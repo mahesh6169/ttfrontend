@@ -1,27 +1,25 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { verifyEmail, sendVerifyOtp } from '@/store/slices/userSlice';
 import { toast } from 'react-toastify';
 
-const EmailVerifyPage = () => {
+const EmailVerifyContent = () => {
   const [otp, setOtp] = useState('');
   const [resendDisabled, setResendDisabled] = useState(false);
-  const [timer, setTimer] = useState(30); // Countdown timer for resend button
+  const [timer, setTimer] = useState(30);
 
   const dispatch = useDispatch();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // ✅ The culprit
 
-  // Extract the redirect param from URL
   const redirect = searchParams.get('redirect') || '/users/profile';
 
   const { user, status } = useSelector((state) => state.user);
 
-  // Redirect if already verified
   useEffect(() => {
     if (user?.isAccountVerified) {
       router.push(redirect);
@@ -125,6 +123,14 @@ const EmailVerifyPage = () => {
         )}
       </div>
     </div>
+  );
+};
+
+const EmailVerifyPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EmailVerifyContent />
+    </Suspense>
   );
 };
 
