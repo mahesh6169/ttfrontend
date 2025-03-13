@@ -1,7 +1,9 @@
 'use client';
+
 import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   fetchThreadMessages,
   sendThreadMessage,
@@ -10,20 +12,19 @@ import {
   unlikeMessage,
 } from '@/store/slices/threadSlice';
 import threadSocket from '@/config/threadSocket';
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 
 const ThreadChatPage = () => {
   const { id: threadId } = useParams();
   const dispatch = useDispatch();
 
-  // Fetch thread details & messages from Redux store
   const thread =
     useSelector((state) =>
       state.threads.threads.find((t) => t._id === threadId)
     ) || {};
   const messages =
     useSelector((state) => state.threads.messages[threadId]) || [];
-  const currentUser = useSelector((state) => state.user.user); // Fetch current user
+  const currentUser = useSelector((state) => state.user.user);
 
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -60,23 +61,22 @@ const ThreadChatPage = () => {
     }
   };
 
-  /* 🔹 Add Like */
+  /* 🔹 Like/Unlike Handlers */
   const handleLike = (messageId) => {
     dispatch(likeMessage(messageId));
   };
 
-  /* 🔹 Remove Like */
   const handleUnlike = (messageId) => {
     dispatch(unlikeMessage(messageId));
   };
 
   /* 🔹 Sort messages by likes (for useful answers) */
   const sortedMessages = [...messages].sort(
-    (a, b) => b.likes - b.dislikes - (a.likes - a.dislikes) // ✅ Sort by Net Score
+    (a, b) => b.likes - b.dislikes - (a.likes - a.dislikes)
   );
   const usefulAnswers = sortedMessages
-    .filter((msg) => msg.likes - msg.dislikes > 0) // ✅ Only include positive Net Score
-    .slice(0, 3); // ✅ Top 3 based on Net Score
+    .filter((msg) => msg.likes - msg.dislikes > 0)
+    .slice(0, 3);
 
   return (
     <div className="mt-12 p-4 max-w-2xl mx-auto w-full">
@@ -112,7 +112,7 @@ const ThreadChatPage = () => {
                   {format(new Date(msg.createdAt), 'dd MMM yyyy HH:mm')}
                 </span>
                 <button
-                  onClick={() => handleToggleLike(msg)}
+                  onClick={() => handleLike(msg._id)}
                   className={`flex items-center space-x-1 ${
                     msg.likedBy?.includes(currentUser?._id)
                       ? 'text-blue-500'
@@ -129,104 +129,128 @@ const ThreadChatPage = () => {
 
       {/* ✅ Messages Section */}
       <div className="border rounded-lg p-4 mb-4 max-h-96 overflow-y-auto w-full bg-white shadow-md">
-  {messages.length > 0 ? (
-    messages.reduce((acc, msg, index) => {
-      const prevMsg = messages[index - 1];
-      const msgDate = new Date(msg.createdAt);
-      const prevMsgDate = prevMsg ? new Date(prevMsg.createdAt) : null;
+        {messages.length > 0 ? (
+          messages.reduce((acc, msg, index) => {
+            const prevMsg = messages[index - 1];
+            const msgDate = new Date(msg.createdAt);
+            const prevMsgDate = prevMsg ? new Date(prevMsg.createdAt) : null;
 
-      // Show date separator only if it's a new day
-      const showDateSeparator = !prevMsg || !isSameDay(msgDate, prevMsgDate);
-      const isCurrentUser = msg.sender?._id === currentUser?._id;
+            const showDateSeparator =
+              !prevMsg || !isSameDay(msgDate, prevMsgDate);
+            const isCurrentUser = msg.sender?._id === currentUser?._id;
 
-      return [
-        ...acc,
-        showDateSeparator && (
-          <div key={`date-${msg._id}`} className="flex justify-center my-3 w-full">
-            <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow">
-              {format(msgDate, 'dd/MM/yyyy')}
-            </span>
-          </div>
-        ),
-        <div
-          key={msg._id}
-          className={`mb-2 flex w-full px-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-        >
-          {/* Message Bubble */}
-          <div
-            className={`relative max-w-[75%] p-3 rounded-2xl shadow-md break-words whitespace-pre-wrap ${
-              isCurrentUser ? 'bg-green-600 text-white' : 'bg-gray-700 text-white'
-            }`}
-          >
-            {/* Sender Name */}
-            <p className="text-sm font-semibold text-gray-300 mb-1">
-              {msg.sender?.name || 'Unknown'}
-            </p>
-
-            {/* Message Content */}
-            <p className="break-words whitespace-pre-wrap">{msg.message}</p>
-
-            {/* Timestamp & Like/Dislike Buttons */}
-            <div className="flex justify-between items-center mt-2 text-xs text-gray-300">
-              {/* Timestamp */}
-              <span>{format(msgDate, 'hh:mm a')}</span>
-
-              {/* Like / Dislike Buttons */}
-              <div className="flex items-center space-x-3">
-                {/* 👍 Like Button */}
-                <button
-                  onClick={() => handleLike(msg._id)}
-                  className="flex items-center space-x-1 hover:text-yellow-400"
+            return [
+              ...acc,
+              showDateSeparator && (
+                <div
+                  key={`date-${msg._id}`}
+                  className="flex justify-center my-3 w-full"
                 >
-                  👍 <span>{msg.likes || 0}</span>
-                </button>
-
-                {/* 👎 Dislike Button */}
-                <button
-                  onClick={() => handleUnlike(msg._id)}
-                  className="flex items-center space-x-1 hover:text-red-400"
+                  <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow">
+                    {format(msgDate, 'dd/MM/yyyy')}
+                  </span>
+                </div>
+              ),
+              <div
+                key={msg._id}
+                className={`mb-2 flex w-full px-2 ${
+                  isCurrentUser ? 'justify-end' : 'justify-start'
+                }`}
+              >
+                <div
+                  className={`relative max-w-[75%] p-3 rounded-2xl shadow-md break-words whitespace-pre-wrap ${
+                    isCurrentUser
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-700 text-white'
+                  }`}
                 >
-                  👎 <span>{msg.dislikes || 0}</span>
-                </button>
+                  <p className="text-sm font-semibold text-gray-300 mb-1">
+                    {msg.sender?.name || 'Unknown'}
+                  </p>
+
+                  <p className="break-words whitespace-pre-wrap">
+                    {msg.message}
+                  </p>
+
+                  <div className="flex justify-between items-center mt-2 text-xs text-gray-300">
+                    <span>{format(msgDate, 'hh:mm a')}</span>
+
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => handleLike(msg._id)}
+                        className="flex items-center space-x-1 hover:text-yellow-400"
+                        disabled={!currentUser}
+                      >
+                        👍 <span>{msg.likes || 0}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleUnlike(msg._id)}
+                        className="flex items-center space-x-1 hover:text-red-400"
+                        disabled={!currentUser}
+                      >
+                        👎 <span>{msg.dislikes || 0}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`absolute bottom-0 w-4 h-4 bg-inherit transform rotate-45 ${
+                      isCurrentUser ? 'right-[-4px]' : 'left-[-4px]'
+                    }`}
+                  ></div>
+                </div>
               </div>
-            </div>
+            ];
+          }, [])
+        ) : (
+          <p className="text-gray-500 text-center">
+            No messages yet. Start the conversation!
+          </p>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-            {/* Tail (Speech Bubble Pointer) */}
-            <div
-              className={`absolute bottom-0 w-4 h-4 bg-inherit transform rotate-45 ${
-                isCurrentUser ? 'right-[-4px]' : 'left-[-4px]'
-              }`}
-            ></div>
+      {/* ✅ Conditional Message Input Section */}
+      {currentUser ? (
+        <div className="flex items-center border rounded-lg p-2 shadow-md bg-white">
+          <textarea
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1 border-none outline-none p-2 resize-none h-auto overflow-auto"
+            rows="3"
+            style={{ minHeight: '4rem', maxHeight: '10rem' }}
+          />
+          <button
+            onClick={handleSendMessage}
+            className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
+            disabled={!newMessage.trim()}
+          >
+            Send
+          </button>
+        </div>
+      ) : (
+        <div className="border rounded-lg p-4 shadow-md bg-white text-center">
+          <p className="text-gray-700 mb-4">
+            You must be logged in to comment or like messages.
+          </p>
+          <div className="flex justify-center space-x-4">
+            <Link
+              href={`/users/login?redirect=/threads/${threadId}`}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Login
+            </Link>
+            <Link
+              href={`/users/register?redirect=/threads/${threadId}`}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Register
+            </Link>
           </div>
         </div>
-      ];
-    }, [])
-  ) : (
-    <p className="text-gray-500 text-center">No messages yet. Start the conversation!</p>
-  )}
-  <div ref={messagesEndRef} />
-</div>
-
-
-      
-      {/* ✅ Message Input Section */}
-      <div className="flex items-center border rounded-lg p-2 shadow-md bg-white">
-        <textarea
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
-          className="flex-1 border-none outline-none p-2 resize-none h-auto overflow-auto"
-          rows="3"
-          style={{ minHeight: '4rem', maxHeight: '10rem' }}
-        />
-        <button
-          onClick={handleSendMessage}
-          className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
-          disabled={!newMessage.trim()}
-        >
-          Send
-        </button>
-      </div>
+      )}
     </div>
   );
 };

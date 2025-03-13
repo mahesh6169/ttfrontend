@@ -243,12 +243,7 @@ export const getWishlist = createAsyncThunk(
 
 const initialState = {
   tokenValidated: false,
-  user: { _id: null, 
-          name: null,
-          email: null, 
-          role: null, 
-          isAccountVerified: null, 
-          wishlist: [] },
+  user: null,
   adverts: [],
   status: 'idle',
   error: null,

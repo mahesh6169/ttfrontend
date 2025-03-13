@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerUser, sendVerifyOtp } from '@/store/slices/userSlice';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 
@@ -12,12 +12,14 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    confirmPassword: '', // ✅ Added confirm password field
+    confirmPassword: '',
   });
 
   const [message, setMessage] = useState('');
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams(); // ✅ Get query params
+  const redirect = searchParams.get('redirect') || '/users/profile'; // ✅ Default fallback page
   const { loading } = useSelector((state) => state.user);
 
   // Handle input changes
@@ -30,14 +32,12 @@ const Register = () => {
     e.preventDefault();
     setMessage('');
 
-    // Frontend Password Confirmation Check
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
 
     try {
-      // Dispatch Registration API
       const result = await dispatch(
         registerUser({
           name: formData.name,
@@ -50,12 +50,12 @@ const Register = () => {
       if (result) {
         toast.success('Registration successful. Sending OTP...');
 
-        // Send OTP Verification
         const otpResult = await dispatch(sendVerifyOtp()).unwrap();
 
         if (otpResult) {
           toast.success('OTP sent successfully. Redirecting...');
-          router.push(`/users/emailverify`);
+          // ✅ Include redirect param when navigating to email verify page
+          router.push(`/users/emailverify?redirect=${redirect}`);
         }
       }
     } catch (err) {
@@ -120,7 +120,7 @@ const Register = () => {
             />
           </div>
 
-          {/* Confirm Password ✅ */}
+          {/* Confirm Password */}
           <div>
             <label htmlFor="confirmPassword" className="block font-medium">
               Confirm Password
@@ -149,11 +149,14 @@ const Register = () => {
 
         {message && <p className="mt-4 text-center text-red-500">{message}</p>}
 
-        {/* Login Link */}
+        {/* Login Link with redirect param */}
         <div className="mt-6 text-center">
           <p>
             Already have an account?{' '}
-            <Link href="/users/login" className="text-blue-600 hover:underline">
+            <Link
+              href={`/users/login?redirect=${encodeURIComponent(redirect)}`}
+              className="text-blue-600 hover:underline"
+            >
               Login here
             </Link>
           </p>

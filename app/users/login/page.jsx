@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser } from '@/store/slices/userSlice';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 
@@ -11,20 +11,24 @@ const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // ✅ Get the redirect param from URL, fallback to /users/profile
+  const redirect = searchParams.get('redirect') || '/users/profile';
 
   const { user, status } = useSelector((state) => state.user);
   const isLoading = status === 'loading';
 
-  // ✅ Redirect users based on role
+  // ✅ Redirect users based on role or redirect param
   useEffect(() => {
     if (user?._id) {
       if (user.role === 'admin') {
-        router.push('/users/admin'); // ✅ Redirect admins
+        router.push('/users/admin');
       } else {
-        router.push('/users/profile'); // ✅ Redirect regular users
+        router.push(redirect); // ✅ Use dynamic redirect
       }
     }
-  }, [user, router]);
+  }, [user, router, redirect]);
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -32,14 +36,13 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
-      // ✅ Dispatch loginUser and wait for response
       const result = await dispatch(loginUser(credentials)).unwrap();
-  
+
       if (result) {
         toast.success('Login successful! Redirecting...');
-        // ✅ Redirection happens inside `useEffect`
+        // ✅ Redirection is handled in useEffect
       }
     } catch (err) {
       toast.error(err || 'Authentication failed. Please check your credentials.');
@@ -100,7 +103,10 @@ const Login = () => {
         <div className="mt-6 text-center">
           <p>
             Don't have an account?{' '}
-            <Link href="/users/register" className="text-blue-600 hover:underline">
+            <Link
+              href={`/users/register?redirect=${encodeURIComponent(redirect)}`}
+              className="text-blue-600 hover:underline"
+            >
               Register here
             </Link>
           </p>

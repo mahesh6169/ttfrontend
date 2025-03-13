@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { verifyEmail, sendVerifyOtp } from '@/store/slices/userSlice';
 import { toast } from 'react-toastify';
 
@@ -13,17 +13,20 @@ const EmailVerifyPage = () => {
 
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Extract the redirect param from URL
+  const redirect = searchParams.get('redirect') || '/users/profile';
 
   const { user, status } = useSelector((state) => state.user);
 
-  // Redirect to profile if already verified
+  // Redirect if already verified
   useEffect(() => {
     if (user?.isAccountVerified) {
-      router.push('/users/profile');
+      router.push(redirect);
     }
-  }, [user, router]);
+  }, [user, router, redirect]);
 
-  // Handle OTP submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -33,7 +36,7 @@ const EmailVerifyPage = () => {
       if (result.message) {
         toast.success('Account verified successfully. Redirecting...');
         setTimeout(() => {
-          router.push('/users/profile');
+          router.push(redirect);
         }, 3000);
       }
     } catch (err) {
@@ -41,11 +44,10 @@ const EmailVerifyPage = () => {
     }
   };
 
-  // Resend OTP function
   const resendOtp = async () => {
     try {
-      setResendDisabled(true); // Disable the button
-      setTimer(30); // Reset timer
+      setResendDisabled(true);
+      setTimer(30);
 
       const result = await dispatch(sendVerifyOtp()).unwrap();
 
@@ -57,7 +59,6 @@ const EmailVerifyPage = () => {
     }
   };
 
-  // Countdown timer effect
   useEffect(() => {
     if (resendDisabled) {
       const countdown = setInterval(() => {
@@ -65,11 +66,12 @@ const EmailVerifyPage = () => {
           if (prev === 1) {
             clearInterval(countdown);
             setResendDisabled(false);
-            return 30; // Reset timer
+            return 30;
           }
           return prev - 1;
         });
       }, 1000);
+
       return () => clearInterval(countdown);
     }
   }, [resendDisabled]);
@@ -79,7 +81,6 @@ const EmailVerifyPage = () => {
       <div className="bg-white p-8 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Email Verification</h1>
 
-        {/* OTP Form */}
         {!user?.isAccountVerified && (
           <>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -99,7 +100,6 @@ const EmailVerifyPage = () => {
                 />
               </div>
 
-              {/* Verify Button */}
               <button
                 type="submit"
                 className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
@@ -109,7 +109,6 @@ const EmailVerifyPage = () => {
               </button>
             </form>
 
-            {/* Resend OTP Button */}
             <button
               onClick={resendOtp}
               disabled={resendDisabled}
