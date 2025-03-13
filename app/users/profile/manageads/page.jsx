@@ -26,6 +26,9 @@ export default function ProfilePage() {
       .unwrap()
       .catch((err) => {
         if (err === 'Authentication required. Please log in.') {
+
+          // Save current page path to localStorage
+        localStorage.setItem('redirectAfterLogin', '/users/profile/manageads');
           router.push('/users/login');
         }
       });

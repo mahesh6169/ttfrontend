@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser } from '@/store/slices/userSlice';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 
@@ -11,24 +11,30 @@ const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const dispatch = useDispatch();
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  // ✅ Get the redirect param from URL, fallback to /users/profile
-  const redirect = searchParams.get('redirect') || '/users/profile';
 
   const { user, status } = useSelector((state) => state.user);
   const isLoading = status === 'loading';
 
-  // ✅ Redirect users based on role or redirect param
-  useEffect(() => {
-    if (user?._id) {
-      if (user.role === 'admin') {
-        router.push('/users/admin');
-      } else {
-        router.push(redirect); // ✅ Use dynamic redirect
-      }
+// 🔹 After successful login, handle redirection
+useEffect(() => {
+  if (user?._id) {
+    let redirectPath;
+
+    // 1. If admin, go to admin page
+    if (user.role === 'admin') {
+      redirectPath = '/users/admin';
+    } else {
+      // 2. Look for a saved path in localStorage
+      redirectPath = localStorage.getItem('redirectAfterLogin') || '/users/profile';
     }
-  }, [user, router, redirect]);
+
+    // 3. Clean up localStorage to avoid stale redirects
+    localStorage.removeItem('redirectAfterLogin');
+
+    // 4. Redirect!
+    router.push(redirectPath);
+  }
+}, [user, router]);
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -42,7 +48,7 @@ const Login = () => {
 
       if (result) {
         toast.success('Login successful! Redirecting...');
-        // ✅ Redirection is handled in useEffect
+        // ✅ Redirection handled in useEffect above
       }
     } catch (err) {
       toast.error(err || 'Authentication failed. Please check your credentials.');
@@ -104,7 +110,7 @@ const Login = () => {
           <p>
             Don't have an account?{' '}
             <Link
-              href={`/users/register?redirect=${encodeURIComponent(redirect)}`}
+              href="/users/register"
               className="text-blue-600 hover:underline"
             >
               Register here

@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { Suspense, useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { verifyEmail, sendVerifyOtp } from '@/store/slices/userSlice';
 import { toast } from 'react-toastify';
 
@@ -14,15 +14,20 @@ const EmailVerifyContent = () => {
 
   const dispatch = useDispatch();
   const router = useRouter();
-  const searchParams = useSearchParams(); // ✅ The culprit
 
-  const redirect = searchParams.get('redirect') || '/users/profile';
+  // 🟢 Get redirect path from localStorage (as fallback, go to /users/profile)
+  const redirect = typeof window !== 'undefined'
+    ? localStorage.getItem('redirectAfterLogin') || '/users/profile'
+    : '/users/profile';
 
   const { user, status } = useSelector((state) => state.user);
 
   useEffect(() => {
     if (user?.isAccountVerified) {
       router.push(redirect);
+
+      // ✅ Clean up the redirect item if you no longer need it
+      localStorage.removeItem('redirectAfterLogin');
     }
   }, [user, router, redirect]);
 
@@ -36,6 +41,7 @@ const EmailVerifyContent = () => {
         toast.success('Account verified successfully. Redirecting...');
         setTimeout(() => {
           router.push(redirect);
+          localStorage.removeItem('redirectAfterLogin');
         }, 3000);
       }
     } catch (err) {

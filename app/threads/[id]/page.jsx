@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation'; // ✅ Added router
 import Link from 'next/link';
 import {
   fetchThreadMessages,
@@ -17,6 +17,7 @@ import { format, isSameDay } from 'date-fns';
 const ThreadChatPage = () => {
   const { id: threadId } = useParams();
   const dispatch = useDispatch();
+  const router = useRouter();
 
   const thread =
     useSelector((state) =>
@@ -29,13 +30,19 @@ const ThreadChatPage = () => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
 
-  /* 🔹 Fetch Messages & Join Thread Room */
+  // ✅ Save current URL in localStorage (when no user logged in)
+  useEffect(() => {
+    if (!currentUser) {
+      localStorage.setItem('redirectAfterLogin', `/threads/${threadId}`);
+    }
+  }, [currentUser, threadId]);
+
+  // Fetch messages + join room
   useEffect(() => {
     dispatch(fetchThreadMessages(threadId));
     threadSocket.emit('joinThread', threadId);
   }, [dispatch, threadId]);
 
-  /* 🔹 Listen for new messages via Socket */
   useEffect(() => {
     threadSocket.on('newThreadMessage', (message) => {
       dispatch(addNewThreadMessage({ threadId, message }));
@@ -46,14 +53,12 @@ const ThreadChatPage = () => {
     };
   }, [dispatch, threadId]);
 
-  /* 🔹 Auto-scroll to the latest message */
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  /* 🔹 Send Message Handler */
   const handleSendMessage = () => {
     if (newMessage.trim()) {
       dispatch(sendThreadMessage({ threadId, message: newMessage }));
@@ -61,7 +66,6 @@ const ThreadChatPage = () => {
     }
   };
 
-  /* 🔹 Like/Unlike Handlers */
   const handleLike = (messageId) => {
     dispatch(likeMessage(messageId));
   };
@@ -70,7 +74,6 @@ const ThreadChatPage = () => {
     dispatch(unlikeMessage(messageId));
   };
 
-  /* 🔹 Sort messages by likes (for useful answers) */
   const sortedMessages = [...messages].sort(
     (a, b) => b.likes - b.dislikes - (a.likes - a.dislikes)
   );
@@ -80,19 +83,16 @@ const ThreadChatPage = () => {
 
   return (
     <div className="mt-12 p-4 max-w-2xl mx-auto w-full">
-      {/* ✅ Thread Title */}
       <h1 className="text-3xl font-bold mb-2">
         {thread.title || 'Thread Discussion'}
       </h1>
 
-      {/* ✅ Thread Question */}
       {thread.question && (
         <p className="text-lg text-gray-700 italic mb-6 border-b pb-4">
           {thread.question}
         </p>
       )}
 
-      {/* 🔥 Useful Answers Section */}
       {usefulAnswers.length > 0 && (
         <div className="mb-6 p-4 bg-yellow-100 border border-yellow-300 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-yellow-700 mb-3">
@@ -127,7 +127,6 @@ const ThreadChatPage = () => {
         </div>
       )}
 
-      {/* ✅ Messages Section */}
       <div className="border rounded-lg p-4 mb-4 max-h-96 overflow-y-auto w-full bg-white shadow-md">
         {messages.length > 0 ? (
           messages.reduce((acc, msg, index) => {
@@ -211,7 +210,6 @@ const ThreadChatPage = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ✅ Conditional Message Input Section */}
       {currentUser ? (
         <div className="flex items-center border rounded-lg p-2 shadow-md bg-white">
           <textarea
@@ -237,13 +235,13 @@ const ThreadChatPage = () => {
           </p>
           <div className="flex justify-center space-x-4">
             <Link
-              href={`/users/login?redirect=/threads/${threadId}`}
+              href="/users/login"
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               Login
             </Link>
             <Link
-              href={`/users/register?redirect=/threads/${threadId}`}
+              href="/users/register"
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
               Register

@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerUser, sendVerifyOtp } from '@/store/slices/userSlice';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 
@@ -18,16 +18,17 @@ const Register = () => {
   const [message, setMessage] = useState('');
   const dispatch = useDispatch();
   const router = useRouter();
-  const searchParams = useSearchParams(); // ✅ Get query params
-  const redirect = searchParams.get('redirect') || '/users/profile'; // ✅ Default fallback page
   const { loading } = useSelector((state) => state.user);
 
-  // Handle input changes
+  // 🟢 Get the redirect path from localStorage or default to /users/profile
+  const redirect = typeof window !== 'undefined'
+    ? localStorage.getItem('redirectAfterLogin') || '/users/profile'
+    : '/users/profile';
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
@@ -54,8 +55,9 @@ const Register = () => {
 
         if (otpResult) {
           toast.success('OTP sent successfully. Redirecting...');
-          // ✅ Include redirect param when navigating to email verify page
-          router.push(`/users/emailverify?redirect=${redirect}`);
+          
+          // ✅ Move to email verify page (keep redirect saved in localStorage)
+          router.push('/users/emailverify');
         }
       }
     } catch (err) {
@@ -149,12 +151,12 @@ const Register = () => {
 
         {message && <p className="mt-4 text-center text-red-500">{message}</p>}
 
-        {/* Login Link with redirect param */}
+        {/* Login Link */}
         <div className="mt-6 text-center">
           <p>
             Already have an account?{' '}
             <Link
-              href={`/users/login?redirect=${encodeURIComponent(redirect)}`}
+              href="/users/login"
               className="text-blue-600 hover:underline"
             >
               Login here
