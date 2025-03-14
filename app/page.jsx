@@ -242,7 +242,7 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Icon Categories Section */}
+      {/* Icon Categories Section. */}
       {filterMode === 'icons' && (
         <div className="w-full overflow-hidden px-4">
           {/* Scrollable Wrapper */}
