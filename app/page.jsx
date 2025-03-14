@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateFilter, fetchAdvertsByFilter } from '@/store/slices/filterSlice';
 import AdvertList from '@/components/advertcomponents/AdvertList';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
+import Pagination from '@/components/Pagination';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import {
   FaMusic,
@@ -241,38 +242,39 @@ const HomePage = () => {
         </div>
       )}
 
-{/* Icon Categories Section */}
-{filterMode === 'icons' && (
-  <div className="w-full overflow-hidden px-4">
-    {/* Scrollable Wrapper */}
-    <div
-      className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-4 py-2 justify-start"
-      style={{
-        WebkitOverflowScrolling: 'touch',
-        scrollSnapType: 'x mandatory',
-        maxWidth: '100%',
-        overflowX: 'auto',
-      }}
-    >
-      {/* Category Buttons */}
-      {categoryIcons.map((cat) => (
-        <button
-          key={cat.name}
-          className={`flex flex-col items-center justify-center p-2 w-[140px] min-w-[140px] border rounded-lg shadow-md cursor-pointer snap-start ${
-            category === cat.name ? 'bg-gray-300' : 'bg-white hover:bg-gray-100'
-          }`}
-          onClick={() => handleCategoryClick(cat.name)}
-        >
-          <div className="text-xs text-gray-600 mb-1">{cat.icon}</div>
-          <span className="text-xs font-semibold text-center whitespace-nowrap">{cat.name}</span>
-        </button>
-      ))}
-    </div>
-  </div>
-)}
-
-
-
+      {/* Icon Categories Section */}
+      {filterMode === 'icons' && (
+        <div className="w-full overflow-hidden px-4">
+          {/* Scrollable Wrapper */}
+          <div
+            className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-4 py-2 justify-start"
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollSnapType: 'x mandatory',
+              maxWidth: '100%',
+              overflowX: 'auto',
+            }}
+          >
+            {/* Category Buttons */}
+            {categoryIcons.map((cat) => (
+              <button
+                key={cat.name}
+                className={`flex flex-col items-center justify-center p-2 w-[140px] min-w-[140px] border rounded-lg shadow-md cursor-pointer snap-start ${
+                  category === cat.name
+                    ? 'bg-gray-300'
+                    : 'bg-white hover:bg-gray-100'
+                }`}
+                onClick={() => handleCategoryClick(cat.name)}
+              >
+                <div className="text-xs text-gray-600 mb-1">{cat.icon}</div>
+                <span className="text-xs font-semibold text-center whitespace-nowrap">
+                  {cat.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Browse by Cities Section */}
       {filterMode === 'cities' && (
@@ -300,27 +302,11 @@ const HomePage = () => {
       <AdvertList adverts={adverts} status={status} />
 
       {/* Pagination Controls */}
-      {meta?.totalPages > 1 && (
-        <div className="mt-4 flex justify-between items-center">
-          <button
-            disabled={page === 1}
-            onClick={() => dispatch(updateFilter({ page: page - 1 }))}
-            className="p-2 bg-gray-200 rounded disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span>
-            Page {page} of {meta.totalPages}
-          </span>
-          <button
-            disabled={page === meta.totalPages}
-            onClick={() => dispatch(updateFilter({ page: page + 1 }))}
-            className="p-2 bg-gray-200 rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
+      <Pagination
+        currentPage={page}
+        totalPages={meta?.totalPages || 1}
+        onPageChange={(pageNum) => dispatch(updateFilter({ page: pageNum }))}
+      />
     </div>
   );
 };
