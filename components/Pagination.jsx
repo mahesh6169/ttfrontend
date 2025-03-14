@@ -1,6 +1,12 @@
 import React from 'react';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+
+   // 🔹 If no pages or only one page, don't render pagination at all
+   if (!totalPages || totalPages <= 1) {
+    return null;
+   }
+
   const pages = [];
 
   // Helper to add ellipsis

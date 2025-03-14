@@ -125,23 +125,6 @@ const HomePage = () => {
     dispatch(fetchAdvertsByFilter());
   }, [category, location, proximity, page, limit, dispatch]);
 
-  // Display loading spinner when status is "loading" and no adverts are available
-  if (status === 'loading' && (!adverts || adverts.length === 0)) {
-    //console.log('loading');
-    return (
-      <div className="flex justify-center items-center h-screen w-full">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  if ((!adverts || adverts.length === 0) && status !== 'loading') {
-    return (
-      <div className="flex justify-center items-center text-center p-8">
-        <p className="text-lg text-gray-500">No adverts found.</p>
-      </div>
-    );
-  }
   return (
     <div>
       <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
