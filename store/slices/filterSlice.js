@@ -37,7 +37,7 @@ const filterSlice = createSlice({
     location: '',
     proximity: 10,
     page: 1,
-    limit: 10,
+    limit: 12,
     adverts: [],
     meta: {},
     status: 'idle', 
