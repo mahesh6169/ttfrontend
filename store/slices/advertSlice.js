@@ -14,7 +14,7 @@ export const fetchAdverts = createAsyncThunk(
             });
 
             if (response.status === 404) {
-                return []; // No adverts found
+                return []; // No adverts found.
             }
 
             if (!response.ok) {
