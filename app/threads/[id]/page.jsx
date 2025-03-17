@@ -164,7 +164,7 @@ const ThreadChatPage = () => {
                   }`}
                 >
                   <p className="text-sm font-semibold text-gray-300 mb-1">
-                    {msg.sender?.name || 'Unknown'}
+                    {msg.sender?.name || 'Former Member'}
                   </p>
 
                   <p className="break-words whitespace-pre-wrap">

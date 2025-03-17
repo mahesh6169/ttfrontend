@@ -102,7 +102,7 @@ const ThreadsPage = () => {
             >
               <h2 className="text-lg font-semibold">{thread.title}</h2>
               <p className="text-sm text-gray-700 italic">{thread.question}</p>
-              <p className="text-sm text-gray-500">Started by {thread.owner.name}</p>
+              <p className="text-sm text-gray-500">Started by {thread.owner?.name || 'Former Member'}</p>
             </li>
           ))}
         </ul>
