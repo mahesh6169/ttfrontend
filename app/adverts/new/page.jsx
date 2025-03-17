@@ -226,7 +226,7 @@ const NewAdvertPage = () => {
     setErrorMessage('');
     setSuccessMessage('');
     console.log("🔹 Submitting advert...");
-    // Validation mapping
+    // Validation mapping.
     const validations = [
       {
         condition: !isLoggedIn && (!formData.email || !formData.name),
