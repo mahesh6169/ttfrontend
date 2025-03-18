@@ -10,6 +10,8 @@ import {
   FIELD_HINTS
 } from '@/components/addadvert/AdvertCategories';
 import AdTypeToggle from '@/components/addadvert/AdTypeToggle';
+import PriceToggle from '@/components/addadvert/PriceToggle';
+import AddressInput from '@/components/addadvert/AddressInput';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 
@@ -490,166 +492,9 @@ const NewAdvertPage = () => {
         <AdTypeToggle formData={formData} setFormData={setFormData} />
 
         {/* Your Price */}
-        <div className="mb-4">
-          <label className="block font-bold mb-2">Price</label>
-
-          {/* Price Type Toggle Buttons */}
-          <div className="flex border border-gray-500 rounded overflow-hidden">
-            {/* Sell Option */}
-            <button
-              type="button"
-              className={`flex-1 p-2 text-center border-r-2 ${
-                formData.isForSale
-                  ? 'bg-gray-200 border-gray-500' // Selected: Grey Highlight & Strong Border
-                  : 'bg-white border-gray-300' // Unselected: Light Grey Border
-              }`}
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  isForSale: true,
-                  isForHire: false,
-                  isForRent: false,
-                  isRequestQuote: false,
-                })
-              }
-            >
-              Sell
-            </button>
-
-            {/* Hire Option */}
-            <button
-              type="button"
-              className={`flex-1 p-2 text-center border-r-2 ${
-                formData.isForHire
-                  ? 'bg-gray-200 border-gray-500' // Selected: Grey Highlight & Strong Border
-                  : 'bg-white border-gray-300' // Unselected: Light Grey Border
-              }`}
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  isForHire: true,
-                  isForSale: false,
-                  isForRent: false,
-                  isRequestQuote: false,
-                })
-              }
-            >
-              Hire
-            </button>
-
-            {/* Rent Option */}
-            <button
-              type="button"
-              className={`flex-1 p-2 text-center border-r-2 ${
-                formData.isForRent
-                  ? 'bg-gray-200 border-gray-500' // Selected: Grey Highlight & Strong Border
-                  : 'bg-white border-gray-300' // Unselected: Light Grey Border
-              }`}
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  isForRent: true,
-                  isForSale: false,
-                  isForHire: false,
-                  isRequestQuote: false,
-                })
-              }
-            >
-              Rent
-            </button>
-
-            {/* Request Quote Option */}
-            <button
-              type="button"
-              className={`flex-1 p-2 text-center ${
-                formData.isRequestQuote
-                  ? 'bg-gray-200 border-gray-500' // Selected: Grey Highlight & Strong Border
-                  : 'bg-white border-gray-300' // Unselected: Light Grey Border
-              }`}
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  isRequestQuote: true,
-                  isForSale: false,
-                  isForHire: false,
-                  isForRent: false,
-                })
-              }
-            >
-              Quote
-            </button>
-          </div>
-
-          {/* Conditional Input Fields */}
-          <div className="mt-4">
-            {/* Sell Price Input */}
-            {formData.isForSale && (
-              <input
-                type="number"
-                name="sellPrice"
-                value={formData.sellPrice}
-                onChange={handleChange}
-                placeholder="Enter your price"
-                className="w-full p-2 border rounded"
-              />
-            )}
-
-            {/* Hire Inputs */}
-            {formData.isForHire && (
-              <>
-                <input
-                  type="number"
-                  name="hirePrice"
-                  value={formData.hirePrice}
-                  onChange={handleChange}
-                  placeholder="Enter hire price"
-                  className="w-full p-2 border rounded mb-2"
-                />
-                <select
-                  name="hireUnit"
-                  value={formData.hireUnit}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                >
-                  <option value="hour">Per Hour</option>
-                  <option value="day">Per Day</option>
-                </select>
-              </>
-            )}
-
-            {/* Rent Inputs */}
-            {formData.isForRent && (
-              <>
-                <input
-                  type="number"
-                  name="rentPrice"
-                  value={formData.rentPrice}
-                  onChange={handleChange}
-                  placeholder="Enter rent price"
-                  className="w-full p-2 border rounded mb-2"
-                />
-                <select
-                  name="rentUnit"
-                  value={formData.rentUnit}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                >
-                  <option value="week">Per Week</option>
-                  <option value="month">Per Month</option>
-                </select>
-              </>
-            )}
-
-            {/* Request Quote Message */}
-            {formData.isRequestQuote && (
-              <p className="text-sm text-gray-500">
-                You have chosen to allow users to request a quote. No price
-                input is required.
-              </p>
-            )}
-          </div>
-        </div>
-
+         <PriceToggle formData={formData} setFormData={setFormData} />
+          
+  
         {/* Description */}
         <div>
           <label className="block font-bold">Description</label>
