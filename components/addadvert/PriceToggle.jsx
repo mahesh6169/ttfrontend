@@ -9,7 +9,7 @@ const PriceToggle = ({ formData, setFormData }) => {
       isForSale: type === 'sell',
       isForHire: type === 'hire',
       isForRent: type === 'rent',
-      isRequestQuote: type === 'quote',
+      // ❌ Removed isRequestQuote handling
     }));
   };
 
@@ -49,22 +49,12 @@ const PriceToggle = ({ formData, setFormData }) => {
 
         <button
           type="button"
-          className={`flex-1 p-2 text-center border-r-2 ${
+          className={`flex-1 p-2 text-center ${
             formData.isForRent ? 'bg-gray-200 border-gray-500' : 'bg-white border-gray-300'
           }`}
           onClick={() => handlePriceTypeSelect('rent')}
         >
           Rent
-        </button>
-
-        <button
-          type="button"
-          className={`flex-1 p-2 text-center ${
-            formData.isRequestQuote ? 'bg-gray-200 border-gray-500' : 'bg-white border-gray-300'
-          }`}
-          onClick={() => handlePriceTypeSelect('quote')}
-        >
-          Quote
         </button>
       </div>
 
@@ -123,12 +113,6 @@ const PriceToggle = ({ formData, setFormData }) => {
               <option value="month">Per Month</option>
             </select>
           </>
-        )}
-
-        {formData.isRequestQuote && (
-          <p className="text-sm text-gray-500 mt-2">
-            You have chosen to allow users to request a quote. No price input is required.
-          </p>
         )}
       </div>
     </div>

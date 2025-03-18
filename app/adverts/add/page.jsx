@@ -8,6 +8,7 @@ import {
   CATEGORY_OPTIONS,
   CATEGORIES_REQUIRING_CONDITION,
   FIELD_HINTS,
+  CATEGORIES_NOT_REQUIRING_PRICE
 } from '@/components/addadvert/AdvertCategories';
 import AdTypeToggle from '@/components/addadvert/AdTypeToggle';
 import PriceToggle from '@/components/addadvert/PriceToggle';
@@ -66,6 +67,9 @@ const NewAdvertPage = () => {
   const shouldShowCondition = CATEGORIES_REQUIRING_CONDITION.includes(
     formData.category
   );
+
+  const shouldShowPrice = formData.isOffered &&
+  !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category);
 
   const [autocomplete, setAutocomplete] = useState(null);
   const [preview, setPreview] = useState([]);
@@ -145,7 +149,8 @@ const NewAdvertPage = () => {
           !formData.isForSale &&
           !formData.isForHire &&
           !formData.isForRent &&
-          !formData.isRequestQuote,
+          !formData.isRequestQuote &&
+          !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category),
         message: 'Price is required.',
       },
       {
@@ -348,6 +353,9 @@ const NewAdvertPage = () => {
           />
         </div>
 
+        {/* Ad Type Toggle  */}
+        <AdTypeToggle formData={formData} setFormData={setFormData} />
+
         {/* Category */}
         <div>
           <label className="block font-bold">Category</label>
@@ -368,16 +376,16 @@ const NewAdvertPage = () => {
           </select>
         </div>
 
+        {/* Your Price */}
+        {shouldShowPrice && (
+  <PriceToggle formData={formData} setFormData={setFormData} />
+)}
+
+
         {/* Condition*/}
-        {shouldShowCondition && (
+        {shouldShowCondition && formData.isForSale && (
           <ConditionToggle formData={formData} setFormData={setFormData} />
         )}
-
-        {/* Ad Type Toggle  */}
-        <AdTypeToggle formData={formData} setFormData={setFormData} />
-
-        {/* Your Price */}
-        <PriceToggle formData={formData} setFormData={setFormData} />
 
         {/* Description */}
         <div>

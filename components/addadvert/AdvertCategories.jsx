@@ -1,31 +1,45 @@
-  export const CATEGORY_OPTIONS = [
-    'Antiques, Art & Collectables',
-    'Baby & Children',
-    'Books, Music & Games',
-    'Cars & Vehicles',
-    'Clothing & Jewellery',
-    'Community',
-    'Electronics & Computer',
-    'Home & Garden',
+export const CATEGORY_OPTIONS = [
+  'Baby & Children',
+  'Music & Games',
+  'Cars & Vehicles',
+  'Fashion & Accessories',
+  'Academics Tutors & Arts',
+  'Electronics & Computers',
+  'Home & Garden',
+  'Jobs',
+  'Miscellaneous',
+  'Pets',
+  'Party Hires & Services',
+  'Health, Sport & Fitness',
+  'Food & Catering Services',
+  'Home Improvement & Repairs',
+  'Real Estate',
+  'Professional Services',
+  'Business & Shops',
+];
+
+
+  export const CATEGORIES_REQUIRING_CONDITION = [ 
+  'Baby & Children',
+  'Music & Games',
+  'Cars & Vehicles',
+  'Fashion & Accessories',
+  'Electronics & Computers',
+  'Home & Garden',
+  'Miscellaneous',
+  'Party Hires & Services',
+  'Health, Sport & Fitness',
+  'Food & Catering Services',
+  'Home Improvement & Repairs',
+  ];
+
+  export const CATEGORIES_NOT_REQUIRING_PRICE = [
     'Jobs',
-    'Miscellaneous',
-    'Pets',
-    'Real Estate',
-    'Services For Hire',
-    'Sport & Fitness',
-    'Restaurants and Cloud Kitchens',
+    'Professional Services',
+    'Business & Shops',
+    'Academics Tutors & Arts',
   ];
-
-  export const CATEGORIES_REQUIRING_CONDITION = [
-    'Electronics & Computer',
-    'Cars & Vehicles',
-    'Clothing & Jewellery',
-    'Home & Garden',
-    'Sport & Fitness',
-    'Antiques, Art & Collectables',
-    'Baby & Children',
-  ];
-
+  
     // Field-specific hints.
     export const FIELD_HINTS = {
         email: 'Required to avoid spam.',
