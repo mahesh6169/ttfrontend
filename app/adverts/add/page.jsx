@@ -43,7 +43,6 @@ const NewAdvertPage = () => {
     isForRent: false,
     rentPrice: 0,
     rentUnit: 'week',
-    isRequestQuote: false,
     description: '',
     address: {
       formattedAddress: '',
@@ -136,7 +135,7 @@ const NewAdvertPage = () => {
         message: 'Category is required.',
       },
       {
-        condition: shouldShowCondition && !formData.condition,
+        condition: shouldShowCondition && formData.isForSale && !formData.condition,
         message: 'Condition is required for this category.',
       },
 
@@ -149,7 +148,6 @@ const NewAdvertPage = () => {
           !formData.isForSale &&
           !formData.isForHire &&
           !formData.isForRent &&
-          !formData.isRequestQuote &&
           !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category),
         message: 'Price is required.',
       },
@@ -221,7 +219,6 @@ const NewAdvertPage = () => {
         case 'isForHire':
         case 'isForSale':
         case 'isForRent':
-        case 'isRequestQuote':
           // Convert boolean values to string ("true"/"false") to be safely sent via FormData
           formPayload.append(key, value ? 'true' : 'false');
           break;
@@ -259,7 +256,6 @@ const NewAdvertPage = () => {
           isForRent: false,
           rentPrice: 0,
           rentUnit: 'week',
-          isRequestQuote: false,
           address: {
             formattedAddress: '',
             streetNumber: '',
