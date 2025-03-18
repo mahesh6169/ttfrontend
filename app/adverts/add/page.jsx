@@ -13,6 +13,7 @@ import AdTypeToggle from '@/components/addadvert/AdTypeToggle';
 import PriceToggle from '@/components/addadvert/PriceToggle';
 import AddressInput from '@/components/addadvert/AddressInput';
 import ImageUploader from '@/components/addadvert/ImageUploader';
+import ConditionToggle from '@/components/addadvert/ConditionToggle';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 
@@ -394,47 +395,9 @@ const NewAdvertPage = () => {
 
         {/* Condition*/}
         {shouldShowCondition && (
-          <div className="mb-4">
-            <label className="block font-bold mb-2">Condition</label>
-            <div className="flex border border-gray-500 rounded overflow-hidden">
-              {/* New Condition Button */}
-              <button
-                type="button"
-                className={`flex-1 p-2 text-center border-r-2 ${
-                  formData.condition === 'New'
-                    ? 'bg-gray-200 border-gray-500' // Selected: Grey Highlight & Strong Border
-                    : 'bg-white border-gray-300' // Unselected: Light Grey Border
-                }`}
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    condition: 'New',
-                  })
-                }
-              >
-                New
-              </button>
+  <ConditionToggle formData={formData} setFormData={setFormData} />
+)}
 
-              {/* Used Condition Button */}
-              <button
-                type="button"
-                className={`flex-1 p-2 text-center ${
-                  formData.condition === 'Used'
-                    ? 'bg-gray-200 border-gray-500' // Selected: Grey Highlight & Strong Border
-                    : 'bg-white border-gray-300' // Unselected: Light Grey Border
-                }`}
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    condition: 'Used',
-                  })
-                }
-              >
-                Used
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Ad Type Toggle  */}
         <AdTypeToggle formData={formData} setFormData={setFormData} />
