@@ -12,6 +12,7 @@ import {
 import AdTypeToggle from '@/components/addadvert/AdTypeToggle';
 import PriceToggle from '@/components/addadvert/PriceToggle';
 import AddressInput from '@/components/addadvert/AddressInput';
+import ImageUploader from '@/components/addadvert/ImageUploader';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 
@@ -83,60 +84,7 @@ const NewAdvertPage = () => {
     setFocusedField(null); // Clear the hint when the field loses focus
   };
 
-  const handlePlaceChanged = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
-      if (!place.geometry || !place.geometry.location) {
-        console.error('No valid location data found');
-        return;
-      }
 
-      // Extract longitude and latitude
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
-
-      // Extract address details
-      const formattedAddress = place.formatted_address || '';
-      const addressComponents = place.address_components || [];
-
-      let street = '',
-        suburb = '',
-        state = '',
-        postalCode = '';
-
-      addressComponents.forEach((component) => {
-        const types = component.types;
-        if (types.includes('route')) {
-          street = component.long_name;
-        }
-        if (types.includes('locality')) {
-          suburb = component.long_name;
-        }
-        if (types.includes('administrative_area_level_1')) {
-          state = component.short_name;
-        }
-        if (types.includes('postal_code')) {
-          postalCode = component.long_name;
-        }
-      });
-
-      // Ensure location is included in formData
-      setFormData((prev) => ({
-        ...prev,
-        address: {
-          formattedAddress,
-          street,
-          suburb,
-          state,
-          postalCode,
-          location: {
-            type: 'Point',
-            coordinates: [lng, lat], // GeoJSON format: [longitude, latitude]
-          },
-        },
-      }));
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -520,86 +468,23 @@ const NewAdvertPage = () => {
         </div>
 
         {/* Address */}
-        <div>
-          {/* Label for Address Input */}
-          <label className="block font-bold">Address</label>
+        <AddressInput
+  formData={formData}
+  setFormData={setFormData}
+  focusedField={focusedField}
+  handleFocus={handleFocus}
+  handleBlur={handleBlur}
+/>
 
-          {/* Load Google Maps API with Places Library */}
-          <LoadScriptNext
-            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY} // Uses API Key from environment variables
-            libraries={libraries} // Loads Places API for autocomplete
-          >
-            {/* Google Places Autocomplete Component */}
-            <Autocomplete
-              onLoad={(auto) => setAutocomplete(auto)} // Stores the autocomplete instance in state
-              onPlaceChanged={handlePlaceChanged} // Calls function when the user selects an address
-              options={{
-                componentRestrictions: { country: 'AU' }, // Restricts search results to Australia
-              }}
-            >
-              {/* Address Input Field with onFocus and onBlur */}
-              <input
-                type="text"
-                placeholder="Enter an address" // Placeholder text guiding user input
-                className="w-full p-2 border rounded"
-                onFocus={() => handleFocus('address')} // Set focused field to "address"
-                onBlur={handleBlur} // Reset focus when input loses focus
-              />
-            </Autocomplete>
-          </LoadScriptNext>
-
-          {/* Display Address Field Hint Dynamically */}
-          {focusedField === 'address' && (
-            <div className="text-sm text-gray-500 mt-1 space-y-1">
-              {Array.isArray(FIELD_HINTS.address) ? (
-                FIELD_HINTS.address.map((line, index) => (
-                  <p key={index}>{line}</p>
-                ))
-              ) : (
-                <p>{FIELD_HINTS.address}</p>
-              )}
-            </div>
-          )}
-        </div>
 
         {/* Image Upload */}
-        <div>
-          {/* Label for Image Upload */}
-          <label className="block font-bold">Upload Images (Max 3)</label>
+        <ImageUploader
+  preview={preview}
+  setPreview={setPreview}
+  formData={formData}
+  setFormData={setFormData}
+/>
 
-          {/* File Input for Selecting Multiple Images */}
-          <input
-            type="file" // Allows file selection
-            multiple // Enables selecting multiple images
-            accept="image/*" // Restricts selection to images only
-            onChange={handleFileChange} // Calls handleFileChange when an image is selected
-            className="w-full p-2 border rounded"
-          />
-
-          {/* Container for Image Previews */}
-          <div className="mt-4 flex gap-4">
-            {/* Loop through preview images and display each */}
-            {preview.map((src, index) => (
-              <div key={index} className="relative">
-                {/* Display the Image Preview */}
-                <img
-                  src={src} // Uses the generated preview URL as the image source
-                  alt={`Preview ${index + 1}`} // Accessibility: Shows index in alt text
-                  className="w-24 h-24 object-cover border" // Styles image size & border
-                />
-
-                {/* Button to Remove an Image */}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(index)} // Calls function to remove the selected image
-                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
-                >
-                  X
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* Submit and Cancel Buttons */}
         <div className="flex gap-4 mt-4">
