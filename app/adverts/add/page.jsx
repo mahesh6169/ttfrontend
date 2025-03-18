@@ -7,7 +7,7 @@ import { addAdvert, clearAdverts } from '@/store/slices/advertSlice';
 import {
   CATEGORY_OPTIONS,
   CATEGORIES_REQUIRING_CONDITION,
-  FIELD_HINTS
+  FIELD_HINTS,
 } from '@/components/addadvert/AdvertCategories';
 import AdTypeToggle from '@/components/addadvert/AdTypeToggle';
 import PriceToggle from '@/components/addadvert/PriceToggle';
@@ -62,8 +62,6 @@ const NewAdvertPage = () => {
     images: [],
   });
 
-
-
   // ✅ Check if the selected category needs a "Condition" field
   const shouldShowCondition = CATEGORIES_REQUIRING_CONDITION.includes(
     formData.category
@@ -75,8 +73,6 @@ const NewAdvertPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [focusedField, setFocusedField] = useState(null); // State to track the focused field
 
-
-
   const handleFocus = (field) => {
     setFocusedField(field); // Set the focused field
   };
@@ -84,8 +80,6 @@ const NewAdvertPage = () => {
   const handleBlur = () => {
     setFocusedField(null); // Clear the hint when the field loses focus
   };
-
-
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -118,32 +112,11 @@ const NewAdvertPage = () => {
     });
   };
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length + preview.length > 3) {
-      toast.error('You can upload up to 3 images only.');
-      return;
-    }
-    setPreview((prev) => [
-      ...prev,
-      ...files.map((file) => URL.createObjectURL(file)),
-    ]);
-    setFormData((prev) => ({ ...prev, images: [...prev.images, ...files] }));
-  };
-
-  const handleRemoveImage = (index) => {
-    setPreview((prev) => prev.filter((_, i) => i !== index));
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
-    console.log("🔹 Submitting advert...");
+    console.log('🔹 Submitting advert...');
     // Validation mapping.
     const validations = [
       {
@@ -263,7 +236,7 @@ const NewAdvertPage = () => {
 
     try {
       const resultAction = await dispatch(addAdvert(formPayload));
-      console.log("🔹 Dispatch result:", resultAction);
+      console.log('🔹 Dispatch result:', resultAction);
       if (addAdvert.fulfilled.match(resultAction)) {
         toast.success('Advert successfully added!');
         setFormData({
@@ -303,7 +276,7 @@ const NewAdvertPage = () => {
         await router.push(isLoggedIn ? '/users/profile/manageads' : '/adverts');
         dispatch(clearAdverts());
       } else {
-        console.error("❌ Dispatch failed:", resultAction);
+        console.error('❌ Dispatch failed:', resultAction);
         throw new Error(resultAction.payload || 'Failed to add advert.');
       }
     } catch (error) {
@@ -339,7 +312,9 @@ const NewAdvertPage = () => {
                 className="w-full p-2 border rounded"
               />
               {focusedField === 'email' && (
-                <p className="text-sm text-gray-500 mt-1">{FIELD_HINTS.email}</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {FIELD_HINTS.email}
+                </p>
               )}
             </div>
 
@@ -395,17 +370,15 @@ const NewAdvertPage = () => {
 
         {/* Condition*/}
         {shouldShowCondition && (
-  <ConditionToggle formData={formData} setFormData={setFormData} />
-)}
-
+          <ConditionToggle formData={formData} setFormData={setFormData} />
+        )}
 
         {/* Ad Type Toggle  */}
         <AdTypeToggle formData={formData} setFormData={setFormData} />
 
         {/* Your Price */}
-         <PriceToggle formData={formData} setFormData={setFormData} />
-          
-  
+        <PriceToggle formData={formData} setFormData={setFormData} />
+
         {/* Description */}
         <div>
           <label className="block font-bold">Description</label>
@@ -432,22 +405,20 @@ const NewAdvertPage = () => {
 
         {/* Address */}
         <AddressInput
-  formData={formData}
-  setFormData={setFormData}
-  focusedField={focusedField}
-  handleFocus={handleFocus}
-  handleBlur={handleBlur}
-/>
-
+          formData={formData}
+          setFormData={setFormData}
+          focusedField={focusedField}
+          handleFocus={handleFocus}
+          handleBlur={handleBlur}
+        />
 
         {/* Image Upload */}
         <ImageUploader
-  preview={preview}
-  setPreview={setPreview}
-  formData={formData}
-  setFormData={setFormData}
-/>
-
+          preview={preview}
+          setPreview={setPreview}
+          formData={formData}
+          setFormData={setFormData}
+        />
 
         {/* Submit and Cancel Buttons */}
         <div className="flex gap-4 mt-4">

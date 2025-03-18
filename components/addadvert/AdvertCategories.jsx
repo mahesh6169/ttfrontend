@@ -26,7 +26,7 @@
     'Baby & Children',
   ];
 
-    // Field-specific hints
+    // Field-specific hints.
     export const FIELD_HINTS = {
         email: 'Required to avoid spam.',
         name: 'Required to avoid spam.',
