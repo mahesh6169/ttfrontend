@@ -3,7 +3,21 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter, useParams } from 'next/navigation';
-import {  editAdvertById,   updateAdvertById,} from '@/store/slices/userAdvertsSlice';
+import {
+  editAdvertById,
+  updateAdvertById,
+} from '@/store/slices/userAdvertsSlice';
+import {
+  CATEGORY_OPTIONS,
+  CATEGORIES_REQUIRING_CONDITION,
+  FIELD_HINTS,
+  CATEGORIES_NOT_REQUIRING_PRICE,
+} from '@/components/editadvert/AdvertCategories';
+import AdTypeToggle from '@/components/editadvert/AdTypeToggle';
+import PriceToggle from '@/components/editadvert/PriceToggle';
+import ConditionToggle from '@/components/editadvert/ConditionToggle';
+import ImageUploader from '@/components/editadvert/ImageUploader';
+import AddressInput from '@/components/editadvert/AddressInput';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -16,7 +30,9 @@ const EditAdvertPage = () => {
   const { id } = useParams();
 
   // Grab state from Redux
-  const { currentAdvert, status, error } = useSelector((state) => state.userAdverts);
+  const { currentAdvert, status, error } = useSelector(
+    (state) => state.userAdverts
+  );
 
   /**
    * ---------------------------------------------------------------------
@@ -80,8 +96,6 @@ const EditAdvertPage = () => {
     dispatch(editAdvertById(id));
   }, [dispatch, id]);
 
-  
-
   useEffect(() => {
     // Once we have currentAdvert, populate the form & existing images
     if (currentAdvert) {
@@ -113,56 +127,13 @@ const EditAdvertPage = () => {
     }
   }, [currentAdvert]);
 
-  /**
-   * ---------------------------------------------------------------------
-   * Data & UI Constants
-   * ---------------------------------------------------------------------
-   */
-  const categoryOptions = [
-    'Antiques, Art & Collectables',
-    'Baby & Children',
-    'Books, Music & Games',
-    'Cars & Vehicles',
-    'Clothing & Jewellery',
-    'Community',
-    'Electronics & Computer',
-    'Home & Garden',
-    'Jobs',
-    'Miscellaneous',
-    'Pets',
-    'Real Estate',
-    'Services For Hire',
-    'Sport & Fitness',
-    'Restaurants and Cloud Kitchens',
-  ];
-
-  const categoriesRequiringCondition = [
-    'Electronics & Computer',
-    'Cars & Vehicles',
-    'Clothing & Jewellery',
-    'Home & Garden',
-    'Sport & Fitness',
-    'Antiques, Art & Collectables',
-    'Baby & Children',
-  ];
-
-  const shouldShowCondition = categoriesRequiringCondition.includes(
+  const shouldShowCondition = CATEGORIES_REQUIRING_CONDITION.includes(
     formData.category
   );
 
-  const fieldHints = {
-    email: 'Required to avoid spam.',
-    name: 'Required to avoid spam.',
-    description: [
-      'Hint:',
-      'Provide detailed information about your advert.',
-      'Include dimensions, condition, and any special features.',
-    ],
-    address: [
-      'Hint:',
-      'If you dont have business address, please provide your suburb to get listed on search results.',
-    ],
-  };
+  const shouldShowPrice =
+      formData.isOffered &&
+      !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category);
 
   /**
    * ---------------------------------------------------------------------
@@ -246,7 +217,7 @@ const EditAdvertPage = () => {
       // ✅ Reset "condition" if the selected category does NOT require it
       if (
         name === 'category' &&
-        !categoriesRequiringCondition.includes(value)
+        !CATEGORIES_REQUIRING_CONDITION.includes(value)
       ) {
         updatedData.condition = '';
       }
@@ -468,6 +439,9 @@ const EditAdvertPage = () => {
           />
         </div>
 
+        {/* Ad Type */}
+        <AdTypeToggle formData={formData} setFormData={setFormData} />
+
         {/* Category */}
         <div>
           <label className="block font-bold">Category</label>
@@ -480,7 +454,7 @@ const EditAdvertPage = () => {
             <option value="" disabled>
               Select a category
             </option>
-            {categoryOptions.map((cat, idx) => (
+            {CATEGORY_OPTIONS.map((cat, idx) => (
               <option key={idx} value={cat}>
                 {cat}
               </option>
@@ -488,230 +462,19 @@ const EditAdvertPage = () => {
           </select>
         </div>
 
+        {/* Price Options */}
+        {shouldShowPrice && (
+          <PriceToggle
+          formData={formData}
+          setFormData={setFormData}
+          handleChange={handleChange}
+        />
+      )}
+
         {/* Condition */}
         {shouldShowCondition && (
-          <div className="mb-4">
-            <label className="block font-bold mb-2">Condition</label>
-            <div className="flex border border-gray-500 rounded overflow-hidden">
-              {/* New Condition Button */}
-              <button
-                type="button"
-                className={`flex-1 p-2 text-center border-r-2 ${
-                  formData.condition === 'New'
-                    ? 'bg-gray-200 border-gray-500' // Selected: Grey Highlight & Strong Border
-                    : 'bg-white border-gray-300' // Unselected: Light Grey Border
-                }`}
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    condition: 'New',
-                  })
-                }
-              >
-                New
-              </button>
-
-              {/* Used Condition Button */}
-              <button
-                type="button"
-                className={`flex-1 p-2 text-center ${
-                  formData.condition === 'Used'
-                    ? 'bg-gray-200 border-gray-500' // Selected: Grey Highlight & Strong Border
-                    : 'bg-white border-gray-300' // Unselected: Light Grey Border
-                }`}
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    condition: 'Used',
-                  })
-                }
-              >
-                Used
-              </button>
-            </div>
-          </div>
+          <ConditionToggle formData={formData} setFormData={setFormData} />
         )}
-
-        {/* Ad Type */}
-        <div className="mb-4">
-          <label className="block font-bold mb-2">Ad Type</label>
-          <div className="flex border rounded overflow-hidden">
-            <button
-              type="button"
-              className={`flex-1 p-2 ${
-                formData.isOffered
-                  ? 'bg-gray-200 border-gray-500'
-                  : 'bg-white border-gray-300'
-              }`}
-              onClick={() =>
-                setFormData({ ...formData, isOffered: true, isWanted: false })
-              }
-            >
-              Offered
-            </button>
-            <button
-              type="button"
-              className={`flex-1 p-2 ${
-                formData.isWanted
-                  ? 'bg-gray-200 border-gray-500'
-                  : 'bg-white border-gray-300'
-              }`}
-              onClick={() =>
-                setFormData({ ...formData, isOffered: false, isWanted: true })
-              }
-            >
-              Wanted
-            </button>
-          </div>
-        </div>
-
-        {/* Price Options */}
-        <div className="mb-4">
-          <label className="block font-bold mb-2">Price</label>
-          <div className="flex border border-gray-500 rounded overflow-hidden">
-            <button
-              type="button"
-              className={`flex-1 p-2 text-center border-r-2 ${
-                formData.isForSale
-                  ? 'bg-gray-200 border-gray-500'
-                  : 'bg-white border-gray-300'
-              }`}
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  isForSale: true,
-                  isForHire: false,
-                  isForRent: false,
-                  isRequestQuote: false,
-                })
-              }
-            >
-              Sell
-            </button>
-            <button
-              type="button"
-              className={`flex-1 p-2 text-center border-r-2 ${
-                formData.isForHire
-                  ? 'bg-gray-200 border-gray-500'
-                  : 'bg-white border-gray-300'
-              }`}
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  isForHire: true,
-                  isForSale: false,
-                  isForRent: false,
-                  isRequestQuote: false,
-                })
-              }
-            >
-              Hire
-            </button>
-            <button
-              type="button"
-              className={`flex-1 p-2 text-center border-r-2 ${
-                formData.isForRent
-                  ? 'bg-gray-200 border-gray-500'
-                  : 'bg-white border-gray-300'
-              }`}
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  isForRent: true,
-                  isForSale: false,
-                  isForHire: false,
-                  isRequestQuote: false,
-                })
-              }
-            >
-              Rent
-            </button>
-            <button
-              type="button"
-              className={`flex-1 p-2 text-center ${
-                formData.isRequestQuote
-                  ? 'bg-gray-200 border-gray-500'
-                  : 'bg-white border-gray-300'
-              }`}
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  isRequestQuote: true,
-                  isForSale: false,
-                  isForHire: false,
-                  isForRent: false,
-                })
-              }
-            >
-              Quote
-            </button>
-          </div>
-
-          {/* Conditional Price Inputs */}
-          <div className="mt-4">
-            {formData.isForSale && (
-              <input
-                type="number"
-                name="sellPrice"
-                value={formData.sellPrice}
-                onChange={handleChange}
-                placeholder="Enter your price"
-                className="w-full p-2 border rounded"
-              />
-            )}
-
-            {formData.isForHire && (
-              <>
-                <input
-                  type="number"
-                  name="hirePrice"
-                  value={formData.hirePrice}
-                  onChange={handleChange}
-                  placeholder="Enter hire price"
-                  className="w-full p-2 border rounded mb-2"
-                />
-                <select
-                  name="hireUnit"
-                  value={formData.hireUnit}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                >
-                  <option value="hour">Per Hour</option>
-                  <option value="day">Per Day</option>
-                </select>
-              </>
-            )}
-
-            {formData.isForRent && (
-              <>
-                <input
-                  type="number"
-                  name="rentPrice"
-                  value={formData.rentPrice}
-                  onChange={handleChange}
-                  placeholder="Enter rent price"
-                  className="w-full p-2 border rounded mb-2"
-                />
-                <select
-                  name="rentUnit"
-                  value={formData.rentUnit}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                >
-                  <option value="week">Per Week</option>
-                  <option value="month">Per Month</option>
-                </select>
-              </>
-            )}
-
-            {formData.isRequestQuote && (
-              <p className="text-sm text-gray-500">
-                You have chosen to allow users to request a quote. No price
-                input is required.
-              </p>
-            )}
-          </div>
-        </div>
 
         {/* Description */}
         <div>
@@ -726,144 +489,57 @@ const EditAdvertPage = () => {
           />
           {focusedField === 'description' && (
             <div className="text-sm text-gray-500 mt-1 space-y-1">
-              {Array.isArray(fieldHints.description) ? (
-                fieldHints.description.map((line, index) => (
+              {Array.isArray(FIELD_HINTS.description) ? (
+                FIELD_HINTS.description.map((line, index) => (
                   <p key={index}>{line}</p>
                 ))
               ) : (
-                <p>{fieldHints.description}</p>
+                <p>{FIELD_HINTS.description}</p>
               )}
             </div>
           )}
         </div>
 
         {/* Address */}
-        <div>
-          <label className="block font-bold">Address</label>
-          <LoadScriptNext
-            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-            libraries={libraries}
-          >
-            <Autocomplete
-              onLoad={(auto) => setAutocomplete(auto)}
-              onPlaceChanged={handlePlaceChanged}
-              options={{
-                componentRestrictions: { country: 'AU' },
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Enter an address"
-                className="w-full p-2 border rounded"
-                value={formData.address.formattedAddress || ''}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    address: {
-                      ...prev.address,
-                      formattedAddress: e.target.value,
-                    },
-                  }))
-                }
-                onFocus={() => handleFocus('address')}
-                onBlur={handleBlur}
-              />
-            </Autocomplete>
-          </LoadScriptNext>
-          {focusedField === 'address' && (
-            <div className="text-sm text-gray-500 mt-1 space-y-1">
-              {Array.isArray(fieldHints.address) ? (
-                fieldHints.address.map((line, index) => (
-                  <p key={index}>{line}</p>
-                ))
-              ) : (
-                <p>{fieldHints.address}</p>
-              )}
-            </div>
-          )}
-        </div>
+        <AddressInput
+          formData={formData}
+          setFormData={setFormData}
+          autocomplete={autocomplete}
+          setAutocomplete={setAutocomplete}
+          handlePlaceChanged={handlePlaceChanged}
+          handleFocus={handleFocus}
+          handleBlur={handleBlur}
+          focusedField={focusedField}
+        />
 
-        {/* Existing Images (from DB) */}
-        {existingImages.length > 0 && (
-          <div>
-            <label className="block font-bold mb-2">Existing Images</label>
-            <div className="flex gap-4 flex-wrap">
-              {existingImages.map((imgObj, idx) => (
-                <div key={idx} className="relative inline-block">
-                  <img
-                    src={imgObj.url} // <-- IMPORTANT: use the .url property
-                    alt={`Existing image ${idx + 1}`}
-                    className="w-24 h-24 object-cover border"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveExistingImage(idx)}
-                    className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
-                    title="Remove this existing image"
-                  >
-                    X
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* New Image Upload */}
-        <div>
-          <label className="block font-bold">
-            Upload New Images (Max Total 3)
-          </label>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full p-2 border rounded"
-          />
-          {preview.length > 0 && (
-            <div className="mt-4 flex gap-4 flex-wrap">
-              {preview.map((src, index) => (
-                <div key={index} className="relative inline-block">
-                  <img
-                    src={src}
-                    alt={`Preview ${index + 1}`}
-                    className="w-24 h-24 object-cover border"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveNewImage(index)}
-                    className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
-                    title="Remove this new image"
-                  >
-                    X
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
+        {/* UPLOAD IMAGESG EXISITNG AND NEW */}
+        <ImageUploader
+          existingImages={existingImages}
+          setExistingImages={setExistingImages}
+          preview={preview}
+          setPreview={setPreview}
+          formData={formData}
+          setFormData={setFormData}
+        />
 
         {/* Submit and Cancel Buttons */}
         <div className="flex gap-4 mt-4">
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Update Advert
+          </button>
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Update Advert
-        </button>
-
-        {/* cancel Button */}
-        <button
-          type="button"
-          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-400"
-          onClick={() => router.back()}
-        >
-          Cancel
-        </button>
+          {/* cancel Button */}
+          <button
+            type="button"
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-400"
+            onClick={() => router.back()}
+          >
+            Cancel
+          </button>
         </div>
       </form>
     </div>

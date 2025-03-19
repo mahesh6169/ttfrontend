@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { addAdvert, clearAdverts } from '@/store/slices/advertSlice';
@@ -8,7 +8,7 @@ import {
   CATEGORY_OPTIONS,
   CATEGORIES_REQUIRING_CONDITION,
   FIELD_HINTS,
-  CATEGORIES_NOT_REQUIRING_PRICE
+  CATEGORIES_NOT_REQUIRING_PRICE,
 } from '@/components/addadvert/AdvertCategories';
 import AdTypeToggle from '@/components/addadvert/AdTypeToggle';
 import PriceToggle from '@/components/addadvert/PriceToggle';
@@ -19,6 +19,8 @@ import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 
 const libraries = ['places'];
+
+
 
 const NewAdvertPage = () => {
   const dispatch = useDispatch();
@@ -62,13 +64,25 @@ const NewAdvertPage = () => {
     images: [],
   });
 
+  useEffect(() => {
+    if (isLoggedIn && user) {
+      setFormData((prev) => ({
+        ...prev,
+        email: user.email || '',
+        name: user.name || '',
+      }));
+    }
+  }, [isLoggedIn, user]);
+  
+
   // ✅ Check if the selected category needs a "Condition" field
   const shouldShowCondition = CATEGORIES_REQUIRING_CONDITION.includes(
     formData.category
   );
 
-  const shouldShowPrice = formData.isOffered &&
-  !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category);
+  const shouldShowPrice =
+    formData.isOffered &&
+    !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category);
 
   const [autocomplete, setAutocomplete] = useState(null);
   const [preview, setPreview] = useState([]);
@@ -119,7 +133,7 @@ const NewAdvertPage = () => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
-    console.log('🔹 Submitting advert...');
+
     // Validation mapping.
     const validations = [
       {
@@ -135,7 +149,8 @@ const NewAdvertPage = () => {
         message: 'Category is required.',
       },
       {
-        condition: shouldShowCondition && formData.isForSale && !formData.condition,
+        condition:
+          shouldShowCondition && formData.isForSale && !formData.condition,
         message: 'Condition is required for this category.',
       },
 
@@ -374,9 +389,8 @@ const NewAdvertPage = () => {
 
         {/* Your Price */}
         {shouldShowPrice && (
-  <PriceToggle formData={formData} setFormData={setFormData} />
-)}
-
+          <PriceToggle formData={formData} setFormData={setFormData} />
+        )}
 
         {/* Condition*/}
         {shouldShowCondition && formData.isForSale && (
@@ -433,7 +447,6 @@ const NewAdvertPage = () => {
           >
             Add Advert
           </button>
-
           {/* cancel Button */}
           <button
             type="button"
