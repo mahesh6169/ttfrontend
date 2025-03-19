@@ -21,7 +21,6 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
               isForSale: true,
               isForHire: false,
               isForRent: false,
-              isRequestQuote: false,
             })
           }
         >
@@ -41,7 +40,6 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
               isForHire: true,
               isForSale: false,
               isForRent: false,
-              isRequestQuote: false,
             })
           }
         >
@@ -61,32 +59,13 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
               isForRent: true,
               isForSale: false,
               isForHire: false,
-              isRequestQuote: false,
             })
           }
         >
           Rent
         </button>
 
-        <button
-          type="button"
-          className={`flex-1 p-2 text-center ${
-            formData.isRequestQuote
-              ? 'bg-gray-200 border-gray-500'
-              : 'bg-white border-gray-300'
-          }`}
-          onClick={() =>
-            setFormData({
-              ...formData,
-              isRequestQuote: true,
-              isForSale: false,
-              isForHire: false,
-              isForRent: false,
-            })
-          }
-        >
-          Quote
-        </button>
+
       </div>
 
       {/* Conditional Price Inputs */}
@@ -144,12 +123,6 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
               <option value="month">Per Month</option>
             </select>
           </>
-        )}
-
-        {formData.isRequestQuote && (
-          <p className="text-sm text-gray-500">
-            You have chosen to allow users to request a quote. No price input is required.
-          </p>
         )}
       </div>
     </div>

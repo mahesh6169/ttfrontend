@@ -53,7 +53,6 @@ const EditAdvertPage = () => {
     isForRent: false,
     rentPrice: 0,
     rentUnit: 'week',
-    isRequestQuote: false,
     description: '',
     address: {
       formattedAddress: '',
@@ -286,8 +285,7 @@ const EditAdvertPage = () => {
         condition:
           !formData.isForSale &&
           !formData.isForHire &&
-          !formData.isForRent &&
-          !formData.isRequestQuote,
+          !formData.isForRent ,
         message: 'Price option is required.',
       },
       {
@@ -361,7 +359,6 @@ const EditAdvertPage = () => {
         case 'isForHire':
         case 'isForSale':
         case 'isForRent':
-        case 'isRequestQuote':
           // Convert booleans to string
           formPayload.append(key, value ? 'true' : 'false');
           break;
@@ -472,7 +469,7 @@ const EditAdvertPage = () => {
       )}
 
         {/* Condition */}
-        {shouldShowCondition && (
+        {shouldShowCondition && formData.isForSale && (
           <ConditionToggle formData={formData} setFormData={setFormData} />
         )}
 
