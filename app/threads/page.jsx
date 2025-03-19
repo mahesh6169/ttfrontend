@@ -2,7 +2,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchThreads, fetchThreadsByCategory, updateThreadFilter } from '@/store/slices/threadSlice';
+import {
+  fetchThreads,
+  fetchThreadsByCategory,
+  updateThreadFilter,
+} from '@/store/slices/threadSlice';
+import Link from 'next/link';
 
 const categoryOptions = [
   'Studying in Australia',
@@ -26,14 +31,16 @@ const categoryOptions = [
   'Sport & Fitness',
   'Restaurants and Cloud Kitchens',
   'Health & Beauty',
-  'Education & Learning', 
-]
+  'Education & Learning',
+];
 
 const ThreadsPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { threads, status, category, page, totalPages } = useSelector((state) => state.threads);
+  const { threads, status, category, page, totalPages } = useSelector(
+    (state) => state.threads
+  );
   const [filterMode, setFilterMode] = useState('recent'); // 'recent' or 'category'
 
   useEffect(() => {
@@ -56,12 +63,12 @@ const ThreadsPage = () => {
 
       {/* ✅ Create New Thread Button */}
       <div className="mb-6 flex justify-between items-center">
-        <button
-          onClick={() => router.push('/threads/new')}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+        <Link
+          href="/threads/new"
+          className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
         >
           Create New Thread
-        </button>
+        </Link>
 
         {/* ✅ Filter Mode Toggle */}
         <div className="flex space-x-2">
@@ -102,7 +109,9 @@ const ThreadsPage = () => {
             >
               <h2 className="text-lg font-semibold">{thread.title}</h2>
               <p className="text-sm text-gray-700 italic">{thread.question}</p>
-              <p className="text-sm text-gray-500">Started by {thread.owner?.name || 'Former Member'}</p>
+              <p className="text-sm text-gray-500">
+                Started by {thread.owner?.name || 'Former Member'}
+              </p>
             </li>
           ))}
         </ul>
@@ -126,7 +135,9 @@ const ThreadsPage = () => {
             disabled={page === totalPages}
             onClick={() => dispatch(updateThreadFilter({ page: page + 1 }))}
             className={`px-4 py-2 border rounded-lg ${
-              page === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200'
+              page === totalPages
+                ? 'opacity-50 cursor-not-allowed'
+                : 'hover:bg-gray-200'
             }`}
           >
             Next

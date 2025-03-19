@@ -18,6 +18,7 @@ import {
   FaHome,
   FaCity,
 } from 'react-icons/fa';
+import Link from 'next/link';
 
 const categoryIcons = [
   { name: 'Music', icon: <FaMusic /> },
@@ -127,6 +128,12 @@ const HomePage = () => {
 
   return (
     <div>
+      <Link
+        href="/adverts/add"
+        className="inline-block mb-4 px-4 py-2 bg-blue-600 text-white text-sm md:text-base rounded hover:bg-blue-700 transition duration-300"
+      >
+        + Post New Advert
+      </Link>
       <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
         Discover Adverts
       </h1>

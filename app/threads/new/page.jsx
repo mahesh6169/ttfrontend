@@ -142,12 +142,24 @@ const CreateThreadPage = () => {
           </>
         )}
 
-        <button
-          type="submit"
-          className="w-full p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Create Thread
-        </button>
+        {/* Submit and Cancel Buttons */}
+        <div className="flex gap-4 mt-4">
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Create Thread
+          </button>
+          {/* cancel Button */}
+          <button
+            type="button"
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-400"
+            onClick={() => router.back()}
+          >
+            Cancel
+          </button>
+        </div>
       </form>
     </div>
   );

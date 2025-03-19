@@ -289,7 +289,7 @@ const NewAdvertPage = () => {
         });
 
         setPreview([]);
-        await router.push(isLoggedIn ? '/users/profile/manageads' : '/adverts');
+        await router.push(isLoggedIn ? '/users/profile/manageads' : '/');
         dispatch(clearAdverts());
       } else {
         console.error('❌ Dispatch failed:', resultAction);
