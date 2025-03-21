@@ -28,21 +28,30 @@ export const createThread = createAsyncThunk(
 /* -------------------------------- Fetch Threads (Public) -------------------------------- */
 export const fetchThreads = createAsyncThunk(
     'threads/fetchThreads',
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await axios.get(BASE_URL);
-            return response.data.map(thread => ({
-                _id: thread._id,
-                title: thread.title,
-                question: thread.question, // ✅ Capture question
-                owner: thread.owner,
-            }));
-        } catch (error) {
-            console.error("🔴 Error fetching threads:", error.response?.data || error.message);
-            return rejectWithValue(error.response?.data?.message || "Failed to fetch threads");
-        }
+    async (_, { getState, rejectWithValue }) => {
+      try {
+        const { page, limit } = getState().threads;
+  
+        const response = await axios.get(BASE_URL, {
+          params: { page, limit },
+        });
+  
+        console.log("✅ Axios response:", response.data); // Debugging line
+  
+        // Ensure meta is always included
+        return {
+          threads: response.data.threads || [], // Prevent undefined
+          meta: response.data.meta || { totalItems: 0, totalPages: 1, currentPage: 1, itemsPerPage: limit }
+        };
+  
+      } catch (error) {
+        console.error("🔴 Error fetching threads:", error.response?.data || error.message);
+        return rejectWithValue(error.response?.data?.message || "Failed to fetch threads");
+      }
     }
-);
+  );
+  
+
 
 
 /* -------------------------------- Fetch Threads by Category -------------------------------- */
@@ -51,7 +60,7 @@ export const fetchThreadsByCategory = createAsyncThunk(
     async (_, { getState, rejectWithValue }) => {
         try {
             const { category, page, limit } = getState().threads; // ✅ Get category, page, limit from state
-            
+
             const params = {
                 ...(category && { category }),
                 page,
@@ -132,14 +141,14 @@ export const unlikeMessage = createAsyncThunk(
 export const deleteThread = createAsyncThunk(
     "threads/deleteThread",
     async (threadId, { rejectWithValue }) => {
-      try {
-        const response = await axios.delete(`${BASE_URL}/thread/${threadId}`, { withCredentials: true });
+        try {
+            const response = await axios.delete(`${BASE_URL}/thread/${threadId}`, { withCredentials: true });
 
-        return { threadId, message: response.data.message }; // ✅ Return thread ID and success message
-      } catch (error) {
-        console.error("🔴 Error deleting thread:", error.response?.data || error.message);
-        return rejectWithValue(error.response?.data?.message || "Failed to delete thread");
-      }
+            return { threadId, message: response.data.message }; // ✅ Return thread ID and success message
+        } catch (error) {
+            console.error("🔴 Error deleting thread:", error.response?.data || error.message);
+            return rejectWithValue(error.response?.data?.message || "Failed to delete thread");
+        }
     }
 );
 
@@ -231,7 +240,13 @@ const threadSlice = createSlice({
             })
             .addCase(fetchThreads.fulfilled, (state, action) => {
                 state.status = 'success';
-                state.threads = action.payload;
+                state.threads = action.payload.threads;
+            
+                // Ensure meta properties are always set
+                const meta = action.payload.meta || {};
+                state.totalItems = meta.totalItems || 0;
+                state.totalPages = meta.totalPages || 1;
+                state.page = meta.currentPage || 1;
             })
             .addCase(fetchThreads.rejected, (state, action) => {
                 state.status = 'failed';
@@ -358,8 +373,8 @@ const threadSlice = createSlice({
                 state.error = action.payload;
             })
 
-              /* --------- Fetch Threads by Category --------- */
-              .addCase(fetchThreadsByCategory.pending, (state) => {
+            /* --------- Fetch Threads by Category --------- */
+            .addCase(fetchThreadsByCategory.pending, (state) => {
                 state.status = 'loading';
                 state.error = null;
             })

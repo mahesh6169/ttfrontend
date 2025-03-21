@@ -6,28 +6,26 @@ import { createThread } from '@/store/slices/threadSlice';
 import { useRouter } from 'next/navigation';
 
 const categoryOptions = [
-  'Studying in Australia',
-  'Living in Australia',
-  'Working in Australia',
+'Education',
   'Migration',
   'Travel',
   'Jobs',
+  'Entertainment & Hobbies',
   'Baby & Children',
-  'Antiques, Art & Collectables',
-  'Books, Music & Games',
+  'Arts & Crafts',
   'Cars & Vehicles',
-  'Clothing & Jewellery',
-  'Community',
+  'Fashion & Accessories',
   'Electronics & Computer',
   'Home & Garden',
   'Miscellaneous',
   'Pets',
   'Real Estate',
-  'Services For Hire',
+  'Party Hires & Services',
   'Sport & Fitness',
-  'Restaurants and Cloud Kitchens',
+  'Food & Catering Services',
   'Health & Beauty',
-  'Education & Learning', 
+  'Business & Shops',
+  'Events & Community',
 ];
 
 const CreateThreadPage = () => {

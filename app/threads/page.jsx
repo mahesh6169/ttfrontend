@@ -10,28 +10,28 @@ import {
 import Link from 'next/link';
 
 const categoryOptions = [
-  'Studying in Australia',
-  'Living in Australia',
-  'Working in Australia',
+  'Education',
   'Migration',
   'Travel',
   'Jobs',
+  'Entertainment',
+  'Hobbies',
   'Baby & Children',
-  'Antiques, Art & Collectables',
-  'Books, Music & Games',
+  'Arts & Crafts',
   'Cars & Vehicles',
-  'Clothing & Jewellery',
-  'Community',
+  'Fashion & Accessories',
   'Electronics & Computer',
   'Home & Garden',
   'Miscellaneous',
   'Pets',
   'Real Estate',
-  'Services For Hire',
+  'Party Hires & Services',
   'Sport & Fitness',
-  'Restaurants and Cloud Kitchens',
+  'Food & Catering Services',
   'Health & Beauty',
-  'Education & Learning',
+  'Business & Shops',
+  'Events & Community',
+  'Services',
 ];
 
 const ThreadsPage = () => {
@@ -121,29 +121,50 @@ const ThreadsPage = () => {
 
       {/* ✅ Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex justify-center mt-4 space-x-4">
-          <button
-            disabled={page === 1}
-            onClick={() => dispatch(updateThreadFilter({ page: page - 1 }))}
-            className={`px-4 py-2 border rounded-lg ${
-              page === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200'
-            }`}
-          >
-            Previous
-          </button>
-          <button
-            disabled={page === totalPages}
-            onClick={() => dispatch(updateThreadFilter({ page: page + 1 }))}
-            className={`px-4 py-2 border rounded-lg ${
-              page === totalPages
-                ? 'opacity-50 cursor-not-allowed'
-                : 'hover:bg-gray-200'
-            }`}
-          >
-            Next
-          </button>
-        </div>
-      )}
+  <div className="flex justify-center mt-4 space-x-2">
+    {/* Previous Button */}
+    <button
+      disabled={page === 1}
+      onClick={() => dispatch(updateThreadFilter({ page: page - 1 }))}
+      className={`px-4 py-2 border rounded-lg ${
+        page === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200'
+      }`}
+    >
+      Previous
+    </button>
+
+    {/* Page Number Buttons */}
+    {Array.from({ length: totalPages }, (_, index) => {
+      const pageNumber = index + 1;
+      return (
+        <button
+          key={pageNumber}
+          onClick={() => dispatch(updateThreadFilter({ page: pageNumber }))}
+          className={`px-4 py-2 border rounded-lg ${
+            pageNumber === page
+              ? 'bg-black text-white'
+              : 'hover:bg-gray-200'
+          }`}
+        >
+          {pageNumber}
+        </button>
+      );
+    })}
+
+    {/* Next Button */}
+    <button
+      disabled={page === totalPages}
+      onClick={() => dispatch(updateThreadFilter({ page: page + 1 }))}
+      className={`px-4 py-2 border rounded-lg ${
+        page === totalPages
+          ? 'opacity-50 cursor-not-allowed'
+          : 'hover:bg-gray-200'
+      }`}
+    >
+      Next
+    </button>
+  </div>
+)}
     </div>
   );
 };

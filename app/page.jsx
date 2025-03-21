@@ -9,27 +9,48 @@ import Pagination from '@/components/Pagination';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import {
   FaMusic,
-  FaHeart,
   FaCarAlt,
   FaBaby,
   FaDog,
   FaBook,
   FaLaptop,
   FaHome,
+  FaUserTie,
+  FaList,
+  FaDumbbell,
+  FaUtensils,
+  FaGraduationCap,
+  FaHeart,
   FaCity,
 } from 'react-icons/fa';
+
+import { LuPartyPopper } from 'react-icons/lu';
+import { MdRealEstateAgent, MdStore } from 'react-icons/md'; // ✅ Store icon from Material Design
+import { GiScrewdriver } from 'react-icons/gi'; // ✅ Use GameIcons for tools
+
 import Link from 'next/link';
 
 const categoryIcons = [
-  { name: 'Music', icon: <FaMusic /> },
-  { name: 'Dating', icon: <FaHeart /> },
-  { name: 'Cars & Vehicles', icon: <FaCarAlt /> },
+  { name: 'Books Art & Collectables', icon: <FaBook /> },
   { name: 'Baby & Children', icon: <FaBaby /> },
-  { name: 'Pets', icon: <FaDog /> },
-  { name: 'Books, Music & Games', icon: <FaBook /> },
-  { name: 'Electronics & Computer', icon: <FaLaptop /> },
+  { name: 'Music & Games', icon: <FaMusic /> },
+  { name: 'Cars & Vehicles', icon: <FaCarAlt /> },
+  { name: 'Fashion & Accessories', icon: <FaHeart /> }, // Example placeholder
+  { name: 'Academics Tutors & Arts', icon: <FaGraduationCap /> },
+  { name: 'Electronics & Computers', icon: <FaLaptop /> },
   { name: 'Home & Garden', icon: <FaHome /> },
+  { name: 'Jobs', icon: <FaUserTie /> },
+  { name: 'Miscellaneous', icon: <FaList /> },
+  { name: 'Pets', icon: <FaDog /> },
+  { name: 'Party Hires & Services', icon: <LuPartyPopper /> },
+  { name: 'Health, Sport & Fitness', icon: <FaDumbbell /> },
+  { name: 'Food & Catering Services', icon: <FaUtensils /> },
+  { name: 'Home Improvement & Repairs', icon: <GiScrewdriver /> }, // ✅ Correct replacement
+  { name: 'Real Estate', icon: <MdRealEstateAgent /> },
+  { name: 'Professional Services', icon: <FaGraduationCap /> }, // Reusing graduation cap
+  { name: 'Business & Stores', icon: <MdStore /> }, // ✅ Correct replacement
 ];
+
 
 const cities = [
   { name: 'Sydney', coordinates: '151.2093,-33.8688' },
