@@ -51,7 +51,6 @@ const categoryIcons = [
   { name: 'Business & Stores', icon: <MdStore /> }, // ✅ Correct replacement
 ];
 
-
 const cities = [
   { name: 'Sydney', coordinates: '151.2093,-33.8688' },
   { name: 'Melbourne', coordinates: '144.9631,-37.8136' },
@@ -148,21 +147,24 @@ const HomePage = () => {
   }, [category, location, proximity, page, limit, dispatch]);
 
   return (
-    <div>
+    <div className="flex flex-col justify-centre">
+      {/* Post New Advert */}
       <Link
         href="/adverts/add"
-        className="inline-block mb-4 px-4 py-2 bg-blue-600 text-white text-sm md:text-base rounded hover:bg-blue-700 transition duration-300"
+        className="block my-2 p-2 bg-blue-600 text-white lg:w-1/4 text-center rounded"
       >
-        + Post New Advert
+        + Post New Advertisement
       </Link>
+
       <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
         Discover Adverts
       </h1>
+
       {/* Filter Mode Toggle */}
-      <div className="mx-auto flex justify-center gap-4 mb-6">
+      <div className="flex justify-center gap-4 mb-4">
         <button
           onClick={() => handleFilterModeChange('input')}
-          className={` text-xs md:text-base px-1 py-1 rounded ${
+          className={` text-xs md:text-base p-1 rounded ${
             filterMode === 'input' ? 'bg-gray-950 text-white' : 'bg-gray-200'
           }`}
         >
@@ -170,7 +172,7 @@ const HomePage = () => {
         </button>
         <button
           onClick={() => handleFilterModeChange('icons')}
-          className={`text-xs md:text-base px-1 py-1 rounded ${
+          className={`text-xs md:text-base p-1 rounded ${
             filterMode === 'icons' ? 'bg-gray-950 text-white' : 'bg-gray-200'
           }`}
         >
@@ -178,7 +180,7 @@ const HomePage = () => {
         </button>
         <button
           onClick={() => handleFilterModeChange('cities')}
-          className={`text-xs md:text-base px-1 py-1 rounded ${
+          className={`text-xs md:text-base px-1 rounded ${
             filterMode === 'cities' ? 'bg-gray-950 text-white' : 'bg-gray-200'
           }`}
         >
@@ -188,9 +190,9 @@ const HomePage = () => {
 
       {/* Input Filter Section */}
       {filterMode === 'input' && (
-        <div className="flex flex-col md:flex-row gap-4 mb-6 justify-center mx-auto">
+        <div className="flex flex-col md:flex-row gap-4 mb-4 justify-center">
           <select
-            className="p-2 border rounded w-full md:w-auto"
+            className="p-2 border rounded "
             onChange={handleCategoryChange}
             value={category}
           >
@@ -216,7 +218,7 @@ const HomePage = () => {
                 <input
                   type="text"
                   placeholder="Enter location"
-                  className="p-2 border rounded w-full md:w-80 lg:w-96"
+                  className="p-2 border rounded w-full md:w-96"
                   value={locationInput}
                   onChange={handleLocationInputChange}
                 />
@@ -225,7 +227,7 @@ const HomePage = () => {
               <input
                 type="text"
                 placeholder="Enter location"
-                className="p-2 border rounded w-full md:w-80 lg:w-96"
+                className="p-2 border rounded"
                 value={locationInput}
                 onChange={handleLocationInputChange}
                 disabled
@@ -235,7 +237,7 @@ const HomePage = () => {
 
           <input
             type="number"
-            className="p-2 border rounded w-full md:w-auto"
+            className="p-2 border rounded"
             placeholder="Proximity (km)"
             min="1"
             value={proximity || ''}
@@ -255,29 +257,29 @@ const HomePage = () => {
 
       {/* Icon Categories Section. */}
       {filterMode === 'icons' && (
-        <div className="w-full overflow-hidden px-4">
+        <div className=" overflow-hidden mb-4">
           {/* Scrollable Wrapper */}
           <div
-            className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-4 py-2 justify-start"
+            className="flex overflow-x-auto gap-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 scroll-smooth"
             style={{
               WebkitOverflowScrolling: 'touch',
               scrollSnapType: 'x mandatory',
-              maxWidth: '100%',
-              overflowX: 'auto',
             }}
           >
             {/* Category Buttons */}
             {categoryIcons.map((cat) => (
               <button
                 key={cat.name}
-                className={`flex flex-col items-center justify-center p-2 w-[140px] min-w-[140px] border rounded-lg shadow-md cursor-pointer snap-start ${
+                className={`flex flex-col items-center justify-center p-2  border rounded-lg shadow-md cursor-pointer snap-start flex-shrink-0 ${
                   category === cat.name
                     ? 'bg-gray-300'
                     : 'bg-white hover:bg-gray-100'
                 }`}
                 onClick={() => handleCategoryClick(cat.name)}
               >
-                <div className="text-xs text-gray-600 mb-1">{cat.icon}</div>
+                <div className="text-xs text-gray-600 mb-1">
+                  {React.cloneElement(cat.icon, { size: 32 })}
+                </div>
                 <span className="text-xs font-semibold text-center whitespace-nowrap">
                   {cat.name}
                 </span>
@@ -289,23 +291,34 @@ const HomePage = () => {
 
       {/* Browse by Cities Section */}
       {filterMode === 'cities' && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-6 mb-8">
-          {cities.map((city) => (
-            <button
-              key={city.name}
-              className={`flex flex-col items-center justify-center p-4 border rounded-lg shadow-md cursor-pointer ${
-                location === city.coordinates
-                  ? 'bg-gray-300'
-                  : 'bg-white hover:bg-gray-100'
-              }`}
-              onClick={() => handleCityClick(city)}
-            >
-              <div className="text-3xl text-gray-600 mb-2">
-                <FaCity />
-              </div>
-              <span className="text-sm font-semibold">{city.name}</span>
-            </button>
-          ))}
+        <div className="overflow-hidden mb-4">
+          {/* Scrollable Wrapper */}
+          <div
+            className="flex overflow-x-auto gap-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 scroll-smooth"
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollSnapType: 'x mandatory',
+            }}
+          >
+            {cities.map((city) => (
+              <button
+                key={city.name}
+                className={`flex flex-col items-center justify-center p-4 min-w-[140px] border rounded-lg shadow-md cursor-pointer snap-start flex-shrink-0 ${
+                  location === city.coordinates
+                    ? 'bg-gray-300'
+                    : 'bg-white hover:bg-gray-100'
+                }`}
+                onClick={() => handleCityClick(city)}
+              >
+                <div className="text-3xl text-gray-600 mb-2">
+                  <FaCity />
+                </div>
+                <span className="text-sm font-semibold text-center whitespace-nowrap">
+                  {city.name}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
