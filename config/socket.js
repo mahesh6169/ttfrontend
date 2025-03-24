@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 
-// Initialize the Socket.IO client
-const socket = io('http://192.168.181.115:5015', { 
+// Socket.IO client connection:
+const socket = io('http://192.168.168.41:5020', { 
    withCredentials: true, 
    autoConnect: true,
    reconnection: true,

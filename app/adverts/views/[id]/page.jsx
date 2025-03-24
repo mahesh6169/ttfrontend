@@ -19,6 +19,14 @@ const AdvertDetail = () => {
     dispatch(fetchAdvertById(id));
   }, [dispatch, id]);
 
+  useEffect(() => {
+    // Save redirect URL for non-logged-in users
+    if (!user) {
+      localStorage.setItem('redirectAfterLogin', `/adverts/views/${id}`);
+    }
+  }, [user, id]);
+  
+
   if (status === 'loading') {
     return <div className="text-center mt-8">Loading advert details...</div>;
   }
@@ -51,16 +59,17 @@ const AdvertDetail = () => {
           <SingleAdvertCard advert={selectedAdvert} />
         </div>
   
-        {/* Chat Container */}
-        <div className="flex-[3] bg-white shadow rounded-none">
-          {user ? (
-            <SendMessage advertId={id} participantId={user._id} owner={selectedAdvert.postedBy?.name} />
-          ) : (
-            <div className="text-center">
-              <p className="text-red-500">Please log in to send a message.</p>
-            </div>
-          )}
-        </div>
+
+{/* Chat Container */}
+<div className="flex-[3] bg-white shadow rounded-none p-4">
+  <SendMessage
+    advertId={id}
+    participantId={selectedAdvert.postedBy?._id}
+    owner={selectedAdvert.postedBy?.name}
+  />
+</div>
+
+
       </div>
     </div>
   );
