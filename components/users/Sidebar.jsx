@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { FaUser, FaAd, FaEnvelope } from 'react-icons/fa';
 import { MdFavorite } from 'react-icons/md';
 import { RiAdvertisementFill } from 'react-icons/ri';
-import { BsChatText } from 'react-icons/bs'; // ✅ New Icon for Manage Threads
+import { BsChatText } from 'react-icons/bs';
 
 const Sidebar = ({ onLinkClick }) => {
   const pathname = usePathname();
@@ -13,13 +13,12 @@ const Sidebar = ({ onLinkClick }) => {
   const menuItems = [
     { label: 'Settings', href: '/users/profile/settings', icon: <FaUser /> },
     { label: 'Manage Ads', href: '/users/profile/manageads', icon: <FaAd /> },
-    { label: 'Manage Threads', href: '/users/profile/managethreads', icon: <BsChatText /> }, // ✅ Added Manage Threads
+    { label: 'Manage Threads', href: '/users/profile/managethreads', icon: <BsChatText /> },
     { label: 'Favourites', href: '/users/profile/favourites', icon: <MdFavorite /> },
     { label: 'Messages', href: '/users/profile/conversations', icon: <FaEnvelope /> },
     { label: 'Post Advert', href: '/adverts/new', icon: <RiAdvertisementFill /> },
   ];
 
-  // 🚀 **Preload Sidebar Links on Mount**
   useEffect(() => {
     menuItems.forEach((item) => {
       router.prefetch(item.href);
@@ -27,7 +26,7 @@ const Sidebar = ({ onLinkClick }) => {
   }, [router]);
 
   return (
-    <nav className="p-4 mt-16">
+    <nav className="p-4">
       <ul className="space-y-4">
         {menuItems.map((item) => (
           <li
@@ -40,8 +39,8 @@ const Sidebar = ({ onLinkClick }) => {
             <Link
               href={item.href}
               className="block w-full"
-              onMouseEnter={() => router.prefetch(item.href)} // 🏎️ Prefetch on hover
-              onClick={onLinkClick} // Close menu on click
+              onMouseEnter={() => router.prefetch(item.href)}
+              onClick={onLinkClick}
             >
               {item.label}
             </Link>

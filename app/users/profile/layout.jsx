@@ -10,14 +10,12 @@ import '@/assets/styles/globals.css';
 const ProfileLayout = ({ children }) => {
   const router = useRouter();
   const { tokenValidated, user } = useSelector((state) => state.user);
-  // Ensure `user._id` is a valid string before marking as authenticated
-  const isAuthenticated = tokenValidated && typeof user._id === 'string' && user._id.trim() !== '';
 
-  // Handle verification properly (if it's `null` or `false`, user is unverified)
+  const isAuthenticated = tokenValidated && typeof user._id === 'string' && user._id.trim() !== '';
   const isVerified = user?.isAccountVerified;
   const isUnverified = isVerified === false || isVerified === null;
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && isUnverified) {
@@ -26,31 +24,34 @@ const ProfileLayout = ({ children }) => {
   }, [isAuthenticated, isUnverified, router]);
 
   const handleLinkClick = () => {
-    setSidebarOpen(false); // Close sidebar when a link is clicked
+    setSidebarOpen(false);
   };
 
   return (
-    <div className="flex">
-      {/* Sidebar (Replaces LeftAd) */}
-      <div className="w-[250px] lg:w-[200px]">
+    <div className="flex flex-col md:flex-row w-full min-h-screen">
+      {/* Mobile Toggle Button */}
+      <div className="md:hidden bg-white shadow-md p-2 flex justify-between items-center">
+        <h2 className="text-lg font-bold">Menu</h2>
         <button
-          className="md:hidden fixed top-15 left-0 z-50 p-2 bg-gray-100 rounded-md shadow"
           onClick={() => setSidebarOpen(!isSidebarOpen)}
+          className="p-2 bg-gray-100 rounded-md shadow"
         >
-          {isSidebarOpen ? <IoClose size={24} /> : <IoMenu size={24} />}
+          {isSidebarOpen ? <IoClose size={20} /> : <IoMenu size={20} />}
         </button>
+      </div>
 
-        <div
-          className={`fixed h-screen bg-white shadow-md z-40 transform ${
-            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } transition-transform duration-300 ease-in-out md:relative md:translate-x-0`}
-        >
-          {isAuthenticated ? <Sidebar onLinkClick={handleLinkClick} /> : null}
-        </div>
+      {/* Sidebar */}
+      <div
+        className={`fixed md:relative z-40 bg-white shadow-md w-64 transform md:translate-x-0 transition-transform duration-300 ease-in-out ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:w-1/4`}
+      >
+        {/* You can optionally hide the mobile close button here if you want */}
+        {isAuthenticated && <Sidebar onLinkClick={handleLinkClick} />}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 w-full mx-auto">{children}</div>
+      <div className="flex-1 w-full">{children}</div>
     </div>
   );
 };

@@ -147,7 +147,7 @@ const HomePage = () => {
   }, [category, location, proximity, page, limit, dispatch]);
 
   return (
-    <div className="flex flex-col justify-centre">
+    <div className="flex flex-col ">
       {/* Post New Advert */}
       <Link
         href="/adverts/add"
@@ -257,10 +257,10 @@ const HomePage = () => {
 
       {/* Icon Categories Section. */}
       {filterMode === 'icons' && (
-        <div className=" overflow-hidden mb-4">
+        <div className="justify-center mb-4 mx-auto">
           {/* Scrollable Wrapper */}
           <div
-            className="flex overflow-x-auto gap-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 scroll-smooth"
+            className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-2 py-2 w-[400px] md:w-[350px] lg:w-[600px] xl:w-[800px] 2xl:w-[800px]"
             style={{
               WebkitOverflowScrolling: 'touch',
               scrollSnapType: 'x mandatory',
@@ -270,7 +270,7 @@ const HomePage = () => {
             {categoryIcons.map((cat) => (
               <button
                 key={cat.name}
-                className={`flex flex-col items-center justify-center p-2  border rounded-lg shadow-md cursor-pointer snap-start flex-shrink-0 ${
+                className={`flex flex-col items-center justify-center p-2  border rounded-lg shadow-md cursor-pointer snap-start  ${
                   category === cat.name
                     ? 'bg-gray-300'
                     : 'bg-white hover:bg-gray-100'
@@ -303,7 +303,7 @@ const HomePage = () => {
             {cities.map((city) => (
               <button
                 key={city.name}
-                className={`flex flex-col items-center justify-center p-4 min-w-[140px] border rounded-lg shadow-md cursor-pointer snap-start flex-shrink-0 ${
+                className={`flex flex-col items-center justify-center p-4 min-w-[140px] border rounded-lg shadow-md cursor-pointer snap-start  ${
                   location === city.coordinates
                     ? 'bg-gray-300'
                     : 'bg-white hover:bg-gray-100'

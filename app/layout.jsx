@@ -21,19 +21,19 @@ const MainLayout = ({ children }) => {
         <Providers>
           <Header />
          
-          <main className="container bg-white my-4">
+          <main className="container bg-white my-4 mx-auto">
             {/* Top Ad */}
             <TopAd />
 
             {/* Centre Layout*/}
-            <div className="flex gap-1">
+            <div className="flex gap-2">
               {/* Left Sidebar Ad - Visible only on large screens */}
               <div className="hidden lg:flex">
                 <LeftAd />
               </div>
 
               {/* Main Content */}
-              <div className="flex-1 max-w-full sm:max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg px-2">
+              <div className="flex-1 w-full ">
                 {children}
               </div>
 
