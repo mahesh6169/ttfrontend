@@ -58,23 +58,21 @@ const ThreadsPage = () => {
   };
 
   return (
-    <div className="mt-12 p-4">
-      <h1 className="text-2xl font-bold mb-4">Threads</h1>
+    <div className="flex flex-col justify-centre">
 
       {/* ✅ Create New Thread Button */}
-      <div className="mb-6 flex justify-between items-center">
         <Link
           href="/threads/new"
-          className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
+          className="block my-2 p-2 mb-4 bg-blue-600 text-white lg:w-1/4 text-center rounded"
         >
           Create New Thread
         </Link>
 
         {/* ✅ Filter Mode Toggle */}
-        <div className="flex space-x-2">
+        <div className="flex justify-center gap-4 mb-4">
           <button
             onClick={() => setFilterMode('recent')}
-            className={`px-4 py-2 rounded-lg ${
+            className={`text-xs md:text-base p-1 rounded ${
               filterMode === 'recent' ? 'bg-black text-white' : 'bg-gray-200'
             }`}
           >
@@ -83,7 +81,7 @@ const ThreadsPage = () => {
           <select
             onChange={handleCategoryChange}
             value={category}
-            className="px-4 py-2 border rounded-lg"
+            className="text-xs md:text-base p-1 rounded"
           >
             <option value="">Browse by Category</option>
             {categoryOptions.map((cat) => (
@@ -93,7 +91,7 @@ const ThreadsPage = () => {
             ))}
           </select>
         </div>
-      </div>
+
 
       {/* ✅ Loading State */}
       {status === 'loading' && <p>Loading threads...</p>}
@@ -107,8 +105,8 @@ const ThreadsPage = () => {
               className="border rounded-lg p-4 cursor-pointer hover:bg-gray-100"
               onClick={() => router.push(`/threads/${thread._id}`)}
             >
-              <h2 className="text-lg font-semibold">{thread.title}</h2>
-              <p className="text-sm text-gray-700 italic">{thread.question}</p>
+              <h2 className="text-base font-semibold">{thread.title}</h2>
+              <p className="text-sm text-gray-700 italic line-clamp-2">{thread.question}</p>
               <p className="text-sm text-gray-500">
                 Started by {thread.owner?.name || 'Former Member'}
               </p>

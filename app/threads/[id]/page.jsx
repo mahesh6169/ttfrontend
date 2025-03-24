@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams, useRouter } from 'next/navigation'; // ✅ Added router
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
+  fetchThreads,
   fetchThreadMessages,
   sendThreadMessage,
   addNewThreadMessage,
@@ -30,14 +31,33 @@ const ThreadChatPage = () => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
 
-  // ✅ Save current URL in localStorage (when no user logged in)
+  // ✅ Visitor Sender-Side Assignment
+  const senderSides = {};
+  let toggleSide = true;
+
+  messages.forEach((msg) => {
+    const senderId = msg.sender?._id || msg.sender?.name;
+    if (!(senderId in senderSides)) {
+      senderSides[senderId] = toggleSide ? 'left' : 'right';
+      toggleSide = !toggleSide;
+    }
+  });
+
+  // Fetch threads if thread is missing
+  useEffect(() => {
+    if (!thread._id) {
+      dispatch(fetchThreads());
+    }
+  }, [dispatch, threadId, thread._id]);
+
+  // Save redirect URL for non-logged-in users
   useEffect(() => {
     if (!currentUser) {
       localStorage.setItem('redirectAfterLogin', `/threads/${threadId}`);
     }
   }, [currentUser, threadId]);
 
-  // Fetch messages + join room
+  // Fetch messages & join socket room
   useEffect(() => {
     dispatch(fetchThreadMessages(threadId));
     threadSocket.emit('joinThread', threadId);
@@ -77,40 +97,35 @@ const ThreadChatPage = () => {
   const sortedMessages = [...messages].sort(
     (a, b) => b.likes - b.dislikes - (a.likes - a.dislikes)
   );
+
   const usefulAnswers = sortedMessages
     .filter((msg) => msg.likes - msg.dislikes > 0)
     .slice(0, 3);
 
   return (
-    <div className="mt-12 p-4 max-w-2xl mx-auto w-full">
-      <h1 className="text-3xl font-bold mb-2">
+    <div className="flex flex-col justify-center">
+      <h1 className="text-lg font-bold mb-2">
         {thread.title || 'Thread Discussion'}
       </h1>
 
       {thread.question && (
-        <p className="text-lg text-gray-700 italic mb-6 border-b pb-4">
+        <p className="text-base text-gray-700 italic mb-4 border-b">
           {thread.question}
         </p>
       )}
 
+      {/* ✅ Useful Answers */}
       {usefulAnswers.length > 0 && (
-        <div className="mb-6 p-4 bg-yellow-100 border border-yellow-300 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold text-yellow-700 mb-3">
-            🔥 Most Useful Answers
-          </h2>
+        <div className="mb-6 p-1 bg-green-400 border border-green-300 rounded-lg shadow-md">
+          <h2 className="text-lg font-semibold text-white mb-1">Useful Answers</h2>
           {usefulAnswers.map((msg) => (
-            <div
-              key={msg._id}
-              className="mb-4 p-3 bg-white rounded-lg shadow-sm"
-            >
+            <div key={msg._id} className="mb-2 p-1 bg-green-100 rounded-lg shadow-sm">
               <p className="text-sm font-semibold text-gray-800">
                 {msg.sender?.name}
               </p>
               <p className="text-gray-700">{msg.message}</p>
               <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
-                <span>
-                  {format(new Date(msg.createdAt), 'dd MMM yyyy HH:mm')}
-                </span>
+                <span>{format(new Date(msg.createdAt), 'dd MMM yyyy HH:mm')}</span>
                 <button
                   onClick={() => handleLike(msg._id)}
                   className={`flex items-center space-x-1 ${
@@ -127,7 +142,8 @@ const ThreadChatPage = () => {
         </div>
       )}
 
-      <div className="border rounded-lg p-4 mb-4 max-h-96 overflow-y-auto w-full bg-white shadow-md">
+      {/* ✅ Message List */}
+      <div className="border rounded-lg p-1 mb-4 max-h-96 overflow-y-auto bg-white shadow-md">
         {messages.length > 0 ? (
           messages.reduce((acc, msg, index) => {
             const prevMsg = messages[index - 1];
@@ -136,15 +152,21 @@ const ThreadChatPage = () => {
 
             const showDateSeparator =
               !prevMsg || !isSameDay(msgDate, prevMsgDate);
-            const isCurrentUser = msg.sender?._id === currentUser?._id;
+
+            // ✅ Determine side
+            let isRightSide = false;
+
+            if (currentUser) {
+              isRightSide = msg.sender?._id === currentUser?._id;
+            } else {
+              const senderId = msg.sender?._id || msg.sender?.name;
+              isRightSide = senderSides[senderId] === 'right';
+            }
 
             return [
               ...acc,
               showDateSeparator && (
-                <div
-                  key={`date-${msg._id}`}
-                  className="flex justify-center my-3 w-full"
-                >
+                <div key={`date-${msg._id}`} className="flex justify-center my-3 w-full">
                   <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow">
                     {format(msgDate, 'dd/MM/yyyy')}
                   </span>
@@ -152,54 +174,48 @@ const ThreadChatPage = () => {
               ),
               <div
                 key={msg._id}
-                className={`mb-2 flex w-full px-2 ${
-                  isCurrentUser ? 'justify-end' : 'justify-start'
+                className={`mb-1 flex px-2 ${
+                  isRightSide ? 'justify-end' : 'justify-start'
                 }`}
               >
                 <div
-                  className={`relative max-w-[75%] p-3 rounded-2xl shadow-md break-words whitespace-pre-wrap ${
-                    isCurrentUser
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-700 text-white'
-                  }`}
+                  className={`relative max-w-[75%] p-2 rounded-lg shadow-md break-words whitespace-pre-wrap
+                    ${
+                      currentUser
+                        ? isRightSide
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-700 text-white'
+                        : 'bg-gray-100 text-black'
+                    }`}
                 >
-                  <p className="text-sm font-semibold text-gray-300 mb-1">
-                    {msg.sender?.name || 'Former Member'}
-                  </p>
-
-                  <p className="break-words whitespace-pre-wrap">
-                    {msg.message}
-                  </p>
-
-                  <div className="flex justify-between items-center mt-2 text-xs text-gray-300">
+                  <div className="flex justify-between items-center mb-1 text-xs">
+                    <p className="text-sm font-semibold">
+                      {msg.sender?.name || 'Former Member'}
+                    </p>
                     <span>{format(msgDate, 'hh:mm a')}</span>
-
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => handleLike(msg._id)}
-                        className="flex items-center space-x-1 hover:text-yellow-400"
-                        disabled={!currentUser}
-                      >
-                        👍 <span>{msg.likes || 0}</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleUnlike(msg._id)}
-                        className="flex items-center space-x-1 hover:text-red-400"
-                        disabled={!currentUser}
-                      >
-                        👎 <span>{msg.dislikes || 0}</span>
-                      </button>
-                    </div>
                   </div>
 
-                  <div
-                    className={`absolute bottom-0 w-4 h-4 bg-inherit transform rotate-45 ${
-                      isCurrentUser ? 'right-[-4px]' : 'left-[-4px]'
-                    }`}
-                  ></div>
+                  <p>{msg.message}</p>
+
+                  <div className="flex items-center space-x-3 mt-2 text-xs">
+                    <button
+                      onClick={() => handleLike(msg._id)}
+                      className="flex items-center space-x-1 hover:text-yellow-400"
+                      disabled={!currentUser}
+                    >
+                      👍 <span>{msg.likes || 0}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleUnlike(msg._id)}
+                      className="flex items-center space-x-1 hover:text-red-400"
+                      disabled={!currentUser}
+                    >
+                      👎 <span>{msg.dislikes || 0}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </div>,
             ];
           }, [])
         ) : (
@@ -210,6 +226,7 @@ const ThreadChatPage = () => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* ✅ Message Box / Login Prompt */}
       {currentUser ? (
         <div className="flex items-center border rounded-lg p-2 shadow-md bg-white">
           <textarea
