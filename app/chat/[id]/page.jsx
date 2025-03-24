@@ -1,175 +1,173 @@
 'use client';
-import { useRef } from 'react';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchMessages, sendMessage, addNewMessage} from '@/store/slices/messageSlice';
-import { markMessageAsRead } from '@/store/slices/messageSlice';
+import { fetchMessages, sendMessage, addNewMessage, markMessageAsRead } from '@/store/slices/messageSlice';
 import socket from '@/config/socket'; // Socket.IO client instance
 import { useSearchParams, useParams } from 'next/navigation';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 const ChatPage = () => {
-  const params = useParams(); 
-  const advertId = params.id; 
-  const searchParams = useSearchParams(); 
-  const otherUserId = searchParams.get('otherUser'); 
+  const params = useParams();
+  const advertId = params.id;
+  const searchParams = useSearchParams();
+  const otherUserId = searchParams.get('otherUser');
 
   const dispatch = useDispatch();
-  const currentUserId = useSelector((state) => state.user.user._id);
+
+  const tokenValidated = useSelector((state) => state.user.tokenValidated);
+  const currentUser = useSelector((state) => state.user.user);
+  const currentUserId = currentUser?._id;
 
   const { activeConversation, status, error } = useSelector((state) => state.messages);
   const [newMessage, setNewMessage] = useState('');
 
   const messagesEndRef = useRef(null);
 
-
-// Fetch messages when the component mounts
+  // ✅ Fetch messages only after token validation and user is ready
   useEffect(() => {
-    if (advertId && otherUserId) {
+    if (tokenValidated && currentUserId && advertId && otherUserId) {
       dispatch(fetchMessages({ advertId, otherUserId }));
     }
-  }, [dispatch, advertId, otherUserId]);
+  }, [dispatch, tokenValidated, currentUserId, advertId, otherUserId]);
 
-   // Scroll to the bottom whenever messages update
-   useEffect(() => {
+  // ✅ Auto-scroll to latest message
+  useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [activeConversation?.messages]);
 
+  // ✅ Determine the role of the current user in this conversation
+  const { owner, participant } = activeConversation?.participants || {};
+  const myRole =
+    owner?.id === currentUserId
+      ? 'owner'
+      : participant?.id === currentUserId
+      ? 'participant'
+      : null;
 
-// Determine the role of the current user in this conversation
-  const { owner, participant } = activeConversation.participants || {};
-  let myRole = null;
-  if (owner?.id === currentUserId) {
-    myRole = 'owner';
-  } else if (participant?.id === currentUserId) {
-    myRole = 'participant';
-  }
-
-  // Mark other user's messages as read
+  // ✅ Mark messages as read
   useEffect(() => {
     if (!activeConversation?.messages || !myRole) return;
 
     activeConversation.messages.forEach((msg) => {
-      const isMyMessage = (msg.senderRole === myRole);
+      const isMyMessage = msg.senderRole === myRole;
       if (!isMyMessage && !msg.isRead) {
         socket.emit('messageRead', { messageId: msg._id });
       }
     });
   }, [activeConversation, myRole]);
 
-  // Listen for newMessage , after sending a message successfully completed in backend
+  // ✅ Listen for new incoming messages
   useEffect(() => {
-    socket.on('newMessage', (message) => {
-      if (
-        activeConversation?.messages &&
-        !activeConversation.messages.some((msg) => msg._id === message._id)
-      ) {
+    const handleNewMessage = (message) => {
+      const alreadyExists = activeConversation?.messages?.some((msg) => msg._id === message._id);
+      if (!alreadyExists) {
         dispatch(addNewMessage(message));
       }
-    });
-
-    return () => {
-      socket.off('newMessage');
     };
+
+    socket.on('newMessage', handleNewMessage);
+
+    return () => socket.off('newMessage', handleNewMessage);
   }, [dispatch, activeConversation]);
 
-  // Send a new message
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      dispatch(sendMessage({ advertId, participantId: otherUserId, message: newMessage }));
-      setNewMessage('');
-    }
-  };
-
-  // Listen for read receipts from the server
+  // ✅ Listen for message read updates
   useEffect(() => {
-    socket.on('messageRead', ({ messageId, userId }) => {
-      console.log(`Message ${messageId} marked as read by user ${userId}`);
-      // If you have a Redux action like markMessageRead, dispatch it here:
+    const handleMessageRead = ({ messageId, userId }) => {
       dispatch(markMessageAsRead({ messageId, userId }));
-    });
-
-    return () => {
-      socket.off('messageRead');
     };
+
+    socket.on('messageRead', handleMessageRead);
+
+    return () => socket.off('messageRead', handleMessageRead);
   }, [dispatch]);
 
-  if (status === 'loading') return <div>Loading chat...</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (!activeConversation.advert) return <div>No conversation found.</div>;
+  // ✅ Send message handler
+  const handleSendMessage = () => {
+    if (!newMessage.trim()) return;
+
+    dispatch(sendMessage({ advertId, participantId: otherUserId, message: newMessage }));
+    setNewMessage('');
+  };
+
+  // ✅ LOADING & GUARDS
+  if (!tokenValidated) return <div className="text-center mt-8">Validating session...</div>;
+  if (!currentUserId) return <div className="text-center mt-8">Loading user data...</div>;
+  if (status === 'loading') return <div className="text-center mt-8">Loading chat...</div>;
+  if (error) return <div className="text-center text-red-500">{error}</div>;
+  if (!activeConversation?.advert) return <div className="text-center text-gray-500">No conversation found.</div>;
 
   return (
-    <div className="mt-12 p-2">
-      {/* Title Section */}
+    <div className="mt-12 p-4 max-w-4xl mx-auto">
+      {/* Header with advert image & title */}
       <div className="flex items-center mb-4">
-        <img
-          src={activeConversation.advert.image}
-          alt={activeConversation.advert.title}
-          className="w-16 h-16 rounded-lg mr-4"
-        />
-        <h1 className="text-2xl font-bold">{activeConversation.advert.title}</h1>
+        <Link href={`/adverts/views/${advertId}`}>
+          <img
+            src={activeConversation.advert.image}
+            alt={activeConversation.advert.title}
+            className="w-16 h-16 rounded-lg mr-4 cursor-pointer hover:opacity-80 transition duration-200"
+          />
+        </Link>
+
+        <Link href={`/adverts/views/${advertId}`}>
+          <h1 className="text-2xl font-bold cursor-pointer hover:text-blue-600 transition duration-200">
+            {activeConversation.advert.title}
+          </h1>
+        </Link>
       </div>
 
-      {/* Messages Section */}
-      <div className="border rounded-lg p-4 mb-4 max-h-96 overflow-y-auto w-full">
-        {activeConversation.messages.map((msg, index) => {
-          const isOwnerMsg = (msg.senderRole === 'owner');
-          const alignment = isOwnerMsg ? 'text-right' : 'text-left';
+      {/* Messages container */}
+      <div className="border rounded-lg p-4 mb-4 h-[500px] overflow-y-auto bg-white shadow-md">
+        {activeConversation.messages.length > 0 ? (
+          activeConversation.messages.map((msg) => {
+            const isMyMessage = msg.senderRole === myRole;
+            const alignment = isMyMessage ? 'justify-end' : 'justify-start';
+            const bubbleColor = isMyMessage ? 'bg-green-600 text-white' : 'bg-gray-700 text-white';
+            const senderName = isMyMessage
+              ? (myRole === 'owner' ? owner?.name : participant?.name)
+              : (msg.senderRole === 'owner' ? owner?.name : participant?.name);
 
-          // Format the timestamp, e.g. "10:30 AM" or "25 Jan 2025 10:30 AM"
-          let timeString = '';
-          if (msg.createdAt) {
-            timeString = format(new Date(msg.createdAt), 'dd MMM yyyy HH:mm');
-          }
-
-          return (
-            <div key={`${msg._id}-${index}`} className={`mb-4 ${alignment}`}>
-              <p className="text-sm text-gray-500 mb-1">
-                {isOwnerMsg ? owner?.name || 'Owner' : participant?.name || 'Participant'}
-              </p>
-              <div className="inline-block">
-                <p
-                  className={`px-4 py-2 rounded-lg ${
-                    isOwnerMsg ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {msg.message}
-                </p>
-                {/* Below, we show the timestamp + read status */}
-                <div className="text-xs text-gray-500 mt-1">
-                  {timeString}
+            return (
+              <div key={msg._id} className={`flex ${alignment} mb-2`}>
+                <div className={`max-w-[70%] px-4 py-2 rounded-lg shadow ${bubbleColor}`}>
+                  <div className="flex justify-between items-center text-xs mb-1">
+                    <span className="font-semibold">{senderName}</span>
+                    <span>{format(new Date(msg.createdAt), 'hh:mm a')}</span>
+                  </div>
+                  <p className="whitespace-pre-wrap">{msg.message}</p>
                   {msg.isRead && (
-                    <span className="ml-2 text-green-600 font-medium">(read)</span>
+                    <div className="text-xs text-green-400 text-right mt-1">(read)</div>
                   )}
                 </div>
               </div>
-            </div>
-          );
-        })}
-        <div ref={messagesEndRef} /> {/* This div scrolls to the bottom */}
+            );
+          })
+        ) : (
+          <div className="text-center text-gray-500">No messages yet. Start the conversation!</div>
+        )}
+
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input Section */}
-      <div className="flex items-center">
-  <textarea
-    value={newMessage}
-    onChange={(e) => setNewMessage(e.target.value)}
-    placeholder="Type your message..."
-    className="flex-1 border rounded-lg p-2 resize-none h-auto overflow-auto"
-    rows="3"
-    style={{ minHeight: '4rem', maxHeight: '10rem' }}
-  />
-  <button
-    onClick={handleSendMessage}
-    className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg"
-  >
-    Send
-  </button>
-</div>
-
+      {/* Message input */}
+      <div className="flex items-center border rounded-lg p-2 shadow bg-white">
+        <textarea
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type your message..."
+          className="flex-1 border-none outline-none resize-none p-2 h-[4rem]"
+        />
+        <button
+          onClick={handleSendMessage}
+          disabled={!newMessage.trim()}
+          className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          Send
+        </button>
+      </div>
     </div>
   );
 };
