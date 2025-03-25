@@ -16,7 +16,6 @@ const Sidebar = ({ onLinkClick }) => {
     { label: 'Manage Threads', href: '/users/profile/managethreads', icon: <BsChatText /> },
     { label: 'Favourites', href: '/users/profile/favourites', icon: <MdFavorite /> },
     { label: 'Messages', href: '/users/profile/conversations', icon: <FaEnvelope /> },
-    { label: 'Post Advert', href: '/adverts/new', icon: <RiAdvertisementFill /> },
   ];
 
   useEffect(() => {

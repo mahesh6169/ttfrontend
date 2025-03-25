@@ -1,54 +1,44 @@
 'use client';
 
-import Sidebar from '@/components/users/Sidebar';
 import { useSelector } from 'react-redux';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { IoMenu, IoClose } from 'react-icons/io5';
+import Sidebar from '@/components/users/Sidebar';
+import '@/assets/styles/globals.css';
 
 const ProfileLayout = ({ children }) => {
+  const router = useRouter();
   const { tokenValidated, user } = useSelector((state) => state.user);
-  const isAuthenticated = tokenValidated && !!user._id;
+
+  const isAuthenticated =
+    tokenValidated && typeof user._id === 'string' && user._id.trim() !== '';
+  const isVerified = user?.isAccountVerified;
+  const isUnverified = isVerified === false || isVerified === null;
+
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    if (isAuthenticated && isUnverified) {
+      router.push('/users/emailverify');
+    }
+  }, [isAuthenticated, isUnverified, router]);
+
   const handleLinkClick = () => {
-    setSidebarOpen(false); // Close the menu
+    setSidebarOpen(false);
   };
 
   return (
-      <div className="flex w-full h-screen">
-        {/* Toggle Button (Hamburger / Close) */}
-        <button
-          className="fixed top-15 left-0 z-50 p-2 bg-gray-100 rounded-md shadow md:hidden"
-          onClick={() => setSidebarOpen(!isSidebarOpen)}
-        >
-          {isSidebarOpen ? <IoClose size={24} /> : <IoMenu size={24} />}
-        </button>
-  
-        {/* Sidebar (Slide In/Out on Mobile, Static on Larger Screens) */}
-        <div
-          className={`fixed  h-1/2 bg-white w-64 shadow-md z-40 transform ${
-            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:h-full`}
-        >
-          <aside>
-            {isAuthenticated ? <Sidebar onLinkClick={handleLinkClick} /> : null}
-          </aside>
-        </div>
-  
-        {/* Backdrop for Sidebar */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 z-30 md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          ></div>
-        )}
-  
-        {/* Main Content */}
-        <div className="flex-grow md:w-3/4 justify-center">
-          <main>{children}</main>
-        </div>
+    <div className="flex flex-col md:flex-row w-full min-h-screen">
+      {/* Sidebar only visible on md+ screens */}
+      <div className="hidden md:block md:max-w-[250px] md:min-w-[180px] md:w-auto">
+        {isAuthenticated && <Sidebar onLinkClick={handleLinkClick} />}
       </div>
-    );
+
+      {/* Main Content */}
+      <div className="flex-1 w-full">{children}</div>
+    </div>
+  );
 };
 
 export default ProfileLayout;

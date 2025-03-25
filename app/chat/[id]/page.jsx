@@ -93,6 +93,19 @@ const ChatPage = () => {
     setNewMessage('');
   };
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !socket.connected) {
+        console.log('🔄 Reconnecting socket after tab became visible...');
+        socket.connect(); // This triggers reconnection
+      }
+    };
+  
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+  
+
   // ✅ LOADING & GUARDS
   if (!tokenValidated) return <div className="text-center mt-8">Validating session...</div>;
   if (!currentUserId) return <div className="text-center mt-8">Loading user data...</div>;
@@ -101,26 +114,25 @@ const ChatPage = () => {
   if (!activeConversation?.advert) return <div className="text-center text-gray-500">No conversation found.</div>;
 
   return (
-    <div className="mt-12 p-4 max-w-4xl mx-auto">
+    <div className="w-full max-w-full px-2 sm:px-4">
       {/* Header with advert image & title */}
-      <div className="flex items-center mb-4">
+      <div className="flex items-center gap-3 mb-4">
         <Link href={`/adverts/views/${advertId}`}>
           <img
             src={activeConversation.advert.image}
             alt={activeConversation.advert.title}
-            className="w-16 h-16 rounded-lg mr-4 cursor-pointer hover:opacity-80 transition duration-200"
+            className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg cursor-pointer hover:opacity-80 transition duration-200"
           />
         </Link>
-
         <Link href={`/adverts/views/${advertId}`}>
-          <h1 className="text-2xl font-bold cursor-pointer hover:text-blue-600 transition duration-200">
+          <h1 className="text-lg sm:text-2xl font-bold cursor-pointer hover:text-blue-600 transition duration-200">
             {activeConversation.advert.title}
           </h1>
         </Link>
       </div>
-
+  
       {/* Messages container */}
-      <div className="border rounded-lg p-4 mb-4 h-[500px] overflow-y-auto bg-white shadow-md">
+      <div className="border rounded-lg p-3 mb-4 overflow-y-auto bg-white shadow-md max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-14rem)]">
         {activeConversation.messages.length > 0 ? (
           activeConversation.messages.map((msg) => {
             const isMyMessage = msg.senderRole === myRole;
@@ -129,17 +141,19 @@ const ChatPage = () => {
             const senderName = isMyMessage
               ? (myRole === 'owner' ? owner?.name : participant?.name)
               : (msg.senderRole === 'owner' ? owner?.name : participant?.name);
-
+  
             return (
               <div key={msg._id} className={`flex ${alignment} mb-2`}>
-                <div className={`max-w-[70%] px-4 py-2 rounded-lg shadow ${bubbleColor}`}>
+                <div
+                  className={`w-full max-w-[85%] sm:max-w-[70%] px-4 py-2 rounded-lg shadow ${bubbleColor} break-words whitespace-pre-wrap`}
+                >
                   <div className="flex justify-between items-center text-xs mb-1">
                     <span className="font-semibold">{senderName}</span>
                     <span>{format(new Date(msg.createdAt), 'hh:mm a')}</span>
                   </div>
-                  <p className="whitespace-pre-wrap">{msg.message}</p>
+                  <p>{msg.message}</p>
                   {msg.isRead && (
-                    <div className="text-xs text-green-400 text-right mt-1">(read)</div>
+                    <div className="text-xs text-green-300 text-right mt-1">(read)</div>
                   )}
                 </div>
               </div>
@@ -148,17 +162,16 @@ const ChatPage = () => {
         ) : (
           <div className="text-center text-gray-500">No messages yet. Start the conversation!</div>
         )}
-
         <div ref={messagesEndRef} />
       </div>
-
+  
       {/* Message input */}
-      <div className="flex items-center border rounded-lg p-2 shadow bg-white">
+      <div className="flex border rounded-lg shadow bg-white p-2">
         <textarea
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type your message..."
-          className="flex-1 border-none outline-none resize-none p-2 h-[4rem]"
+          className="flex-1 border-none outline-none resize-none p-2 h-[4rem] text-sm sm:text-base"
         />
         <button
           onClick={handleSendMessage}
@@ -170,6 +183,7 @@ const ChatPage = () => {
       </div>
     </div>
   );
+  
 };
 
 export default ChatPage;

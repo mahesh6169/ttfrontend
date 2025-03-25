@@ -1,8 +1,9 @@
 import { io } from 'socket.io-client';
 
 // Socket.IO client connection:
-const socket = io('http://192.168.168.41:5020', { 
-   withCredentials: true, 
+const socket = io(process.env.NEXT_PUBLIC_BACKEND_BASE_URL, {
+   withCredentials: true,
+   transports: ['websocket'], 
    autoConnect: true,
    reconnection: true,
    reconnectionAttempts: Infinity,

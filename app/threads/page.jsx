@@ -7,6 +7,8 @@ import {
   fetchThreadsByCategory,
   updateThreadFilter,
 } from '@/store/slices/threadSlice';
+import SelectSlider from '@/components/SelectSlider';
+import Pagination from '@/components/Pagination';
 import Link from 'next/link';
 
 const categoryOptions = [
@@ -78,18 +80,15 @@ const ThreadsPage = () => {
           >
             Browse Recently Added
           </button>
-          <select
-            onChange={handleCategoryChange}
-            value={category}
-            className="text-xs md:text-base p-1 rounded"
-          >
-            <option value="">Browse by Category</option>
-            {categoryOptions.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+          <SelectSlider
+  className="w-[180px] text-xs md:text-base"
+  options={['Browse by Category', ...categoryOptions]}
+  value={category || 'Browse by Category'}
+  onChange={(selected) => {
+    const value = selected === 'Browse by Category' ? '' : selected;
+    dispatch(updateFilter({ category: value }));
+  }}
+/>
         </div>
 
 
@@ -118,51 +117,16 @@ const ThreadsPage = () => {
       )}
 
       {/* ✅ Pagination Controls */}
+
       {totalPages > 1 && (
-  <div className="flex justify-center mt-4 space-x-2">
-    {/* Previous Button */}
-    <button
-      disabled={page === 1}
-      onClick={() => dispatch(updateThreadFilter({ page: page - 1 }))}
-      className={`px-4 py-2 border rounded-lg ${
-        page === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200'
-      }`}
-    >
-      Previous
-    </button>
-
-    {/* Page Number Buttons */}
-    {Array.from({ length: totalPages }, (_, index) => {
-      const pageNumber = index + 1;
-      return (
-        <button
-          key={pageNumber}
-          onClick={() => dispatch(updateThreadFilter({ page: pageNumber }))}
-          className={`px-4 py-2 border rounded-lg ${
-            pageNumber === page
-              ? 'bg-black text-white'
-              : 'hover:bg-gray-200'
-          }`}
-        >
-          {pageNumber}
-        </button>
-      );
-    })}
-
-    {/* Next Button */}
-    <button
-      disabled={page === totalPages}
-      onClick={() => dispatch(updateThreadFilter({ page: page + 1 }))}
-      className={`px-4 py-2 border rounded-lg ${
-        page === totalPages
-          ? 'opacity-50 cursor-not-allowed'
-          : 'hover:bg-gray-200'
-      }`}
-    >
-      Next
-    </button>
-  </div>
+  <Pagination
+    currentPage={page}
+    totalPages={totalPages}
+    onPageChange={(pageNum) => dispatch(updateThreadFilter({ page: pageNum }))}
+  />
 )}
+
+
     </div>
   );
 };

@@ -27,6 +27,7 @@ import {
 import { LuPartyPopper } from 'react-icons/lu';
 import { MdRealEstateAgent, MdStore } from 'react-icons/md'; // ✅ Store icon from Material Design
 import { GiScrewdriver } from 'react-icons/gi'; // ✅ Use GameIcons for tools
+import SelectSlider from '@/components/SelectSlider';
 
 import Link from 'next/link';
 
@@ -191,18 +192,17 @@ const HomePage = () => {
       {/* Input Filter Section */}
       {filterMode === 'input' && (
         <div className="flex flex-col md:flex-row gap-4 mb-4 justify-center">
-          <select
-            className="p-2 border rounded "
-            onChange={handleCategoryChange}
-            value={category}
-          >
-            <option value="">All Categories</option>
-            {categoryIcons.map((cat) => (
-              <option key={cat.name} value={cat.name}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+          <SelectSlider
+            options={[
+              'All Categories',
+              ...categoryIcons.map((cat) => cat.name),
+            ]}
+            value={category || 'All Categories'}
+            onChange={(selected) => {
+              const value = selected === 'All Categories' ? '' : selected;
+              dispatch(updateFilter({ category: value }));
+            }}
+          />
 
           <LoadScriptNext
             googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
@@ -260,7 +260,7 @@ const HomePage = () => {
         <div className="justify-center mb-4 mx-auto">
           {/* Scrollable Wrapper */}
           <div
-            className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-2 py-2 w-[400px] md:w-[350px] lg:w-[600px] xl:w-[800px] 2xl:w-[800px]"
+            className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-2 py-2 w-[300px] md:w-[350px] lg:w-[600px] xl:w-[800px] 2xl:w-[800px]"
             style={{
               WebkitOverflowScrolling: 'touch',
               scrollSnapType: 'x mandatory',
