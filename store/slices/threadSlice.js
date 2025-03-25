@@ -4,7 +4,7 @@ import axios from 'axios';
 const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/threads`;
 
 
-/* -------------------------------- Create a Thread -------------------------------- */
+/* -------------------------------- Create a Thread --------------------------------- */
 
 export const createThread = createAsyncThunk(
     'threads/createThread',
