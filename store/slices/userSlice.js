@@ -240,6 +240,58 @@ export const getWishlist = createAsyncThunk(
   }
 );
 
+//Thunk to Password Reset OTP
+export const sendResetOtp = createAsyncThunk(
+  'user/sendResetOtp',
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/sendResetOtp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Failed to send reset OTP');
+      }
+
+      const data = await response.json();
+      console.log('UserSlice/sendResetOtp response:', data);
+      return data; // Expected: { success: true, message: 'OTP sent successfully' }
+    } catch (err) {
+      return rejectWithValue('An unexpected error occurred while sending reset OTP. Please try again.');
+    }
+  }
+);
+
+//Thunk to Reset Password
+export const resetPassword = createAsyncThunk(
+  'user/resetPassword',
+  async ({ email, otp, newPassword, confirmPassword }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/resetPassword`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, otp, newPassword, confirmPassword }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(data.message || 'Failed to reset password');
+      }
+
+      return data; // { message: 'Password reset successfully' }
+    } catch (err) {
+      return rejectWithValue('An unexpected error occurred while resetting password.');
+    }
+  }
+);
 
 const initialState = {
   tokenValidated: false,
@@ -247,6 +299,10 @@ const initialState = {
   adverts: [],
   status: 'idle',
   error: null,
+  resetStatus: 'idle',
+  resetError: null,
+  otpMessage: null,
+
 };
 
 const userSlice = createSlice({
@@ -258,6 +314,11 @@ const userSlice = createSlice({
     },
     resetValidation(state) {
       state.tokenValidated = false; // Reset validation when needed
+    },
+    resetOtpState(state) {
+      state.otpMessage = null;
+      state.status = 'idle';
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -424,9 +485,39 @@ const userSlice = createSlice({
       .addCase(getWishlist.rejected, (state, { payload }) => {
         state.status = 'failed';
         state.error = payload;
+      })
+
+      // Send reset OTP cases
+      .addCase(sendResetOtp.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(sendResetOtp.fulfilled, (state, { payload }) => {
+        state.status = 'success';
+        state.error = null;
+        state.otpMessage = payload.message; // Optional: if you want to store success message
+      })
+      .addCase(sendResetOtp.rejected, (state, { payload }) => {
+        state.status = 'failed';
+        state.error = payload;
+      })
+      
+      // Password Reset
+      .addCase(resetPassword.pending, (state) => {
+        state.resetStatus = 'loading';
+        state.resetError = null;
+      })
+      .addCase(resetPassword.fulfilled, (state) => {
+        state.resetStatus = 'success';
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.resetStatus = 'failed';
+        state.resetError = action.payload;
       });
+      
+
   },
 });
 
-export const { resetError, resetValidation } = userSlice.actions;
+export const { resetError, resetValidation, resetOtpState } = userSlice.actions;
 export default userSlice.reducer;
