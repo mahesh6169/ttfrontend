@@ -78,22 +78,28 @@ useEffect(() => {
             />
           </div>
 
-          {/* Password */}
-          <div>
-            <label htmlFor="password" className="block font-medium">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={credentials.password}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
+{/* Password */}
+<div>
+  <label htmlFor="password" className="block font-medium">
+    Password
+  </label>
+  <input
+    id="password"
+    name="password"
+    type="password"
+    value={credentials.password}
+    onChange={handleChange}
+    className="w-full p-2 border border-gray-300 rounded"
+    placeholder="Enter your password"
+    required
+  />
+  <div className="text-right mt-1 text-sm">
+    <Link href="/users/pwdreset" className="text-blue-600 hover:underline">
+      Forgot your password?
+    </Link>
+  </div>
+</div>
+
 
           {/* Submit Button */}
           <button

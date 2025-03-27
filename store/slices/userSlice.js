@@ -39,14 +39,14 @@ export const fetchuserProfile = createAsyncThunk(
 // Register user thunk
 export const registerUser = createAsyncThunk(
   'user/registerUser',
-  async ({ name, email, password, confirmPassword }, { rejectWithValue }) => {
+  async (formData, { rejectWithValue }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password, confirmPassword }),
+        body: JSON.stringify(formData), // ✅ send all fields
         credentials: 'include',
       });
 
@@ -62,6 +62,7 @@ export const registerUser = createAsyncThunk(
     }
   }
 );
+
 
 // Send OTP for email verification
 export const sendVerifyOtp = createAsyncThunk(
@@ -293,6 +294,60 @@ export const resetPassword = createAsyncThunk(
   }
 );
 
+// ✅ 3. REDUX THUNK TO FETCH ACCOUNT DETAILS
+export const fetchAccountDetails = createAsyncThunk(
+  'user/fetchAccountDetails',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/account/details`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Failed to fetch account info');
+      }
+
+      const data = await response.json();
+      return data.user;
+    } catch (err) {
+      return rejectWithValue('An unexpected error occurred.');
+    }
+  }
+);
+
+// ✅ 4. REDUX THUNK TO UPDATE ACCOUNT DETAILS
+export const updateAccountDetails = createAsyncThunk(
+  'user/updateAccountDetails',
+  async (formData, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/account/details`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Failed to update details');
+      }
+
+      const data = await response.json();
+      return data.message;
+    } catch (err) {
+      return rejectWithValue('Update failed. Please try again.');
+    }
+  }
+);
+
+
 const initialState = {
   tokenValidated: false,
   user: null,
@@ -302,6 +357,10 @@ const initialState = {
   resetStatus: 'idle',
   resetError: null,
   otpMessage: null,
+  accountDetails: null,
+  accountDetailsStatus: 'idle',
+  accountDetailsError: null,
+  updateAccountMessage: null,
 
 };
 
@@ -513,7 +572,36 @@ const userSlice = createSlice({
       .addCase(resetPassword.rejected, (state, action) => {
         state.resetStatus = 'failed';
         state.resetError = action.payload;
-      });
+      })
+
+      // 🟦 FETCH ACCOUNT DETAILS
+    .addCase(fetchAccountDetails.pending, (state) => {
+      state.accountDetailsStatus = 'loading';
+      state.accountDetailsError = null;
+    })
+    .addCase(fetchAccountDetails.fulfilled, (state, { payload }) => {
+      state.accountDetailsStatus = 'succeeded';
+      state.accountDetails = payload;
+    })
+    .addCase(fetchAccountDetails.rejected, (state, { payload }) => {
+      state.accountDetailsStatus = 'failed';
+      state.accountDetailsError = payload;
+    })
+
+    // 🟩 UPDATE ACCOUNT DETAILS
+    .addCase(updateAccountDetails.pending, (state) => {
+      state.accountDetailsStatus = 'updating';
+      state.accountDetailsError = null;
+      state.updateAccountMessage = null;
+    })
+    .addCase(updateAccountDetails.fulfilled, (state, { payload }) => {
+      state.accountDetailsStatus = 'updated';
+      state.updateAccountMessage = payload;
+    })
+    .addCase(updateAccountDetails.rejected, (state, { payload }) => {
+      state.accountDetailsStatus = 'update_failed';
+      state.accountDetailsError = payload;
+    });
       
 
   },

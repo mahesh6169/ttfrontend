@@ -13,50 +13,67 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    address: '',
+    suburb: '',
+    state: '',
+    postcode: '',
+    marketingOptIn: false,
   });
 
+  const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
+
   const dispatch = useDispatch();
   const router = useRouter();
   const { loading } = useSelector((state) => state.user);
 
-  // 🟢 Get the redirect path from localStorage or default to /users/profile
-  const redirect = typeof window !== 'undefined'
-    ? localStorage.getItem('redirectAfterLogin') || '/users/profile'
-    : '/users/profile';
-
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
+    const newErrors = {};
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    if (!formData.password.trim()) newErrors.password = 'Password is required';
+    if (!formData.confirmPassword.trim()) newErrors.confirmPassword = 'Confirm Password is required';
+    if (!formData.postcode.trim()) newErrors.postcode = 'Postcode is required';
+
+    if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (formData.postcode && !/^\d{4}$/.test(formData.postcode)) {
+      newErrors.postcode = 'Postcode must be exactly 4 digits';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
+    setErrors({});
+
     try {
-      const result = await dispatch(
-        registerUser({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword,
-        })
-      ).unwrap();
+      const result = await dispatch(registerUser({ ...formData })).unwrap();
 
       if (result) {
         toast.success('Registration successful. Sending OTP...');
-
         const otpResult = await dispatch(sendVerifyOtp()).unwrap();
 
         if (otpResult) {
           toast.success('OTP sent successfully. Redirecting...');
-          
-          // ✅ Move to email verify page (keep redirect saved in localStorage)
           router.push('/users/emailverify');
         }
       }
@@ -66,80 +83,64 @@ const Register = () => {
   };
 
   return (
-    <div className="flex w-full h-screen items-start justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Register</h1>
+    <div className="flex w-full min-h-screen items-start justify-center">
+      <div className="bg-white p-4 rounded-lg shadow-md max-w-md w-full mt-6">
+        <h1 className="text-2xl font-bold mb-4 text-center">Register</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div>
-            <label htmlFor="name" className="block font-medium">
-              Name
-            </label>
+          {[
+            'name',
+            'email',
+            'password',
+            'confirmPassword',
+            'address',
+            'suburb',
+            'state',
+            'postcode',
+          ].map((field) => {
+            const isRequired = ['name', 'email', 'password', 'confirmPassword', 'postcode'].includes(field);
+            const labelText = field === 'confirmPassword' ? 'Confirm Password' : field.charAt(0).toUpperCase() + field.slice(1);
+            const inputType = field.toLowerCase().includes('password') ? 'password' : 'text';
+
+            return (
+              <div key={field}>
+                <label htmlFor={field} className="block font-medium capitalize">
+                  {labelText}
+                  {isRequired && <span className="text-red-500 ml-1">*</span>}
+                </label>
+                <input
+                  id={field}
+                  name={field}
+                  type={inputType}
+                  value={formData[field]}
+                  onChange={handleChange}
+                  className={`w-full p-2 border rounded ${
+                    errors[field] ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder={`Enter your ${field}`}
+                />
+                {errors[field] && (
+                  <p className="text-red-500 text-sm mt-1">{errors[field]}</p>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Marketing Opt-In */}
+          <div className="flex items-center">
             <input
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name}
+              id="marketingOptIn"
+              name="marketingOptIn"
+              type="checkbox"
+              checked={formData.marketingOptIn}
               onChange={handleChange}
-              className="w-full p-2 border rounded"
-              placeholder="Enter your name"
-              required
+              className="mr-2"
             />
+            <label htmlFor="marketingOptIn" className="text-sm text-gray-700">
+              I agree to receive updates and offers
+            </label>
           </div>
 
-          {/* Email */}
-          <div>
-            <label htmlFor="email" className="block font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label htmlFor="password" className="block font-medium">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label htmlFor="confirmPassword" className="block font-medium">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              placeholder="Confirm your password"
-              required
-            />
-          </div>
-
-          {/* Submit Button */}
           <button
             type="submit"
             className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
@@ -151,14 +152,10 @@ const Register = () => {
 
         {message && <p className="mt-4 text-center text-red-500">{message}</p>}
 
-        {/* Login Link */}
         <div className="mt-6 text-center">
           <p>
             Already have an account?{' '}
-            <Link
-              href="/users/login"
-              className="text-blue-600 hover:underline"
-            >
+            <Link href="/users/login" className="text-blue-600 hover:underline">
               Login here
             </Link>
           </p>

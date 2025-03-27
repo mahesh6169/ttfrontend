@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useRouter } from 'next/navigation';
 import { sendResetOtp, resetPassword } from '@/store/slices/userSlice';
 import { toast } from 'react-toastify';
 
 const ResetPasswordContent = () => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const { status, resetStatus, otpMessage, resetError } = useSelector((state) => state.user);
 
   const [email, setEmail] = useState('');
@@ -15,11 +17,13 @@ const ResetPasswordContent = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resendDisabled, setResendDisabled] = useState(false);
   const [timer, setTimer] = useState(30);
+  const [otpSent, setOtpSent] = useState(false);
 
   const handleSendOtp = async () => {
     try {
       await dispatch(sendResetOtp(email)).unwrap();
       toast.success('OTP sent to your email');
+      setOtpSent(true);
       setResendDisabled(true);
       setTimer(30);
     } catch (err) {
@@ -36,7 +40,12 @@ const ResetPasswordContent = () => {
 
     try {
       await dispatch(resetPassword({ email, otp, newPassword, confirmPassword })).unwrap();
-      toast.success('Password reset successful. You can now login.');
+      toast.success('Password reset successful. Redirecting to login...');
+
+      // 🔁 Wait 3 seconds, then redirect
+      setTimeout(() => {
+        router.push('/users/login');
+      }, 3000);
     } catch (err) {
       toast.error(err || resetError || 'Failed to reset password.');
     }
@@ -66,7 +75,7 @@ const ResetPasswordContent = () => {
 
         <form onSubmit={handleResetPassword} className="space-y-4">
           {/* Row 1 - Email + Send OTP */}
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="email"
               className="flex-1 p-2 border border-gray-300 rounded"
@@ -85,58 +94,58 @@ const ResetPasswordContent = () => {
             </button>
           </div>
 
-          {/* Row 2 - OTP input */}
-          <input
-            type="text"
-            className="w-full p-2 border border-gray-300 rounded"
-            placeholder="Enter OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            required
-          />
+          {/* Only show OTP and password inputs after OTP is sent */}
+          {otpSent && (
+            <>
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+              />
 
-          {/* Row 3 - New Password */}
-          <input
-            type="password"
-            className="w-full p-2 border border-gray-300 rounded"
-            placeholder="New Password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-          />
+              <input
+                type="password"
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="New Password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
 
-          {/* Row 4 - Confirm Password */}
-          <input
-            type="password"
-            className="w-full p-2 border border-gray-300 rounded"
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
+              <input
+                type="password"
+                className="w-full p-2 border border-gray-300 rounded"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
 
-          {/* Submit */}
-          <button
-            type="submit"
-            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
-            disabled={resetStatus === 'loading'}
-          >
-            {resetStatus === 'loading' ? 'Resetting...' : 'Reset Password'}
-          </button>
+              <button
+                type="submit"
+                className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
+                disabled={resetStatus === 'loading'}
+              >
+                {resetStatus === 'loading' ? 'Resetting...' : 'Reset Password'}
+              </button>
+
+              <button
+                onClick={handleSendOtp}
+                disabled={resendDisabled}
+                className={`w-full mt-4 text-sm font-medium py-2 rounded transition ${
+                  resendDisabled
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
+              >
+                {resendDisabled ? `Resend OTP in ${timer}s` : 'Resend OTP'}
+              </button>
+            </>
+          )}
         </form>
-
-        {/* Resend OTP */}
-        <button
-          onClick={handleSendOtp}
-          disabled={resendDisabled}
-          className={`w-full mt-4 text-sm font-medium py-2 rounded transition ${
-            resendDisabled
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-indigo-600 text-white hover:bg-indigo-700'
-          }`}
-        >
-          {resendDisabled ? `Resend OTP in ${timer}s` : 'Resend OTP'}
-        </button>
       </div>
     </div>
   );
