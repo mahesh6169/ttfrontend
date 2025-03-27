@@ -5,7 +5,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { registerUser, sendVerifyOtp } from '@/store/slices/userSlice';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import Link from 'next/link';
+
+const libraries = ['places'];
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -13,22 +16,29 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    address: '',
-    suburb: '',
-    state: '',
-    postcode: '',
+    mobile: '',
+    suburb: {
+      name: '',
+      state: '',
+      postalCode: '',
+      location: {
+        type: 'Point',
+        coordinates: [],
+      },
+    },
     marketingOptIn: false,
   });
 
+  const [autocomplete, setAutocomplete] = useState(null);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
-
   const dispatch = useDispatch();
   const router = useRouter();
   const { loading } = useSelector((state) => state.user);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
@@ -36,6 +46,48 @@ const Register = () => {
 
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handlePlaceChanged = () => {
+    if (!autocomplete) return;
+
+    const place = autocomplete.getPlace();
+    const addressComponents = place.address_components || [];
+
+    let suburb = '';
+    let state = '';
+    let postalCode = '';
+    let coordinates = [];
+
+    addressComponents.forEach((component) => {
+      const types = component.types;
+      if (types.includes('locality')) suburb = component.long_name;
+      if (types.includes('administrative_area_level_1')) state = component.short_name;
+      if (types.includes('postal_code')) postalCode = component.long_name;
+    });
+
+    if (place.geometry && place.geometry.location) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      coordinates = [lng, lat];
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      suburb: {
+        name: suburb,
+        state,
+        postalCode,
+        location: {
+          type: 'Point',
+          coordinates,
+        },
+      },
+    }));
+
+    if (errors.suburb) {
+      setErrors((prev) => ({ ...prev, suburb: '' }));
     }
   };
 
@@ -48,14 +100,13 @@ const Register = () => {
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.password.trim()) newErrors.password = 'Password is required';
     if (!formData.confirmPassword.trim()) newErrors.confirmPassword = 'Confirm Password is required';
-    if (!formData.postcode.trim()) newErrors.postcode = 'Postcode is required';
+    if (!formData.mobile.trim()) newErrors.mobile = 'Mobile is required';
+    if (!/^04\d{8}$/.test(formData.mobile)) newErrors.mobile = 'Mobile must be 10 digits and start with 04';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
 
-    if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    if (formData.postcode && !/^\d{4}$/.test(formData.postcode)) {
-      newErrors.postcode = 'Postcode must be exactly 4 digits';
+    const { name, state, postalCode, location } = formData.suburb;
+    if (!name || !state || !postalCode || location.coordinates.length !== 2) {
+      newErrors.suburb = 'Please select a valid suburb using the autocomplete field';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -63,15 +114,11 @@ const Register = () => {
       return;
     }
 
-    setErrors({});
-
     try {
-      const result = await dispatch(registerUser({ ...formData })).unwrap();
-
+      const result = await dispatch(registerUser(formData)).unwrap();
       if (result) {
         toast.success('Registration successful. Sending OTP...');
         const otpResult = await dispatch(sendVerifyOtp()).unwrap();
-
         if (otpResult) {
           toast.success('OTP sent successfully. Redirecting...');
           router.push('/users/emailverify');
@@ -86,47 +133,51 @@ const Register = () => {
     <div className="flex w-full min-h-screen items-start justify-center">
       <div className="bg-white p-4 rounded-lg shadow-md max-w-md w-full mt-6">
         <h1 className="text-2xl font-bold mb-4 text-center">Register</h1>
-
         <form onSubmit={handleSubmit} className="space-y-4">
-          {[
-            'name',
-            'email',
-            'password',
-            'confirmPassword',
-            'address',
-            'suburb',
-            'state',
-            'postcode',
-          ].map((field) => {
-            const isRequired = ['name', 'email', 'password', 'confirmPassword', 'postcode'].includes(field);
-            const labelText = field === 'confirmPassword' ? 'Confirm Password' : field.charAt(0).toUpperCase() + field.slice(1);
-            const inputType = field.toLowerCase().includes('password') ? 'password' : 'text';
 
-            return (
-              <div key={field}>
-                <label htmlFor={field} className="block font-medium capitalize">
-                  {labelText}
-                  {isRequired && <span className="text-red-500 ml-1">*</span>}
-                </label>
+          {['name', 'email', 'mobile', 'password', 'confirmPassword'].map((field) => (
+            <div key={field}>
+              <label htmlFor={field} className="block font-medium capitalize">
+                {field === 'confirmPassword' ? 'Confirm Password' : field.charAt(0).toUpperCase() + field.slice(1)}
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                id={field}
+                name={field}
+                type={field.toLowerCase().includes('password') ? 'password' : 'text'}
+                value={formData[field]}
+                onChange={handleChange}
+                className={`w-full p-2 border rounded ${errors[field] ? 'border-red-500' : 'border-gray-300'}`}
+                placeholder={`Enter your ${field}`}
+              />
+              {errors[field] && <p className="text-red-500 text-sm mt-1">{errors[field]}</p>}
+            </div>
+          ))}
+
+          <div>
+            <label className="block font-medium">Suburb</label>
+            <LoadScriptNext
+              googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+              libraries={libraries}
+            >
+              <Autocomplete
+                onLoad={(auto) => setAutocomplete(auto)}
+                onPlaceChanged={handlePlaceChanged}
+                options={{
+                  componentRestrictions: { country: 'AU' },
+                  types: ['(regions)'],
+                }}
+              >
                 <input
-                  id={field}
-                  name={field}
-                  type={inputType}
-                  value={formData[field]}
-                  onChange={handleChange}
-                  className={`w-full p-2 border rounded ${
-                    errors[field] ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder={`Enter your ${field}`}
+                  type="text"
+                  placeholder="Enter your suburb"
+                  className={`w-full p-2 border rounded ${errors.suburb ? 'border-red-500' : 'border-gray-300'}`}
                 />
-                {errors[field] && (
-                  <p className="text-red-500 text-sm mt-1">{errors[field]}</p>
-                )}
-              </div>
-            );
-          })}
+              </Autocomplete>
+            </LoadScriptNext>
+            {errors.suburb && <p className="text-red-500 text-sm mt-1">{errors.suburb}</p>}
+          </div>
 
-          {/* Marketing Opt-In */}
           <div className="flex items-center">
             <input
               id="marketingOptIn"
