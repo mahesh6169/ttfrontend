@@ -347,6 +347,35 @@ export const updateAccountDetails = createAsyncThunk(
   }
 );
 
+// REDUX THUNK TO DELETE ACCOUNT
+export const deleteUserAccount = createAsyncThunk(
+  'user/deleteUserAccount',
+  async (userId, { rejectWithValue }) => {
+    try {
+      console.log('🔸 deleteUserAccount called with userId:', userId); // 👈 logging the incoming value
+
+      const response = await fetch(`${API_BASE_URL}/account/delete`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }), // Optional: Only if your backend expects body
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(data.message || 'Failed to delete account');
+      }
+
+      return data.message;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Unexpected error');
+    }
+  }
+);
+
 
 const initialState = {
   tokenValidated: false,
@@ -361,6 +390,8 @@ const initialState = {
   accountDetailsStatus: 'idle',
   accountDetailsError: null,
   updateAccountMessage: null,
+  deleteStatus: 'idle',
+ deleteError: null,
 
 };
 
@@ -601,7 +632,25 @@ const userSlice = createSlice({
     .addCase(updateAccountDetails.rejected, (state, { payload }) => {
       state.accountDetailsStatus = 'update_failed';
       state.accountDetailsError = payload;
-    });
+    })
+
+    // 🟥 DELETE ACCOUN
+    // // 🟥 DELETE ACCOUNT
+.addCase(deleteUserAccount.pending, (state) => {
+  state.deleteStatus = 'loading';
+  state.deleteError = null;
+})
+.addCase(deleteUserAccount.fulfilled, (state) => {
+  state.deleteStatus = 'succeeded';
+  state.user = null;
+  state.accountDetails = null;
+  state.tokenValidated = false;
+})
+.addCase(deleteUserAccount.rejected, (state, { payload }) => {
+  state.deleteStatus = 'failed';
+  state.deleteError = payload;
+});
+
       
 
   },

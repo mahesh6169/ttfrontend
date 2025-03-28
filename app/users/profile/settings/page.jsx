@@ -2,24 +2,37 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAccountDetails, updateAccountDetails } from '@/store/slices/userSlice';
+import {
+  fetchAccountDetails,
+  updateAccountDetails,
+  deleteUserAccount,
+  logoutUser,
+} from '@/store/slices/userSlice';
 import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
+import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
+
+const libraries = ['places'];
 
 export default function Settings() {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.user);
+  const router = useRouter();
+  const userId = useSelector((state) => state.user.user?._id);
+  const [autocomplete, setAutocomplete] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    address: '',
-    suburb: '',
-    state: '',
-    postcode: '',
+    mobile: '',
+    suburb: {
+      name: '',
+      state: '',
+      postalCode: '',
+      location: { type: 'Point', coordinates: [0, 0] },
+    },
     marketingOptIn: false,
   });
-
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     dispatch(fetchAccountDetails()).then((res) => {
@@ -31,16 +44,59 @@ export default function Settings() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (name.startsWith('suburb.')) {
+      const key = name.split('.')[1];
+      setFormData((prev) => ({
+        ...prev,
+        suburb: {
+          ...prev.suburb,
+          [key]: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      }));
+    }
+  };
+
+  const handlePlaceChanged = () => {
+    if (!autocomplete) return;
+
+    const place = autocomplete.getPlace();
+    const components = place.address_components || [];
+
+    let suburb = '', state = '', postalCode = '';
+    let coordinates = [];
+
+    components.forEach((c) => {
+      if (c.types.includes('locality')) suburb = c.long_name;
+      if (c.types.includes('administrative_area_level_1')) state = c.short_name;
+      if (c.types.includes('postal_code')) postalCode = c.long_name;
+    });
+
+    if (place.geometry?.location) {
+      coordinates = [
+        place.geometry.location.lng(),
+        place.geometry.location.lat(),
+      ];
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      suburb: {
+        name: suburb,
+        state,
+        postalCode,
+        location: { type: 'Point', coordinates },
+      },
     }));
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const result = await dispatch(updateAccountDetails(formData)).unwrap();
       toast.success(result || 'Account updated successfully');
@@ -48,6 +104,20 @@ export default function Settings() {
       toast.error(err || 'Update failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) return;
+
+    try {
+      console.log('🔸 Deleting account for userId:', userId);
+      await dispatch(deleteUserAccount(userId)).unwrap();
+      toast.success('Account deleted successfully');
+      await dispatch(logoutUser());
+      router.push('/');
+    } catch (err) {
+      toast.error(err || 'Failed to delete account');
     }
   };
 
@@ -68,7 +138,7 @@ export default function Settings() {
           />
         </div>
 
-        {/* Email (read-only) */}
+        {/* Email (disabled) */}
         <div>
           <label className="block font-medium mb-1">Email</label>
           <input
@@ -76,56 +146,47 @@ export default function Settings() {
             name="email"
             value={formData.email}
             disabled
-            className="w-full p-2 border border-gray-200 bg-gray-100 rounded cursor-not-allowed"
+            className="w-full p-2 border bg-gray-100 border-gray-200 rounded cursor-not-allowed"
           />
         </div>
 
-        {/* Address */}
+        {/* Mobile */}
         <div>
-          <label className="block font-medium mb-1">Address</label>
+          <label className="block font-medium mb-1">Mobile</label>
           <input
             type="text"
-            name="address"
-            value={formData.address}
+            name="mobile"
+            value={formData.mobile}
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
           />
         </div>
 
-        {/* Suburb */}
+        {/* Suburb (Google Autocomplete) */}
         <div>
           <label className="block font-medium mb-1">Suburb</label>
-          <input
-            type="text"
-            name="suburb"
-            value={formData.suburb}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-
-        {/* State */}
-        <div>
-          <label className="block font-medium mb-1">State</label>
-          <input
-            type="text"
-            name="state"
-            value={formData.state}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-
-        {/* Postcode */}
-        <div>
-          <label className="block font-medium mb-1">Postcode</label>
-          <input
-            type="text"
-            name="postcode"
-            value={formData.postcode}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
+          <LoadScriptNext
+            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+            libraries={libraries}
+          >
+            <Autocomplete
+              onLoad={(a) => setAutocomplete(a)}
+              onPlaceChanged={handlePlaceChanged}
+              options={{
+                componentRestrictions: { country: 'AU' },
+                types: ['(regions)'],
+              }}
+            >
+              <input
+                type="text"
+                name="suburb.name"
+                value={formData.suburb.name}
+                onChange={handleChange}
+                placeholder="Search and select suburb"
+                className="w-full p-2 border border-gray-300 rounded"
+              />
+            </Autocomplete>
+          </LoadScriptNext>
         </div>
 
         {/* Marketing Opt-in */}
@@ -139,10 +200,11 @@ export default function Settings() {
             className="mr-2"
           />
           <label htmlFor="marketingOptIn" className="text-sm text-gray-700">
-            I agree to receive updates and offers
+            I agree to receive communication and promotional emails
           </label>
         </div>
 
+        {/* Update Button */}
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
@@ -151,6 +213,16 @@ export default function Settings() {
           {loading ? 'Updating...' : 'Update Details'}
         </button>
       </form>
+
+      {/* Delete Account Button */}
+      <div className="mt-6 text-center">
+        <button
+          onClick={handleDelete}
+          className="text-red-600 hover:underline text-sm"
+        >
+          Delete My Account
+        </button>
+      </div>
     </div>
   );
 }
