@@ -30,6 +30,13 @@ const NewAdvertPage = () => {
   const { user } = useSelector((state) => state.user);
   const { status, error } = useSelector((state) => state.advert);
 
+  useEffect(() => {
+    if (!isLoggedIn) {
+      localStorage.setItem('redirectAfterLogin', '/adverts/add');
+    }
+  }, [isLoggedIn]);
+  
+
   // Initial form statee
   const [formData, setFormData] = useState({
     title: '',
@@ -304,6 +311,23 @@ const NewAdvertPage = () => {
   return (
     <div className="p-8 max-w-lg mx-auto">
       <h1 className="text-2xl font-bold mb-4">Add New Advert</h1>
+      {!isLoggedIn ? (
+      <div className="text-center bg-yellow-50 p-6 rounded border border-yellow-200">
+        <p className="text-lg text-gray-700 mb-2">
+          Please{' '}
+          <a href="/users/login" className="text-blue-600 underline">
+            Login
+          </a>{' '}
+          or{' '}
+          <a href="/users/register" className="text-blue-600 underline">
+            Register
+          </a>{' '}
+          to add a new advert.
+        </p>
+      </div>
+    ) :
+    (
+      <>
       {status === 'loading' && (
         <p className="text-blue-500 mb-4">Adding advert...</p>
       )}
@@ -457,6 +481,8 @@ const NewAdvertPage = () => {
           </button>
         </div>
       </form>
+      </>
+      )}
     </div>
   );
 };
