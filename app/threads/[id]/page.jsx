@@ -50,12 +50,7 @@ const ThreadChatPage = () => {
     }
   }, [dispatch, threadId, thread._id]);
 
-  // Save redirect URL for non-logged-in users
-  useEffect(() => {
-    if (!currentUser) {
-      localStorage.setItem('redirectAfterLogin', `/threads/${threadId}`);
-    }
-  }, [currentUser, threadId]);
+
 
   // Fetch messages & join socket room
   useEffect(() => {
@@ -252,13 +247,19 @@ const ThreadChatPage = () => {
           </p>
           <div className="flex justify-center space-x-4">
             <Link
-              href="/users/login"
+              href={`/users/login?preserveRedirect=true`}
+              onClick={() => {
+                localStorage.setItem('redirectAfterLogin', `/threads/${threadId}`);
+              }}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               Login
             </Link>
             <Link
-              href="/users/register"
+              href={`/users/register?preserveRedirect=true`}
+              onClick={() => {
+                localStorage.setItem('redirectAfterLogin', `/threads/${threadId}`);
+              }}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
               Register

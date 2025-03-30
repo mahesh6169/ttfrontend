@@ -6,17 +6,26 @@ import { loginUser } from '@/store/slices/userSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
+import { useSearchParams } from 'next/navigation';
+
+
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
+const preserveRedirect = searchParams.get('preserveRedirect') === 'true';
 
   const { user, status } = useSelector((state) => state.user);
   const isLoading = status === 'loading';
 
 // 🔹 After successful login, handle redirection
 useEffect(() => {
+  if (!preserveRedirect) {
+    localStorage.removeItem('redirectAfterLogin'); // 🧹 clean up old redirect
+  }
+
   if (user?._id) {
     let redirectPath;
 

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 const libraries = ['places'];
 
@@ -35,6 +36,9 @@ const Register = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { loading } = useSelector((state) => state.user);
+  const searchParams = useSearchParams();
+const preserveRedirect = searchParams.get('preserveRedirect') === 'true';
+
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
