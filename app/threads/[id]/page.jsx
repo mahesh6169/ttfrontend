@@ -31,7 +31,7 @@ const ThreadChatPage = () => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
 
-  // ✅ Visitor Sender-Side Assignment
+  // ✅ Visitor Sender-Side Assignment.
   const senderSides = {};
   let toggleSide = true;
 
