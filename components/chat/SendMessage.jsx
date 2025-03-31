@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { CgProfile } from 'react-icons/cg';
 import { toast } from 'react-toastify';
 
-const SendMessage = ({ advertId, participantId, owner }) => {
+const SendMessage = ({ advertId, participantId, owner, preserveRedirectUrl }) => {
   const dispatch = useDispatch();
   const router = useRouter();
 
@@ -28,17 +28,10 @@ const SendMessage = ({ advertId, participantId, owner }) => {
     }
 
     setSending(true);
-
-    // Optional: show a loader notification
     const toastId = toast.loading('Sending message...');
 
     try {
-      const messageData = {
-        advertId,
-        participantId,
-        message,
-      };
-
+      const messageData = { advertId, participantId, message };
       await dispatch(sendMessage(messageData)).unwrap();
       setMessage('');
       toast.update(toastId, {
@@ -61,7 +54,10 @@ const SendMessage = ({ advertId, participantId, owner }) => {
   };
 
   const handleLoginRedirect = () => {
-    router.push('/users/login');
+    if (preserveRedirectUrl) {
+      localStorage.setItem('redirectAfterLogin', preserveRedirectUrl);
+    }
+    router.push('/users/login?preserveRedirect=true');
   };
 
   return (
