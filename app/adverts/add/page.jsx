@@ -17,10 +17,29 @@ import ImageUploader from '@/components/addadvert/ImageUploader';
 import ConditionToggle from '@/components/addadvert/ConditionToggle';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
+import Link from 'next/link';
+
+<p className="text-lg text-gray-700 mb-2">
+  Please{' '}
+  <Link
+    href="/users/login?preserveRedirect=true"
+    className="text-blue-600 underline"
+    onClick={() => localStorage.setItem('redirectAfterLogin', '/adverts/add')}
+  >
+    Login
+  </Link>{' '}
+  or{' '}
+  <Link
+    href="/users/register?preserveRedirect=true"
+    className="text-blue-600 underline"
+    onClick={() => localStorage.setItem('redirectAfterLogin', '/adverts/add')}
+  >
+    Register
+  </Link>{' '}
+  to add a new advert.
+</p>;
 
 const libraries = ['places'];
-
-
 
 const NewAdvertPage = () => {
   const dispatch = useDispatch();
@@ -29,13 +48,6 @@ const NewAdvertPage = () => {
   const isLoggedIn = useSelector((state) => state.user.tokenValidated);
   const { user } = useSelector((state) => state.user);
   const { status, error } = useSelector((state) => state.advert);
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      localStorage.setItem('redirectAfterLogin', '/adverts/add');
-    }
-  }, [isLoggedIn]);
-  
 
   // Initial form statee
   const [formData, setFormData] = useState({
@@ -80,7 +92,6 @@ const NewAdvertPage = () => {
       }));
     }
   }, [isLoggedIn, user]);
-  
 
   // ✅ Check if the selected category needs a "Condition" field
   const shouldShowCondition = CATEGORIES_REQUIRING_CONDITION.includes(
@@ -312,176 +323,189 @@ const NewAdvertPage = () => {
     <div className="p-8 max-w-lg mx-auto">
       <h1 className="text-2xl font-bold mb-4">Add New Advert</h1>
       {!isLoggedIn ? (
-      <div className="text-center bg-yellow-50 p-6 rounded border border-yellow-200">
-        <p className="text-lg text-gray-700 mb-2">
-          Please{' '}
-          <a href="/users/login" className="text-blue-600 underline">
-            Login
-          </a>{' '}
-          or{' '}
-          <a href="/users/register" className="text-blue-600 underline">
-            Register
-          </a>{' '}
-          to add a new advert.
-        </p>
-      </div>
-    ) :
-    (
-      <>
-      {status === 'loading' && (
-        <p className="text-blue-500 mb-4">Adding advert...</p>
-      )}
-      {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
-      {successMessage && (
-        <p className="text-green-500 mb-4">{successMessage}</p>
-      )}
+        <div className="text-center bg-yellow-50 p-6 rounded border border-yellow-200">
+          <p className="text-lg text-gray-700 mb-2">
+            Please{' '}
+            <Link
+              href="/users/login?preserveRedirect=true"
+              className="text-blue-600 underline"
+              onClick={() =>
+                localStorage.setItem('redirectAfterLogin', '/adverts/add')
+              }
+            >
+              Login
+            </Link>{' '}
+            or{' '}
+            <Link
+              href="/users/register?preserveRedirect=true"
+              className="text-blue-600 underline"
+              onClick={() =>
+                localStorage.setItem('redirectAfterLogin', '/adverts/add')
+              }
+            >
+              Register
+            </Link>{' '}
+            to add a new advert.
+          </p>
+        </div>
+      ) : (
+        <>
+          {status === 'loading' && (
+            <p className="text-blue-500 mb-4">Adding advert...</p>
+          )}
+          {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
+          {successMessage && (
+            <p className="text-green-500 mb-4">{successMessage}</p>
+          )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Email and Name */}
-        {!isLoggedIn && (
-          <>
-            <div>
-              <label className="block font-bold">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                onFocus={() => handleFocus('email')}
-                onBlur={handleBlur}
-                className="w-full p-2 border rounded"
-              />
-              {focusedField === 'email' && (
-                <p className="text-sm text-gray-500 mt-1">
-                  {FIELD_HINTS.email}
-                </p>
-              )}
-            </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email and Name */}
+            {!isLoggedIn && (
+              <>
+                <div>
+                  <label className="block font-bold">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    onFocus={() => handleFocus('email')}
+                    onBlur={handleBlur}
+                    className="w-full p-2 border rounded"
+                  />
+                  {focusedField === 'email' && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {FIELD_HINTS.email}
+                    </p>
+                  )}
+                </div>
 
+                <div>
+                  <label className="block font-bold">Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    onFocus={() => handleFocus('name')}
+                    onBlur={handleBlur}
+                    className="w-full p-2 border rounded"
+                  />
+                  {focusedField === 'name' && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {FIELD_HINTS.name}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Title */}
             <div>
-              <label className="block font-bold">Name</label>
+              <label className="block font-bold">Title</label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="title"
+                value={formData.title}
                 onChange={handleChange}
-                onFocus={() => handleFocus('name')}
-                onBlur={handleBlur}
                 className="w-full p-2 border rounded"
               />
-              {focusedField === 'name' && (
-                <p className="text-sm text-gray-500 mt-1">{FIELD_HINTS.name}</p>
+            </div>
+
+            {/* Ad Type Toggle  */}
+            <AdTypeToggle formData={formData} setFormData={setFormData} />
+
+            {/* Category */}
+            <div>
+              <label className="block font-bold">Category</label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              >
+                <option value="" disabled>
+                  Select a category
+                </option>
+                {CATEGORY_OPTIONS.map((category, index) => (
+                  <option key={index} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Your Price */}
+            {shouldShowPrice && (
+              <PriceToggle formData={formData} setFormData={setFormData} />
+            )}
+
+            {/* Condition*/}
+            {shouldShowCondition && formData.isForSale && (
+              <ConditionToggle formData={formData} setFormData={setFormData} />
+            )}
+
+            {/* Description */}
+            <div>
+              <label className="block font-bold">Description</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                onFocus={() => handleFocus('description')}
+                onBlur={handleBlur}
+                className="w-full p-05 border rounded"
+              />
+              {focusedField === 'description' && (
+                <div className="text-sm text-gray-500 mt-1 space-y-1">
+                  {Array.isArray(FIELD_HINTS.description) ? (
+                    FIELD_HINTS.description.map((line, index) => (
+                      <p key={index}>{line}</p>
+                    ))
+                  ) : (
+                    <p>{FIELD_HINTS.description}</p>
+                  )}
+                </div>
               )}
             </div>
-          </>
-        )}
 
-        {/* Title */}
-        <div>
-          <label className="block font-bold">Title</label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-          />
-        </div>
+            {/* Address */}
+            <AddressInput
+              formData={formData}
+              setFormData={setFormData}
+              focusedField={focusedField}
+              handleFocus={handleFocus}
+              handleBlur={handleBlur}
+            />
 
-        {/* Ad Type Toggle  */}
-        <AdTypeToggle formData={formData} setFormData={setFormData} />
+            {/* Image Upload */}
+            <ImageUploader
+              preview={preview}
+              setPreview={setPreview}
+              formData={formData}
+              setFormData={setFormData}
+            />
 
-        {/* Category */}
-        <div>
-          <label className="block font-bold">Category</label>
-          <select
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-          >
-            <option value="" disabled>
-              Select a category
-            </option>
-            {CATEGORY_OPTIONS.map((category, index) => (
-              <option key={index} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Your Price */}
-        {shouldShowPrice && (
-          <PriceToggle formData={formData} setFormData={setFormData} />
-        )}
-
-        {/* Condition*/}
-        {shouldShowCondition && formData.isForSale && (
-          <ConditionToggle formData={formData} setFormData={setFormData} />
-        )}
-
-        {/* Description */}
-        <div>
-          <label className="block font-bold">Description</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            onFocus={() => handleFocus('description')}
-            onBlur={handleBlur}
-            className="w-full p-05 border rounded"
-          />
-          {focusedField === 'description' && (
-            <div className="text-sm text-gray-500 mt-1 space-y-1">
-              {Array.isArray(FIELD_HINTS.description) ? (
-                FIELD_HINTS.description.map((line, index) => (
-                  <p key={index}>{line}</p>
-                ))
-              ) : (
-                <p>{FIELD_HINTS.description}</p>
-              )}
+            {/* Submit and Cancel Buttons */}
+            <div className="flex gap-4 mt-4">
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Add Advert
+              </button>
+              {/* cancel Button */}
+              <button
+                type="button"
+                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-400"
+                onClick={() => router.back()}
+              >
+                Cancel
+              </button>
             </div>
-          )}
-        </div>
-
-        {/* Address */}
-        <AddressInput
-          formData={formData}
-          setFormData={setFormData}
-          focusedField={focusedField}
-          handleFocus={handleFocus}
-          handleBlur={handleBlur}
-        />
-
-        {/* Image Upload */}
-        <ImageUploader
-          preview={preview}
-          setPreview={setPreview}
-          formData={formData}
-          setFormData={setFormData}
-        />
-
-        {/* Submit and Cancel Buttons */}
-        <div className="flex gap-4 mt-4">
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Add Advert
-          </button>
-          {/* cancel Button */}
-          <button
-            type="button"
-            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-400"
-            onClick={() => router.back()}
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-      </>
+          </form>
+        </>
       )}
     </div>
   );
