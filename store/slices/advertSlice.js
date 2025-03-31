@@ -52,25 +52,34 @@ export const fetchAdvertById = createAsyncThunk(
 export const addAdvert = createAsyncThunk(
     'adverts/addAdvert',
     async (advertData, { rejectWithValue }) => {
-        console.log("🔹 Sending API request with data:", advertData);
-        try {
-            const response = await axios.post(`${API_BASE_URL}/addadvert`, advertData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            if (response.data.success) {
-                return response.data.advert; // Return advert data
-            } else {
-                return rejectWithValue(response.data.message || 'Failed to add advert');
-            }
-        } catch (error) {
-            console.error('addAdvert Thunk - Error:', error);
-            const errorMessage =
-                error.response?.data?.message || 'addAdvert thunk unable to reach addAdvert Controller due to a network/server issue';
-            return rejectWithValue(errorMessage);
+      console.log("🔹 Sending API request with data:", advertData);
+      try {
+        const response = await axios.post(
+          `${API_BASE_URL}/addadvert`,
+          advertData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            withCredentials: true, // ✅ Required for sending cookies!
+          }
+        );
+  
+        if (response.data.success) {
+          return response.data.advert;
+        } else {
+          return rejectWithValue(response.data.message || 'Failed to add advert');
         }
+      } catch (error) {
+        console.error('addAdvert Thunk - Error:', error);
+        const errorMessage =
+          error.response?.data?.message ||
+          'addAdvert thunk unable to reach addAdvert Controller due to a network/server issue';
+        return rejectWithValue(errorMessage);
+      }
     }
-);
+  );
+  
 
 
 const advertSlice = createSlice({
