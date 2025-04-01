@@ -2,9 +2,11 @@ import React from 'react';
 import Link from 'next/link';
 import { MdLocationOn } from 'react-icons/md';
 import { BsCalendar2Event } from 'react-icons/bs';
+import { AiFillHeart, AiOutlineHeart } from 'react-icons/ai';
 
-const EventCard = ({ event }) => {
+const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   const { title, dateTime, venue, description, address, images, organiser } = event;
+
   const date = new Date(dateTime).toLocaleString('en-AU', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -12,8 +14,18 @@ const EventCard = ({ event }) => {
   });
 
   return (
-    <Link href={`/events/views/${event._id}`}>
-      <div className="border rounded-lg shadow-md p-4 bg-white hover:shadow-lg transition w-full">
+    <div className="relative border rounded-lg shadow-md p-4 bg-white hover:shadow-lg transition w-full">
+      {/* Wishlist Icon */}
+      <button
+        onClick={onWishlistToggle}
+        className="absolute top-2 right-2 text-red-500 text-xl z-10"
+        title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+      >
+        {isInWishlist ? <AiFillHeart /> : <AiOutlineHeart />}
+      </button>
+
+      {/* Event Link & Content */}
+      <Link href={`/events/views/${event._id}`} className="block">
         {/* Event Image */}
         <div className="w-full h-40 md:h-52 relative">
           {images?.length > 0 ? (
@@ -48,8 +60,8 @@ const EventCard = ({ event }) => {
         <div className="text-xs text-gray-500 mt-2 italic truncate">
           {organiser?.name ? `By ${organiser.name}` : 'Unknown organiser'}
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 };
 

@@ -376,6 +376,53 @@ export const deleteUserAccount = createAsyncThunk(
   }
 );
 
+// Get event wishlist
+export const getEventWishlist = createAsyncThunk(
+  'user/getEventWishlist',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/eventwishlist`, { withCredentials: true });
+      return res.data.wishlist;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch event wishlist');
+    }
+  }
+);
+
+// Add event to wishlist
+export const addToEventWishlist = createAsyncThunk(
+  'user/addToEventWishlist',
+  async ({ eventId }, { rejectWithValue }) => {
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/eventwishlist/add`,
+        { eventId },
+        { withCredentials: true }
+      );
+      return res.data.eventWishlist;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to add event to wishlist');
+    }
+  }
+);
+
+// Remove event from wishlist
+export const removeFromEventWishlist = createAsyncThunk(
+  'user/removeFromEventWishlist',
+  async ({ eventId }, { rejectWithValue }) => {
+    try {
+      const res = await axios.delete(`${API_BASE_URL}/eventwishlist/remove`, {
+        data: { eventId },
+        withCredentials: true,
+      });
+      return res.data.eventWishlist;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to remove event from wishlist');
+    }
+  }
+);
+
+
 
 const initialState = {
   tokenValidated: false,
@@ -392,6 +439,9 @@ const initialState = {
   updateAccountMessage: null,
   deleteStatus: 'idle',
  deleteError: null,
+ eventWishlist: [],           
+ eventWishlistStatus: 'idle', 
+ eventWishlistError: null,    
 
 };
 
@@ -634,8 +684,7 @@ const userSlice = createSlice({
       state.accountDetailsError = payload;
     })
 
-    // 🟥 DELETE ACCOUN
-    // // 🟥 DELETE ACCOUNT
+    // 🟥 DELETE ACCOUNT
 .addCase(deleteUserAccount.pending, (state) => {
   state.deleteStatus = 'loading';
   state.deleteError = null;
@@ -649,6 +698,48 @@ const userSlice = createSlice({
 .addCase(deleteUserAccount.rejected, (state, { payload }) => {
   state.deleteStatus = 'failed';
   state.deleteError = payload;
+})
+
+// ✅ GET Event Wishlist
+.addCase(getEventWishlist.pending, (state) => {
+  state.eventWishlistStatus = 'loading';
+  state.eventWishlistError = null;
+})
+.addCase(getEventWishlist.fulfilled, (state, { payload }) => {
+  state.eventWishlistStatus = 'succeeded';
+  state.eventWishlist = payload;
+})
+.addCase(getEventWishlist.rejected, (state, { payload }) => {
+  state.eventWishlistStatus = 'failed';
+  state.eventWishlistError = payload;
+})
+
+// ✅ ADD to Event Wishlist
+.addCase(addToEventWishlist.pending, (state) => {
+  state.eventWishlistStatus = 'loading';
+  state.eventWishlistError = null;
+})
+.addCase(addToEventWishlist.fulfilled, (state, { payload }) => {
+  state.eventWishlistStatus = 'succeeded';
+  state.eventWishlist = payload;
+})
+.addCase(addToEventWishlist.rejected, (state, { payload }) => {
+  state.eventWishlistStatus = 'failed';
+  state.eventWishlistError = payload;
+})
+
+// ✅ REMOVE from Event Wishlist
+.addCase(removeFromEventWishlist.pending, (state) => {
+  state.eventWishlistStatus = 'loading';
+  state.eventWishlistError = null;
+})
+.addCase(removeFromEventWishlist.fulfilled, (state, { payload }) => {
+  state.eventWishlistStatus = 'succeeded';
+  state.eventWishlist = payload;
+})
+.addCase(removeFromEventWishlist.rejected, (state, { payload }) => {
+  state.eventWishlistStatus = 'failed';
+  state.eventWishlistError = payload;
 });
 
       
