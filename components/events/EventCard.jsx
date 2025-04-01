@@ -12,7 +12,7 @@ const EventCard = ({ event }) => {
   });
 
   return (
-    <Link href={`/events/${event._id}`}>
+    <Link href={`/events/views/${event._id}`}>
       <div className="border rounded-lg shadow-md p-4 bg-white hover:shadow-lg transition w-full">
         {/* Event Image */}
         <div className="w-full h-40 md:h-52 relative">

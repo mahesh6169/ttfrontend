@@ -25,8 +25,10 @@ const AddEventPage = () => {
     organiserName: '',
     organiserEmail: '',
     organiserWebsite: '',
-    organiserPrimaryContact: '',
-    organiserSecondaryContact: '',
+    organiserPrimaryContactName: '',
+    organiserPrimaryContactPhone: '',
+    organiserSecondaryContactName: '',
+    organiserSecondaryContactPhone: '',
     address: {
       formattedAddress: '',
       streetNumber: '',
@@ -43,6 +45,10 @@ const AddEventPage = () => {
   });
 
   const [preview, setPreview] = useState([]);
+  const [focusedField, setFocusedField] = useState(null);
+
+  const handleFocus = (field) => setFocusedField(field);
+  const handleBlur = () => setFocusedField(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,7 +67,8 @@ const AddEventPage = () => {
       { condition: !formData.venue, message: 'Venue is required.' },
       { condition: !formData.description, message: 'Description is required.' },
       { condition: !formData.organiserName, message: 'Organiser name is required.' },
-      { condition: !formData.organiserPrimaryContact, message: 'Primary contact is required.' },
+      { condition: !formData.organiserPrimaryContactName, message: 'Primary contact name is required.' },
+      { condition: !formData.organiserPrimaryContactPhone, message: 'Primary contact phone is required.' },
       { condition: !formData.address.formattedAddress, message: 'Address is required.' },
     ];
 
@@ -105,10 +112,18 @@ const AddEventPage = () => {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block font-semibold">Title</label>
-            <input type="text" name="title" value={formData.title} onChange={handleChange} className="w-full p-2 border rounded" />
-          </div>
+          {['title', 'venue', 'description', 'organiserName', 'organiserEmail', 'organiserWebsite', 'organiserPrimaryContactName', 'organiserPrimaryContactPhone', 'organiserSecondaryContactName', 'organiserSecondaryContactPhone'].map((field) => (
+            <div key={field}>
+              <label className="block font-semibold">{field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</label>
+              <input
+                type={field.includes('Email') ? 'email' : field.includes('Phone') ? 'text' : 'text'}
+                name={field}
+                value={formData[field]}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+          ))}
 
           <div>
             <label className="block font-semibold">Category</label>
@@ -118,61 +133,38 @@ const AddEventPage = () => {
               onChange={handleChange}
               className="w-full p-2 border rounded"
             >
-              <option value="" disabled>
-                Select a category
-              </option>
+              <option value="" disabled>Select a category</option>
               {CATEGORY_OPTIONS.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
+                <option key={category} value={category}>{category}</option>
               ))}
             </select>
           </div>
 
           <div>
             <label className="block font-semibold">Date & Time</label>
-            <input type="datetime-local" name="dateTime" value={formData.dateTime} onChange={handleChange} className="w-full p-2 border rounded" />
+            <input
+              type="datetime-local"
+              name="dateTime"
+              value={formData.dateTime}
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+            />
           </div>
 
-          <div>
-            <label className="block font-semibold">Venue</label>
-            <input type="text" name="venue" value={formData.venue} onChange={handleChange} className="w-full p-2 border rounded" />
-          </div>
+          <AddressInput
+            formData={formData}
+            setFormData={setFormData}
+            focusedField={focusedField}
+            handleFocus={handleFocus}
+            handleBlur={handleBlur}
+          />
 
-          <div>
-            <label className="block font-semibold">Description</label>
-            <textarea name="description" value={formData.description} onChange={handleChange} className="w-full p-2 border rounded" />
-          </div>
-
-          {/* Organiser Details */}
-          <div>
-            <label className="block font-semibold">Organiser Name</label>
-            <input type="text" name="organiserName" value={formData.organiserName} onChange={handleChange} className="w-full p-2 border rounded" />
-          </div>
-
-          <div>
-            <label className="block font-semibold">Organiser Email</label>
-            <input type="email" name="organiserEmail" value={formData.organiserEmail} onChange={handleChange} className="w-full p-2 border rounded" />
-          </div>
-
-          <div>
-            <label className="block font-semibold">Organiser Website</label>
-            <input type="url" name="organiserWebsite" value={formData.organiserWebsite} onChange={handleChange} className="w-full p-2 border rounded" />
-          </div>
-
-          <div>
-            <label className="block font-semibold">Primary Contact</label>
-            <input type="text" name="organiserPrimaryContact" value={formData.organiserPrimaryContact} onChange={handleChange} className="w-full p-2 border rounded" />
-          </div>
-
-          <div>
-            <label className="block font-semibold">Secondary Contact</label>
-            <input type="text" name="organiserSecondaryContact" value={formData.organiserSecondaryContact} onChange={handleChange} className="w-full p-2 border rounded" />
-          </div>
-
-          <AddressInput formData={formData} setFormData={setFormData} />
-
-          <ImageUploader preview={preview} setPreview={setPreview} formData={formData} setFormData={setFormData} />
+          <ImageUploader
+            preview={preview}
+            setPreview={setPreview}
+            formData={formData}
+            setFormData={setFormData}
+          />
 
           <div className="flex gap-4 mt-4">
             <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Event</button>
