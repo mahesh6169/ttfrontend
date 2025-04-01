@@ -7,6 +7,8 @@ import messages from './slices/messageSlice'; // Import messageSlice
 import filterReducer from './slices/filterSlice'; // Import filterSlice
 import threadReducer from './slices/threadSlice'; // Import threadSlice
 import adminReducer from './slices/adminSlice'; // Import adminSlice
+import eventReducer from './slices/eventSlice'; // Import eventSlice
+import events from '@/app/events/page';
 
 const store = configureStore({
     reducer: {
@@ -17,6 +19,7 @@ const store = configureStore({
         filters: filterReducer, // Add filterReducer
         threads: threadReducer, // Add threadReducer
         admin: adminReducer, // Add adminReducer
+        events: eventReducer, // Add eventReducer
     },
 });
 
