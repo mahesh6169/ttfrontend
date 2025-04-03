@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { MdLocationOn } from 'react-icons/md';
 import { BsCalendar2Event } from 'react-icons/bs';
-import { AiFillHeart, AiOutlineHeart } from 'react-icons/ai';
+import { FaHeart } from 'react-icons/fa';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   const { title, dateTime, venue, description, address, images, organiser } = event;
@@ -15,13 +15,19 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
 
   return (
     <div className="relative border rounded-lg shadow-md p-4 bg-white hover:shadow-lg transition w-full">
-      {/* Wishlist Icon */}
+      {/* Wishlist Button - Top Right */}
       <button
         onClick={onWishlistToggle}
-        className="absolute top-2 right-2 text-red-500 text-xl z-10"
-        title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+        className={`absolute top-2 right-2 text-white p-2 rounded-full z-10 ${
+          isInWishlist ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-300 hover:bg-gray-400'
+        }`}
+        title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
       >
-        {isInWishlist ? <AiFillHeart /> : <AiOutlineHeart />}
+        <FaHeart
+          className={`text-sm sm:text-base md:text-lg ${
+            isInWishlist ? 'text-white' : 'text-gray-700'
+          }`}
+        />
       </button>
 
       {/* Event Link & Content */}

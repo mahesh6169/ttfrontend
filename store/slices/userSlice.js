@@ -438,10 +438,13 @@ const initialState = {
   accountDetailsError: null,
   updateAccountMessage: null,
   deleteStatus: 'idle',
- deleteError: null,
- eventWishlist: [],           
- eventWishlistStatus: 'idle', 
- eventWishlistError: null,    
+  deleteError: null,
+  wishlist: [],
+  wishlistStatus: 'idle',
+  wishlistError: null,
+  eventWishlist: [],
+  eventWishlistStatus: 'idle',
+  eventWishlistError: null,
 
 };
 
@@ -584,48 +587,60 @@ const userSlice = createSlice({
         state.error = payload;
       })
 
-      // Add to wishlist cases
-      .addCase(addToWishlist.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-      })
-      .addCase(addToWishlist.fulfilled, (state, { payload }) => {
-        state.status = 'success';
-        state.user.wishlist = payload;
-      })
-      .addCase(addToWishlist.rejected, (state, { payload }) => {
-        state.status = 'failed';
-        state.error = payload;
-      })
+      // ✅ ADD to Advert Wishlist (match event logic)
+.addCase(addToWishlist.pending, (state) => {
+  state.wishlistStatus = 'loading';
+  state.wishlistError = null;
+})
+.addCase(addToWishlist.fulfilled, (state, { payload }) => {
+  state.wishlistStatus = 'success';
+  state.user = {
+    ...state.user,
+    wishlist: payload.map((id) => id.toString()), // IDs only
+  };
+})
+.addCase(addToWishlist.rejected, (state, { payload }) => {
+  state.wishlistStatus = 'failed';
+  state.wishlistError = payload;
+})
 
-      // Remove from wishlist cases
-      .addCase(removeFromWishlist.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-      })
-      .addCase(removeFromWishlist.fulfilled, (state, { payload }) => {
-        state.status = 'success';
-        state.user.wishlist = payload;
-      })
-      .addCase(removeFromWishlist.rejected, (state, { payload }) => {
-        state.status = 'failed';
-        state.error = payload;
-      })
+// ✅ REMOVE from Advert Wishlist (match event logic)
+.addCase(removeFromWishlist.pending, (state) => {
+  state.wishlistStatus = 'loading';
+  state.wishlistError = null;
+})
+.addCase(removeFromWishlist.fulfilled, (state, { payload }) => {
+  state.wishlistStatus = 'success';
+  state.user = {
+    ...state.user,
+    wishlist: payload.map((id) => id.toString()),
+  };
+})
+.addCase(removeFromWishlist.rejected, (state, { payload }) => {
+  state.wishlistStatus = 'failed';
+  state.wishlistError = payload;
+})
 
-      // Get wishlist cases
-      .addCase(getWishlist.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-      })
-      .addCase(getWishlist.fulfilled, (state, { payload }) => {
-        state.status = 'success';
-        state.user.wishlist = payload.map((advert) => advert._id);
-        state.adverts = payload;
-      })
-      .addCase(getWishlist.rejected, (state, { payload }) => {
-        state.status = 'failed';
-        state.error = payload;
-      })
+// ✅ GET Advert Wishlist
+.addCase(getWishlist.pending, (state) => {
+  state.wishlistStatus = 'loading';
+  state.wishlistError = null;
+})
+.addCase(getWishlist.fulfilled, (state, { payload }) => {
+  state.wishlistStatus = 'success';
+  state.wishlist = payload; // full advert objects
+  state.user = {
+    ...state.user,
+    wishlist: payload.map((adv) => adv._id.toString()),
+  };
+})
+.addCase(getWishlist.rejected, (state, { payload }) => {
+  state.wishlistStatus = 'failed';
+  state.wishlistError = payload;
+})
+
+
+
 
       // Send reset OTP cases
       .addCase(sendResetOtp.pending, (state) => {
@@ -641,7 +656,7 @@ const userSlice = createSlice({
         state.status = 'failed';
         state.error = payload;
       })
-      
+
       // Password Reset
       .addCase(resetPassword.pending, (state) => {
         state.resetStatus = 'loading';
@@ -656,93 +671,92 @@ const userSlice = createSlice({
       })
 
       // 🟦 FETCH ACCOUNT DETAILS
-    .addCase(fetchAccountDetails.pending, (state) => {
-      state.accountDetailsStatus = 'loading';
-      state.accountDetailsError = null;
-    })
-    .addCase(fetchAccountDetails.fulfilled, (state, { payload }) => {
-      state.accountDetailsStatus = 'succeeded';
-      state.accountDetails = payload;
-    })
-    .addCase(fetchAccountDetails.rejected, (state, { payload }) => {
-      state.accountDetailsStatus = 'failed';
-      state.accountDetailsError = payload;
-    })
+      .addCase(fetchAccountDetails.pending, (state) => {
+        state.accountDetailsStatus = 'loading';
+        state.accountDetailsError = null;
+      })
+      .addCase(fetchAccountDetails.fulfilled, (state, { payload }) => {
+        state.accountDetailsStatus = 'succeeded';
+        state.accountDetails = payload;
+      })
+      .addCase(fetchAccountDetails.rejected, (state, { payload }) => {
+        state.accountDetailsStatus = 'failed';
+        state.accountDetailsError = payload;
+      })
 
-    // 🟩 UPDATE ACCOUNT DETAILS
-    .addCase(updateAccountDetails.pending, (state) => {
-      state.accountDetailsStatus = 'updating';
-      state.accountDetailsError = null;
-      state.updateAccountMessage = null;
-    })
-    .addCase(updateAccountDetails.fulfilled, (state, { payload }) => {
-      state.accountDetailsStatus = 'updated';
-      state.updateAccountMessage = payload;
-    })
-    .addCase(updateAccountDetails.rejected, (state, { payload }) => {
-      state.accountDetailsStatus = 'update_failed';
-      state.accountDetailsError = payload;
-    })
+      // 🟩 UPDATE ACCOUNT DETAILS
+      .addCase(updateAccountDetails.pending, (state) => {
+        state.accountDetailsStatus = 'updating';
+        state.accountDetailsError = null;
+        state.updateAccountMessage = null;
+      })
+      .addCase(updateAccountDetails.fulfilled, (state, { payload }) => {
+        state.accountDetailsStatus = 'updated';
+        state.updateAccountMessage = payload;
+      })
+      .addCase(updateAccountDetails.rejected, (state, { payload }) => {
+        state.accountDetailsStatus = 'update_failed';
+        state.accountDetailsError = payload;
+      })
 
-    // 🟥 DELETE ACCOUNT
-.addCase(deleteUserAccount.pending, (state) => {
-  state.deleteStatus = 'loading';
-  state.deleteError = null;
-})
-.addCase(deleteUserAccount.fulfilled, (state) => {
-  state.deleteStatus = 'succeeded';
-  state.user = null;
-  state.accountDetails = null;
-  state.tokenValidated = false;
-})
-.addCase(deleteUserAccount.rejected, (state, { payload }) => {
-  state.deleteStatus = 'failed';
-  state.deleteError = payload;
-})
+      // 🟥 DELETE ACCOUNT
+      .addCase(deleteUserAccount.pending, (state) => {
+        state.deleteStatus = 'loading';
+        state.deleteError = null;
+      })
+      .addCase(deleteUserAccount.fulfilled, (state) => {
+        state.deleteStatus = 'succeeded';
+        state.user = null;
+        state.accountDetails = null;
+        state.tokenValidated = false;
+      })
+      .addCase(deleteUserAccount.rejected, (state, { payload }) => {
+        state.deleteStatus = 'failed';
+        state.deleteError = payload;
+      })
 
-// ✅ GET Event Wishlist
-.addCase(getEventWishlist.pending, (state) => {
-  state.eventWishlistStatus = 'loading';
-  state.eventWishlistError = null;
-})
-.addCase(getEventWishlist.fulfilled, (state, { payload }) => {
-  state.eventWishlistStatus = 'succeeded';
-  state.eventWishlist = payload;
-})
-.addCase(getEventWishlist.rejected, (state, { payload }) => {
-  state.eventWishlistStatus = 'failed';
-  state.eventWishlistError = payload;
-})
+      // ✅ GET Event Wishlist
+      .addCase(getEventWishlist.pending, (state) => {
+        state.eventWishlistStatus = 'loading';
+        state.eventWishlistError = null;
+      })
+      .addCase(getEventWishlist.fulfilled, (state, { payload }) => {
+        state.eventWishlistStatus = 'success';
+        state.eventWishlist = payload.map((event) => event._id.toString());
+      })
+      .addCase(getEventWishlist.rejected, (state, { payload }) => {
+        state.eventWishlistStatus = 'failed';
+        state.eventWishlistError = payload;
+      })
 
-// ✅ ADD to Event Wishlist
-.addCase(addToEventWishlist.pending, (state) => {
-  state.eventWishlistStatus = 'loading';
-  state.eventWishlistError = null;
-})
-.addCase(addToEventWishlist.fulfilled, (state, { payload }) => {
-  state.eventWishlistStatus = 'succeeded';
-  state.eventWishlist = payload;
-})
-.addCase(addToEventWishlist.rejected, (state, { payload }) => {
-  state.eventWishlistStatus = 'failed';
-  state.eventWishlistError = payload;
-})
+      // ✅ ADD to Event Wishlist
+      .addCase(addToEventWishlist.pending, (state) => {
+        state.eventWishlistStatus = 'loading';
+        state.eventWishlistError = null;
+      })
+      .addCase(addToEventWishlist.fulfilled, (state, { payload }) => {
+        state.eventWishlistStatus = 'success';
+        state.eventWishlist = payload;// Just store IDs
+      })
+      .addCase(addToEventWishlist.rejected, (state, { payload }) => {
+        state.eventWishlistStatus = 'failed';
+        state.eventWishlistError = payload;
+      })
 
-// ✅ REMOVE from Event Wishlist
-.addCase(removeFromEventWishlist.pending, (state) => {
-  state.eventWishlistStatus = 'loading';
-  state.eventWishlistError = null;
-})
-.addCase(removeFromEventWishlist.fulfilled, (state, { payload }) => {
-  state.eventWishlistStatus = 'succeeded';
-  state.eventWishlist = payload;
-})
-.addCase(removeFromEventWishlist.rejected, (state, { payload }) => {
-  state.eventWishlistStatus = 'failed';
-  state.eventWishlistError = payload;
-});
+      // ✅ REMOVE from Event Wishlist
+      .addCase(removeFromEventWishlist.pending, (state) => {
+        state.eventWishlistStatus = 'loading';
+        state.eventWishlistError = null;
+      })
+      .addCase(removeFromEventWishlist.fulfilled, (state, { payload }) => {
+        state.eventWishlistStatus = 'success';
+        state.eventWishlist = payload;// Just store IDs
+      })
+      .addCase(removeFromEventWishlist.rejected, (state, { payload }) => {
+        state.eventWishlistStatus = 'failed';
+        state.eventWishlistError = payload;
+      });
 
-      
 
   },
 });
