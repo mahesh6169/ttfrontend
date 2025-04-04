@@ -8,6 +8,7 @@ import { addEvent } from '@/store/slices/eventSlice';
 import { CATEGORY_OPTIONS } from '@/components/events/EventCategories';
 import AddressInput from '@/components/addadvert/AddressInput';
 import ImageUploader from '@/components/addadvert/ImageUploader';
+import { zonedTimeToUtc } from 'date-fns-tz';
 
 const AU_TIMEZONES = [
   { label: 'Sydney (NSW)', value: 'Australia/Sydney', key: 'Australia/Sydney-NSW' },
@@ -99,6 +100,9 @@ const AddEventPage = () => {
         value.forEach((file) => formPayload.append('images', file));
       } else if (key === 'address') {
         formPayload.append(key, JSON.stringify(value));
+      } else if (key === 'dateTime') {
+        const utcDate = zonedTimeToUtc(value, formData.timeZone);
+        formPayload.append('dateTime', utcDate.toISOString());
       } else {
         formPayload.append(key, value ?? '');
       }

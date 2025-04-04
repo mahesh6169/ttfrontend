@@ -1,109 +1,220 @@
-import React, { useState, useEffect } from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { createUser } from '@/store/slices/adminSlice';
 import { toast } from 'react-toastify';
+import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
+
+const libraries = ['places'];
 
 const CreateUserModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
 
-  // Initial state for form
   const initialFormState = {
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
     role: 'user',
+    mobile: '',
+    marketingOptIn: false,
+    suburb: {
+      name: '',
+      state: '',
+      postalCode: '',
+      location: {
+        type: 'Point',
+        coordinates: [],
+      },
+    },
   };
 
   const [formData, setFormData] = useState(initialFormState);
+  const [autocomplete, setAutocomplete] = useState(null);
 
-  // Reset form when the modal opens
   useEffect(() => {
-    if (isOpen) {
-      setFormData(initialFormState); // Reset the form when modal opens
-    }
+    if (isOpen) setFormData(initialFormState);
   }, [isOpen]);
 
-  // Handle input change
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
-  // Handle form submission
+  const handlePlaceChanged = () => {
+    if (!autocomplete) return;
+
+    const place = autocomplete.getPlace();
+    const components = place.address_components || [];
+
+    let suburb = '';
+    let state = '';
+    let postalCode = '';
+    let coordinates = [];
+
+    components.forEach((component) => {
+      const types = component.types;
+      if (types.includes('locality')) suburb = component.long_name;
+      if (types.includes('administrative_area_level_1')) state = component.short_name;
+      if (types.includes('postal_code')) postalCode = component.long_name;
+    });
+
+    if (place.geometry && place.geometry.location) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      coordinates = [lng, lat];
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      suburb: {
+        name: suburb,
+        state,
+        postalCode,
+        location: {
+          type: 'Point',
+          coordinates,
+        },
+      },
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
+      return;
+    }
+
+    const { name, state, postalCode, location } = formData.suburb;
+    if (!name || !state || !postalCode || location.coordinates.length !== 2) {
+      toast.error('Please select a valid suburb from the suggestions');
+      return;
+    }
+
+    if (formData.mobile && !/^04\d{8}$/.test(formData.mobile)) {
+      toast.error('Mobile must start with 04 and be 10 digits long');
       return;
     }
 
     try {
       await dispatch(createUser(formData)).unwrap();
       toast.success('User created successfully');
-      setFormData(initialFormState); // Reset form after success
-      onClose(); // Close modal
+      setFormData(initialFormState);
+      onClose();
     } catch (error) {
       toast.error(error || 'Failed to create user');
     }
   };
 
-  if (!isOpen) return null; // Don't render modal if it's not open
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-      <div className="bg-white p-6 rounded shadow-md w-96">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
         <h2 className="text-xl font-bold mb-4">Create New User</h2>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-3">
           <input
-            type="text"
             name="name"
-            placeholder="Name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full p-2 border rounded mb-2"
+            placeholder="Name"
+            className="w-full p-2 border rounded"
             required
           />
           <input
-            type="email"
             name="email"
-            placeholder="Email"
+            type="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-2 border rounded mb-2"
+            placeholder="Email"
+            className="w-full p-2 border rounded"
             required
           />
           <input
-            type="password"
+            name="mobile"
+            value={formData.mobile}
+            onChange={handleChange}
+            placeholder="Mobile (04xxxxxxxx)"
+            className="w-full p-2 border rounded"
+          />
+          <input
             name="password"
-            placeholder="Password"
+            type="password"
             value={formData.password}
             onChange={handleChange}
-            className="w-full p-2 border rounded mb-2"
+            placeholder="Password"
+            className="w-full p-2 border rounded"
             required
           />
           <input
-            type="password"
             name="confirmPassword"
-            placeholder="Confirm Password"
+            type="password"
             value={formData.confirmPassword}
             onChange={handleChange}
-            className="w-full p-2 border rounded mb-2"
+            placeholder="Confirm Password"
+            className="w-full p-2 border rounded"
             required
           />
           <select
             name="role"
             value={formData.role}
             onChange={handleChange}
-            className="w-full p-2 border rounded mb-2"
+            className="w-full p-2 border rounded"
           >
             <option value="user">User</option>
             <option value="admin">Admin</option>
           </select>
+
+          {/* ✅ Suburb Autocomplete using Google Maps */}
+          <LoadScriptNext
+            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+            libraries={libraries}
+          >
+            <Autocomplete
+              onLoad={(auto) => setAutocomplete(auto)}
+              onPlaceChanged={handlePlaceChanged}
+              options={{
+                componentRestrictions: { country: 'AU' },
+                types: ['(regions)'],
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Enter suburb"
+                className="w-full p-2 border rounded"
+              />
+            </Autocomplete>
+          </LoadScriptNext>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="marketingOptIn"
+              checked={formData.marketingOptIn}
+              onChange={handleChange}
+            />
+            <label className="text-sm text-gray-600">Opt-in for offers & updates</label>
+          </div>
+
           <div className="flex justify-between mt-4">
-            <button type="button" className="bg-gray-500 text-white p-2 rounded" onClick={onClose}>
+            <button
+              type="button"
+              className="bg-gray-500 text-white px-4 py-2 rounded"
+              onClick={onClose}
+            >
               Cancel
             </button>
-            <button type="submit" className="bg-blue-500 text-white p-2 rounded">
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
               Create User
             </button>
           </div>

@@ -9,7 +9,7 @@ import AddressInput from '@/components/addadvert/AddressInput';
 import ImageUploader from '@/components/addadvert/ImageUploader';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { utcToZonedTime } from 'date-fns-tz';
+import { utcToZonedTime , zonedTimeToUtc  } from 'date-fns-tz';
 import { format } from 'date-fns';
 
 
@@ -132,6 +132,9 @@ const EditEventPage = () => {
         value.forEach((file) => formPayload.append('images', file));
       } else if (key === 'address') {
         formPayload.append(key, JSON.stringify(value));
+      } else if (key === 'dateTime') {
+        const utcDate = zonedTimeToUtc(value, formData.timeZone);
+        formPayload.append('dateTime', utcDate.toISOString());
       } else {
         formPayload.append(key, value ?? '');
       }

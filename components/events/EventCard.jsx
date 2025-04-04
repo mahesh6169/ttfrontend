@@ -2,10 +2,11 @@ import React from 'react';
 import Link from 'next/link';
 import { MdLocationOn } from 'react-icons/md';
 import { BsCalendar2Event } from 'react-icons/bs';
-import { FaHeart } from 'react-icons/fa';
+import { FaHeart, FaFontAwesomeFlag } from 'react-icons/fa';
+import { BsChatRightDots } from 'react-icons/bs';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
-  const { title, dateTime, venue, description, address, images, organiser } = event;
+  const { title, dateTime, venue, address, images } = event;
 
   const date = new Date(dateTime).toLocaleString('en-AU', {
     dateStyle: 'medium',
@@ -30,9 +31,9 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         />
       </button>
 
-      {/* Event Link & Content */}
+      {/* Main Content */}
       <Link href={`/events/views/${event._id}`} className="block">
-        {/* Event Image */}
+        {/* Image */}
         <div className="w-full h-40 md:h-52 relative">
           {images?.length > 0 ? (
             <img
@@ -62,7 +63,20 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
           <span>{address?.suburb || address?.state || venue}</span>
         </div>
 
+        {/* Chat & Report Icons */}
+        <div className="flex justify-between mt-4 text-gray-600">
+          {/* Chat */}
+          <div className="flex flex-col items-center text-sm sm:text-base md:text-lg">
+            <BsChatRightDots className="mb-1" size={20} />
+            <span>Chat</span>
+          </div>
 
+          {/* Report */}
+          <div className="flex flex-col items-center text-sm sm:text-base md:text-lg">
+            <FaFontAwesomeFlag className="mb-1" size={20} />
+            <span>Report</span>
+          </div>
+        </div>
       </Link>
     </div>
   );

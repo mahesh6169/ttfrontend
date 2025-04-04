@@ -1,45 +1,21 @@
 export const CATEGORY_OPTIONS = [
-  'Baby & Children',
-  'Music & Games',
-  'Cars & Vehicles',
-  'Fashion & Accessories',
-  'Academics Tutors & Arts',
-  'Electronics & Computers',
-  'Home & Garden',
-  'Jobs',
-  'Miscellaneous',
-  'Pets',
-  'Party Hires & Services',
-  'Health, Sport & Fitness',
-  'Food & Catering Services',
-  'Home Improvement & Repairs',
-  'Real Estate',
-  'Professional Services',
-  'Business & Shops',
+  "Technology",
+  "Real Estate",
+  "Spiritual & Devotional",
+  "Community & Cultural",
+  "Education",
+  "Migration",
+  "Sports",
+  "Entertainment & Music",
+  "Miscellaneous",
+  "Travel & Adventure",
+  "Art & Exhibitions",
+  "Volunteering & Charity",
+  "Family & Kids"
 ];
 
 
-  export const CATEGORIES_REQUIRING_CONDITION = [ 
-  'Baby & Children',
-  'Music & Games',
-  'Cars & Vehicles',
-  'Fashion & Accessories',
-  'Electronics & Computers',
-  'Home & Garden',
-  'Miscellaneous',
-  'Party Hires & Services',
-  'Health, Sport & Fitness',
-  'Food & Catering Services',
-  'Home Improvement & Repairs',
-  ];
-
-  export const CATEGORIES_NOT_REQUIRING_PRICE = [
-    'Jobs',
-    'Professional Services',
-    'Business & Shops',
-    'Academics Tutors & Arts',
-  ];
-  
+ 
     // Field-specific hints.
     export const FIELD_HINTS = {
         email: 'Required to avoid spam.',

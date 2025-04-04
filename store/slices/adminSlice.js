@@ -46,38 +46,47 @@ export const fetchUserById = createAsyncThunk('admin/fetchUserById', async (user
 
 export const createUser = createAsyncThunk(
     'admin/createUser',
-    async ({ name, email, password, confirmPassword, role }, { rejectWithValue }) => {
-        try {
-            console.log('📨 Creating user:', { name, email, role });
-
-            const { data } = await axios.post(
-                `${BASE_URL}/users`,
-                { name, email, password, confirmPassword, role },
-                { withCredentials: true } // ✅ Ensures authentication cookies are sent
-            );
-
-            console.log('✅ User Created:', data);
-            return data.user;
-        } catch (error) {
-            console.error('❌ Create User Error:', error.response?.data || error.message);
-            return rejectWithValue(error.response?.data?.message || 'Failed to create user');
-        }
-    }
-);
-
-
-export const updateUser = createAsyncThunk('admin/updateUser', async ({ userId, userData }, { rejectWithValue }) => {
-    try {
-        const { data } = await axios.put(`${BASE_URL}/users/${userId}`, userData, {
-            withCredentials: true, // ✅ Ensures authentication is included
-        });
-
+    async (payload, { rejectWithValue }) => {
+      try {
+        console.log('📨 Creating user with full payload:', payload);
+  
+        const { data } = await axios.post(
+          `${BASE_URL}/users`,
+          payload,
+          { withCredentials: true } // ✅ Sends auth cookies/session
+        );
+  
+        console.log('✅ User Created:', data);
         return data.user;
-    } catch (error) {
+      } catch (error) {
+        console.error('❌ Create User Error:', error.response?.data || error.message);
+        return rejectWithValue(error.response?.data?.message || 'Failed to create user');
+      }
+    }
+  );
+  
+
+
+  export const updateUser = createAsyncThunk(
+    'admin/updateUser',
+    async (payload, { rejectWithValue }) => {
+      try {
+        const { userId, ...userData } = payload;
+  
+        const { data } = await axios.put(
+          `${BASE_URL}/users/${userId}`,
+          userData,
+          { withCredentials: true }
+        );
+  
+        return data.user;
+      } catch (error) {
         console.error("❌ Update User Error:", error.response?.data || error.message);
         return rejectWithValue(error.response?.data?.message || 'Failed to update user');
+      }
     }
-});
+  );
+  
 
 export const deleteUser = createAsyncThunk('admin/deleteUser', async (userId, { rejectWithValue }) => {
     try {
