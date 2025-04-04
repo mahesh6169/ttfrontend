@@ -44,7 +44,7 @@ const CreateThreadPage = () => {
     name: '',
   });
 
-  // Ensure email & name are set correctly when the user logs in
+  // Ensure email & name are set correctly when the user logs in.
   useEffect(() => {
     if (isLoggedIn && user) {
       setFormData((prev) => ({
