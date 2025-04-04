@@ -65,7 +65,7 @@ const cities = [
 
 const HomePage = () => {
   const dispatch = useDispatch();
-  const { adverts, meta, status, category, location, proximity, page, limit } =
+  const { adverts, meta, status: advertStatus, category, location, proximity, page, limit } =
     useSelector((state) => state.filters);
   const [filterMode, setFilterMode] = useState('input'); // 'input', 'icons', or 'cities'
 
@@ -323,7 +323,7 @@ const HomePage = () => {
       )}
 
       {/* Advert List */}
-      <AdvertList adverts={adverts} status={status} />
+      <AdvertList adverts={adverts} advertStatus={advertStatus} />
 
       {/* Pagination Controls */}
       <Pagination

@@ -6,9 +6,9 @@ import { getWishlist, addToWishlist, removeFromWishlist } from '@/store/slices/u
 import AdvertCard from './AdvertCard';
 import LoadingSpinner from '../LoadingSpinner';
 
-const AdvertList = ({ adverts, status }) => {
+const AdvertList = ({ adverts, advertStatus }) => {
   const dispatch = useDispatch();
-  const { tokenValidated, user, status: userStatus } = useSelector((state) => state.user);
+  const { tokenValidated, user, status: userStatus, wishlistStatus } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user._id;
 
   // Fetch wishlist if authenticated
@@ -20,13 +20,13 @@ const AdvertList = ({ adverts, status }) => {
 
   // Handle wishlist toggle
   const handleWishlistToggle = async (advertId) => {
+    if (!isAuthenticated) {
+      alert('Please log in to use the wishlist feature.');
+      return;
+    }
+  
     try {
-      if (!isAuthenticated) {
-        alert('Please log in to use the wishlist feature.');
-        return;
-      }
-
-      const isInWishlist = user?.wishlist?.includes(advertId);
+      const isInWishlist = user?.wishlist?.includes(advertId.toString());
       if (isInWishlist) {
         await dispatch(removeFromWishlist({ advertId })).unwrap();
       } else {
@@ -36,9 +36,10 @@ const AdvertList = ({ adverts, status }) => {
       console.error('Error updating wishlist:', error);
     }
   };
+  
 
   // Show loading spinner while fetching data
-  if (status === 'loading' || userStatus === 'loading') {
+  if (advertStatus === 'loading' || userStatus === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
         <LoadingSpinner />

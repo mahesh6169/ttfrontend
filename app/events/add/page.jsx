@@ -9,6 +9,17 @@ import { CATEGORY_OPTIONS } from '@/components/events/EventCategories';
 import AddressInput from '@/components/addadvert/AddressInput';
 import ImageUploader from '@/components/addadvert/ImageUploader';
 
+const AU_TIMEZONES = [
+  { label: 'Sydney (NSW)', value: 'Australia/Sydney', key: 'Australia/Sydney-NSW' },
+  { label: 'Melbourne (VIC)', value: 'Australia/Melbourne', key: 'Australia/Melbourne-VIC' },
+  { label: 'Brisbane (QLD)', value: 'Australia/Brisbane', key: 'Australia/Brisbane-QLD' },
+  { label: 'Perth (WA)', value: 'Australia/Perth', key: 'Australia/Perth-WA' },
+  { label: 'Adelaide (SA)', value: 'Australia/Adelaide', key: 'Australia/Adelaide-SA' },
+  { label: 'Hobart (TAS)', value: 'Australia/Hobart', key: 'Australia/Hobart-TAS' },
+  { label: 'Darwin (NT)', value: 'Australia/Darwin', key: 'Australia/Darwin-NT' },
+  { label: 'Canberra (ACT)', value: 'Australia/Sydney', key: 'Australia/Sydney-ACT' },
+];
+
 const AddEventPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
@@ -19,7 +30,7 @@ const AddEventPage = () => {
     title: '',
     category: '',
     dateTime: '',
-    timeZone: 'Australia/Sydney',
+    timeZone: '',
     venue: '',
     description: '',
     organiserName: '',
@@ -61,9 +72,12 @@ const AddEventPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    console.log('🧭 Submitting Event:', formData);
+
     const validations = [
       { condition: !formData.title, message: 'Title is required.' },
       { condition: !formData.dateTime, message: 'Date & Time are required.' },
+      { condition: !formData.timeZone, message: 'Time zone is required.' },
       { condition: !formData.venue, message: 'Venue is required.' },
       { condition: !formData.description, message: 'Description is required.' },
       { condition: !formData.organiserName, message: 'Organiser name is required.' },
@@ -112,11 +126,24 @@ const AddEventPage = () => {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {['title', 'venue', 'description', 'organiserName', 'organiserEmail', 'organiserWebsite', 'organiserPrimaryContactName', 'organiserPrimaryContactPhone', 'organiserSecondaryContactName', 'organiserSecondaryContactPhone'].map((field) => (
+          {[
+            'title',
+            'venue',
+            'description',
+            'organiserName',
+            'organiserEmail',
+            'organiserWebsite',
+            'organiserPrimaryContactName',
+            'organiserPrimaryContactPhone',
+            'organiserSecondaryContactName',
+            'organiserSecondaryContactPhone',
+          ].map((field) => (
             <div key={field}>
-              <label className="block font-semibold">{field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</label>
+              <label className="block font-semibold">
+                {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+              </label>
               <input
-                type={field.includes('Email') ? 'email' : field.includes('Phone') ? 'text' : 'text'}
+                type={field.includes('Email') ? 'email' : 'text'}
                 name={field}
                 value={formData[field]}
                 onChange={handleChange}
@@ -149,6 +176,24 @@ const AddEventPage = () => {
               onChange={handleChange}
               className="w-full p-2 border rounded"
             />
+          </div>
+
+          <div>
+            <label className="block font-semibold">Time Zone</label>
+            <select
+              name="timeZone"
+              value={formData.timeZone}
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+            >
+              <option value="" disabled>Select time zone</option>
+              {AU_TIMEZONES.map((tz) => (
+  <option key={tz.key} value={tz.value}>
+    {tz.label}
+  </option>
+))}
+
+            </select>
           </div>
 
           <AddressInput

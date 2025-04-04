@@ -9,19 +9,32 @@ import AddressInput from '@/components/addadvert/AddressInput';
 import ImageUploader from '@/components/addadvert/ImageUploader';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { utcToZonedTime } from 'date-fns-tz';
+import { format } from 'date-fns';
+
+
+const AU_TIMEZONES = [
+  { label: 'Sydney (NSW)', value: 'Australia/Sydney', key: 'Australia/Sydney-NSW' },
+  { label: 'Melbourne (VIC)', value: 'Australia/Melbourne', key: 'Australia/Melbourne-VIC' },
+  { label: 'Brisbane (QLD)', value: 'Australia/Brisbane', key: 'Australia/Brisbane-QLD' },
+  { label: 'Perth (WA)', value: 'Australia/Perth', key: 'Australia/Perth-WA' },
+  { label: 'Adelaide (SA)', value: 'Australia/Adelaide', key: 'Australia/Adelaide-SA' },
+  { label: 'Hobart (TAS)', value: 'Australia/Hobart', key: 'Australia/Hobart-TAS' },
+  { label: 'Darwin (NT)', value: 'Australia/Darwin', key: 'Australia/Darwin-NT' },
+  { label: 'Canberra (ACT)', value: 'Australia/Sydney', key: 'Australia/Sydney-ACT' },
+];
 
 const EditEventPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { id } = useParams();
-
-  const { selectedEvent, loading, error } = useSelector((state) => state.events);
+  const { selectedEvent, loading } = useSelector((state) => state.events);
 
   const [formData, setFormData] = useState({
     title: '',
     category: '',
     dateTime: '',
-    timeZone: 'Australia/Sydney',
+    timeZone: '',
     venue: '',
     description: '',
     organiserName: '',
@@ -57,9 +70,13 @@ const EditEventPage = () => {
   useEffect(() => {
     if (selectedEvent) {
       const org = selectedEvent.organiser || {};
+      const zone = selectedEvent.timeZone;
+      const zonedDate = utcToZonedTime(new Date(selectedEvent.dateTime), zone);
+      const formattedDate = format(zonedDate, "yyyy-MM-dd'T'HH:mm");
       setFormData((prev) => ({
         ...prev,
         ...selectedEvent,
+        dateTime: formattedDate,
         organiserName: org.name || '',
         organiserEmail: org.email || '',
         organiserWebsite: org.website || '',
@@ -91,12 +108,14 @@ const EditEventPage = () => {
     const requiredFields = [
       'title',
       'dateTime',
+      'timeZone',
       'venue',
       'description',
       'organiserName',
       'organiserPrimaryContactName',
       'organiserPrimaryContactPhone',
     ];
+
     const missing = requiredFields.filter((field) => !formData[field]);
     if (missing.length > 0) {
       toast.error(`Missing required fields: ${missing.join(', ')}`);
@@ -104,7 +123,6 @@ const EditEventPage = () => {
     }
 
     const formPayload = new FormData();
-
     existingImages.forEach((imgObj) => {
       formPayload.append('existingImages', JSON.stringify(imgObj));
     });
@@ -141,14 +159,59 @@ const EditEventPage = () => {
       <h1 className="text-2xl font-bold mb-4">Edit Event</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input type="text" name="title" value={formData.title} onChange={handleChange} className="w-full p-2 border rounded" placeholder="Title" />
-        <select name="category" value={formData.category} onChange={handleChange} className="w-full p-2 border rounded">
-          <option value="">Select category</option>
-          {CATEGORY_OPTIONS.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-        </select>
-        <input type="datetime-local" name="dateTime" value={formData.dateTime} onChange={handleChange} className="w-full p-2 border rounded" />
-        <input type="text" name="venue" value={formData.venue} onChange={handleChange} className="w-full p-2 border rounded" placeholder="Venue" />
-        <textarea name="description" value={formData.description} onChange={handleChange} onFocus={() => handleFocus('description')} onBlur={handleBlur} className="w-full p-2 border rounded" />
+        {[ 'title','venue','description','organiserName','organiserEmail','organiserWebsite','organiserPrimaryContactName','organiserPrimaryContactPhone','organiserSecondaryContactName','organiserSecondaryContactPhone' ].map((field) => (
+          <div key={field}>
+            <label className="block font-semibold">
+              {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+            </label>
+            <input
+              type={field.includes('Email') ? 'email' : 'text'}
+              name={field}
+              value={formData[field]}
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+        ))}
+
+        <div>
+          <label className="block font-semibold">Category</label>
+          <select
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="">Select category</option>
+            {CATEGORY_OPTIONS.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label className="block font-semibold">Date & Time</label>
+          <input
+            type="datetime-local"
+            name="dateTime"
+            value={formData.dateTime}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        <div>
+          <label className="block font-semibold">Time Zone</label>
+          <select
+            name="timeZone"
+            value={formData.timeZone}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="" disabled>Select time zone</option>
+            {AU_TIMEZONES.map((tz) => (
+              <option key={tz.key} value={tz.value}>{tz.label}</option>
+            ))}
+          </select>
+        </div>
 
         <AddressInput
           formData={formData}
@@ -167,8 +230,10 @@ const EditEventPage = () => {
           setFormData={setFormData}
         />
 
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Update Event</button>
-        <button type="button" onClick={() => router.back()} className="ml-2 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">Cancel</button>
+        <div className="flex gap-4">
+          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Update Event</button>
+          <button type="button" onClick={() => router.back()} className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">Cancel</button>
+        </div>
       </form>
     </div>
   );

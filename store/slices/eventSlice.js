@@ -110,90 +110,91 @@ const eventSlice = createSlice({
     allEvents: [],
     myEvents: [],
     selectedEvent: null,
-    loading: false,
+    status: 'idle',
     error: null,
   },
   reducers: {},
-  extraReducers: builder => {
+  extraReducers: (builder) => {
     builder
 
       // Add Event
-      .addCase(addEvent.pending, state => {
-        state.loading = true;
+      .addCase(addEvent.pending, (state) => {
+        state.status = 'loading';
         state.error = null;
       })
       .addCase(addEvent.fulfilled, (state, action) => {
-        state.loading = false;
+        state.status = 'success';
         state.myEvents.push(action.payload);
         state.allEvents.push(action.payload);
       })
       .addCase(addEvent.rejected, (state, action) => {
-        state.loading = false;
+        state.status = 'failed';
         state.error = action.payload;
       })
 
-      // Fetch single event by ID
-      .addCase(fetchEventById.pending, state => {
-        state.loading = true;
+      // Fetch Event by ID
+      .addCase(fetchEventById.pending, (state) => {
+        state.status = 'loading';
         state.error = null;
+        state.selectedEvent = null;
       })
       .addCase(fetchEventById.fulfilled, (state, action) => {
-        state.loading = false;
+        state.status = 'success';
         state.selectedEvent = action.payload;
       })
       .addCase(fetchEventById.rejected, (state, action) => {
-        state.loading = false;
+        state.status = 'failed';
         state.error = action.payload;
         state.selectedEvent = null;
       })
 
+      // Update Event
       .addCase(updateEventById.pending, (state) => {
-        state.loading = true;
+        state.status = 'loading';
         state.error = null;
       })
       .addCase(updateEventById.fulfilled, (state, action) => {
-        state.loading = false;
+        state.status = 'success';
         state.selectedEvent = action.payload;
       })
       .addCase(updateEventById.rejected, (state, action) => {
-        state.loading = false;
+        state.status = 'failed';
         state.error = action.payload;
       })
-      
 
-
-      // Fetch all events
-      .addCase(fetchAllEvents.pending, state => {
-        state.loading = true;
+      // Fetch All Events
+      .addCase(fetchAllEvents.pending, (state) => {
+        state.status = 'loading';
         state.error = null;
       })
       .addCase(fetchAllEvents.fulfilled, (state, action) => {
-        state.loading = false;
+        state.status = 'success';
         state.allEvents = action.payload;
       })
       .addCase(fetchAllEvents.rejected, (state, action) => {
-        state.loading = false;
+        state.status = 'failed';
         state.error = action.payload;
       })
 
-      // Fetch my events
-      .addCase(fetchMyEvents.pending, state => {
-        state.loading = true;
+      // Fetch My Events
+      .addCase(fetchMyEvents.pending, (state) => {
+        state.status = 'loading';
         state.error = null;
       })
       .addCase(fetchMyEvents.fulfilled, (state, action) => {
-        state.loading = false;
+        state.status = 'success';
         state.myEvents = action.payload;
       })
       .addCase(fetchMyEvents.rejected, (state, action) => {
-        state.loading = false;
+        state.status = 'failed';
         state.myEvents = [];
         state.error = action.payload;
       })
 
-      // Delete event
+      // Delete Event
       .addCase(deleteMyEvent.fulfilled, (state, action) => {
-        state.myEvents = state.myEvents.filter(event => event._id !== action.payload);
+        state.myEvents = state.myEvents.filter((event) => event._id !== action.payload);
+        state.allEvents = state.allEvents.filter((event) => event._id !== action.payload);
       });
   },
 });

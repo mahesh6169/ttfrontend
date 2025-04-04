@@ -10,7 +10,7 @@ import {
 import EventCard from './EventCard';
 import LoadingSpinner from '../LoadingSpinner';
 
-const EventGrid = ({ events, status }) => {
+const EventGrid = ({ events, eventStatus }) => {
   const dispatch = useDispatch();
   const { tokenValidated, user, eventWishlistStatus } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user?._id;
@@ -29,12 +29,12 @@ const EventGrid = ({ events, status }) => {
 
   // ✅ Toggle event wishlist handler
   const handleWishlistToggle = async (eventId) => {
+    if (!isAuthenticated) {
+      alert('Please log in to use the wishlist feature.');
+      return;
+    }
+  
     try {
-      if (!isAuthenticated) {
-        alert('Please log in to use the wishlist feature.');
-        return;
-      }
-
       const isInWishlist = eventWishlist?.includes(eventId.toString());
       if (isInWishlist) {
         await dispatch(removeFromEventWishlist({ eventId })).unwrap();
@@ -47,7 +47,7 @@ const EventGrid = ({ events, status }) => {
   };
 
   // 🔁 Loading spinner if still loading
-  if (status === 'loading' || eventWishlistStatus === 'loading') {
+  if (eventStatus === 'loading' || eventWishlistStatus === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
         <LoadingSpinner />

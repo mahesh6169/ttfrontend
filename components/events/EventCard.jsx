@@ -14,7 +14,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   });
 
   return (
-    <div className="relative border rounded-lg shadow-md p-4 bg-white hover:shadow-lg transition w-full">
+    <div className="relative border rounded-lg shadow-md p-4 bg-white hover:shadow-lg w-full">
       {/* Wishlist Button - Top Right */}
       <button
         onClick={onWishlistToggle}
@@ -62,10 +62,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
           <span>{address?.suburb || address?.state || venue}</span>
         </div>
 
-        {/* Organiser */}
-        <div className="text-xs text-gray-500 mt-2 italic truncate">
-          {organiser?.name ? `By ${organiser.name}` : 'Unknown organiser'}
-        </div>
+
       </Link>
     </div>
   );

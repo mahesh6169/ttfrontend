@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
-import { FIELD_HINTS } from './AdvertCategories'; // Reuse your constants!
+import { FIELD_HINTS } from './AdvertCategories';
 
 const libraries = ['places'];
 
