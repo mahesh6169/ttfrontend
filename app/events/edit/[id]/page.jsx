@@ -6,12 +6,10 @@ import { useRouter, useParams } from 'next/navigation';
 import { fetchEventById, updateEventById } from '@/store/slices/eventSlice';
 import { CATEGORY_OPTIONS } from '@/components/events/EventCategories';
 import AddressInput from '@/components/addadvert/AddressInput';
-import ImageUploader from '@/components/addadvert/ImageUploader';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { utcToZonedTime , zonedTimeToUtc  } from 'date-fns-tz';
 import { format } from 'date-fns';
-
 
 const AU_TIMEZONES = [
   { label: 'Sydney (NSW)', value: 'Australia/Sydney', key: 'Australia/Sydney-NSW' },
@@ -102,31 +100,46 @@ const EditEventPage = () => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + preview.length + existingImages.length > 3) {
+      toast.error('You can upload up to 3 images only.');
+      return;
+    }
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    setPreview((prev) => [...prev, ...newPreviews]);
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, ...files],
+    }));
+  };
+
+  const handleRemoveNewImage = (index) => {
+    setPreview((prev) => prev.filter((_, i) => i !== index));
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleRemoveExistingImage = (index) => {
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const requiredFields = [
-      'title',
-      'dateTime',
-      'timeZone',
-      'venue',
-      'description',
-      'organiserName',
-      'organiserPrimaryContactName',
-      'organiserPrimaryContactPhone',
+      'title','dateTime','timeZone','venue','description','organiserName','organiserPrimaryContactName','organiserPrimaryContactPhone'
     ];
-
     const missing = requiredFields.filter((field) => !formData[field]);
     if (missing.length > 0) {
       toast.error(`Missing required fields: ${missing.join(', ')}`);
       return;
     }
-
     const formPayload = new FormData();
     existingImages.forEach((imgObj) => {
       formPayload.append('existingImages', JSON.stringify(imgObj));
     });
-
     Object.entries(formData).forEach(([key, value]) => {
       if (key === 'images') {
         value.forEach((file) => formPayload.append('images', file));
@@ -139,7 +152,6 @@ const EditEventPage = () => {
         formPayload.append(key, value ?? '');
       }
     });
-
     try {
       const result = await dispatch(updateEventById({ id, data: formPayload }));
       if (updateEventById.fulfilled.match(result)) {
@@ -160,7 +172,6 @@ const EditEventPage = () => {
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Edit Event</h1>
-
       <form onSubmit={handleSubmit} className="space-y-4">
         {[ 'title','venue','description','organiserName','organiserEmail','organiserWebsite','organiserPrimaryContactName','organiserPrimaryContactPhone','organiserSecondaryContactName','organiserSecondaryContactPhone' ].map((field) => (
           <div key={field}>
@@ -176,20 +187,13 @@ const EditEventPage = () => {
             />
           </div>
         ))}
-
         <div>
           <label className="block font-semibold">Category</label>
-          <select
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-          >
+          <select name="category" value={formData.category} onChange={handleChange} className="w-full p-2 border rounded">
             <option value="">Select category</option>
             {CATEGORY_OPTIONS.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
           </select>
         </div>
-
         <div>
           <label className="block font-semibold">Date & Time</label>
           <input
@@ -200,22 +204,15 @@ const EditEventPage = () => {
             className="w-full p-2 border rounded"
           />
         </div>
-
         <div>
           <label className="block font-semibold">Time Zone</label>
-          <select
-            name="timeZone"
-            value={formData.timeZone}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-          >
+          <select name="timeZone" value={formData.timeZone} onChange={handleChange} className="w-full p-2 border rounded">
             <option value="" disabled>Select time zone</option>
             {AU_TIMEZONES.map((tz) => (
               <option key={tz.key} value={tz.value}>{tz.label}</option>
             ))}
           </select>
         </div>
-
         <AddressInput
           formData={formData}
           setFormData={setFormData}
@@ -223,16 +220,43 @@ const EditEventPage = () => {
           handleBlur={handleBlur}
           focusedField={focusedField}
         />
-
-        <ImageUploader
-          preview={preview}
-          setPreview={setPreview}
-          existingImages={existingImages}
-          setExistingImages={setExistingImages}
-          formData={formData}
-          setFormData={setFormData}
-        />
-
+        {/* Image Previews */}
+        <div>
+          <label className="block font-bold">Upload Images (Max 3)</label>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleFileChange}
+            className="w-full p-2 border rounded"
+          />
+          <div className="mt-4 flex gap-4 flex-wrap">
+            {existingImages.map((img, idx) => (
+              <div key={idx} className="relative">
+                <img src={img.url} alt={`Existing ${idx}`} className="w-24 h-24 object-cover border" />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveExistingImage(idx)}
+                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
+                >
+                  X
+                </button>
+              </div>
+            ))}
+            {preview.map((src, idx) => (
+              <div key={`new-${idx}`} className="relative">
+                <img src={src} alt={`Preview ${idx + 1}`} className="w-24 h-24 object-cover border" />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveNewImage(idx)}
+                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
+                >
+                  X
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="flex gap-4">
           <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Update Event</button>
           <button type="button" onClick={() => router.back()} className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">Cancel</button>
