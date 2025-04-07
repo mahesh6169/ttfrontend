@@ -31,6 +31,8 @@ import SelectSlider from '@/components/SelectSlider';
 
 import Link from 'next/link';
 
+const libraries = ['places'];
+
 const categoryIcons = [
   { name: 'Books Art & Collectables', icon: <FaBook /> },
   { name: 'Baby & Children', icon: <FaBaby /> },
@@ -206,7 +208,7 @@ const HomePage = () => {
 
           <LoadScriptNext
             googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-            libraries={['places']}
+            libraries={libraries}
             onLoad={() => setIsScriptLoaded(true)}
           >
             {isScriptLoaded ? (

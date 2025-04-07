@@ -11,6 +11,7 @@ import SelectSlider from '@/components/SelectSlider';
 import Link from 'next/link';
 import { FaCity } from 'react-icons/fa';
 
+const libraries = ['places'];
 const CATEGORY_OPTIONS = [
   'Technology',
   'Real Estate',
@@ -125,7 +126,7 @@ const EventsPage = () => {
 
           <LoadScriptNext
             googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-            libraries={['places']}
+            libraries={libraries}
             onLoad={() => setIsScriptLoaded(true)}
           >
             {isScriptLoaded && (
