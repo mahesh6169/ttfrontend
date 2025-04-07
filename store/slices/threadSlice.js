@@ -75,6 +75,20 @@ export const fetchThreadsByCategory = createAsyncThunk(
     }
 );
 
+/* -------------------------------- Fetch Threads by ID -------------------------------- */
+export const fetchThreadById = createAsyncThunk(
+    'threads/fetchThreadById',
+    async (threadId, { rejectWithValue }) => {
+      try {
+        const response = await axios.get(`${BASE_URL}/thread/${threadId}`, { withCredentials: true });
+        console.log('[Thunk] API success. Response:', response.data);
+        return response.data;
+      } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to fetch thread');
+      }
+    }
+  );
+  
 
 /* -------------------------------- Fetch Messages for a Thread -------------------------------- */
 export const fetchThreadMessages = createAsyncThunk(
@@ -170,22 +184,7 @@ export const fetchUserThreads = createAsyncThunk(
     }
 );
 
-/* -------------------------------- Edit a Thread (Requires Auth) -------------------------------- */
-export const editThread = createAsyncThunk(
-    'threads/editThread',
-    async ({ threadId, formData }, { rejectWithValue }) => {
-      try {
-        const response = await axios.put(`${BASE_URL}/thread/${threadId}`, formData, {
-          withCredentials: true,
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        return response.data;
-      } catch (error) {
-        console.error("🔴 Error editing thread:", error.response?.data || error.message);
-        return rejectWithValue(error.response?.data?.message || 'Failed to edit thread');
-      }
-    }
-  );
+
 
   /* -------------------------------- update Thread-------------------------------- */
   export const updateThread = createAsyncThunk(
@@ -224,6 +223,7 @@ const threadSlice = createSlice({
         totalItems: 0, // ✅ Total number of threads
         status: 'idle',
         error: null,
+        selectedThread: null,
     },
     reducers: {
         addNewThreadMessage: (state, action) => {
@@ -364,48 +364,20 @@ const threadSlice = createSlice({
                 state.status = 'failed';
                 state.error = payload;
             })
-            /* --------- editThread--------- */
-            .addCase(editThread.pending, (state) => {
-                state.status = "loading";
-                state.error = null;
-            })
-            .addCase(editThread.fulfilled, (state, action) => {
-                const updatedThread = action.payload.thread;
 
-                // ✅ Update thread in `threads` array
-                const threadIndex = state.threads.findIndex((t) => t._id === updatedThread._id);
-                if (threadIndex !== -1) {
-                    state.threads[threadIndex] = updatedThread;
-                }
-
-                // ✅ Update thread in `userThreads` array (if user is the owner)
-                const userThreadIndex = state.userThreads.findIndex((t) => t._id === updatedThread._id);
-                if (userThreadIndex !== -1) {
-                    state.userThreads[userThreadIndex] = updatedThread;
-                }
-
-                state.status = "success";
-            })
-            .addCase(editThread.rejected, (state, action) => {
-                state.status = "failed";
-                state.error = action.payload;
-            })
 
 
             /* --------- updateThread--------- */
-            .addCase(updateThread.pending, (state) => {
-                state.status = 'loading';
-                state.error = null;
-              })
-              .addCase(updateThread.fulfilled, (state, action) => {
-                const updatedThread = action.payload.thread;
-              
-                const index = state.threads.findIndex((t) => t._id === updatedThread._id);
+            .addCase(updateThread.fulfilled, (state, action) => {
+                const updatedThread = action.payload;
+                state.selectedThread = updatedThread;
+        
+                const index = state.threads.findIndex(t => t._id === updatedThread._id);
                 if (index !== -1) state.threads[index] = updatedThread;
-              
-                const userIndex = state.userThreads.findIndex((t) => t._id === updatedThread._id);
+        
+                const userIndex = state.userThreads.findIndex(t => t._id === updatedThread._id);
                 if (userIndex !== -1) state.userThreads[userIndex] = updatedThread;
-              
+        
                 state.status = 'success';
               })
               .addCase(updateThread.rejected, (state, action) => {
@@ -428,7 +400,21 @@ const threadSlice = createSlice({
             .addCase(fetchThreadsByCategory.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.payload;
-            });
+            })
+
+            /* --------- Fetch Threads by ID --------- */
+            .addCase(fetchThreadById.pending, (state) => {
+                state.status = 'loading';
+              })
+              .addCase(fetchThreadById.fulfilled, (state, action) => {
+                state.status = 'success';
+                state.selectedThread = action.payload;
+              })
+              .addCase(fetchThreadById.rejected, (state, action) => {
+                state.status = 'failed';
+                state.error = action.payload;
+              });
+              
 
 
     },

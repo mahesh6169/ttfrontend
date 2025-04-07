@@ -9,6 +9,7 @@ import filterEventReducer from './slices/filterEventSlice'; // Import filterEven
 import threadReducer from './slices/threadSlice'; // Import threadSlice
 import adminReducer from './slices/adminSlice'; // Import adminSlice
 import eventReducer from './slices/eventSlice'; // Import eventSlice
+import filterThreadReducer from './slices/filterThreadSlice'; // Import filterThreadSlice
 import events from '@/app/events/page';
 
 const store = configureStore({
@@ -22,6 +23,7 @@ const store = configureStore({
         admin: adminReducer, // Add adminReducer
         events: eventReducer, // Add eventReducer
         eventFilters: filterEventReducer, // Add filterEventReducer
+        filterThreads: filterThreadReducer, // Add filterThreadsReducer
     },
 });
 
