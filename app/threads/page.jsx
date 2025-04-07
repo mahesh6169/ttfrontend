@@ -78,7 +78,7 @@ const ThreadsPage = () => {
               filterMode === 'recent' ? 'bg-black text-white' : 'bg-gray-200'
             }`}
           >
-            Browse Recently Added
+            Recently Added
           </button>
           <SelectSlider
   className="w-[180px] text-xs md:text-base"
@@ -86,8 +86,10 @@ const ThreadsPage = () => {
   value={category || 'Browse by Category'}
   onChange={(selected) => {
     const value = selected === 'Browse by Category' ? '' : selected;
-    dispatch(updateFilter({ category: value }));
+    dispatch(updateThreadFilter({ category: value, page: 1 }));
+    setFilterMode('category'); // trigger category-based fetching
   }}
+  
 />
         </div>
 
@@ -107,7 +109,7 @@ const ThreadsPage = () => {
               <h2 className="text-base font-semibold">{thread.title}</h2>
               <p className="text-sm text-gray-700 italic line-clamp-2">{thread.question}</p>
               <p className="text-sm text-gray-500">
-                Started by {thread.owner?.name || 'Former Member'}
+                Posted by {thread.owner?.name || 'Former Member'}
               </p>
             </li>
           ))}

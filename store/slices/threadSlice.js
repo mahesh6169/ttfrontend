@@ -8,20 +8,19 @@ const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/threads`;
 
 export const createThread = createAsyncThunk(
     'threads/createThread',
-    async ({ title, question, category, email, name }, { rejectWithValue }) => {
-        try {
-            const response = await axios.post(
-                `${BASE_URL}/create`,
-                { title, question, category, email, name },
-                { withCredentials: true }
-            );
-            return response.data;
-        } catch (error) {
-            console.error("🔴 Error creating thread:", error.response?.data || error.message);
-            return rejectWithValue(error.response?.data?.message || "Failed to create thread");
-        }
+    async (formData, { rejectWithValue }) => {
+      try {
+        const response = await axios.post(`${BASE_URL}/create`, formData, {
+          withCredentials: true,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+      } catch (error) {
+        console.error("🔴 Error creating thread:", error.response?.data || error.message);
+        return rejectWithValue(error.response?.data?.message || "Failed to create thread");
+      }
     }
-);
+  );
 
 
 
@@ -173,22 +172,41 @@ export const fetchUserThreads = createAsyncThunk(
 
 /* -------------------------------- Edit a Thread (Requires Auth) -------------------------------- */
 export const editThread = createAsyncThunk(
-    "threads/editThread",
-    async ({ threadId, title, question, category }, { rejectWithValue }) => {
-        try {
-            const response = await axios.put(
-                `${BASE_URL}/thread/${threadId}`,
-                { title, question, category },
-                { withCredentials: true }
-            );
-            return response.data; // Returns the updated thread object
-        } catch (error) {
-            console.error("🔴 Error editing thread:", error.response?.data || error.message);
-            return rejectWithValue(error.response?.data?.message || "Failed to edit thread");
-        }
+    'threads/editThread',
+    async ({ threadId, formData }, { rejectWithValue }) => {
+      try {
+        const response = await axios.put(`${BASE_URL}/thread/${threadId}`, formData, {
+          withCredentials: true,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+      } catch (error) {
+        console.error("🔴 Error editing thread:", error.response?.data || error.message);
+        return rejectWithValue(error.response?.data?.message || 'Failed to edit thread');
+      }
     }
-);
+  );
 
+  /* -------------------------------- update Thread-------------------------------- */
+  export const updateThread = createAsyncThunk(
+  'threads/updateThread',
+  async ({ threadId, formData }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `${BASE_URL}/update/${threadId}`, // ✅ Note the updated route
+        formData,
+        {
+          withCredentials: true,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('🔴 Error updating thread:', error.response?.data || error.message);
+      return rejectWithValue(error.response?.data?.message || 'Failed to update thread');
+    }
+  }
+);
 
 
 
@@ -372,6 +390,29 @@ const threadSlice = createSlice({
                 state.status = "failed";
                 state.error = action.payload;
             })
+
+
+            /* --------- updateThread--------- */
+            .addCase(updateThread.pending, (state) => {
+                state.status = 'loading';
+                state.error = null;
+              })
+              .addCase(updateThread.fulfilled, (state, action) => {
+                const updatedThread = action.payload.thread;
+              
+                const index = state.threads.findIndex((t) => t._id === updatedThread._id);
+                if (index !== -1) state.threads[index] = updatedThread;
+              
+                const userIndex = state.userThreads.findIndex((t) => t._id === updatedThread._id);
+                if (userIndex !== -1) state.userThreads[userIndex] = updatedThread;
+              
+                state.status = 'success';
+              })
+              .addCase(updateThread.rejected, (state, action) => {
+                state.status = 'failed';
+                state.error = action.payload;
+              })
+              
 
             /* --------- Fetch Threads by Category --------- */
             .addCase(fetchThreadsByCategory.pending, (state) => {
