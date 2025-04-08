@@ -285,7 +285,8 @@ const EditAdvertPage = () => {
         condition:
           !formData.isForSale &&
           !formData.isForHire &&
-          !formData.isForRent ,
+          !formData.isForRent &&
+          !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category),
         message: 'Price option is required.',
       },
       {
