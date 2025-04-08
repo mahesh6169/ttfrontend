@@ -34,16 +34,20 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist}) => {
 
     {/* Price Box - Positioned on Top of Image */}
     {(advert.isForSale && advert.sellPrice > 0) ||
-    (advert.isForHire && advert.hirePrice > 0) ||
-    (advert.isForRent && advert.rentPrice > 0) ? (
-      <div className="absolute top-2 left-2 bg-gray-900 text-white font-bold px-2 py-1 rounded-md text-sm sm:text-base md:text-lg">
-        {advert.isForSale
-          ? `$${advert.sellPrice}`
-          : advert.isForHire
-          ? `$${advert.hirePrice} p/${advert.hireUnit}`
-          : `$${advert.rentPrice} p/${advert.rentUnit}`}
-      </div>
-    ) : null}
+ (advert.isForHire && advert.hirePrice > 0) ||
+ (advert.isForRent && advert.rentPrice > 0) ||
+ (advert.isForShare && advert.sharePrice > 0) ? (
+  <div className="absolute top-2 left-2 bg-gray-900 text-white font-bold px-2 py-1 rounded-md text-sm sm:text-base md:text-lg">
+    {advert.isForSale
+      ? `$${advert.sellPrice}`
+      : advert.isForHire
+      ? `$${advert.hirePrice} p/${advert.hireUnit}`
+      : advert.isForRent
+      ? `$${advert.rentPrice} p/${advert.rentUnit}`
+      : `$${advert.sharePrice} p/${advert.shareUnit}`}
+  </div>
+) : null}
+
   </div>
 
   {/* Title Box */}

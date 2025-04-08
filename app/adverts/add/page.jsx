@@ -64,6 +64,9 @@ const NewAdvertPage = () => {
     isForRent: false,
     rentPrice: 0,
     rentUnit: 'week',
+    isForShare: false,
+sharePrice: 0,
+shareUnit: 'week',
     description: '',
     address: {
       formattedAddress: '',
@@ -181,6 +184,7 @@ const NewAdvertPage = () => {
           !formData.isForSale &&
           !formData.isForHire &&
           !formData.isForRent &&
+          !formData.isForShare &&
           !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category),
         message: 'Price is required.',
       },
@@ -252,6 +256,7 @@ const NewAdvertPage = () => {
         case 'isForHire':
         case 'isForSale':
         case 'isForRent':
+        case 'isForShare':
           // Convert boolean values to string ("true"/"false") to be safely sent via FormData
           formPayload.append(key, value ? 'true' : 'false');
           break;
@@ -259,6 +264,7 @@ const NewAdvertPage = () => {
         case 'hirePrice':
         case 'sellPrice':
         case 'rentPrice':
+        case 'sharePrice':
           // Ensure number values are stored as strings to avoid sending null/undefined
           formPayload.append(key, value !== undefined ? value.toString() : '0');
           break;

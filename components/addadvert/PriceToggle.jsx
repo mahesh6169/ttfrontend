@@ -9,6 +9,8 @@ const PriceToggle = ({ formData, setFormData }) => {
       isForSale: type === 'sell',
       isForHire: type === 'hire',
       isForRent: type === 'rent',
+      isForShare: type === 'share',
+
       // ❌ Removed isRequestQuote handling
     }));
   };
@@ -61,6 +63,19 @@ const PriceToggle = ({ formData, setFormData }) => {
         >
           Hire
         </button>
+
+        <button
+  type="button"
+  className={`flex-1 p-2 text-center ${
+    formData.isForShare
+      ? 'bg-gray-200 border-gray-500'
+      : 'bg-white border-gray-300'
+  }`}
+  onClick={() => handlePriceTypeSelect('share')}
+>
+  Share
+</button>
+
 
 
       </div>
@@ -121,6 +136,29 @@ const PriceToggle = ({ formData, setFormData }) => {
             </select>
           </>
         )}
+
+{formData.isForShare && (
+  <>
+    <input
+      type="number"
+      name="sharePrice"
+      value={formData.sharePrice}
+      onChange={handleChange}
+      placeholder="Enter share price"
+      className="w-full p-2 border rounded mb-2"
+    />
+    <select
+      name="shareUnit"
+      value={formData.shareUnit}
+      onChange={handleChange}
+      className="w-full p-2 border rounded"
+    >
+      <option value="week">Per Week</option>
+      <option value="month">Per Month</option>
+    </select>
+  </>
+)}
+
       </div>
     </div>
   );

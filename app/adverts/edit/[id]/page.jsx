@@ -53,6 +53,9 @@ const EditAdvertPage = () => {
     isForRent: false,
     rentPrice: 0,
     rentUnit: 'week',
+    isForShare: false,
+sharePrice: 0,
+shareUnit: 'week',
     description: '',
     address: {
       formattedAddress: '',
@@ -286,6 +289,7 @@ const EditAdvertPage = () => {
           !formData.isForSale &&
           !formData.isForHire &&
           !formData.isForRent &&
+          !formData.isForShare &&
           !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category),
         message: 'Price option is required.',
       },
@@ -360,12 +364,14 @@ const EditAdvertPage = () => {
         case 'isForHire':
         case 'isForSale':
         case 'isForRent':
+        case 'isForShare':
           // Convert booleans to string
           formPayload.append(key, value ? 'true' : 'false');
           break;
         case 'sellPrice':
         case 'hirePrice':
         case 'rentPrice':
+        case 'sharePrice':
           // Ensure numeric fields are stored as string
           formPayload.append(key, String(value || 0));
           break;
