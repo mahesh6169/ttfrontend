@@ -9,6 +9,7 @@ import { CATEGORY_OPTIONS } from '@/components/events/EventCategories';
 import AddressInput from '@/components/addadvert/AddressInput';
 import ImageUploader from '@/components/addadvert/ImageUploader';
 import { zonedTimeToUtc } from 'date-fns-tz';
+import Link from 'next/link';
 
 const AU_TIMEZONES = [
   { label: 'Sydney (NSW)', value: 'Australia/Sydney', key: 'Australia/Sydney-NSW' },
@@ -125,10 +126,28 @@ const AddEventPage = () => {
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Add New Event</h1>
       {!isLoggedIn ? (
-        <div className="text-center bg-yellow-100 p-4 rounded">
-          <p className="text-gray-700">Please login to add a new event.</p>
-        </div>
-      ) : (
+  <div className="text-center bg-yellow-50 p-6 rounded border border-yellow-200">
+    <p className="text-lg text-gray-700 mb-2">
+      Please{' '}
+      <Link
+        href="/users/login?preserveRedirect=true"
+        className="text-blue-600 underline"
+        onClick={() => localStorage.setItem('redirectAfterLogin', '/events/add')}
+      >
+        Login
+      </Link>{' '}
+      or{' '}
+      <Link
+        href="/users/register?preserveRedirect=true"
+        className="text-blue-600 underline"
+        onClick={() => localStorage.setItem('redirectAfterLogin', '/events/add')}
+      >
+        Register
+      </Link>{' '}
+      to add a new event.
+    </p>
+  </div>
+) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {[
             'title',
