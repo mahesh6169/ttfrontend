@@ -55,12 +55,14 @@ const AdvertDetail = () => {
 
 {/* Chat Container */}
 <div className="flex-[3] bg-white shadow rounded-none p-4">
-  <SendMessage
-    advertId={id}
-    participantId={selectedAdvert.postedBy?._id}
-    owner={selectedAdvert.postedBy?.name}
-    preserveRedirectUrl={`/adverts/views/${id}`}
-  />
+<SendMessage
+  resourceId={id}
+  resourceType="advert"
+  participantId={selectedAdvert.postedBy?._id}
+  owner={selectedAdvert.postedBy?.name}
+  preserveRedirectUrl={`/adverts/views/${id}`}
+/>
+
 </div>
 
 

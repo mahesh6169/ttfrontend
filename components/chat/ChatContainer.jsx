@@ -4,23 +4,21 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { sendMessage } from "@/store/slices/messageSlice";
 
-export default function ChatContainer({ advertId, otherUserId, messages, advert }) {
+export default function ChatContainer({ resourceId, resourceType, otherUserId, messages, resource }) {
   const dispatch = useDispatch();
   const [newMessage, setNewMessage] = useState("");
 
   const handleSend = () => {
     if (!newMessage.trim()) return;
 
-    // Our backend expects: { advertId, participantId, message }
-    // participantId must be the actual participant’s ID if we are the owner,
-    // or our own ID if we are the participant.
-    // For simplicity, we'll assume the "otherUser" is the participant.
-
-    dispatch(sendMessage({
-      advertId,
-      participantId: otherUserId, 
-      message: newMessage
-    }));
+    dispatch(
+      sendMessage({
+        resourceId,         // supports advert or event
+        resourceType,       // "advert" or "event"
+        participantId: otherUserId,
+        message: newMessage,
+      })
+    );
 
     setNewMessage("");
   };

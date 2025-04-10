@@ -84,7 +84,7 @@ const ThreadsPage = () => {
             <li
               key={thread._id}
               className="border rounded-lg p-4 cursor-pointer hover:bg-gray-100"
-              onClick={() => router.push(`/threads/${thread._id}`)}
+              onClick={() => router.push(`/threads/views/${thread._id}`)}
             >
               <h2 className="text-base font-semibold">{thread.title}</h2>
               <p className="text-sm text-gray-700 italic line-clamp-2">

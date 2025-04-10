@@ -7,11 +7,11 @@ import { useRouter } from 'next/navigation';
 import { CgProfile } from 'react-icons/cg';
 import { toast } from 'react-toastify';
 
-const SendMessage = ({ advertId, participantId, owner, preserveRedirectUrl }) => {
+const SendMessage = ({ resourceId, resourceType = 'advert', participantId, owner, preserveRedirectUrl }) => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const user = useSelector((state) => state.user.user); // Get current user from redux
+  const user = useSelector((state) => state.user.user);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -21,9 +21,9 @@ const SendMessage = ({ advertId, participantId, owner, preserveRedirectUrl }) =>
       return;
     }
 
-    if (!advertId || !participantId) {
-      console.error('Missing required IDs:', { advertId, participantId });
-      toast.error('Advert ID and participantID are required to send a message.');
+    if (!resourceId || !participantId) {
+      console.error('Missing required IDs:', { resourceType, resourceId, participantId });
+      toast.error('Resource ID and participantID are required to send a message.');
       return;
     }
 
@@ -31,8 +31,7 @@ const SendMessage = ({ advertId, participantId, owner, preserveRedirectUrl }) =>
     const toastId = toast.loading('Sending message...');
 
     try {
-      const messageData = { advertId, participantId, message };
-      await dispatch(sendMessage(messageData)).unwrap();
+      await dispatch(sendMessage({ resourceId, resourceType, participantId, message })).unwrap();
       setMessage('');
       toast.update(toastId, {
         render: 'Message sent successfully!',
@@ -62,19 +61,13 @@ const SendMessage = ({ advertId, participantId, owner, preserveRedirectUrl }) =>
 
   return (
     <div className="border p-4 rounded shadow-md bg-white">
-      {/* Title */}
       <h2 className="text-lg font-semibold mb-2">Get in touch</h2>
-
-      {/* Owner Info */}
       <p className="flex items-center mb-2">
         <CgProfile className="mr-2 text-gray-700" size={24} />
         {owner || 'User'}
       </p>
-
-      {/* Enquire Text */}
       <p className="mb-4 text-sm text-gray-600">Enquire about the listing</p>
 
-      {/* Message Input */}
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
@@ -86,7 +79,6 @@ const SendMessage = ({ advertId, participantId, owner, preserveRedirectUrl }) =>
         rows={4}
       />
 
-      {/* Button Section */}
       {user ? (
         <button
           onClick={handleSendMessage}

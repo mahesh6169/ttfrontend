@@ -2,15 +2,19 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchMessages, sendMessage, addNewMessage, markMessageAsRead } from '@/store/slices/messageSlice';
-import socket from '@/config/socket'; // Socket.IO client instance
+import {
+  fetchMessages,
+  sendMessage,
+  addNewMessage,
+  markMessageAsRead,
+} from '@/store/slices/messageSlice';
+import socket from '@/config/socket';
 import { useSearchParams, useParams } from 'next/navigation';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
 const ChatPage = () => {
-  const params = useParams();
-  const advertId = params.id;
+  const { type: resourceType, id: resourceId } = useParams();
   const searchParams = useSearchParams();
   const otherUserId = searchParams.get('otherUser');
 
@@ -22,25 +26,25 @@ const ChatPage = () => {
 
   const { activeConversation, status, error } = useSelector((state) => state.messages);
   const [newMessage, setNewMessage] = useState('');
-
   const messagesEndRef = useRef(null);
 
-  // ✅ Fetch messages only after token validation and user is ready
+  // Fetch messages when ready
   useEffect(() => {
-    if (tokenValidated && currentUserId && advertId && otherUserId) {
-      dispatch(fetchMessages({ advertId, otherUserId }));
+    if (tokenValidated && currentUserId && resourceId && otherUserId && resourceType) {
+      dispatch(fetchMessages({ resourceId, resourceType, otherUserId }));
     }
-  }, [dispatch, tokenValidated, currentUserId, advertId, otherUserId]);
+  }, [dispatch, tokenValidated, currentUserId, resourceId, otherUserId, resourceType]);
 
-  // ✅ Auto-scroll to latest message
+  // Auto-scroll to latest message
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [activeConversation?.messages]);
 
-  // ✅ Determine the role of the current user in this conversation
-  const { owner, participant } = activeConversation?.participants || {};
+  const { resource, participants } = activeConversation || {};
+  const { owner, participant } = participants || {};
+
   const myRole =
     owner?.id === currentUserId
       ? 'owner'
@@ -48,7 +52,7 @@ const ChatPage = () => {
       ? 'participant'
       : null;
 
-  // ✅ Mark messages as read
+  // Emit read receipts
   useEffect(() => {
     if (!activeConversation?.messages || !myRole) return;
 
@@ -60,88 +64,90 @@ const ChatPage = () => {
     });
   }, [activeConversation, myRole]);
 
-  // ✅ Listen for new incoming messages
+  // Handle incoming socket messages
   useEffect(() => {
     const handleNewMessage = (message) => {
-      const alreadyExists = activeConversation?.messages?.some((msg) => msg._id === message._id);
+      const alreadyExists = activeConversation?.messages?.some(
+        (msg) => msg._id === message._id
+      );
       if (!alreadyExists) {
         dispatch(addNewMessage(message));
       }
     };
 
     socket.on('newMessage', handleNewMessage);
-
     return () => socket.off('newMessage', handleNewMessage);
   }, [dispatch, activeConversation]);
 
-  // ✅ Listen for message read updates
+  // Handle messageRead from socket
   useEffect(() => {
-    const handleMessageRead = ({ messageId, userId }) => {
-      dispatch(markMessageAsRead({ messageId, userId }));
+    const handleMessageRead = ({ messageId }) => {
+      dispatch(markMessageAsRead({ messageId }));
     };
 
     socket.on('messageRead', handleMessageRead);
-
     return () => socket.off('messageRead', handleMessageRead);
   }, [dispatch]);
 
-  // ✅ Send message handler
+  // Send message
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
-
-    dispatch(sendMessage({ advertId, participantId: otherUserId, message: newMessage }));
+    dispatch(
+      sendMessage({ resourceType, resourceId, participantId: otherUserId, message: newMessage })
+    );
     setNewMessage('');
   };
 
+  // Reconnect socket if tab was hidden
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && !socket.connected) {
-        console.log('🔄 Reconnecting socket after tab became visible...');
-        socket.connect(); // This triggers reconnection
+        console.log('🔄 Reconnecting socket...');
+        socket.connect();
       }
     };
-  
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
-  
 
-  // ✅ LOADING & GUARDS
+  // Guards
   if (!tokenValidated) return <div className="text-center mt-8">Validating session...</div>;
   if (!currentUserId) return <div className="text-center mt-8">Loading user data...</div>;
   if (status === 'loading') return <div className="text-center mt-8">Loading chat...</div>;
   if (error) return <div className="text-center text-red-500">{error}</div>;
-  if (!activeConversation?.advert) return <div className="text-center text-gray-500">No conversation found.</div>;
+  if (!resource) return <div className="text-center text-gray-500">No conversation found.</div>;
 
   return (
     <div className="w-full max-w-full px-2 sm:px-4">
-      {/* Header with advert image & title */}
+      {/* Header with image & title */}
       <div className="flex items-center gap-3 mb-4">
-        <Link href={`/adverts/views/${advertId}`}>
+        <Link href={`/${resourceType}s/views/${resourceId}`}>
           <img
-            src={activeConversation.advert.image}
-            alt={activeConversation.advert.title}
+            src={resource.image || '/default.jpg'}
+            alt={resource.title}
             className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg cursor-pointer hover:opacity-80 transition duration-200"
           />
         </Link>
-        <Link href={`/adverts/views/${advertId}`}>
+        <Link href={`/${resourceType}s/views/${resourceId}`}>
           <h1 className="text-lg sm:text-2xl font-bold cursor-pointer hover:text-blue-600 transition duration-200">
-            {activeConversation.advert.title}
+            {resource.title}
           </h1>
         </Link>
       </div>
-  
-      {/* Messages container */}
+
+      {/* Messages */}
       <div className="border rounded-lg p-3 mb-4 overflow-y-auto bg-white shadow-md max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-14rem)]">
         {activeConversation.messages.length > 0 ? (
           activeConversation.messages.map((msg) => {
             const isMyMessage = msg.senderRole === myRole;
             const alignment = isMyMessage ? 'justify-end' : 'justify-start';
             const bubbleColor = isMyMessage ? 'bg-green-600 text-white' : 'bg-gray-700 text-white';
-            const senderName = isMyMessage
-              ? (myRole === 'owner' ? owner?.name : participant?.name)
-              : (msg.senderRole === 'owner' ? owner?.name : participant?.name);
-  
+            const senderName =
+              isMyMessage
+                ? (myRole === 'owner' ? owner?.name : participant?.name)
+                : (msg.senderRole === 'owner' ? owner?.name : participant?.name);
+
             return (
               <div key={msg._id} className={`flex ${alignment} mb-2`}>
                 <div
@@ -164,8 +170,8 @@ const ChatPage = () => {
         )}
         <div ref={messagesEndRef} />
       </div>
-  
-      {/* Message input */}
+
+      {/* Input */}
       <div className="flex border rounded-lg shadow bg-white p-2">
         <textarea
           value={newMessage}
@@ -183,7 +189,6 @@ const ChatPage = () => {
       </div>
     </div>
   );
-  
 };
 
 export default ChatPage;

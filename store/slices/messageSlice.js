@@ -3,9 +3,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// Your backend URL for messages
 const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/messages`;
-
 
 /* -------------------------------- Thunks -------------------------------- */
 
@@ -15,10 +13,8 @@ export const fetchConversations = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${BASE_URL}/conversations`, {
-        withCredentials: true, // if using cookies for auth
+        withCredentials: true,
       });
-      // response.data is an array of conversation objects
-      // Each object has: { advert, lastMessage, otherUser }
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -29,16 +25,14 @@ export const fetchConversations = createAsyncThunk(
 );
 
 // 2) Fetch all messages for one conversation
-// Controller expects: /fetch?advertId=...&otherUserId=...
 export const fetchMessages = createAsyncThunk(
   'messages/fetchMessages',
-  async ({ advertId, otherUserId }, { rejectWithValue }) => {
+  async ({ resourceId, resourceType, otherUserId }, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${BASE_URL}/fetch`, {
-        params: { advertId, otherUserId },
+        params: { resourceId, resourceType, otherUserId },
         withCredentials: true,
       });
-      // response.data = { messages: [...], advert: { id, title, image } }
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -48,18 +42,16 @@ export const fetchMessages = createAsyncThunk(
   }
 );
 
-// 3) Send a new message to the conversation
-// Controller expects { advertId, participantId, message }
+// 3) Send a new message
 export const sendMessage = createAsyncThunk(
   'messages/sendMessage',
-  async ({ advertId, participantId, message }, { rejectWithValue }) => {
+  async ({ resourceId, resourceType, participantId, message }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
         `${BASE_URL}/send`,
-        { advertId, participantId, message },
+        { resourceId, resourceType, participantId, message },
         { withCredentials: true }
       );
-      // response.data.data is the newly created message doc
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
@@ -72,13 +64,13 @@ export const sendMessage = createAsyncThunk(
 // 4) Delete a conversation
 export const deleteConversation = createAsyncThunk(
   'messages/deleteConversation',
-  async ({ advertId, otherUserId }, { rejectWithValue }) => {
+  async ({ resourceId, resourceType, otherUserId }, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(`${BASE_URL}/deleteConversation`, {
-        data: { advertId, otherUserId },
+      await axios.delete(`${BASE_URL}/deleteConversation`, {
+        data: { resourceId, resourceType, otherUserId },
         withCredentials: true,
       });
-      return { advertId, otherUserId };
+      return { resourceId, resourceType, otherUserId };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Failed to delete conversation'
@@ -87,122 +79,118 @@ export const deleteConversation = createAsyncThunk(
   }
 );
 
-
-
-
 /* -------------------------------- Slice -------------------------------- */
 
 const messageSlice = createSlice({
   name: 'messages',
   initialState: {
-    conversations: [], // list of all conversation “cards”
+    conversations: [],
     activeConversation: {
-      advert: null,      // { id, title, image } from backend
-      participants: null,   // You’ll set this from the conversation “card” or a separate user fetch
-      messages: [],      // array of the actual message docs
+      resource: null,      // event or advert
+      resourceType: null,  // 'advert' or 'event'
+      participants: null,
+      messages: [],
     },
     status: 'idle',
     error: null,
   },
   reducers: {
-    // Set or update the currently active conversation 
     setActiveConversation(state, { payload }) {
-      // payload might include { advert, otherUser }
       state.activeConversation = {
         ...state.activeConversation,
         ...payload,
       };
     },
-
-    // Completely reset or clear the conversation state
     resetMessagesState(state) {
       state.conversations = [];
       state.activeConversation = {
-        advert: null,
-        otherUser: null,
+        resource: null,
+        resourceType: null,
+        participants: null,
         messages: [],
       };
-      state.loading = false;
+      state.status = 'idle';
       state.error = null;
     },
     addNewMessage(state, { payload }) {
       state.activeConversation.messages.push(payload);
     },
     markMessageAsRead(state, { payload }) {
-      const { messageId, userId } = payload;
+      const { messageId } = payload;
       const message = state.activeConversation.messages.find((msg) => msg._id === messageId);
       if (message) {
-        message.isRead = true; // Ensure this triggers a UI update
-        console.log(`Message ${messageId} updated as read in Redux state`);
+        message.isRead = true;
       }
     },
-    
   },
   extraReducers: (builder) => {
-    /* -------------- fetchConversations -------------- */
-    builder.addCase(fetchConversations.pending, (state) => {
-      state.status = 'loading';
-      state.error = null;
-    });
-    builder.addCase(fetchConversations.fulfilled, (state, { payload }) => {
-      state.status = 'success';
-      // payload is an array of conversation “cards”
-      state.conversations = payload;
-      console.log(payload);
-    });
-    builder.addCase(fetchConversations.rejected, (state, { payload }) => {
-      state.status = 'failed';
-      state.error = payload;
-    });
+    builder
+      .addCase(fetchConversations.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchConversations.fulfilled, (state, { payload }) => {
+        state.status = 'success';
+        state.conversations = payload;
+      })
+      .addCase(fetchConversations.rejected, (state, { payload }) => {
+        state.status = 'failed';
+        state.error = payload;
+      })
 
-    /* -------------- fetchMessages -------------- */
-    builder.addCase(fetchMessages.pending, (state) => {
-      state.status = 'loading';
-      state.error = null;
-    });
-    builder.addCase(fetchMessages.fulfilled, (state, { payload }) => {
-      state.status = 'success';
-      // payload = { messages, advert }
-      const { messages, advert, participants } = payload;
-      // Put them in the activeConversation
-      state.activeConversation.advert = advert; // { id, title, image }
-      state.activeConversation.messages = messages || [];
-      state.activeConversation.participants = participants || null; // Store participants
-    });
-    builder.addCase(fetchMessages.rejected, (state, { payload }) => {
-      state.status = 'failed';
-      state.error = payload;
-    });
+      .addCase(fetchMessages.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchMessages.fulfilled, (state, { payload }) => {
+        const { messages, resourceType, participants } = payload;
+      
+        // Dynamically get the actual resource (advert or event)
+        const resource = payload[resourceType];
+      
+        state.status = 'success';
+        state.activeConversation = {
+          resource,
+          resourceType,
+          participants,
+          messages: messages || [],
+        };
+      })
+      
+      .addCase(fetchMessages.rejected, (state, { payload }) => {
+        state.status = 'failed';
+        state.error = payload;
+      })
 
-    /* -------------- sendMessage -------------- */
-    builder.addCase(sendMessage.pending, (state) => {
-      state.status = 'loading';
-      state.error = null;
-    });
-    builder.addCase(sendMessage.fulfilled, (state, { payload }) => {
-      state.status = 'success';
-      // payload is the newly created message doc
-      // Append it to the current conversation’s messages
-      //state.activeConversation.messages.push(payload);
-    });
-    builder.addCase(sendMessage.rejected, (state, { payload }) => {
-      state.status = 'failed';
-      state.error = payload;
-    })
+      .addCase(sendMessage.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(sendMessage.fulfilled, (state) => {
+        state.status = 'success';
+      })
+      .addCase(sendMessage.rejected, (state, { payload }) => {
+        state.status = 'failed';
+        state.error = payload;
+      })
 
-    /* -------------- deleteConversation -------------- */
-
-    builder.addCase(deleteConversation.fulfilled, (state, { payload }) => {
-      state.conversations = state.conversations.filter(
-        (conv) => conv.advert.id !== payload.advertId || conv.otherUser.id !== payload.otherUserId
-      );
-    });
-
+      .addCase(deleteConversation.fulfilled, (state, { payload }) => {
+        const { resourceId, resourceType, otherUserId } = payload;
+        state.conversations = state.conversations.filter(
+          (conv) =>
+            conv.resource.id !== resourceId ||
+            conv.resourceType !== resourceType ||
+            conv.otherUser.id !== otherUserId
+        );
+      });
   },
 });
 
-/* ------------------------------- Exports ------------------------------- */
-
-export const { setActiveConversation, resetMessagesState, addNewMessage,   markMessageAsRead } = messageSlice.actions;
+export const {
+  setActiveConversation,
+  resetMessagesState,
+  addNewMessage,
+  markMessageAsRead,
+} = messageSlice.actions;
 
 export default messageSlice.reducer;

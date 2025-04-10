@@ -58,12 +58,13 @@ const EventDetail = () => {
 
         {/* Chat Container */}
         <div className="flex-[3] bg-white shadow rounded-none p-4">
-          <SendMessage
-            eventId={id}
-            participantId={selectedEvent.postedBy?._id}
-            owner={selectedEvent.postedBy?.name}
-            preserveRedirectUrl={`/events/views/${id}`}
-          />
+        <SendMessage
+  resourceId={id}
+  resourceType="event"
+  participantId={selectedEvent.postedBy?._id}
+  owner={selectedEvent.postedBy?.name}
+  preserveRedirectUrl={`/events/views/${id}`}
+/>
         </div>
       </div>
     </div>
