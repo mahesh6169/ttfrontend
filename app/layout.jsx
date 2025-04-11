@@ -27,7 +27,7 @@ const MainLayout = ({ children }) => {
 
             {/* Centre Layout*/}
             <div className="flex gap-2">
-              {/* Left Sidebar Ad - Visible only on large screens */}
+              {/* Left Sidebar Ad - Visible only on large screens. */}
               <div className="hidden lg:flex">
                 <LeftAd />
               </div>
