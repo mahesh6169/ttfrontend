@@ -17,7 +17,7 @@ const AdvertFavourites = () => {
   // ✅ Use the full populated wishlist from Redux, not user.wishlist
   const { wishlist, wishlistStatus, wishlistError } = useSelector((state) => state.user);
 
-  // ✅ Fetch wishlist on first load
+  // ✅ Fetch wishlist on first load.
   useEffect(() => {
     dispatch(getWishlist())
       .unwrap()
