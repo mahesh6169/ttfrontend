@@ -12,41 +12,46 @@ import LoadingSpinner from '../LoadingSpinner';
 
 const EventGrid = ({ events, eventStatus }) => {
   const dispatch = useDispatch();
-  const { tokenValidated, user, eventWishlistStatus } = useSelector((state) => state.user);
+  const {
+    tokenValidated,
+    user,
+    eventWishlist,
+    eventWishlistStatus,
+  } = useSelector((state) => state.user);
+
   const isAuthenticated = tokenValidated && !!user?._id;
 
-  // ✅ Fetch event wishlist only once when authenticated
+  // ✅ Fetch wishlist if authenticated and idle
   useEffect(() => {
-    if (isAuthenticated && eventWishlistStatus === 'idle') {
+    if (isAuthenticated) {
       dispatch(getEventWishlist())
         .unwrap()
         .catch((err) => console.error('Failed to fetch event wishlist:', err));
     }
-  }, [dispatch, isAuthenticated, eventWishlistStatus]);
+  }, [dispatch, isAuthenticated]);
 
-  // 🧠 Shortcut access to eventWishlist from Redux state
-  const eventWishlist = useSelector((state) => state.user.eventWishlist);
-
-  // ✅ Toggle event wishlist handler
+  // ✅ Handle toggle
   const handleWishlistToggle = async (eventId) => {
     if (!isAuthenticated) {
       alert('Please log in to use the wishlist feature.');
       return;
     }
-  
+
     try {
-      const isInWishlist = eventWishlist?.includes(eventId.toString());
+      const isInWishlist = user?.eventWishlist?.includes(eventId.toString());
       if (isInWishlist) {
         await dispatch(removeFromEventWishlist({ eventId })).unwrap();
       } else {
         await dispatch(addToEventWishlist({ eventId })).unwrap();
       }
+      // ✅ Refresh wishlist to reflect updates (optional if using optimistic update)
+      await dispatch(getEventWishlist()).unwrap();
     } catch (error) {
       console.error('Error updating event wishlist:', error);
     }
   };
 
-  // 🔁 Loading spinner if still loading
+  // ⏳ Loading
   if (eventStatus === 'loading' || eventWishlistStatus === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -55,7 +60,7 @@ const EventGrid = ({ events, eventStatus }) => {
     );
   }
 
-  // 🚫 No events
+  // 😐 No events
   if (!events || events.length === 0) {
     return (
       <div className="flex justify-center items-center text-center p-8">
@@ -64,23 +69,15 @@ const EventGrid = ({ events, eventStatus }) => {
     );
   }
 
-  // ✅ Render event cards
-console.log('✔ Wishlist from Redux:', eventWishlist);
-events.forEach((event) => {
-  console.log('🎫 Event ID:', event._id?.toString());
-  console.log('💖 isInWishlist:', eventWishlist?.includes(event._id?.toString()));
-});
-
-
-  // ✅ Render event cards
+  // ✅ Render events
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6 lg:gap-8 w-full max-w-full overflow-hidden">
       {events.map((event) => (
         <EventCard
           key={event._id}
           event={event}
-          isInWishlist={eventWishlist?.includes(event._id.toString())}
-          onWishlistToggle={() => handleWishlistToggle(event._id?.toString())}
+          isInWishlist={eventWishlist?.some((e) => e._id === event._id)}
+          onWishlistToggle={() => handleWishlistToggle(event._id)}
         />
       ))}
     </div>

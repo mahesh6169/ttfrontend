@@ -8,7 +8,7 @@ import LoadingSpinner from '../LoadingSpinner';
 
 const AdvertList = ({ adverts, advertStatus }) => {
   const dispatch = useDispatch();
-  const { tokenValidated, user, status: userStatus, wishlistStatus } = useSelector((state) => state.user);
+  const { tokenValidated, user, status: userStatus, advertWishlist, advertWishlistStatus } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user._id;
 
   // Fetch wishlist if authenticated
@@ -26,12 +26,14 @@ const AdvertList = ({ adverts, advertStatus }) => {
     }
   
     try {
-      const isInWishlist = user?.wishlist?.includes(advertId.toString());
+      const isInWishlist = advertWishlist?.some((adv) => adv._id === advertId);
       if (isInWishlist) {
         await dispatch(removeFromWishlist({ advertId })).unwrap();
       } else {
         await dispatch(addToWishlist({ advertId })).unwrap();
       }
+        // ✅ Refresh the list immediately
+    await dispatch(getWishlist()).unwrap();
     } catch (error) {
       console.error('Error updating wishlist:', error);
     }
@@ -63,7 +65,7 @@ const AdvertList = ({ adverts, advertStatus }) => {
         <AdvertCard
           key={advert._id}
           advert={advert}
-          isInWishlist={user?.wishlist?.includes(advert._id.toString())}
+          isInWishlist={advertWishlist?.some((adv) => adv._id === advert._id)}
           onWishlistToggle={() => handleWishlistToggle(advert._id)}
         />
       ))}

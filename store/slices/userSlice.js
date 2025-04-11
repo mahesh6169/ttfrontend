@@ -241,6 +241,53 @@ export const getWishlist = createAsyncThunk(
   }
 );
 
+// Get event wishlist
+export const getEventWishlist = createAsyncThunk(
+  'user/getEventWishlist',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/eventwishlist`, { withCredentials: true });
+      return res.data.wishlist;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch event wishlist');
+    }
+  }
+);
+
+// Add event to wishlist
+export const addToEventWishlist = createAsyncThunk(
+  'user/addToEventWishlist',
+  async ({ eventId }, { rejectWithValue }) => {
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/eventwishlist/add`,
+        { eventId },
+        { withCredentials: true }
+      );
+      return res.data.eventWishlist;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to add event to wishlist');
+    }
+  }
+);
+
+// Remove event from wishlist
+export const removeFromEventWishlist = createAsyncThunk(
+  'user/removeFromEventWishlist',
+  async ({ eventId }, { rejectWithValue }) => {
+    try {
+      const res = await axios.delete(`${API_BASE_URL}/eventwishlist/remove`, {
+        data: { eventId },
+        withCredentials: true,
+      });
+      return res.data.eventWishlist;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to remove event from wishlist');
+    }
+  }
+);
+
+
 //Thunk to Password Reset OTP
 export const sendResetOtp = createAsyncThunk(
   'user/sendResetOtp',
@@ -376,51 +423,6 @@ export const deleteUserAccount = createAsyncThunk(
   }
 );
 
-// Get event wishlist
-export const getEventWishlist = createAsyncThunk(
-  'user/getEventWishlist',
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/eventwishlist`, { withCredentials: true });
-      return res.data.wishlist;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch event wishlist');
-    }
-  }
-);
-
-// Add event to wishlist
-export const addToEventWishlist = createAsyncThunk(
-  'user/addToEventWishlist',
-  async ({ eventId }, { rejectWithValue }) => {
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/eventwishlist/add`,
-        { eventId },
-        { withCredentials: true }
-      );
-      return res.data.eventWishlist;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to add event to wishlist');
-    }
-  }
-);
-
-// Remove event from wishlist
-export const removeFromEventWishlist = createAsyncThunk(
-  'user/removeFromEventWishlist',
-  async ({ eventId }, { rejectWithValue }) => {
-    try {
-      const res = await axios.delete(`${API_BASE_URL}/eventwishlist/remove`, {
-        data: { eventId },
-        withCredentials: true,
-      });
-      return res.data.eventWishlist;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to remove event from wishlist');
-    }
-  }
-);
 
 
 
@@ -439,9 +441,9 @@ const initialState = {
   updateAccountMessage: null,
   deleteStatus: 'idle',
   deleteError: null,
-  wishlist: [],
-  wishlistStatus: 'idle',
-  wishlistError: null,
+  advertWishlist: [],
+  advertWishlistStatus: 'idle',
+  advertWishlistError: null,
   eventWishlist: [],
   eventWishlistStatus: 'idle',
   eventWishlistError: null,
@@ -588,58 +590,62 @@ const userSlice = createSlice({
       })
 
       // ✅ ADD to Advert Wishlist (match event logic)
-.addCase(addToWishlist.pending, (state) => {
-  state.wishlistStatus = 'loading';
-  state.wishlistError = null;
-})
-.addCase(addToWishlist.fulfilled, (state, { payload }) => {
-  state.wishlistStatus = 'success';
-  state.user = {
-    ...state.user,
-    wishlist: payload.map((id) => id.toString()), // IDs only
-  };
-})
-.addCase(addToWishlist.rejected, (state, { payload }) => {
-  state.wishlistStatus = 'failed';
-  state.wishlistError = payload;
-})
+      .addCase(addToWishlist.pending, (state) => {
+        state.advertWishlistStatus = 'loading';
+        state.advertWishlistError = null;
+      })
+      .addCase(addToWishlist.fulfilled, (state, { payload }) => {
+        state.advertWishlistStatus = 'success';
+        state.user = {
+          ...state.user,
+          advertWishlist: payload.map((id) => id.toString()), // IDs only
+        };
+        state.advertWishlist = state.advertWishlist.filter(
+          (adv) => payload.includes(adv._id.toString())
+        );        
+      })
+      .addCase(addToWishlist.rejected, (state, { payload }) => {
+        state.advertWishlistStatus = 'failed';
+        state.advertWishlistError = payload;
+      })
 
-// ✅ REMOVE from Advert Wishlist (match event logic)
-.addCase(removeFromWishlist.pending, (state) => {
-  state.wishlistStatus = 'loading';
-  state.wishlistError = null;
-})
-.addCase(removeFromWishlist.fulfilled, (state, { payload }) => {
-  state.wishlistStatus = 'success';
-  state.user = {
-    ...state.user,
-    wishlist: payload.map((id) => id.toString()),
-  };
-})
-.addCase(removeFromWishlist.rejected, (state, { payload }) => {
-  state.wishlistStatus = 'failed';
-  state.wishlistError = payload;
-})
+      // ✅ REMOVE from Advert Wishlist (match event logic)
+      .addCase(removeFromWishlist.pending, (state) => {
+        state.advertWishlistStatus = 'loading';
+        state.advertWishlistError = null;
+      })
+      .addCase(removeFromWishlist.fulfilled, (state, { payload }) => {
+        state.advertWishlistStatus = 'success';
+        state.user = {
+          ...state.user,
+          advertWishlist: payload.map((id) => id.toString()),
+        };
+        state.advertWishlist = state.advertWishlist.filter(
+          (adv) => payload.includes(adv._id.toString())
+        );
+      })
+      .addCase(removeFromWishlist.rejected, (state, { payload }) => {
+        state.advertWishlistStatus = 'failed';
+        state.advertWishlistError = payload;
+      })
 
-// ✅ GET Advert Wishlist
-.addCase(getWishlist.pending, (state) => {
-  state.wishlistStatus = 'loading';
-  state.wishlistError = null;
-})
-.addCase(getWishlist.fulfilled, (state, { payload }) => {
-  state.wishlistStatus = 'success';
-  state.wishlist = payload; // full advert objects
-  state.user = {
-    ...state.user,
-    wishlist: payload.map((adv) => adv._id.toString()),
-  };
-})
-.addCase(getWishlist.rejected, (state, { payload }) => {
-  state.wishlistStatus = 'failed';
-  state.wishlistError = payload;
-})
-
-
+      // ✅ GET Advert Wishlist
+      .addCase(getWishlist.pending, (state) => {
+        state.advertWishlistStatus = 'loading';
+        state.advertWishlistError = null;
+      })
+      .addCase(getWishlist.fulfilled, (state, { payload }) => {
+        state.advertWishlistStatus = 'success';
+        state.advertWishlist = payload; // full advert objects
+        state.user = {
+          ...state.user,
+          advertWishlist: payload.map((adv) => adv._id.toString()),
+        };
+      })
+      .addCase(getWishlist.rejected, (state, { payload }) => {
+        state.advertWishlistStatus = 'failed';
+        state.advertWishlistError = payload;
+      })
 
 
       // Send reset OTP cases
@@ -722,7 +728,11 @@ const userSlice = createSlice({
       })
       .addCase(getEventWishlist.fulfilled, (state, { payload }) => {
         state.eventWishlistStatus = 'success';
-        state.eventWishlist = payload.map((event) => event._id.toString());
+        state.eventWishlist = payload;
+        state.user = {
+          ...state.user,
+          eventWishlist: payload.map((event) => event._id.toString()),
+        };
       })
       .addCase(getEventWishlist.rejected, (state, { payload }) => {
         state.eventWishlistStatus = 'failed';
@@ -736,12 +746,19 @@ const userSlice = createSlice({
       })
       .addCase(addToEventWishlist.fulfilled, (state, { payload }) => {
         state.eventWishlistStatus = 'success';
-        state.eventWishlist = payload;// Just store IDs
+        state.user = {
+          ...state.user,
+          eventWishlist: payload.map((id) => id.toString()),
+        };
+        state.eventWishlist = state.eventWishlist.filter(
+          (event) => payload.includes(event._id.toString())
+        );
       })
       .addCase(addToEventWishlist.rejected, (state, { payload }) => {
         state.eventWishlistStatus = 'failed';
         state.eventWishlistError = payload;
       })
+
 
       // ✅ REMOVE from Event Wishlist
       .addCase(removeFromEventWishlist.pending, (state) => {
@@ -750,7 +767,13 @@ const userSlice = createSlice({
       })
       .addCase(removeFromEventWishlist.fulfilled, (state, { payload }) => {
         state.eventWishlistStatus = 'success';
-        state.eventWishlist = payload;// Just store IDs
+        state.user = {
+          ...state.user,
+          eventWishlist: payload.map((id) => id.toString()),
+        };
+        state.eventWishlist = state.eventWishlist.filter(
+          (event) => payload.includes(event._id.toString())
+        );
       })
       .addCase(removeFromEventWishlist.rejected, (state, { payload }) => {
         state.eventWishlistStatus = 'failed';
