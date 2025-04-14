@@ -3,12 +3,32 @@ import { MdLocationOn } from 'react-icons/md';
 import { FaFontAwesomeFlag } from 'react-icons/fa';
 import { BsChatRightDots } from 'react-icons/bs';
 import Link from 'next/link';
+import { format, differenceInDays } from 'date-fns';
 
 const AdvertCard = ({ advert, onWishlistToggle, isInWishlist}) => {
   const postedByName = advert.postedBy?.name || 'Guest';
 
+  const postedDaysAgo = differenceInDays(new Date(), new Date(advert.createdAt));
+  const postedText = postedDaysAgo <= 15
+    ? `${postedDaysAgo === 0 ? 'Today' : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`}`
+    : format(new Date(advert.createdAt), 'dd MMM yyyy');
+
+  // 📦 Determine which price to display
+let priceLabel = null;
+
+if (advert.isForSale && advert.sellPrice > 0) {
+  priceLabel = `$${advert.sellPrice}`;
+} else if (advert.isForHire && advert.hirePrice > 0) {
+  priceLabel = `$${advert.hirePrice} p/${advert.hireUnit}`;
+} else if (advert.isForRent && advert.rentPrice > 0) {
+  priceLabel = `$${advert.rentPrice} p/${advert.rentUnit}`;
+} else if (advert.isForShare && advert.sharePrice > 0) {
+  priceLabel = `$${advert.sharePrice} p/${advert.shareUnit}`;
+}
+
+
   return (
-<div className="relative border rounded-lg shadow-md p-4 bg-gray-50 w-full">
+<div className="relative border rounded-lg shadow-md p-4 bg-gray-100 hover:bg-gray-200 w-full">
   {/* Wishlist Button - Top Right */}
   <button
     onClick={onWishlistToggle}
@@ -33,20 +53,11 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist}) => {
     )}
 
     {/* Price Box - Positioned on Top of Image */}
-    {(advert.isForSale && advert.sellPrice > 0) ||
- (advert.isForHire && advert.hirePrice > 0) ||
- (advert.isForRent && advert.rentPrice > 0) ||
- (advert.isForShare && advert.sharePrice > 0) ? (
-  <div className="absolute top-2 left-2 bg-gray-900 text-white font-bold px-2 py-1 rounded-md text-sm sm:text-base md:text-lg">
-    {advert.isForSale
-      ? `$${advert.sellPrice}`
-      : advert.isForHire
-      ? `$${advert.hirePrice} p/${advert.hireUnit}`
-      : advert.isForRent
-      ? `$${advert.rentPrice} p/${advert.rentUnit}`
-      : `$${advert.sharePrice} p/${advert.shareUnit}`}
+    {priceLabel && (
+  <div className="absolute top-2 left-2 bg-gray-300 text-gray-900 font-bold px-2 py-1 rounded-md text-sm sm:text-base md:text-lg">
+    {priceLabel}
   </div>
-) : null}
+)}
 
   </div>
 
@@ -56,27 +67,22 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist}) => {
   </h2>
 
   {/* Address Box */}
-  <div className="flex items-center text-gray-600 text-sm truncate mt-2">
-    <MdLocationOn className="text-lg mr-2 flex-shrink-0" />
-    {advert.address?.suburb || advert.address?.state
-      ? [advert.address?.suburb, advert.address?.state].filter(Boolean).join(', ')
-      : 'Address not available'}
+  <div className="flex justify-between items-center text-gray-600 text-sm mt-2">
+  {/* Location block */}
+  <div className="flex items-center gap-1 truncate">
+    <MdLocationOn className="text-lg flex-shrink-0" />
+    <span>
+      {advert.address?.suburb || advert.address?.state
+        ? [advert.address?.suburb, advert.address?.state].filter(Boolean).join(', ')
+        : 'Address not available'}
+    </span>
   </div>
 
-  {/* Chat & Report Box */}
-  <div className="flex justify-between mt-4">
-    {/* Chat */}
-    <div className="text-gray-600 flex flex-col items-center text-sm sm:text-base md:text-lg">
-      <BsChatRightDots className="mb-1" size={20} />
-      <span>Chat</span>
-    </div>
+  {/* Posted date */}
+  <div className="text-xs text-gray-500 whitespace-nowrap">{postedText}</div>
+</div>
 
-    {/* Report */}
-    <div className="text-gray-600 flex flex-col items-center text-sm sm:text-base md:text-lg">
-      <FaFontAwesomeFlag className="mb-1" size={20} />
-      <span>Report</span>
-    </div>
-  </div>
+
   </Link>
 </div>
   );

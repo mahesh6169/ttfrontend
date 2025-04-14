@@ -154,12 +154,12 @@ const HomePage = () => {
       {/* Post New Advert */}
       <Link
         href="/adverts/add"
-        className="block my-2 p-2 bg-blue-600 text-white lg:w-1/4 text-center rounded"
+        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
       >
         + Post New Advertisement
       </Link>
 
-      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
+      <h1 className="text-lg md:text-2xl  mb-2 text-center  text-gray-900 font-semibold">
         Discover Adverts
       </h1>
 
@@ -168,23 +168,23 @@ const HomePage = () => {
         <button
           onClick={() => handleFilterModeChange('input')}
           className={` text-xs md:text-base p-1 rounded ${
-            filterMode === 'input' ? 'bg-gray-950 text-white' : 'bg-gray-200'
+            filterMode === 'input' ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'
           }`}
         >
           Search All
         </button>
         <button
           onClick={() => handleFilterModeChange('icons')}
-          className={`text-xs md:text-base p-1 rounded ${
-            filterMode === 'icons' ? 'bg-gray-950 text-white' : 'bg-gray-200'
+          className={`text-sm md:text-base p-1 rounded ${
+            filterMode === 'icons' ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'
           }`}
         >
           Browse Categories
         </button>
         <button
           onClick={() => handleFilterModeChange('cities')}
-          className={`text-xs md:text-base px-1 rounded ${
-            filterMode === 'cities' ? 'bg-gray-950 text-white' : 'bg-gray-200'
+          className={`text-sm md:text-base px-1 rounded ${
+            filterMode === 'cities' ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'
           }`}
         >
           Browse Cities
@@ -193,8 +193,8 @@ const HomePage = () => {
 
       {/* Input Filter Section */}
       {filterMode === 'input' && (
-        <div className="flex flex-col md:flex-row gap-4 mb-4 justify-center">
-          <SelectSlider
+        <div className=" text-sm lg:text-base p-1 w-full  flex flex-col md:flex-row gap-4 mb-4 justify-center">
+          <SelectSlider  
             options={[
               'All Categories',
               ...categoryIcons.map((cat) => cat.name),
@@ -249,11 +249,12 @@ const HomePage = () => {
           {/* Clear All Button */}
           <button
             type="button"
-            className="bg-blue-900 text-white px-4 py-2 rounded hover:bg-blue-950"
+            className="bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200 "
             onClick={handleClearAll}
           >
             Clear All
           </button>
+          
         </div>
       )}
 

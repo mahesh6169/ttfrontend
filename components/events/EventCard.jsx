@@ -2,21 +2,29 @@ import React from 'react';
 import Link from 'next/link';
 import { MdLocationOn } from 'react-icons/md';
 import { BsCalendar2Event } from 'react-icons/bs';
-import { FaHeart, FaFontAwesomeFlag } from 'react-icons/fa';
-import { BsChatRightDots } from 'react-icons/bs';
+import { FaHeart } from 'react-icons/fa';
+import { format, differenceInDays } from 'date-fns';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
-  const { title, dateTime, venue, address, images } = event;
+  const { title, dateTime, venue, address, images, createdAt, timeZone } = event;
 
-  const date = new Date(dateTime).toLocaleString('en-AU', {
+  // 🕒 Format event date
+  const formattedDate = new Date(dateTime).toLocaleString('en-AU', {
     dateStyle: 'medium',
     timeStyle: 'short',
-    timeZone: event.timeZone || 'Australia/Sydney',
+    timeZone: timeZone || 'Australia/Sydney',
   });
 
+  // 🗓️ Calculate how long ago the event was posted
+  const postedDaysAgo = differenceInDays(new Date(), new Date(createdAt));
+  const postedText =
+    postedDaysAgo <= 15
+      ? `${postedDaysAgo === 0 ? 'Today' : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`}`
+      : format(new Date(createdAt), 'dd MMM yyyy');
+
   return (
-    <div className="relative border rounded-lg shadow-md p-4 bg-white hover:shadow-lg w-full">
-      {/* Wishlist Button - Top Right */}
+    <div className="relative border rounded-lg shadow-md p-4 bg-gray-100 hover:bg-gray-200 w-full">
+      {/* Wishlist Button */}
       <button
         onClick={onWishlistToggle}
         className={`absolute top-2 right-2 text-white p-2 rounded-full z-10 ${
@@ -31,7 +39,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         />
       </button>
 
-      {/* Main Content */}
+      {/* Main Card */}
       <Link href={`/events/views/${event._id}`} className="block">
         {/* Image */}
         <div className="w-full h-40 md:h-52 relative">
@@ -51,31 +59,19 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         {/* Title */}
         <h2 className="mt-3 font-semibold text-base md:text-lg truncate">{title}</h2>
 
-        {/* Date and Time */}
+        {/* Date & Time */}
         <div className="flex items-center text-sm text-gray-600 mt-1">
           <BsCalendar2Event className="mr-2" />
-          <span>{date}</span>
+          <span>{formattedDate}</span>
         </div>
 
-        {/* Location */}
-        <div className="flex items-center text-sm text-gray-600 mt-1">
-          <MdLocationOn className="mr-2" />
-          <span>{address?.suburb || address?.state || venue}</span>
-        </div>
-
-        {/* Chat & Report Icons */}
-        <div className="flex justify-between mt-4 text-gray-600">
-          {/* Chat */}
-          <div className="flex flex-col items-center text-sm sm:text-base md:text-lg">
-            <BsChatRightDots className="mb-1" size={20} />
-            <span>Chat</span>
+        {/* Location & Posted Info */}
+        <div className="flex items-center justify-between text-sm text-gray-600 mt-1">
+          <div className="flex items-center gap-1 truncate">
+            <MdLocationOn />
+            <span>{address?.suburb || address?.state || venue}</span>
           </div>
-
-          {/* Report */}
-          <div className="flex flex-col items-center text-sm sm:text-base md:text-lg">
-            <FaFontAwesomeFlag className="mb-1" size={20} />
-            <span>Report</span>
-          </div>
+          <div className="text-xs text-gray-500 whitespace-nowrap">{postedText}</div>
         </div>
       </Link>
     </div>

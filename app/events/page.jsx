@@ -95,12 +95,12 @@ const EventsPage = () => {
     <div className="flex flex-col">
       <Link
         href="/events/add"
-        className="block my-2 p-2 bg-green-600 text-white lg:w-1/4 text-center rounded"
+        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
       >
         + Post New Event
       </Link>
 
-      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">Browse Events</h1>
+      <h1 className="text-lg md:text-2xl  mb-2 text-center  text-gray-900 font-semibold">Browse Events</h1>
 
       <div className="flex justify-center gap-4 mb-4">
         {['input', 'icons', 'cities'].map((mode) => (
@@ -108,7 +108,7 @@ const EventsPage = () => {
             key={mode}
             onClick={() => handleFilterModeChange(mode)}
             className={`text-xs md:text-base p-1 rounded ${
-              filterMode === mode ? 'bg-gray-950 text-white' : 'bg-gray-200'
+              filterMode === mode ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'
             }`}
           >
             {mode === 'input' ? 'Search All' : mode === 'icons' ? 'Browse Categories' : 'Browse Cities'}
@@ -117,7 +117,7 @@ const EventsPage = () => {
       </div>
 
       {filterMode === 'input' && (
-        <div className="flex flex-col md:flex-row gap-4 mb-4 justify-center">
+        <div className="text-sm lg:text-base p-1 w-full flex flex-col md:flex-row gap-4 mb-4 justify-center">
           <SelectSlider
             options={['All Categories', ...CATEGORY_OPTIONS]}
             value={category || 'All Categories'}
@@ -157,7 +157,7 @@ const EventsPage = () => {
 
           <button
             type="button"
-            className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800"
+            className="bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200"
             onClick={handleClearAll}
           >
             Clear All

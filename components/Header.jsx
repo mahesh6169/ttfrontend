@@ -136,7 +136,7 @@ const NavLink = ({ href, icon, text, pathname, mobile = false, onClick }) => {
       href={href}
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2 rounded 
-        ${isActive ? 'bg-gray-950 text-white' : 'hover:bg-gray-200'} 
+        ${isActive ? 'bg-gray-300 text-gray-900' : 'hover:bg-gray-200 hover:text-gray-900'} 
         ${mobile ? 'text-sm' : ''}`}
     >
       {icon && <span>{icon}</span>}

@@ -123,125 +123,177 @@ const AddEventPage = () => {
   };
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Add New Event</h1>
-      {!isLoggedIn ? (
-  <div className="text-center bg-yellow-50 p-6 rounded border border-yellow-200">
-    <p className="text-lg text-gray-700 mb-2">
-      Please{' '}
-      <Link
-        href="/users/login?preserveRedirect=true"
-        className="text-blue-600 underline"
-        onClick={() => localStorage.setItem('redirectAfterLogin', '/events/add')}
-      >
-        Login
-      </Link>{' '}
-      or{' '}
-      <Link
-        href="/users/register?preserveRedirect=true"
-        className="text-blue-600 underline"
-        onClick={() => localStorage.setItem('redirectAfterLogin', '/events/add')}
-      >
-        Register
-      </Link>{' '}
-      to add a new event.
-    </p>
-  </div>
-) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {[
-            'title',
-            'venue',
-            'description',
-            'organiserName',
-            'organiserEmail',
-            'organiserWebsite',
-            'organiserPrimaryContactName',
-            'organiserPrimaryContactPhone',
-            'organiserSecondaryContactName',
-            'organiserSecondaryContactPhone',
-          ].map((field) => (
-            <div key={field}>
-              <label className="block font-semibold">
-                {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-              </label>
-              <input
-                type={field.includes('Email') ? 'email' : 'text'}
-                name={field}
-                value={formData[field]}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-          ))}
+  <div className="p-8 max-w-2xl mx-auto">
+    <h1 className="text-2xl font-bold mb-4">Add New Event</h1>
 
-          <div>
-            <label className="block font-semibold">Category</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-            >
-              <option value="" disabled>Select a category</option>
-              {CATEGORY_OPTIONS.map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
+    {!isLoggedIn ? (
+      <div className="text-center bg-yellow-50 p-6 rounded border border-yellow-200">
+        <p className="text-lg text-gray-700 mb-2">
+          Please{' '}
+          <Link
+            href="/users/login?preserveRedirect=true"
+            className="text-blue-600 underline"
+            onClick={() => localStorage.setItem('redirectAfterLogin', '/events/add')}
+          >
+            Login
+          </Link>{' '}
+          or{' '}
+          <Link
+            href="/users/register?preserveRedirect=true"
+            className="text-blue-600 underline"
+            onClick={() => localStorage.setItem('redirectAfterLogin', '/events/add')}
+          >
+            Register
+          </Link>{' '}
+          to add a new event.
+        </p>
+      </div>
+    ) : (
+      <form onSubmit={handleSubmit} className="space-y-4">
 
-          <div>
-            <label className="block font-semibold">Date & Time</label>
+        {/* 1. Title */}
+        <div>
+          <label className="block font-semibold">Title</label>
+          <input
+            type="text"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        {/* 2. Date & Time */}
+        <div>
+          <label className="block font-semibold">Date & Time</label>
+          <input
+            type="datetime-local"
+            name="dateTime"
+            value={formData.dateTime}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        {/* 3. Time Zone */}
+        <div>
+          <label className="block font-semibold">Time Zone</label>
+          <select
+            name="timeZone"
+            value={formData.timeZone}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="" disabled>Select time zone</option>
+            {AU_TIMEZONES.map((tz) => (
+              <option key={tz.key} value={tz.value}>
+                {tz.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 4. Category */}
+        <div>
+          <label className="block font-semibold">Category</label>
+          <select
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="" disabled>Select a category</option>
+            {CATEGORY_OPTIONS.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* 5. Venue */}
+        <div>
+          <label className="block font-semibold">Venue</label>
+          <input
+            type="text"
+            name="venue"
+            value={formData.venue}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        {/* 6. Address */}
+        <AddressInput
+          formData={formData}
+          setFormData={setFormData}
+          focusedField={focusedField}
+          handleFocus={handleFocus}
+          handleBlur={handleBlur}
+        />
+
+        {/* 7–13. Organiser Fields */}
+        {[
+          'organiserName',
+          'organiserEmail',
+          'organiserWebsite',
+          'organiserPrimaryContactName',
+          'organiserPrimaryContactPhone',
+          'organiserSecondaryContactName',
+          'organiserSecondaryContactPhone',
+        ].map((field) => (
+          <div key={field}>
+            <label className="block font-semibold">
+              {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+            </label>
             <input
-              type="datetime-local"
-              name="dateTime"
-              value={formData.dateTime}
+              type={field.includes('Email') ? 'email' : 'text'}
+              name={field}
+              value={formData[field]}
               onChange={handleChange}
               className="w-full p-2 border rounded"
             />
           </div>
+        ))}
 
-          <div>
-            <label className="block font-semibold">Time Zone</label>
-            <select
-              name="timeZone"
-              value={formData.timeZone}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-            >
-              <option value="" disabled>Select time zone</option>
-              {AU_TIMEZONES.map((tz) => (
-  <option key={tz.key} value={tz.value}>
-    {tz.label}
-  </option>
-))}
+        {/* 14. Upload Images */}
+        <ImageUploader
+          preview={preview}
+          setPreview={setPreview}
+          formData={formData}
+          setFormData={setFormData}
+        />
 
-            </select>
-          </div>
-
-          <AddressInput
-            formData={formData}
-            setFormData={setFormData}
-            focusedField={focusedField}
-            handleFocus={handleFocus}
-            handleBlur={handleBlur}
+        {/* 15. Description */}
+        <div>
+          <label className="block font-semibold">Description</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            className="w-full p-2 border rounded min-h-[100px]"
           />
+        </div>
 
-          <ImageUploader
-            preview={preview}
-            setPreview={setPreview}
-            formData={formData}
-            setFormData={setFormData}
-          />
+        {/* Buttons */}
+        <div className="flex gap-4 mt-4">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Add Event
+          </button>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    )}
+  </div>
+);
 
-          <div className="flex gap-4 mt-4">
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Event</button>
-            <button type="button" onClick={() => router.back()} className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">Cancel</button>
-          </div>
-        </form>
-      )}
-    </div>
-  );
 };
 
 export default AddEventPage;

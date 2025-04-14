@@ -71,6 +71,7 @@ const EventGrid = ({ events, eventStatus }) => {
 
   // ✅ Render events
   return (
+    <div className="w-full">
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6 lg:gap-8 w-full max-w-full overflow-hidden">
       {events.map((event) => (
         <EventCard
@@ -80,6 +81,7 @@ const EventGrid = ({ events, eventStatus }) => {
           onWishlistToggle={() => handleWishlistToggle(event._id)}
         />
       ))}
+    </div>
     </div>
   );
 };

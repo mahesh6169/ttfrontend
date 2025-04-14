@@ -1,80 +1,57 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  const [blockSize, setBlockSize] = useState(3);
+
+  useEffect(() => {
+    const updateBlockSize = () => {
+      const width = window.innerWidth;
+      if (width >= 1024) {
+        setBlockSize(7); // lg and up
+      } else {
+        setBlockSize(5); // default, sm, md
+      }
+    };
+
+    updateBlockSize(); // Initial call
+    window.addEventListener('resize', updateBlockSize);
+    return () => window.removeEventListener('resize', updateBlockSize);
+  }, []);
+
   if (!totalPages || totalPages <= 1) return null;
 
+  const currentBlock = Math.floor((currentPage - 1) / blockSize);
+  const startPage = currentBlock * blockSize + 1;
+  const endPage = Math.min(startPage + blockSize - 1, totalPages);
+
   const pages = [];
-
-  const addEllipsis = (key) => (
-    <span key={key} className="px-2">
-      ...
-    </span>
-  );
-
-  if (totalPages <= 15) {
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => onPageChange(i)}
-          className={`px-3 py-1 rounded ${
-            i === currentPage ? 'bg-blue-600 text-white' : 'bg-gray-200'
-          }`}
-        >
-          {i}
-        </button>
-      );
-    }
-  } else {
+  for (let i = startPage; i <= endPage; i++) {
     pages.push(
       <button
-        key={1}
-        onClick={() => onPageChange(1)}
-        className={`px-3 py-1 rounded ${
-          currentPage === 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'
+        key={i}
+        onClick={() => onPageChange(i)}
+        className={`text-xs lg:text-base px-2 md:px-3 py-1 rounded ${
+          i === currentPage ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'
         }`}
       >
-        1
-      </button>
-    );
-
-    if (currentPage > 5) {
-      pages.push(addEllipsis('start'));
-    }
-
-    const startPage = Math.max(2, currentPage - 2);
-    const endPage = Math.min(totalPages - 1, currentPage + 2);
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => onPageChange(i)}
-          className={`px-3 py-1 rounded ${
-            i === currentPage ? 'bg-blue-600 text-white' : 'bg-gray-200'
-          }`}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    if (currentPage < totalPages - 4) {
-      pages.push(addEllipsis('end'));
-    }
-
-    pages.push(
-      <button
-        key={totalPages}
-        onClick={() => onPageChange(totalPages)}
-        className={`px-3 py-1 rounded ${
-          currentPage === totalPages ? 'bg-blue-600 text-white' : 'bg-gray-200'
-        }`}
-      >
-        {totalPages}
+        {i}
       </button>
     );
   }
+
+  const handleNextBlock = () => {
+    const nextBlockStart = (currentBlock + 1) * blockSize + 1;
+    if (nextBlockStart <= totalPages) {
+      onPageChange(nextBlockStart);
+    }
+  };
+
+  const handlePrevBlock = () => {
+    const prevBlockStart = (currentBlock - 1) * blockSize + 1;
+    if (prevBlockStart >= 1) {
+      onPageChange(prevBlockStart);
+    }
+  };
 
   return (
     <div className="flex items-center justify-center gap-2 mt-6 flex-wrap">
@@ -82,29 +59,35 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(1)}
         disabled={currentPage === 1}
-        className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
-      >
+        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded 
+             bg-gray-300 text-gray-900 font-semibold
+             disabled:text-gray-100 disabled:opacity-60"
+>
         First
       </button>
 
-      {/* Prev */}
+      {/* Prev Block */}
       <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
-      >
+        onClick={handlePrevBlock}
+        disabled={currentBlock === 0}
+        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded 
+             bg-gray-300 text-gray-900 font-semibold
+             disabled:text-gray-100 disabled:opacity-60"
+>
         Prev
       </button>
 
       {/* Page Numbers */}
       {pages}
 
-      {/* Next */}
+      {/* Next Block */}
       <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
-      >
+        onClick={handleNextBlock}
+        disabled={(currentBlock + 1) * blockSize >= totalPages}
+        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded 
+             bg-gray-300 text-gray-900 font-semibold
+             disabled:text-gray-100 disabled:opacity-60"
+>
         Next
       </button>
 
@@ -112,8 +95,10 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(totalPages)}
         disabled={currentPage === totalPages}
-        className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
-      >
+        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded 
+             bg-gray-300 text-gray-900 font-semibold
+             disabled:text-gray-100 disabled:opacity-60"
+>
         Last
       </button>
     </div>

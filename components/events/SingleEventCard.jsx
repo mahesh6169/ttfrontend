@@ -9,6 +9,7 @@ import {
   addToEventWishlist,
   removeFromEventWishlist,
 } from '@/store/slices/userSlice';
+import { format, differenceInDays } from 'date-fns';
 
 const SingleEventCard = ({ event }) => {
   const dispatch = useDispatch();
@@ -45,7 +46,6 @@ const SingleEventCard = ({ event }) => {
     );
   };
 
-  // 🕒 Timezone Display Logic
   const eventTime = new Date(event.dateTime);
   const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -75,9 +75,15 @@ const SingleEventCard = ({ event }) => {
 
   const showLocalTime = eventZone !== localTimeZone;
 
+  const postedDaysAgo = differenceInDays(new Date(), new Date(event.createdAt));
+  const postedText =
+    postedDaysAgo <= 15
+      ? `${postedDaysAgo === 0 ? 'Today' : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`}`
+      : format(new Date(event.createdAt), 'dd MMM yyyy');
+
   return (
     <div className="border p-4 rounded shadow-md bg-white max-w-[800px] mx-auto">
-      {/* Images Section */}
+      {/* Image Section */}
       <div className="relative w-full h-[500px] bg-gray-200 flex items-center justify-center overflow-hidden rounded">
         {event.images?.length > 0 ? (
           <img
@@ -99,16 +105,13 @@ const SingleEventCard = ({ event }) => {
 
         <button
           onClick={() => handleWishlistToggle(event._id.toString())}
-          className={`absolute top-2 right-2 p-2 rounded-full z-10 ${
-            isInWishlist ? 'bg-red-500' : 'bg-gray-300'
-          }`}
+          className={`absolute top-2 right-2 p-2 rounded-full z-10 ${isInWishlist ? 'bg-red-500' : 'bg-gray-300'}`}
           title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
         >
           <FaHeart className={`text-lg ${isInWishlist ? 'text-white' : 'text-gray-700'}`} />
         </button>
       </div>
 
-      {/* Fullscreen modal */}
       {isFullscreen && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="relative w-full h-full flex items-center justify-center">
@@ -126,46 +129,47 @@ const SingleEventCard = ({ event }) => {
         </div>
       )}
 
-      {/* Event Details */}
-      <div className="p-4">
-        <h2 className="text-2xl font-bold mb-2">{event.title}</h2>
-        <p className="text-gray-500 mb-1 font-semibold">
-          Category: {event.category}
-        </p>
+      {/* Event Info */}
+      <div className="p-4 space-y-4">
+        {/* Centered Title */}
+        <h2 className="text-3xl font-bold text-center">{event.title}</h2>
 
-        <div className="mb-4">
-          <p className="text-md mb-1">🗓️ {eventDateStr}</p>
-          <p className="text-md">
-            ⏰ {eventTimeStr} {eventZoneCity}
-            {showLocalTime && (
-              <>
-                {' '}|| {localTimeStr} {localZoneCity}
-              </>
-            )}
+        {/* Category */}
+        <div className="text-xs text-left text-gray-500">{event.category}</div>
+
+        {/* Posted by + posted date */}
+        <div className="flex justify-between text-base text-gray-700">
+          <span><strong>Posted By:</strong> {event.postedBy?.name || 'N/A'}</span>
+          <span><strong>Posted:</strong> {postedText}</span>
+        </div>
+
+        {/* Event Details */}
+        <div>
+          <h3 className="font-bold text-lg mb-2">Event Details</h3>
+          <p>🗓️ {eventDateStr}</p>
+          <p>⏰ {eventTimeStr} {eventZoneCity}{showLocalTime && <> || {localTimeStr} {localZoneCity}</>}</p>
+          <p className="mt-2 flex gap-2 items-start">
+            📍 <span className="flex flex-col">
+              <span>{event.venue}</span>
+              <span>{event.address?.formattedAddress}</span>
+            </span>
           </p>
-          <p className="mt-1">📍 {event.venue}</p>
         </div>
 
-        <div className="mb-4">
-          <strong>Location:</strong>{' '}
-          <span className="flex items-center mt-1">
-            <MdLocationOn className="text-lg mr-1" />
-            {event.address?.formattedAddress || 'N/A'}
-          </span>
-        </div>
-
-        <div className="mb-4">
-          <h3 className="font-bold">Event Organisers</h3>
+        {/* Organiser */}
+        <div>
+          <h3 className="font-bold text-lg mb-2">Event Organiser</h3>
           <p><strong>Name:</strong> {event.organiser?.name}</p>
           <p><strong>Website:</strong> {event.organiser?.website || 'N/A'}</p>
-          <p><strong>Primary Contact:</strong> {event.organiser?.primaryContact?.name} ({event.organiser?.primaryContact?.phone})</p>
+          <p><strong>Primary Contact:</strong> {event.organiser?.primaryContact?.name} / {event.organiser?.primaryContact?.phone}</p>
           {event.organiser?.secondaryContact?.name && (
-            <p><strong>Secondary Contact:</strong> {event.organiser.secondaryContact.name} ({event.organiser.secondaryContact.phone})</p>
+            <p><strong>Secondary Contact:</strong> {event.organiser.secondaryContact.name} / {event.organiser.secondaryContact.phone}</p>
           )}
         </div>
 
+        {/* Description */}
         <div>
-          <h3 className="font-bold mb-2">Event Description</h3>
+          <h3 className="font-bold text-lg mb-2">Description</h3>
           <p className="text-gray-700">{event.description}</p>
         </div>
       </div>
