@@ -167,7 +167,7 @@ const EventsPage = () => {
 
 {filterMode === 'icons' && (
   <div className="justify-center mb-4 mx-auto">
-    {/* Scrollable Wrapper */}
+    {/* Scrollable Wrapper .*/}
     <div
       className="flex overflow-x-auto gap-2 py-2 w-[300px] md:w-[350px] lg:w-[600px] xl:w-[800px] 2xl:w-[800px] scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200"
       style={{
