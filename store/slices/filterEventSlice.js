@@ -3,17 +3,18 @@ import axios from 'axios';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/fetchEventsByFilter`;
 
-// ** Async Thunk to Fetch Events Based on Filters **
+// ✅ Async Thunk to Fetch Events
 export const fetchEventsByFilter = createAsyncThunk(
   'eventFilters/fetchEventsByFilter',
   async (_, { getState, rejectWithValue }) => {
     try {
-      const { category, location, proximity, page, limit } = getState().eventFilters;
+      const { category, location, proximity, page, limit, selectedMonth } = getState().eventFilters;
 
       const params = {
         ...(category && { category }),
         ...(location && { location }),
         ...(proximity && { proximity }),
+        ...(selectedMonth && { month: selectedMonth }), // ⬅️ Include month if selected
         page,
         limit,
       };
@@ -29,7 +30,7 @@ export const fetchEventsByFilter = createAsyncThunk(
   }
 );
 
-// ** Redux Slice **
+// ✅ Slice
 const filterEventSlice = createSlice({
   name: 'eventFilters',
   initialState: {
@@ -38,6 +39,7 @@ const filterEventSlice = createSlice({
     proximity: 10,
     page: 1,
     limit: 12,
+    selectedMonth: '', // Format: "YYYY-MM"
     events: [],
     meta: {},
     status: 'idle',
@@ -53,6 +55,7 @@ const filterEventSlice = createSlice({
       state.proximity = 10;
       state.page = 1;
       state.limit = 12;
+      state.selectedMonth = '';
       state.events = [];
       state.meta = {};
       state.status = 'idle';

@@ -1,5 +1,5 @@
 'use client';
-
+import { format, addMonths, parse } from 'date-fns';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateEventFilter, fetchEventsByFilter } from '@/store/slices/filterEventSlice';
@@ -50,12 +50,15 @@ const EventsPage = () => {
     proximity,
     page,
     limit,
+    selectedMonth,
   } = useSelector((state) => state.eventFilters);
 
   const [filterMode, setFilterMode] = useState('input');
   const [locationInput, setLocationInput] = useState('');
   const [autocomplete, setAutocomplete] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const currentMonth = format(new Date(), 'yyyy-MM');
+const [localMonth, setLocalMonth] = useState(currentMonth);
 
   const handleClearAll = () => {
     dispatch(updateEventFilter({ category: '', location: null, proximity: '' }));
@@ -68,12 +71,22 @@ const EventsPage = () => {
   };
 
   const handleCategoryClick = (selectedCategory) => {
-    dispatch(updateEventFilter({ category: selectedCategory }));
+    if (category === selectedCategory) {
+      dispatch(updateEventFilter({ category: '', page: 1 }));
+    } else {
+      dispatch(updateEventFilter({ category: selectedCategory, page: 1 }));
+    }
   };
+  
 
   const handleCityClick = (city) => {
-    dispatch(updateEventFilter({ location: city.coordinates, proximity: 50 }));
+    if (location === city.coordinates) {
+      dispatch(updateEventFilter({ location: '', proximity: 10, page: 1 }));
+    } else {
+      dispatch(updateEventFilter({ location: city.coordinates, proximity: 50, page: 1 }));
+    }
   };
+  
 
   const handlePlaceChanged = () => {
     if (autocomplete) {
@@ -87,9 +100,21 @@ const EventsPage = () => {
     }
   };
 
+  const handleMonthChange = (direction) => {
+    const parsed = parse(localMonth, 'yyyy-MM', new Date());
+    const newDate = addMonths(parsed, direction);
+    const formatted = format(newDate, 'yyyy-MM');
+    setLocalMonth(formatted);
+    dispatch(updateEventFilter({ selectedMonth: formatted, page: 1 }));
+  };
+
+  useEffect(() => {
+    dispatch(updateEventFilter({ selectedMonth: currentMonth }));
+  }, [dispatch]);
+
   useEffect(() => {
     dispatch(fetchEventsByFilter());
-  }, [category, location, proximity, page, limit, dispatch]);
+  }, [category, location, proximity, selectedMonth, page, limit, dispatch]);
 
   return (
     <div className="flex flex-col">
@@ -155,6 +180,8 @@ const EventsPage = () => {
             onChange={(e) => dispatch(updateEventFilter({ proximity: parseInt(e.target.value, 10) }))}
           />
 
+
+
           <button
             type="button"
             className="bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200"
@@ -179,9 +206,10 @@ const EventsPage = () => {
       {CATEGORY_OPTIONS.map((cat) => (
         <button
           key={cat}
-          className={`flex items-center justify-center p-2 min-w-[120px] border rounded-lg shadow-md snap-start whitespace-nowrap font-semibold text-sm ${
+          className={`flex items-center justify-center px-3 py-2 border rounded-lg shadow-md snap-start whitespace-nowrap font-semibold text-xs ${
             category === cat ? 'bg-gray-300' : 'bg-white hover:bg-gray-100'
           }`}
+          
           onClick={() => handleCategoryClick(cat)}
         >
           {cat}
@@ -210,6 +238,28 @@ const EventsPage = () => {
           </div>
         </div>
       )}
+                {/* 🗓️ Month Filter */}
+                <div className="flex justify-center my-4">
+  <div className="flex items-center gap-2">
+    <button
+      onClick={() => handleMonthChange(-1)}
+      className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+      aria-label="Previous Month"
+    >
+      ◀
+    </button>
+    <span className="font-semibold min-w-[120px] text-center">
+      {format(parse(localMonth, 'yyyy-MM', new Date()), 'MMMM yyyy')}
+    </span>
+    <button
+      onClick={() => handleMonthChange(1)}
+      className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+      aria-label="Next Month"
+    >
+      ▶
+    </button>
+  </div>
+</div>
 
       {/* Events Grid */}
       <EventsGrid events={events} eventStatus={eventStatus} />
