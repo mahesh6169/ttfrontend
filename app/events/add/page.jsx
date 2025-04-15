@@ -58,7 +58,7 @@ const AddEventPage = () => {
   });
 
   const [isRecurring, setIsRecurring] = useState(false);
-const [repeatDays, setRepeatDays] = useState([]);
+  const [repeatSchedule, setRepeatSchedule] = useState([{ day: 'Mon', time: '' }]);
 const [endDate, setEndDate] = useState('');
 
   const [preview, setPreview] = useState([]);
@@ -102,11 +102,25 @@ const [endDate, setEndDate] = useState('');
     const formPayload = new FormData();
     if (isRecurring) {
       formPayload.append('isRecurring', 'true');
-      repeatDays.forEach((day) => formPayload.append('repeatDays', day));
+    
+      const convertedSchedule = repeatSchedule.map(({ day, time }) => {
+        const today = new Date(); // dummy date
+        const localDateTime = new Date(`${today.toISOString().split('T')[0]}T${time}`);
+        const utcTime = zonedTimeToUtc(localDateTime, formData.timeZone);
+        return {
+          day,
+          time: utcTime.toISOString(), // send in ISO format
+        };
+      });
+    
+      formPayload.append('repeatSchedule', JSON.stringify(convertedSchedule));
+    
       if (endDate) {
         formPayload.append('endDate', endDate);
       }
     }
+    
+    
     Object.entries(formData).forEach(([key, value]) => {
       if (key === 'images') {
         value.forEach((file) => formPayload.append('images', file));
@@ -204,7 +218,7 @@ const [endDate, setEndDate] = useState('');
           </select>
         </div>
 
-        {/* 🔁 Recurrence Section */}
+{/* 🔁 Recurrence Section */}
 <div className="border rounded p-4 bg-gray-50">
   <label className="block font-semibold mb-2">
     <input
@@ -218,25 +232,56 @@ const [endDate, setEndDate] = useState('');
 
   {isRecurring && (
     <>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-          <label key={day} className="flex items-center gap-1">
+      {/* Repeat Days with Times */}
+      <div className="space-y-2 mb-4">
+        {repeatSchedule.map((entry, idx) => (
+          <div key={idx} className="flex items-center gap-2">
+            <select
+              value={entry.day}
+              onChange={(e) => {
+                const updated = [...repeatSchedule];
+                updated[idx].day = e.target.value;
+                setRepeatSchedule(updated);
+              }}
+              className="p-2 border rounded"
+            >
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
             <input
-              type="checkbox"
-              checked={repeatDays.includes(day)}
-              onChange={(e) =>
-                setRepeatDays((prev) =>
-                  e.target.checked
-                    ? [...prev, day]
-                    : prev.filter((d) => d !== day)
-                )
-              }
+              type="time"
+              value={entry.time}
+              onChange={(e) => {
+                const updated = [...repeatSchedule];
+                updated[idx].time = e.target.value;
+                setRepeatSchedule(updated);
+              }}
+              className="p-2 border rounded"
             />
-            {day}
-          </label>
+            <button
+              type="button"
+              onClick={() => {
+                setRepeatSchedule((prev) => prev.filter((_, i) => i !== idx));
+              }}
+              className="text-red-600 font-bold"
+            >
+              ×
+            </button>
+          </div>
         ))}
+        <button
+          type="button"
+          onClick={() =>
+            setRepeatSchedule((prev) => [...prev, { day: 'Mon', time: '' }])
+          }
+          className="text-blue-600 text-sm underline"
+        >
+          + Add another
+        </button>
       </div>
 
+      {/* End Date */}
       <div>
         <label className="block font-semibold">End Date (optional)</label>
         <input
@@ -249,6 +294,7 @@ const [endDate, setEndDate] = useState('');
     </>
   )}
 </div>
+
 
 
         {/* 4. Category */}

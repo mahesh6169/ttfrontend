@@ -75,7 +75,8 @@ const EventGrid = ({ events, eventStatus }) => {
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6 lg:gap-8 w-full max-w-full overflow-hidden">
       {events.map((event) => (
         <EventCard
-        key={`${event._id}-${new Date(event.dateTime).getTime()}`}
+        key={`${event._id}-${event.dateTime}-${Math.random().toString(36).substring(2, 8)}`}
+
           event={event}
           isInWishlist={eventWishlist?.some((e) => e._id === event._id)}
           onWishlistToggle={() => handleWishlistToggle(event._id)}
