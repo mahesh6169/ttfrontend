@@ -57,6 +57,10 @@ const AddEventPage = () => {
     images: [],
   });
 
+  const [isRecurring, setIsRecurring] = useState(false);
+const [repeatDays, setRepeatDays] = useState([]);
+const [endDate, setEndDate] = useState('');
+
   const [preview, setPreview] = useState([]);
   const [focusedField, setFocusedField] = useState(null);
 
@@ -96,6 +100,13 @@ const AddEventPage = () => {
     }
 
     const formPayload = new FormData();
+    if (isRecurring) {
+      formPayload.append('isRecurring', 'true');
+      repeatDays.forEach((day) => formPayload.append('repeatDays', day));
+      if (endDate) {
+        formPayload.append('endDate', endDate);
+      }
+    }
     Object.entries(formData).forEach(([key, value]) => {
       if (key === 'images') {
         value.forEach((file) => formPayload.append('images', file));
@@ -192,6 +203,53 @@ const AddEventPage = () => {
             ))}
           </select>
         </div>
+
+        {/* 🔁 Recurrence Section */}
+<div className="border rounded p-4 bg-gray-50">
+  <label className="block font-semibold mb-2">
+    <input
+      type="checkbox"
+      checked={isRecurring}
+      onChange={(e) => setIsRecurring(e.target.checked)}
+      className="mr-2"
+    />
+    Is this a recurring event?
+  </label>
+
+  {isRecurring && (
+    <>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+          <label key={day} className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={repeatDays.includes(day)}
+              onChange={(e) =>
+                setRepeatDays((prev) =>
+                  e.target.checked
+                    ? [...prev, day]
+                    : prev.filter((d) => d !== day)
+                )
+              }
+            />
+            {day}
+          </label>
+        ))}
+      </div>
+
+      <div>
+        <label className="block font-semibold">End Date (optional)</label>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+    </>
+  )}
+</div>
+
 
         {/* 4. Category */}
         <div>
