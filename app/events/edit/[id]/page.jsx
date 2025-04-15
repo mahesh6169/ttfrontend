@@ -8,18 +8,46 @@ import { CATEGORY_OPTIONS } from '@/components/events/EventCategories';
 import AddressInput from '@/components/addadvert/AddressInput';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { utcToZonedTime , zonedTimeToUtc  } from 'date-fns-tz';
+import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 import { format } from 'date-fns';
 
 const AU_TIMEZONES = [
-  { label: 'Sydney (NSW)', value: 'Australia/Sydney', key: 'Australia/Sydney-NSW' },
-  { label: 'Melbourne (VIC)', value: 'Australia/Melbourne', key: 'Australia/Melbourne-VIC' },
-  { label: 'Brisbane (QLD)', value: 'Australia/Brisbane', key: 'Australia/Brisbane-QLD' },
+  {
+    label: 'Sydney (NSW)',
+    value: 'Australia/Sydney',
+    key: 'Australia/Sydney-NSW',
+  },
+  {
+    label: 'Melbourne (VIC)',
+    value: 'Australia/Melbourne',
+    key: 'Australia/Melbourne-VIC',
+  },
+  {
+    label: 'Brisbane (QLD)',
+    value: 'Australia/Brisbane',
+    key: 'Australia/Brisbane-QLD',
+  },
   { label: 'Perth (WA)', value: 'Australia/Perth', key: 'Australia/Perth-WA' },
-  { label: 'Adelaide (SA)', value: 'Australia/Adelaide', key: 'Australia/Adelaide-SA' },
-  { label: 'Hobart (TAS)', value: 'Australia/Hobart', key: 'Australia/Hobart-TAS' },
-  { label: 'Darwin (NT)', value: 'Australia/Darwin', key: 'Australia/Darwin-NT' },
-  { label: 'Canberra (ACT)', value: 'Australia/Sydney', key: 'Australia/Sydney-ACT' },
+  {
+    label: 'Adelaide (SA)',
+    value: 'Australia/Adelaide',
+    key: 'Australia/Adelaide-SA',
+  },
+  {
+    label: 'Hobart (TAS)',
+    value: 'Australia/Hobart',
+    key: 'Australia/Hobart-TAS',
+  },
+  {
+    label: 'Darwin (NT)',
+    value: 'Australia/Darwin',
+    key: 'Australia/Darwin-NT',
+  },
+  {
+    label: 'Canberra (ACT)',
+    value: 'Australia/Sydney',
+    key: 'Australia/Sydney-ACT',
+  },
 ];
 
 const EditEventPage = () => {
@@ -54,6 +82,10 @@ const EditEventPage = () => {
     images: [],
   });
 
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [repeatDays, setRepeatDays] = useState([]);
+  const [endDate, setEndDate] = useState('');
+
   const [existingImages, setExistingImages] = useState([]);
   const [preview, setPreview] = useState([]);
   const [focusedField, setFocusedField] = useState(null);
@@ -71,6 +103,13 @@ const EditEventPage = () => {
       const zone = selectedEvent.timeZone;
       const zonedDate = utcToZonedTime(new Date(selectedEvent.dateTime), zone);
       const formattedDate = format(zonedDate, "yyyy-MM-dd'T'HH:mm");
+      setIsRecurring(selectedEvent?.recurrence?.isRecurring || false);
+      setRepeatDays(selectedEvent?.recurrence?.repeatDays || []);
+      setEndDate(
+        selectedEvent?.recurrence?.endDate
+          ? format(new Date(selectedEvent.recurrence.endDate), 'yyyy-MM-dd')
+          : ''
+      );
       setFormData((prev) => ({
         ...prev,
         ...selectedEvent,
@@ -129,7 +168,14 @@ const EditEventPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const requiredFields = [
-      'title','dateTime','timeZone','venue','description','organiserName','organiserPrimaryContactName','organiserPrimaryContactPhone'
+      'title',
+      'dateTime',
+      'timeZone',
+      'venue',
+      'description',
+      'organiserName',
+      'organiserPrimaryContactName',
+      'organiserPrimaryContactPhone',
     ];
     const missing = requiredFields.filter((field) => !formData[field]);
     if (missing.length > 0) {
@@ -137,6 +183,13 @@ const EditEventPage = () => {
       return;
     }
     const formPayload = new FormData();
+    if (isRecurring) {
+      formPayload.append('isRecurring', 'true');
+      repeatDays.forEach((day) => formPayload.append('repeatDays', day));
+      if (endDate) {
+        formPayload.append('endDate', endDate);
+      }
+    }
     existingImages.forEach((imgObj) => {
       formPayload.append('existingImages', JSON.stringify(imgObj));
     });
@@ -166,14 +219,17 @@ const EditEventPage = () => {
   };
 
   if (loading && !selectedEvent) {
-    return <div className="flex justify-center h-64"><LoadingSpinner /></div>;
+    return (
+      <div className="flex justify-center h-64">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Edit Event</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
-  
         {/* 1. Title */}
         <div>
           <label className="block font-semibold">Title</label>
@@ -185,7 +241,7 @@ const EditEventPage = () => {
             className="w-full p-2 border rounded"
           />
         </div>
-  
+
         {/* 2. Date & Time */}
         <div>
           <label className="block font-semibold">Date & Time</label>
@@ -197,7 +253,7 @@ const EditEventPage = () => {
             className="w-full p-2 border rounded"
           />
         </div>
-  
+
         {/* 3. Time Zone */}
         <div>
           <label className="block font-semibold">Time Zone</label>
@@ -207,13 +263,64 @@ const EditEventPage = () => {
             onChange={handleChange}
             className="w-full p-2 border rounded"
           >
-            <option value="" disabled>Select time zone</option>
+            <option value="" disabled>
+              Select time zone
+            </option>
             {AU_TIMEZONES.map((tz) => (
-              <option key={tz.key} value={tz.value}>{tz.label}</option>
+              <option key={tz.key} value={tz.value}>
+                {tz.label}
+              </option>
             ))}
           </select>
         </div>
-  
+
+        {/* 🔁 Recurrence Section */}
+<div className="border rounded p-4 bg-gray-50">
+  <label className="block font-semibold mb-2">
+    <input
+      type="checkbox"
+      checked={isRecurring}
+      onChange={(e) => setIsRecurring(e.target.checked)}
+      className="mr-2"
+    />
+    Is this a recurring event?
+  </label>
+
+  {isRecurring && (
+    <>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+          <label key={day} className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={repeatDays.includes(day)}
+              onChange={(e) =>
+                setRepeatDays((prev) =>
+                  e.target.checked
+                    ? [...prev, day]
+                    : prev.filter((d) => d !== day)
+                )
+              }
+            />
+            {day}
+          </label>
+        ))}
+      </div>
+
+      <div>
+        <label className="block font-semibold">End Date (optional)</label>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+    </>
+  )}
+</div>
+
+
         {/* 4. Category */}
         <div>
           <label className="block font-semibold">Category</label>
@@ -225,11 +332,13 @@ const EditEventPage = () => {
           >
             <option value="">Select category</option>
             {CATEGORY_OPTIONS.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
           </select>
         </div>
-  
+
         {/* 5. Venue */}
         <div>
           <label className="block font-semibold">Venue</label>
@@ -241,7 +350,7 @@ const EditEventPage = () => {
             className="w-full p-2 border rounded"
           />
         </div>
-  
+
         {/* 6. Address */}
         <AddressInput
           formData={formData}
@@ -250,7 +359,7 @@ const EditEventPage = () => {
           handleBlur={handleBlur}
           focusedField={focusedField}
         />
-  
+
         {/* 7–13. Organiser Fields */}
         {[
           'organiserName',
@@ -259,11 +368,13 @@ const EditEventPage = () => {
           'organiserPrimaryContactName',
           'organiserPrimaryContactPhone',
           'organiserSecondaryContactName',
-          'organiserSecondaryContactPhone'
+          'organiserSecondaryContactPhone',
         ].map((field) => (
           <div key={field}>
             <label className="block font-semibold">
-              {field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+              {field
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, (str) => str.toUpperCase())}
             </label>
             <input
               type={field.includes('Email') ? 'email' : 'text'}
@@ -274,7 +385,7 @@ const EditEventPage = () => {
             />
           </div>
         ))}
-  
+
         {/* 14. Upload Images */}
         <div>
           <label className="block font-bold">Upload Images (Max 3)</label>
@@ -288,7 +399,11 @@ const EditEventPage = () => {
           <div className="mt-4 flex gap-4 flex-wrap">
             {existingImages.map((img, idx) => (
               <div key={idx} className="relative">
-                <img src={img.url} alt={`Existing ${idx}`} className="w-24 h-24 object-cover border" />
+                <img
+                  src={img.url}
+                  alt={`Existing ${idx}`}
+                  className="w-24 h-24 object-cover border"
+                />
                 <button
                   type="button"
                   onClick={() => handleRemoveExistingImage(idx)}
@@ -300,7 +415,11 @@ const EditEventPage = () => {
             ))}
             {preview.map((src, idx) => (
               <div key={`new-${idx}`} className="relative">
-                <img src={src} alt={`Preview ${idx + 1}`} className="w-24 h-24 object-cover border" />
+                <img
+                  src={src}
+                  alt={`Preview ${idx + 1}`}
+                  className="w-24 h-24 object-cover border"
+                />
                 <button
                   type="button"
                   onClick={() => handleRemoveNewImage(idx)}
@@ -312,7 +431,7 @@ const EditEventPage = () => {
             ))}
           </div>
         </div>
-  
+
         {/* 15. Description */}
         <div>
           <label className="block font-semibold">Description</label>
@@ -323,20 +442,26 @@ const EditEventPage = () => {
             className="w-full p-2 border rounded min-h-[100px]"
           />
         </div>
-  
+
         {/* Buttons */}
         <div className="flex gap-4">
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
             Update Event
           </button>
-          <button type="button" onClick={() => router.back()} className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+          >
             Cancel
           </button>
         </div>
       </form>
     </div>
   );
-  
 };
 
 export default EditEventPage;

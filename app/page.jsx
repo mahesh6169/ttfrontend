@@ -100,13 +100,22 @@ const HomePage = () => {
 
   // Handle category icon click
   const handleCategoryClick = (selectedCategory) => {
-    dispatch(updateFilter({ category: selectedCategory }));
-  };
+      if (category === selectedCategory) {
+        dispatch(updateFilter({ category: '', page: 1 }));
+      } else {
+        dispatch(updateFilter({ category: selectedCategory, page: 1 }));
+      }
+    };
+    
 
   // Handle city click
   const handleCityClick = (city) => {
-    dispatch(updateFilter({ location: city.coordinates, proximity: 50 })); // Default proximity: 50km
-  };
+      if (location === city.coordinates) {
+        dispatch(updateFilter({ location: '', proximity: 10, page: 1 }));
+      } else {
+        dispatch(updateFilter({ location: city.coordinates, proximity: 50, page: 1 }));
+      }
+    };
 
   // Handle Google Maps Autocomplete location selection
   const handlePlaceChanged = () => {

@@ -4,16 +4,17 @@ import { MdLocationOn } from 'react-icons/md';
 import { BsCalendar2Event } from 'react-icons/bs';
 import { FaHeart } from 'react-icons/fa';
 import { format, differenceInDays } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   const { title, dateTime, venue, address, images, createdAt, timeZone } = event;
 
   // 🕒 Format event date
-  const formattedDate = new Date(dateTime).toLocaleString('en-AU', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: timeZone || 'Australia/Sydney',
-  });
+  const formattedDate = formatInTimeZone(
+    dateTime,
+    timeZone || 'Australia/Sydney',
+    'EEE dd MMM yyyy, h:mm a'
+  );
 
   // 🗓️ Calculate how long ago the event was posted
   const postedDaysAgo = differenceInDays(new Date(), new Date(createdAt));
