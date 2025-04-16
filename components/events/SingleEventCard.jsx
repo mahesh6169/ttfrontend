@@ -68,10 +68,12 @@ const SingleEventCard = ({ event }) => {
   });
 
   const eventDateStr = eventTime.toLocaleDateString('en-AU', {
+    timeZone: eventZone,
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   });
+  
 
   const showLocalTime = eventZone !== localTimeZone;
 

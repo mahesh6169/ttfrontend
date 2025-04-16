@@ -8,7 +8,7 @@ import { CATEGORY_OPTIONS } from '@/components/events/EventCategories';
 import AddressInput from '@/components/addadvert/AddressInput';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
+import { utcToZonedTime, formatInTimeZone, zonedTimeToUtc } from 'date-fns-tz';
 import { format } from 'date-fns';
 
 const AU_TIMEZONES = [
@@ -83,7 +83,7 @@ const EditEventPage = () => {
   });
 
   const [isRecurring, setIsRecurring] = useState(false);
-  const [repeatDays, setRepeatDays] = useState([]);
+  const [repeatSchedule, setRepeatSchedule] = useState([{ day: 'Mon', time: '' }]);
   const [endDate, setEndDate] = useState('');
 
   const [existingImages, setExistingImages] = useState([]);
@@ -104,7 +104,25 @@ const EditEventPage = () => {
       const zonedDate = utcToZonedTime(new Date(selectedEvent.dateTime), zone);
       const formattedDate = format(zonedDate, "yyyy-MM-dd'T'HH:mm");
       setIsRecurring(selectedEvent?.recurrence?.isRecurring || false);
-      setRepeatDays(selectedEvent?.recurrence?.repeatDays || []);
+
+      setRepeatSchedule(
+        selectedEvent?.recurrence?.repeatSchedule?.length > 0
+          ? selectedEvent.recurrence.repeatSchedule.map(({ day, time }) => {
+              // Validate and pass HH:mm directly
+              return {
+                day,
+                time: /^\d{2}:\d{2}$/.test(time) ? time : '', // fallback if malformed
+              };
+            })
+          : [{ day: 'Mon', time: '' }]
+      );
+      
+
+      setEndDate(
+        selectedEvent?.recurrence?.endDate
+          ? format(new Date(selectedEvent.recurrence.endDate), 'yyyy-MM-dd')
+          : ''
+      );
       setEndDate(
         selectedEvent?.recurrence?.endDate
           ? format(new Date(selectedEvent.recurrence.endDate), 'yyyy-MM-dd')
@@ -182,17 +200,33 @@ const EditEventPage = () => {
       toast.error(`Missing required fields: ${missing.join(', ')}`);
       return;
     }
+  
     const formPayload = new FormData();
+  
+    // ✅ Recurrence Logic
     if (isRecurring) {
       formPayload.append('isRecurring', 'true');
-      repeatDays.forEach((day) => formPayload.append('repeatDays', day));
+  
+      const convertedSchedule = repeatSchedule.map(({ day, time }) => {
+        if (!/^[0-9]{2}:[0-9]{2}$/.test(time)) {
+          toast.error(`Invalid time format for ${day}: ${time}`);
+          throw new Error(`Invalid time format for ${day}: ${time}`);
+        }
+        return { day, time }; // Send clean HH:mm format
+      });
+  
+      formPayload.append('repeatSchedule', JSON.stringify(convertedSchedule));
       if (endDate) {
         formPayload.append('endDate', endDate);
       }
     }
+  
+    // ✅ Retained Images
     existingImages.forEach((imgObj) => {
       formPayload.append('existingImages', JSON.stringify(imgObj));
     });
+  
+    // ✅ Form Fields
     Object.entries(formData).forEach(([key, value]) => {
       if (key === 'images') {
         value.forEach((file) => formPayload.append('images', file));
@@ -205,6 +239,8 @@ const EditEventPage = () => {
         formPayload.append(key, value ?? '');
       }
     });
+  
+    // ✅ Dispatch update
     try {
       const result = await dispatch(updateEventById({ id, data: formPayload }));
       if (updateEventById.fulfilled.match(result)) {
@@ -217,6 +253,7 @@ const EditEventPage = () => {
       toast.error(err.message || 'Update failed');
     }
   };
+  
 
   if (loading && !selectedEvent) {
     return (
@@ -275,7 +312,7 @@ const EditEventPage = () => {
         </div>
 
         {/* 🔁 Recurrence Section */}
-<div className="border rounded p-4 bg-gray-50">
+        <div className="border rounded p-4 bg-gray-50">
   <label className="block font-semibold mb-2">
     <input
       type="checkbox"
@@ -288,25 +325,56 @@ const EditEventPage = () => {
 
   {isRecurring && (
     <>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-          <label key={day} className="flex items-center gap-1">
+      {/* Repeat Days with Times */}
+      <div className="space-y-2 mb-4">
+        {repeatSchedule.map((entry, idx) => (
+          <div key={idx} className="flex items-center gap-2">
+            <select
+              value={entry.day}
+              onChange={(e) => {
+                const updated = [...repeatSchedule];
+                updated[idx].day = e.target.value;
+                setRepeatSchedule(updated);
+              }}
+              className="p-2 border rounded"
+            >
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
             <input
-              type="checkbox"
-              checked={repeatDays.includes(day)}
-              onChange={(e) =>
-                setRepeatDays((prev) =>
-                  e.target.checked
-                    ? [...prev, day]
-                    : prev.filter((d) => d !== day)
-                )
-              }
+              type="time"
+              value={entry.time}
+              onChange={(e) => {
+                const updated = [...repeatSchedule];
+                updated[idx].time = e.target.value;
+                setRepeatSchedule(updated);
+              }}
+              className="p-2 border rounded"
             />
-            {day}
-          </label>
+            <button
+              type="button"
+              onClick={() => {
+                setRepeatSchedule((prev) => prev.filter((_, i) => i !== idx));
+              }}
+              className="text-red-600 font-bold"
+            >
+              ×
+            </button>
+          </div>
         ))}
+        <button
+          type="button"
+          onClick={() =>
+            setRepeatSchedule((prev) => [...prev, { day: 'Mon', time: '' }])
+          }
+          className="text-blue-600 text-sm underline"
+        >
+          + Add another
+        </button>
       </div>
 
+      {/* End Date */}
       <div>
         <label className="block font-semibold">End Date (optional)</label>
         <input
@@ -319,6 +387,7 @@ const EditEventPage = () => {
     </>
   )}
 </div>
+
 
 
         {/* 4. Category */}

@@ -60,6 +60,9 @@ const EventGrid = ({ events, eventStatus }) => {
     );
   }
 
+  console.log('📦 events received by EventGrid:', events);
+
+
   // 😐 No events
   if (!events || events.length === 0) {
     return (

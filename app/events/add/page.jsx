@@ -103,15 +103,11 @@ const [endDate, setEndDate] = useState('');
     if (isRecurring) {
       formPayload.append('isRecurring', 'true');
     
-      const convertedSchedule = repeatSchedule.map(({ day, time }) => {
-        const today = new Date(); // dummy date
-        const localDateTime = new Date(`${today.toISOString().split('T')[0]}T${time}`);
-        const utcTime = zonedTimeToUtc(localDateTime, formData.timeZone);
-        return {
-          day,
-          time: utcTime.toISOString(), // send in ISO format
-        };
-      });
+      const convertedSchedule = repeatSchedule.map(({ day, time }) => ({
+        day,
+        time, // "HH:mm" format only
+      }));
+      
     
       formPayload.append('repeatSchedule', JSON.stringify(convertedSchedule));
     
