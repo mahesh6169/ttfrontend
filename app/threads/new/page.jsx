@@ -27,6 +27,8 @@ const categoryOptions = [
   'Health & Beauty',
   'Business & Shops',
   'Events & Community',
+  'Services',
+  'Travel Partner', 'financial aid'
 ];
 
 const CreateThreadPage = () => {

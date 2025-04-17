@@ -11,7 +11,8 @@ const categoryOptions = [
   'Baby & Children', 'Arts & Crafts', 'Cars & Vehicles', 'Fashion & Accessories',
   'Electronics & Computer', 'Home & Garden', 'Miscellaneous', 'Pets', 'Real Estate',
   'Party Hires & Services', 'Sport & Fitness', 'Food & Catering Services',
-  'Health & Beauty', 'Business & Shops', 'Events & Community',
+  'Health & Beauty', 'Business & Shops', 'Events & Community', 'Services',
+  'Travel Partner', 'financial aid'
 ];
 
 const EditThreadPage = () => {

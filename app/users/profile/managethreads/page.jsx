@@ -52,7 +52,7 @@ const ManageThreads = () => {
               key={thread._id}
               className="border rounded-lg p-4 flex justify-between items-center hover:bg-gray-100 transition-all duration-200"
             >
-              <div onClick={() => router.push(`/threads/${thread._id}`)} className="cursor-pointer flex-1">
+              <div onClick={() => router.push(`/threads/views/${thread._id}`)} className="cursor-pointer flex-1">
                 <h2 className="text-lg font-semibold text-blue-600 hover:underline">{thread.title}</h2>
                 <p className="text-sm text-gray-700 italic">{thread.question}</p>
                 <p className="text-sm text-gray-500">Started by {thread.owner?.name || 'Unknown'}</p>

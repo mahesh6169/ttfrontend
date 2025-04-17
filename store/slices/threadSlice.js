@@ -107,11 +107,11 @@ export const fetchThreadMessages = createAsyncThunk(
 /* -------------------------------- Send a Message in a Thread (Requires Auth) -------------------------------- */
 export const sendThreadMessage = createAsyncThunk(
     'threads/sendMessage',
-    async ({ threadId, message }, { rejectWithValue }) => {
+    async ({ threadId, message, createdAt  }, { rejectWithValue }) => {
         try {
             const response = await axios.post(
                 `${BASE_URL}/send`,
-                { threadId, message },
+                { threadId, message, createdAt },
                 { withCredentials: true } // ✅ Include authentication
             );
             return { threadId, message: response.data };
