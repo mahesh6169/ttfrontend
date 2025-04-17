@@ -103,11 +103,22 @@ const ThreadChatPage = () => {
         {thread.title || 'Thread Discussion'}
       </h1>
 
+      {thread.images?.[0]?.url && (
+  <div className="relative w-full h-[500px] bg-gray-200 flex items-center justify-center overflow-hidden rounded mb-4">
+    <img
+      src={thread.images[0].url}
+      alt="Thread Image"
+      className="object-cover h-full w-full"
+    />
+  </div>
+)}
+
       {thread.question && (
         <p className="text-base text-gray-700 italic mb-4 border-b">
           {thread.question}
         </p>
       )}
+      
 
       {/* ✅ Useful Answers */}
       {usefulAnswers.length > 0 && (

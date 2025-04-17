@@ -70,7 +70,12 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         <div className="flex items-center justify-between text-sm text-gray-600 mt-1">
           <div className="flex items-center gap-1 truncate">
             <MdLocationOn />
-            <span>{address?.suburb || address?.state || venue}</span>
+            <span>
+  {address?.suburb || address?.state
+    ? [address?.suburb, address?.state].filter(Boolean).join(', ')
+    : venue}
+</span>
+
           </div>
           <div className="text-xs text-gray-500 whitespace-nowrap">{postedText}</div>
         </div>

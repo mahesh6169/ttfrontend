@@ -82,18 +82,31 @@ const ThreadsPage = () => {
         <ul className="space-y-4">
           {threads.map((thread) => (
             <li
-              key={thread._id}
-              className="border rounded-lg p-4 cursor-pointer hover:bg-gray-100"
-              onClick={() => router.push(`/threads/views/${thread._id}`)}
-            >
-              <h2 className="text-base font-semibold">{thread.title}</h2>
-              <p className="text-sm text-gray-700 italic line-clamp-2">
-                {thread.question}
-              </p>
-              <p className="text-sm text-gray-500">
-                Posted by {thread.owner?.name || 'Former Member'}
-              </p>
-            </li>
+  key={thread._id}
+  className="flex justify-between items-center border rounded-lg p-4 hover:bg-gray-100 cursor-pointer"
+  onClick={() => router.push(`/threads/views/${thread._id}`)}
+>
+  {/* 🔹 Left: Text content */}
+  <div className="flex-1 pr-4">
+    <h2 className="text-base font-semibold">{thread.title}</h2>
+    <p className="text-sm text-gray-700 italic line-clamp-2">
+      {thread.question}
+    </p>
+    <p className="text-sm text-gray-500">
+      Posted by {thread.owner?.name || 'Former Member'}
+    </p>
+  </div>
+
+  {/* 🔹 Right: Image Thumbnail */}
+  {thread.images?.[0]?.url && (
+    <img
+      src={thread.images[0].url}
+      alt="Thread"
+      className="w-16 h-16 object-cover rounded"
+    />
+  )}
+</li>
+
           ))}
         </ul>
       ) : (
