@@ -6,6 +6,7 @@ import { sendMessage } from '@/store/slices/messageSlice';
 import { useRouter } from 'next/navigation';
 import { CgProfile } from 'react-icons/cg';
 import { toast } from 'react-toastify';
+import { zonedTimeToUtc } from 'date-fns-tz';
 
 const SendMessage = ({ resourceId, resourceType = 'advert', participantId, owner, preserveRedirectUrl }) => {
   const dispatch = useDispatch();
@@ -27,11 +28,15 @@ const SendMessage = ({ resourceId, resourceType = 'advert', participantId, owner
       return;
     }
 
+    const localNow = new Date();
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const utcNow = zonedTimeToUtc(localNow, timeZone); // ✅ Correctly convert to UTC
+
     setSending(true);
     const toastId = toast.loading('Sending message...');
 
     try {
-      await dispatch(sendMessage({ resourceId, resourceType, participantId, message })).unwrap();
+      await dispatch(sendMessage({ resourceId, resourceType, participantId, message,createdAt: utcNow.toISOString(), })).unwrap();
       setMessage('');
       toast.update(toastId, {
         render: 'Message sent successfully!',

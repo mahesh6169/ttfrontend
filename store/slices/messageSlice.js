@@ -45,11 +45,11 @@ export const fetchMessages = createAsyncThunk(
 // 3) Send a new message
 export const sendMessage = createAsyncThunk(
   'messages/sendMessage',
-  async ({ resourceId, resourceType, participantId, message }, { rejectWithValue }) => {
+  async ({ resourceId, resourceType, participantId, message, createdAt }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
         `${BASE_URL}/send`,
-        { resourceId, resourceType, participantId, message },
+        { resourceId, resourceType, participantId, message, createdAt }, // ✅ include createdAt
         { withCredentials: true }
       );
       return response.data.data;
@@ -60,6 +60,7 @@ export const sendMessage = createAsyncThunk(
     }
   }
 );
+
 
 // 4) Delete a conversation
 export const deleteConversation = createAsyncThunk(

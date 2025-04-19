@@ -10,7 +10,8 @@ import {
 } from '@/store/slices/messageSlice';
 import socket from '@/config/socket';
 import { useSearchParams, useParams } from 'next/navigation';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
+import { zonedTimeToUtc } from 'date-fns-tz';
 import Link from 'next/link';
 
 const ChatPage = () => {
@@ -19,46 +20,33 @@ const ChatPage = () => {
   const otherUserId = searchParams.get('otherUser');
 
   const dispatch = useDispatch();
-
-  const tokenValidated = useSelector((state) => state.user.tokenValidated);
-  const currentUser = useSelector((state) => state.user.user);
-  const currentUserId = currentUser?._id;
-
+  const { tokenValidated, user } = useSelector((state) => state.user);
+  const currentUserId = user?._id;
   const { activeConversation, status, error } = useSelector((state) => state.messages);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
 
-  // Fetch messages when ready
+  const { resource, participants } = activeConversation || {};
+  const { owner, participant } = participants || {};
+  const myRole = owner?.id === currentUserId ? 'owner' : participant?.id === currentUserId ? 'participant' : null;
+
+  // Fetch messages
   useEffect(() => {
     if (tokenValidated && currentUserId && resourceId && otherUserId && resourceType) {
       dispatch(fetchMessages({ resourceId, resourceType, otherUserId }));
     }
   }, [dispatch, tokenValidated, currentUserId, resourceId, otherUserId, resourceType]);
 
-  // Auto-scroll to latest message
+  // Scroll to latest message
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeConversation?.messages]);
 
-  const { resource, participants } = activeConversation || {};
-  const { owner, participant } = participants || {};
-
-  const myRole =
-    owner?.id === currentUserId
-      ? 'owner'
-      : participant?.id === currentUserId
-      ? 'participant'
-      : null;
-
-  // Emit read receipts
+  // Read receipts
   useEffect(() => {
     if (!activeConversation?.messages || !myRole) return;
-
     activeConversation.messages.forEach((msg) => {
-      const isMyMessage = msg.senderRole === myRole;
-      if (!isMyMessage && !msg.isRead) {
+      if (msg.senderRole !== myRole && !msg.isRead) {
         socket.emit('messageRead', { messageId: msg._id });
       }
     });
@@ -66,52 +54,46 @@ const ChatPage = () => {
 
   // Handle incoming socket messages
   useEffect(() => {
-    const handleNewMessage = (message) => {
-      const alreadyExists = activeConversation?.messages?.some(
-        (msg) => msg._id === message._id
-      );
-      if (!alreadyExists) {
-        dispatch(addNewMessage(message));
+    const handleNew = (msg) => {
+      if (!activeConversation?.messages?.some((m) => m._id === msg._id)) {
+        dispatch(addNewMessage(msg));
       }
     };
-
-    socket.on('newMessage', handleNewMessage);
-    return () => socket.off('newMessage', handleNewMessage);
+    socket.on('newMessage', handleNew);
+    return () => socket.off('newMessage', handleNew);
   }, [dispatch, activeConversation]);
 
-  // Handle messageRead from socket
+  // Handle read from socket
   useEffect(() => {
-    const handleMessageRead = ({ messageId }) => {
-      dispatch(markMessageAsRead({ messageId }));
-    };
-
-    socket.on('messageRead', handleMessageRead);
-    return () => socket.off('messageRead', handleMessageRead);
+    const handler = ({ messageId }) => dispatch(markMessageAsRead({ messageId }));
+    socket.on('messageRead', handler);
+    return () => socket.off('messageRead', handler);
   }, [dispatch]);
 
-  // Send message
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    dispatch(
-      sendMessage({ resourceType, resourceId, participantId: otherUserId, message: newMessage })
-    );
-    setNewMessage('');
-  };
-
-  // Reconnect socket if tab was hidden
+  // Reconnect socket
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const reconnect = () => {
       if (document.visibilityState === 'visible' && !socket.connected) {
-        console.log('🔄 Reconnecting socket...');
         socket.connect();
       }
     };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('visibilitychange', reconnect);
+    return () => document.removeEventListener('visibilitychange', reconnect);
   }, []);
 
-  // Guards
+  const handleSendMessage = () => {
+    if (!newMessage.trim()) return;
+    const utcNow = zonedTimeToUtc(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone);
+    dispatch(sendMessage({
+      resourceType,
+      resourceId,
+      participantId: otherUserId,
+      message: newMessage,
+      createdAt: utcNow.toISOString(),
+    }));
+    setNewMessage('');
+  };
+
   if (!tokenValidated) return <div className="text-center mt-8">Validating session...</div>;
   if (!currentUserId) return <div className="text-center mt-8">Loading user data...</div>;
   if (status === 'loading') return <div className="text-center mt-8">Loading chat...</div>;
@@ -120,55 +102,57 @@ const ChatPage = () => {
 
   return (
     <div className="w-full max-w-full px-2 sm:px-4">
-      {/* Header with image & title */}
+      {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <Link href={`/${resourceType}s/views/${resourceId}`}>
-          <img
-            src={resource.image || '/default.jpg'}
-            alt={resource.title}
-            className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg cursor-pointer hover:opacity-80 transition duration-200"
-          />
+          <img src={resource.image || '/default.jpg'} alt={resource.title} className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg cursor-pointer hover:opacity-80" />
         </Link>
         <Link href={`/${resourceType}s/views/${resourceId}`}>
-          <h1 className="text-lg sm:text-2xl font-bold cursor-pointer hover:text-blue-600 transition duration-200">
-            {resource.title}
-          </h1>
+          <h1 className="text-lg sm:text-2xl font-bold cursor-pointer hover:text-blue-600">{resource.title}</h1>
         </Link>
       </div>
 
       {/* Messages */}
       <div className="border rounded-lg p-3 mb-4 overflow-y-auto bg-white shadow-md max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-14rem)]">
         {activeConversation.messages.length > 0 ? (
-          activeConversation.messages.map((msg) => {
-            const isMyMessage = msg.senderRole === myRole;
-            const alignment = isMyMessage ? 'justify-end' : 'justify-start';
-            const bubbleColor = isMyMessage ? 'bg-green-600 text-white' : 'bg-gray-700 text-white';
-            const senderName =
-              isMyMessage
-                ? (myRole === 'owner' ? owner?.name : participant?.name)
-                : (msg.senderRole === 'owner' ? owner?.name : participant?.name);
+          <>
+            {activeConversation.messages.reduce((acc, msg, index) => {
+              const prevMsg = activeConversation.messages[index - 1];
+              const msgDate = new Date(msg.createdAt);
+              const prevMsgDate = prevMsg ? new Date(prevMsg.createdAt) : null;
+              const showDateSeparator = !prevMsg || !isSameDay(msgDate, prevMsgDate);
 
-            return (
-              <div key={msg._id} className={`flex ${alignment} mb-2`}>
-                <div
-                  className={`w-full max-w-[85%] sm:max-w-[70%] px-4 py-2 rounded-lg shadow ${bubbleColor} break-words whitespace-pre-wrap`}
-                >
-                  <div className="flex justify-between items-center text-xs mb-1">
-                    <span className="font-semibold">{senderName}</span>
-                    <span>{format(new Date(msg.createdAt), 'hh:mm a')}</span>
+              const isMyMessage = msg.senderRole === myRole;
+              const alignment = isMyMessage ? 'justify-end' : 'justify-start';
+              const bubbleColor = isMyMessage ? 'bg-green-600 text-white' : 'bg-gray-700 text-white';
+              const senderName = isMyMessage
+                ? myRole === 'owner' ? owner?.name : participant?.name
+                : msg.senderRole === 'owner' ? owner?.name : participant?.name;
+
+              return [
+                ...acc,
+                showDateSeparator && (
+                  <div key={`date-${msg._id}`} className="flex justify-center my-3 w-full">
+                    <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow">{msgDate.toLocaleDateString()}</span>
                   </div>
-                  <p>{msg.message}</p>
-                  {msg.isRead && (
-                    <div className="text-xs text-green-300 text-right mt-1">(read)</div>
-                  )}
-                </div>
-              </div>
-            );
-          })
+                ),
+                <div key={msg._id} className={`flex ${alignment} mb-2`}>
+                  <div className={`w-full max-w-[85%] sm:max-w-[70%] px-4 py-2 rounded-lg shadow ${bubbleColor} break-words whitespace-pre-wrap`}>
+                    <div className="flex justify-between items-center text-xs mb-1">
+                      <span className="font-semibold">{senderName}</span>
+                      <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                    </div>
+                    <p>{msg.message}</p>
+                    {msg.isRead && <div className="text-xs text-green-300 text-right mt-1">(read)</div>}
+                  </div>
+                </div>,
+              ];
+            }, [])}
+            <div ref={messagesEndRef} />
+          </>
         ) : (
           <div className="text-center text-gray-500">No messages yet. Start the conversation!</div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
