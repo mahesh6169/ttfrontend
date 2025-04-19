@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import { fetchMyEvents, deleteMyEvent } from '@/store/slices/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
+import Link from 'next/link';
 
 const ManageEventsPage = () => {
   const dispatch = useDispatch();
@@ -65,6 +66,13 @@ const ManageEventsPage = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-center mb-6">Manage My Events</h1>
+      <Link
+  href="/events/add"
+  onClick={() => localStorage.setItem('cancelRedirectUrl', '/users/profile/manageevents')}
+  className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+>
+  + Post New Event
+</Link>
 
       {myEvents.length === 0 ? (
         <p className="text-center text-gray-600">You haven’t posted any events yet.</p>

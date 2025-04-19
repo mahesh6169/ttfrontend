@@ -6,6 +6,7 @@ import { fetchUserThreads, deleteThread } from '@/store/slices/threadSlice';
 import { useRouter } from 'next/navigation';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import Link from 'next/link';
 
 const ManageThreads = () => {
   const dispatch = useDispatch();
@@ -40,6 +41,13 @@ const ManageThreads = () => {
   return (
     <div>
       <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">Manage Your Threads</h1>
+      <Link
+  href="/threads/new"
+  onClick={() => localStorage.setItem('cancelRedirectUrl', '/users/profile/managethreads')}
+  className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+>
+  + Post New Thread
+</Link>
 
       {status === 'loading' && <p className="text-blue-500">Loading threads...</p>}
       {error && <p className="text-red-500">{error}</p>}

@@ -8,6 +8,7 @@ import { deleteUserAdvert } from '@/store/slices/userAdvertsSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { toast } from 'react-toastify';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const dispatch = useDispatch();
@@ -93,6 +94,15 @@ export default function ProfilePage() {
   return (
     <div>
       <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">Manage Ads</h1>
+      <Link
+  href="/adverts/add"
+  onClick={() => localStorage.setItem('cancelRedirectUrl', '/users/profile/manageads')}
+  className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+>
+  + Post New Advertisement
+</Link>
+
+
       {adverts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {adverts.map((advert) => (
