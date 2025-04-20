@@ -23,6 +23,40 @@ export const getManageAdverts = createAsyncThunk(
   }
 );
 
+export const deleteAdvertById = createAsyncThunk(
+  'adminManageAdverts/deleteAdvertById',
+  async (advertId, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/adverts/byid/${advertId}`,
+        { withCredentials: true }
+      );
+      return { advertId };
+    } catch (err) {
+      console.error("❌ Admin Delete Advert Error:", err.response?.data || err.message);
+      return rejectWithValue(err.response?.data?.message || 'Failed to delete advert');
+    }
+  }
+);
+
+export const sendAdvertReminder = createAsyncThunk(
+  'adminManageAdverts/sendAdvertReminder',
+  async ({ advertId, type }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/adverts/remind/${advertId}?type=${type}`,
+        {},
+        { withCredentials: true }
+      );
+      return { advertId, type, message: response.data.message };
+    } catch (err) {
+      console.error(`❌ Reminder ${type} Email Error:`, err.response?.data || err.message);
+      return rejectWithValue(err.response?.data?.message || 'Failed to send reminder');
+    }
+  }
+);
+
+
 // ✅ Slice
 const adminManageAdvertSlice = createSlice({
   name: 'adminManageAdvert',
@@ -61,7 +95,40 @@ const adminManageAdvertSlice = createSlice({
       .addCase(getManageAdverts.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
-      });
+      })
+       // 🗑️ Handle deleteAdvertById
+    .addCase(deleteAdvertById.pending, (state) => {
+      state.status = 'loading';
+    })
+    .addCase(deleteAdvertById.fulfilled, (state, action) => {
+      state.status = 'success';
+      // Remove the deleted advert from the local state
+      state.manageAdverts = state.manageAdverts.filter(ad => ad._id !== action.payload.advertId);
+    })
+    .addCase(deleteAdvertById.rejected, (state, action) => {
+      state.status = 'failed';
+      state.error = action.payload;
+    })
+
+    .addCase(sendAdvertReminder.pending, (state) => {
+      state.status = 'loading';
+    })
+    .addCase(sendAdvertReminder.fulfilled, (state, action) => {
+      state.status = 'success';
+      // Optionally update the advert's reminder sent status
+      const { advertId, type } = action.payload;
+      const advert = state.manageAdverts.find(ad => ad._id === advertId);
+      if (advert) {
+        if (type === '14') advert.renewalStatus = 'pendingNotification2';
+        if (type === '7') advert.renewalStatus = 'valid';
+      }
+    })
+    .addCase(sendAdvertReminder.rejected, (state, action) => {
+      state.status = 'failed';
+      state.error = action.payload;
+    });
+
+
   },
 });
 

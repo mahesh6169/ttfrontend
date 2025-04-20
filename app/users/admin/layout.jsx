@@ -15,6 +15,8 @@ const AdminLayout = ({ children }) => {
 
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
+  
+
 const handleLinkClick = () => {
   setSidebarOpen(false); // Close sidebar when a link is clicked
 };
