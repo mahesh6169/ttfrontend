@@ -11,6 +11,7 @@ import adminReducer from './slices/adminSlice'; // Import adminSlice
 import eventReducer from './slices/eventSlice'; // Import eventSlice
 import filterThreadReducer from './slices/filterThreadSlice'; // Import filterThreadSlice
 import adminManageAdvertReducer from './slices/adminManageAdvertSlice'; // Import adminManageAdvertSlice
+import adminManageEventReducer from './slices/adminManageEventSlice'; // Import adminManageEventSlice
 import events from '@/app/events/page';
 
 const store = configureStore({
@@ -26,6 +27,7 @@ const store = configureStore({
         eventFilters: filterEventReducer, // Add filterEventReducer
         filterThreads: filterThreadReducer, // Add filterThreadsReducer
         adminManageAdvert: adminManageAdvertReducer, // Add adminManageAdvertReducer
+        adminManageEvent: adminManageEventReducer, // Add adminManageEventReducer
     },
 });
 

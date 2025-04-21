@@ -15,7 +15,6 @@ import PriceToggle from '@/components/addadvert/PriceToggle';
 import AddressInput from '@/components/addadvert/AddressInput';
 import ImageUploader from '@/components/addadvert/ImageUploader';
 import ConditionToggle from '@/components/addadvert/ConditionToggle';
-import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 
