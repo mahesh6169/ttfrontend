@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { CURRENT_TERMS_VERSION } from '@/constants/terms';
 
 const libraries = ['places'];
 
@@ -28,6 +29,7 @@ const Register = () => {
       },
     },
     marketingOptIn: false,
+    acceptTerms: false,
   });
 
   const [autocomplete, setAutocomplete] = useState(null);
@@ -113,6 +115,9 @@ const Register = () => {
     if (!formData.mobile.trim()) newErrors.mobile = 'Mobile is required';
     if (!/^04\d{8}$/.test(formData.mobile)) newErrors.mobile = 'Mobile must be 10 digits and start with 04';
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (!formData.acceptTerms) {
+      newErrors.acceptTerms = 'You must accept the Terms and Privacy Policy';
+    }
 
     const { name, state, postalCode, location } = formData.suburb;
     if (!name || !state || !postalCode || location.coordinates.length !== 2) {
@@ -125,6 +130,8 @@ const Register = () => {
     }
 
     try {
+      formData.acceptedTermsVersion = CURRENT_TERMS_VERSION;
+  formData.acceptedTermsAt = new Date().toISOString();
       const result = await dispatch(registerUser(formData)).unwrap();
       if (result) {
         toast.success('Registration successful. Sending OTP...');
@@ -203,6 +210,29 @@ const Register = () => {
               I agree to receive updates and offers
             </label>
           </div>
+          <div className="flex items-start gap-2">
+  <input
+    id="acceptTerms"
+    name="acceptTerms"
+    type="checkbox"
+    checked={formData.acceptTerms}
+    onChange={handleChange}
+    className="mt-1"
+  />
+  <label htmlFor="acceptTerms" className="text-sm text-gray-700">
+    I agree to the{' '}
+    <Link href="/support/terms" target="_blank" className="text-blue-600 underline">
+      Terms & Conditions
+    </Link>{' '}
+    and{' '}
+    <Link href="/support/privacy" target="_blank" className="text-blue-600 underline">
+      Privacy Policy
+    </Link>
+    .
+  </label>
+</div>
+{errors.acceptTerms && <p className="text-red-500 text-sm mt-1">{errors.acceptTerms}</p>}
+
 
           <button
             type="submit"

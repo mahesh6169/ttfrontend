@@ -7,6 +7,7 @@ import TopAd from '@/components/ads/TopAd';
 import BottomAd from '@/components/ads/BottomAd';
 import LeftAd from '@/components/ads/LeftAd';
 import RightAd from '@/components/ads/RightAd';
+import TermsModal from '@/components/support/TermsModal';
 
 export const metadata = {
   title: 'Marketplace',
@@ -20,6 +21,7 @@ const MainLayout = ({ children }) => {
       <body >
         <Providers>
           <Header />
+          <TermsModal />
          
           <main className="container bg-white my-4 mx-auto">
             {/* Top Ad */}

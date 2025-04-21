@@ -423,7 +423,28 @@ export const deleteUserAccount = createAsyncThunk(
   }
 );
 
+// REDUX THUNK TO ACCEPT UPDATED TERMS
+export const acceptUpdatedTerms = createAsyncThunk(
+  'user/acceptUpdatedTerms',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/accept-terms`, {
+        method: 'PATCH',
+        credentials: 'include',
+      });
 
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to accept terms');
+      }
+
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 
 
 const initialState = {
@@ -778,6 +799,23 @@ const userSlice = createSlice({
       .addCase(removeFromEventWishlist.rejected, (state, { payload }) => {
         state.eventWishlistStatus = 'failed';
         state.eventWishlistError = payload;
+      })
+
+      // ✅ Accept Updated Terms
+      .addCase(acceptUpdatedTerms.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(acceptUpdatedTerms.fulfilled, (state) => {
+        state.status = 'success';
+        if (state.user) {
+          state.user.acceptedTermsVersion = action.payload.acceptedTermsVersion;
+          state.user.acceptedTermsAt = action.payload.acceptedTermsAt;
+        }
+      })
+      .addCase(acceptUpdatedTerms.rejected, (state, { payload }) => {
+        state.status = 'failed';
+        state.error = payload;
       });
 
 
