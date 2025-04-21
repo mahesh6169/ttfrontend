@@ -6,6 +6,8 @@ import SingleAdvertCard from '@/components/advertcomponents/SingleAdvertCard';
 import SendMessage from '@/components/chat/SendMessage';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchAdvertById } from '@/store/slices/advertSlice';
+import Link from 'next/link';
+
 
 const AdvertDetail = () => {
   const { id } = useParams();
@@ -62,8 +64,14 @@ const AdvertDetail = () => {
   owner={selectedAdvert.postedBy?.name}
   preserveRedirectUrl={`/adverts/views/${id}`}
 />
-
+<Link
+  href={`/support/report?type=advert&id=${id}&title=${encodeURIComponent(selectedAdvert.title)}`}
+  className="text-sm text-red-600 underline mt-2 inline-block"
+>
+  Report this advert
+</Link>
 </div>
+
 
 
       </div>

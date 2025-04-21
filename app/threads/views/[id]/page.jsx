@@ -142,6 +142,16 @@ const ThreadChatPage = () => {
           {thread.question}
         </p>
       )}
+
+{thread.title && (
+  <Link
+    href={`/support/report?type=thread&id=${threadId}&title=${encodeURIComponent(thread.title)}`}
+    className="text-sm text-red-600 underline ml-2"
+  >
+    Report this thread
+  </Link>
+)}
+
       
 
       {/* ✅ Useful Answers */}

@@ -7,6 +7,7 @@ import { fetchEventById } from '@/store/slices/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SingleEventCard from '@/components/events/SingleEventCard';
 import SendMessage from '@/components/chat/SendMessage';
+import Link from 'next/link';
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -65,6 +66,13 @@ const EventDetail = () => {
   owner={selectedEvent.postedBy?.name}
   preserveRedirectUrl={`/events/views/${id}`}
 />
+<Link
+  href={`/support/report?type=event&id=${id}&title=${encodeURIComponent(selectedEvent.title)}`}
+  className="text-sm text-red-600 underline mt-2 inline-block"
+>
+  Report this event
+</Link>
+
         </div>
       </div>
     </div>
