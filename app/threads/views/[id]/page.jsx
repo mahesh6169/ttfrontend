@@ -35,7 +35,7 @@ const ThreadChatPage = () => {
   const messagesContainerRef = useRef(null);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
 
-  // ✅ Visitor Sender-Side Assignment.
+  // ✅ Visitor Sender-Side Assignment..
   const senderSides = {};
   let toggleSide = true;
 
