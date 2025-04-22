@@ -1,49 +1,57 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { sendMessage } from "@/store/slices/messageSlice";
+import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { sendMessage } from '@/store/slices/shared/messageSlice';
 
-export default function ChatContainer({ resourceId, resourceType, otherUserId, messages, resource }) {
+export default function ChatContainer({
+  resourceId,
+  resourceType,
+  otherUserId,
+  messages,
+  resource,
+}) {
   const dispatch = useDispatch();
-  const [newMessage, setNewMessage] = useState("");
+  const [newMessage, setNewMessage] = useState('');
 
   const handleSend = () => {
     if (!newMessage.trim()) return;
 
     dispatch(
       sendMessage({
-        resourceId,         // supports advert or event
-        resourceType,       // "advert" or "event"
+        resourceId, // supports advert or event
+        resourceType, // "advert" or "event"
         participantId: otherUserId,
         message: newMessage,
       })
     );
 
-    setNewMessage("");
+    setNewMessage('');
   };
 
   return (
-    <div style={{ border: "1px solid #ccc", padding: "1rem", marginTop: "1rem" }}>
+    <div
+      style={{ border: '1px solid #ccc', padding: '1rem', marginTop: '1rem' }}
+    >
       {/* Scrollable Message List */}
       <div
         style={{
-          maxHeight: "300px",
-          overflowY: "auto",
-          marginBottom: "1rem",
-          border: "1px solid #ddd",
-          padding: "0.5rem",
+          maxHeight: '300px',
+          overflowY: 'auto',
+          marginBottom: '1rem',
+          border: '1px solid #ddd',
+          padding: '0.5rem',
         }}
       >
         {messages.map((msg) => (
-          <div key={msg._id} style={{ margin: "0.5rem 0" }}>
+          <div key={msg._id} style={{ margin: '0.5rem 0' }}>
             <strong>{msg.senderRole}:</strong> {msg.message}
           </div>
         ))}
       </div>
 
       {/* Input and Send Button */}
-      <div style={{ display: "flex", gap: "0.5rem" }}>
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
         <input
           style={{ flex: 1 }}
           value={newMessage}

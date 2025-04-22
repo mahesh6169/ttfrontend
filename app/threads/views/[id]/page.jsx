@@ -11,7 +11,7 @@ import {
   addNewThreadMessage,
   likeMessage,
   unlikeMessage,
-} from '@/store/slices/threadSlice';
+} from '@/store/slices/threads/threadSlice';
 import threadSocket from '@/config/threadSocket';
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
@@ -54,8 +54,6 @@ const ThreadChatPage = () => {
     }
   }, [dispatch, threadId, thread._id]);
 
-
-
   // Fetch messages & join socket room
   useEffect(() => {
     dispatch(fetchThreadMessages(threadId));
@@ -75,35 +73,42 @@ const ThreadChatPage = () => {
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-  
+
     const handleScroll = () => {
       const isNearBottom =
-        container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+        container.scrollHeight - container.scrollTop - container.clientHeight <
+        80;
       setAutoScrollEnabled(isNearBottom);
     };
-  
+
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
-  
 
   useEffect(() => {
     if (autoScrollEnabled && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, autoScrollEnabled]);
-  
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
       const localNow = new Date();
-      const utcNow = zonedTimeToUtc(localNow, Intl.DateTimeFormat().resolvedOptions().timeZone);
-  
-      dispatch(sendThreadMessage({ threadId, message: newMessage, createdAt: utcNow.toISOString() }));
+      const utcNow = zonedTimeToUtc(
+        localNow,
+        Intl.DateTimeFormat().resolvedOptions().timeZone
+      );
+
+      dispatch(
+        sendThreadMessage({
+          threadId,
+          message: newMessage,
+          createdAt: utcNow.toISOString(),
+        })
+      );
       setNewMessage('');
     }
   };
-  
 
   const handleLike = (messageId) => {
     dispatch(likeMessage(messageId));
@@ -128,14 +133,14 @@ const ThreadChatPage = () => {
       </h1>
 
       {thread.images?.[0]?.url && (
-  <div className="relative w-full h-[500px] bg-gray-200 flex items-center justify-center overflow-hidden rounded mb-4">
-    <img
-      src={thread.images[0].url}
-      alt="Thread Image"
-      className="object-cover h-full w-full"
-    />
-  </div>
-)}
+        <div className="relative w-full h-[500px] bg-gray-200 flex items-center justify-center overflow-hidden rounded mb-4">
+          <img
+            src={thread.images[0].url}
+            alt="Thread Image"
+            className="object-cover h-full w-full"
+          />
+        </div>
+      )}
 
       {thread.question && (
         <p className="text-base text-gray-900 mb-8 border-b">
@@ -143,62 +148,75 @@ const ThreadChatPage = () => {
         </p>
       )}
 
-{thread.title && (
-  <Link
-    href={`/support/report?type=thread&id=${threadId}&title=${encodeURIComponent(thread.title)}`}
-    className="text-sm text-red-600 underline ml-2"
-  >
-    Report this thread
-  </Link>
-)}
-
-      
+      {thread.title && (
+        <Link
+          href={`/support/report?type=thread&id=${threadId}&title=${encodeURIComponent(
+            thread.title
+          )}`}
+          className="text-sm text-red-600 underline ml-2"
+        >
+          Report this thread
+        </Link>
+      )}
 
       {/* ✅ Useful Answers */}
       {usefulAnswers.length > 0 && (
         <div className="mb-10 p-1  border border-green-600 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">Useful Answers</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">
+            Useful Answers
+          </h2>
           {usefulAnswers.map((msg) => (
-            <div key={msg._id} className="mb-2 p-1 bg-green-50 rounded-lg shadow-sm">
+            <div
+              key={msg._id}
+              className="mb-2 p-1 bg-green-50 rounded-lg shadow-sm"
+            >
               <p className="text-sm font-semibold text-gray-800">
                 {msg.sender?.name}
               </p>
               <p className="text-gray-700">{msg.message}</p>
               <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
-              <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                <span>
+                  {new Date(msg.createdAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                  })}
+                </span>
 
-  <div className="flex items-center space-x-3">
-    <button
-      onClick={() => handleLike(msg._id)}
-      className={`flex items-center space-x-1 ${
-        msg.likedBy?.includes(currentUser?._id)
-          ? 'text-blue-500'
-          : 'text-gray-500'
-      }`}
-    >
-      👍 {msg.likes || 0}
-    </button>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => handleLike(msg._id)}
+                    className={`flex items-center space-x-1 ${
+                      msg.likedBy?.includes(currentUser?._id)
+                        ? 'text-blue-500'
+                        : 'text-gray-500'
+                    }`}
+                  >
+                    👍 {msg.likes || 0}
+                  </button>
 
-    <button
-      onClick={() => handleUnlike(msg._id)}
-      className={`flex items-center space-x-1 ${
-        msg.dislikedBy?.includes(currentUser?._id)
-          ? 'text-red-500'
-          : 'text-gray-500'
-      }`}
-    >
-      👎 {msg.dislikes || 0}
-    </button>
-  </div>
-</div>
-
+                  <button
+                    onClick={() => handleUnlike(msg._id)}
+                    className={`flex items-center space-x-1 ${
+                      msg.dislikedBy?.includes(currentUser?._id)
+                        ? 'text-red-500'
+                        : 'text-gray-500'
+                    }`}
+                  >
+                    👎 {msg.dislikes || 0}
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
       )}
 
       {/* ✅ Message List */}
-      <div ref={messagesContainerRef} className="border rounded-lg p-1 mb-4 max-h-[700px] overflow-y-auto bg-white shadow-md">
+      <div
+        ref={messagesContainerRef}
+        className="border rounded-lg p-1 mb-4 max-h-[700px] overflow-y-auto bg-white shadow-md"
+      >
         {messages.length > 0 ? (
           messages.reduce((acc, msg, index) => {
             const prevMsg = messages[index - 1];
@@ -221,9 +239,12 @@ const ThreadChatPage = () => {
             return [
               ...acc,
               showDateSeparator && (
-                <div key={`date-${msg._id}`} className="flex justify-center my-3 w-full">
+                <div
+                  key={`date-${msg._id}`}
+                  className="flex justify-center my-3 w-full"
+                >
                   <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow">
-                  {new Date(msg.createdAt).toLocaleDateString()}
+                    {new Date(msg.createdAt).toLocaleDateString()}
                   </span>
                 </div>
               ),
@@ -247,7 +268,13 @@ const ThreadChatPage = () => {
                     <p className="text-sm font-semibold">
                       {msg.sender?.name || 'Former Member'}
                     </p>
-                    <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                    <span>
+                      {msgDate.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </span>
                   </div>
 
                   <p>{msg.message}</p>
@@ -309,7 +336,10 @@ const ThreadChatPage = () => {
             <Link
               href={`/users/login?preserveRedirect=true`}
               onClick={() => {
-                localStorage.setItem('redirectAfterLogin', `/threads/views/${threadId}`);
+                localStorage.setItem(
+                  'redirectAfterLogin',
+                  `/threads/views/${threadId}`
+                );
               }}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
@@ -318,7 +348,10 @@ const ThreadChatPage = () => {
             <Link
               href={`/users/register?preserveRedirect=true`}
               onClick={() => {
-                localStorage.setItem('redirectAfterLogin', `/threads/views/${threadId}`);
+                localStorage.setItem(
+                  'redirectAfterLogin',
+                  `/threads/views/${threadId}`
+                );
               }}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >

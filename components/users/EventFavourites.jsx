@@ -6,7 +6,7 @@ import {
   getEventWishlist,
   addToEventWishlist,
   removeFromEventWishlist,
-} from '@/store/slices/userSlice';
+} from '@/store/slices/users/userSlice';
 import EventCard from '@/components/events/EventCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { toast } from 'react-toastify';
@@ -15,7 +15,7 @@ const EventFavourites = () => {
   const dispatch = useDispatch();
 
   const {
-    eventWishlist,         // ✅ full event objects
+    eventWishlist, // ✅ full event objects
     eventWishlistStatus,
     eventWishlistError,
     user,
@@ -41,7 +41,7 @@ const EventFavourites = () => {
       } else {
         await dispatch(addToEventWishlist({ eventId })).unwrap();
       }
-    }     catch (err) {
+    } catch (err) {
       toast.error(err || 'Error updating event wishlist');
     }
   };

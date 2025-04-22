@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { createThread } from '@/store/slices/threadSlice';
+import { createThread } from '@/store/slices/threads/threadSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -28,7 +28,8 @@ const categoryOptions = [
   'Business & Shops',
   'Events & Community',
   'Services',
-  'Travel Partner', 'financial aid'
+  'Travel Partner',
+  'financial aid',
 ];
 
 const CreateThreadPage = () => {
@@ -75,7 +76,11 @@ const CreateThreadPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.question.trim() || !formData.category.trim()) {
+    if (
+      !formData.title.trim() ||
+      !formData.question.trim() ||
+      !formData.category.trim()
+    ) {
       alert('⚠️ Title, question, and category are required!');
       return;
     }
@@ -101,34 +106,33 @@ const CreateThreadPage = () => {
   return (
     <div className="max-w-lg mx-auto mt-10 p-6 border rounded-lg shadow-lg bg-white">
       <h1 className="text-2xl font-bold mb-4">Create a New Thread</h1>
-  
+
       {!isLoggedIn ? (
         <div className="border rounded-lg p-4 shadow-md bg-white text-center">
-  <p className="text-gray-700 mb-4">
-    You must be logged in to add a new thread.
-  </p>
-  <div className="flex justify-center space-x-4">
-    <Link
-      href="/users/login?preserveRedirect=true"
-      onClick={() => {
-        localStorage.setItem('redirectAfterLogin', '/threads/new');
-      }}
-      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-    >
-      Login
-    </Link>
-    <Link
-      href="/users/register?preserveRedirect=true"
-      onClick={() => {
-        localStorage.setItem('redirectAfterLogin', '/threads/new');
-      }}
-      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-    >
-      Register
-    </Link>
-  </div>
-</div>
-
+          <p className="text-gray-700 mb-4">
+            You must be logged in to add a new thread.
+          </p>
+          <div className="flex justify-center space-x-4">
+            <Link
+              href="/users/login?preserveRedirect=true"
+              onClick={() => {
+                localStorage.setItem('redirectAfterLogin', '/threads/new');
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Login
+            </Link>
+            <Link
+              href="/users/register?preserveRedirect=true"
+              onClick={() => {
+                localStorage.setItem('redirectAfterLogin', '/threads/new');
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Register
+            </Link>
+          </div>
+        </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -157,10 +161,12 @@ const CreateThreadPage = () => {
           >
             <option value="">Select Category</option>
             {categoryOptions.map((category) => (
-              <option key={category} value={category}>{category}</option>
+              <option key={category} value={category}>
+                {category}
+              </option>
             ))}
           </select>
-  
+
           {/* Image Upload */}
           <div>
             <label className="block font-semibold">Upload Images (Max 3)</label>
@@ -174,7 +180,11 @@ const CreateThreadPage = () => {
             <div className="mt-4 flex gap-4 flex-wrap">
               {preview.map((src, idx) => (
                 <div key={idx} className="relative">
-                  <img src={src} alt={`Preview ${idx}`} className="w-24 h-24 object-cover border" />
+                  <img
+                    src={src}
+                    alt={`Preview ${idx}`}
+                    className="w-24 h-24 object-cover border"
+                  />
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(idx)}
@@ -186,9 +196,12 @@ const CreateThreadPage = () => {
               ))}
             </div>
           </div>
-  
+
           <div className="flex gap-4 mt-4">
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
               Create Thread
             </button>
             <button
@@ -207,7 +220,6 @@ const CreateThreadPage = () => {
       )}
     </div>
   );
-  
 };
 
 export default CreateThreadPage;

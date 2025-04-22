@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { fetchuserProfile } from '@/store/slices/userSlice';
-import { deleteUserAdvert } from '@/store/slices/userAdvertsSlice';
+import { fetchuserProfile } from '@/store/slices/users/userSlice';
+import { deleteUserAdvert } from '@/store/slices/adverts/userAdvertsSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { toast } from 'react-toastify';
@@ -15,8 +15,14 @@ export default function ProfilePage() {
   const router = useRouter();
 
   // Extract required state fields
-  const { adverts, status: userStatus, error: userError } = useSelector((state) => state.user);
-  const { status: advertStatus, error: advertError } = useSelector((state) => state.userAdverts);
+  const {
+    adverts,
+    status: userStatus,
+    error: userError,
+  } = useSelector((state) => state.user);
+  const { status: advertStatus, error: advertError } = useSelector(
+    (state) => state.userAdverts
+  );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [advertToDelete, setAdvertToDelete] = useState(null);
@@ -27,9 +33,11 @@ export default function ProfilePage() {
       .unwrap()
       .catch((err) => {
         if (err === 'Authentication required. Please log in.') {
-
           // Save current page path to localStorage
-        localStorage.setItem('redirectAfterLogin', '/users/profile/manageads');
+          localStorage.setItem(
+            'redirectAfterLogin',
+            '/users/profile/manageads'
+          );
           router.push('/users/login');
         }
       });
@@ -93,15 +101,18 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">Manage Ads</h1>
+      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
+        Manage Ads
+      </h1>
       <Link
-  href="/adverts/add"
-  onClick={() => localStorage.setItem('cancelRedirectUrl', '/users/profile/manageads')}
-  className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
->
-  + Post New Advertisement
-</Link>
-
+        href="/adverts/add"
+        onClick={() =>
+          localStorage.setItem('cancelRedirectUrl', '/users/profile/manageads')
+        }
+        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+      >
+        + Post New Advertisement
+      </Link>
 
       {adverts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

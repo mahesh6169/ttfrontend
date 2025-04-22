@@ -2,13 +2,19 @@
 
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { sendMessage } from '@/store/slices/messageSlice';
+import { sendMessage } from '@/store/slices/shared/messageSlice';
 import { useRouter } from 'next/navigation';
 import { CgProfile } from 'react-icons/cg';
 import { toast } from 'react-toastify';
 import { zonedTimeToUtc } from 'date-fns-tz';
 
-const SendMessage = ({ resourceId, resourceType = 'advert', participantId, owner, preserveRedirectUrl }) => {
+const SendMessage = ({
+  resourceId,
+  resourceType = 'advert',
+  participantId,
+  owner,
+  preserveRedirectUrl,
+}) => {
   const dispatch = useDispatch();
   const router = useRouter();
 
@@ -23,8 +29,14 @@ const SendMessage = ({ resourceId, resourceType = 'advert', participantId, owner
     }
 
     if (!resourceId || !participantId) {
-      console.error('Missing required IDs:', { resourceType, resourceId, participantId });
-      toast.error('Resource ID and participantID are required to send a message.');
+      console.error('Missing required IDs:', {
+        resourceType,
+        resourceId,
+        participantId,
+      });
+      toast.error(
+        'Resource ID and participantID are required to send a message.'
+      );
       return;
     }
 
@@ -36,7 +48,15 @@ const SendMessage = ({ resourceId, resourceType = 'advert', participantId, owner
     const toastId = toast.loading('Sending message...');
 
     try {
-      await dispatch(sendMessage({ resourceId, resourceType, participantId, message,createdAt: utcNow.toISOString(), })).unwrap();
+      await dispatch(
+        sendMessage({
+          resourceId,
+          resourceType,
+          participantId,
+          message,
+          createdAt: utcNow.toISOString(),
+        })
+      ).unwrap();
       setMessage('');
       toast.update(toastId, {
         render: 'Message sent successfully!',
@@ -77,7 +97,9 @@ const SendMessage = ({ resourceId, resourceType = 'advert', participantId, owner
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         disabled={!user || sending}
-        placeholder={user ? 'Type your message here' : 'Please login to type a message'}
+        placeholder={
+          user ? 'Type your message here' : 'Please login to type a message'
+        }
         className={`w-full border rounded p-2 mb-4 resize-none ${
           !user ? 'bg-gray-100 cursor-not-allowed' : ''
         }`}

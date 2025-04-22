@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUsers, deleteUser } from '@/store/slices/adminSlice';
+import { fetchUsers, deleteUser } from '@/store/slices/admin/users/adminSlice';
 import Link from 'next/link';
 import CreateUserModal from '@/components/modals/CreateUserModal';
 import UserEditModal from '@/components/modals/UserEditModal';
@@ -76,15 +76,15 @@ export default function UsersPage() {
                 <td className="border p-2">{user.email}</td>
                 <td className="border p-2">{user.role}</td>
                 <td className="border p-2 flex gap-2">
-                  <button 
+                  <button
                     onClick={() => handleEditClick(user)}
                     className="text-blue-500 hover:underline"
                   >
                     Edit
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleDeleteClick(user._id)}
-                    className="text-red-500 hover:underline" 
+                    className="text-red-500 hover:underline"
                     disabled={isDeleting}
                   >
                     {isDeleting ? 'Deleting...' : 'Delete'}
@@ -94,20 +94,25 @@ export default function UsersPage() {
             ))
           ) : (
             <tr>
-              <td colSpan="4" className="text-center p-4">No users found.</td>
+              <td colSpan="4" className="text-center p-4">
+                No users found.
+              </td>
             </tr>
           )}
         </tbody>
       </table>
 
       {/* Create User Modal */}
-      <CreateUserModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      <CreateUserModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
 
       {/* Edit User Modal */}
-      <UserEditModal 
-        isOpen={isEditModalOpen} 
-        onClose={() => setIsEditModalOpen(false)} 
-        user={selectedUser} 
+      <UserEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        user={selectedUser}
       />
     </div>
   );

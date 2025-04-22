@@ -7,7 +7,7 @@ import {
   updateAccountDetails,
   deleteUserAccount,
   logoutUser,
-} from '@/store/slices/userSlice';
+} from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
@@ -67,7 +67,9 @@ export default function Settings() {
     const place = autocomplete.getPlace();
     const components = place.address_components || [];
 
-    let suburb = '', state = '', postalCode = '';
+    let suburb = '',
+      state = '',
+      postalCode = '';
     let coordinates = [];
 
     components.forEach((c) => {
@@ -108,7 +110,12 @@ export default function Settings() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) return;
+    if (
+      !confirm(
+        'Are you sure you want to delete your account? This action cannot be undone.'
+      )
+    )
+      return;
 
     try {
       console.log('🔸 Deleting account for userId:', userId);
@@ -123,7 +130,9 @@ export default function Settings() {
 
   return (
     <div className="max-w-xl mx-auto p-4 bg-white rounded shadow">
-      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center">Account Settings</h1>
+      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center">
+        Account Settings
+      </h1>
 
       <form onSubmit={handleUpdate} className="space-y-4">
         {/* Name */}

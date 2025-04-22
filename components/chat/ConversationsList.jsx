@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchConversations } from '@/store/slices/messageSlice';
+import { fetchConversations } from '@/store/slices/shared/messageSlice';
 import { useRouter } from 'next/navigation';
 
 const ConversationsList = () => {
@@ -46,17 +46,12 @@ const ConversationsList = () => {
           >
             <div className="flex items-center space-x-4">
               <img
-                src={
-                  conversation.advert.image ||
-                  '/default-advert.jpg'
-                }
+                src={conversation.advert.image || '/default-advert.jpg'}
                 alt={conversation.advert.title || 'Advert'}
                 className="w-16 h-16 object-cover rounded"
               />
               <div>
-                <h3 className="font-bold">
-                  {conversation.advert.title}
-                </h3>
+                <h3 className="font-bold">{conversation.advert.title}</h3>
                 <p className="text-gray-600 truncate w-64">
                   Last Message: {conversation.lastMessage.message}
                 </p>

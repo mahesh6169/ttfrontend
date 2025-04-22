@@ -3,7 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter, useParams } from 'next/navigation';
-import { fetchEventById, updateEventById } from '@/store/slices/eventSlice';
+import {
+  fetchEventById,
+  updateEventById,
+} from '@/store/slices/events/eventSlice';
 import { CATEGORY_OPTIONS } from '@/components/events/EventCategories';
 import AddressInput from '@/components/addadvert/AddressInput';
 import { toast } from 'react-toastify';
@@ -83,7 +86,9 @@ const EditEventPage = () => {
   });
 
   const [isRecurring, setIsRecurring] = useState(false);
-  const [repeatSchedule, setRepeatSchedule] = useState([{ day: 'Mon', time: '' }]);
+  const [repeatSchedule, setRepeatSchedule] = useState([
+    { day: 'Mon', time: '' },
+  ]);
   const [endDate, setEndDate] = useState('');
 
   const [existingImages, setExistingImages] = useState([]);
@@ -116,7 +121,6 @@ const EditEventPage = () => {
             })
           : [{ day: 'Mon', time: '' }]
       );
-      
 
       setEndDate(
         selectedEvent?.recurrence?.endDate
@@ -200,13 +204,13 @@ const EditEventPage = () => {
       toast.error(`Missing required fields: ${missing.join(', ')}`);
       return;
     }
-  
+
     const formPayload = new FormData();
-  
+
     // ✅ Recurrence Logic
     if (isRecurring) {
       formPayload.append('isRecurring', 'true');
-  
+
       const convertedSchedule = repeatSchedule.map(({ day, time }) => {
         if (!/^[0-9]{2}:[0-9]{2}$/.test(time)) {
           toast.error(`Invalid time format for ${day}: ${time}`);
@@ -214,18 +218,18 @@ const EditEventPage = () => {
         }
         return { day, time }; // Send clean HH:mm format
       });
-  
+
       formPayload.append('repeatSchedule', JSON.stringify(convertedSchedule));
       if (endDate) {
         formPayload.append('endDate', endDate);
       }
     }
-  
+
     // ✅ Retained Images
     existingImages.forEach((imgObj) => {
       formPayload.append('existingImages', JSON.stringify(imgObj));
     });
-  
+
     // ✅ Form Fields
     Object.entries(formData).forEach(([key, value]) => {
       if (key === 'images') {
@@ -239,7 +243,7 @@ const EditEventPage = () => {
         formPayload.append(key, value ?? '');
       }
     });
-  
+
     // ✅ Dispatch update
     try {
       const result = await dispatch(updateEventById({ id, data: formPayload }));
@@ -253,7 +257,6 @@ const EditEventPage = () => {
       toast.error(err.message || 'Update failed');
     }
   };
-  
 
   if (loading && !selectedEvent) {
     return (
@@ -313,82 +316,91 @@ const EditEventPage = () => {
 
         {/* 🔁 Recurrence Section */}
         <div className="border rounded p-4 bg-gray-50">
-  <label className="block font-semibold mb-2">
-    <input
-      type="checkbox"
-      checked={isRecurring}
-      onChange={(e) => setIsRecurring(e.target.checked)}
-      className="mr-2"
-    />
-    Is this a recurring event?
-  </label>
-
-  {isRecurring && (
-    <>
-      {/* Repeat Days with Times */}
-      <div className="space-y-2 mb-4">
-        {repeatSchedule.map((entry, idx) => (
-          <div key={idx} className="flex items-center gap-2">
-            <select
-              value={entry.day}
-              onChange={(e) => {
-                const updated = [...repeatSchedule];
-                updated[idx].day = e.target.value;
-                setRepeatSchedule(updated);
-              }}
-              className="p-2 border rounded"
-            >
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+          <label className="block font-semibold mb-2">
             <input
-              type="time"
-              value={entry.time}
-              onChange={(e) => {
-                const updated = [...repeatSchedule];
-                updated[idx].time = e.target.value;
-                setRepeatSchedule(updated);
-              }}
-              className="p-2 border rounded"
+              type="checkbox"
+              checked={isRecurring}
+              onChange={(e) => setIsRecurring(e.target.checked)}
+              className="mr-2"
             />
-            <button
-              type="button"
-              onClick={() => {
-                setRepeatSchedule((prev) => prev.filter((_, i) => i !== idx));
-              }}
-              className="text-red-600 font-bold"
-            >
-              ×
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() =>
-            setRepeatSchedule((prev) => [...prev, { day: 'Mon', time: '' }])
-          }
-          className="text-blue-600 text-sm underline"
-        >
-          + Add another
-        </button>
-      </div>
+            Is this a recurring event?
+          </label>
 
-      {/* End Date */}
-      <div>
-        <label className="block font-semibold">End Date (optional)</label>
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
-      </div>
-    </>
-  )}
-</div>
+          {isRecurring && (
+            <>
+              {/* Repeat Days with Times */}
+              <div className="space-y-2 mb-4">
+                {repeatSchedule.map((entry, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <select
+                      value={entry.day}
+                      onChange={(e) => {
+                        const updated = [...repeatSchedule];
+                        updated[idx].day = e.target.value;
+                        setRepeatSchedule(updated);
+                      }}
+                      className="p-2 border rounded"
+                    >
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(
+                        (d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        )
+                      )}
+                    </select>
+                    <input
+                      type="time"
+                      value={entry.time}
+                      onChange={(e) => {
+                        const updated = [...repeatSchedule];
+                        updated[idx].time = e.target.value;
+                        setRepeatSchedule(updated);
+                      }}
+                      className="p-2 border rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRepeatSchedule((prev) =>
+                          prev.filter((_, i) => i !== idx)
+                        );
+                      }}
+                      className="text-red-600 font-bold"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRepeatSchedule((prev) => [
+                      ...prev,
+                      { day: 'Mon', time: '' },
+                    ])
+                  }
+                  className="text-blue-600 text-sm underline"
+                >
+                  + Add another
+                </button>
+              </div>
 
-
+              {/* End Date */}
+              <div>
+                <label className="block font-semibold">
+                  End Date (optional)
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+            </>
+          )}
+        </div>
 
         {/* 4. Category */}
         <div>

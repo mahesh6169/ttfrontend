@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { createUser } from '@/store/slices/adminSlice';
+import { createUser } from '@/store/slices/admin/users/adminSlice';
 import { toast } from 'react-toastify';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 
@@ -60,7 +60,8 @@ const CreateUserModal = ({ isOpen, onClose }) => {
     components.forEach((component) => {
       const types = component.types;
       if (types.includes('locality')) suburb = component.long_name;
-      if (types.includes('administrative_area_level_1')) state = component.short_name;
+      if (types.includes('administrative_area_level_1'))
+        state = component.short_name;
       if (types.includes('postal_code')) postalCode = component.long_name;
     });
 
@@ -200,7 +201,9 @@ const CreateUserModal = ({ isOpen, onClose }) => {
               checked={formData.marketingOptIn}
               onChange={handleChange}
             />
-            <label className="text-sm text-gray-600">Opt-in for offers & updates</label>
+            <label className="text-sm text-gray-600">
+              Opt-in for offers & updates
+            </label>
           </div>
 
           <div className="flex justify-between mt-4">

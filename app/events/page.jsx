@@ -2,7 +2,10 @@
 import { format, addMonths, parse } from 'date-fns';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateEventFilter, fetchEventsByFilter } from '@/store/slices/filterEventSlice';
+import {
+  updateEventFilter,
+  fetchEventsByFilter,
+} from '@/store/slices/events/filterEventSlice';
 import EventsGrid from '@/components/events/EventsGrid';
 import Pagination from '@/components/Pagination';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -58,10 +61,12 @@ const EventsPage = () => {
   const [autocomplete, setAutocomplete] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const currentMonth = format(new Date(), 'yyyy-MM');
-const [localMonth, setLocalMonth] = useState(currentMonth);
+  const [localMonth, setLocalMonth] = useState(currentMonth);
 
   const handleClearAll = () => {
-    dispatch(updateEventFilter({ category: '', location: null, proximity: '' }));
+    dispatch(
+      updateEventFilter({ category: '', location: null, proximity: '' })
+    );
     setLocationInput('');
   };
 
@@ -77,16 +82,20 @@ const [localMonth, setLocalMonth] = useState(currentMonth);
       dispatch(updateEventFilter({ category: selectedCategory, page: 1 }));
     }
   };
-  
 
   const handleCityClick = (city) => {
     if (location === city.coordinates) {
       dispatch(updateEventFilter({ location: '', proximity: 10, page: 1 }));
     } else {
-      dispatch(updateEventFilter({ location: city.coordinates, proximity: 50, page: 1 }));
+      dispatch(
+        updateEventFilter({
+          location: city.coordinates,
+          proximity: 50,
+          page: 1,
+        })
+      );
     }
   };
-  
 
   const handlePlaceChanged = () => {
     if (autocomplete) {
@@ -95,7 +104,9 @@ const [localMonth, setLocalMonth] = useState(currentMonth);
         lat: place.geometry.location.lat(),
         lng: place.geometry.location.lng(),
       };
-      dispatch(updateEventFilter({ location: `${coordinates.lng},${coordinates.lat}` }));
+      dispatch(
+        updateEventFilter({ location: `${coordinates.lng},${coordinates.lat}` })
+      );
       setLocationInput(place.formatted_address);
     }
   };
@@ -125,7 +136,9 @@ const [localMonth, setLocalMonth] = useState(currentMonth);
         + Post New Event
       </Link>
 
-      <h1 className="text-lg md:text-2xl  mb-2 text-center  text-gray-900 font-semibold">Browse Events</h1>
+      <h1 className="text-lg md:text-2xl  mb-2 text-center  text-gray-900 font-semibold">
+        Browse Events
+      </h1>
 
       <div className="flex justify-center gap-4 mb-4">
         {['input', 'icons', 'cities'].map((mode) => (
@@ -133,10 +146,16 @@ const [localMonth, setLocalMonth] = useState(currentMonth);
             key={mode}
             onClick={() => handleFilterModeChange(mode)}
             className={`text-xs md:text-base p-1 rounded ${
-              filterMode === mode ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'
+              filterMode === mode
+                ? 'bg-gray-300 text-gray-900 font-semibold'
+                : 'bg-gray-100 text-gray-800'
             }`}
           >
-            {mode === 'input' ? 'Search All' : mode === 'icons' ? 'Browse Categories' : 'Browse Cities'}
+            {mode === 'input'
+              ? 'Search All'
+              : mode === 'icons'
+              ? 'Browse Categories'
+              : 'Browse Cities'}
           </button>
         ))}
       </div>
@@ -146,7 +165,13 @@ const [localMonth, setLocalMonth] = useState(currentMonth);
           <SelectSlider
             options={['All Categories', ...CATEGORY_OPTIONS]}
             value={category || 'All Categories'}
-            onChange={(val) => dispatch(updateEventFilter({ category: val === 'All Categories' ? '' : val }))}
+            onChange={(val) =>
+              dispatch(
+                updateEventFilter({
+                  category: val === 'All Categories' ? '' : val,
+                })
+              )
+            }
           />
 
           <LoadScriptNext
@@ -155,7 +180,10 @@ const [localMonth, setLocalMonth] = useState(currentMonth);
             onLoad={() => setIsScriptLoaded(true)}
           >
             {isScriptLoaded && (
-              <Autocomplete onLoad={setAutocomplete} onPlaceChanged={handlePlaceChanged}>
+              <Autocomplete
+                onLoad={setAutocomplete}
+                onPlaceChanged={handlePlaceChanged}
+              >
                 <input
                   type="text"
                   className="p-2 border rounded w-full md:w-96"
@@ -177,10 +205,12 @@ const [localMonth, setLocalMonth] = useState(currentMonth);
             placeholder="Proximity (km)"
             min="1"
             value={proximity || ''}
-            onChange={(e) => dispatch(updateEventFilter({ proximity: parseInt(e.target.value, 10) }))}
+            onChange={(e) =>
+              dispatch(
+                updateEventFilter({ proximity: parseInt(e.target.value, 10) })
+              )
+            }
           />
-
-
 
           <button
             type="button"
@@ -192,33 +222,33 @@ const [localMonth, setLocalMonth] = useState(currentMonth);
         </div>
       )}
 
-{filterMode === 'icons' && (
-  <div className="justify-center mb-4 mx-auto">
-    {/* Scrollable Wrapper .*/}
-    <div
-      className="flex overflow-x-auto gap-2 py-2 w-[300px] md:w-[350px] lg:w-[600px] xl:w-[800px] 2xl:w-[800px] scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200"
-      style={{
-        WebkitOverflowScrolling: 'touch',
-        scrollSnapType: 'x mandatory',
-      }}
-    >
-      {/* Category Buttons (Text only) */}
-      {CATEGORY_OPTIONS.map((cat) => (
-        <button
-          key={cat}
-          className={`flex items-center justify-center px-3 py-2 border rounded-lg shadow-md snap-start whitespace-nowrap font-semibold text-xs ${
-            category === cat ? 'bg-gray-300' : 'bg-white hover:bg-gray-100'
-          }`}
-          
-          onClick={() => handleCategoryClick(cat)}
-        >
-          {cat}
-        </button>
-      ))}
-    </div>
-  </div>
-)}
-
+      {filterMode === 'icons' && (
+        <div className="justify-center mb-4 mx-auto">
+          {/* Scrollable Wrapper .*/}
+          <div
+            className="flex overflow-x-auto gap-2 py-2 w-[300px] md:w-[350px] lg:w-[600px] xl:w-[800px] 2xl:w-[800px] scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200"
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollSnapType: 'x mandatory',
+            }}
+          >
+            {/* Category Buttons (Text only) */}
+            {CATEGORY_OPTIONS.map((cat) => (
+              <button
+                key={cat}
+                className={`flex items-center justify-center px-3 py-2 border rounded-lg shadow-md snap-start whitespace-nowrap font-semibold text-xs ${
+                  category === cat
+                    ? 'bg-gray-300'
+                    : 'bg-white hover:bg-gray-100'
+                }`}
+                onClick={() => handleCategoryClick(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {filterMode === 'cities' && (
         <div className="overflow-hidden mb-4">
@@ -227,7 +257,9 @@ const [localMonth, setLocalMonth] = useState(currentMonth);
               <button
                 key={city.name}
                 className={`flex flex-col items-center justify-center p-4 min-w-[140px] border rounded-lg shadow-md cursor-pointer snap-start  ${
-                  location === city.coordinates ? 'bg-gray-300' : 'bg-white hover:bg-gray-100'
+                  location === city.coordinates
+                    ? 'bg-gray-300'
+                    : 'bg-white hover:bg-gray-100'
                 }`}
                 onClick={() => handleCityClick(city)}
               >
@@ -238,28 +270,28 @@ const [localMonth, setLocalMonth] = useState(currentMonth);
           </div>
         </div>
       )}
-                {/* 🗓️ Month Filter */}
-                <div className="flex justify-center my-4">
-  <div className="flex items-center gap-2">
-    <button
-      onClick={() => handleMonthChange(-1)}
-      className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
-      aria-label="Previous Month"
-    >
-      ◀
-    </button>
-    <span className="font-semibold min-w-[120px] text-center">
-      {format(parse(localMonth, 'yyyy-MM', new Date()), 'MMMM yyyy')}
-    </span>
-    <button
-      onClick={() => handleMonthChange(1)}
-      className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
-      aria-label="Next Month"
-    >
-      ▶
-    </button>
-  </div>
-</div>
+      {/* 🗓️ Month Filter */}
+      <div className="flex justify-center my-4">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleMonthChange(-1)}
+            className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            aria-label="Previous Month"
+          >
+            ◀
+          </button>
+          <span className="font-semibold min-w-[120px] text-center">
+            {format(parse(localMonth, 'yyyy-MM', new Date()), 'MMMM yyyy')}
+          </span>
+          <button
+            onClick={() => handleMonthChange(1)}
+            className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            aria-label="Next Month"
+          >
+            ▶
+          </button>
+        </div>
+      </div>
 
       {/* Events Grid */}
       <EventsGrid events={events} eventStatus={eventStatus} />

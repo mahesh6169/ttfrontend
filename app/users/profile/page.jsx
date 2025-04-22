@@ -1,8 +1,8 @@
- 'use client';
+'use client';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { fetchuserProfile } from '@/store/slices/userSlice';
+import { fetchuserProfile } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -11,7 +11,7 @@ const ProfilePage = () => {
   const router = useRouter();
 
   const { user, status } = useSelector((state) => state.user);
-  const isAccountVerified = user?.isAccountVerified; 
+  const isAccountVerified = user?.isAccountVerified;
 
   // Fetch profile on mount.
   useEffect(() => {
@@ -28,8 +28,6 @@ const ProfilePage = () => {
     fetchProfile();
   }, [dispatch, router]);
 
-
-
   // Show loading spinner while fetching profile
   if (status === 'loading') {
     return (
@@ -41,8 +39,10 @@ const ProfilePage = () => {
 
   return (
     <div>
-      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">Manage Profile</h1>
-      <p className='text-center'>Welcome to your profile page.</p>
+      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
+        Manage Profile
+      </h1>
+      <p className="text-center">Welcome to your profile page.</p>
     </div>
   );
 };

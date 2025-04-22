@@ -8,7 +8,7 @@ import {
   getEventWishlist,
   addToEventWishlist,
   removeFromEventWishlist,
-} from '@/store/slices/userSlice';
+} from '@/store/slices/users/userSlice';
 import { format, differenceInDays } from 'date-fns';
 
 const SingleEventCard = ({ event }) => {
@@ -16,7 +16,9 @@ const SingleEventCard = ({ event }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const { tokenValidated, user, eventWishlist } = useSelector((state) => state.user);
+  const { tokenValidated, user, eventWishlist } = useSelector(
+    (state) => state.user
+  );
   const isAuthenticated = tokenValidated && !!user?._id;
   const isInWishlist = eventWishlist?.includes(event._id.toString());
 
@@ -73,14 +75,17 @@ const SingleEventCard = ({ event }) => {
     day: 'numeric',
     month: 'long',
   });
-  
 
   const showLocalTime = eventZone !== localTimeZone;
 
   const postedDaysAgo = differenceInDays(new Date(), new Date(event.createdAt));
   const postedText =
     postedDaysAgo <= 15
-      ? `${postedDaysAgo === 0 ? 'Today' : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`}`
+      ? `${
+          postedDaysAgo === 0
+            ? 'Today'
+            : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
+        }`
       : format(new Date(event.createdAt), 'dd MMM yyyy');
 
   return (
@@ -100,17 +105,33 @@ const SingleEventCard = ({ event }) => {
 
         {event.images?.length > 1 && (
           <>
-            <button onClick={handlePrevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow">Prev</button>
-            <button onClick={handleNextImage} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow">Next</button>
+            <button
+              onClick={handlePrevImage}
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow"
+            >
+              Prev
+            </button>
+            <button
+              onClick={handleNextImage}
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow"
+            >
+              Next
+            </button>
           </>
         )}
 
         <button
           onClick={() => handleWishlistToggle(event._id.toString())}
-          className={`absolute top-2 right-2 p-2 rounded-full z-10 ${isInWishlist ? 'bg-red-500' : 'bg-gray-300'}`}
+          className={`absolute top-2 right-2 p-2 rounded-full z-10 ${
+            isInWishlist ? 'bg-red-500' : 'bg-gray-300'
+          }`}
           title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
         >
-          <FaHeart className={`text-lg ${isInWishlist ? 'text-white' : 'text-gray-700'}`} />
+          <FaHeart
+            className={`text-lg ${
+              isInWishlist ? 'text-white' : 'text-gray-700'
+            }`}
+          />
         </button>
       </div>
 
@@ -122,11 +143,24 @@ const SingleEventCard = ({ event }) => {
               alt="Event Full"
               className="max-w-full max-h-full object-contain"
             />
-            <button onClick={() => setIsFullscreen(false)} className="absolute top-4 right-4 bg-white p-2 rounded-full">
+            <button
+              onClick={() => setIsFullscreen(false)}
+              className="absolute top-4 right-4 bg-white p-2 rounded-full"
+            >
               <FaTimes size={24} />
             </button>
-            <button onClick={handlePrevImage} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full">Prev</button>
-            <button onClick={handleNextImage} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full">Next</button>
+            <button
+              onClick={handlePrevImage}
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full"
+            >
+              Prev
+            </button>
+            <button
+              onClick={handleNextImage}
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full"
+            >
+              Next
+            </button>
           </div>
         </div>
       )}
@@ -141,17 +175,30 @@ const SingleEventCard = ({ event }) => {
 
         {/* Posted by + posted date */}
         <div className="flex justify-between text-base text-gray-700">
-          <span><strong>Posted By:</strong> {event.postedBy?.name || 'N/A'}</span>
-          <span><strong>Posted:</strong> {postedText}</span>
+          <span>
+            <strong>Posted By:</strong> {event.postedBy?.name || 'N/A'}
+          </span>
+          <span>
+            <strong>Posted:</strong> {postedText}
+          </span>
         </div>
 
         {/* Event Details */}
         <div>
           <h3 className="font-bold text-lg mb-2">Event Details</h3>
           <p>🗓️ {eventDateStr}</p>
-          <p>⏰ {eventTimeStr} {eventZoneCity}{showLocalTime && <> || {localTimeStr} {localZoneCity}</>}</p>
+          <p>
+            ⏰ {eventTimeStr} {eventZoneCity}
+            {showLocalTime && (
+              <>
+                {' '}
+                || {localTimeStr} {localZoneCity}
+              </>
+            )}
+          </p>
           <p className="mt-2 flex gap-2 items-start">
-            📍 <span className="flex flex-col">
+            📍{' '}
+            <span className="flex flex-col">
               <span>{event.venue}</span>
               <span>{event.address?.formattedAddress}</span>
             </span>
@@ -161,11 +208,23 @@ const SingleEventCard = ({ event }) => {
         {/* Organiser */}
         <div>
           <h3 className="font-bold text-lg mb-2">Event Organiser</h3>
-          <p><strong>Name:</strong> {event.organiser?.name}</p>
-          <p><strong>Website:</strong> {event.organiser?.website || 'N/A'}</p>
-          <p><strong>Primary Contact:</strong> {event.organiser?.primaryContact?.name} / {event.organiser?.primaryContact?.phone}</p>
+          <p>
+            <strong>Name:</strong> {event.organiser?.name}
+          </p>
+          <p>
+            <strong>Website:</strong> {event.organiser?.website || 'N/A'}
+          </p>
+          <p>
+            <strong>Primary Contact:</strong>{' '}
+            {event.organiser?.primaryContact?.name} /{' '}
+            {event.organiser?.primaryContact?.phone}
+          </p>
           {event.organiser?.secondaryContact?.name && (
-            <p><strong>Secondary Contact:</strong> {event.organiser.secondaryContact.name} / {event.organiser.secondaryContact.phone}</p>
+            <p>
+              <strong>Secondary Contact:</strong>{' '}
+              {event.organiser.secondaryContact.name} /{' '}
+              {event.organiser.secondaryContact.phone}
+            </p>
           )}
         </div>
 

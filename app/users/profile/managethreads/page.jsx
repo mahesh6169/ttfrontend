@@ -2,7 +2,10 @@
 
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUserThreads, deleteThread } from '@/store/slices/threadSlice';
+import {
+  fetchUserThreads,
+  deleteThread,
+} from '@/store/slices/threads/threadSlice';
 import { useRouter } from 'next/navigation';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
@@ -21,7 +24,9 @@ const ManageThreads = () => {
   }, [dispatch, user]);
 
   const handleDelete = async (threadId) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this thread?');
+    const confirmDelete = window.confirm(
+      'Are you sure you want to delete this thread?'
+    );
     if (!confirmDelete) return;
 
     const result = await dispatch(deleteThread(threadId));
@@ -40,18 +45,29 @@ const ManageThreads = () => {
 
   return (
     <div>
-      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">Manage Your Threads</h1>
+      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
+        Manage Your Threads
+      </h1>
       <Link
-  href="/threads/new"
-  onClick={() => localStorage.setItem('cancelRedirectUrl', '/users/profile/managethreads')}
-  className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
->
-  + Post New Thread
-</Link>
+        href="/threads/new"
+        onClick={() =>
+          localStorage.setItem(
+            'cancelRedirectUrl',
+            '/users/profile/managethreads'
+          )
+        }
+        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+      >
+        + Post New Thread
+      </Link>
 
-      {status === 'loading' && <p className="text-blue-500">Loading threads...</p>}
+      {status === 'loading' && (
+        <p className="text-blue-500">Loading threads...</p>
+      )}
       {error && <p className="text-red-500">{error}</p>}
-      {threads.length === 0 && !error && status !== 'loading' && <p>No threads found. Start a new discussion!</p>}
+      {threads.length === 0 && !error && status !== 'loading' && (
+        <p>No threads found. Start a new discussion!</p>
+      )}
 
       {threads.length > 0 && (
         <ul className="space-y-4">
@@ -60,10 +76,19 @@ const ManageThreads = () => {
               key={thread._id}
               className="border rounded-lg p-4 flex justify-between items-center hover:bg-gray-100 transition-all duration-200"
             >
-              <div onClick={() => router.push(`/threads/views/${thread._id}`)} className="cursor-pointer flex-1">
-                <h2 className="text-lg font-semibold text-blue-600 hover:underline">{thread.title}</h2>
-                <p className="text-sm text-gray-700 italic">{thread.question}</p>
-                <p className="text-sm text-gray-500">Started by {thread.owner?.name || 'Unknown'}</p>
+              <div
+                onClick={() => router.push(`/threads/views/${thread._id}`)}
+                className="cursor-pointer flex-1"
+              >
+                <h2 className="text-lg font-semibold text-blue-600 hover:underline">
+                  {thread.title}
+                </h2>
+                <p className="text-sm text-gray-700 italic">
+                  {thread.question}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Started by {thread.owner?.name || 'Unknown'}
+                </p>
                 <p className="text-xs text-gray-400">
                   Created on: {new Date(thread.createdAt).toLocaleDateString()}
                 </p>

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
-import { logoutUser } from '../store/slices/userSlice';
+import { logoutUser } from '../store/slices/users/userSlice';
 import { CgProfile } from 'react-icons/cg';
 import { FaHome } from 'react-icons/fa';
 import { FaEnvelope } from 'react-icons/fa';
@@ -105,56 +105,55 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu */}
-{/* Mobile Menu */}
-{isMobileMenuOpen && (
-  <div
-    className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg p-4 z-50 transform ${
-      isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-    } transition-transform duration-300 ease-in-out md:hidden`}
-  >
-    {isAuthenticated ? (
-      <>
-        <Link
-          href="/users/profile"
-          className="block flex items-center space-x-2 hover:underline"
-          onClick={() => setMobileMenuOpen(false)}
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div
+          className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg p-4 z-50 transform ${
+            isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          } transition-transform duration-300 ease-in-out md:hidden`}
         >
-          <CgProfile size={20} />
-          <span>Profile</span>
-        </Link>
-        <button
-          onClick={() => {
-            handleLogout();
-            setMobileMenuOpen(false); // Close the menu after logout
-          }}
-          className="block text-left flex items-center space-x-2 hover:underline cursor-pointer"
-        >
-          <TbLogout size={20} />
-          <span>Logout</span>
-        </button>
-      </>
-    ) : (
-      <>
-        <Link
-          href="/users/login"
-          className="block flex items-center space-x-2 hover:underline"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          <TbLogin size={20} />
-          <span>Login</span>
-        </Link>
-        <Link
-          href="/users/register"
-          className="block flex items-center space-x-2 hover:underline"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          <span>Register</span>
-        </Link>
-      </>
-    )}
-  </div>
-)}
-
+          {isAuthenticated ? (
+            <>
+              <Link
+                href="/users/profile"
+                className="block flex items-center space-x-2 hover:underline"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <CgProfile size={20} />
+                <span>Profile</span>
+              </Link>
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setMobileMenuOpen(false); // Close the menu after logout
+                }}
+                className="block text-left flex items-center space-x-2 hover:underline cursor-pointer"
+              >
+                <TbLogout size={20} />
+                <span>Logout</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/users/login"
+                className="block flex items-center space-x-2 hover:underline"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <TbLogin size={20} />
+                <span>Login</span>
+              </Link>
+              <Link
+                href="/users/register"
+                className="block flex items-center space-x-2 hover:underline"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span>Register</span>
+              </Link>
+            </>
+          )}
+        </div>
+      )}
     </nav>
   );
 };

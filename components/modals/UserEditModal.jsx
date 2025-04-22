@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { updateUser } from '@/store/slices/adminSlice';
+import { updateUser } from '@/store/slices/admin/users/adminSlice';
 import { toast } from 'react-toastify';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 
@@ -59,17 +59,24 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
     const place = autocomplete.getPlace();
     const components = place.address_components || [];
 
-    let suburb = '', state = '', postalCode = '', coordinates = [];
+    let suburb = '',
+      state = '',
+      postalCode = '',
+      coordinates = [];
 
     components.forEach((component) => {
       const types = component.types;
       if (types.includes('locality')) suburb = component.long_name;
-      if (types.includes('administrative_area_level_1')) state = component.short_name;
+      if (types.includes('administrative_area_level_1'))
+        state = component.short_name;
       if (types.includes('postal_code')) postalCode = component.long_name;
     });
 
     if (place.geometry?.location) {
-      coordinates = [place.geometry.location.lng(), place.geometry.location.lat()];
+      coordinates = [
+        place.geometry.location.lng(),
+        place.geometry.location.lat(),
+      ];
     }
 
     setFormData((prev) => ({
@@ -102,7 +109,9 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
     if (!formData.password) delete payload.password;
 
     try {
-      await dispatch(updateUser({ userId: user._id, userData: payload })).unwrap();
+      await dispatch(
+        updateUser({ userId: user._id, userData: payload })
+      ).unwrap();
       toast.success('User updated successfully');
       onClose();
     } catch (error) {
@@ -159,7 +168,10 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
             <option value="admin">Admin</option>
           </select>
 
-          <LoadScriptNext googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY} libraries={libraries}>
+          <LoadScriptNext
+            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+            libraries={libraries}
+          >
             <Autocomplete
               onLoad={(auto) => setAutocomplete(auto)}
               onPlaceChanged={handlePlaceChanged}
@@ -181,10 +193,12 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
               type="checkbox"
               name="isAccountVerified"
               checked={formData.isAccountVerified}
-              onChange={() => setFormData((prev) => ({
-                ...prev,
-                isAccountVerified: !prev.isAccountVerified,
-              }))}
+              onChange={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  isAccountVerified: !prev.isAccountVerified,
+                }))
+              }
             />
             <label>Account Verified</label>
           </div>
@@ -196,7 +210,9 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
               checked={formData.marketingOptIn}
               onChange={handleChange}
             />
-            <label className="text-sm text-gray-600">Opt-in for offers & updates</label>
+            <label className="text-sm text-gray-600">
+              Opt-in for offers & updates
+            </label>
           </div>
 
           <div className="flex justify-between mt-4">

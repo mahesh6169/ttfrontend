@@ -6,18 +6,14 @@ import {
   getEventWishlist,
   addToEventWishlist,
   removeFromEventWishlist,
-} from '@/store/slices/userSlice';
+} from '@/store/slices/users/userSlice';
 import EventCard from './EventCard';
 import LoadingSpinner from '../LoadingSpinner';
 
 const EventGrid = ({ events, eventStatus }) => {
   const dispatch = useDispatch();
-  const {
-    tokenValidated,
-    user,
-    eventWishlist,
-    eventWishlistStatus,
-  } = useSelector((state) => state.user);
+  const { tokenValidated, user, eventWishlist, eventWishlistStatus } =
+    useSelector((state) => state.user);
 
   const isAuthenticated = tokenValidated && !!user?._id;
 
@@ -62,7 +58,6 @@ const EventGrid = ({ events, eventStatus }) => {
 
   console.log('📦 events received by EventGrid:', events);
 
-
   // 😐 No events
   if (!events || events.length === 0) {
     return (
@@ -75,17 +70,18 @@ const EventGrid = ({ events, eventStatus }) => {
   // ✅ Render events
   return (
     <div className="w-full">
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6 lg:gap-8 w-full max-w-full overflow-hidden">
-      {events.map((event) => (
-        <EventCard
-        key={`${event._id}-${event.dateTime}-${Math.random().toString(36).substring(2, 8)}`}
-
-          event={event}
-          isInWishlist={eventWishlist?.some((e) => e._id === event._id)}
-          onWishlistToggle={() => handleWishlistToggle(event._id)}
-        />
-      ))}
-    </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6 lg:gap-8 w-full max-w-full overflow-hidden">
+        {events.map((event) => (
+          <EventCard
+            key={`${event._id}-${event.dateTime}-${Math.random()
+              .toString(36)
+              .substring(2, 8)}`}
+            event={event}
+            isInWishlist={eventWishlist?.some((e) => e._id === event._id)}
+            onWishlistToggle={() => handleWishlistToggle(event._id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };

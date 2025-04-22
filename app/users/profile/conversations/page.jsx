@@ -2,14 +2,19 @@
 
 import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchConversations, deleteConversation } from '@/store/slices/messageSlice';
+import {
+  fetchConversations,
+  deleteConversation,
+} from '@/store/slices/shared/messageSlice';
 import { useRouter } from 'next/navigation';
 
 const ConversationsPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { conversations, status, error } = useSelector((state) => state.messages);
+  const { conversations, status, error } = useSelector(
+    (state) => state.messages
+  );
 
   useEffect(() => {
     dispatch(fetchConversations());
@@ -23,13 +28,18 @@ const ConversationsPage = () => {
 
   if (status === 'loading') return <div>Loading conversations...</div>;
   if (error) return <div>Error: {error}</div>;
-  if (!conversations.length) return (
-    <div className="text-xl font-bold text-gray-800 p-14">No conversations found.</div>
-  );
+  if (!conversations.length)
+    return (
+      <div className="text-xl font-bold text-gray-800 p-14">
+        No conversations found.
+      </div>
+    );
 
   return (
     <div className="p-1">
-      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center">Chat Messages</h1>
+      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center">
+        Chat Messages
+      </h1>
 
       <ul className="space-y-4">
         {conversations.map((conv) => (
@@ -41,7 +51,9 @@ const ConversationsPage = () => {
             <div
               className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 cursor-pointer"
               onClick={() =>
-                router.push(`/chat/${conv.resourceType}/${conv.resourceId}?otherUser=${conv.otherUser.id}`)
+                router.push(
+                  `/chat/${conv.resourceType}/${conv.resourceId}?otherUser=${conv.otherUser.id}`
+                )
               }
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -69,7 +81,11 @@ const ConversationsPage = () => {
             <div className="flex justify-end">
               <button
                 onClick={() =>
-                  handleDeleteConversation(conv.resourceId, conv.otherUser.id, conv.resourceType)
+                  handleDeleteConversation(
+                    conv.resourceId,
+                    conv.otherUser.id,
+                    conv.resourceType
+                  )
                 }
                 className="mt-1 px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
               >

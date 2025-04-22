@@ -7,9 +7,8 @@ import {
   getWishlist,
   addToWishlist,
   removeFromWishlist,
-} from '@/store/slices/userSlice';
+} from '@/store/slices/users/userSlice';
 import { format, differenceInDays } from 'date-fns';
-
 
 const SingleAdvertCard = ({ advert }) => {
   const dispatch = useDispatch();
@@ -26,14 +25,16 @@ const SingleAdvertCard = ({ advert }) => {
     }
   }, [dispatch, isAuthenticated]);
 
-  const postedDaysAgo = differenceInDays(new Date(), new Date(advert.createdAt));
-const postedText =
-  postedDaysAgo <= 15
-    ? postedDaysAgo === 0
-      ? 'Today'
-      : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
-    : format(new Date(advert.createdAt), 'dd MMM yyyy');
-
+  const postedDaysAgo = differenceInDays(
+    new Date(),
+    new Date(advert.createdAt)
+  );
+  const postedText =
+    postedDaysAgo <= 15
+      ? postedDaysAgo === 0
+        ? 'Today'
+        : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
+      : format(new Date(advert.createdAt), 'dd MMM yyyy');
 
   const handleWishlistToggle = async (advertId) => {
     if (!isAuthenticated) {
@@ -165,41 +166,51 @@ const postedText =
       )}
 
       {/* Summary Section */}
-<div className="p-4 space-y-4">
+      <div className="p-4 space-y-4">
+        {/* Title */}
+        <h2 className="text-xl font-bold text-center break-words">
+          {advert.title || 'No Title'}
+        </h2>
 
-  {/* Title */}
-  <h2 className="text-xl font-bold text-center break-words">
-    {advert.title || 'No Title'}
-  </h2>
+        {/* Price and Address */}
+        <div className="space-y-1">
+          <p>
+            <strong>Price:</strong> {getPriceLabel()}
+          </p>
+          <p>
+            <strong>Address:</strong>{' '}
+            {advert.address?.formattedAddress || 'N/A'}
+          </p>
+        </div>
 
-  {/* Price and Address */}
-  <div className="space-y-1">
-    <p><strong>Price:</strong> {getPriceLabel()}</p>
-    <p>
-      <strong>Address:</strong> {advert.address?.formattedAddress || 'N/A'}
-    </p>
-  </div>
+        {/* Condition and Category */}
+        <div className="flex flex-col sm:flex-row justify-between gap-2">
+          <p>
+            <strong>Condition:</strong> {advert.condition || 'N/A'}
+          </p>
+          <p>
+            <strong>Category:</strong> {advert.category || 'N/A'}
+          </p>
+        </div>
 
-  {/* Condition and Category */}
-  <div className="flex flex-col sm:flex-row justify-between gap-2">
-    <p><strong>Condition:</strong> {advert.condition || 'N/A'}</p>
-    <p><strong>Category:</strong> {advert.category || 'N/A'}</p>
-  </div>
+        {/* Posted By and Date (Optional) */}
+        <div className="flex flex-col sm:flex-row justify-between gap-2">
+          <p>
+            <strong>Posted By:</strong> {advert.postedBy?.name || 'Unknown'}
+          </p>
+          <p>
+            <strong>Posted:</strong> {postedText || 'Unknown date'}
+          </p>
+        </div>
 
-  {/* Posted By and Date (Optional) */}
-  <div className="flex flex-col sm:flex-row justify-between gap-2">
-    <p><strong>Posted By:</strong> {advert.postedBy?.name || 'Unknown'}</p>
-    <p><strong>Posted:</strong> {postedText || 'Unknown date'}</p>
-  </div>
-
-  {/* Description */}
-  <div>
-    <h3 className="text-lg font-bold mb-1">Description:</h3>
-    <p className="text-gray-700">{advert.description || 'No Description Provided'}</p>
-  </div>
-
-</div>
-
+        {/* Description */}
+        <div>
+          <h3 className="text-lg font-bold mb-1">Description:</h3>
+          <p className="text-gray-700">
+            {advert.description || 'No Description Provided'}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

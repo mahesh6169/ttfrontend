@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { registerUser, sendVerifyOtp } from '@/store/slices/userSlice';
+import { registerUser, sendVerifyOtp } from '@/store/slices/users/userSlice';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
@@ -46,7 +46,6 @@ const Register = () => {
       localStorage.removeItem('redirectAfterLogin');
     }
   }, [preserveRedirect]);
-  
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -75,7 +74,8 @@ const Register = () => {
     addressComponents.forEach((component) => {
       const types = component.types;
       if (types.includes('locality')) suburb = component.long_name;
-      if (types.includes('administrative_area_level_1')) state = component.short_name;
+      if (types.includes('administrative_area_level_1'))
+        state = component.short_name;
       if (types.includes('postal_code')) postalCode = component.long_name;
     });
 
@@ -111,17 +111,21 @@ const Register = () => {
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.password.trim()) newErrors.password = 'Password is required';
-    if (!formData.confirmPassword.trim()) newErrors.confirmPassword = 'Confirm Password is required';
+    if (!formData.confirmPassword.trim())
+      newErrors.confirmPassword = 'Confirm Password is required';
     if (!formData.mobile.trim()) newErrors.mobile = 'Mobile is required';
-    if (!/^04\d{8}$/.test(formData.mobile)) newErrors.mobile = 'Mobile must be 10 digits and start with 04';
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (!/^04\d{8}$/.test(formData.mobile))
+      newErrors.mobile = 'Mobile must be 10 digits and start with 04';
+    if (formData.password !== formData.confirmPassword)
+      newErrors.confirmPassword = 'Passwords do not match';
     if (!formData.acceptTerms) {
       newErrors.acceptTerms = 'You must accept the Terms and Privacy Policy';
     }
 
     const { name, state, postalCode, location } = formData.suburb;
     if (!name || !state || !postalCode || location.coordinates.length !== 2) {
-      newErrors.suburb = 'Please select a valid suburb using the autocomplete field';
+      newErrors.suburb =
+        'Please select a valid suburb using the autocomplete field';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -131,13 +135,14 @@ const Register = () => {
 
     try {
       formData.acceptedTermsVersion = CURRENT_TERMS_VERSION;
-  formData.acceptedTermsAt = new Date().toISOString();
+      formData.acceptedTermsAt = new Date().toISOString();
       const result = await dispatch(registerUser(formData)).unwrap();
       if (result) {
         toast.success('Registration successful. Sending OTP...');
         const otpResult = await dispatch(sendVerifyOtp()).unwrap();
         if (otpResult) {
-          const redirect = localStorage.getItem('redirectAfterLogin') || '/users/profile';
+          const redirect =
+            localStorage.getItem('redirectAfterLogin') || '/users/profile';
           localStorage.setItem('redirectAfterLogin', redirect);
           toast.success('OTP sent successfully. Redirecting...');
           router.push('/users/emailverify');
@@ -153,25 +158,36 @@ const Register = () => {
       <div className="bg-white p-4 rounded-lg shadow-md max-w-md w-full mt-6">
         <h1 className="text-2xl font-bold mb-4 text-center">Register</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-
-          {['name', 'email', 'mobile', 'password', 'confirmPassword'].map((field) => (
-            <div key={field}>
-              <label htmlFor={field} className="block font-medium capitalize">
-                {field === 'confirmPassword' ? 'Confirm Password' : field.charAt(0).toUpperCase() + field.slice(1)}
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                id={field}
-                name={field}
-                type={field.toLowerCase().includes('password') ? 'password' : 'text'}
-                value={formData[field]}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded ${errors[field] ? 'border-red-500' : 'border-gray-300'}`}
-                placeholder={`Enter your ${field}`}
-              />
-              {errors[field] && <p className="text-red-500 text-sm mt-1">{errors[field]}</p>}
-            </div>
-          ))}
+          {['name', 'email', 'mobile', 'password', 'confirmPassword'].map(
+            (field) => (
+              <div key={field}>
+                <label htmlFor={field} className="block font-medium capitalize">
+                  {field === 'confirmPassword'
+                    ? 'Confirm Password'
+                    : field.charAt(0).toUpperCase() + field.slice(1)}
+                  <span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  id={field}
+                  name={field}
+                  type={
+                    field.toLowerCase().includes('password')
+                      ? 'password'
+                      : 'text'
+                  }
+                  value={formData[field]}
+                  onChange={handleChange}
+                  className={`w-full p-2 border rounded ${
+                    errors[field] ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder={`Enter your ${field}`}
+                />
+                {errors[field] && (
+                  <p className="text-red-500 text-sm mt-1">{errors[field]}</p>
+                )}
+              </div>
+            )
+          )}
 
           <div>
             <label className="block font-medium">Suburb</label>
@@ -190,11 +206,15 @@ const Register = () => {
                 <input
                   type="text"
                   placeholder="Enter your suburb"
-                  className={`w-full p-2 border rounded ${errors.suburb ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full p-2 border rounded ${
+                    errors.suburb ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
               </Autocomplete>
             </LoadScriptNext>
-            {errors.suburb && <p className="text-red-500 text-sm mt-1">{errors.suburb}</p>}
+            {errors.suburb && (
+              <p className="text-red-500 text-sm mt-1">{errors.suburb}</p>
+            )}
           </div>
 
           <div className="flex items-center">
@@ -211,28 +231,37 @@ const Register = () => {
             </label>
           </div>
           <div className="flex items-start gap-2">
-  <input
-    id="acceptTerms"
-    name="acceptTerms"
-    type="checkbox"
-    checked={formData.acceptTerms}
-    onChange={handleChange}
-    className="mt-1"
-  />
-  <label htmlFor="acceptTerms" className="text-sm text-gray-700">
-    I agree to the{' '}
-    <Link href="/support/terms" target="_blank" className="text-blue-600 underline">
-      Terms & Conditions
-    </Link>{' '}
-    and{' '}
-    <Link href="/support/privacy" target="_blank" className="text-blue-600 underline">
-      Privacy Policy
-    </Link>
-    .
-  </label>
-</div>
-{errors.acceptTerms && <p className="text-red-500 text-sm mt-1">{errors.acceptTerms}</p>}
-
+            <input
+              id="acceptTerms"
+              name="acceptTerms"
+              type="checkbox"
+              checked={formData.acceptTerms}
+              onChange={handleChange}
+              className="mt-1"
+            />
+            <label htmlFor="acceptTerms" className="text-sm text-gray-700">
+              I agree to the{' '}
+              <Link
+                href="/support/terms"
+                target="_blank"
+                className="text-blue-600 underline"
+              >
+                Terms & Conditions
+              </Link>{' '}
+              and{' '}
+              <Link
+                href="/support/privacy"
+                target="_blank"
+                className="text-blue-600 underline"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </label>
+          </div>
+          {errors.acceptTerms && (
+            <p className="text-red-500 text-sm mt-1">{errors.acceptTerms}</p>
+          )}
 
           <button
             type="submit"

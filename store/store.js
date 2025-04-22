@@ -1,15 +1,15 @@
 // store/store.js
 import { configureStore } from '@reduxjs/toolkit';
 import advertReducer from './slices/adverts/advertSlice';
-import userReducer from './slices/userSlice';
-import userAdvertReducer from './slices/userAdvertsSlice'; // Import userAdvertReducer
-import messages from './slices/messageSlice'; // Import messageSlice
+import userReducer from './slices/users/userSlice';
+import userAdvertReducer from './slices/adverts/userAdvertsSlice'; // Import userAdvertReducer
+import messages from './slices/shared/messageSlice'; // Import messageSlice
 import filterReducer from './slices/adverts/filterSlice'; // Import filterSlice
-import filterEventReducer from './slices/filterEventSlice'; // Import filterEventSlice
-import threadReducer from './slices/threadSlice'; // Import threadSlice
-import adminReducer from './slices/adminSlice'; // Import adminSlice
-import eventReducer from './slices/eventSlice'; // Import eventSlice
-import filterThreadReducer from './slices/filterThreadSlice'; // Import filterThreadSlice
+import filterEventReducer from './slices/events/filterEventSlice'; // Import filterEventSlice
+import threadReducer from './slices/threads/threadSlice'; // Import threadSlice
+import adminReducer from './slices/admin/users/adminSlice'; // Import adminSlice
+import eventReducer from './slices/events/eventSlice'; // Import eventSlice
+import filterThreadReducer from './slices/threads/filterThreadSlice'; // Import filterThreadSlice
 import adminManageAdvertReducer from './slices/adminManageAdvertSlice'; // Import adminManageAdvertSlice
 import adminManageEventReducer from './slices/adminManageEventSlice'; // Import adminManageEventSlice
 import supportReducer from './slices/supportSlice'; // Import supportSlice

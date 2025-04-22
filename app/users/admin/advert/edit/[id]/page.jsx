@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import {
   editAdvertById,
   updateAdvertById,
-} from '@/store/slices/userAdvertsSlice';
+} from '@/store/slices/adverts/userAdvertsSlice';
 import {
   CATEGORY_OPTIONS,
   CATEGORIES_REQUIRING_CONDITION,
@@ -54,8 +54,8 @@ const AdminEditAdvert = () => {
     rentPrice: 0,
     rentUnit: 'week',
     isForShare: false,
-sharePrice: 0,
-shareUnit: 'week',
+    sharePrice: 0,
+    shareUnit: 'week',
     description: '',
     address: {
       formattedAddress: '',
@@ -134,8 +134,8 @@ shareUnit: 'week',
   );
 
   const shouldShowPrice =
-      formData.isOffered &&
-      !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category);
+    formData.isOffered &&
+    !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category);
 
   /**
    * ---------------------------------------------------------------------
@@ -469,11 +469,11 @@ shareUnit: 'week',
         {/* Price Options */}
         {shouldShowPrice && (
           <PriceToggle
-          formData={formData}
-          setFormData={setFormData}
-          handleChange={handleChange}
-        />
-      )}
+            formData={formData}
+            setFormData={setFormData}
+            handleChange={handleChange}
+          />
+        )}
 
         {/* Condition */}
         {shouldShowCondition && formData.isForSale && (

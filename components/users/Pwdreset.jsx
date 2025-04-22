@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { sendResetOtp, resetPassword } from '@/store/slices/userSlice';
+import { sendResetOtp, resetPassword } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
 
 const ResetPasswordContent = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { status, resetStatus, otpMessage, resetError } = useSelector((state) => state.user);
+  const { status, resetStatus, otpMessage, resetError } = useSelector(
+    (state) => state.user
+  );
 
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -39,7 +41,9 @@ const ResetPasswordContent = () => {
     }
 
     try {
-      await dispatch(resetPassword({ email, otp, newPassword, confirmPassword })).unwrap();
+      await dispatch(
+        resetPassword({ email, otp, newPassword, confirmPassword })
+      ).unwrap();
       toast.success('Password reset successful. Redirecting to login...');
 
       // 🔁 Wait 3 seconds, then redirect

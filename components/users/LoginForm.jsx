@@ -2,48 +2,47 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser } from '@/store/slices/userSlice';
+import { loginUser } from '@/store/slices/users/userSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 import { useSearchParams } from 'next/navigation';
-
-
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
-const preserveRedirect = searchParams.get('preserveRedirect') === 'true';
+  const preserveRedirect = searchParams.get('preserveRedirect') === 'true';
 
   const { user, status } = useSelector((state) => state.user);
   const isLoading = status === 'loading';
 
-// 🔹 After successful login, handle redirection
-useEffect(() => {
-  if (!preserveRedirect) {
-    localStorage.removeItem('redirectAfterLogin'); // 🧹 clean up old redirect
-  }
-
-  if (user?._id) {
-    let redirectPath;
-
-    // 1. If admin, go to admin page
-    if (user.role === 'admin') {
-      redirectPath = '/users/admin';
-    } else {
-      // 2. Look for a saved path in localStorage
-      redirectPath = localStorage.getItem('redirectAfterLogin') || '/users/profile';
+  // 🔹 After successful login, handle redirection
+  useEffect(() => {
+    if (!preserveRedirect) {
+      localStorage.removeItem('redirectAfterLogin'); // 🧹 clean up old redirect
     }
 
-    // 3. Clean up localStorage to avoid stale redirects
-    localStorage.removeItem('redirectAfterLogin');
+    if (user?._id) {
+      let redirectPath;
 
-    // 4. Redirect!
-    router.push(redirectPath);
-  }
-}, [user, router]);
+      // 1. If admin, go to admin page
+      if (user.role === 'admin') {
+        redirectPath = '/users/admin';
+      } else {
+        // 2. Look for a saved path in localStorage
+        redirectPath =
+          localStorage.getItem('redirectAfterLogin') || '/users/profile';
+      }
+
+      // 3. Clean up localStorage to avoid stale redirects
+      localStorage.removeItem('redirectAfterLogin');
+
+      // 4. Redirect!
+      router.push(redirectPath);
+    }
+  }, [user, router]);
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -60,7 +59,9 @@ useEffect(() => {
         // ✅ Redirection handled in useEffect above
       }
     } catch (err) {
-      toast.error(err || 'Authentication failed. Please check your credentials.');
+      toast.error(
+        err || 'Authentication failed. Please check your credentials.'
+      );
     }
   };
 
@@ -87,28 +88,30 @@ useEffect(() => {
             />
           </div>
 
-{/* Password */}
-<div>
-  <label htmlFor="password" className="block font-medium">
-    Password
-  </label>
-  <input
-    id="password"
-    name="password"
-    type="password"
-    value={credentials.password}
-    onChange={handleChange}
-    className="w-full p-2 border border-gray-300 rounded"
-    placeholder="Enter your password"
-    required
-  />
-  <div className="text-right mt-1 text-sm">
-    <Link href="/users/pwdreset" className="text-blue-600 hover:underline">
-      Forgot your password?
-    </Link>
-  </div>
-</div>
-
+          {/* Password */}
+          <div>
+            <label htmlFor="password" className="block font-medium">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              value={credentials.password}
+              onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded"
+              placeholder="Enter your password"
+              required
+            />
+            <div className="text-right mt-1 text-sm">
+              <Link
+                href="/users/pwdreset"
+                className="text-blue-600 hover:underline"
+              >
+                Forgot your password?
+              </Link>
+            </div>
+          </div>
 
           {/* Submit Button */}
           <button

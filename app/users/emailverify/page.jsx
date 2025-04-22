@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import React, { Suspense, useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { verifyEmail, sendVerifyOtp } from '@/store/slices/userSlice';
+import { verifyEmail, sendVerifyOtp } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
 
 const EmailVerifyContent = () => {
@@ -16,9 +16,10 @@ const EmailVerifyContent = () => {
   const router = useRouter();
 
   // 🟢 Get redirect path from localStorage (as fallback, go to /users/profile)
-  const redirect = typeof window !== 'undefined'
-    ? localStorage.getItem('redirectAfterLogin') || '/users/profile'
-    : '/users/profile';
+  const redirect =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('redirectAfterLogin') || '/users/profile'
+      : '/users/profile';
 
   const { user, status } = useSelector((state) => state.user);
 
@@ -84,7 +85,9 @@ const EmailVerifyContent = () => {
   return (
     <div className="flex w-full h-screen items-start justify-center">
       <div className="bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Email Verification</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">
+          Email Verification
+        </h1>
 
         {!user?.isAccountVerified && (
           <>

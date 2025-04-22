@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchEventById } from '@/store/slices/eventSlice';
+import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SingleEventCard from '@/components/events/SingleEventCard';
 import SendMessage from '@/components/chat/SendMessage';
@@ -35,7 +35,9 @@ const EventDetail = () => {
   }
 
   if (!selectedEvent) {
-    return <div className="text-center text-gray-500 mt-8">Event not found.</div>;
+    return (
+      <div className="text-center text-gray-500 mt-8">Event not found.</div>
+    );
   }
 
   return (
@@ -59,20 +61,21 @@ const EventDetail = () => {
 
         {/* Chat Container */}
         <div className="flex-[3] bg-white shadow rounded-none p-4">
-        <SendMessage
-  resourceId={id}
-  resourceType="event"
-  participantId={selectedEvent.postedBy?._id}
-  owner={selectedEvent.postedBy?.name}
-  preserveRedirectUrl={`/events/views/${id}`}
-/>
-<Link
-  href={`/support/report?type=event&id=${id}&title=${encodeURIComponent(selectedEvent.title)}`}
-  className="text-sm text-red-600 underline mt-2 inline-block"
->
-  Report this event
-</Link>
-
+          <SendMessage
+            resourceId={id}
+            resourceType="event"
+            participantId={selectedEvent.postedBy?._id}
+            owner={selectedEvent.postedBy?.name}
+            preserveRedirectUrl={`/events/views/${id}`}
+          />
+          <Link
+            href={`/support/report?type=event&id=${id}&title=${encodeURIComponent(
+              selectedEvent.title
+            )}`}
+            className="text-sm text-red-600 underline mt-2 inline-block"
+          >
+            Report this event
+          </Link>
         </div>
       </div>
     </div>
