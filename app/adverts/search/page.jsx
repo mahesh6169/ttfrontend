@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateFilter, fetchAdvertsByFilter } from '@/store/slices/filterSlice';
+import {
+  updateFilter,
+  fetchAdvertsByFilter,
+} from '@/store/slices/adverts/filterSlice';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import AdvertList from '@/components/advertcomponents/AdvertList';
 import { useRouter } from 'next/navigation';

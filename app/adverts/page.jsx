@@ -2,13 +2,12 @@
 
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchAdverts } from '../../store/slices/advertSlice';
+import { fetchAdverts } from '../../store/slices/adverts/advertSlice';
 import Link from 'next/link';
 
 const AdvertsPage = () => {
   const dispatch = useDispatch();
   const { adverts, status, error } = useSelector((state) => state.advert);
-  
 
   useEffect(() => {
     if (status === 'idle') {
@@ -23,8 +22,6 @@ const AdvertsPage = () => {
   if (status === 'failed') {
     return <div className="text-center text-red-500">Error: {error}</div>;
   }
-  
-
 
   return (
     <div className="p-8">

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { addAdvert, clearAdverts } from '@/store/slices/advertSlice';
+import { addAdvert, clearAdverts } from '@/store/slices/adverts/advertSlice';
 import { LoadScript, Autocomplete } from '@react-google-maps/api';
 
 const NewAdvertPage = () => {

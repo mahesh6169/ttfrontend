@@ -5,22 +5,22 @@ import { useRouter, useParams } from 'next/navigation';
 import SingleAdvertCard from '@/components/advertcomponents/SingleAdvertCard';
 import SendMessage from '@/components/chat/SendMessage';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchAdvertById } from '@/store/slices/advertSlice';
+import { fetchAdvertById } from '@/store/slices/adverts/advertSlice';
 import Link from 'next/link';
-
 
 const AdvertDetail = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { selectedAdvert, status, error } = useSelector((state) => state.advert);
+  const { selectedAdvert, status, error } = useSelector(
+    (state) => state.advert
+  );
   const { user } = useSelector((state) => state.user);
 
   useEffect(() => {
     dispatch(fetchAdvertById(id));
   }, [dispatch, id]);
-
 
   if (status === 'loading') {
     return <div className="text-center mt-8">Loading advert details...</div>;
@@ -46,38 +46,35 @@ const AdvertDetail = () => {
           Go back
         </button>
       </div>
-  
+
       {/* Advert Details and Chat Container */}
       <div className="flex flex-col lg:flex-row gap-2">
         {/* Advert Details */}
         <div className="flex-[7] border-r bg-white">
           <SingleAdvertCard advert={selectedAdvert} />
         </div>
-  
 
-{/* Chat Container */}
-<div className="flex-[3] bg-white shadow rounded-none p-4">
-<SendMessage
-  resourceId={id}
-  resourceType="advert"
-  participantId={selectedAdvert.postedBy?._id}
-  owner={selectedAdvert.postedBy?.name}
-  preserveRedirectUrl={`/adverts/views/${id}`}
-/>
-<Link
-  href={`/support/report?type=advert&id=${id}&title=${encodeURIComponent(selectedAdvert.title)}`}
-  className="text-sm text-red-600 underline mt-2 inline-block"
->
-  Report this advert
-</Link>
-</div>
-
-
-
+        {/* Chat Container */}
+        <div className="flex-[3] bg-white shadow rounded-none p-4">
+          <SendMessage
+            resourceId={id}
+            resourceType="advert"
+            participantId={selectedAdvert.postedBy?._id}
+            owner={selectedAdvert.postedBy?.name}
+            preserveRedirectUrl={`/adverts/views/${id}`}
+          />
+          <Link
+            href={`/support/report?type=advert&id=${id}&title=${encodeURIComponent(
+              selectedAdvert.title
+            )}`}
+            className="text-sm text-red-600 underline mt-2 inline-block"
+          >
+            Report this advert
+          </Link>
+        </div>
       </div>
     </div>
   );
-  
 };
 
 export default AdvertDetail;

@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateFilter, fetchAdvertsByFilter } from '@/store/slices/filterSlice';
+import {
+  updateFilter,
+  fetchAdvertsByFilter,
+} from '@/store/slices/adverts/filterSlice';
 import AdvertList from '@/components/advertcomponents/AdvertList';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import {
@@ -44,7 +47,6 @@ const MixedCategoriesPage = () => {
   const { adverts, meta, status, category, location, proximity, page, limit } =
     useSelector((state) => state.filters);
   const [filterMode, setFilterMode] = useState('input'); // 'input', 'icons', or 'cities'
-
 
   // State for location input
   const [locationInput, setLocationInput] = useState('');
@@ -241,13 +243,14 @@ const MixedCategoriesPage = () => {
                 onClick={() => handleCategoryClick(cat.name)}
               >
                 <div className="text-xs text-gray-600 mb-2">{cat.icon}</div>
-                <span className="text-xs font-semibold whitespace-nowrap">{cat.name}</span>
+                <span className="text-xs font-semibold whitespace-nowrap">
+                  {cat.name}
+                </span>
               </button>
             ))}
           </div>
         </div>
       )}
-
 
       {/* Browse by Cities Section */}
       {filterMode === 'cities' && (
@@ -256,7 +259,9 @@ const MixedCategoriesPage = () => {
             <button
               key={city.name}
               className={`flex flex-col items-center justify-center p-4 border rounded-lg shadow-md cursor-pointer ${
-                location === city.coordinates ? 'bg-gray-300' : 'bg-white hover:bg-gray-100'
+                location === city.coordinates
+                  ? 'bg-gray-300'
+                  : 'bg-white hover:bg-gray-100'
               }`}
               onClick={() => handleCityClick(city)}
             >

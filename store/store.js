@@ -1,10 +1,10 @@
 // store/store.js
 import { configureStore } from '@reduxjs/toolkit';
-import advertReducer from './slices/advertSlice';
+import advertReducer from './slices/adverts/advertSlice';
 import userReducer from './slices/userSlice';
 import userAdvertReducer from './slices/userAdvertsSlice'; // Import userAdvertReducer
 import messages from './slices/messageSlice'; // Import messageSlice
-import filterReducer from './slices/filterSlice'; // Import filterSlice
+import filterReducer from './slices/adverts/filterSlice'; // Import filterSlice
 import filterEventReducer from './slices/filterEventSlice'; // Import filterEventSlice
 import threadReducer from './slices/threadSlice'; // Import threadSlice
 import adminReducer from './slices/adminSlice'; // Import adminSlice

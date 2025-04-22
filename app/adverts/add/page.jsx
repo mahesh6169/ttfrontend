@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { addAdvert, clearAdverts } from '@/store/slices/advertSlice';
+import { addAdvert, clearAdverts } from '@/store/slices/adverts/advertSlice';
 import {
   CATEGORY_OPTIONS,
   CATEGORIES_REQUIRING_CONDITION,
@@ -64,8 +64,8 @@ const NewAdvertPage = () => {
     rentPrice: 0,
     rentUnit: 'week',
     isForShare: false,
-sharePrice: 0,
-shareUnit: 'week',
+    sharePrice: 0,
+    shareUnit: 'week',
     description: '',
     address: {
       formattedAddress: '',
@@ -329,31 +329,30 @@ shareUnit: 'week',
       <h1 className="text-2xl font-bold mb-4">Add New Advert</h1>
       {!isLoggedIn ? (
         <div className="border rounded-lg p-4 shadow-md bg-white text-center">
-        <p className="text-gray-700 mb-4">
-          You must be logged in to add a new advert.
-        </p>
-        <div className="flex justify-center space-x-4">
-          <Link
-            href="/users/login?preserveRedirect=true"
-            onClick={() => {
-              localStorage.setItem('redirectAfterLogin', '/adverts/add');
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Login
-          </Link>
-          <Link
-            href="/users/register?preserveRedirect=true"
-            onClick={() => {
-              localStorage.setItem('redirectAfterLogin', '/adverts/add');
-            }}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Register
-          </Link>
+          <p className="text-gray-700 mb-4">
+            You must be logged in to add a new advert.
+          </p>
+          <div className="flex justify-center space-x-4">
+            <Link
+              href="/users/login?preserveRedirect=true"
+              onClick={() => {
+                localStorage.setItem('redirectAfterLogin', '/adverts/add');
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Login
+            </Link>
+            <Link
+              href="/users/register?preserveRedirect=true"
+              onClick={() => {
+                localStorage.setItem('redirectAfterLogin', '/adverts/add');
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Register
+            </Link>
+          </div>
         </div>
-      </div>
-      
       ) : (
         <>
           {status === 'loading' && (

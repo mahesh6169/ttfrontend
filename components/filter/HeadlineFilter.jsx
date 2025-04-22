@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { useDispatch } from 'react-redux';
-import { updateFilter } from '@/store/slices/filterSlice';
+import { updateFilter } from '@/store/slices/adverts/filterSlice';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 
 const categories = [
@@ -43,7 +43,9 @@ const HeadlineFilter = ({ filters, onFiltersChange }) => {
       const place = autocomplete.getPlace();
 
       if (!place.geometry || !place.formatted_address) {
-        console.error('Invalid place object or missing geometry/formatted_address');
+        console.error(
+          'Invalid place object or missing geometry/formatted_address'
+        );
         return;
       }
 

@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateFilter, fetchAdvertsByFilter } from '@/store/slices/filterSlice';
+import {
+  updateFilter,
+  fetchAdvertsByFilter,
+} from '@/store/slices/adverts/filterSlice';
 import AdvertList from '@/components/advertcomponents/AdvertList';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Pagination from '@/components/Pagination';
@@ -67,8 +70,16 @@ const cities = [
 
 const HomePage = () => {
   const dispatch = useDispatch();
-  const { adverts, meta, status: advertStatus, category, location, proximity, page, limit } =
-    useSelector((state) => state.filters);
+  const {
+    adverts,
+    meta,
+    status: advertStatus,
+    category,
+    location,
+    proximity,
+    page,
+    limit,
+  } = useSelector((state) => state.filters);
   const [filterMode, setFilterMode] = useState('input'); // 'input', 'icons', or 'cities'
 
   // State for location input
@@ -100,22 +111,23 @@ const HomePage = () => {
 
   // Handle category icon click
   const handleCategoryClick = (selectedCategory) => {
-      if (category === selectedCategory) {
-        dispatch(updateFilter({ category: '', page: 1 }));
-      } else {
-        dispatch(updateFilter({ category: selectedCategory, page: 1 }));
-      }
-    };
-    
+    if (category === selectedCategory) {
+      dispatch(updateFilter({ category: '', page: 1 }));
+    } else {
+      dispatch(updateFilter({ category: selectedCategory, page: 1 }));
+    }
+  };
 
   // Handle city click
   const handleCityClick = (city) => {
-      if (location === city.coordinates) {
-        dispatch(updateFilter({ location: '', proximity: 10, page: 1 }));
-      } else {
-        dispatch(updateFilter({ location: city.coordinates, proximity: 50, page: 1 }));
-      }
-    };
+    if (location === city.coordinates) {
+      dispatch(updateFilter({ location: '', proximity: 10, page: 1 }));
+    } else {
+      dispatch(
+        updateFilter({ location: city.coordinates, proximity: 50, page: 1 })
+      );
+    }
+  };
 
   // Handle Google Maps Autocomplete location selection
   const handlePlaceChanged = () => {
@@ -177,7 +189,9 @@ const HomePage = () => {
         <button
           onClick={() => handleFilterModeChange('input')}
           className={` text-xs md:text-base p-1 rounded ${
-            filterMode === 'input' ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'
+            filterMode === 'input'
+              ? 'bg-gray-300 text-gray-900 font-semibold'
+              : 'bg-gray-100 text-gray-800'
           }`}
         >
           Search All
@@ -185,7 +199,9 @@ const HomePage = () => {
         <button
           onClick={() => handleFilterModeChange('icons')}
           className={`text-sm md:text-base p-1 rounded ${
-            filterMode === 'icons' ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'
+            filterMode === 'icons'
+              ? 'bg-gray-300 text-gray-900 font-semibold'
+              : 'bg-gray-100 text-gray-800'
           }`}
         >
           Browse Categories
@@ -193,7 +209,9 @@ const HomePage = () => {
         <button
           onClick={() => handleFilterModeChange('cities')}
           className={`text-sm md:text-base px-1 rounded ${
-            filterMode === 'cities' ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'
+            filterMode === 'cities'
+              ? 'bg-gray-300 text-gray-900 font-semibold'
+              : 'bg-gray-100 text-gray-800'
           }`}
         >
           Browse Cities
@@ -203,7 +221,7 @@ const HomePage = () => {
       {/* Input Filter Section */}
       {filterMode === 'input' && (
         <div className=" text-sm lg:text-base p-1 w-full  flex flex-col md:flex-row gap-4 mb-4 justify-center">
-          <SelectSlider  
+          <SelectSlider
             options={[
               'All Categories',
               ...categoryIcons.map((cat) => cat.name),
@@ -263,7 +281,6 @@ const HomePage = () => {
           >
             Clear All
           </button>
-          
         </div>
       )}
 
