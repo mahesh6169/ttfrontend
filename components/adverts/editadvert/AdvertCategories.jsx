@@ -40,6 +40,10 @@ export const CATEGORY_OPTIONS = [
     'Academics Tutors & Arts',
   ];
   
+  export const CATEGORIES_HIDE_ISFORHIRE = [
+    'Real Estate',
+  ];
+
     // Field-specific hints.
     export const FIELD_HINTS = {
         email: 'Required to avoid spam.',

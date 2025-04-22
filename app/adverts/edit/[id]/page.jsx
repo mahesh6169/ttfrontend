@@ -12,6 +12,7 @@ import {
   CATEGORIES_REQUIRING_CONDITION,
   FIELD_HINTS,
   CATEGORIES_NOT_REQUIRING_PRICE,
+  CATEGORIES_HIDE_ISFORHIRE,
 } from '@/components/adverts/editadvert/AdvertCategories';
 import AdTypeToggle from '@/components/adverts/editadvert/AdTypeToggle';
 import PriceToggle from '@/components/adverts/editadvert/PriceToggle';
@@ -206,7 +207,7 @@ const EditAdvertPage = () => {
 
     setFormData((prev) => {
       let updatedData = { ...prev };
-
+    
       if (type === 'checkbox') {
         updatedData[name] = checked;
       } else if (name.startsWith('address.')) {
@@ -215,17 +216,24 @@ const EditAdvertPage = () => {
       } else {
         updatedData[name] = value;
       }
-
+    
       // ✅ Reset "condition" if the selected category does NOT require it
-      if (
-        name === 'category' &&
-        !CATEGORIES_REQUIRING_CONDITION.includes(value)
-      ) {
-        updatedData.condition = '';
+      if (name === 'category') {
+        if (!CATEGORIES_REQUIRING_CONDITION.includes(value)) {
+          updatedData.condition = '';
+        }
+    
+        // ✅ Reset "isForHire" if the selected category should hide hire
+        if (CATEGORIES_HIDE_ISFORHIRE.includes(value)) {
+          updatedData.isForHire = false;
+          updatedData.hirePrice = 0;            // Optional: reset hirePrice
+          updatedData.hireUnit = 'hour';        // Optional: reset unit if you want
+        }
       }
-
+    
       return updatedData;
     });
+    
   };
 
   // Handle new image files chosen

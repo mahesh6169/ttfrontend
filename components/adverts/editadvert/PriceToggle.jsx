@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { CATEGORIES_HIDE_ISFORHIRE } from '@/components/adverts/editadvert/AdvertCategories';
 
 const PriceToggle = ({ formData, setFormData, handleChange }) => {
   const handlePriceTypeChange = (selectedType) => {
@@ -12,6 +13,10 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
       share: formData.isForShare,
     };
 
+    if (selectedType === 'hire' && shouldHideHire) {
+      return;
+    }
+
     // If the type has changed, reset all others to 0
     if (!previouslySelected[selectedType]) {
       setFormData((prev) => ({
@@ -19,8 +24,8 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
         isForSale: selectedType === 'sell',
         sellPrice: selectedType === 'sell' ? prev.sellPrice : 0,
 
-        isForHire: selectedType === 'hire',
-        hirePrice: selectedType === 'hire' ? prev.hirePrice : 0,
+        isForHire: selectedType === 'hire' && !shouldHideHire,
+        hirePrice: selectedType === 'hire' && !shouldHideHire ? prev.hirePrice : 0,
 
         isForRent: selectedType === 'rent',
         rentPrice: selectedType === 'rent' ? prev.rentPrice : 0,
@@ -30,6 +35,8 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
       }));
     }
   };
+
+  const shouldHideHire = CATEGORIES_HIDE_ISFORHIRE.includes(formData.category);
 
   return (
     <div className="mb-4">
@@ -47,6 +54,7 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
           Sell
         </button>
 
+        {!shouldHideHire && (
         <button
           type="button"
           className={`flex-1 p-2 text-center border-r-2 ${
@@ -56,6 +64,7 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
         >
           Hire
         </button>
+        )}
 
         <button
           type="button"

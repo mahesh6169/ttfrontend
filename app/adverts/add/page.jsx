@@ -9,6 +9,7 @@ import {
   CATEGORIES_REQUIRING_CONDITION,
   FIELD_HINTS,
   CATEGORIES_NOT_REQUIRING_PRICE,
+  CATEGORIES_HIDE_ISFORHIRE,
 } from '@/components/adverts/addadvert/AdvertCategories';
 import AdTypeToggle from '@/components/adverts/addadvert/AdTypeToggle';
 import PriceToggle from '@/components/adverts/addadvert/PriceToggle';
@@ -123,7 +124,7 @@ const NewAdvertPage = () => {
 
     setFormData((prev) => {
       let updatedData = { ...prev };
-
+    
       if (type === 'checkbox') {
         updatedData[name] = checked;
       } else if (name.startsWith('address')) {
@@ -136,17 +137,26 @@ const NewAdvertPage = () => {
       } else {
         updatedData[name] = value;
       }
-
+    
       // ✅ Reset "condition" if the selected category does NOT require it
-      if (
-        name === 'category' &&
-        !CATEGORIES_REQUIRING_CONDITION.includes(value)
-      ) {
-        updatedData.condition = null;
+      if (name === 'category') {
+        const shouldHideHire = CATEGORIES_HIDE_ISFORHIRE.includes(value);
+    
+        if (!CATEGORIES_REQUIRING_CONDITION.includes(value)) {
+          updatedData.condition = null;
+        }
+    
+        // ✅ Reset isForHire if the category hides Hire:
+        if (shouldHideHire) {
+          updatedData.isForHire = false;
+          updatedData.hirePrice = 0;
+          updatedData.hireUnit = 'hour'; // Optional: reset to default unit
+        }
       }
-
+    
       return updatedData;
     });
+    
   };
 
   const handleSubmit = async (e) => {
@@ -442,7 +452,7 @@ const NewAdvertPage = () => {
 
             {/* Your Price */}
             {shouldShowPrice && (
-              <PriceToggle formData={formData} setFormData={setFormData} />
+              <PriceToggle formData={formData} setFormData={setFormData} category={formData.category}/>
             )}
 
             {/* Condition*/}

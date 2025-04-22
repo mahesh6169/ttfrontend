@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import { CATEGORIES_HIDE_ISFORHIRE } from '@/components/adverts/addadvert/AdvertCategories';
 
-const PriceToggle = ({ formData, setFormData }) => {
+const PriceToggle = ({ formData, setFormData, category }) => {
   const handlePriceTypeSelect = (type) => {
     setFormData((prev) => ({
       ...prev,
@@ -22,6 +23,8 @@ const PriceToggle = ({ formData, setFormData }) => {
       [name]: value,
     }));
   };
+
+  const shouldHideHire = CATEGORIES_HIDE_ISFORHIRE.includes(category);
 
   return (
     <div className="mb-4">
@@ -52,6 +55,7 @@ const PriceToggle = ({ formData, setFormData }) => {
           Rent
         </button>
 
+        {!shouldHideHire && (
         <button
           type="button"
           className={`flex-1 p-2 text-center border-r-2 ${
@@ -63,7 +67,7 @@ const PriceToggle = ({ formData, setFormData }) => {
         >
           Hire
         </button>
-
+  )}
         <button
   type="button"
   className={`flex-1 p-2 text-center ${
@@ -115,7 +119,7 @@ const PriceToggle = ({ formData, setFormData }) => {
           </>
         )}
 
-        {formData.isForHire && (
+        {formData.isForHire && !shouldHideHire && (
           <>
             <input
               type="number"
