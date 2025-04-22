@@ -447,12 +447,14 @@ export const acceptUpdatedTerms = createAsyncThunk(
 );
 
 
+
 const initialState = {
   tokenValidated: false,
   user: null,
   adverts: [],
   status: 'idle',
   error: null,
+  profileLoaded: false,
   resetStatus: 'idle',
   resetError: null,
   otpMessage: null,
@@ -572,9 +574,12 @@ const userSlice = createSlice({
           name: payload.user.name,
           email: payload.user.email,
           isAccountVerified: payload.user.isAccountVerified,
+          acceptedTermsVersion: payload.user.acceptedTermsVersion || null,
+          acceptedTermsAt: payload.user.acceptedTermsAt || null,
         };
         state.adverts = payload.adverts || [];
         state.error = null;
+        state.profileLoaded = true; // Set profileLoaded to true after fetching
       })
       .addCase(fetchuserProfile.rejected, (state, { payload }) => {
         state.status = 'failed';
@@ -806,7 +811,7 @@ const userSlice = createSlice({
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(acceptUpdatedTerms.fulfilled, (state) => {
+      .addCase(acceptUpdatedTerms.fulfilled, (state, action) => {
         state.status = 'success';
         if (state.user) {
           state.user.acceptedTermsVersion = action.payload.acceptedTermsVersion;

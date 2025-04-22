@@ -9,9 +9,11 @@ import { toast } from 'react-toastify';
 
 const TermsModal = () => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.user);
+  const { user, status, profileLoaded  } = useSelector((state) => state.user);
+  
 
   const needsToAccept =
+  profileLoaded &&
     user &&
     user.role !== 'guest' &&
     (!user.acceptedTermsVersion || user.acceptedTermsVersion !== CURRENT_TERMS_VERSION);
@@ -35,8 +37,11 @@ const TermsModal = () => {
       setLoading(false);
     }
   };
+  
 
-  if (!needsToAccept) return null;
+
+
+  if (!profileLoaded || !needsToAccept) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center px-4">
