@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import SingleAdvertCard from '@/components/advertcomponents/SingleAdvertCard';
+import SingleAdvertCard from '@/components/adverts/advertcomponents/SingleAdvertCard';
 import SendMessage from '@/components/chat/SendMessage';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchAdvertById } from '@/store/slices/adverts/advertSlice';

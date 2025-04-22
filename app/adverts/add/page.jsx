@@ -9,12 +9,12 @@ import {
   CATEGORIES_REQUIRING_CONDITION,
   FIELD_HINTS,
   CATEGORIES_NOT_REQUIRING_PRICE,
-} from '@/components/addadvert/AdvertCategories';
-import AdTypeToggle from '@/components/addadvert/AdTypeToggle';
-import PriceToggle from '@/components/addadvert/PriceToggle';
-import AddressInput from '@/components/addadvert/AddressInput';
-import ImageUploader from '@/components/addadvert/ImageUploader';
-import ConditionToggle from '@/components/addadvert/ConditionToggle';
+} from '@/components/adverts/addadvert/AdvertCategories';
+import AdTypeToggle from '@/components/adverts/addadvert/AdTypeToggle';
+import PriceToggle from '@/components/adverts/addadvert/PriceToggle';
+import AddressInput from '@/components/adverts/addadvert/AddressInput';
+import ImageUploader from '@/components/adverts/addadvert/ImageUploader';
+import ConditionToggle from '@/components/adverts/addadvert/ConditionToggle';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 

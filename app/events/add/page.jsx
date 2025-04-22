@@ -5,9 +5,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { addEvent } from '@/store/slices/events/eventSlice';
-import { CATEGORY_OPTIONS } from '@/components/events/EventCategories';
-import AddressInput from '@/components/addadvert/AddressInput';
-import ImageUploader from '@/components/addadvert/ImageUploader';
+import { CATEGORY_OPTIONS } from '@/components/events/addevents/EventCategories';
+import AddressInput from '@/components/adverts/addadvert/AddressInput';
+import ImageUploader from '@/components/adverts/addadvert/ImageUploader';
 import { zonedTimeToUtc } from 'date-fns-tz';
 import Link from 'next/link';
 

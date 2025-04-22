@@ -573,6 +573,7 @@ const userSlice = createSlice({
           _id: payload.user._id,
           name: payload.user.name,
           email: payload.user.email,
+          role: payload.user.role,
           isAccountVerified: payload.user.isAccountVerified,
           acceptedTermsVersion: payload.user.acceptedTermsVersion || null,
           acceptedTermsAt: payload.user.acceptedTermsAt || null,

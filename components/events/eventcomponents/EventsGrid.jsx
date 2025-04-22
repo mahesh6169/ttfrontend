@@ -7,8 +7,8 @@ import {
   addToEventWishlist,
   removeFromEventWishlist,
 } from '@/store/slices/users/userSlice';
-import EventCard from './EventCard';
-import LoadingSpinner from '../LoadingSpinner';
+import EventCard from '@/components/events/eventcomponents/EventCard';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const EventGrid = ({ events, eventStatus }) => {
   const dispatch = useDispatch();

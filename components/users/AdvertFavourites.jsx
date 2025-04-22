@@ -7,7 +7,7 @@ import {
   addToWishlist,
   removeFromWishlist,
 } from '@/store/slices/users/userSlice';
-import AdvertCard from '@/components/advertcomponents/AdvertCard';
+import AdvertCard from '@/components/adverts/advertcomponents/AdvertCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { toast } from 'react-toastify';
 

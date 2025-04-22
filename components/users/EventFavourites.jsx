@@ -7,7 +7,7 @@ import {
   addToEventWishlist,
   removeFromEventWishlist,
 } from '@/store/slices/users/userSlice';
-import EventCard from '@/components/events/EventCard';
+import EventCard from '@/components/events/eventcomponents/EventCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { toast } from 'react-toastify';
 

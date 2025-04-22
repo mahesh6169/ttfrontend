@@ -6,7 +6,7 @@ import {
   updateEventFilter,
   fetchEventsByFilter,
 } from '@/store/slices/events/filterEventSlice';
-import EventsGrid from '@/components/events/EventsGrid';
+import EventsGrid from '@/components/events/eventcomponents/EventsGrid';
 import Pagination from '@/components/Pagination';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';

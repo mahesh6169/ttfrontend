@@ -29,8 +29,10 @@ const Header = () => {
 
   const { tokenValidated, user } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user._id;
-  const profileLink =
-    user?.role === 'admin' ? '/users/admin' : '/users/profile';
+  const baseProfilePath = user?.role === 'admin' ? '/admin/profile' : '/users/profile';
+  const profileLink = baseProfilePath;
+
+
 
   const handleLogout = async () => {
     try {
@@ -164,7 +166,7 @@ const Header = () => {
                     onClick={toggleMobileMenu}
                   />
                   <NavLink
-                    href="/users/profile/settings"
+                    href={`${baseProfilePath}/settings`}
                     icon={<FaUser />}
                     text="Settings"
                     pathname={pathname}
@@ -172,7 +174,7 @@ const Header = () => {
                     onClick={toggleMobileMenu}
                   />
                   <NavLink
-                    href="/users/profile/manageads"
+                    href={`${baseProfilePath}/manageads`}
                     icon={<FaAd />}
                     text="Manage Ads"
                     pathname={pathname}
@@ -180,7 +182,7 @@ const Header = () => {
                     onClick={toggleMobileMenu}
                   />
                   <NavLink
-                    href="/users/profile/managethreads"
+                    href={`${baseProfilePath}/managethreads`}
                     icon={<BsChatText />}
                     text="Manage Threads"
                     pathname={pathname}
@@ -188,7 +190,7 @@ const Header = () => {
                     onClick={toggleMobileMenu}
                   />
                   <NavLink
-                    href="/users/profile/favourites"
+                    href={`${baseProfilePath}/favourites`}
                     icon={<MdFavorite />}
                     text="Favourites"
                     pathname={pathname}
@@ -196,7 +198,7 @@ const Header = () => {
                     onClick={toggleMobileMenu}
                   />
                   <NavLink
-                    href="/users/profile/conversations"
+                    href={`${baseProfilePath}/conversations`}
                     icon={<FaEnvelope />}
                     text="Messages"
                     pathname={pathname}

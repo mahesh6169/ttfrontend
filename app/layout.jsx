@@ -16,7 +16,7 @@ const MainLayout = ({ children }) => {
       <body>
         <Providers>
           <Header />
-          <TermsModal />
+           {/* <TermsModal /> */} 
           {children}
           <ToastContainer />
         </Providers>

@@ -7,7 +7,7 @@ import {
   fetchAdvertsByFilter,
 } from '@/store/slices/adverts/filterSlice';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
-import AdvertList from '@/components/advertcomponents/AdvertList';
+import AdvertList from '@/components/adverts/advertcomponents/AdvertList';
 import { useRouter } from 'next/navigation';
 
 const categories = [

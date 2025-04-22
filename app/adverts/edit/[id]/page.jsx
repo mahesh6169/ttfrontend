@@ -12,12 +12,12 @@ import {
   CATEGORIES_REQUIRING_CONDITION,
   FIELD_HINTS,
   CATEGORIES_NOT_REQUIRING_PRICE,
-} from '@/components/editadvert/AdvertCategories';
-import AdTypeToggle from '@/components/editadvert/AdTypeToggle';
-import PriceToggle from '@/components/editadvert/PriceToggle';
-import ConditionToggle from '@/components/editadvert/ConditionToggle';
-import ImageUploader from '@/components/editadvert/ImageUploader';
-import AddressInput from '@/components/editadvert/AddressInput';
+} from '@/components/adverts/editadvert/AdvertCategories';
+import AdTypeToggle from '@/components/adverts/editadvert/AdTypeToggle';
+import PriceToggle from '@/components/adverts/editadvert/PriceToggle';
+import ConditionToggle from '@/components/adverts/editadvert/ConditionToggle';
+import ImageUploader from '@/components/adverts/editadvert/ImageUploader';
+import AddressInput from '@/components/adverts/editadvert/AddressInput';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';

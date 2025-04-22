@@ -6,7 +6,7 @@ import {
   updateFilter,
   fetchAdvertsByFilter,
 } from '@/store/slices/adverts/filterSlice';
-import AdvertList from '@/components/advertcomponents/AdvertList';
+import AdvertList from '@/components/adverts/advertcomponents/AdvertList';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import {
   FaMusic,

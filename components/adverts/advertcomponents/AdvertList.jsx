@@ -8,7 +8,7 @@ import {
   removeFromWishlist,
 } from '@/store/slices/users/userSlice';
 import AdvertCard from './AdvertCard';
-import LoadingSpinner from '../LoadingSpinner';
+import LoadingSpinner from '../../LoadingSpinner';
 
 const AdvertList = ({ adverts, advertStatus }) => {
   const dispatch = useDispatch();
