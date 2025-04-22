@@ -29,7 +29,7 @@ const Login = () => {
 
       // 1. If admin, go to admin page
       if (user.role === 'admin') {
-        redirectPath = '/users/admin';
+        redirectPath = '/admin/profile';
       } else {
         // 2. Look for a saved path in localStorage
         redirectPath =

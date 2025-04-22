@@ -13,10 +13,10 @@ const AdminSidebar = ({ onLinkClick }) => {
   const router = useRouter();
 
   const menuItems = [
-    { label: 'Users', href: '/users/admin/users', icon: <FaUsers /> },
-    { label: 'Adverts', href: '/users/admin/adverts', icon: <FaAd /> },
-    { label: 'Threads', href: '/users/admin/threads', icon: <BsChatText /> },
-    { label: 'Events', href: '/users/admin/events', icon: <MdEvent /> },
+    { label: 'Users', href: '/admin/profile/users', icon: <FaUsers /> },
+    { label: 'Adverts', href: '/admin/profile/adverts', icon: <FaAd /> },
+    { label: 'Threads', href: '/admin/profile/threads', icon: <BsChatText /> },
+    { label: 'Events', href: '/admin/profile/events', icon: <MdEvent /> },
     { label: 'Categories', href: '/users/admin/categories', icon: <MdCategory /> },
     { label: 'Post Advert', href: '/users/admin/adverts/new', icon: <RiAdvertisementFill /> },
     { label: 'Settings', href: '/users/admin/settings', icon: <FaCog /> },
