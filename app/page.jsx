@@ -26,7 +26,7 @@ import {
 
 import { LuPartyPopper } from 'react-icons/lu';
 import { MdRealEstateAgent, MdStore } from 'react-icons/md'; // ✅ Store icon from Materiall Design
-import { GiScrewdriver } from 'react-icons/gi'; // ✅ Use GameIcons for toolss.
+import { GiScrewdriver } from 'react-icons/gi'; // ✅ Use GameIcons for tools.
 import SelectSlider from '@/components/SelectSlider';
 
 import Link from 'next/link';
