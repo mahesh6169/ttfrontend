@@ -133,9 +133,17 @@ const handleFilterModeChange = (mode) => {
       {/* 🟢 Clear Filter */}
       {category && (
         <div className="flex justify-center mb-4">
-          <button onClick={() => dispatch(clearThreadFilter())} className="text-xs md:text-base px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600">
-            Clear Filter
-          </button>
+          <button
+  onClick={() => {
+    dispatch(clearThreadFilter());
+    setFilterMode('categories'); // ✅ Switch back to Browse All Topics
+    dispatch(fetchThreads());    // ✅ Reload all threads
+  }}
+  className="text-xs md:text-base px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600"
+>
+  Clear Filter
+</button>
+
         </div>
       )}
 
