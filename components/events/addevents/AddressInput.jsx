@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
-import { FIELD_HINTS } from './AdvertCategories';
+import { FIELD_HINTS } from './EventCategories'; // Adjust the import path as necessary
 
 const libraries = ['places'];
 

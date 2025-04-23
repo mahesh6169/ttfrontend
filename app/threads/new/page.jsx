@@ -104,7 +104,7 @@ const CreateThreadPage = () => {
   };
 
   return (
-    <div className="max-w-lg mx-auto mt-10 p-6 border rounded-lg shadow-lg bg-white">
+    <div className="max-w-lg mx-auto mt-08 p-6 border rounded-lg shadow-lg bg-white">
       <h1 className="text-2xl font-bold mb-4">Create a New Thread</h1>
 
       {!isLoggedIn ? (

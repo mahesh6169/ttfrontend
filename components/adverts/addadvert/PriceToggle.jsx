@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CATEGORIES_HIDE_ISFORHIRE } from '@/components/adverts/addadvert/AdvertCategories';
+import { CATEGORIES_HIDE_ISFORHIRE, CATEGORIES_HIDE_ISFORSHARE, } from '@/components/adverts/addadvert/AdvertCategories';
 
 const PriceToggle = ({ formData, setFormData, category }) => {
   const handlePriceTypeSelect = (type) => {
@@ -25,6 +25,7 @@ const PriceToggle = ({ formData, setFormData, category }) => {
   };
 
   const shouldHideHire = CATEGORIES_HIDE_ISFORHIRE.includes(category);
+  const shouldHideShare = CATEGORIES_HIDE_ISFORSHARE.includes(category);
 
   return (
     <div className="mb-4">
@@ -68,7 +69,8 @@ const PriceToggle = ({ formData, setFormData, category }) => {
           Hire
         </button>
   )}
-        <button
+  
+  {!shouldHideShare && ( <button
   type="button"
   className={`flex-1 p-2 text-center ${
     formData.isForShare
@@ -79,7 +81,7 @@ const PriceToggle = ({ formData, setFormData, category }) => {
 >
   Share
 </button>
-
+)}
 
 
       </div>
@@ -141,7 +143,7 @@ const PriceToggle = ({ formData, setFormData, category }) => {
           </>
         )}
 
-{formData.isForShare && (
+{formData.isForShare && !shouldHideShare && (
   <>
     <input
       type="number"

@@ -10,6 +10,7 @@ import {
   FIELD_HINTS,
   CATEGORIES_NOT_REQUIRING_PRICE,
   CATEGORIES_HIDE_ISFORHIRE,
+  CATEGORIES_HIDE_ISFORSHARE,
 } from '@/components/adverts/addadvert/AdvertCategories';
 import AdTypeToggle from '@/components/adverts/addadvert/AdTypeToggle';
 import PriceToggle from '@/components/adverts/addadvert/PriceToggle';
@@ -19,25 +20,8 @@ import ConditionToggle from '@/components/adverts/addadvert/ConditionToggle';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 
-<p className="text-lg text-gray-700 mb-2">
-  Please{' '}
-  <Link
-    href="/users/login?preserveRedirect=true"
-    className="text-blue-600 underline"
-    onClick={() => localStorage.setItem('redirectAfterLogin', '/adverts/add')}
-  >
-    Login
-  </Link>{' '}
-  or{' '}
-  <Link
-    href="/users/register?preserveRedirect=true"
-    className="text-blue-600 underline"
-    onClick={() => localStorage.setItem('redirectAfterLogin', '/adverts/add')}
-  >
-    Register
-  </Link>{' '}
-  to add a new advert.
-</p>;
+
+
 
 const libraries = ['places'];
 
@@ -119,6 +103,62 @@ const NewAdvertPage = () => {
     setFocusedField(null); // Clear the hint when the field loses focus
   };
 
+
+// ✅ Add handlePlaceChanged RIGHT HERE:
+const handlePlaceChanged = () => {
+  if (autocomplete) {
+    const place = autocomplete.getPlace();
+
+    if (!place.geometry || !place.geometry.location) {
+      console.error('No valid location data found');
+      return;
+    }
+
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+    const formattedAddress = place.formatted_address || '';
+    const addressComponents = place.address_components || [];
+
+    let street = '',
+      suburb = '',
+      state = '',
+      postalCode = '';
+
+    addressComponents.forEach((component) => {
+      const types = component.types;
+      if (types.includes('route')) {
+        street = component.long_name;
+      }
+      if (types.includes('locality')) {
+        suburb = component.long_name;
+      }
+      if (types.includes('administrative_area_level_1')) {
+        state = component.short_name;
+      }
+      if (types.includes('postal_code')) {
+        postalCode = component.long_name;
+      }
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        formattedAddress,
+        street,
+        suburb,
+        state,
+        postalCode,
+        location: {
+          type: 'Point',
+          coordinates: [lng, lat],
+        },
+      },
+    }));
+};
+  };
+
+
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -141,6 +181,7 @@ const NewAdvertPage = () => {
       // ✅ Reset "condition" if the selected category does NOT require it
       if (name === 'category') {
         const shouldHideHire = CATEGORIES_HIDE_ISFORHIRE.includes(value);
+        const shouldHideShare = CATEGORIES_HIDE_ISFORSHARE.includes(value);
     
         if (!CATEGORIES_REQUIRING_CONDITION.includes(value)) {
           updatedData.condition = null;
@@ -151,6 +192,12 @@ const NewAdvertPage = () => {
           updatedData.isForHire = false;
           updatedData.hirePrice = 0;
           updatedData.hireUnit = 'hour'; // Optional: reset to default unit
+        }
+          // ✅ Reset isForShare if the category hides Share:
+        if (shouldHideShare) {
+          updatedData.isForShare = false;
+          updatedData.sharePrice = 0;
+          updatedData.shareUnit = 'week';
         }
       }
     
@@ -242,6 +289,7 @@ const NewAdvertPage = () => {
       formData.condition = null;
     }
 
+    
     const formPayload = new FormData();
 
     Object.entries(formData).forEach(([key, value]) => {
@@ -469,7 +517,7 @@ const NewAdvertPage = () => {
                 onChange={handleChange}
                 onFocus={() => handleFocus('description')}
                 onBlur={handleBlur}
-                className="w-full p-05 border rounded"
+                className="w-full p-05 border rounded h-48"
               />
               {focusedField === 'description' && (
                 <div className="text-sm text-gray-500 mt-1 space-y-1">
@@ -491,6 +539,8 @@ const NewAdvertPage = () => {
               focusedField={focusedField}
               handleFocus={handleFocus}
               handleBlur={handleBlur}
+              handlePlaceChanged={handlePlaceChanged}
+              setAutocomplete={setAutocomplete}
             />
 
             {/* Image Upload */}

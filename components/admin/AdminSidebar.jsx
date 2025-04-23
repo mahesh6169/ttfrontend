@@ -14,11 +14,11 @@ const AdminSidebar = ({ onLinkClick }) => {
 
   const menuItems = [
     { label: 'Users', href: '/admin/profile/users', icon: <FaUsers /> },
-    { label: 'Adverts', href: '/admin/profile/adverts', icon: <FaAd /> },
-    { label: 'Threads', href: '/admin/profile/threads', icon: <BsChatText /> },
-    { label: 'Events', href: '/admin/profile/events', icon: <MdEvent /> },
-    { label: 'Categories', href: '/users/admin/categories', icon: <MdCategory /> },
-    { label: 'Post Advert', href: '/users/admin/adverts/new', icon: <RiAdvertisementFill /> },
+    { label: 'renewals Adverts', href: '/admin/profile/adverts/renewals', icon: <FaAd /> },
+    { label: 'Add Adverts', href: '/admin/profile/adverts/add', icon: <FaAd /> },
+    { label: 'Manage Adverts', href: '/admin/profile/adverts/manage', icon: <FaAd /> },
+    { label: 'Manage Threads', href: '/admin/profile/threads/manage', icon: <BsChatText /> },
+    { label: 'Manage Events', href: '/users/profile/manageevents', icon: <MdEvent /> },
     { label: 'Settings', href: '/users/admin/settings', icon: <FaCog /> },
   ];
 

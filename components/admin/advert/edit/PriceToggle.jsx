@@ -1,10 +1,16 @@
 'use client';
 
 import React from 'react';
+import {
+  CATEGORIES_HIDE_ISFORHIRE,
+  CATEGORIES_HIDE_ISFORSHARE,
+} from '@/components/adverts/editadvert/AdvertCategories';
 
 const PriceToggle = ({ formData, setFormData, handleChange }) => {
+  const shouldHideHire = CATEGORIES_HIDE_ISFORHIRE.includes(formData.category);
+  const shouldHideShare = CATEGORIES_HIDE_ISFORSHARE.includes(formData.category);
+
   const handlePriceTypeChange = (selectedType) => {
-    // Determine which price type was previously selected
     const previouslySelected = {
       sell: formData.isForSale,
       hire: formData.isForHire,
@@ -12,21 +18,25 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
       share: formData.isForShare,
     };
 
-    // If the type has changed, reset all others to 0
+    // Prevent selection if type is hidden
+    if ((selectedType === 'hire' && shouldHideHire) || (selectedType === 'share' && shouldHideShare)) {
+      return;
+    }
+
     if (!previouslySelected[selectedType]) {
       setFormData((prev) => ({
         ...prev,
         isForSale: selectedType === 'sell',
         sellPrice: selectedType === 'sell' ? prev.sellPrice : 0,
 
-        isForHire: selectedType === 'hire',
-        hirePrice: selectedType === 'hire' ? prev.hirePrice : 0,
+        isForHire: selectedType === 'hire' && !shouldHideHire,
+        hirePrice: selectedType === 'hire' && !shouldHideHire ? prev.hirePrice : 0,
 
         isForRent: selectedType === 'rent',
         rentPrice: selectedType === 'rent' ? prev.rentPrice : 0,
 
-        isForShare: selectedType === 'share',
-        sharePrice: selectedType === 'share' ? prev.sharePrice : 0,
+        isForShare: selectedType === 'share' && !shouldHideShare,
+        sharePrice: selectedType === 'share' && !shouldHideShare ? prev.sharePrice : 0,
       }));
     }
   };
@@ -35,7 +45,7 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
     <div className="mb-4">
       <label className="block font-bold mb-2">Price</label>
 
-      {/* Price Type Buttons */}
+      {/* Price Type Toggle Buttons */}
       <div className="flex border border-gray-500 rounded overflow-hidden">
         <button
           type="button"
@@ -47,15 +57,17 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
           Sell
         </button>
 
-        <button
-          type="button"
-          className={`flex-1 p-2 text-center border-r-2 ${
-            formData.isForHire ? 'bg-gray-200 border-gray-500' : 'bg-white border-gray-300'
-          }`}
-          onClick={() => handlePriceTypeChange('hire')}
-        >
-          Hire
-        </button>
+        {!shouldHideHire && (
+          <button
+            type="button"
+            className={`flex-1 p-2 text-center border-r-2 ${
+              formData.isForHire ? 'bg-gray-200 border-gray-500' : 'bg-white border-gray-300'
+            }`}
+            onClick={() => handlePriceTypeChange('hire')}
+          >
+            Hire
+          </button>
+        )}
 
         <button
           type="button"
@@ -67,15 +79,17 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
           Rent
         </button>
 
-        <button
-          type="button"
-          className={`flex-1 p-2 text-center ${
-            formData.isForShare ? 'bg-gray-200 border-gray-500' : 'bg-white border-gray-300'
-          }`}
-          onClick={() => handlePriceTypeChange('share')}
-        >
-          Share
-        </button>
+        {!shouldHideShare && (
+          <button
+            type="button"
+            className={`flex-1 p-2 text-center ${
+              formData.isForShare ? 'bg-gray-200 border-gray-500' : 'bg-white border-gray-300'
+            }`}
+            onClick={() => handlePriceTypeChange('share')}
+          >
+            Share
+          </button>
+        )}
       </div>
 
       {/* Price Input Fields */}
@@ -91,7 +105,7 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
           />
         )}
 
-        {formData.isForHire && (
+        {formData.isForHire && !shouldHideHire && (
           <>
             <input
               type="number"
@@ -135,7 +149,7 @@ const PriceToggle = ({ formData, setFormData, handleChange }) => {
           </>
         )}
 
-        {formData.isForShare && (
+        {formData.isForShare && !shouldHideShare && (
           <>
             <input
               type="number"

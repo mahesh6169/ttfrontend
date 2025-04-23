@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import { CATEGORIES_HIDE_ISFORHIRE, CATEGORIES_HIDE_ISFORSHARE, } from '@/components/admin/advert/add/AdvertCategories';
 
-const PriceToggle = ({ formData, setFormData }) => {
+const PriceToggle = ({ formData, setFormData, category }) => {
   const handlePriceTypeSelect = (type) => {
     setFormData((prev) => ({
       ...prev,
@@ -22,6 +23,9 @@ const PriceToggle = ({ formData, setFormData }) => {
       [name]: value,
     }));
   };
+
+  const shouldHideHire = CATEGORIES_HIDE_ISFORHIRE.includes(category);
+  const shouldHideShare = CATEGORIES_HIDE_ISFORSHARE.includes(category);
 
   return (
     <div className="mb-4">
@@ -52,6 +56,7 @@ const PriceToggle = ({ formData, setFormData }) => {
           Rent
         </button>
 
+        {!shouldHideHire && (
         <button
           type="button"
           className={`flex-1 p-2 text-center border-r-2 ${
@@ -63,8 +68,9 @@ const PriceToggle = ({ formData, setFormData }) => {
         >
           Hire
         </button>
-
-        <button
+  )}
+  
+  {!shouldHideShare && ( <button
   type="button"
   className={`flex-1 p-2 text-center ${
     formData.isForShare
@@ -75,7 +81,7 @@ const PriceToggle = ({ formData, setFormData }) => {
 >
   Share
 </button>
-
+)}
 
 
       </div>
@@ -115,7 +121,7 @@ const PriceToggle = ({ formData, setFormData }) => {
           </>
         )}
 
-        {formData.isForHire && (
+        {formData.isForHire && !shouldHideHire && (
           <>
             <input
               type="number"
@@ -137,7 +143,7 @@ const PriceToggle = ({ formData, setFormData }) => {
           </>
         )}
 
-{formData.isForShare && (
+{formData.isForShare && !shouldHideShare && (
   <>
     <input
       type="number"

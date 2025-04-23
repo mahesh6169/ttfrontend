@@ -55,6 +55,7 @@ const categoryIcons = [
   { name: 'Real Estate', icon: <MdRealEstateAgent /> },
   { name: 'Professional Services', icon: <FaGraduationCap /> }, // Reusing graduation cap
   { name: 'Business & Stores', icon: <MdStore /> }, // ✅ Correct replacement
+  { name: 'Overseas', icon: <FaCity /> }, // Example placeholder
 ];
 
 const cities = [
@@ -194,7 +195,7 @@ const HomePage = () => {
               : 'bg-gray-100 text-gray-800'
           }`}
         >
-          Search All
+           All
         </button>
         <button
           onClick={() => handleFilterModeChange('icons')}
@@ -204,7 +205,7 @@ const HomePage = () => {
               : 'bg-gray-100 text-gray-800'
           }`}
         >
-          Browse Categories
+          Categories
         </button>
         <button
           onClick={() => handleFilterModeChange('cities')}
@@ -214,7 +215,17 @@ const HomePage = () => {
               : 'bg-gray-100 text-gray-800'
           }`}
         >
-          Browse Cities
+          Cities
+        </button>
+        <button
+          onClick={() => handleFilterModeChange('telugufy')}
+          className={`text-sm md:text-base px-1 rounded ${
+            filterMode === 'telugufy'
+              ? 'bg-gray-300 text-gray-900 font-semibold'
+              : 'bg-gray-100 text-gray-800'
+          }`}
+        >
+          telugufy
         </button>
       </div>
 

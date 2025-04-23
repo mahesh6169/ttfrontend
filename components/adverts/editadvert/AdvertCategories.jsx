@@ -44,6 +44,22 @@ export const CATEGORY_OPTIONS = [
     'Real Estate',
   ];
 
+  export const CATEGORIES_HIDE_ISFORSHARE = [
+    'Baby & Children',
+  'Music & Games',
+  'Cars & Vehicles',
+  'Fashion & Accessories',
+  'Electronics & Computers',
+  'Home & Garden',
+  'Pets',
+  'Miscellaneous',
+  'Party Hires & Services',
+  'Health, Sport & Fitness',
+  'Food & Catering Services',
+  'Home Improvement & Repairs',
+  ];
+  
+
     // Field-specific hints.
     export const FIELD_HINTS = {
         email: 'Required to avoid spam.',

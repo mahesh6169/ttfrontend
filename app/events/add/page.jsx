@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { addEvent } from '@/store/slices/events/eventSlice';
 import { CATEGORY_OPTIONS } from '@/components/events/addevents/EventCategories';
-import AddressInput from '@/components/adverts/addadvert/AddressInput';
-import ImageUploader from '@/components/adverts/addadvert/ImageUploader';
+import AddressInput from '@/components/events/addevents/AddressInput';
+import ImageUploader from '@/components/events/addevents/ImageUploader';
 import { zonedTimeToUtc } from 'date-fns-tz';
 import Link from 'next/link';
 

@@ -12,65 +12,13 @@ const AddressInput = ({
   focusedField,
   handleFocus,
   handleBlur,
+  handlePlaceChanged,
+  setAutocomplete
+  
 }) => {
-  const [autocomplete, setAutocomplete] = useState(null);
-
-  const handlePlaceChanged = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
-
-      if (!place.geometry || !place.geometry.location) {
-        console.error('No valid location data found');
-        return;
-      }
-
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
-      const formattedAddress = place.formatted_address || '';
-      const addressComponents = place.address_components || [];
-
-      let street = '',
-        suburb = '',
-        state = '',
-        postalCode = '';
-
-      addressComponents.forEach((component) => {
-        const types = component.types;
-        if (types.includes('route')) {
-          street = component.long_name;
-        }
-        if (types.includes('locality')) {
-          suburb = component.long_name;
-        }
-        if (types.includes('administrative_area_level_1')) {
-          state = component.short_name;
-        }
-        if (types.includes('postal_code')) {
-          postalCode = component.long_name;
-        }
-      });
-
-      setFormData((prev) => ({
-        ...prev,
-        address: {
-          formattedAddress,
-          street,
-          suburb,
-          state,
-          postalCode,
-          location: {
-            type: 'Point',
-            coordinates: [lng, lat],
-          },
-        },
-      }));
-    }
-  };
-
   return (
     <div>
       <label className="block font-bold">Address</label>
-
       <LoadScriptNext
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
         libraries={libraries}

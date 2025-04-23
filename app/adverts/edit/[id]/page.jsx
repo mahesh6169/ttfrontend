@@ -13,6 +13,7 @@ import {
   FIELD_HINTS,
   CATEGORIES_NOT_REQUIRING_PRICE,
   CATEGORIES_HIDE_ISFORHIRE,
+  CATEGORIES_HIDE_ISFORSHARE,
 } from '@/components/adverts/editadvert/AdvertCategories';
 import AdTypeToggle from '@/components/adverts/editadvert/AdTypeToggle';
 import PriceToggle from '@/components/adverts/editadvert/PriceToggle';
@@ -229,6 +230,12 @@ const EditAdvertPage = () => {
           updatedData.hirePrice = 0;            // Optional: reset hirePrice
           updatedData.hireUnit = 'hour';        // Optional: reset unit if you want
         }
+
+        if (CATEGORIES_HIDE_ISFORSHARE.includes(value)) {
+          updatedData.isForShare = false;
+          updatedData.sharePrice = 0;
+          updatedData.shareUnit = 'week';
+        }        
       }
     
       return updatedData;
