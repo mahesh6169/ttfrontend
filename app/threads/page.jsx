@@ -172,8 +172,9 @@ const handleFilterModeChange = (mode) => {
                   )}
                 </div>
                 <div className="flex justify-start items-center text-sm text-gray-500 ">
-  <p>Posted by {thread.owner?.name || 'Former Member'}</p>
-  <p className="ml-3">{getPostedText(thread.createdAt)}</p>
+  <p>Posted by: {thread.owner?.name || 'Former Member'}</p>
+  <p className="ml-3">| Posted: {getPostedText(thread.createdAt)}</p>
+  {thread.category && <p className="ml-3">| Category: {thread.category}</p>}
 </div>
 
               </div>

@@ -2,6 +2,7 @@ import TopAd from '@/components/ads/TopAd';
 import BottomAd from '@/components/ads/BottomAd';
 import LeftAd from '@/components/ads/LeftAd';
 import RightAd from '@/components/ads/RightAd';
+import Footer from '@/components/Footer';
 
 const FunctionsLayout = ({ children }) => {
   return (
@@ -28,6 +29,9 @@ const FunctionsLayout = ({ children }) => {
 
       {/* Bottom Ad */}
       <BottomAd />
+      
+      {/* Footer */}
+      <Footer />
     </main>
   );
 };

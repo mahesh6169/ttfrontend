@@ -26,9 +26,32 @@ export const submitReport = createAsyncThunk(
   }
 );
 
+// 🟢 Thunk: Submit a contact message
+export const submitContact = createAsyncThunk(
+  'support/submitContact',
+  async ({ title, category, message, senderName, senderEmail }, thunkAPI) => {
+    try {
+      const res = await axios.post(`${API_BASE_URL}/contact`, {
+        title,
+        category,
+        message,
+        senderName,
+        senderEmail,
+      });
+      return res.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
 const initialState = {
   reportStatus: 'idle', // idle | loading | success | failed
   reportError: null,
+  contactStatus: 'idle', // idle | loading | success | failed
+  contactError: null,
 };
 
 const supportSlice = createSlice({
@@ -38,6 +61,10 @@ const supportSlice = createSlice({
     resetReportStatus: (state) => {
       state.reportStatus = 'idle';
       state.reportError = null;
+    },
+    resetContactStatus: (state) => {
+      state.contactStatus = 'idle';
+      state.contactError = null;
     },
   },
   extraReducers: (builder) => {
@@ -53,10 +80,24 @@ const supportSlice = createSlice({
       .addCase(submitReport.rejected, (state, action) => {
         state.reportStatus = 'failed';
         state.reportError = action.payload;
-      });
+      })
+      // 🟢 Contact Reducers
+    builder
+    .addCase(submitContact.pending, (state) => {
+      state.contactStatus = 'loading';
+      state.contactError = null;
+    })
+    .addCase(submitContact.fulfilled, (state) => {
+      state.contactStatus = 'success';
+      state.contactError = null;
+    })
+    .addCase(submitContact.rejected, (state, action) => {
+      state.contactStatus = 'failed';
+      state.contactError = action.payload;
+    });
   },
 });
 
-export const { resetReportStatus } = supportSlice.actions;
+export const { resetReportStatus, resetContactStatus } = supportSlice.actions;
 
 export default supportSlice.reducer;
