@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   updateFilter,
   fetchAdvertsByFilter,
+  resetFilters,
 } from '@/store/slices/adverts/filterSlice';
 import AdvertList from '@/components/adverts/advertcomponents/AdvertList';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
@@ -90,9 +91,19 @@ const HomePage = () => {
 
   // Clear all filters
   const handleClearAll = () => {
-    dispatch(updateFilter({ category: '', location: null, proximity: '' }));
-    setLocationInput('');
+    if (filterMode === 'input') {
+      dispatch(updateFilter({ category: '', location: null, proximity: 10, page: 1 }));
+      setLocationInput('');
+    } else if (filterMode === 'icons') {
+      dispatch(updateFilter({ category: '' }));
+    } else if (filterMode === 'cities') {
+      dispatch(updateFilter({ location: '', proximity: 10 }));
+    } else if (filterMode === 'telugufy') {
+      // Add your logic for telugufy mode here
+      dispatch(updateFilter({ /* whatever filters telugufy uses */ }));
+    }
   };
+  
 
   // Handle filter mode change
   const handleFilterModeChange = (mode) => {
@@ -165,6 +176,21 @@ const HomePage = () => {
       dispatch(updateFilter({ location: null }));
     }
   };
+
+  const isFilterActive = () => {
+    if (filterMode === 'input') {
+      return category || location || proximity !== 10;
+    } else if (filterMode === 'icons') {
+      return category;
+    } else if (filterMode === 'cities') {
+      return location || proximity !== 10;
+    } else if (filterMode === 'telugufy') {
+      // Add your condition here based on telugufy fields
+      return false; // Adjust accordingly
+    }
+    return false;
+  };
+  
 
   // Fetch adverts whenever filters change
   useEffect(() => {
@@ -284,14 +310,10 @@ const HomePage = () => {
             onChange={handleProximityChange}
           />
 
-          {/* Clear All Button */}
-          <button
-            type="button"
-            className="bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200 "
-            onClick={handleClearAll}
-          >
-            Clear All
-          </button>
+
+
+
+
         </div>
       )}
 
@@ -361,6 +383,18 @@ const HomePage = () => {
           </div>
         </div>
       )}
+
+                {/* Clear All Button */}
+                {isFilterActive() && (
+  <div className="flex justify-center mb-4">
+    <button
+      onClick={handleClearAll}
+      className="text-xs md:text-base px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600"
+    >
+      Clear Filter
+    </button>
+  </div>
+)}
 
       {/* Advert List */}
       <AdvertList adverts={adverts} advertStatus={advertStatus} />
