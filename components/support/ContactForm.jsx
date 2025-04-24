@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { submitContact, resetContactStatus } from '@/store/slices/supportSlice';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const ContactForm = () => {
   const dispatch = useDispatch();
   const { contactStatus, contactError } = useSelector((state) => state.support);
+  const [captchaToken, setCaptchaToken] = useState(null);
 
   const [title, setTitle] = useState('');
   const [name, setName] = useState('');
@@ -32,6 +34,7 @@ const ContactForm = () => {
         senderName: name,
         senderEmail: email,
         message: description,
+        captchaToken,
       })
     )
       .unwrap()
@@ -42,6 +45,7 @@ const ContactForm = () => {
         setOption('Feature Request');
         setOtherOption('');
         setDescription('');
+        setCaptchaToken(null); 
       });
   };
 
@@ -107,6 +111,15 @@ const ContactForm = () => {
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe your request or issue..."
         />
+
+        {/* ✅ CAPTCHA integration here */}
+        <div className="flex justify-center my-2">
+          <ReCAPTCHA
+            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+            onChange={(token) => setCaptchaToken(token)}
+            onExpired={() => setCaptchaToken(null)}
+          />
+        </div>
 
         <button
           type="submit"

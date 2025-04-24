@@ -31,7 +31,7 @@ export const submitReport = createAsyncThunk(
 // 🟢 Thunk: Submit a contact message
 export const submitContact = createAsyncThunk(
   'support/submitContact',
-  async ({ title, category, message, senderName, senderEmail }, thunkAPI) => {
+  async ({ title, category, message, senderName, senderEmail, captchaToken }, thunkAPI) => {
     try {
       const res = await axios.post(`${API_BASE_URL}/contact`, {
         title,
@@ -39,6 +39,7 @@ export const submitContact = createAsyncThunk(
         message,
         senderName,
         senderEmail,
+        captchaToken, // ✅ Pass the captchaToken here
       });
       return res.data;
     } catch (error) {
@@ -48,6 +49,7 @@ export const submitContact = createAsyncThunk(
     }
   }
 );
+
 
 const initialState = {
   reportStatus: 'idle', // idle | loading | success | failed
