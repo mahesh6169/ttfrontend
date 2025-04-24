@@ -6,7 +6,7 @@ const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/support`;
 // 🎯 Thunk: Submit a report
 export const submitReport = createAsyncThunk(
   'support/submitReport',
-  async ({ type, id, title, message, senderName, senderEmail }, thunkAPI) => {
+  async ({ type, id, title, message, senderName, senderEmail, captchaToken }, thunkAPI) => {
     try {
       const res = await axios.post(`${API_BASE_URL}/report`, {
         type,
@@ -15,6 +15,7 @@ export const submitReport = createAsyncThunk(
         message,
         senderName,
         senderEmail,
+        captchaToken, // ✅ Add this!
       });
 
       return res.data;
@@ -25,6 +26,7 @@ export const submitReport = createAsyncThunk(
     }
   }
 );
+
 
 // 🟢 Thunk: Submit a contact message
 export const submitContact = createAsyncThunk(

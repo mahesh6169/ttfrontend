@@ -4,12 +4,15 @@ import { useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { submitReport, resetReportStatus } from '@/store/slices/supportSlice';
+import ReCAPTCHA from 'react-google-recaptcha';
+
 
 const ReportForm = () => {
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
   const { reportStatus, reportError } = useSelector((state) => state.support);
+  const [captchaToken, setCaptchaToken] = useState(null);
 
   const title = searchParams.get('title') || '';
   const id = searchParams.get('id') || '';
@@ -34,7 +37,12 @@ const ReportForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
+    if (!captchaToken) {
+      alert('Please complete the CAPTCHA before submitting.');
+      return;
+    }
+  
     dispatch(
       submitReport({
         title,
@@ -43,13 +51,16 @@ const ReportForm = () => {
         message,
         senderName: name,
         senderEmail: email,
+        captchaToken, // 👈 Include the token in your payload
       })
     )
       .unwrap()
       .then(() => {
         setMessage('');
+        setCaptchaToken(null); // Optional: Reset CAPTCHA after successful submission
       });
   };
+  
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-6">
@@ -83,6 +94,13 @@ const ReportForm = () => {
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Explain the issue clearly..."
         />
+        
+        <ReCAPTCHA
+  sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+  onChange={(token) => setCaptchaToken(token)}
+  onExpired={() => setCaptchaToken(null)}
+/>
+
 
         <button
           type="submit"
