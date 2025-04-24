@@ -9,6 +9,8 @@ import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CURRENT_TERMS_VERSION } from '@/constants/terms';
+import ReCAPTCHA from 'react-google-recaptcha';
+
 
 const libraries = ['places'];
 
@@ -31,6 +33,8 @@ const Register = () => {
     marketingOptIn: false,
     acceptTerms: false,
   });
+
+  const [captchaToken, setCaptchaToken] = useState(null);
 
   const [autocomplete, setAutocomplete] = useState(null);
   const [errors, setErrors] = useState({});
@@ -133,10 +137,17 @@ const Register = () => {
       return;
     }
 
+    if (!captchaToken) {
+      toast.error('Please complete the CAPTCHA.');
+      return;
+    }
+    
+
     try {
       formData.acceptedTermsVersion = CURRENT_TERMS_VERSION;
       formData.acceptedTermsAt = new Date().toISOString();
-      const result = await dispatch(registerUser(formData)).unwrap();
+      const payload = { ...formData, captchaToken };
+      const result = await dispatch(registerUser(payload)).unwrap();
       if (result) {
         toast.success('Registration successful. Sending OTP...');
         const otpResult = await dispatch(sendVerifyOtp()).unwrap();
@@ -262,6 +273,15 @@ const Register = () => {
           {errors.acceptTerms && (
             <p className="text-red-500 text-sm mt-1">{errors.acceptTerms}</p>
           )}
+
+<div className="flex justify-center">
+  <ReCAPTCHA
+    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+    onChange={(token) => setCaptchaToken(token)}
+    onExpired={() => setCaptchaToken(null)}
+  />
+</div>
+
 
           <button
             type="submit"
