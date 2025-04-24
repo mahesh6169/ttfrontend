@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 import { useSearchParams } from 'next/navigation';
+import ReCAPTCHA from 'react-google-recaptcha';
+
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
@@ -14,6 +16,8 @@ const Login = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preserveRedirect = searchParams.get('preserveRedirect') === 'true';
+  const [captchaToken, setCaptchaToken] = useState(null);
+
 
   const { user, status } = useSelector((state) => state.user);
   const isLoading = status === 'loading';
@@ -50,20 +54,24 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
+    if (!captchaToken) {
+      toast.error('Please complete the CAPTCHA.');
+      return;
+    }
+  
     try {
-      const result = await dispatch(loginUser(credentials)).unwrap();
-
+      const result = await dispatch(loginUser({ ...credentials, captchaToken })).unwrap();
+  
       if (result) {
         toast.success('Login successful! Redirecting...');
         // ✅ Redirection handled in useEffect above
       }
     } catch (err) {
-      toast.error(
-        err || 'Authentication failed. Please check your credentials.'
-      );
+      toast.error(err || 'Authentication failed. Please check your credentials.');
     }
   };
+  
 
   return (
     <div className="flex w-full h-screen items-start justify-center">
@@ -112,6 +120,16 @@ const Login = () => {
               </Link>
             </div>
           </div>
+
+          {/* ReCAPTCHA */}
+          <div className="flex justify-center">
+  <ReCAPTCHA
+    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY} // ✅ Use your Site Key
+    onChange={(token) => setCaptchaToken(token)}
+    onExpired={() => setCaptchaToken(null)}
+  />
+</div>
+
 
           {/* Submit Button */}
           <button
