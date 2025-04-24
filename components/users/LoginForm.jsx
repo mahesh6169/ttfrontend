@@ -18,7 +18,7 @@ const Login = () => {
   const { user, status } = useSelector((state) => state.user);
   const isLoading = status === 'loading';
 
-  // 🔹 After successful login, handle redirection
+  // 🔹 After successful login, handle redirection.
   useEffect(() => {
     if (!preserveRedirect) {
       localStorage.removeItem('redirectAfterLogin'); // 🧹 clean up old redirect
