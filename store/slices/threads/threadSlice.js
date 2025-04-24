@@ -208,6 +208,8 @@ export const fetchUserThreads = createAsyncThunk(
 );
 
 
+  
+
 
 /* -------------------------------- Redux Slice -------------------------------- */
 const threadSlice = createSlice({
@@ -414,7 +416,6 @@ const threadSlice = createSlice({
                 state.status = 'failed';
                 state.error = action.payload;
               });
-              
 
 
     },

@@ -446,6 +446,39 @@ export const acceptUpdatedTerms = createAsyncThunk(
   }
 );
 
+// REDUX THUNK TO MUTE THREAD NOTIFICATION
+export const muteThreadNotification = createAsyncThunk(
+  'user/muteThreadNotification',
+  async (threadId, thunkAPI) => {
+    try {
+      const res = await axios.patch(
+        `${API_BASE_URL}/mute/${threadId}`,
+        {},
+        { withCredentials: true }
+      );
+      return { threadId };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// REDUX THUNK TO UNMUTE THREAD NOTIFICATION
+export const unmuteThreadNotification = createAsyncThunk(
+  'user/unmuteThreadNotification',
+  async (threadId, thunkAPI) => {
+    try {
+      const res = await axios.patch(
+        `${API_BASE_URL}/unmute/${threadId}`,
+        {},
+        { withCredentials: true }
+      );
+      return { threadId };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
 
 
 const initialState = {
@@ -470,6 +503,7 @@ const initialState = {
   eventWishlist: [],
   eventWishlistStatus: 'idle',
   eventWishlistError: null,
+  mutedThreads: [],
 
 };
 
@@ -610,6 +644,7 @@ const userSlice = createSlice({
           email: payload.user.email,
           isAccountVerified: payload.user.isAccountVerified,
         };
+        state.mutedThreads = payload.user.mutedThreads || [];
       })
       .addCase(validateToken.rejected, (state, { payload }) => {
         state.status = 'failed';
@@ -822,7 +857,38 @@ const userSlice = createSlice({
       .addCase(acceptUpdatedTerms.rejected, (state, { payload }) => {
         state.status = 'failed';
         state.error = payload;
-      });
+      })
+
+      // Mute thread notification
+.addCase(muteThreadNotification.pending, (state) => {
+  state.status = 'loading';
+})
+.addCase(muteThreadNotification.fulfilled, (state, action) => {
+  const threadId = action.payload.threadId;
+  if (!state.mutedThreads.includes(threadId)) {
+    state.mutedThreads.push(threadId); // ✅ Add threadId if not already present
+  }
+  state.status = 'success';
+})
+.addCase(muteThreadNotification.rejected, (state, action) => {
+  state.status = 'failed';
+  state.error = action.payload;
+})
+
+// Unmute thread notification
+.addCase(unmuteThreadNotification.pending, (state) => {
+  state.status = 'loading';
+})
+.addCase(unmuteThreadNotification.fulfilled, (state, action) => {
+  const threadId = action.payload.threadId;
+  state.mutedThreads = state.mutedThreads.filter((id) => id !== threadId); // ✅ Remove threadId
+  state.status = 'success';
+})
+.addCase(unmuteThreadNotification.rejected, (state, action) => {
+  state.status = 'failed';
+  state.error = action.payload;
+});
+
 
 
   },

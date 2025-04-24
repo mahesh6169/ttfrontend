@@ -10,8 +10,12 @@ import {
   sendThreadMessage,
   addNewThreadMessage,
   likeMessage,
-  unlikeMessage,
+  unlikeMessage
 } from '@/store/slices/threads/threadSlice';
+import {
+  muteThreadNotification,
+  unmuteThreadNotification,
+} from '@/store/slices/users/userSlice';
 import threadSocket from '@/config/threadSocket';
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
@@ -34,6 +38,11 @@ const ThreadChatPage = () => {
 
   const messagesContainerRef = useRef(null);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
+
+  const isMuted = useSelector((state) =>
+    state.user.mutedThreads?.includes(threadId)
+  );
+  
 
   // ✅ Visitor Sender-Side Assignment..
   const senderSides = {};
@@ -118,6 +127,15 @@ const ThreadChatPage = () => {
     dispatch(unlikeMessage(messageId));
   };
 
+  const handleToggleMute = () => {
+    if (isMuted) {
+      dispatch(unmuteThreadNotification(threadId));
+    } else {
+      dispatch(muteThreadNotification(threadId));
+    }
+  };
+  
+
   const sortedMessages = [...messages].sort(
     (a, b) => b.likes - b.dislikes - (a.likes - a.dislikes)
   );
@@ -131,6 +149,7 @@ const ThreadChatPage = () => {
       <h1 className="text-lg font-bold mb-2">
         {thread.title || 'Thread Discussion'}
       </h1>
+      
 
       {thread.images?.[0]?.url && (
         <div className="relative w-full h-[500px] bg-gray-200 flex items-center justify-center overflow-hidden rounded mb-4">
@@ -158,6 +177,25 @@ const ThreadChatPage = () => {
           Report this thread
         </Link>
       )}
+
+{currentUser && (
+  <div className="flex justify-end mb-2">
+    <button
+      onClick={handleToggleMute}
+      className={`text-xs px-3 py-1 rounded-full border w-auto inline-block ${
+        isMuted
+          ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+          : 'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300'
+      } transition-colors duration-200`}
+    >
+      {isMuted ? 'Unmute' : 'Mute'}
+    </button>
+  </div>
+)}
+
+
+
+      
 
       {/* ✅ Useful Answers */}
       {usefulAnswers.length > 0 && (
