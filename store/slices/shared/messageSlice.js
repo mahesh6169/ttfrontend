@@ -65,13 +65,13 @@ export const sendMessage = createAsyncThunk(
 // 4) Delete a conversation
 export const deleteConversation = createAsyncThunk(
   'messages/deleteConversation',
-  async ({ resourceId, resourceType, otherUserId }, { rejectWithValue }) => {
+  async ({ resourceId, resourceType, otherUserId }, { dispatch, rejectWithValue }) => {
     try {
       await axios.delete(`${BASE_URL}/deleteConversation`, {
         data: { resourceId, resourceType, otherUserId },
         withCredentials: true,
       });
-      return { resourceId, resourceType, otherUserId };
+      return { resourceId, resourceType, otherUserId }; // Optional if you still want to use this data
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Failed to delete conversation'
@@ -79,6 +79,7 @@ export const deleteConversation = createAsyncThunk(
     }
   }
 );
+
 
 /* -------------------------------- Slice -------------------------------- */
 
@@ -94,6 +95,7 @@ const messageSlice = createSlice({
     },
     status: 'idle',
     error: null,
+    deleteConversationStatus: 'idle',
   },
   reducers: {
     setActiveConversation(state, { payload }) {
@@ -133,6 +135,7 @@ const messageSlice = createSlice({
       .addCase(fetchConversations.fulfilled, (state, { payload }) => {
         state.status = 'success';
         state.conversations = payload;
+        state.deleteConversationStatus = 'idle';
       })
       .addCase(fetchConversations.rejected, (state, { payload }) => {
         state.status = 'failed';
@@ -174,16 +177,18 @@ const messageSlice = createSlice({
         state.status = 'failed';
         state.error = payload;
       })
-
-      .addCase(deleteConversation.fulfilled, (state, { payload }) => {
-        const { resourceId, resourceType, otherUserId } = payload;
-        state.conversations = state.conversations.filter(
-          (conv) =>
-            conv.resource.id !== resourceId ||
-            conv.resourceType !== resourceType ||
-            conv.otherUser.id !== otherUserId
-        );
+      .addCase(deleteConversation.pending, (state) => {
+        state.deleteConversationStatus = 'loading'; // ✅ Change here
+        state.error = null;
+      })
+      .addCase(deleteConversation.fulfilled, (state) => {
+        state.deleteConversationStatus = 'success'; // ✅ Success here
+      })
+      .addCase(deleteConversation.rejected, (state, { payload }) => {
+        state.deleteConversationStatus = 'failed'; // ✅ Failed here
+        state.error = payload;
       });
+
   },
 });
 

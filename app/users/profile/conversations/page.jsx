@@ -7,12 +7,13 @@ import {
   deleteConversation,
 } from '@/store/slices/shared/messageSlice';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 
 const ConversationsPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { conversations, status, error } = useSelector(
+  const { conversations, status, error,  deleteConversationStatus  } = useSelector(
     (state) => state.messages
   );
 
@@ -20,11 +21,20 @@ const ConversationsPage = () => {
     dispatch(fetchConversations());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (deleteConversationStatus === 'success') {
+      dispatch(fetchConversations());
+    }
+  }, [deleteConversationStatus, dispatch]);
+
   const handleDeleteConversation = (resourceId, otherUserId, resourceType) => {
     if (window.confirm('Are you sure you want to delete this conversation?')) {
       dispatch(deleteConversation({ resourceId, otherUserId, resourceType }));
+      toast.success('Conversation deletion started...');
     }
   };
+  
+  
 
   if (status === 'loading') return <div>Loading conversations...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -42,7 +52,9 @@ const ConversationsPage = () => {
       </h1>
 
       <ul className="space-y-4">
-        {conversations.map((conv) => (
+        {conversations.map((conv) => {
+           if (!conv.otherUser) return null;
+           return (
           <li
             key={`${conv.resourceId}-${conv.otherUser.id}`}
             className="p-4 border rounded-lg shadow-md hover:bg-gray-100 flex flex-col gap-2 sm:gap-3 w-full"
@@ -93,7 +105,8 @@ const ConversationsPage = () => {
               </button>
             </div>
           </li>
-        ))}
+           );
+          })}
       </ul>
     </div>
   );
