@@ -44,18 +44,23 @@ const ChatPage = () => {
 
   // Read receipts
   useEffect(() => {
-    if (!activeConversation?.messages || !myRole) return;
+    if (!activeConversation?.messages || !myRole || !currentUserId) return;
   
-    activeConversation.messages.forEach((msg) => {
+    const unreadMessages = activeConversation.messages.filter((msg) => {
       const isSentByMe =
         (msg.senderRole === 'owner' && msg.owner.toString() === currentUserId) ||
         (msg.senderRole === 'participant' && msg.participant.toString() === currentUserId);
   
-      if (!isSentByMe && !msg.isRead) {
-        socket.emit('messageRead', { messageId: msg._id });
-      }
+      return !isSentByMe && msg.readBy !== currentUserId;
     });
-  }, [activeConversation?.messages.length, myRole]);
+  
+    // ✅ Emit only once per unread message
+    unreadMessages.forEach((msg) => {
+      socket.emit('messageRead', { messageId: msg._id });
+    });
+  
+  }, [activeConversation?.messages, myRole, currentUserId]);
+  
   
 
   // Handle incoming socket messages
@@ -70,11 +75,15 @@ const ChatPage = () => {
   }, [dispatch, activeConversation]);
 
   // Handle read from socket
-  useEffect(() => {
-    const handler = ({ messageId }) => dispatch(markMessageAsRead({ messageId }));
-    socket.on('messageRead', handler);
-    return () => socket.off('messageRead', handler);
-  }, [dispatch]);
+// Handle read from socket
+useEffect(() => {
+  const handler = ({ messageId, userId }) => {
+    dispatch(markMessageAsRead({ messageId, userId }));  // ✅ Pass both messageId and userId
+  };
+  socket.on('messageRead', handler);
+  return () => socket.off('messageRead', handler);
+}, [dispatch]);
+
 
   // Reconnect socket
   useEffect(() => {
@@ -149,7 +158,9 @@ const ChatPage = () => {
                       <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                     </div>
                     <p>{msg.message}</p>
-                    {msg.isRead && <div className="text-xs text-green-300 text-right mt-1">(read)</div>}
+                    {String(msg.readBy) === String(otherUserId) && (
+  <div className="text-xs text-green-300 text-right mt-1">(read)</div>
+)}
                   </div>
                 </div>,
               ];

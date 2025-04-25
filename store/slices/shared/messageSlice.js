@@ -119,12 +119,15 @@ const messageSlice = createSlice({
       state.activeConversation.messages.push(payload);
     },
     markMessageAsRead(state, { payload }) {
-      const { messageId } = payload;
+      const { messageId, userId } = payload;   // ✅ Expect both messageId and userId
       const message = state.activeConversation.messages.find((msg) => msg._id === messageId);
       if (message) {
-        message.isRead = true;
+        message.readBy = userId;                // ✅ Correct field is readBy (not readUser)
+        message.isRead = true;                  // Optional, for your UI logic
       }
-    },
+    }
+    
+    ,
   },
   extraReducers: (builder) => {
     builder

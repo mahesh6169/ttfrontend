@@ -209,7 +209,7 @@ const ThreadChatPage = () => {
               className="mb-2 p-1 bg-green-50 rounded-lg shadow-sm"
             >
               <p className="text-sm font-semibold text-gray-800">
-                {msg.sender?.name}
+                {msg.sender?.name || 'Former Member'}
               </p>
               <p className="text-gray-700">{msg.message}</p>
               <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
@@ -306,7 +306,7 @@ const ThreadChatPage = () => {
                     <p className="text-sm font-semibold">
                       {msg.sender?.name || 'Former Member'}
                     </p>
-                    <span>
+                    <span className="ml-2">
                       {msgDate.toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
