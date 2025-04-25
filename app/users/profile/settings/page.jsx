@@ -121,7 +121,6 @@ export default function Settings() {
       console.log('🔸 Deleting account for userId:', userId);
       await dispatch(deleteUserAccount(userId)).unwrap();
       toast.success('Account deleted successfully');
-      await dispatch(logoutUser());
       router.push('/');
     } catch (err) {
       toast.error(err || 'Failed to delete account');
