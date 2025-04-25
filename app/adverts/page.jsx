@@ -107,7 +107,7 @@ const filterModesConfig = {
   },
 };
 
-const HomePage = () => {
+const AdvertsPage = () => {
   const dispatch = useDispatch();
   const filters = useSelector((state) => state.filters);
   const {
@@ -227,7 +227,7 @@ const HomePage = () => {
         ))}
       </div>
 
-      {/* 🎯 Filter Sections */}
+      {/* 🎯 Filter Sections. */}
       {filterMode === 'input' && (
         <div className="text-sm lg:text-base flex flex-col md:flex-row gap-4 mb-4 justify-center">
           <SelectSlider
@@ -409,4 +409,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default AdvertsPage;
