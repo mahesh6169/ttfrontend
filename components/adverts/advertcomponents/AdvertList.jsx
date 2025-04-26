@@ -71,8 +71,8 @@ const AdvertList = ({ adverts, advertStatus }) => {
 
   // Render adverts
   return (
-    <div id="Advertgrid">
-      <div id="Advertgrids"className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-4 ">
+    <div id="AdvertGrid">
+      <div id="AdvertGrids" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-4">
         {adverts.map((advert) => (
           <AdvertCard
             key={advert._id}

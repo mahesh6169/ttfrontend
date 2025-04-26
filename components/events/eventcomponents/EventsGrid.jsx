@@ -69,8 +69,8 @@ const EventGrid = ({ events, eventStatus }) => {
 
   // ✅ Render events
   return (
-    <div className="w-full">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6 lg:gap-8 w-full max-w-full overflow-hidden">
+    <div id="EventGrid">
+      <div id="EventGrids" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-4">
         {events.map((event) => (
           <EventCard
             key={`${event._id}-${event.dateTime}-${Math.random()

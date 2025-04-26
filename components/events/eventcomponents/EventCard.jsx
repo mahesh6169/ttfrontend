@@ -7,7 +7,8 @@ import { format, differenceInDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
-  const { title, dateTime, venue, address, images, createdAt, timeZone } = event;
+  const { title, dateTime, venue, address, images, createdAt, timeZone } =
+    event;
 
   // 🕒 Format event date
   const formattedDate = formatInTimeZone(
@@ -20,21 +21,30 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   const postedDaysAgo = differenceInDays(new Date(), new Date(createdAt));
   const postedText =
     postedDaysAgo <= 15
-      ? `${postedDaysAgo === 0 ? 'Today' : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`}`
+      ? `${
+          postedDaysAgo === 0
+            ? 'Today'
+            : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
+        }`
       : format(new Date(createdAt), 'dd MMM yyyy');
 
   return (
-    <div className="relative border rounded-lg shadow-md p-4 bg-gray-100 hover:bg-gray-200 w-full">
+    <div
+      id="EventCard"
+      className="relative border rounded-lg shadow-md  bg-gray-100 hover:bg-gray-200"
+    >
       {/* Wishlist Button */}
       <button
         onClick={onWishlistToggle}
         className={`absolute top-2 right-2 text-white p-2 rounded-full z-10 ${
-          isInWishlist ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-300 hover:bg-gray-400'
+          isInWishlist
+            ? 'bg-red-500 hover:bg-red-600'
+            : 'bg-gray-300 hover:bg-gray-400'
         }`}
         title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
       >
         <FaHeart
-          className={`text-sm sm:text-base md:text-lg ${
+          className={`text-sm sm:text-base  ${
             isInWishlist ? 'text-white' : 'text-gray-700'
           }`}
         />
@@ -43,7 +53,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
       {/* Main Card */}
       <Link href={`/events/views/${event._id}`} className="block">
         {/* Image */}
-        <div className="w-full h-40 md:h-52 relative">
+        <div className="relative w-full h-40 sm:h-48 md:h-56">
           {images?.length > 0 ? (
             <img
               src={images[0].url}
@@ -58,28 +68,32 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         </div>
 
         {/* Title */}
-        <h2 className="mt-3 font-semibold text-base md:text-lg truncate">{title}</h2>
+        <h2 className="text-sm sm:text-base font-bold px-2 truncate">
+          {title}
+        </h2>
 
         {/* Date & Time */}
-        <div className="flex items-center text-sm text-gray-600 mt-1">
-          <BsCalendar2Event className="mr-2" />
-          <span>{formattedDate}</span>
+        <div className="flex items-center text-sm text-gray-600  px-2">
+          <BsCalendar2Event className="mr-1" />
+          <span className="text-xs sm:text-sm md:text-base text-gray-500">
+            {formattedDate}
+          </span>
         </div>
 
         {/* Location & Posted Info */}
-        <div className="flex items-center justify-between text-sm text-gray-600 mt-1">
-          <div className="flex items-center gap-1 truncate">
-            <MdLocationOn />
-            <span>
-  {address?.suburb || address?.state
-    ? [address?.suburb, address?.state].filter(Boolean).join(', ')
-    : venue}
-</span>
-
-          </div>
-          <div className="text-xs text-gray-500 whitespace-nowrap">{postedText}</div>
+        <div className="flex items-center gap-1 px-2 truncate">
+          <MdLocationOn className="text-xs flex-shrink-0" />
+          <span className="text-xs sm:text-sm md:text-base text-gray-500">
+            {address?.suburb || address?.state
+              ? [address?.suburb, address?.state].filter(Boolean).join(', ')
+              : venue}
+          </span>
+        </div>
+        <div className="text-xs sm:text-sm md:text-base  text-gray-500 text-right whitespace-nowrap px-2">
+          {postedText}
         </div>
       </Link>
+
     </div>
   );
 };

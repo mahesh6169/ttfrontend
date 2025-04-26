@@ -37,7 +37,7 @@ if (advert.isForSale && advert.sellPrice > 0) {
     }`}
     title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
   >
-    <FaHeart className={`text-sm sm:text-base md:text-lg ${isInWishlist ? 'text-white' : 'text-gray-700'}`} />
+    <FaHeart className={`text-sm sm:text-base  ${isInWishlist ? 'text-white' : 'text-gray-700'}`} />
   </button>
   
 
@@ -54,7 +54,7 @@ if (advert.isForSale && advert.sellPrice > 0) {
 
     {/* Price Box - Positioned on Top of Image */}
     {priceLabel && (
-  <div className="absolute top-2 left-2 bg-gray-300 text-gray-900 font-bold px-2 py-1 rounded-md text-sm sm:text-base md:text-lg">
+  <div className="absolute top-2 left-2 bg-gray-300 text-gray-900 font-bold px-2 py-1 rounded-md text-sm sm:text-base ">
     {priceLabel}
   </div>
 )}
@@ -62,16 +62,17 @@ if (advert.isForSale && advert.sellPrice > 0) {
   </div>
 
   {/* Title Box */}
-  <h2 className="text-base sm:text-lg md:text-xl font-bold mt-2 px-2 truncate">
+  <h2 className="text-sm sm:text-base font-bold my-1 px-2 truncate">
     {advert.title}
   </h2>
 
   {/* Address Box */}
-  <div className="flex justify-between items-center text-gray-600 text-sm mt-2">
+
   {/* Location block */}
-  <div className="flex items-center gap-1 truncate px-2 ">
+  <div className="flex items-center gap-1 px-2 truncate ">
     <MdLocationOn className="text-xs flex-shrink-0" />
-    <span>
+    <span className="text-xs sm:text-sm md:text-base text-gray-500">
+      {/* Display suburb and state if available, otherwise show venue */}
       {advert.address?.suburb || advert.address?.state
         ? [advert.address?.suburb, advert.address?.state].filter(Boolean).join(', ')
         : 'Address not available'}
@@ -79,9 +80,7 @@ if (advert.isForSale && advert.sellPrice > 0) {
   </div>
 
   {/* Posted date */}
-  <div className="text-xs text-gray-500 whitespace-nowrap px-2 ">{postedText}</div>
-</div>
-
+  <div className="text-xs sm:text-sm md:text-base text-gray-500 text-right whitespace-nowrap px-2">{postedText}</div>
 
   </Link>
 </div>
