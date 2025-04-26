@@ -129,16 +129,27 @@ const EventsPage = () => {
 
   return (
     <div className="flex flex-col">
+<div className="relative my-4">
+  {/* Flex Row Always */}
+  <div className="flex items-center justify-center">
+    {/* Button (Absolute Positioned Relative to Parent) */}
+    <div className="absolute left-0">
       <Link
         href="/events/add"
-        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+        className="text-xs sm:text-sm md:text-base p-2 md:p-4 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold text-center rounded"
       >
-        + Post New Event
+        Post Advert
       </Link>
+    </div>
 
-      <h1 className="text-lg md:text-2xl  mb-2 text-center  text-gray-900 font-semibold">
-        Browse Events
+    {/* Heading */}
+    <div className="w-full">
+      <h1 className="text-xs sm:text-lg md:text-lg text-center text-gray-900 font-semibold">
+        Discover Events
       </h1>
+    </div>
+  </div>
+</div>
 
       <div className="flex justify-center gap-4 mb-4">
         {['input', 'icons', 'cities'].map((mode) => (
@@ -161,7 +172,7 @@ const EventsPage = () => {
       </div>
 
       {filterMode === 'input' && (
-        <div className="text-sm lg:text-base p-1 w-full flex flex-col md:flex-row gap-4 mb-4 justify-center">
+        <div className="text-xs md:text-base flex flex-col md:flex-row gap-1 md:gap-4 mb-4 justify-center">
           <SelectSlider
             options={['All Categories', ...CATEGORY_OPTIONS]}
             value={category || 'All Categories'}

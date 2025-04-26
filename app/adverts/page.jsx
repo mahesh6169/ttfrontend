@@ -199,16 +199,29 @@ const AdvertsPage = () => {
 
   return (
     <div className="flex flex-col">
+<div className="relative my-4">
+  {/* Flex Row Always */}
+  <div className="flex items-center justify-center">
+    {/* Button (Absolute Positioned Relative to Parent) */}
+    <div className="absolute left-0">
       <Link
         href="/adverts/add"
-        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+        className="text-xs sm:text-sm md:text-base p-2 md:p-4 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold text-center rounded"
       >
-        + Post New Advertisement
+        Post Advert
       </Link>
+    </div>
 
-      <h1 className="text-lg md:text-2xl mb-2 text-center text-gray-900 font-semibold">
+    {/* Heading */}
+    <div className="w-full">
+      <h1 className="text-xs sm:text-lg md:text-lg text-center text-gray-900 font-semibold">
         Discover Adverts
       </h1>
+    </div>
+  </div>
+</div>
+
+
 
       {/* 🔵 Filter Mode Switch */}
       <div className="flex justify-center gap-4 mb-4">
@@ -229,7 +242,7 @@ const AdvertsPage = () => {
 
       {/* 🎯 Filter Sections. */}
       {filterMode === 'input' && (
-        <div className="text-sm lg:text-base flex flex-col md:flex-row gap-4 mb-4 justify-center">
+        <div className="text-xs md:text-base flex flex-col md:flex-row gap-1 md:gap-4 mb-4 justify-center">
           <SelectSlider
             options={[
               'All Categories',
@@ -389,10 +402,10 @@ const AdvertsPage = () => {
 
       {/* 🟥 Clear Filter Button */}
       {isFilterActive && (
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center ">
           <button
             onClick={handleClearAll}
-            className="text-xs md:text-base px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600"
+            className="text-xs md:text-base p-1 md:p-1 rounded bg-red-500 text-white hover:bg-red-600"
           >
             Clear Filter
           </button>
