@@ -6,31 +6,16 @@ import Footer from '@/components/Footer';
 
 const FunctionsLayout = ({ children }) => {
   return (
-    <main className="container bg-white my-4 mx-auto">
-      {/* Top Ad */}
+    <main id="Parent" className="container bg-white my-2 mx-auto">
       <TopAd />
-
       <div className="flex gap-2">
-        {/* Left Ad */}
-        <div className="hidden lg:flex w-[160px]">
-          <LeftAd />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 w-full max-w-full overflow-hidden">
+        <LeftAd />
+        <div id="Main" className="flex-1 overflow-hidden">
           {children}
         </div>
-
-        {/* Right Ad */}
-        <div className="hidden lg:flex w-[160px]">
-          <RightAd />
-        </div>
+        <RightAd />
       </div>
-
-      {/* Bottom Ad */}
       <BottomAd />
-      
-      {/* Footer */}
       <Footer />
     </main>
   );

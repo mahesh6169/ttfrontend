@@ -28,7 +28,7 @@ if (advert.isForSale && advert.sellPrice > 0) {
 
 
   return (
-<div className="relative border rounded-lg shadow-md p-4 bg-gray-100 hover:bg-gray-200 w-full">
+<div id="AdvertCard" className="relative border rounded-lg shadow-md  bg-gray-100 hover:bg-gray-200">
   {/* Wishlist Button - Top Right */}
   <button
     onClick={onWishlistToggle}
@@ -62,15 +62,15 @@ if (advert.isForSale && advert.sellPrice > 0) {
   </div>
 
   {/* Title Box */}
-  <h2 className="text-base sm:text-lg md:text-xl font-bold mt-2 truncate">
+  <h2 className="text-base sm:text-lg md:text-xl font-bold mt-2 px-2 truncate">
     {advert.title}
   </h2>
 
   {/* Address Box */}
   <div className="flex justify-between items-center text-gray-600 text-sm mt-2">
   {/* Location block */}
-  <div className="flex items-center gap-1 truncate">
-    <MdLocationOn className="text-lg flex-shrink-0" />
+  <div className="flex items-center gap-1 truncate px-2 ">
+    <MdLocationOn className="text-xs flex-shrink-0" />
     <span>
       {advert.address?.suburb || advert.address?.state
         ? [advert.address?.suburb, advert.address?.state].filter(Boolean).join(', ')
@@ -79,7 +79,7 @@ if (advert.isForSale && advert.sellPrice > 0) {
   </div>
 
   {/* Posted date */}
-  <div className="text-xs text-gray-500 whitespace-nowrap">{postedText}</div>
+  <div className="text-xs text-gray-500 whitespace-nowrap px-2 ">{postedText}</div>
 </div>
 
 

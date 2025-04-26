@@ -5,7 +5,7 @@ import { FaFacebookF, FaWhatsapp, FaXTwitter } from 'react-icons/fa6';
 
 const Footer = () => {
   return (
-    <footer className="border-t mt-8 py-4 px-6 bg-gray-50 text-gray-700 text-sm">
+    <footer id="Footer" className="my-4 py-4 px-4 bg-gray-50 text-gray-700 text-sm">
       <div className="flex justify-between items-center flex-wrap gap-2">
         {/* Left side links */}
         <div className="flex gap-4">

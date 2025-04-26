@@ -71,8 +71,8 @@ const AdvertList = ({ adverts, advertStatus }) => {
 
   // Render adverts
   return (
-    <div className="w-full">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-4 w-full max-w-full overflow-hidden">
+    <div id="Advertgrid">
+      <div id="Advertgrids"className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-4 ">
         {adverts.map((advert) => (
           <AdvertCard
             key={advert._id}
