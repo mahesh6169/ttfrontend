@@ -8,7 +8,7 @@ import {
   updateEventById,
 } from '@/store/slices/events/eventSlice';
 import { CATEGORY_OPTIONS } from '@/components/events/addevents/EventCategories';
-import AddressInput from '@/components/adverts/addadvert/AddressInput';
+import AddressInput from '@/components/events/addevents/AddressInput';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { utcToZonedTime, formatInTimeZone, zonedTimeToUtc } from 'date-fns-tz';

@@ -42,6 +42,33 @@ const cities = [
   { name: 'Canberra', coordinates: '149.1300,-35.2809' },
 ];
 
+/* 🟢 Centralized filter mode config for Events */
+const eventFilterModesConfig = {
+  input: {
+    label: 'All',
+    clear: (dispatch, setLocationInput) => {
+      dispatch(
+        updateEventFilter({ category: '', location: null, proximity: '10', page: 1 })
+      );
+      if (setLocationInput) setLocationInput('');
+    },
+    isActive: (filters) =>
+      filters.category || filters.location || filters.proximity !== '10',
+  },
+  icons: {
+    label: 'Categories',
+    clear: (dispatch) => dispatch(updateEventFilter({ category: '', page: 1 })),
+    isActive: (filters) => filters.category,
+  },
+  cities: {
+    label: 'Cities',
+    clear: (dispatch) =>
+      dispatch(updateEventFilter({ location: '', proximity: '10', page: 1 })),
+    isActive: (filters) => filters.location || filters.proximity !== '10',
+  },
+};
+
+
 const EventsPage = () => {
   const dispatch = useDispatch();
   const {
@@ -64,16 +91,21 @@ const EventsPage = () => {
   const [localMonth, setLocalMonth] = useState(currentMonth);
 
   const handleClearAll = () => {
-    dispatch(
-      updateEventFilter({ category: '', location: null, proximity: '' })
-    );
-    setLocationInput('');
+    eventFilterModesConfig[filterMode].clear(dispatch, setLocationInput);
   };
+  
+
+  const isFilterActive = eventFilterModesConfig[filterMode].isActive({
+    category,
+    location,
+    proximity,
+  });
 
   const handleFilterModeChange = (mode) => {
     setFilterMode(mode);
-    handleClearAll();
+    eventFilterModesConfig[mode].clear(dispatch, setLocationInput);
   };
+  
 
   const handleCategoryClick = (selectedCategory) => {
     if (category === selectedCategory) {
@@ -138,7 +170,7 @@ const EventsPage = () => {
         href="/events/add"
         className="text-xs sm:text-sm md:text-base p-2 md:p-4 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold text-center rounded"
       >
-        Post Advert
+        Post Event
       </Link>
     </div>
 
@@ -151,26 +183,25 @@ const EventsPage = () => {
   </div>
 </div>
 
+     {/* 🔵 Filter Mode Switch */}
       <div className="flex justify-center gap-4 mb-4">
-        {['input', 'icons', 'cities'].map((mode) => (
-          <button
-            key={mode}
-            onClick={() => handleFilterModeChange(mode)}
-            className={`text-xs md:text-base p-1 rounded ${
-              filterMode === mode
-                ? 'bg-gray-300 text-gray-900 font-semibold'
-                : 'bg-gray-100 text-gray-800'
-            }`}
-          >
-            {mode === 'input'
-              ? 'Search All'
-              : mode === 'icons'
-              ? 'Browse Categories'
-              : 'Browse Cities'}
-          </button>
-        ))}
+      {Object.keys(eventFilterModesConfig).map((mode) => (
+  <button
+    key={mode}
+    onClick={() => handleFilterModeChange(mode)}
+    className={`text-xs md:text-base p-1 rounded ${
+      filterMode === mode
+        ? 'bg-gray-300 text-gray-900 font-semibold'
+        : 'bg-gray-100 text-gray-800'
+    }`}
+  >
+    {eventFilterModesConfig[mode].label}
+  </button>
+))}
+
       </div>
 
+        {/* 🎯 Filter Sections. */}
       {filterMode === 'input' && (
         <div className="text-xs md:text-base flex flex-col md:flex-row gap-1 md:gap-4 mb-4 justify-center">
           <SelectSlider
@@ -194,6 +225,7 @@ const EventsPage = () => {
               <Autocomplete
                 onLoad={setAutocomplete}
                 onPlaceChanged={handlePlaceChanged}
+                options={{ componentRestrictions: { country: 'AU' } }}
               >
                 <input
                   type="text"
@@ -223,13 +255,6 @@ const EventsPage = () => {
             }
           />
 
-          <button
-            type="button"
-            className="bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200"
-            onClick={handleClearAll}
-          >
-            Clear All
-          </button>
         </div>
       )}
 
@@ -303,6 +328,19 @@ const EventsPage = () => {
           </button>
         </div>
       </div>
+
+   {/* 🟥 Clear Filter Button */}
+   {isFilterActive && (
+        <div className="flex justify-center ">
+          <button
+            onClick={handleClearAll}
+            className="text-xs md:text-base p-1 md:p-1 rounded bg-red-500 text-white hover:bg-red-600"
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
+
 
       {/* Events Grid */}
       <EventsGrid events={events} eventStatus={eventStatus} />

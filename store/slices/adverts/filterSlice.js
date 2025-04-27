@@ -57,9 +57,17 @@ const filterSlice = createSlice({
       state.limit = 12;
       state.adverts = [];
       state.meta = {};
-      state.status = false;
+      state.status = 'idle';
       state.error = null;
     },
+    clearAdvertFilter: (state) => {
+      state.category = '';
+      state.location = '';
+      state.proximity = 10;
+      state.page = 1;
+      state.error = null;
+    },
+    
   },
   extraReducers: (builder) => {
     builder
@@ -79,5 +87,5 @@ const filterSlice = createSlice({
   },
 });
 
-export const { updateFilter, resetFilters } = filterSlice.actions;
+export const { updateFilter, resetFilters,clearAdvertFilter } = filterSlice.actions;
 export default filterSlice.reducer;

@@ -6,6 +6,7 @@ import {
   updateFilter,
   fetchAdvertsByFilter,
   resetFilters,
+  clearAdvertFilter,
 } from '@/store/slices/adverts/filterSlice';
 import AdvertList from '@/components/adverts/advertcomponents/AdvertList';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
@@ -127,7 +128,10 @@ const AdvertsPage = () => {
 
   /* 🔄 Filter clearing using config */
   const handleClearAll = () => {
-    filterModesConfig[filterMode].clear(dispatch, setLocationInput);
+    dispatch(clearAdvertFilter());          // Use your slice's clearAdvertFilter action
+    setFilterMode('input');                 // Optionally reset mode to 'input' like ThreadsPage
+    dispatch(fetchAdvertsByFilter());       // Immediately re-fetch after clearing
+    setLocationInput('');                   // Clear location input field
   };
 
   /* 🟢 Mode switching using config */
@@ -277,14 +281,9 @@ const AdvertsPage = () => {
                 />
               </Autocomplete>
             ) : (
-              <input
-                type="text"
-                placeholder="Enter location"
-                className="p-2 border rounded"
-                value={locationInput}
-                onChange={handleLocationInputChange}
-                disabled
-              />
+              <div className="flex items-center justify-center w-full md:w-96 p-2 border rounded bg-gray-100 text-gray-500">
+              Loading Google Maps...
+            </div>
             )}
           </LoadScriptNext>
           <input
@@ -320,7 +319,7 @@ const AdvertsPage = () => {
                 onClick={() => handleCategoryClick(cat.name)}
               >
                 <div className="text-xs text-gray-600 mb-1">
-                  {React.cloneElement(cat.icon, { size: 32 })}
+                  {React.cloneElement(cat.icon, { size: 20 })}
                 </div>
                 <span className="text-xs font-semibold text-center whitespace-nowrap">
                   {cat.name}
@@ -331,45 +330,45 @@ const AdvertsPage = () => {
         </div>
       )}
 
-      {filterMode === 'cities' && (
-        <div className="overflow-hidden mb-4">
-          <div className="flex overflow-x-auto gap-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 scroll-smooth">
-            {cities.map((city) => (
-              <button
-                key={city.name}
-                className={`flex flex-col items-center justify-center p-4 min-w-[140px] border rounded-lg shadow-md cursor-pointer ${
-                  filters.location === city.coordinates
-                    ? 'bg-gray-300'
-                    : 'bg-white hover:bg-gray-100'
-                }`}
-                onClick={() =>
-                  dispatch(
-                    updateFilter({
-                      location:
-                        filters.location === city.coordinates
-                          ? ''
-                          : city.coordinates,
-                      proximity: 50,
-                      page: 1,
-                    })
-                  )
-                }
-              >
-                <div className="text-3xl text-gray-600 mb-2">
-                  <FaCity />
-                </div>
-                <span className="text-sm font-semibold text-center whitespace-nowrap">
-                  {city.name}
-                </span>
-              </button>
-            ))}
+{filterMode === 'cities' && (
+  <div className="justify-center mb-4 mx-auto">
+    <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-2 py-2 w-max justify-center mx-auto">
+      {cities.map((city) => (
+        <button
+          key={city.name}
+          className={`flex flex-col items-center justify-center p-2 border rounded-lg shadow-md cursor-pointer ${
+            filters.location === city.coordinates
+              ? 'bg-gray-300'
+              : 'bg-white hover:bg-gray-100'
+          }`}
+          onClick={() =>
+            dispatch(
+              updateFilter({
+                location:
+                  filters.location === city.coordinates ? '' : city.coordinates,
+                proximity: 50,
+                page: 1,
+              })
+            )
+          }
+        >
+          <div className="text-xs text-gray-600 mb-1">
+            {React.cloneElement(<FaCity />, { size: 32 })} 
+            {/* Matching icon size to icons section */}
           </div>
-        </div>
-      )}
+          <span className="text-xs font-semibold text-center whitespace-nowrap">
+            {city.name}
+          </span>
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+
 
 {filterMode === 'telugufy' && (
   <div className="justify-center mb-4 mx-auto">
-    <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-2 py-2 w-[300px] md:w-[350px] lg:w-[600px] xl:w-[800px] 2xl:w-[800px]">
+    <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-2 py-2 w-max justify-center mx-auto">
       {categoryIcons
         .filter((cat) => ['Overseas', 'Real Estate'].includes(cat.name))
         .map((cat) => (
@@ -388,7 +387,8 @@ const AdvertsPage = () => {
             }
           >
             <div className="text-xs text-gray-600 mb-1">
-              {React.cloneElement(cat.icon, { size: 32 })}
+              {React.cloneElement(cat.icon, { size: 32 })} 
+              {/* Matching icon size to icons section */}
             </div>
             <span className="text-xs font-semibold text-center whitespace-nowrap">
               {cat.name}
@@ -400,12 +400,13 @@ const AdvertsPage = () => {
 )}
 
 
+
       {/* 🟥 Clear Filter Button */}
       {isFilterActive && (
         <div className="flex justify-center ">
           <button
             onClick={handleClearAll}
-            className="text-xs md:text-base p-1 md:p-1 rounded bg-red-500 text-white hover:bg-red-600"
+            className="text-xs md:text-base p-1 md:p-1 m-2 rounded bg-red-500 text-white hover:bg-red-600"
           >
             Clear Filter
           </button>
