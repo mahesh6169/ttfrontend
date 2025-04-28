@@ -42,7 +42,7 @@ const cities = [
   { name: 'Canberra', coordinates: '149.1300,-35.2809' },
 ];
 
-/* 🟢 Centralized filter mode config for Events */
+/* 🟢 Centralized filter mode config for Eventss */
 const eventFilterModesConfig = {
   input: {
     label: 'All',

@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/fetchEventsByFilter`;
 
-// ✅ Async Thunk to Fetch Events
+// ✅ Async Thunk to Fetch Eventss
 export const fetchEventsByFilter = createAsyncThunk(
   'eventFilters/fetchEventsByFilter',
   async (_, { getState, rejectWithValue }) => {
