@@ -2,63 +2,48 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  updateFilter,
-  fetchAdvertsByFilter,
-  resetFilters,
-  clearAdvertFilter,
-} from '@/store/slices/adverts/filterSlice';
+import { updateFilter,
+   fetchAdvertsAll, fetchAdvertsByCategory, fetchAdvertsTelugufy,
+   fetchAdvertsByCity, resetFilters } from '@/store/slices/adverts/filterSlice';
 import AdvertList from '@/components/adverts/advertcomponents/AdvertList';
-import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Pagination from '@/components/Pagination';
 import SelectSlider from '@/components/SelectSlider';
+import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
-import {
-  FaCity,
-  FaMusic,
-  FaCarAlt,
-  FaBaby,
-  FaDog,
-  FaBook,
-  FaLaptop,
-  FaHome,
-  FaUserTie,
-  FaList,
-  FaDumbbell,
-  FaUtensils,
-  FaGraduationCap,
-  FaHeart,
-} from 'react-icons/fa';
-import { LuPartyPopper } from 'react-icons/lu';
-import { MdRealEstateAgent, MdStore } from 'react-icons/md';
-import { GiScrewdriver } from 'react-icons/gi';
 
 const libraries = ['places'];
 
-/* 🟢 Configurations */
-const categoryIcons = [
-  { name: 'Books Art & Collectables', icon: <FaBook /> },
-  { name: 'Baby & Children', icon: <FaBaby /> },
-  { name: 'Music & Games', icon: <FaMusic /> },
-  { name: 'Cars & Vehicles', icon: <FaCarAlt /> },
-  { name: 'Fashion & Accessories', icon: <FaHeart /> },
-  { name: 'Academics Tutors & Arts', icon: <FaGraduationCap /> },
-  { name: 'Electronics & Computers', icon: <FaLaptop /> },
-  { name: 'Home & Garden', icon: <FaHome /> },
-  { name: 'Jobs', icon: <FaUserTie /> },
-  { name: 'Miscellaneous', icon: <FaList /> },
-  { name: 'Pets', icon: <FaDog /> },
-  { name: 'Party Hires & Services', icon: <LuPartyPopper /> },
-  { name: 'Health, Sport & Fitness', icon: <FaDumbbell /> },
-  { name: 'Food & Catering Services', icon: <FaUtensils /> },
-  { name: 'Home Improvement & Repairs', icon: <GiScrewdriver /> },
-  { name: 'Real Estate', icon: <MdRealEstateAgent /> },
-  { name: 'Professional Services', icon: <FaGraduationCap /> },
-  { name: 'Business & Stores', icon: <MdStore /> },
-  { name: 'Overseas', icon: <FaCity /> },
+const MODES = [
+  { label: 'All', value: 'all' },
+  { label: 'Categories', value: 'categories' },
+  { label: 'Cities', value: 'cities' },
+  { label: 'Telugufy', value: 'telugufy' },
 ];
 
-const cities = [
+const categoryOptions = [
+  
+  'Books Art & Collectables',
+  'Baby & Children',
+  'Music & Games',
+  'Cars & Vehicles',
+  'Fashion & Accessories',
+  'Academics Tutors & Arts',
+  'Electronics & Computers',
+  'Home & Garden',
+  'Jobs',
+  'Miscellaneous',
+  'Pets',
+  'Party Hires & Services',
+  'Health, Sport & Fitness',
+  'Food & Catering Services',
+  'Home Improvement & Repairs',
+  'Real Estate',
+  'Professional Services',
+  'Business & Stores',
+  'Overseas',
+];
+
+const cityOptions = [
   { name: 'Sydney', coordinates: '151.2093,-33.8688' },
   { name: 'Melbourne', coordinates: '144.9631,-37.8136' },
   { name: 'Brisbane', coordinates: '153.0281,-27.4679' },
@@ -69,78 +54,39 @@ const cities = [
   { name: 'Canberra', coordinates: '149.1300,-35.2809' },
 ];
 
-/* 🟢 Centralized filter mode config */
-const filterModesConfig = {
-  input: {
-    label: 'All',
-    clear: (dispatch, setLocationInput) => {
-      dispatch(
-        updateFilter({ category: '', location: null, proximity: 10, page: 1 })
-      );
-      setLocationInput('');
-    },
-    isActive: (filters) =>
-      filters.category || filters.location || filters.proximity !== 10,
-  },
-  icons: {
-    label: 'Categories',
-    clear: (dispatch) => dispatch(updateFilter({ category: '', page: 1 })),
-    isActive: (filters) => filters.category,
-  },
-  cities: {
-    label: 'Cities',
-    clear: (dispatch) =>
-      dispatch(updateFilter({ location: '', proximity: 10, page: 1 })),
-    isActive: (filters) => filters.location || filters.proximity !== 10,
-  },
-  telugufy: {
-    label: 'Telugufy',
-    clear: (dispatch) =>
-      dispatch(
-        updateFilter({ category: ['Overseas', 'Real Estate'], page: 1 })
-      ),
-    isActive: (filters) =>
-      Array.isArray(filters.category)
-        ? filters.category.some((cat) =>
-            ['Overseas', 'Real Estate'].includes(cat)
-          )
-        : ['Overseas', 'Real Estate'].includes(filters.category),
-  },
-};
+const TELUGUFY_CATEGORIES = [
+  'Overseas',
+  'Real Estate',
+];
 
 const AdvertsPage = () => {
   const dispatch = useDispatch();
-  const filters = useSelector((state) => state.filters);
-  const {
-    adverts,
-    meta,
-    status: advertStatus,
-    category,
-    location,
-    proximity,
-    page,
-    limit,
-  } = useSelector((state) => state.filters);
-  const [filterMode, setFilterMode] = useState('input');
-  const [locationInput, setLocationInput] = useState('');
+  const { mode, all, categories, adverts, cities, telugufy, meta, status } = useSelector((state) => state.filters);
+  const [locationInput, setLocationInput] = useState(all.locationInputText || '');
   const [autocomplete, setAutocomplete] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
-  /* 🔄 Filter clearing using config */
-  const handleClearAll = () => {
-    dispatch(clearAdvertFilter());          // Use your slice's clearAdvertFilter action
-    setFilterMode('input');                 // Optionally reset mode to 'input' like ThreadsPage
-    dispatch(fetchAdvertsByFilter());       // Immediately re-fetch after clearing
-    setLocationInput('');                   // Clear location input field
+ 
+
+  // 🔥 Dispatcher based on selected mode
+  useEffect(() => {
+    if (mode === 'all') {
+      dispatch(fetchAdvertsAll());
+    } else if (mode === 'categories') {
+      dispatch(fetchAdvertsByCategory());
+    } else if (mode === 'cities') {
+      dispatch(fetchAdvertsByCity());
+    } else if (mode === 'telugufy') {
+      dispatch(fetchAdvertsTelugufy());
+    }
+  }, [mode, all, categories, cities, telugufy, dispatch]);  // ✅ Add `telugufy` to dependencies
+  
+
+  const handleModeChange = (newMode) => {
+    dispatch(resetFilters(newMode));         // Reset filters per selected mode
+    setLocationInput('');                    // Reset local input
   };
 
-  /* 🟢 Mode switching using config */
-  const handleFilterModeChange = (mode) => {
-    setFilterMode(mode);
-    filterModesConfig[mode].clear(dispatch, setLocationInput);
-  };
-
-  /* 📍 Location logic */
   const handlePlaceChanged = () => {
     if (autocomplete) {
       const place = autocomplete.getPlace();
@@ -149,118 +95,61 @@ const AdvertsPage = () => {
           lat: place.geometry.location.lat(),
           lng: place.geometry.location.lng(),
         };
-        dispatch(
-          updateFilter({ location: `${coordinates.lng},${coordinates.lat}` })
-        );
+        dispatch(updateFilter({
+          mode: 'all',
+          values: {
+            location: `${coordinates.lng},${coordinates.lat}`,
+            locationInputText: place.formatted_address,
+          },
+        }));
         setLocationInput(place.formatted_address);
       }
     }
   };
 
-  const handleLocationInputChange = (e) => {
-    const value = e.target.value;
-    setLocationInput(value);
-    if (value === '') dispatch(updateFilter({ location: null }));
-  };
-
-  /* 🔄 Fetch on filter change */
-  useEffect(() => {
-    dispatch(fetchAdvertsByFilter());
-  }, [
-    filters.category,
-    filters.location,
-    filters.proximity,
-    filters.page,
-    filters.limit,
-    dispatch,
-  ]);
-
-  const isFilterActive = filterModesConfig[filterMode].isActive(filters);
-
-  const handleCategoryClick = (selectedCategory) => {
-    if (filterMode === 'telugufy') {
-      // ✅ Multiple category toggle logic for Telugufy
-      const currentCategories = Array.isArray(filters.category)
-        ? filters.category
-        : [];
-      const isSelected = currentCategories.includes(selectedCategory);
-      const updatedCategories = isSelected
-        ? currentCategories.filter((cat) => cat !== selectedCategory)
-        : [...currentCategories, selectedCategory];
-
-      dispatch(updateFilter({ category: updatedCategories, page: 1 }));
-    } else {
-      // ✅ Single category toggle logic for other modes
-      dispatch(
-        updateFilter({
-          category:
-            filters.category === selectedCategory ? '' : selectedCategory,
-          page: 1,
-        })
-      );
-    }
+  const handleClearFilters = () => {
+    dispatch(resetFilters(mode));
+    setLocationInput('');
   };
 
   return (
     <div className="flex flex-col">
-<div className="relative my-4">
-  {/* Flex Row Always */}
-  <div className="flex items-center justify-center">
-    {/* Button (Absolute Positioned Relative to Parent) */}
-    <div className="absolute left-0">
-      <Link
-        href="/adverts/add"
-        className="text-xs sm:text-sm md:text-base p-2 md:p-4 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold text-center rounded"
-      >
-        Post Advert
-      </Link>
-    </div>
+      <div className="flex justify-between items-center my-4 px-4">
+        <Link href="/adverts/add" className="bg-gray-200 px-4 py-2 rounded text-sm font-semibold">
+          Post Advert
+        </Link>
+        <h1 className="text-lg font-bold text-center flex-1">Discover Adverts</h1>
+      </div>
 
-    {/* Heading */}
-    <div className="w-full">
-      <h1 className="text-xs sm:text-lg md:text-lg text-center text-gray-900 font-semibold">
-        Discover Adverts
-      </h1>
-    </div>
-  </div>
-</div>
-
-
-
-      {/* 🔵 Filter Mode Switch */}
-      <div className="flex justify-center gap-4 mb-4">
-        {Object.keys(filterModesConfig).map((mode) => (
+      {/* 🌟 Mode Selector */}
+      <div className="flex justify-center mb-4 gap-2">
+        {MODES.map((m) => (
           <button
-            key={mode}
-            onClick={() => handleFilterModeChange(mode)}
-            className={`text-xs md:text-base p-1 rounded ${
-              filterMode === mode
-                ? 'bg-gray-300 text-gray-900 font-semibold'
-                : 'bg-gray-100 text-gray-800'
-            }`}
+            key={m.value}
+            onClick={() => handleModeChange(m.value)}
+            className={`px-3 py-1 rounded ${mode === m.value ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
           >
-            {filterModesConfig[mode].label}
+            {m.label}
           </button>
         ))}
       </div>
 
-      {/* 🎯 Filter Sections. */}
-      {filterMode === 'input' && (
-        <div className="text-xs md:text-base flex flex-col md:flex-row gap-1 md:gap-4 mb-4 justify-center">
+      {/* 🟢 Filters for ALL mode */}
+      {mode === 'all' && (
+        <div className="flex flex-col md:flex-row justify-center gap-4 mb-4 px-4">
           <SelectSlider
-            options={[
-              'All Categories',
-              ...categoryIcons.map((cat) => cat.name),
-            ]}
-            value={filters.category || 'All Categories'}
+            options={categoryOptions}
+            value={all.category || 'All Categories'}
             onChange={(selected) =>
               dispatch(
                 updateFilter({
-                  category: selected === 'All Categories' ? '' : selected,
+                  mode: 'all',
+                  values: { category: selected === 'All Categories' ? '' : selected },
                 })
               )
             }
           />
+
           <LoadScriptNext
             googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
             libraries={libraries}
@@ -277,147 +166,156 @@ const AdvertsPage = () => {
                   placeholder="Enter location"
                   className="p-2 border rounded w-full md:w-96"
                   value={locationInput}
-                  onChange={handleLocationInputChange}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLocationInput(val);
+                    if (val === '')
+                      dispatch(updateFilter({ mode: 'all', values: { location: '' } }));
+                  }}
                 />
               </Autocomplete>
             ) : (
-              <div className="flex items-center justify-center w-full md:w-96 p-2 border rounded bg-gray-100 text-gray-500">
-              Loading Google Maps...
-            </div>
+              <div className="p-2 w-full md:w-96 bg-gray-100 text-gray-500 rounded border">Loading map…</div>
             )}
           </LoadScriptNext>
+
           <input
             type="number"
-            className="p-2 border rounded"
-            placeholder="Proximity (km)"
             min="1"
-            value={filters.proximity || ''}
+            placeholder="Proximity (km)"
+            className="p-2 border rounded"
+            value={all.proximity || ''}
             onChange={(e) =>
-              dispatch(
-                updateFilter({ proximity: parseInt(e.target.value, 10) })
-              )
+              dispatch(updateFilter({ mode: 'all', values: { proximity: parseInt(e.target.value) } }))
             }
           />
         </div>
       )}
 
-      {filterMode === 'icons' && (
-        <div className="justify-center mb-4 mx-auto">
-          <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-2 py-2 w-[300px] md:w-[350px] lg:w-[600px] xl:w-[800px] 2xl:w-[800px]">
-            {categoryIcons.map((cat) => (
-              <button
-                key={cat.name}
-                className={`flex flex-col items-center justify-center p-2 border rounded-lg shadow-md cursor-pointer ${
-                  Array.isArray(filters.category)
-                    ? filters.category.includes(cat.name)
-                      ? 'bg-gray-300'
-                      : 'bg-white hover:bg-gray-100'
-                    : filters.category === cat.name
-                    ? 'bg-gray-300'
-                    : 'bg-white hover:bg-gray-100'
-                }`}
-                onClick={() => handleCategoryClick(cat.name)}
-              >
-                <div className="text-xs text-gray-600 mb-1">
-                  {React.cloneElement(cat.icon, { size: 20 })}
-                </div>
-                <span className="text-xs font-semibold text-center whitespace-nowrap">
-                  {cat.name}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-{filterMode === 'cities' && (
-  <div className="justify-center mb-4 mx-auto">
-    <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-2 py-2 w-max justify-center mx-auto">
-      {cities.map((city) => (
-        <button
-          key={city.name}
-          className={`flex flex-col items-center justify-center p-2 border rounded-lg shadow-md cursor-pointer ${
-            filters.location === city.coordinates
-              ? 'bg-gray-300'
-              : 'bg-white hover:bg-gray-100'
-          }`}
-          onClick={() =>
-            dispatch(
-              updateFilter({
-                location:
-                  filters.location === city.coordinates ? '' : city.coordinates,
-                proximity: 50,
-                page: 1,
-              })
-            )
-          }
-        >
-          <div className="text-xs text-gray-600 mb-1">
-            {React.cloneElement(<FaCity />, { size: 32 })} 
-            {/* Matching icon size to icons section */}
-          </div>
-          <span className="text-xs font-semibold text-center whitespace-nowrap">
-            {city.name}
-          </span>
-        </button>
-      ))}
-    </div>
-  </div>
-)}
-
-
-{filterMode === 'telugufy' && (
-  <div className="justify-center mb-4 mx-auto">
-    <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 gap-2 py-2 w-max justify-center mx-auto">
-      {categoryIcons
-        .filter((cat) => ['Overseas', 'Real Estate'].includes(cat.name))
-        .map((cat) => (
-          <button
-            key={cat.name}
-            className={`flex flex-col items-center justify-center p-2 border rounded-lg shadow-md cursor-pointer ${
-              filters.category === cat.name ? 'bg-gray-300' : 'bg-white hover:bg-gray-100'
-            }`}
-            onClick={() =>
-              dispatch(
-                updateFilter({
-                  category: filters.category === cat.name ? '' : cat.name,
-                  page: 1,
-                })
-              )
-            }
+      {/* 🟢 Filters for CATEGORIES mode */}
+      {mode === 'categories' && (
+  <div className="flex flex-col items-center mb-4 px-4">
+    <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
+      <div
+        className="grid grid-flow-col auto-cols-max gap-4"
+        style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
+      >
+        {categoryOptions.map((category) => (
+          <label
+            key={category}
+            className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
           >
-            <div className="text-xs text-gray-600 mb-1">
-              {React.cloneElement(cat.icon, { size: 32 })} 
-              {/* Matching icon size to icons section */}
-            </div>
-            <span className="text-xs font-semibold text-center whitespace-nowrap">
-              {cat.name}
-            </span>
-          </button>
+            <input
+              type="checkbox"
+              checked={categories.selectedCategories.includes(category)}
+              onChange={(e) => {
+                const selected = categories.selectedCategories.includes(category)
+                  ? categories.selectedCategories.filter((c) => c !== category)
+                  : [...categories.selectedCategories, category];
+                dispatch(
+                  updateFilter({
+                    mode: 'categories',
+                    values: { selectedCategories: selected },
+                  })
+                );
+              }}
+            />
+            <span className="text-sm">{category}</span>
+          </label>
         ))}
+      </div>
     </div>
   </div>
 )}
 
-
-
-      {/* 🟥 Clear Filter Button */}
-      {isFilterActive && (
-        <div className="flex justify-center ">
-          <button
-            onClick={handleClearAll}
-            className="text-xs md:text-base p-1 md:p-1 m-2 rounded bg-red-500 text-white hover:bg-red-600"
+      {/* 🟢 Filters for Cities mode */}
+{mode === 'cities' && (
+  <div className="flex flex-col items-center mb-4 px-4">
+    <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
+      <div
+        className="grid grid-flow-col auto-cols-max gap-4"
+        style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
+      >
+        {cityOptions.map((city) => (
+          <label
+            key={city.name}
+            className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
           >
-            Clear Filter
-          </button>
-        </div>
-      )}
+            <input
+              type="radio"
+              name="city-selection"
+              checked={cities.location === city.coordinates}
+              onChange={() =>
+                dispatch(
+                  updateFilter({
+                    mode: 'cities',
+                    values: { location: city.coordinates },
+                  })
+                )
+              }
+            />
+            <span className="text-sm">{city.name }</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
-      <AdvertList adverts={adverts} advertStatus={advertStatus} />
+      {/* 🟢 Filters for Telugufy mode */}
+      {mode === 'telugufy' && (
+  <div className="flex flex-col items-center mb-4 px-4">
+    <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
+      <div
+        className="grid grid-flow-col auto-cols-max gap-4"
+        style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
+      >
+        {TELUGUFY_CATEGORIES.map((category) => (
+          <label
+            key={category}
+            className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+          >
+            <input
+              type="checkbox"
+              checked={telugufy.selectedCategories.includes(category)}
+              onChange={() => {
+                const selected = telugufy.selectedCategories.includes(category)
+                  ? telugufy.selectedCategories.filter((c) => c !== category)
+                  : [...telugufy.selectedCategories, category];
+                dispatch(
+                  updateFilter({
+                    mode: 'telugufy',
+                    values: { selectedCategories: selected },
+                  })
+                );
+              }}
+            />
+            <span className="text-sm">{category}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+      {/* 🔴 Clear Filters */}
+      <div className="flex justify-center mb-2">
+        <button
+          onClick={handleClearFilters}
+          className="text-sm bg-red-500 text-white px-3 py-1 rounded"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      {/* 🔷 Advert Listing */}
+      <AdvertList adverts={adverts} advertStatus={status} />
       <Pagination
-        currentPage={filters.page}
+        currentPage={all.page}
         totalPages={meta?.totalPages || 1}
-        onPageChange={(pageNum) => dispatch(updateFilter({ page: pageNum }))}
+        onPageChange={(pageNum) =>
+          dispatch(updateFilter({ mode: 'all', values: { page: pageNum } }))
+        }
       />
     </div>
   );
