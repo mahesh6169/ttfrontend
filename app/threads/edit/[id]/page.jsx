@@ -8,6 +8,9 @@ import {
 } from '@/store/slices/threads/threadSlice';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
+import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
+
+const libraries = ['places'];
 
 const categoryOptions = [
   'Education',
@@ -48,9 +51,22 @@ const EditThreadPage = () => {
     question: '',
     category: '',
     images: [],
+    suburb: {
+      name: '',
+      state: '',
+      postalCode: '',
+      location: {
+        type: 'Point',
+        coordinates: [],
+      },
+    },
   });
+  
   const [existingImages, setExistingImages] = useState([]);
   const [preview, setPreview] = useState([]);
+  const [autocomplete, setAutocomplete] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [locationInput, setLocationInput] = useState('');
 
   useEffect(() => {
     if (threadId) {
@@ -59,28 +75,52 @@ const EditThreadPage = () => {
   }, [dispatch, threadId]);
 
   useEffect(() => {
-    console.log('[EditPage] thread from Redux:', thread);
     if (thread) {
-      console.log('[EditPage] Populating form with fetched thread data');
-      setFormData({
+      const updatedFormData = {
         title: thread.title || '',
         question: thread.question || '',
         category: thread.category || '',
         images: [],
-      });
+        suburb: thread.suburb || {
+          name: '',
+          state: '',
+          postalCode: '',
+          location: {
+            type: 'Point',
+            coordinates: [],
+          },
+        },
+      };
+  
+      setFormData(updatedFormData);
       setExistingImages(thread.images || []);
       setPreview((thread.images || []).map((img) => img.url));
+  
+      if (thread.suburb && thread.suburb.name) {
+        setLocationInput(`${thread.suburb.name}, ${thread.suburb.state} ${thread.suburb.postalCode}`);
+      }
     }
   }, [thread]);
+  
+
+  // Add this useEffect to update locationInput when formData.suburb changes
+useEffect(() => {
+  if (formData.suburb && formData.suburb.name) {
+    setLocationInput(`${formData.suburb.name}, ${formData.suburb.state} ${formData.suburb.postalCode}`);
+  }
+}, [formData.suburb]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: '' });
+    }
   };
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length + preview.length > 3) {
-      alert('You can upload up to 3 images only.');
+      toast.warning('You can upload up to 3 images only.');
       return;
     }
     const newPreviews = files.map((file) => URL.createObjectURL(file));
@@ -103,12 +143,89 @@ const EditThreadPage = () => {
     setPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Location input handler
+  const handleLocationInputChange = (e) => {
+    setLocationInput(e.target.value);
+    
+    // Clear suburb error if typing
+    if (errors.suburb) {
+      setErrors((prev) => ({ ...prev, suburb: '' }));
+    }
+  };
+
+  const handlePlaceChanged = () => {
+    if (!autocomplete) return;
+  
+    const place = autocomplete.getPlace();
+  
+    if (!place || !place.address_components) {
+      console.log("No valid place selected");
+      return;
+    }
+  
+    const addressComponents = place.address_components;
+  
+    let suburb = '';
+    let state = '';
+    let postalCode = '';
+    let coordinates = [];
+  
+    addressComponents.forEach((component) => {
+      const types = component.types;
+      if (types.includes('locality')) suburb = component.long_name;
+      if (types.includes('administrative_area_level_1'))
+        state = component.short_name;
+      if (types.includes('postal_code')) postalCode = component.long_name;
+    });
+  
+    if (place.geometry && place.geometry.location) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      coordinates = [lng, lat];
+    }
+  
+    // ✅ Update formData with selected location
+    setFormData((prev) => ({
+      ...prev,
+      suburb: {
+        name: suburb,
+        state,
+        postalCode,
+        location: {
+          type: 'Point',
+          coordinates,
+        },
+      },
+    }));
+  
+    // ✅ Important: Clear existingImages because suburb is being changed
+    setExistingImages((prev) => [...prev]);
+  
+    // Update the input field
+    setLocationInput(`${suburb}, ${state} ${postalCode}`);
+  
+    if (errors.suburb) {
+      setErrors((prev) => ({ ...prev, suburb: '' }));
+    }
+  };
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { title, question, category, images } = formData;
+    const { title, question, category, images, suburb } = formData;
+    const newErrors = {};
 
-    if (!title || !question || !category) {
-      toast.error('All fields are required.');
+    if (!title.trim()) newErrors.title = 'Title is required';
+    if (!question.trim()) newErrors.question = 'Question is required';
+    if (!category.trim()) newErrors.category = 'Category is required';
+
+    const { name, state, postalCode, location } = suburb;
+    if (!name || !state || !postalCode || location.coordinates.length !== 2) {
+      newErrors.suburb = 'Please select a valid suburb using the autocomplete field';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -116,6 +233,10 @@ const EditThreadPage = () => {
     formPayload.append('title', title);
     formPayload.append('question', question);
     formPayload.append('category', category);
+    
+    // Append suburb data
+    formPayload.append('suburb', JSON.stringify(suburb));
+    
     existingImages.forEach((img) =>
       formPayload.append('existingImages', JSON.stringify(img))
     );
@@ -134,43 +255,99 @@ const EditThreadPage = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 mt-10 bg-white border rounded shadow">
+    <div className="max-w-lg mx-auto p-6 mt-10 bg-white border rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold mb-4">Edit Thread</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          name="title"
-          value={formData.title || ''}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          placeholder="Thread Title"
-          required
-        />
-        <textarea
-          name="question"
-          value={formData.question || ''}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          placeholder="Describe your question..."
-          required
-        />
-        <select
-          name="category"
-          value={formData.category}
-          onChange={handleChange || ''}
-          className="w-full p-2 border rounded"
-          required
-        >
-          <option value="">Select Category</option>
-          {categoryOptions.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
+        <div>
+          <input
+            type="text"
+            name="title"
+            value={formData.title || ''}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-lg ${
+              errors.title ? 'border-red-500' : ''
+            }`}
+            placeholder="Thread Title"
+            required
+          />
+          {errors.title && (
+            <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+          )}
+        </div>
+        
+        <div>
+          <textarea
+            name="question"
+            value={formData.question || ''}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-lg ${
+              errors.question ? 'border-red-500' : ''
+            }`}
+            placeholder="Describe your question..."
+            required
+          />
+          {errors.question && (
+            <p className="text-red-500 text-sm mt-1">{errors.question}</p>
+          )}
+        </div>
+        
+        <div>
+          <select
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-lg ${
+              errors.category ? 'border-red-500' : ''
+            }`}
+            required
+          >
+            <option value="">Select Category</option>
+            {categoryOptions.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+          {errors.category && (
+            <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+          )}
+        </div>
+
+        {/* Location/Suburb Selector */}
+        <div>
+          <label className="block font-medium">
+            Location <span className="text-red-500">*</span>
+          </label>
+          <LoadScriptNext
+            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+            libraries={libraries}
+          >
+            <Autocomplete
+              onLoad={(auto) => setAutocomplete(auto)}
+              onPlaceChanged={handlePlaceChanged}
+              options={{
+                componentRestrictions: { country: 'AU' },
+                types: ['(regions)'],
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Enter your suburb"
+                className={`w-full p-2 border rounded ${
+                  errors.suburb ? 'border-red-500' : 'border-gray-300'
+                }`}
+                value={locationInput}
+                onChange={handleLocationInputChange}
+              />
+            </Autocomplete>
+          </LoadScriptNext>
+          {errors.suburb && (
+            <p className="text-red-500 text-sm mt-1">{errors.suburb}</p>
+          )}
+        </div>
 
         <div>
-          <label className="font-semibold block mb-1">Images (max 3)</label>
+          <label className="block font-semibold mb-1">Images (max 3)</label>
           <input
             type="file"
             multiple
