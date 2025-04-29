@@ -82,15 +82,16 @@ export const fetchEventsCustomCategory = createAsyncThunk(
   'eventFilters/fetchEventsCustomCategory',
   async (_, { getState, rejectWithValue }) => {
     const { customCategories } = getState().eventFilters;
+    const DEFAULT_CUSTOM_CATEGORIES = ['Technology', 'Real Estate', 'Community & Cultural'];
 
     try {
-      // Custom categories are required for this endpoint
-      if (customCategories.selectedCategories.length === 0) {
-        return rejectWithValue('Categories are required for custom filtering');
-      }
+      // Use selected categories or fall back to defaults (just like Telugufy)
+      const categoriesToUse = customCategories.selectedCategories.length > 0 
+        ? customCategories.selectedCategories 
+        : DEFAULT_CUSTOM_CATEGORIES;
       
       const params = {
-        categories: customCategories.selectedCategories.join(','),
+        categories: categoriesToUse.join(','),
         ...(customCategories.selectedMonth && { month: customCategories.selectedMonth }),
         page: customCategories.page,
         limit: customCategories.limit,

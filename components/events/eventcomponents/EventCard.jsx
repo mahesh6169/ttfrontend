@@ -5,6 +5,7 @@ import { BsCalendar2Event } from 'react-icons/bs';
 import { FaHeart } from 'react-icons/fa';
 import { format, differenceInDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
+import { MdRepeat } from 'react-icons/md';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   const { title, dateTime, venue, address, images, createdAt, timeZone } =
@@ -68,9 +69,17 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         </div>
 
         {/* Title */}
-        <h2 className="text-sm sm:text-base font-bold px-2 truncate">
-          {title}
-        </h2>
+        <div className="flex items-center px-2">
+  <h2 className="text-sm sm:text-base font-bold truncate">
+    {title}
+  </h2>
+  {(event.recurrence?.isRecurring || event.isRecurringInstance) && (
+    <MdRepeat 
+      className="ml-1 text-blue-500 flex-shrink-0" 
+      title="Recurring Event"
+    />
+  )}
+</div>
 
         {/* Date & Time */}
         <div className="flex items-center text-sm text-gray-600  px-2">

@@ -64,8 +64,20 @@ const EventsPage = () => {
   // Current month handling
   const currentMonth = format(new Date(), 'yyyy-MM');
   // Start with no month selected (empty string)
-  const [selectedMonthDisplay, setSelectedMonthDisplay] = useState('');
-  const [isMonthSelected, setIsMonthSelected] = useState(false);
+  const [selectedMonthDisplay, setSelectedMonthDisplay] = useState(() => {
+    const currentMode = mode;
+    const selectedMonth = currentMode === 'all' 
+      ? all.selectedMonth 
+      : currentMode === 'categories'
+        ? categories.selectedMonth
+        : currentMode === 'locations'
+          ? locations.selectedMonth
+          : customCategories.selectedMonth;
+    
+    return selectedMonth || '';
+  });
+  
+  const [isMonthSelected, setIsMonthSelected] = useState(!!selectedMonthDisplay);
 
   // 🔥 Dispatcher based on selected mode
   useEffect(() => {
@@ -80,14 +92,6 @@ const EventsPage = () => {
     }
   }, [mode, all, categories, locations, customCategories, dispatch]);
 
-  // Initialize with no month selected
-  useEffect(() => {
-    // Set month to empty string in Redux store - this will show all future events
-    dispatch(updateEventFilter({
-      mode: mode,
-      values: { selectedMonth: '' }
-    }));
-  }, [dispatch, mode]);
 
   const handleModeChange = (newMode) => {
     dispatch(resetEventFilters(newMode));    // Reset filters per selected mode
