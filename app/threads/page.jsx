@@ -1,46 +1,66 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  fetchThreads,
-  fetchThreadsByCategory,
-  updateThreadFilter,
-  clearThreadFilter,
+import { useRouter } from 'next/navigation';
+import { 
+  updateThreadFilter, 
+  fetchThreadsAll, 
+  fetchThreadsByCategory, 
+  fetchThreadsByCity,
+  fetchThreadsCustomCategory,
+  resetThreadFilters 
 } from '@/store/slices/threads/filterThreadSlice';
 import Pagination from '@/components/Pagination';
+import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 
-/* 🟢 Centralized Config */
-const modesConfig = {
-  categories: {
-    label: 'Browse All Topics',
-    categories: [
-      'Education', 'Migration', 'Travel', 'Jobs', 'Entertainment', 'Hobbies',
-      'Baby & Children', 'Arts & Crafts', 'Cars & Vehicles', 'Fashion & Accessories',
-      'Electronics & Computer', 'Home & Garden', 'Miscellaneous', 'Pets',
-      'Real Estate', 'Party Hires & Services', 'Sport & Fitness',
-      'Food & Catering Services', 'Health & Beauty', 'Business & Shops',
-      'Events & Community', 'Services', 'Travel Partner', 'financial aid'
-    ],
-  },
-  popular: {
-    label: 'Popular Topics',
-    categories: ['Travel Partner', 'financial aid'],
-  },
-  // Example: Add sports in future
-  // sports: { label: 'Sports Topics', categories: ['Cricket', 'Football'] },
-};
+const libraries = ['places'];
+
+const MODES = [
+  { label: 'All', value: 'all' },
+  { label: 'Categories', value: 'categories' },
+  { label: 'Cities', value: 'cities' },
+  { label: 'Popular', value: 'customCategories' },
+];
+
+const categoryOptions = [
+  'Education', 'Migration', 'Travel', 'Jobs', 'Entertainment', 'Hobbies',
+  'Baby & Children', 'Arts & Crafts', 'Cars & Vehicles', 'Fashion & Accessories',
+  'Electronics & Computer', 'Home & Garden', 'Miscellaneous', 'Pets',
+  'Real Estate', 'Party Hires & Services', 'Sport & Fitness',
+  'Food & Catering Services', 'Health & Beauty', 'Business & Shops',
+  'Events & Community', 'Services', 'Travel Partner', 'financial aid'
+];
+
+const cityOptions = [
+  { name: 'Sydney', coordinates: '151.2093,-33.8688' },
+  { name: 'Melbourne', coordinates: '144.9631,-37.8136' },
+  { name: 'Brisbane', coordinates: '153.0281,-27.4679' },
+  { name: 'Perth', coordinates: '115.8605,-31.9505' },
+  { name: 'Adelaide', coordinates: '138.6007,-34.9285' },
+  { name: 'Hobart', coordinates: '147.3272,-42.8821' },
+  { name: 'Darwin', coordinates: '130.8456,-12.4634' },
+  { name: 'Canberra', coordinates: '149.1300,-35.2809' },
+];
+
+// Popular categories pre-selection
+const POPULAR_CATEGORIES = [
+  'Travel Partner',
+  'financial aid',
+];
 
 const ThreadsPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { threads, status, category, page, totalPages } = useSelector((state) => state.filterThreads);
-  const [filterMode, setFilterMode] = useState('categories');
-  const allowedCategories = modesConfig[filterMode].categories;
+  const { mode, all, categories, cities, customCategories, threads, meta, status } = 
+    useSelector((state) => state.filterThreads);
+  const [locationInput, setLocationInput] = useState(all.locationInputText || '');
+  const [autocomplete, setAutocomplete] = useState(null);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
+  // Get formatted date for display
   const getPostedText = (createdAt) => {
     const daysAgo = differenceInDays(new Date(), new Date(createdAt));
     if (daysAgo <= 10) {
@@ -50,110 +70,263 @@ const ThreadsPage = () => {
     }
   };
 
-/* 🔄 Load data */
-useEffect(() => {
-  if (filterMode === 'categories') {
-    if (category) {
+  // Dispatcher based on selected mode
+  useEffect(() => {
+    if (mode === 'all') {
+      dispatch(fetchThreadsAll());
+    } else if (mode === 'categories') {
       dispatch(fetchThreadsByCategory());
-    } else {
-      dispatch(fetchThreads());
+    } else if (mode === 'cities') {
+      dispatch(fetchThreadsByCity());
+    } else if (mode === 'customCategories') {      
+      dispatch(fetchThreadsCustomCategory());
     }
-  } else {
-    // In 'popular' or other modes, always use fetchThreadsByCategory (since we want filtering)
-    dispatch(fetchThreadsByCategory());
-  }
-}, [dispatch, category, page, filterMode]);
+  }, [mode, all, categories, cities, customCategories, dispatch]);
 
-  /* 🟢 Handle Category Click */
-  const handleCategoryClick = (cat) => {
-    const isSelected = category === cat;
-  
-    if (filterMode === 'categories') {
-      // Normal toggle logic for Browse All
-      dispatch(updateThreadFilter({ category: isSelected ? '' : cat, page: 1 }));
-    } else {
-      // For Popular / Sports / Any group-based mode
-      dispatch(
-        updateThreadFilter({
-          category: isSelected ? modesConfig[filterMode].categories : cat, 
-          page: 1,
-        })
-      );
+  // Handle switching between filter modes
+  const handleModeChange = (newMode) => {
+    dispatch(resetThreadFilters(newMode));
+    setLocationInput('');
+  };
+
+  // Google Places autocomplete handler
+  const handlePlaceChanged = () => {
+    if (autocomplete) {
+      const place = autocomplete.getPlace();
+      if (place.geometry) {
+        const coordinates = {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+        };
+        dispatch(updateThreadFilter({
+          mode: 'all',
+          values: {
+            location: `${coordinates.lng},${coordinates.lat}`,
+            locationInputText: place.formatted_address,
+          },
+        }));
+        setLocationInput(place.formatted_address);
+      }
     }
   };
-  
 
- /* 🟢 Handle Mode Switch */
-const handleFilterModeChange = (mode) => {
-  setFilterMode(mode);
-  dispatch(clearThreadFilter());
-
-  // If it's 'categories' (Browse All), fetch all
-  if (mode === 'categories') {
-    dispatch(fetchThreads());
-  } else {
-    // If it's popular (or any other future group), fetch threads by these categories
-    dispatch(updateThreadFilter({ category: modesConfig[mode].categories, page: 1 }));
-  }
-};
+  // Clear all filters for current mode
+  const handleClearFilters = () => {
+    dispatch(resetThreadFilters(mode));
+    setLocationInput('');
+  };
 
   return (
-    <div className="flex flex-col justify-center px-2">
-      {/* 🟢 Create Thread */}
-      <Link href="/threads/new" className="block my-2 p-2 mb-4 bg-blue-600 text-white lg:w-1/4 text-center rounded">
-        Create New Thread
-      </Link>
+    <div className="flex flex-col">
+      <div className="flex justify-between items-center my-4 px-4">
+        <Link href="/threads/new" className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold">
+          Create New Thread
+        </Link>
+        <h1 className="text-lg font-bold text-center flex-1">Community Threads</h1>
+      </div>
 
-      {/* 🟢 Mode Switch */}
-      <div className="flex justify-center gap-4 mb-4">
-        {Object.keys(modesConfig).map((mode) => (
+      {/* Mode Selector */}
+      <div className="flex justify-center mb-4 gap-2">
+        {MODES.map((m) => (
           <button
-            key={mode}
-            onClick={() => handleFilterModeChange(mode)}
-            className={`text-xs md:text-base p-1 rounded ${filterMode === mode ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'}`}
+            key={m.value}
+            onClick={() => handleModeChange(m.value)}
+            className={`px-3 py-1 rounded ${mode === m.value ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
           >
-            {modesConfig[mode].label}
+            {m.label}
           </button>
         ))}
       </div>
 
-      {/* 🟢 Subcategories */}
-      <div className={`flex ${filterMode === 'popular' ? 'flex-wrap justify-center' : 'overflow-x-auto'} gap-2 py-2 mb-4`}>
-        {allowedCategories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => handleCategoryClick(cat)}
-            className={`px-3 py-2 border rounded-lg shadow-md whitespace-nowrap text-xs font-semibold ${category === cat ? 'bg-gray-300' : 'bg-white hover:bg-gray-100'}`}
+      {/* Filters for ALL mode */}
+      {mode === 'all' && (
+        <div className="flex flex-col md:flex-row justify-center gap-4 mb-4 px-4">
+          <select
+            className="p-2 border rounded"
+            value={all.category || ''}
+            onChange={(e) =>
+              dispatch(
+                updateThreadFilter({
+                  mode: 'all',
+                  values: { category: e.target.value },
+                })
+              )
+            }
           >
-            {cat}
-          </button>
-        ))}
-      </div>
+            <option value="">All Categories</option>
+            {categoryOptions.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
 
-      {/* 🟢 Clear Filter */}
-      {category && (
-        <div className="flex justify-center mb-4">
-          <button
-  onClick={() => {
-    dispatch(clearThreadFilter());
-    setFilterMode('categories'); // ✅ Switch back to Browse All Topics
-    dispatch(fetchThreads());    // ✅ Reload all threads
-  }}
-  className="text-xs md:text-base px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600"
->
-  Clear Filter
-</button>
+          <LoadScriptNext
+            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+            libraries={libraries}
+            onLoad={() => setIsScriptLoaded(true)}
+          >
+            {isScriptLoaded ? (
+              <Autocomplete
+                onLoad={setAutocomplete}
+                onPlaceChanged={handlePlaceChanged}
+                options={{ componentRestrictions: { country: 'AU' } }}
+              >
+                <input
+                  type="text"
+                  placeholder="Enter location"
+                  className="p-2 border rounded w-full md:w-96"
+                  value={locationInput}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLocationInput(val);
+                    if (val === '')
+                      dispatch(updateThreadFilter({ mode: 'all', values: { location: '' } }));
+                  }}
+                />
+              </Autocomplete>
+            ) : (
+              <div className="p-2 w-full md:w-96 bg-gray-100 text-gray-500 rounded border">Loading map…</div>
+            )}
+          </LoadScriptNext>
 
+          <input
+            type="number"
+            min="1"
+            placeholder="Proximity (km)"
+            className="p-2 border rounded"
+            value={all.proximity || ''}
+            onChange={(e) =>
+              dispatch(updateThreadFilter({ 
+                mode: 'all', 
+                values: { proximity: parseInt(e.target.value) } 
+              }))
+            }
+          />
         </div>
       )}
 
-      {/* 🟢 Threads */}
+      {/* Filters for CATEGORIES mode */}
+      {mode === 'categories' && (
+        <div className="flex flex-col items-center mb-4 px-4">
+          <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
+            <div
+              className="grid grid-flow-col auto-cols-max gap-4"
+              style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
+            >
+              {categoryOptions.map((category) => (
+                <label
+                  key={category}
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                >
+                  <input
+                    type="checkbox"
+                    checked={categories.selectedCategories.includes(category)}
+                    onChange={(e) => {
+                      const selected = categories.selectedCategories.includes(category)
+                        ? categories.selectedCategories.filter((c) => c !== category)
+                        : [...categories.selectedCategories, category];
+                      dispatch(
+                        updateThreadFilter({
+                          mode: 'categories',
+                          values: { selectedCategories: selected },
+                        })
+                      );
+                    }}
+                  />
+                  <span className="text-sm">{category}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters for Cities mode */}
+      {mode === 'cities' && (
+        <div className="flex flex-col items-center mb-4 px-4">
+          <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
+            <div
+              className="grid grid-flow-col auto-cols-max gap-4"
+              style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
+            >
+              {cityOptions.map((city) => (
+                <label
+                  key={city.name}
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                >
+                  <input
+                    type="radio"
+                    name="city-selection"
+                    checked={cities.location === city.coordinates}
+                    onChange={() =>
+                      dispatch(
+                        updateThreadFilter({
+                          mode: 'cities',
+                          values: { location: city.coordinates },
+                        })
+                      )
+                    }
+                  />
+                  <span className="text-sm">{city.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters for Popular mode (custom categories) */}
+      {mode === 'customCategories' && (
+        <div className="flex flex-col items-center mb-4 px-4">
+          <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
+            <div
+              className="grid grid-flow-col auto-cols-max gap-4"
+              style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
+            >
+              {POPULAR_CATEGORIES.map((category) => (
+                <label
+                  key={category}
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                >
+                  <input
+                    type="checkbox"
+                    checked={customCategories.selectedCategories.includes(category)}
+                    onChange={() => {
+                      const selected = customCategories.selectedCategories.includes(category)
+                        ? customCategories.selectedCategories.filter((c) => c !== category)
+                        : [...customCategories.selectedCategories, category];
+                      dispatch(
+                        updateThreadFilter({
+                          mode: 'customCategories',
+                          values: { selectedCategories: selected },
+                        })
+                      );
+                    }}
+                  />
+                  <span className="text-sm">{category}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Filters */}
+      <div className="flex justify-center mb-2">
+        <button
+          onClick={handleClearFilters}
+          className="text-sm bg-red-500 text-white px-3 py-1 rounded"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      {/* Thread Listing */}
       {status === 'loading' ? (
-        <p className="text-center text-gray-500">Loading threads...</p>
+        <div className="text-center p-4">Loading threads...</div>
       ) : threads.length > 0 ? (
-        <ul className="space-y-4">
+        <div className="space-y-4 px-4">
           {threads.map((thread) => (
-            <li
+            <div
               key={thread._id}
               className="border rounded-lg p-4 hover:bg-gray-100 cursor-pointer"
               onClick={() => router.push(`/threads/views/${thread._id}`)}
@@ -171,22 +344,32 @@ const handleFilterModeChange = (mode) => {
                     <img src={thread.images[0].url} alt="Thread" className="w-16 h-16 object-cover rounded shrink-0" />
                   )}
                 </div>
-                <div className="flex justify-start items-center text-sm text-gray-500 ">
-  <p>Posted by: {thread.owner?.name || 'Former Member'}</p>
-  <p className="ml-3">| Posted: {getPostedText(thread.createdAt)}</p>
-  {thread.category && <p className="ml-3">| Category: {thread.category}</p>}
-</div>
-
+                <div className="flex justify-start items-center text-sm text-gray-500">
+                  <p>Posted by: {thread.ownerName || 'Former Member'}</p>
+                  <p className="ml-3">| Posted: {getPostedText(thread.createdAt)}</p>
+                  {thread.category && <p className="ml-3">| Category: {thread.category}</p>}
+                  {thread.distance && <p className="ml-3">| Distance: {thread.distance.toFixed(1)} km</p>}
+                </div>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : (
-        <p className="text-center text-gray-500">No threads available. Start a new discussion!</p>
+        <div className="text-center p-4 text-gray-500">No threads available. Start a new discussion!</div>
       )}
 
-      {totalPages > 1 && (
-        <Pagination currentPage={page} totalPages={totalPages} onPageChange={(pageNum) => dispatch(updateThreadFilter({ page: pageNum }))} />
+      {/* Pagination */}
+      {meta && meta.totalPages > 1 && (
+        <Pagination
+          currentPage={meta.currentPage}
+          totalPages={meta.totalPages}
+          onPageChange={(pageNum) =>
+            dispatch(updateThreadFilter({ 
+              mode, 
+              values: { page: pageNum } 
+            }))
+          }
+        />
       )}
     </div>
   );

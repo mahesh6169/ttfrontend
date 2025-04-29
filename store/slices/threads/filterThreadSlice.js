@@ -1,99 +1,168 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/threads`;
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/threads/filters`;
 
-/* -------------------------------- Fetch Threads by Category -------------------------------- */
+/* 🔥 First Thunk (All Filter) */
+export const fetchThreadsAll = createAsyncThunk(
+  'filterThreads/fetchThreadsAll',
+  async (_, { getState, rejectWithValue }) => {
+    const { all } = getState().filterThreads;
+    try {
+      const params = {
+        ...(all.category && { category: all.category }),
+        ...(all.location && { location: all.location }),
+        ...(all.proximity && { proximity: all.proximity }),
+        page: all.page,
+        limit: all.limit,
+      };
+      const response = await axios.get(`${API_BASE_URL}/all`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('❌ API Fetch Error:', error.response?.data || error.message);
+      return rejectWithValue(error.response?.data || 'Failed to fetch threads');
+    }
+  }
+);
+
+/* 🔥 Thunk for Categories Filter */
 export const fetchThreadsByCategory = createAsyncThunk(
   'filterThreads/fetchThreadsByCategory',
   async (_, { getState, rejectWithValue }) => {
-    try {
-      const { category, page, limit } = getState().filterThreads;
+    const { categories } = getState().filterThreads;
 
+    try {
       const params = {
-        ...(category && { category }),
-        page,
-        limit,
+        ...(categories.selectedCategories.length > 0 && {
+          categories: categories.selectedCategories.join(','),
+        }),
+        page: categories.page,
+        limit: categories.limit,
       };
 
-      const response = await axios.get(`${BASE_URL}/categories`, { params });
+      const response = await axios.get(`${API_BASE_URL}/categories`, { params });
       return response.data;
     } catch (error) {
-      console.error("🔴 Error fetching threads by category:", error.response?.data || error.message);
-      return rejectWithValue(error.response?.data?.message || "Failed to fetch threads");
+      return rejectWithValue(error.response?.data || 'Failed to fetch threads by categories');
     }
   }
 );
 
-/* -------------------------------- Fetch Threads (All) -------------------------------- */
-export const fetchThreads = createAsyncThunk(
-  'filterThreads/fetchThreads',
+/* 🔥 Thunk for Cities Filter */
+export const fetchThreadsByCity = createAsyncThunk(
+  'filterThreads/fetchThreadsByCity',
   async (_, { getState, rejectWithValue }) => {
+    const { cities } = getState().filterThreads;
+
     try {
-      const { page, limit } = getState().filterThreads;
-
-      const response = await axios.get(BASE_URL, {
-        params: { page, limit },
-      });
-
-      return {
-        threads: response.data.threads || [],
-        meta: response.data.meta || { totalItems: 0, totalPages: 1, currentPage: 1, itemsPerPage: limit },
+      const params = {
+        ...(cities.location && { location: cities.location }),
+        page: cities.page,
+        limit: cities.limit,
       };
+
+      const response = await axios.get(`${API_BASE_URL}/cities`, { params });
+      return response.data;
     } catch (error) {
-      console.error("🔴 Error fetching all threads:", error.response?.data || error.message);
-      return rejectWithValue(error.response?.data?.message || "Failed to fetch threads");
+      return rejectWithValue(error.response?.data || 'Failed to fetch threads by city');
     }
   }
 );
 
-const filterThreadsSlice = createSlice({
+/* 🔥 Thunk for Custom Categories Filter */
+export const fetchThreadsCustomCategory = createAsyncThunk(
+  'filterThreads/fetchThreadsCustomCategory',
+  async (_, { getState, rejectWithValue }) => {
+    const { customCategories } = getState().filterThreads;
+    const POPULAR_CATEGORIES = ['Travel Partner', 'financial aid'];
+
+    try {
+      // Use selected categories or fall back to defaults (just like in fetchEventsCustomCategory)
+      const categoriesToUse = customCategories.selectedCategories.length > 0 
+        ? customCategories.selectedCategories 
+        : POPULAR_CATEGORIES;
+      
+      const params = {
+        categories: categoriesToUse.join(','),
+        page: customCategories.page,
+        limit: customCategories.limit,
+      };
+
+      console.log("🔍 Thread API Custom Categories Request Params:", params);
+      const response = await axios.get(`${API_BASE_URL}/customcategories`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('❌ Thread API Custom Categories Error:', error.response?.data || error.message);
+      return rejectWithValue(error.response?.data || 'Failed to fetch threads by custom categories');
+    }
+  }
+);
+
+/* 🟡 Initial State */
+const initialState = {
+  mode: 'all',
+  all: { category: '', location: '', locationInputText: '', proximity: 10, page: 1, limit: 10 },
+  categories: { selectedCategories: [], page: 1, limit: 10 },
+  cities: { location: '', page: 1, limit: 10 },
+  customCategories: { selectedCategories: [], page: 1, limit: 10 },
+  threads: [],
+  meta: {},
+  status: 'idle',
+  error: null,
+};
+
+/* 🟢 Slice */
+const filterThreadSlice = createSlice({
   name: 'filterThreads',
-  initialState: {
-    threads: [],
-    category: '',
-    page: 1,
-    limit: 10,
-    totalItems: 0,
-    totalPages: 0,
-    status: 'idle',
-    error: null,
-  },
+  initialState,
   reducers: {
     updateThreadFilter: (state, action) => {
-      Object.assign(state, action.payload);
+      const { mode, values } = action.payload;
+      state.mode = mode;
+      state[mode] = { ...state[mode], ...values };
     },
-    clearThreadFilter: (state) => {
-      state.category = '';
-      state.page = 1;
+    resetThreadFilters: (state, action) => {
+      const mode = action.payload || 'all';  // Default to 'all' if not specified
+    
+      state.mode = mode;
+    
+      const defaultStates = {
+        all: { category: '', location: '', locationInputText: '', proximity: 10, page: 1, limit: 10 },
+        categories: { selectedCategories: [], page: 1, limit: 10 },
+        cities: { location: '', page: 1, limit: 10 },
+        customCategories: { selectedCategories: [], page: 1, limit: 10 },
+      };
+    
+      state[mode] = defaultStates[mode];
+    
       state.threads = [];
-      state.totalItems = 0;
-      state.totalPages = 0;
+      state.meta = {};
       state.status = 'idle';
       state.error = null;
+    
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('threadFilters');
+      }
     },
   },
   extraReducers: (builder) => {
     builder
-      /* --------- Fetch Threads (All) --------- */
-      .addCase(fetchThreads.pending, (state) => {
+      // ✅ All Filters mode
+      .addCase(fetchThreadsAll.pending, (state) => {
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(fetchThreads.fulfilled, (state, action) => {
+      .addCase(fetchThreadsAll.fulfilled, (state, action) => {
         state.status = 'success';
         state.threads = action.payload.threads;
-        const meta = action.payload.meta || {};
-        state.totalItems = meta.totalItems || 0;
-        state.totalPages = meta.totalPages || 1;
-        state.page = meta.currentPage || 1;
+        state.meta = action.payload.meta;
       })
-      .addCase(fetchThreads.rejected, (state, action) => {
+      .addCase(fetchThreadsAll.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload;
+        state.error = action.payload || 'Something went wrong';
       })
-
-      /* --------- Fetch Threads by Category --------- */
+      
+      // ✅ Categories mode
       .addCase(fetchThreadsByCategory.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -101,15 +170,44 @@ const filterThreadsSlice = createSlice({
       .addCase(fetchThreadsByCategory.fulfilled, (state, action) => {
         state.status = 'success';
         state.threads = action.payload.threads;
-        state.totalItems = action.payload.meta.totalItems;
-        state.totalPages = action.payload.meta.totalPages;
+        state.meta = action.payload.meta;
       })
       .addCase(fetchThreadsByCategory.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload;
+        state.error = action.payload || 'Something went wrong';
+      })
+      
+      // ✅ Cities mode
+      .addCase(fetchThreadsByCity.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchThreadsByCity.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.threads = action.payload.threads;
+        state.meta = action.payload.meta;
+      })
+      .addCase(fetchThreadsByCity.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Something went wrong';
+      })
+      
+      // ✅ Custom Categories mode
+      .addCase(fetchThreadsCustomCategory.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchThreadsCustomCategory.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.threads = action.payload.threads;
+        state.meta = action.payload.meta;
+      })
+      .addCase(fetchThreadsCustomCategory.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Something went wrong';
       });
   },
 });
 
-export const { updateThreadFilter, clearThreadFilter } = filterThreadsSlice.actions;
-export default filterThreadsSlice.reducer;
+export const { updateThreadFilter, resetThreadFilters } = filterThreadSlice.actions;
+export default filterThreadSlice.reducer;
