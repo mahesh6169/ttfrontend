@@ -1,21 +1,27 @@
 'use client';
-import { format, addMonths, parse } from 'date-fns';
+
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  updateEventFilter,
-  fetchEventsByFilter,
-} from '@/store/slices/events/filterEventSlice';
+import { updateEventFilter,
+  fetchAllEvents, fetchEventsByCategory, fetchEventsCustomCategory,
+  fetchEventsByLocation, resetEventFilters } from '@/store/slices/events/filterEventSlice';
 import EventsGrid from '@/components/events/eventcomponents/EventsGrid';
 import Pagination from '@/components/Pagination';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import SelectSlider from '@/components/SelectSlider';
+import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
-import { FaCity } from 'react-icons/fa';
+import { format, parse, addMonths } from 'date-fns';
 
 const libraries = ['places'];
-const CATEGORY_OPTIONS = [
+
+const MODES = [
+  { label: 'All', value: 'all' },
+  { label: 'Categories', value: 'categories' },
+  { label: 'Locations', value: 'locations' },
+  { label: 'Custom Categories', value: 'customCategories' },
+];
+
+const categoryOptions = [
   'Technology',
   'Real Estate',
   'Spiritual & Devotional',
@@ -31,7 +37,7 @@ const CATEGORY_OPTIONS = [
   'Family & Kids',
 ];
 
-const cities = [
+const cityOptions = [
   { name: 'Sydney', coordinates: '151.2093,-33.8688' },
   { name: 'Melbourne', coordinates: '144.9631,-37.8136' },
   { name: 'Brisbane', coordinates: '153.0281,-27.4679' },
@@ -42,271 +48,106 @@ const cities = [
   { name: 'Canberra', coordinates: '149.1300,-35.2809' },
 ];
 
-/* 🟢 Centralized filter mode config for Eventss */
-const eventFilterModesConfig = {
-  input: {
-    label: 'All',
-    clear: (dispatch, setLocationInput) => {
-      dispatch(
-        updateEventFilter({ category: '', location: null, proximity: '10', page: 1 })
-      );
-      if (setLocationInput) setLocationInput('');
-    },
-    isActive: (filters) =>
-      filters.category || filters.location || filters.proximity !== '10',
-  },
-  icons: {
-    label: 'Categories',
-    clear: (dispatch) => dispatch(updateEventFilter({ category: '', page: 1 })),
-    isActive: (filters) => filters.category,
-  },
-  cities: {
-    label: 'Cities',
-    clear: (dispatch) =>
-      dispatch(updateEventFilter({ location: '', proximity: '10', page: 1 })),
-    isActive: (filters) => filters.location || filters.proximity !== '10',
-  },
-};
-
+const CUSTOM_CATEGORIES = [
+  'Technology',
+  'Real Estate',
+  'Community & Cultural',
+];
 
 const EventsPage = () => {
   const dispatch = useDispatch();
-  const {
-    events,
-    meta,
-    status: eventStatus,
-    category,
-    location,
-    proximity,
-    page,
-    limit,
-    selectedMonth,
-  } = useSelector((state) => state.eventFilters);
-
-  const [filterMode, setFilterMode] = useState('input');
-  const [locationInput, setLocationInput] = useState('');
+  const { mode, all, categories, locations, customCategories, events, meta, status } = useSelector((state) => state.eventFilters);
+  const [locationInput, setLocationInput] = useState(all.locationInputText || '');
   const [autocomplete, setAutocomplete] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  
+  // Current month handling
   const currentMonth = format(new Date(), 'yyyy-MM');
-  const [localMonth, setLocalMonth] = useState(currentMonth);
+  const [selectedMonthDisplay, setSelectedMonthDisplay] = useState(currentMonth);
 
-  const handleClearAll = () => {
-    eventFilterModesConfig[filterMode].clear(dispatch, setLocationInput);
-  };
-  
-
-  const isFilterActive = eventFilterModesConfig[filterMode].isActive({
-    category,
-    location,
-    proximity,
-  });
-
-  const handleFilterModeChange = (mode) => {
-    setFilterMode(mode);
-    eventFilterModesConfig[mode].clear(dispatch, setLocationInput);
-  };
-  
-
-  const handleCategoryClick = (selectedCategory) => {
-    if (category === selectedCategory) {
-      dispatch(updateEventFilter({ category: '', page: 1 }));
-    } else {
-      dispatch(updateEventFilter({ category: selectedCategory, page: 1 }));
+  // 🔥 Dispatcher based on selected mode
+  useEffect(() => {
+    if (mode === 'all') {
+      dispatch(fetchAllEvents());
+    } else if (mode === 'categories') {
+      dispatch(fetchEventsByCategory());
+    } else if (mode === 'locations') {
+      dispatch(fetchEventsByLocation());
+    } else if (mode === 'customCategories') {
+      dispatch(fetchEventsCustomCategory());
     }
-  };
+  }, [mode, all, categories, locations, customCategories, dispatch]);
 
-  const handleCityClick = (city) => {
-    if (location === city.coordinates) {
-      dispatch(updateEventFilter({ location: '', proximity: 10, page: 1 }));
-    } else {
-      dispatch(
-        updateEventFilter({
-          location: city.coordinates,
-          proximity: 50,
-          page: 1,
-        })
-      );
-    }
+  const handleModeChange = (newMode) => {
+    dispatch(resetEventFilters(newMode));    // Reset filters per selected mode
+    setLocationInput('');                     // Reset local input
   };
 
   const handlePlaceChanged = () => {
     if (autocomplete) {
       const place = autocomplete.getPlace();
-      const coordinates = {
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng(),
-      };
-      dispatch(
-        updateEventFilter({ location: `${coordinates.lng},${coordinates.lat}` })
-      );
-      setLocationInput(place.formatted_address);
+      if (place.geometry) {
+        const coordinates = {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+        };
+        dispatch(updateEventFilter({
+          mode: 'all',
+          values: {
+            location: `${coordinates.lng},${coordinates.lat}`,
+            locationInputText: place.formatted_address,
+          },
+        }));
+        setLocationInput(place.formatted_address);
+      }
     }
   };
 
-  const handleMonthChange = (direction) => {
-    const parsed = parse(localMonth, 'yyyy-MM', new Date());
-    const newDate = addMonths(parsed, direction);
-    const formatted = format(newDate, 'yyyy-MM');
-    setLocalMonth(formatted);
-    dispatch(updateEventFilter({ selectedMonth: formatted, page: 1 }));
+  const handleClearFilters = () => {
+    dispatch(resetEventFilters(mode));
+    setLocationInput('');
   };
-
-  useEffect(() => {
-    dispatch(updateEventFilter({ selectedMonth: currentMonth }));
-  }, [dispatch]);
-
-  useEffect(() => {
-    dispatch(fetchEventsByFilter());
-  }, [category, location, proximity, selectedMonth, page, limit, dispatch]);
+  
+  const handleMonthChange = (direction) => {
+    // Parse the current display month
+    const currentDate = parse(selectedMonthDisplay, 'yyyy-MM', new Date());
+    // Add or subtract months
+    const newDate = addMonths(currentDate, direction);
+    // Format back to yyyy-MM
+    const formattedMonth = format(newDate, 'yyyy-MM');
+    
+    setSelectedMonthDisplay(formattedMonth);
+    
+    // Update the month in the appropriate mode
+    dispatch(updateEventFilter({
+      mode: mode,
+      values: { selectedMonth: formattedMonth },
+    }));
+  };
 
   return (
     <div className="flex flex-col">
-<div className="relative my-4">
-  {/* Flex Row Always */}
-  <div className="flex items-center justify-center">
-    {/* Button (Absolute Positioned Relative to Parent) */}
-    <div className="absolute left-0">
-      <Link
-        href="/events/add"
-        className="text-xs sm:text-sm md:text-base p-2 md:p-4 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold text-center rounded"
-      >
-        Post Event
-      </Link>
-    </div>
-
-    {/* Heading */}
-    <div className="w-full">
-      <h1 className="text-xs sm:text-lg md:text-lg text-center text-gray-900 font-semibold">
-        Discover Events
-      </h1>
-    </div>
-  </div>
-</div>
-
-     {/* 🔵 Filter Mode Switch */}
-      <div className="flex justify-center gap-4 mb-4">
-      {Object.keys(eventFilterModesConfig).map((mode) => (
-  <button
-    key={mode}
-    onClick={() => handleFilterModeChange(mode)}
-    className={`text-xs md:text-base p-1 rounded ${
-      filterMode === mode
-        ? 'bg-gray-300 text-gray-900 font-semibold'
-        : 'bg-gray-100 text-gray-800'
-    }`}
-  >
-    {eventFilterModesConfig[mode].label}
-  </button>
-))}
-
+      <div className="flex justify-between items-center my-4 px-4">
+        <Link href="/events/add" className="bg-gray-200 px-4 py-2 rounded text-sm font-semibold">
+          Post Event
+        </Link>
+        <h1 className="text-lg font-bold text-center flex-1">Discover Events</h1>
       </div>
 
-        {/* 🎯 Filter Sections. */}
-      {filterMode === 'input' && (
-        <div className="text-xs md:text-base flex flex-col md:flex-row gap-1 md:gap-4 mb-4 justify-center">
-          <SelectSlider
-            options={['All Categories', ...CATEGORY_OPTIONS]}
-            value={category || 'All Categories'}
-            onChange={(val) =>
-              dispatch(
-                updateEventFilter({
-                  category: val === 'All Categories' ? '' : val,
-                })
-              )
-            }
-          />
-
-          <LoadScriptNext
-            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-            libraries={libraries}
-            onLoad={() => setIsScriptLoaded(true)}
+      {/* 🌟 Mode Selector */}
+      <div className="flex justify-center mb-4 gap-2">
+        {MODES.map((m) => (
+          <button
+            key={m.value}
+            onClick={() => handleModeChange(m.value)}
+            className={`px-3 py-1 rounded ${mode === m.value ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
           >
-            {isScriptLoaded && (
-              <Autocomplete
-                onLoad={setAutocomplete}
-                onPlaceChanged={handlePlaceChanged}
-                options={{ componentRestrictions: { country: 'AU' } }}
-              >
-                <input
-                  type="text"
-                  className="p-2 border rounded w-full md:w-96"
-                  placeholder="Enter location"
-                  value={locationInput}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setLocationInput(value);
-                    if (!value) dispatch(updateEventFilter({ location: null }));
-                  }}
-                />
-              </Autocomplete>
-            )}
-          </LoadScriptNext>
+            {m.label}
+          </button>
+        ))}
+      </div>
 
-          <input
-            type="number"
-            className="p-2 border rounded"
-            placeholder="Proximity (km)"
-            min="1"
-            value={proximity || ''}
-            onChange={(e) =>
-              dispatch(
-                updateEventFilter({ proximity: parseInt(e.target.value, 10) })
-              )
-            }
-          />
-
-        </div>
-      )}
-
-      {filterMode === 'icons' && (
-        <div className="justify-center mb-4 mx-auto">
-          {/* Scrollable Wrapper .*/}
-          <div
-            className="flex overflow-x-auto gap-2 py-2 w-[300px] md:w-[350px] lg:w-[600px] xl:w-[800px] 2xl:w-[800px] scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200"
-            style={{
-              WebkitOverflowScrolling: 'touch',
-              scrollSnapType: 'x mandatory',
-            }}
-          >
-            {/* Category Buttons (Text only) */}
-            {CATEGORY_OPTIONS.map((cat) => (
-              <button
-                key={cat}
-                className={`flex items-center justify-center px-3 py-2 border rounded-lg shadow-md snap-start whitespace-nowrap font-semibold text-xs ${
-                  category === cat
-                    ? 'bg-gray-300'
-                    : 'bg-white hover:bg-gray-100'
-                }`}
-                onClick={() => handleCategoryClick(cat)}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {filterMode === 'cities' && (
-        <div className="overflow-hidden mb-4">
-          <div className="flex overflow-x-auto gap-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
-            {cities.map((city) => (
-              <button
-                key={city.name}
-                className={`flex flex-col items-center justify-center p-4 min-w-[140px] border rounded-lg shadow-md cursor-pointer snap-start  ${
-                  location === city.coordinates
-                    ? 'bg-gray-300'
-                    : 'bg-white hover:bg-gray-100'
-                }`}
-                onClick={() => handleCityClick(city)}
-              >
-                <FaCity className="text-2xl text-gray-600 mb-1" />
-                <span className="text-sm font-semibold">{city.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* 🗓️ Month Filter */}
+      {/* 🟢 Month Selection (common for all modes) */}
       <div className="flex justify-center my-4">
         <div className="flex items-center gap-2">
           <button
@@ -317,7 +158,7 @@ const EventsPage = () => {
             ◀
           </button>
           <span className="font-semibold min-w-[120px] text-center">
-            {format(parse(localMonth, 'yyyy-MM', new Date()), 'MMMM yyyy')}
+            {format(parse(selectedMonthDisplay, 'yyyy-MM', new Date()), 'MMMM yyyy')}
           </span>
           <button
             onClick={() => handleMonthChange(1)}
@@ -329,27 +170,188 @@ const EventsPage = () => {
         </div>
       </div>
 
-   {/* 🟥 Clear Filter Button */}
-   {isFilterActive && (
-        <div className="flex justify-center ">
-          <button
-            onClick={handleClearAll}
-            className="text-xs md:text-base p-1 md:p-1 rounded bg-red-500 text-white hover:bg-red-600"
+      {/* 🟢 Filters for ALL mode */}
+      {mode === 'all' && (
+        <div className="flex flex-col md:flex-row justify-center gap-4 mb-4 px-4">
+          <SelectSlider
+            options={categoryOptions}
+            value={all.category || 'All Categories'}
+            onChange={(selected) =>
+              dispatch(
+                updateEventFilter({
+                  mode: 'all',
+                  values: { category: selected === 'All Categories' ? '' : selected },
+                })
+              )
+            }
+          />
+
+          <LoadScriptNext
+            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+            libraries={libraries}
+            onLoad={() => setIsScriptLoaded(true)}
           >
-            Clear Filter
-          </button>
+            {isScriptLoaded ? (
+              <Autocomplete
+                onLoad={setAutocomplete}
+                onPlaceChanged={handlePlaceChanged}
+                options={{ componentRestrictions: { country: 'AU' } }}
+              >
+                <input
+                  type="text"
+                  placeholder="Enter location"
+                  className="p-2 border rounded w-full md:w-96"
+                  value={locationInput}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLocationInput(val);
+                    if (val === '')
+                      dispatch(updateEventFilter({ mode: 'all', values: { location: '' } }));
+                  }}
+                />
+              </Autocomplete>
+            ) : (
+              <div className="p-2 w-full md:w-96 bg-gray-100 text-gray-500 rounded border">Loading map…</div>
+            )}
+          </LoadScriptNext>
+
+          <input
+            type="number"
+            min="1"
+            placeholder="Proximity (km)"
+            className="p-2 border rounded"
+            value={all.proximity || ''}
+            onChange={(e) =>
+              dispatch(updateEventFilter({ mode: 'all', values: { proximity: parseInt(e.target.value) } }))
+            }
+          />
         </div>
       )}
 
+      {/* 🟢 Filters for CATEGORIES mode */}
+      {mode === 'categories' && (
+        <div className="flex flex-col items-center mb-4 px-4">
+          <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
+            <div
+              className="grid grid-flow-col auto-cols-max gap-4"
+              style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
+            >
+              {categoryOptions.map((category) => (
+                <label
+                  key={category}
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                >
+                  <input
+                    type="checkbox"
+                    checked={categories.selectedCategories.includes(category)}
+                    onChange={(e) => {
+                      const selected = categories.selectedCategories.includes(category)
+                        ? categories.selectedCategories.filter((c) => c !== category)
+                        : [...categories.selectedCategories, category];
+                      dispatch(
+                        updateEventFilter({
+                          mode: 'categories',
+                          values: { selectedCategories: selected },
+                        })
+                      );
+                    }}
+                  />
+                  <span className="text-sm">{category}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Events Grid */}
-      <EventsGrid events={events} eventStatus={eventStatus} />
+      {/* 🟢 Filters for Locations mode */}
+      {mode === 'locations' && (
+        <div className="flex flex-col items-center mb-4 px-4">
+          <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
+            <div
+              className="grid grid-flow-col auto-cols-max gap-4"
+              style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
+            >
+              {cityOptions.map((city) => (
+                <label
+                  key={city.name}
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                >
+                  <input
+                    type="radio"
+                    name="city-selection"
+                    checked={locations.location === city.coordinates}
+                    onChange={() =>
+                      dispatch(
+                        updateEventFilter({
+                          mode: 'locations',
+                          values: { location: city.coordinates },
+                        })
+                      )
+                    }
+                  />
+                  <span className="text-sm">{city.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Pagination */}
+      {/* 🟢 Filters for Custom Categories mode */}
+      {mode === 'customCategories' && (
+        <div className="flex flex-col items-center mb-4 px-4">
+          <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
+            <div
+              className="grid grid-flow-col auto-cols-max gap-4"
+              style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
+            >
+              {CUSTOM_CATEGORIES.map((category) => (
+                <label
+                  key={category}
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                >
+                  <input
+                    type="checkbox"
+                    checked={customCategories.selectedCategories.includes(category)}
+                    onChange={() => {
+                      const selected = customCategories.selectedCategories.includes(category)
+                        ? customCategories.selectedCategories.filter((c) => c !== category)
+                        : [...customCategories.selectedCategories, category];
+                      dispatch(
+                        updateEventFilter({
+                          mode: 'customCategories',
+                          values: { selectedCategories: selected },
+                        })
+                      );
+                    }}
+                  />
+                  <span className="text-sm">{category}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔴 Clear Filters */}
+      <div className="flex justify-center mb-2">
+        <button
+          onClick={handleClearFilters}
+          className="text-sm bg-red-500 text-white px-3 py-1 rounded"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      {/* 🔷 Event Listing */}
+      <EventsGrid events={events} eventStatus={status} />
       <Pagination
-        currentPage={page}
+        currentPage={all.page}
         totalPages={meta?.totalPages || 1}
-        onPageChange={(p) => dispatch(updateEventFilter({ page: p }))}
+        onPageChange={(pageNum) =>
+          dispatch(updateEventFilter({ mode, values: { page: pageNum } }))
+        }
       />
     </div>
   );
