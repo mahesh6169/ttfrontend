@@ -63,7 +63,9 @@ const EventsPage = () => {
   
   // Current month handling
   const currentMonth = format(new Date(), 'yyyy-MM');
-  const [selectedMonthDisplay, setSelectedMonthDisplay] = useState(currentMonth);
+  // Start with no month selected (empty string)
+  const [selectedMonthDisplay, setSelectedMonthDisplay] = useState('');
+  const [isMonthSelected, setIsMonthSelected] = useState(false);
 
   // 🔥 Dispatcher based on selected mode
   useEffect(() => {
@@ -78,9 +80,20 @@ const EventsPage = () => {
     }
   }, [mode, all, categories, locations, customCategories, dispatch]);
 
+  // Initialize with no month selected
+  useEffect(() => {
+    // Set month to empty string in Redux store - this will show all future events
+    dispatch(updateEventFilter({
+      mode: mode,
+      values: { selectedMonth: '' }
+    }));
+  }, [dispatch, mode]);
+
   const handleModeChange = (newMode) => {
     dispatch(resetEventFilters(newMode));    // Reset filters per selected mode
     setLocationInput('');                     // Reset local input
+    setSelectedMonthDisplay('');              // Reset month display to "Select Month"
+    setIsMonthSelected(false);                // Reset month selection state
   };
 
   const handlePlaceChanged = () => {
@@ -106,22 +119,39 @@ const EventsPage = () => {
   const handleClearFilters = () => {
     dispatch(resetEventFilters(mode));
     setLocationInput('');
+    setSelectedMonthDisplay('');
+    setIsMonthSelected(false);
+    
+    // Explicitly set selectedMonth to empty string to show all future events
+    dispatch(updateEventFilter({
+      mode: mode,
+      values: { selectedMonth: '' }
+    }));
   };
   
   const handleMonthChange = (direction) => {
-    // Parse the current display month
+    // If no month is currently selected, start with the current month
+    if (!isMonthSelected) {
+      setSelectedMonthDisplay(currentMonth);
+      setIsMonthSelected(true);
+      
+      dispatch(updateEventFilter({
+        mode: mode,
+        values: { selectedMonth: currentMonth }
+      }));
+      return;
+    }
+
+    // If month is already selected, navigate as usual
     const currentDate = parse(selectedMonthDisplay, 'yyyy-MM', new Date());
-    // Add or subtract months
     const newDate = addMonths(currentDate, direction);
-    // Format back to yyyy-MM
     const formattedMonth = format(newDate, 'yyyy-MM');
     
     setSelectedMonthDisplay(formattedMonth);
     
-    // Update the month in the appropriate mode
     dispatch(updateEventFilter({
       mode: mode,
-      values: { selectedMonth: formattedMonth },
+      values: { selectedMonth: formattedMonth }
     }));
   };
 
@@ -158,7 +188,9 @@ const EventsPage = () => {
             ◀
           </button>
           <span className="font-semibold min-w-[120px] text-center">
-            {format(parse(selectedMonthDisplay, 'yyyy-MM', new Date()), 'MMMM yyyy')}
+            {isMonthSelected 
+              ? format(parse(selectedMonthDisplay, 'yyyy-MM', new Date()), 'MMMM yyyy')
+              : "Select Month"}
           </span>
           <button
             onClick={() => handleMonthChange(1)}
