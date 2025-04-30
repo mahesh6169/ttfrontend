@@ -24,11 +24,11 @@ export const getManageEvents = createAsyncThunk(
 // ✅ Send Reminder
 export const sendEventReminder = createAsyncThunk(
     'adminManageEvents/sendEventReminder',
-    async (eventId, { rejectWithValue }) => {
+    async ({ eventId, type }, { rejectWithValue }) => {
       try {
         const response = await axios.post(
           `${API_BASE_URL}/remind/${eventId}`,
-          {},
+          {type },
           { withCredentials: true }
         );
         return { eventId, message: response.data.message };

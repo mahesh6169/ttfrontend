@@ -10,8 +10,8 @@ import threadReducer from './slices/threads/threadSlice'; // Import threadSlice
 import adminReducer from './slices/admin/users/adminSlice'; // Import adminSlice
 import eventReducer from './slices/events/eventSlice'; // Import eventSlice
 import filterThreadReducer from './slices/threads/filterThreadSlice'; // Import filterThreadSlice
-import adminManageAdvertReducer from './slices/adminManageAdvertSlice'; // Import adminManageAdvertSlice
-import adminManageEventReducer from './slices/adminManageEventSlice'; // Import adminManageEventSlice
+import adminManageAdvertReducer from './slices/admin/adverts/adminManageAdvertSlice'; // Import adminManageAdvertSlice
+import adminManageEventReducer from './slices/admin/events/adminManageEventSlice'; // Import adminManageEventSlice
 import supportReducer from './slices/supportSlice'; // Import supportSlice
 import events from '@/app/events/page';
 
