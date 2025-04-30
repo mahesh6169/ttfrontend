@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { sendResetOtp, resetPassword } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const ResetPasswordContent = () => {
   const dispatch = useDispatch();
@@ -127,6 +128,13 @@ const ResetPasswordContent = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
+              <div className="flex justify-center">
+  <ReCAPTCHA
+    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+    onChange={(token) => setCaptchaToken(token)}
+    onExpired={() => setCaptchaToken(null)}
+  />
+</div>
 
               <button
                 type="submit"
@@ -137,6 +145,7 @@ const ResetPasswordContent = () => {
               </button>
 
               <button
+              type="button"
                 onClick={handleSendOtp}
                 disabled={resendDisabled}
                 className={`w-full mt-4 text-sm font-medium py-2 rounded transition ${
