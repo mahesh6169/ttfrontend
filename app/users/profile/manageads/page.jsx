@@ -128,12 +128,27 @@ export default function ProfilePage() {
       {adverts.length > 0 ? (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
     {adverts.map((advert) => {
-  const expiryTime = new Date(advert.lastVerifiedAt).getTime() + 90 * 24 * 60 * 60 * 1000;
+  const expiryTime = new Date(advert.willExpire).getTime();
   const daysLeft = Math.floor((expiryTime - Date.now()) / (1000 * 60 * 60 * 24));
+  const isExpired = daysLeft < 0;
+  const canRenew = daysLeft <= 7;
 
   return (
-    <div key={advert._id} className="p-4 border border-gray-300 rounded shadow hover:shadow-lg transition">
-      <h3 className="text-xl font-bold">{advert.title}</h3>
+    <div
+      key={advert._id}
+      className="p-4 border border-gray-300 rounded shadow hover:shadow-lg transition"
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <h3 className="text-xl font-bold">{advert.title}</h3>
+        <span
+          className={`text-sm font-semibold ${
+            isExpired ? 'text-red-600' : 'text-gray-600'
+          }`}
+        >
+          {isExpired ? 'Expired' : `Expires in: ${daysLeft} day${daysLeft === 1 ? '' : 's'}`}
+        </span>
+      </div>
+
       {advert.images?.length > 0 && (
         <div className="mt-2">
           <img
@@ -144,49 +159,47 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className="flex justify-between mt-4">
+      <div className="flex justify-between items-center mt-4 gap-2">
         <button
           onClick={() => handleEdit(advert)}
-          disabled={daysLeft < 0}
-          className={`py-1 px-4 rounded transition ${
-            daysLeft < 0
+          disabled={isExpired}
+          className={`flex-1 py-1 px-4 rounded transition ${
+            isExpired
               ? 'bg-gray-400 text-white cursor-not-allowed'
               : 'bg-blue-500 text-white hover:bg-blue-600'
           }`}
         >
           Edit
         </button>
+
+        <button
+          onClick={() => canRenew && handleRenew(advert._id)}
+          disabled={!canRenew}
+          className={`flex-1 py-1 px-4 rounded transition ${
+            canRenew
+              ? 'bg-green-600 text-white hover:bg-green-700'
+              : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+          }`}
+        >
+          Renew
+        </button>
+
         <button
           onClick={() => confirmDelete(advert._id)}
-          className="bg-red-500 text-white py-1 px-4 rounded hover:bg-red-600 transition"
+          className="flex-1 bg-red-500 text-white py-1 px-4 rounded hover:bg-red-600 transition"
         >
           Delete
         </button>
       </div>
-
-      {/* ✅ Renew Button: only show if advert is not expired and due for renewal */}
-      {daysLeft <= 14  && (
-        <button
-          onClick={() => handleRenew(advert._id)}
-          className="w-full mt-2 bg-green-600 text-white py-1 px-4 rounded hover:bg-green-700 transition"
-        >
-          Renew
-        </button>
-      )}
-
-      {/* ✅ Show expiry status */}
-      <p className="mt-2 text-sm text-gray-500">
-        {daysLeft < 0 ? 'Expired' : `Expires in: ${daysLeft} day${daysLeft === 1 ? '' : 's'}`}
-      </p>
     </div>
   );
 })}
-
 
   </div>
 ) : (
   <p className="text-gray-700 pt-25">You have no adverts posted.</p>
 )}
+
 
 
       {/* Reusable Confirm Modal */}

@@ -81,40 +81,56 @@ const ManageEventsPage = () => {
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {myEvents.map((event) => (
-            <div
-              key={event._id}
-              className="p-4 border rounded shadow hover:shadow-md transition"
-            >
-              <h2 className="text-lg font-bold">{event.title}</h2>
-              <p className="text-sm text-gray-500 mb-2">
-                {new Date(event.dateTime).toLocaleString('en-AU', {
-                  timeZone: event.timeZone,
-                })}
-              </p>
-              {event.images?.[0]?.url && (
-                <img
-                  src={event.images[0].url}
-                  alt={event.title}
-                  className="w-full h-40 object-cover rounded mb-2"
-                />
-              )}
-              <div className="flex justify-between mt-4">
-                <button
-                  onClick={() => handleEdit(event)}
-                  className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => confirmDelete(event._id)}
-                  className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+          {myEvents.map((event) => {
+  const isExpired = new Date() > new Date(event.willExpire);
+
+  return (
+    <div
+      key={event._id}
+      className="p-4 border rounded shadow hover:shadow-md transition"
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+  <h2 className="text-lg font-bold">{event.title}</h2>
+  {isExpired && (
+    <span className="text-sm font-semibold text-red-600">Expired</span>
+  )}
+</div>
+
+
+      <p className="text-sm text-gray-500 mb-2">
+        {new Date(event.dateTime).toLocaleString('en-AU', {
+          timeZone: event.timeZone,
+        })}
+      </p>
+      {event.images?.[0]?.url && (
+        <img
+          src={event.images[0].url}
+          alt={event.title}
+          className="w-full h-40 object-cover rounded mb-2"
+        />
+      )}
+      <div className="flex justify-between mt-4">
+        <button
+          onClick={() => !isExpired && handleEdit(event)}
+          className={`px-4 py-1 rounded ${
+            isExpired
+              ? 'bg-gray-400 text-white cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+          disabled={isExpired}
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => confirmDelete(event._id)}
+          className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+})}
         </div>
       )}
 
