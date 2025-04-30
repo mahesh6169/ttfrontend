@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { fetchuserProfile } from '@/store/slices/users/userSlice';
-import { deleteUserAdvert } from '@/store/slices/adverts/userAdvertsSlice';
+import { deleteUserAdvert, renewUserAdvert } from '@/store/slices/adverts/userAdvertsSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { toast } from 'react-toastify';
@@ -80,6 +80,17 @@ export default function ProfilePage() {
     }
   };
 
+  const handleRenew = async (advertId) => {
+    try {
+      const result = await dispatch(renewUserAdvert(advertId)).unwrap();
+      toast.success('Advert renewed successfully.');
+      dispatch(fetchuserProfile()); // Refresh list
+    } catch (error) {
+      toast.error(error || 'Failed to renew advert.');
+    }
+  };
+  
+
   // Show loading spinner if user profile or adverts are still loading
   if (userStatus === 'loading' || advertStatus === 'loading') {
     return (
@@ -115,42 +126,68 @@ export default function ProfilePage() {
       </Link>
 
       {adverts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {adverts.map((advert) => (
-            <div
-              key={advert._id}
-              className="p-4 border border-gray-300 rounded shadow hover:shadow-lg transition"
-            >
-              <h3 className="text-xl font-bold">{advert.title}</h3>
-              {advert.images?.length > 0 && (
-                <div className="mt-2">
-                  <img
-                    src={advert.images[0].url}
-                    alt={advert.title}
-                    className="w-full h-48 object-cover rounded"
-                  />
-                </div>
-              )}
-              <div className="flex justify-between mt-4">
-                <button
-                  onClick={() => handleEdit(advert)}
-                  className="bg-blue-500 text-white py-1 px-4 rounded hover:bg-blue-600 transition"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => confirmDelete(advert._id)}
-                  className="bg-red-500 text-white py-1 px-4 rounded hover:bg-red-600 transition"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+    {adverts.map((advert) => {
+  const expiryTime = new Date(advert.lastVerifiedAt).getTime() + 90 * 24 * 60 * 60 * 1000;
+  const daysLeft = Math.floor((expiryTime - Date.now()) / (1000 * 60 * 60 * 24));
+
+  return (
+    <div key={advert._id} className="p-4 border border-gray-300 rounded shadow hover:shadow-lg transition">
+      <h3 className="text-xl font-bold">{advert.title}</h3>
+      {advert.images?.length > 0 && (
+        <div className="mt-2">
+          <img
+            src={advert.images[0].url}
+            alt={advert.title}
+            className="w-full h-48 object-cover rounded"
+          />
         </div>
-      ) : (
-        <p className="text-gray-700 pt-25">You have no adverts posted.</p>
       )}
+
+      <div className="flex justify-between mt-4">
+        <button
+          onClick={() => handleEdit(advert)}
+          disabled={daysLeft < 0}
+          className={`py-1 px-4 rounded transition ${
+            daysLeft < 0
+              ? 'bg-gray-400 text-white cursor-not-allowed'
+              : 'bg-blue-500 text-white hover:bg-blue-600'
+          }`}
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => confirmDelete(advert._id)}
+          className="bg-red-500 text-white py-1 px-4 rounded hover:bg-red-600 transition"
+        >
+          Delete
+        </button>
+      </div>
+
+      {/* ✅ Renew Button: only show if advert is not expired and due for renewal */}
+      {daysLeft <= 14  && (
+        <button
+          onClick={() => handleRenew(advert._id)}
+          className="w-full mt-2 bg-green-600 text-white py-1 px-4 rounded hover:bg-green-700 transition"
+        >
+          Renew
+        </button>
+      )}
+
+      {/* ✅ Show expiry status */}
+      <p className="mt-2 text-sm text-gray-500">
+        {daysLeft < 0 ? 'Expired' : `Expires in: ${daysLeft} day${daysLeft === 1 ? '' : 's'}`}
+      </p>
+    </div>
+  );
+})}
+
+
+  </div>
+) : (
+  <p className="text-gray-700 pt-25">You have no adverts posted.</p>
+)}
+
 
       {/* Reusable Confirm Modal */}
       <ConfirmModal

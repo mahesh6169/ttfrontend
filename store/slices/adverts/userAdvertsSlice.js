@@ -51,12 +51,30 @@ export const updateAdvertById = createAsyncThunk(
   }
 );
 
+export const renewUserAdvert = createAsyncThunk(
+  'userAdverts/renewUserAdvert',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/renew/${id}`, {}, {
+        withCredentials: true,
+      });
+      return response.data.advert; // Return the updated advert
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to renew advert.'
+      );
+    }
+  }
+);
+
+
 const userAdvertSlice = createSlice({
   name: 'userAdverts',
   initialState: {
     adverts: [], // List of adverts
     currentAdvert: null, // The advert being edited
     status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+    renewStatus: 'idle',
     error: null, // Error message
   },
   reducers: {
@@ -111,7 +129,30 @@ const userAdvertSlice = createSlice({
       .addCase(updateAdvertById.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
-      });
+      })
+      .addCase(renewUserAdvert.pending, (state) => {
+        state.renewStatus = 'loading';
+        state.renewError = null;
+      })
+      .addCase(renewUserAdvert.fulfilled, (state, action) => {
+        state.renewStatus = 'success';
+      
+        // Update the advert in the list if it's present
+        const index = state.adverts.findIndex(a => a._id === action.payload._id);
+        if (index !== -1) {
+          state.adverts[index] = action.payload;
+        }
+      
+        // Optionally also update currentAdvert if it's the one renewed
+        if (state.currentAdvert?._id === action.payload._id) {
+          state.currentAdvert = action.payload;
+        }
+      })
+      .addCase(renewUserAdvert.rejected, (state, action) => {
+        state.renewStatus = 'failed';
+        state.renewError = action.payload;
+      })
+      
   },
 });
 
