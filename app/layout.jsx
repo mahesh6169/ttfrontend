@@ -10,7 +10,7 @@ export const metadata = {
   keywords: 'marketplace, buy, sell, items',
 };
 
-const MainLayout = ({ children }) => {
+const ParentLayout = ({ children }) => {
   return (
     <html lang="en">
       <body>
@@ -25,4 +25,4 @@ const MainLayout = ({ children }) => {
   );
 };
 
-export default MainLayout;
+export default ParentLayout;

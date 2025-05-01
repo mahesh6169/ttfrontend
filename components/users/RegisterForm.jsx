@@ -165,8 +165,8 @@ const Register = () => {
   };
 
   return (
-    <div className="flex w-full min-h-screen items-start justify-center">
-      <div className="bg-white p-4 rounded-lg shadow-md max-w-md w-full mt-6">
+    <div className="flex my-4 w-full justify-center">
+      <div className="p-6 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-4 text-center">Register</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           {['name', 'email', 'mobile', 'password', 'confirmPassword'].map(
