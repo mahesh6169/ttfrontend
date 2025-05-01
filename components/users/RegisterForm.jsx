@@ -153,7 +153,7 @@ const Register = () => {
         const otpResult = await dispatch(sendVerifyOtp()).unwrap();
         if (otpResult) {
           const redirect =
-            localStorage.getItem('redirectAfterLogin') || '/users/profile';
+            localStorage.getItem('redirectAfterLogin') || '/users/profile/manageads';
           localStorage.setItem('redirectAfterLogin', redirect);
           toast.success('OTP sent successfully. Redirecting...');
           router.push('/users/emailverify');
@@ -297,7 +297,7 @@ const Register = () => {
         <div className="mt-6 text-center">
           <p>
             Already have an account?{' '}
-            <Link href="/users/login" className="text-blue-600 hover:underline">
+            <Link href="/login" className="text-blue-600 hover:underline">
               Login here
             </Link>
           </p>

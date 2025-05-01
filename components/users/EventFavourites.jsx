@@ -21,16 +21,17 @@ const EventFavourites = () => {
     user,
   } = useSelector((state) => state.user);
 
-  const isAuthenticated = user && user._id;
+
 
   // ✅ Load event wishlist on mount
-  useEffect(() => {
-    if (isAuthenticated) {
+
+   useEffect(() => {
       dispatch(getEventWishlist())
         .unwrap()
-        .catch((err) => toast.error(err || 'Failed to load event wishlist'));
-    }
-  }, [dispatch, isAuthenticated]);
+        .catch((err) => toast.error(err || 'Failed to load Event wishlist.'));
+    }, [dispatch]);
+
+
 
   // ✅ Toggle handler for wishlist
   const handleToggle = async (eventId) => {

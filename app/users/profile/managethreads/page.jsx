@@ -15,13 +15,11 @@ const ManageThreads = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { threads, status, error } = useSelector((state) => state.threads);
-  const { user } = useSelector((state) => state.user);
+
 
   useEffect(() => {
-    if (user && user._id) {
-      dispatch(fetchUserThreads());
-    }
-  }, [dispatch, user]);
+    dispatch(fetchUserThreads());
+  }, [dispatch]);
 
   const handleDelete = async (threadId) => {
     const confirmDelete = window.confirm(

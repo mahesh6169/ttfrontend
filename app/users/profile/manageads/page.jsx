@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { fetchuserProfile } from '@/store/slices/users/userSlice';
-import { deleteUserAdvert, renewUserAdvert } from '@/store/slices/adverts/userAdvertsSlice';
+import { fetchMyAdverts, deleteUserAdvert, renewUserAdvert } from '@/store/slices/adverts/userAdvertsSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { toast } from 'react-toastify';
@@ -15,39 +15,27 @@ export default function ProfilePage() {
   const router = useRouter();
 
   // Extract required state fields
-  const {
-    adverts,
-    status: userStatus,
-    error: userError,
-  } = useSelector((state) => state.user);
-  const { status: advertStatus, error: advertError } = useSelector(
-    (state) => state.userAdverts
-  );
+  const { 
+    adverts, 
+    status: advertStatus, 
+    error: advertError 
+  } = useSelector((state) => state.userAdverts);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [advertToDelete, setAdvertToDelete] = useState(null);
 
-  // Fetch user profile on mount
+  
   useEffect(() => {
-    dispatch(fetchuserProfile())
-      .unwrap()
-      .catch((err) => {
-        if (err === 'Authentication required. Please log in.') {
-          // Save current page path to localStorage
-          localStorage.setItem(
-            'redirectAfterLogin',
-            '/users/profile/manageads'
-          );
-          router.push('/users/login');
-        }
-      });
-  }, [dispatch, router]);
+    dispatch(fetchMyAdverts());
+  }, [dispatch]);
 
   // 🚀 Preload the edit page when the component loads
   useEffect(() => {
-    adverts.forEach((advert) => {
-      router.prefetch(`/adverts/edit/${advert._id}`);
-    });
+    if (adverts && adverts.length > 0) {
+      adverts.forEach((advert) => {
+        router.prefetch(`/adverts/edit/${advert._id}`);
+      });
+    }
   }, [adverts, router]);
 
   const handleEdit = (advert) => {
@@ -91,27 +79,27 @@ export default function ProfilePage() {
   };
   
 
-  // Show loading spinner if user profile or adverts are still loading
-  if (userStatus === 'loading' || advertStatus === 'loading') {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  // Handle errors
-  if (userStatus === 'failed' || advertStatus === 'failed') {
-    return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-red-500">Error</h1>
-        <p>{userError || advertError}</p>
-      </div>
-    );
-  }
+    // Show loading spinner if adverts are still loading
+    if (advertStatus === 'loading') {
+      return (
+        <div className="flex justify-center items-center h-screen">
+          <LoadingSpinner />
+        </div>
+      );
+    }
+  
+    // Handle errors
+    if (advertStatus === 'failed') {
+      return (
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-red-500">Error</h1>
+          <p>{advertError}</p>
+        </div>
+      );
+    }
 
   return (
-    <div>
+    <div >
       <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
         Manage Ads
       </h1>
@@ -125,7 +113,7 @@ export default function ProfilePage() {
         + Post New Advertisement
       </Link>
 
-      {adverts.length > 0 ? (
+      {adverts && adverts.length > 0 ? (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
     {adverts.map((advert) => {
   const expiryTime = new Date(advert.willExpire).getTime();

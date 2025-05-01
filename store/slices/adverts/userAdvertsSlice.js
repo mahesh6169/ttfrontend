@@ -67,6 +67,20 @@ export const renewUserAdvert = createAsyncThunk(
   }
 );
 
+// Add this thunk at the top with the other createAsyncThunk calls
+export const fetchMyAdverts = createAsyncThunk(
+  'userAdverts/fetchMyAdverts',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/myadverts`, {
+        withCredentials: true,
+      });
+      return response.data.adverts;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch your adverts');
+    }
+  }
+);
 
 const userAdvertSlice = createSlice({
   name: 'userAdverts',
@@ -130,6 +144,8 @@ const userAdvertSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload;
       })
+
+      // Renew Advert
       .addCase(renewUserAdvert.pending, (state) => {
         state.renewStatus = 'loading';
         state.renewError = null;
@@ -153,6 +169,19 @@ const userAdvertSlice = createSlice({
         state.renewError = action.payload;
       })
       
+      // Fetch My Adverts
+      .addCase(fetchMyAdverts.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchMyAdverts.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.adverts = action.payload;
+      })
+      .addCase(fetchMyAdverts.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      });
   },
 });
 

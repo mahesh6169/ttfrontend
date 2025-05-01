@@ -29,15 +29,15 @@ const Header = () => {
 
   const { tokenValidated, user } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user._id;
-  const baseProfilePath = user?.role === 'admin' ? '/admin/profile' : '/users/profile';
-  const profileLink = baseProfilePath;
+  const baseProfilePath = user?.role === 'admin' ? '/admin/profile' : '/users/profile/';
+  const profileLink = `${baseProfilePath}/manageads`;
 
 
 
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser()).unwrap();
-      router.push('/users/login');
+      router.push('/login');
       toast.success('Logout successful');
     } catch (error) {
       toast.error(error || 'Logout failed. Please try again.');
@@ -98,13 +98,13 @@ const Header = () => {
             ) : (
               <>
                 <NavLink
-                  href="/users/login"
+                  href="/login"
                   icon={<TbLogin size={20} />}
                   text="Login"
                   pathname={pathname}
                 />
                 <NavLink
-                  href="/users/register"
+                  href="/register"
                   text="Register"
                   pathname={pathname}
                 />
@@ -218,14 +218,14 @@ const Header = () => {
               ) : (
                 <>
                   <NavLink
-                    href="/users/login"
+                    href="/login"
                     text="Login"
                     pathname={pathname}
                     mobile
                     onClick={toggleMobileMenu}
                   />
                   <NavLink
-                    href="/users/register"
+                    href="/register"
                     text="Register"
                     pathname={pathname}
                     mobile

@@ -11,23 +11,7 @@ const ProfilePage = () => {
   const router = useRouter();
 
   const { user, status } = useSelector((state) => state.user);
-  const isAccountVerified = user?.isAccountVerified;
-
-  // Fetch profile on mount.
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        await dispatch(fetchuserProfile()).unwrap();
-      } catch (err) {
-        if (err === 'Authentication required. Please log in.') {
-          router.push('/users/login');
-        }
-      }
-    };
-
-    fetchProfile();
-  }, [dispatch, router]);
-
+ 
   // Show loading spinner while fetching profile
   if (status === 'loading') {
     return (
@@ -38,7 +22,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div>
+    <div className="my-4 w-full justify-center">
       <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
         Manage Profile
       </h1>

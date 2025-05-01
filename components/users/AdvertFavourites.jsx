@@ -21,15 +21,11 @@ const AdvertFavourites = () => {
     user,
   } = useSelector((state) => state.user);
 
-  const isAuthenticated = user && user._id;
-
   useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(getWishlist())
-        .unwrap()
-        .catch((err) => toast.error(err || 'Failed to load wishlist.'));
-    }
-  }, [dispatch, isAuthenticated]);
+    dispatch(getWishlist())
+      .unwrap()
+      .catch((err) => toast.error(err || 'Failed to load Advert wishlist.'));
+  }, [dispatch]);
 
   const handleToggle = async (advertId) => {
     try {

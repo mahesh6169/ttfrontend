@@ -37,7 +37,7 @@ const Login = () => {
       } else {
         // 2. Look for a saved path in localStorage
         redirectPath =
-          localStorage.getItem('redirectAfterLogin') || '/users/profile';
+          localStorage.getItem('redirectAfterLogin') || '/users/profile/manageads';
       }
 
       // 3. Clean up localStorage to avoid stale redirects
@@ -146,7 +146,7 @@ const Login = () => {
           <p>
             Don't have an account?{' '}
             <Link
-              href="/users/register"
+              href="/register"
               className="text-blue-600 hover:underline"
             >
               Register here
