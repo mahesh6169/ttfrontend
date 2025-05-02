@@ -58,7 +58,7 @@ export const ALLOWED_EMAIL_DOMAINS = [
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Email format is invalid';
     } else if (!isValidEmailDomain(formData.email)) {
-      errors.email = '"Registration is restricted to recognized email IDs.';   
+      errors.email = 'Registration is restricted to recognized email IDs.';
     }
   
     // Common: Password
@@ -66,52 +66,46 @@ export const ALLOWED_EMAIL_DOMAINS = [
       errors.password = 'Password is required';
     }
   
+    // Register-specific validations
     if (mode === 'register') {
-      // Name
       if (!formData.name?.trim()) {
         errors.name = 'Name is required';
       }
   
-      // Strong password only on register
       if (formData.password && formData.password.length < 8) {
         errors.password = 'Password must be at least 8 characters';
       } else if (!isStrongPassword(formData.password)) {
         errors.password = 'Password must include uppercase, lowercase, and numbers';
       }
   
-      // Confirm Password
       if (!formData.confirmPassword?.trim()) {
         errors.confirmPassword = 'Confirm Password is required';
       } else if (formData.password !== formData.confirmPassword) {
         errors.confirmPassword = 'Passwords do not match';
       }
   
-      // Optional: Mobile
       if (formData.mobile?.trim() && !isValidAustralianMobile(formData.mobile)) {
         errors.mobile = 'Please enter a valid Australian mobile number (e.g., 0412 345 678)';
       }
   
-      // Terms
       if (!formData.acceptTerms) {
         errors.acceptTerms = 'You must accept the Terms and Privacy Policy';
       }
-     
-      // suburb required
-      // Suburb - Required
-const s = formData.suburb;
-if (
-  !s?.name ||
-  !s?.state ||
-  !s?.postalCode ||
-  !Array.isArray(s?.location?.coordinates) ||
-  s.location.coordinates.length !== 2
-) {
-  errors.suburb = 'Please select a valid suburb from the suggestions';
-}
-
-
+  
+      // Suburb validation
+      const s = formData.suburb;
+      if (
+        !s?.name ||
+        !s?.state ||
+        !s?.postalCode ||
+        !Array.isArray(s?.location?.coordinates) ||
+        s.location.coordinates.length !== 2
+      ) {
+        errors.suburb = 'Please select a valid suburb from the suggestions';
+      }
     }
   
     return errors;
   }
+  
   

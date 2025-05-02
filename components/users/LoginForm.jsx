@@ -8,38 +8,12 @@ import Link from 'next/link';
 import { toast } from 'react-toastify';
 import { useSearchParams } from 'next/navigation';
 import ReCAPTCHA from 'react-google-recaptcha';
+import {
+  sanitizeInput,
+  validateAuthForm,
+} from '@/utils/forms/validation';
+import { isHoneypotTriggered, isFormSubmittedTooQuickly } from '@/utils/forms/antiBot';
 
-// List of allowed email domains (popular providers)
-const ALLOWED_EMAIL_DOMAINS = [
-  'gmail.com',
-  'yahoo.com',
-  'outlook.com',
-  'hotmail.com',
-  'aol.com',
-  'icloud.com',
-  'me.com',
-  'protonmail.com',
-  'live.com',
-  'msn.com',
-  'bigpond.com',
-  'optusnet.com.au',
-  'iinet.net.au',
-  'internode.on.net',
-  'tpg.com.au',
-  'aapt.net.au',
-  'telstra.com',
-  'dodo.com.au',
-];
-
-// Helper function to sanitize input and prevent XSS
-const sanitizeInput = (input) => {
-  if (!input) return '';
-  return input
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-};
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
@@ -84,124 +58,81 @@ const Login = () => {
     }
   }, [user, router, preserveRedirect]);
 
-  // AU domain suffixes
-  const AU_SUFFIXES = ['.com.au', '.net.au', '.org.au', '.edu.au', '.gov.au'];
 
-  // Validate email domain
-  const isValidEmailDomain = (email) => {
-    if (!email || !email.includes('@')) return false;
-  
-    const domain = email.split('@')[1].toLowerCase();
-  
-    return (
-      ALLOWED_EMAIL_DOMAINS.includes(domain) ||
-      domain.endsWith('.au') ||
-      AU_SUFFIXES.some((suffix) => domain.endsWith(suffix))
-    );
-  };
-
-  // Validate form inputs
-  const validateForm = () => {
-    const newErrors = {};
-    
-    // Email validation
-    if (!credentials.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(credentials.email)) {
-      newErrors.email = 'Email format is invalid';
-    } else if (!isValidEmailDomain(credentials.email)) {
-      newErrors.email = 'Registration is limited to reputable email services.';
-    }
-    
-    // Password validation
-    if (!credentials.password) {
-      newErrors.password = 'Password is required';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Sanitize input to prevent XSS
     const sanitizedValue = sanitizeInput(value);
-    setCredentials({ ...credentials, [name]: sanitizedValue });
-    
-    // Clear error when user types
+  
+    setCredentials((prev) => ({ ...prev, [name]: sanitizedValue }));
+  
     if (errors[name]) {
-      setErrors({ ...errors, [name]: null });
+      setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Check if honeypot field is filled (bots often fill hidden fields)
-    if (honeypotRef.current && honeypotRef.current.value) {
-      console.log('Bot detected via honeypot'); // Log for monitoring
-      // Pretend success but do nothing
+  
+    const honeypotValue = honeypotRef.current?.value || '';
+    const currentTime = Date.now();
+    const timeElapsed = currentTime - formLoadTime;
+  
+    if (isHoneypotTriggered(honeypotValue)) {
       toast.success('Processing your request...');
       return;
     }
-    
-    // Check if form was submitted too quickly (bot detection)
-    const currentTime = Date.now();
-    const timeElapsed = currentTime - formLoadTime;
-    if (timeElapsed < 1500) { // Less than 1.5 seconds
-      console.log('Bot detected: form filled too quickly'); // Log for monitoring
-      // Slow down the response to discourage bots
+  
+    if (isFormSubmittedTooQuickly(formLoadTime, 1500)) {
       setTimeout(() => {
         toast.error('An error occurred. Please try again later.');
       }, 2000);
       return;
     }
-    
-    // Rate limiting
-    if (currentTime - lastSubmitTime < 3000) { // 3 seconds between submissions
+  
+    if (currentTime - lastSubmitTime < 3000) {
       toast.error('Please wait before trying again');
       return;
     }
-    
-    // Increment submission counter for rate limiting
-    setSubmitCount(submitCount + 1);
+  
+    setSubmitCount((prev) => prev + 1);
     setLastSubmitTime(currentTime);
-    
-    // Too many attempts
+  
     if (submitCount >= 5) {
       toast.error('Too many login attempts. Please try again later');
       return;
     }
-
-    // Validate form
-    if (!validateForm()) {
+  
+    const validationErrors = validateAuthForm(credentials, 'login');
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
-    
-    // Check captcha
+  
     if (!captchaToken) {
       toast.error('Please complete the CAPTCHA');
       return;
     }
-    
+  
     try {
       const result = await dispatch(
-        loginUser({ 
-          ...credentials, 
+        loginUser({
+          ...credentials,
           captchaToken,
-          formLoadTime, // Send to server for additional timing verification
-          timeElapsed
+          formLoadTime,
+          timeElapsed,
         })
       ).unwrap();
-      
+  
       if (result) {
         toast.success('Login successful! Redirecting...');
-        // Redirection handled in useEffect
       }
     } catch (err) {
       toast.error(err || 'Authentication failed. Please check your credentials.');
     }
   };
+  
   
   return (
     <div className="flex my-6 w-full justify-center">
