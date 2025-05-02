@@ -182,7 +182,7 @@ const CreateThreadPage = () => {
     }
 
     if (!isLoggedIn) {
-      router.push('/users/login?preserveRedirect=true');
+      router.push('/login?preserveRedirect=true');
       return;
     }
 

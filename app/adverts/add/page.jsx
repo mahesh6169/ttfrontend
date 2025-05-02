@@ -29,7 +29,7 @@ const NewAdvertPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const isLoggedIn = useSelector((state) => state.user.tokenValidated);
+  const tokenValidated = useSelector((state) => state.user.tokenValidated);
   const { user } = useSelector((state) => state.user);
   const { status, error } = useSelector((state) => state.advert);
 
@@ -65,20 +65,12 @@ const NewAdvertPage = () => {
         coordinates: [0, 0], // Default empty coordinates
       },
     },
-    email: isLoggedIn && user ? user.email : '',
-    name: isLoggedIn && user ? user.name : '',
+    email: user?.email || '',
+    name: user?.name || '',
     images: [],
   });
 
-  useEffect(() => {
-    if (isLoggedIn && user) {
-      setFormData((prev) => ({
-        ...prev,
-        email: user.email || '',
-        name: user.name || '',
-      }));
-    }
-  }, [isLoggedIn, user]);
+
 
   // ✅ Check if the selected category needs a "Condition" field
   const shouldShowCondition = CATEGORIES_REQUIRING_CONDITION.includes(
@@ -214,7 +206,7 @@ const handlePlaceChanged = () => {
     // Validation mapping.
     const validations = [
       {
-        condition: !isLoggedIn && (!formData.email || !formData.name),
+        condition: !tokenValidated && (!formData.email || !formData.name),
         message: 'Email and Name are required for non-logged-in users.',
       },
       {
@@ -364,13 +356,13 @@ const handlePlaceChanged = () => {
               coordinates: [0, 0],
             },
           },
-          email: isLoggedIn && user ? user.email : '', // Retain logic for logged-in users
-          name: isLoggedIn && user ? user.name : '',
+          email: user?.email || '',// Retain logic for logged-in users
+          name: user?.name || '',
           images: [], // Reset images to empty array
         });
 
         setPreview([]);
-        await router.push(isLoggedIn ? '/users/profile/manageads' : '/');
+        await router.push(tokenValidated ? '/users/profile/manageads' : '/');
         dispatch(clearAdverts());
       } else {
         console.error('❌ Dispatch failed:', resultAction);
@@ -385,14 +377,14 @@ const handlePlaceChanged = () => {
   return (
     <div className="p-8 max-w-lg mx-auto">
       <h1 className="text-2xl font-bold mb-4">Add New Advert</h1>
-      {!isLoggedIn ? (
+      {!tokenValidated ? (
         <div className="border rounded-lg p-4 shadow-md bg-white text-center">
           <p className="text-gray-700 mb-4">
             You must be logged in to add a new advert.
           </p>
           <div className="flex justify-center space-x-4">
             <Link
-              href="/users/login?preserveRedirect=true"
+              href="/login?preserveRedirect=true"
               onClick={() => {
                 localStorage.setItem('redirectAfterLogin', '/adverts/add');
               }}
@@ -423,7 +415,7 @@ const handlePlaceChanged = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email and Name */}
-            {!isLoggedIn && (
+            {!tokenValidated && (
               <>
                 <div>
                   <label className="block font-bold">Email</label>

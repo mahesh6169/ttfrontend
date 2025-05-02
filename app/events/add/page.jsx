@@ -200,7 +200,7 @@ const AddEventPage = () => {
           </p>
           <div className="flex justify-center space-x-4">
             <Link
-              href="/users/login?preserveRedirect=true"
+              href="/login?preserveRedirect=true"
               onClick={() => {
                 localStorage.setItem('redirectAfterLogin', '/events/add');
               }}
