@@ -1,34 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState } from 'react';
 import { FaTimes, FaHeart } from 'react-icons/fa';
-import { MdLocationOn } from 'react-icons/md';
-import { BsChatRightDots } from 'react-icons/bs';
-import {
-  getWishlist,
-  addToWishlist,
-  removeFromWishlist,
-} from '@/store/slices/users/userSlice';
 import { format, differenceInDays } from 'date-fns';
+import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
+import SendMessage from '@/components/chat/SendMessage';
+
+
+const FALLBACK_IMAGE_URL =
+  'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
 
 const SingleAdvertCard = ({ advert }) => {
-  const dispatch = useDispatch();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const { tokenValidated, user } = useSelector((state) => state.user);
-  const isAuthenticated = tokenValidated && !!user._id;
+  const {
+    isInWishlist,
+    toggleWishlist,
+  } = useAdvertWishlist();
 
-  const isInWishlist = user?.wishlist?.includes(advert._id);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(getWishlist());
-    }
-  }, [dispatch, isAuthenticated]);
-
-  const postedDaysAgo = differenceInDays(
-    new Date(),
-    new Date(advert.createdAt)
-  );
+  const postedDaysAgo = differenceInDays(new Date(), new Date(advert.createdAt));
   const postedText =
     postedDaysAgo <= 15
       ? postedDaysAgo === 0
@@ -36,125 +24,81 @@ const SingleAdvertCard = ({ advert }) => {
         : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
       : format(new Date(advert.createdAt), 'dd MMM yyyy');
 
-  const handleWishlistToggle = async (advertId) => {
-    if (!isAuthenticated) {
-      alert('Please log in to use the wishlist feature.');
-      return;
-    }
-
-    try {
-      const isInWishlist = user?.wishlist?.includes(advertId);
-      if (isInWishlist) {
-        await dispatch(removeFromWishlist({ advertId })).unwrap();
-      } else {
-        await dispatch(addToWishlist({ advertId })).unwrap();
-      }
-    } catch (error) {
-      console.error('Error updating wishlist:', error);
-    }
-  };
-
-  const handleImageClick = () => {
-    setIsFullscreen(true);
-  };
-
-  const handleCloseFullscreen = () => {
-    setIsFullscreen(false);
-  };
-
-  const handleNextImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % advert.images.length);
-  };
-
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prevIndex) =>
-      prevIndex === 0 ? advert.images.length - 1 : prevIndex - 1
+  const handleImageClick = () => setIsFullscreen(true);
+  const handleCloseFullscreen = () => setIsFullscreen(false);
+  const handleNextImage = () =>
+    setCurrentImageIndex((prev) => (prev + 1) % advert.images.length);
+  const handlePrevImage = () =>
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? advert.images.length - 1 : prev - 1
     );
-  };
 
-  // **Determine the correct price format based on the advert details**
-  const getPriceLabel = () => {
-    if (advert.isForSale) return `$${advert.sellPrice}`;
-    if (advert.isForHire) return `$${advert.hirePrice} / ${advert.hireUnit}`;
-    if (advert.isForRent) return `$${advert.rentPrice} / ${advert.rentUnit}`;
-    if (advert.isForShare) return `$${advert.sharePrice} / ${advert.shareUnit}`;
-    return '$$$';
-  };
+    const getPriceLabel = () => {
+      if (advert.isForSale) return { label: 'For Sale', value: `$${advert.sellPrice}` };
+      if (advert.isForHire) return { label: 'For Hire', value: `$${advert.hirePrice} / ${advert.hireUnit}` };
+      if (advert.isForRent) return { label: 'For Rent', value: `$${advert.rentPrice} / ${advert.rentUnit}` };
+      if (advert.isForShare) return { label: 'For Share', value: `$${advert.sharePrice} / ${advert.shareUnit}` };
+      return null;
+    };
 
   return (
-    <div className="border p-4 rounded shadow-md bg-white max-w-[800px] mx-auto">
-      {/* Images Section with Navigation */}
-      <div className="relative w-full h-[500] bg-gray-200 flex items-center justify-center overflow-hidden rounded">
+    <div className="border p-4 rounded shadow-md bg-white max-w-[800px] mx-auto space-y-4">
+      {/* Image Section */}
+      <div className="relative w-full max-w-[600px] max-h-[500px] mx-auto bg-gray-200 flex items-center justify-center overflow-hidden rounded">
         {advert.images?.length > 0 ? (
           <img
             src={advert.images[currentImageIndex].url}
             alt={advert.title || 'Advert Image'}
-            className="object-cover h-full w-full cursor-pointer"
+            className="object-contain w-full h-full cursor-pointer"
             onClick={handleImageClick}
           />
         ) : (
-          <span className="text-gray-500">No Image Available</span>
+          <img
+            src={FALLBACK_IMAGE_URL}
+            alt="No Image"
+            className="object-contain w-full h-full"
+          />
         )}
-        {/* Navigation Buttons for Image Section */}
-        {advert.images?.length > 1 && (
-          <>
-            <button
-              onClick={handlePrevImage}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white text-black p-2 rounded-full shadow"
-            >
-              Prev
-            </button>
-            <button
-              onClick={handleNextImage}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black p-2 rounded-full shadow"
-            >
-              Next
-            </button>
-          </>
-        )}
+
         {/* Wishlist Button */}
         <button
-          onClick={() => handleWishlistToggle(advert._id)}
+          onClick={() => toggleWishlist(advert._id)}
           className={`absolute top-2 right-2 text-white p-2 rounded-full z-10 ${
-            isInWishlist
+            isInWishlist(advert._id)
               ? 'bg-red-500 hover:bg-red-600'
               : 'bg-gray-300 hover:bg-gray-400'
           }`}
-          title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+          title={isInWishlist(advert._id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
         >
           <FaHeart
             className={`text-sm sm:text-base md:text-lg ${
-              isInWishlist ? 'text-white' : 'text-gray-700'
+              isInWishlist(advert._id) ? 'text-white' : 'text-gray-700'
             }`}
           />
         </button>
       </div>
 
-      {/* Fullscreen Image Modal with Navigation */}
+      {/* Fullscreen Modal */}
       {isFullscreen && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="relative w-full h-full flex items-center justify-center">
-            {/* Image */}
             <img
               src={advert.images[currentImageIndex].url}
               alt={advert.title || 'Advert Image'}
               className="max-w-full max-h-full object-contain"
             />
-            {/* Close Button */}
             <button
               onClick={handleCloseFullscreen}
               className="absolute top-1/3 bg-white text-black p-2 rounded-full shadow hover:bg-gray-200 transition z-50"
             >
               <FaTimes size={30} />
             </button>
-            {/* Previous Button */}
             <button
               onClick={handlePrevImage}
               className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white text-black p-2 rounded-full shadow hover:bg-gray-200 transition"
             >
               Prev
             </button>
-            {/* Next Button */}
             <button
               onClick={handleNextImage}
               className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white text-black p-2 rounded-full shadow hover:bg-gray-200 transition"
@@ -165,52 +109,83 @@ const SingleAdvertCard = ({ advert }) => {
         </div>
       )}
 
-      {/* Summary Section */}
-      <div className="p-4 space-y-4">
-        {/* Title */}
-        <h2 className="text-xl font-bold text-center break-words">
-          {advert.title || 'No Title'}
-        </h2>
+      {/* Title */}
+      {advert.title && (
+        <h2 className="text-2xl font-bold text-center break-words">{advert.title}</h2>
+      )}
 
-        {/* Price and Address */}
-        <div className="space-y-1">
-          <p>
-            <strong>Price:</strong> {getPriceLabel()}
-          </p>
-          <p>
-            <strong>Address:</strong>{' '}
-            {advert.address?.formattedAddress || 'N/A'}
-          </p>
-        </div>
+      {/* Posted By */}
+      {advert.postedBy?.name && (
+  <div className="flex justify-start gap-4 text-sm text-gray-600 px-2 text-left">
+    <span>
+      <strong>Posted By:</strong> {advert.postedBy.name}
+    </span>
+    <span>
+      <strong>Posted:</strong>{' '}
+      {(() => {
+        const postedDaysAgo = differenceInDays(new Date(), new Date(advert.createdAt));
+        return postedDaysAgo <= 15
+          ? postedDaysAgo === 0
+            ? 'Today'
+            : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
+          : format(new Date(advert.createdAt), 'dd MMM yyyy');
+      })()}
+    </span>
+  </div>
+)}
 
-        {/* Condition and Category */}
-        <div className="flex flex-col sm:flex-row justify-between gap-2">
-          <p>
-            <strong>Condition:</strong> {advert.condition || 'N/A'}
-          </p>
-          <p>
-            <strong>Category:</strong> {advert.category || 'N/A'}
-          </p>
-        </div>
 
-        {/* Posted By and Date (Optional) */}
-        <div className="flex flex-col sm:flex-row justify-between gap-2">
-          <p>
-            <strong>Posted By:</strong> {advert.postedBy?.name || 'Unknown'}
-          </p>
-          <p>
-            <strong>Posted:</strong> {postedText || 'Unknown date'}
-          </p>
-        </div>
+      {/* Address */}
+      {advert.address?.formattedAddress && (
+  <p className="text-sm text-gray-600 px-2 text-left">
+    <strong>Address:</strong> {advert.address.formattedAddress}
+  </p>
+)}
 
-        {/* Description */}
-        <div>
-          <h3 className="text-lg font-bold mb-1">Description:</h3>
-          <p className="text-gray-700">
-            {advert.description || 'No Description Provided'}
-          </p>
-        </div>
-      </div>
+
+      {/* Row: Category, Ad Type, Condition */}
+      <div className="flex flex-col sm:flex-row justify-start gap-4 text-sm text-gray-700 px-2 text-left">
+  {advert.category && (
+    <p>
+      <strong>Category:</strong> {advert.category}
+    </p>
+  )}
+  {(advert.isWanted || advert.isOffered) && (
+    <p>
+      <strong>Ad Type:</strong>{' '}
+      {advert.isWanted ? 'Wanted' : advert.isOffered ? 'Offered' : ''}
+    </p>
+  )}
+  {advert.condition && (
+    <p>
+      <strong>Condition:</strong> {advert.condition}
+    </p>
+  )}
+</div>
+
+
+      {/* Row: Price */}
+      {getPriceLabel() && (
+  <p className="text-base font-semibold px-2 text-left">
+    <strong>{getPriceLabel().label}:</strong> {getPriceLabel().value}
+  </p>
+)}
+
+
+      {/* Spacer */}
+      <div className="my-2" />
+{/* Chat Container */}
+
+      {/* Spacer */}
+      <div className="my-2" />
+
+      {/* Description */}
+      {advert.description && (
+  <div className="border border-gray-300 p-3 rounded text-left">
+    <h3 className="font-semibold mb-2">Description</h3>
+    <p className="text-gray-800 whitespace-pre-wrap">{advert.description}</p>
+  </div>
+)}
     </div>
   );
 };

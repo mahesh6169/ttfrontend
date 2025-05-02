@@ -234,12 +234,13 @@ export const getWishlist = createAsyncThunk(
       const response = await axios.get(`${API_BASE_URL}/wishlist`, {
         withCredentials: true,
       });
-      return response.data.wishlist; // Return detailed wishlist array from backend
+      return response.data.wishlist; // Now contains full advert objects
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch wishlist');
     }
   }
 );
+
 
 // Get event wishlist
 export const getEventWishlist = createAsyncThunk(

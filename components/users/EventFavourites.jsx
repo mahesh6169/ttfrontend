@@ -1,66 +1,23 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  getEventWishlist,
-  addToEventWishlist,
-  removeFromEventWishlist,
-} from '@/store/slices/users/userSlice';
+import React from 'react';
 import EventCard from '@/components/events/eventcomponents/EventCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { toast } from 'react-toastify';
+import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 
 const EventFavourites = () => {
-  const dispatch = useDispatch();
-
   const {
-    eventWishlist, // ✅ full event objects
+    eventWishlist,
     eventWishlistStatus,
-    eventWishlistError,
-    user,
-  } = useSelector((state) => state.user);
+    isInEventWishlist,
+    toggleEventWishlist,
+  } = useEventWishlist();
 
-
-
-  // ✅ Load event wishlist on mount
-
-   useEffect(() => {
-      dispatch(getEventWishlist())
-        .unwrap()
-        .catch((err) => toast.error(err || 'Failed to load Event wishlist.'));
-    }, [dispatch]);
-
-
-
-  // ✅ Toggle handler for wishlist
-  const handleToggle = async (eventId) => {
-    try {
-      const isInWishlist = user?.eventWishlist?.includes(eventId.toString());
-      if (isInWishlist) {
-        await dispatch(removeFromEventWishlist({ eventId })).unwrap();
-      } else {
-        await dispatch(addToEventWishlist({ eventId })).unwrap();
-      }
-    } catch (err) {
-      toast.error(err || 'Error updating event wishlist');
-    }
-  };
-
-  // ⏳ Loading state
+  // ⏳ Loading
   if (eventWishlistStatus === 'loading') {
     return (
       <div className="flex justify-center items-center h-screen">
         <LoadingSpinner />
-      </div>
-    );
-  }
-
-  // ❌ Error state
-  if (eventWishlistError) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-red-500 text-lg">{eventWishlistError}</p>
       </div>
     );
   }
@@ -87,8 +44,8 @@ const EventFavourites = () => {
           <EventCard
             key={event._id}
             event={event}
-            isInWishlist={user?.eventWishlist?.includes(event._id.toString())}
-            onWishlistToggle={() => handleToggle(event._id)}
+            isInWishlist={isInEventWishlist(event._id)}
+            onWishlistToggle={() => toggleEventWishlist(event._id)}
           />
         ))}
       </div>

@@ -1,60 +1,43 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { FaTimes, FaHeart } from 'react-icons/fa';
 import { MdLocationOn } from 'react-icons/md';
-import {
-  getEventWishlist,
-  addToEventWishlist,
-  removeFromEventWishlist,
-} from '@/store/slices/users/userSlice';
-import { format, differenceInDays } from 'date-fns';
+import { differenceInDays, format } from 'date-fns';
+import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 
 const SingleEventCard = ({ event }) => {
-  const dispatch = useDispatch();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const { tokenValidated, user, eventWishlist } = useSelector(
-    (state) => state.user
-  );
-  const isAuthenticated = tokenValidated && !!user?._id;
-  const isInWishlist = eventWishlist?.includes(event._id.toString());
+  const { isInEventWishlist, toggleEventWishlist, isAuthenticated } = useEventWishlist();
+  const isInWishlist = isInEventWishlist(event._id);
 
-  const handleWishlistToggle = async (eventId) => {
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % event.images.length);
+  };
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? event.images.length - 1 : prev - 1
+    );
+  };
+
+  const handleWishlistToggle = () => {
     if (!isAuthenticated) {
       alert('Please log in to use the wishlist feature.');
       return;
     }
-    try {
-      if (isInWishlist) {
-        await dispatch(removeFromEventWishlist({ eventId })).unwrap();
-      } else {
-        await dispatch(addToEventWishlist({ eventId })).unwrap();
-      }
-    } catch (error) {
-      console.error('Error updating wishlist:', error);
-    }
-  };
-
-  const handleNextImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % event.images.length);
-  };
-
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prevIndex) =>
-      prevIndex === 0 ? event.images.length - 1 : prevIndex - 1
-    );
+    toggleEventWishlist(event._id);
   };
 
   const eventTime = new Date(event.dateTime);
   const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const eventZone = event.timeZone || localTimeZone;
 
   const getCityFromZone = (zone) =>
     zone?.split('/')?.[1]?.replace('_', ' ') || zone;
 
-  const eventZone = event.timeZone || localTimeZone;
   const eventZoneCity = getCityFromZone(eventZone);
   const localZoneCity = getCityFromZone(localTimeZone);
 
@@ -81,11 +64,9 @@ const SingleEventCard = ({ event }) => {
   const postedDaysAgo = differenceInDays(new Date(), new Date(event.createdAt));
   const postedText =
     postedDaysAgo <= 15
-      ? `${
-          postedDaysAgo === 0
-            ? 'Today'
-            : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
-        }`
+      ? postedDaysAgo === 0
+        ? 'Today'
+        : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
       : format(new Date(event.createdAt), 'dd MMM yyyy');
 
   return (
@@ -121,16 +102,14 @@ const SingleEventCard = ({ event }) => {
         )}
 
         <button
-          onClick={() => handleWishlistToggle(event._id.toString())}
+          onClick={handleWishlistToggle}
           className={`absolute top-2 right-2 p-2 rounded-full z-10 ${
             isInWishlist ? 'bg-red-500' : 'bg-gray-300'
           }`}
           title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
         >
           <FaHeart
-            className={`text-lg ${
-              isInWishlist ? 'text-white' : 'text-gray-700'
-            }`}
+            className={`text-lg ${isInWishlist ? 'text-white' : 'text-gray-700'}`}
           />
         </button>
       </div>
@@ -167,13 +146,9 @@ const SingleEventCard = ({ event }) => {
 
       {/* Event Info */}
       <div className="p-4 space-y-4">
-        {/* Centered Title */}
         <h2 className="text-3xl font-bold text-center">{event.title}</h2>
-
-        {/* Category */}
         <div className="text-xs text-left text-gray-500">{event.category}</div>
 
-        {/* Posted by + posted date */}
         <div className="flex justify-between text-base text-gray-700">
           <span>
             <strong>Posted By:</strong> {event.postedBy?.name || 'N/A'}
@@ -183,18 +158,12 @@ const SingleEventCard = ({ event }) => {
           </span>
         </div>
 
-        {/* Event Details */}
         <div>
           <h3 className="font-bold text-lg mb-2">Event Details</h3>
           <p>🗓️ {eventDateStr}</p>
           <p>
             ⏰ {eventTimeStr} {eventZoneCity}
-            {showLocalTime && (
-              <>
-                {' '}
-                || {localTimeStr} {localZoneCity}
-              </>
-            )}
+            {showLocalTime && <> || {localTimeStr} {localZoneCity}</>}
           </p>
           <p className="mt-2 flex gap-2 items-start">
             📍{' '}
@@ -205,7 +174,6 @@ const SingleEventCard = ({ event }) => {
           </p>
         </div>
 
-        {/* Organiser */}
         <div>
           <h3 className="font-bold text-lg mb-2">Event Organiser</h3>
           <p>
@@ -228,7 +196,6 @@ const SingleEventCard = ({ event }) => {
           )}
         </div>
 
-        {/* Description */}
         <div>
           <h3 className="font-bold text-lg mb-2">Description</h3>
           <p className="text-gray-700">{event.description}</p>

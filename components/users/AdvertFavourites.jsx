@@ -2,43 +2,31 @@
 
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  getWishlist,
-  addToWishlist,
-  removeFromWishlist,
-} from '@/store/slices/users/userSlice';
+import { getWishlist } from '@/store/slices/users/userSlice';
 import AdvertCard from '@/components/adverts/advertcomponents/AdvertCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { toast } from 'react-toastify';
+import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
 
 const AdvertFavourites = () => {
   const dispatch = useDispatch();
 
   const {
-    advertWishlist, // ✅ full advert objects
     advertWishlistStatus,
     advertWishlistError,
-    user,
   } = useSelector((state) => state.user);
+
+  const {
+    advertWishlist,
+    isInWishlist,
+    toggleWishlist,
+  } = useAdvertWishlist();
 
   useEffect(() => {
     dispatch(getWishlist())
       .unwrap()
       .catch((err) => toast.error(err || 'Failed to load Advert wishlist.'));
   }, [dispatch]);
-
-  const handleToggle = async (advertId) => {
-    try {
-      const isInWishlist = user?.advertWishlist?.includes(advertId.toString());
-      if (isInWishlist) {
-        await dispatch(removeFromWishlist({ advertId })).unwrap();
-      } else {
-        await dispatch(addToWishlist({ advertId })).unwrap();
-      }
-    } catch (error) {
-      toast.error(error || 'Error updating wishlist.');
-    }
-  };
 
   if (advertWishlistStatus === 'loading') {
     return (
@@ -76,8 +64,8 @@ const AdvertFavourites = () => {
           <AdvertCard
             key={advert._id}
             advert={advert}
-            isInWishlist={user?.advertWishlist?.includes(advert._id.toString())}
-            onWishlistToggle={() => handleToggle(advert._id)}
+            isInWishlist={isInWishlist(advert._id)}
+            onWishlistToggle={() => toggleWishlist(advert._id)}
           />
         ))}
       </div>
