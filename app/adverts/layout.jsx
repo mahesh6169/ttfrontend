@@ -6,7 +6,7 @@ import Footer from '@/components/Footer';
 
 const FunctionsLayout = ({ children }) => {
   return (
-    <main id="Parent" className="container bg-white my-2 mx-auto">
+    <main id="Parent" className="container my-2 mx-auto">
       <TopAd />
       <div className="flex gap-2">
         <LeftAd />

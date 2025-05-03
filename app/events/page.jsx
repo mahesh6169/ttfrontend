@@ -17,8 +17,8 @@ const libraries = ['places'];
 const MODES = [
   { label: 'All', value: 'all' },
   { label: 'Categories', value: 'categories' },
-  { label: 'Locations', value: 'locations' },
-  { label: 'Custom Categories', value: 'customCategories' },
+  { label: 'Cities', value: 'locations' },
+  { label: 'Custom ', value: 'customCategories' },
 ];
 
 const categoryOptions = [
@@ -161,11 +161,26 @@ const EventsPage = () => {
 
   return (
     <div className="flex flex-col">
-      <div className="flex justify-between items-center my-4 px-4">
-        <Link href="/events/add" className="bg-gray-200 px-4 py-2 rounded text-sm font-semibold">
-          Post Event
-        </Link>
-        <h1 className="text-lg font-bold text-center flex-1">Discover Events</h1>
+      <div className="my-2 px-4">
+        <div className="flex justify-start">
+          <Link
+            href="/events/add"
+            className="bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-semibold transition duration-200"
+          >
+            Post Event
+          </Link>
+        </div>
+      </div>
+
+      {/* Discover Events - Centered header with gradient background */}
+      <div className="my-2 px-4 py-6 bg-gradient-to-br from-teal-950 to-teal-100 shadow-sm rounded-md flex justify-center">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-yellow-400 tracking-tight flex items-center gap-2 text-center animate-[pulsezoom_1.5s_ease-in-out_infinite]">
+          <span>Plan</span>
+          <span className="text-yellow-400">•</span>
+          <span>Attend</span>
+          <span className="text-yellow-400">•</span>
+          <span>Connect</span>
+        </h1>
       </div>
 
       {/* 🌟 Mode Selector */}
@@ -174,7 +189,9 @@ const EventsPage = () => {
           <button
             key={m.value}
             onClick={() => handleModeChange(m.value)}
-            className={`px-3 py-1 rounded ${mode === m.value ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            className={`px-3 py-1 rounded text-xs sm:text-base font-semibold ${
+              mode === m.value ? 'bg-teal-700 text-lime-100' : 'text-teal-700 hover:bg-lime-100'
+            }`}
           >
             {m.label}
           </button>
@@ -186,19 +203,19 @@ const EventsPage = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleMonthChange(-1)}
-            className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            className="px-2 py-1 rounded bg-teal-700 text-lime-100 hover:bg-teal-800"
             aria-label="Previous Month"
           >
             ◀
           </button>
-          <span className="font-semibold min-w-[120px] text-center">
+          <span className="font-semibold min-w-[120px] text-center text-xs sm:text-base">
             {isMonthSelected 
               ? format(parse(selectedMonthDisplay, 'yyyy-MM', new Date()), 'MMMM yyyy')
               : "Select Month"}
           </span>
           <button
             onClick={() => handleMonthChange(1)}
-            className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            className="px-2 py-1 rounded bg-teal-700 text-lime-100 hover:bg-teal-800"
             aria-label="Next Month"
           >
             ▶
@@ -208,7 +225,7 @@ const EventsPage = () => {
 
       {/* 🟢 Filters for ALL mode */}
       {mode === 'all' && (
-        <div className="flex flex-col md:flex-row justify-center gap-4 mb-4 px-4">
+        <div className="flex flex-col text-xs sm:text-base md:flex-row justify-center gap-4 mb-4 px-4">
           <SelectSlider
             options={categoryOptions}
             value={all.category || 'All Categories'}
@@ -269,13 +286,13 @@ const EventsPage = () => {
         <div className="flex flex-col items-center mb-4 px-4">
           <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
             <div
-              className="grid grid-flow-col auto-cols-max gap-4"
+              className="grid grid-flow-col auto-cols-max gap-1 sm:gap-4"
               style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
             >
               {categoryOptions.map((category) => (
                 <label
                   key={category}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-lime-100 rounded"
                 >
                   <input
                     type="checkbox"
@@ -292,7 +309,7 @@ const EventsPage = () => {
                       );
                     }}
                   />
-                  <span className="text-sm">{category}</span>
+                  <span className="text-xs sm:text-base">{category}</span>
                 </label>
               ))}
             </div>
@@ -305,13 +322,13 @@ const EventsPage = () => {
         <div className="flex flex-col items-center mb-4 px-4">
           <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
             <div
-              className="grid grid-flow-col auto-cols-max gap-4"
+              className="grid grid-flow-col auto-cols-max gap-1 sm:gap-4"
               style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
             >
               {cityOptions.map((city) => (
                 <label
                   key={city.name}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-lime-100 rounded sm:p-2"
                 >
                   <input
                     type="radio"
@@ -326,7 +343,7 @@ const EventsPage = () => {
                       )
                     }
                   />
-                  <span className="text-sm">{city.name}</span>
+                  <span className="text-xs sm:text-base">{city.name}</span>
                 </label>
               ))}
             </div>
@@ -339,13 +356,13 @@ const EventsPage = () => {
         <div className="flex flex-col items-center mb-4 px-4">
           <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
             <div
-              className="grid grid-flow-col auto-cols-max gap-4"
+              className="grid grid-flow-col auto-cols-max gap-1 sm:gap-4"
               style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
             >
               {CUSTOM_CATEGORIES.map((category) => (
                 <label
                   key={category}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-lime-100 rounded sm:p-2"
                 >
                   <input
                     type="checkbox"
@@ -362,7 +379,7 @@ const EventsPage = () => {
                       );
                     }}
                   />
-                  <span className="text-sm">{category}</span>
+                  <span className="text-xs sm:text-base">{category}</span>
                 </label>
               ))}
             </div>
@@ -374,7 +391,7 @@ const EventsPage = () => {
       <div className="flex justify-center mb-2">
         <button
           onClick={handleClearFilters}
-          className="text-sm bg-red-500 text-white px-3 py-1 rounded"
+          className="text-xs sm:text-base bg-red-500 text-white px-3 py-1 rounded"
         >
           Clear Filters
         </button>

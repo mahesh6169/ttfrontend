@@ -28,7 +28,7 @@ if (advert.isForSale && advert.sellPrice > 0) {
 
 
   return (
-<div id="AdvertCard" className="relative border rounded-lg shadow-md  bg-gray-100 hover:bg-gray-200">
+<div id="AdvertCard" className="relative border rounded-lg shadow-md  bg-gray-50 hover:bg-gray-100">
   {/* Wishlist Button - Top Right */}
   <button
     onClick={onWishlistToggle}

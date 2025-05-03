@@ -118,11 +118,26 @@ const ThreadsPage = () => {
 
   return (
     <div className="flex flex-col">
-      <div className="flex justify-between items-center my-4 px-4">
-        <Link href="/threads/new" className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold">
-          Create New Thread
-        </Link>
-        <h1 className="text-lg font-bold text-center flex-1">Community Threads</h1>
+      <div className="my-2 px-4">
+        <div className="flex justify-start">
+          <Link
+            href="/threads/new"
+            className="bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-semibold transition duration-200"
+          >
+            Create New Thread
+          </Link>
+        </div>
+      </div>
+
+      {/* Discover Community Threads - Centered header with gradient background */}
+      <div className="my-2 px-4 py-6 bg-gradient-to-br from-teal-950 to-teal-100 shadow-sm rounded-md flex justify-center">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-yellow-400 tracking-tight flex items-center gap-2 text-center animate-[pulsezoom_1.5s_ease-in-out_infinite]">
+          <span>Ask</span>
+          <span className="text-yellow-400">•</span>
+          <span>Discuss</span>
+          <span className="text-yellow-400">•</span>
+          <span>Connect</span>
+        </h1>
       </div>
 
       {/* Mode Selector */}
@@ -131,7 +146,9 @@ const ThreadsPage = () => {
           <button
             key={m.value}
             onClick={() => handleModeChange(m.value)}
-            className={`px-3 py-1 rounded ${mode === m.value ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            className={`px-3 py-1 rounded text-xs sm:text-base font-semibold ${
+              mode === m.value ? 'bg-teal-700 text-lime-100' : 'text-teal-700 hover:bg-lime-100'
+            }`}
           >
             {m.label}
           </button>
@@ -140,7 +157,7 @@ const ThreadsPage = () => {
 
       {/* Filters for ALL mode */}
       {mode === 'all' && (
-        <div className="flex flex-col md:flex-row justify-center gap-4 mb-4 px-4">
+        <div className="flex flex-col text-xs sm:text-base md:flex-row justify-center gap-4 mb-4 px-4">
           <select
             className="p-2 border rounded"
             value={all.category || ''}
@@ -209,13 +226,13 @@ const ThreadsPage = () => {
         <div className="flex flex-col items-center mb-4 px-4">
           <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
             <div
-              className="grid grid-flow-col auto-cols-max gap-4"
+              className="grid grid-flow-col auto-cols-max gap-1 sm:gap-4"
               style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
             >
               {categoryOptions.map((category) => (
                 <label
                   key={category}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-lime-100 rounded"
                 >
                   <input
                     type="checkbox"
@@ -232,7 +249,7 @@ const ThreadsPage = () => {
                       );
                     }}
                   />
-                  <span className="text-sm">{category}</span>
+                  <span className="text-xs sm:text-base">{category}</span>
                 </label>
               ))}
             </div>
@@ -245,13 +262,13 @@ const ThreadsPage = () => {
         <div className="flex flex-col items-center mb-4 px-4">
           <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
             <div
-              className="grid grid-flow-col auto-cols-max gap-4"
+              className="grid grid-flow-col auto-cols-max gap-1 sm:gap-4"
               style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
             >
               {cityOptions.map((city) => (
                 <label
                   key={city.name}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-lime-100 rounded sm:p-2"
                 >
                   <input
                     type="radio"
@@ -266,7 +283,7 @@ const ThreadsPage = () => {
                       )
                     }
                   />
-                  <span className="text-sm">{city.name}</span>
+                  <span className="text-xs sm:text-base">{city.name}</span>
                 </label>
               ))}
             </div>
@@ -279,13 +296,13 @@ const ThreadsPage = () => {
         <div className="flex flex-col items-center mb-4 px-4">
           <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
             <div
-              className="grid grid-flow-col auto-cols-max gap-4"
+              className="grid grid-flow-col auto-cols-max gap-1 sm:gap-4"
               style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
             >
               {POPULAR_CATEGORIES.map((category) => (
                 <label
                   key={category}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded p-2"
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-lime-100 rounded sm:p-2"
                 >
                   <input
                     type="checkbox"
@@ -302,7 +319,7 @@ const ThreadsPage = () => {
                       );
                     }}
                   />
-                  <span className="text-sm">{category}</span>
+                  <span className="text-xs sm:text-base">{category}</span>
                 </label>
               ))}
             </div>
@@ -314,7 +331,7 @@ const ThreadsPage = () => {
       <div className="flex justify-center mb-2">
         <button
           onClick={handleClearFilters}
-          className="text-sm bg-red-500 text-white px-3 py-1 rounded"
+          className="text-xs sm:text-base bg-red-500 text-white px-3 py-1 rounded"
         >
           Clear Filters
         </button>
@@ -328,13 +345,17 @@ const ThreadsPage = () => {
           {threads.map((thread) => (
             <div
               key={thread._id}
-              className="border rounded-lg p-4 hover:bg-gray-100 cursor-pointer"
+              className="border rounded-lg p-4 hover:bg-teal-50 cursor-pointer shadow-sm transition-colors duration-200"
               onClick={() => router.push(`/threads/views/${thread._id}`)}
             >
               <div className="flex flex-col space-y-1">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-base font-semibold text-gray-900">{thread.title}</h2>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${thread.commentCount > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                  <h2 className="text-base font-semibold text-teal-800">{thread.title}</h2>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    thread.commentCount > 0 
+                      ? 'bg-teal-100 text-teal-700' 
+                      : 'bg-gray-100 text-gray-500'
+                  }`}>
                     💬 {thread.commentCount > 0 ? `${thread.commentCount} comment${thread.commentCount > 1 ? 's' : ''}` : 'No comments'}
                   </span>
                 </div>
@@ -344,7 +365,7 @@ const ThreadsPage = () => {
                     <img src={thread.images[0].url} alt="Thread" className="w-16 h-16 object-cover rounded shrink-0" />
                   )}
                 </div>
-                <div className="flex justify-start items-center text-sm text-gray-500">
+                <div className="flex flex-wrap justify-start items-center text-xs sm:text-sm text-gray-500">
                   <p>Posted by: {thread.ownerName || 'Former Member'}</p>
                   <p className="ml-3">| Posted: {getPostedText(thread.createdAt)}</p>
                   {thread.category && <p className="ml-3">| Category: {thread.category}</p>}

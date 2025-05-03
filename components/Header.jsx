@@ -49,8 +49,8 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow">
-      <div className="container mx-auto py-2 space-y-2">
+    <header className="bg-teal-700 shadow">
+      <div className="container mx-auto py-2 space-y-2 text-lime-100">
         <div className="flex items-center justify-between">
           <Link
             href="/"
@@ -61,7 +61,7 @@ const Header = () => {
 
           <div className="hidden md:flex items-center gap-6 ml-auto">
             <NavLink
-              href="/"
+              href="/adverts"
               icon={<FaHome size={20} />}
               text="Home"
               pathname={pathname}
@@ -117,7 +117,7 @@ const Header = () => {
           </button>
         </div>
 
-        <div className="flex md:hidden items-center justify-around border-t pt-2">
+        <div className="flex md:hidden items-center justify-around  pt-2 text-lime-200">
           <NavLink
             href="/"
             icon={<FaHome size={18} />}
@@ -258,8 +258,8 @@ const NavLink = ({ href, icon, text, pathname, mobile = false, onClick }) => {
       className={`flex items-center gap-2 px-4 py-2 rounded 
         ${
           isActive
-            ? 'bg-gray-300 text-gray-900'
-            : 'hover:bg-gray-200 hover:text-gray-900'
+            ? 'bg-lime-100 text-teal-700'
+            : 'hover:bg-lime-50 hover:text-teal-700'
         } 
         ${mobile ? 'text-sm' : ''}`}
     >

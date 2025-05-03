@@ -81,17 +81,17 @@ const SendMessage = ({
     if (preserveRedirectUrl) {
       localStorage.setItem('redirectAfterLogin', preserveRedirectUrl);
     }
-    router.push('/users/login?preserveRedirect=true');
+    router.push('/login?preserveRedirect=true');
   };
 
   return (
-    <div className="border p-4 rounded shadow-md bg-white">
+    <div className="border p-2 rounded shadow-md w-full">
       <h2 className="text-lg font-semibold mb-2">Get in touch</h2>
       <p className="flex items-center mb-2">
         <CgProfile className="mr-2 text-gray-700" size={24} />
         {owner || 'User'}
       </p>
-      <p className="mb-4 text-sm text-gray-600">Enquire about the listing</p>
+      <p className="mb-2 text-sm text-gray-600">Enquire about the listing</p>
 
       <textarea
         value={message}
@@ -110,8 +110,8 @@ const SendMessage = ({
         <button
           onClick={handleSendMessage}
           disabled={sending}
-          className={`w-full py-2 px-4 bg-blue-600 text-white rounded ${
-            sending ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
+          className={`w-full py-2 px-4 bg-yellow-400  text-teal-700 rounded font-medium ${
+            sending ? 'opacity-50 cursor-not-allowed' : 'hover:bg-teal-700 hover:text-lime-100'
           }`}
         >
           {sending ? 'Sending...' : 'Send'}
