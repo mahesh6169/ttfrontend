@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchMessages,
@@ -12,9 +13,11 @@ import socket from '@/config/socket';
 import { useSearchParams, useParams } from 'next/navigation';
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
+import { RiArrowGoBackFill } from "react-icons/ri";
 import Link from 'next/link';
 
 const ChatPage = () => {
+   const router = useRouter();
   const { type: resourceType, id: resourceId } = useParams();
   const searchParams = useSearchParams();
   const otherUserId = searchParams.get('otherUser');
@@ -117,6 +120,15 @@ useEffect(() => {
 
   return (
     <div className="mt-4 px-2 sm:px-4">
+       <div className="mb-2">
+  <span
+    onClick={() => router.back()}
+    className="inline-flex items-center gap-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium cursor-pointer"
+  >
+    <RiArrowGoBackFill className="text-xs sm:text-base" />
+    <span>Back to Adverts</span>
+  </span>
+</div>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <Link href={`/${resourceType}s/views/${resourceId}`}>
@@ -174,23 +186,37 @@ useEffect(() => {
 
       {/* Input */}
 {/* Input */}
-<div className="flex border rounded-lg shadow bg-white p-2">
+<div className="border rounded-lg shadow bg-white p-2">
+  {/* Auto-growing Textarea */}
   <textarea
     value={newMessage}
     onChange={(e) => setNewMessage(e.target.value)}
     placeholder="Type your message..."
     rows={1}
-    className="flex-1 border-none outline-none resize-none p-2 text-sm sm:text-base max-h-40 overflow-y-auto"
-    style={{ height: 'auto', minHeight: '3rem' }}
+    className="w-full border-none outline-none resize-none p-2 text-sm sm:text-base overflow-y-auto"
+    style={{
+      minHeight: '2.5rem',
+      maxHeight: '8rem',
+      height: 'auto',
+    }}
+    onInput={(e) => {
+      e.target.style.height = 'auto';
+      e.target.style.height = `${e.target.scrollHeight}px`;
+    }}
   />
-  <button
-    onClick={handleSendMessage}
-    disabled={!newMessage.trim()}
-    className="ml-2 px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 disabled:opacity-50"
-  >
-    Send
-  </button>
+
+  {/* Send Button Row */}
+  <div className="flex justify-end mt-2">
+    <button
+      onClick={handleSendMessage}
+      disabled={!newMessage.trim()}
+      className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 disabled:opacity-50"
+    >
+      Send
+    </button>
+  </div>
 </div>
+
 
     </div>
   );
