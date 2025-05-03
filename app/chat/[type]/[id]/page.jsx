@@ -116,7 +116,7 @@ useEffect(() => {
   if (!resource) return <div className="text-center text-gray-500">No conversation found.</div>;
 
   return (
-    <div className="w-full max-w-full px-2 sm:px-4">
+    <div className="mt-4 px-2 sm:px-4">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <Link href={`/${resourceType}s/views/${resourceId}`}>
@@ -173,21 +173,25 @@ useEffect(() => {
       </div>
 
       {/* Input */}
-      <div className="flex border rounded-lg shadow bg-white p-2">
-        <textarea
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
-          className="flex-1 border-none outline-none resize-none p-2 h-[4rem] text-sm sm:text-base"
-        />
-        <button
-          onClick={handleSendMessage}
-          disabled={!newMessage.trim()}
-          className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          Send
-        </button>
-      </div>
+{/* Input */}
+<div className="flex border rounded-lg shadow bg-white p-2">
+  <textarea
+    value={newMessage}
+    onChange={(e) => setNewMessage(e.target.value)}
+    placeholder="Type your message..."
+    rows={1}
+    className="flex-1 border-none outline-none resize-none p-2 text-sm sm:text-base max-h-40 overflow-y-auto"
+    style={{ height: 'auto', minHeight: '3rem' }}
+  />
+  <button
+    onClick={handleSendMessage}
+    disabled={!newMessage.trim()}
+    className="ml-2 px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 disabled:opacity-50"
+  >
+    Send
+  </button>
+</div>
+
     </div>
   );
 };

@@ -127,9 +127,9 @@ export default function ProfilePage() {
       className="p-4 border border-gray-300 rounded shadow hover:shadow-lg transition"
     >
       <div className="flex items-center justify-between gap-2 mb-2">
-        <h3 className="text-xl font-bold">{advert.title}</h3>
+        <h3 className="text-xs font-bold truncate">{advert.title}</h3>
         <span
-          className={`text-sm font-semibold ${
+          className={`text-xs font-semibold ${
             isExpired ? 'text-red-600' : 'text-gray-600'
           }`}
         >

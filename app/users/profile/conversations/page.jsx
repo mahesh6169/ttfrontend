@@ -46,8 +46,8 @@ const ConversationsPage = () => {
     );
 
   return (
-    <div className="p-1">
-      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center">
+    <div>
+      <h1 className="text-base sm:text-2xl font-bold mb-4 text-center">
         Chat Messages
       </h1>
 
@@ -55,56 +55,57 @@ const ConversationsPage = () => {
         {conversations.map((conv) => {
            if (!conv.otherUser) return null;
            return (
-          <li
-            key={`${conv.resourceId}-${conv.otherUser.id}`}
-            className="p-4 border rounded-lg shadow-md hover:bg-gray-100 flex flex-col gap-2 sm:gap-3 w-full"
-          >
-            {/* Row 1 */}
-            <div
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 cursor-pointer"
-              onClick={() =>
-                router.push(
-                  `/chat/${conv.resourceType}/${conv.resourceId}?otherUser=${conv.otherUser.id}`
-                )
-              }
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <img
-                  src={conv.image || '/default.jpg'}
-                  alt={conv.title}
-                  className="w-14 h-14 rounded-md object-cover shrink-0"
-                />
-                <h2 className="text-lg font-semibold truncate">{conv.title}</h2>
-              </div>
+<li
+  key={`${conv.resourceId}-${conv.otherUser.id}`}
+  className="px-3 py-2 border rounded-md shadow-sm hover:bg-lime-50 flex flex-col gap-1 sm:gap-2 w-full"
+>
+  {/* Row 1 */}
+  <div
+    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 cursor-pointer"
+    onClick={() =>
+      router.push(
+        `/chat/${conv.resourceType}/${conv.resourceId}?otherUser=${conv.otherUser.id}`
+      )
+    }
+  >
+    <div className="flex items-center gap-2 min-w-0">
+      <img
+        src={conv.image || '/default.jpg'}
+        alt={conv.title}
+        className="w-10 h-10 rounded-md object-cover shrink-0"
+      />
+      <h2 className="text-sm font-medium ">{conv.title}</h2>
+    </div>
 
-              <p className="text-sm text-gray-500 sm:text-start">
-                Chat with {conv.otherUser.name}
-              </p>
-            </div>
+    <p className="text-xs text-teal-700 sm:text-start">
+      Chat with {conv.otherUser.name}
+    </p>
+  </div>
 
-            {/* Row 2 */}
-            <div className="pl-0 sm:pl-[4.5rem]">
-              <p className="text-sm text-gray-600 truncate w-[90%]">
-                {conv.lastMessage.text}
-              </p>
-            </div>
+  {/* Row 2 */}
+  <div className="pl-0 sm:pl-[3rem]">
+    <p className="text-xs text-gray-600 truncate w-[90%]">
+      {conv.lastMessage.text}
+    </p>
+  </div>
 
-            {/* Delete Button */}
-            <div className="flex justify-end">
-              <button
-                onClick={() =>
-                  handleDeleteConversation(
-                    conv.resourceId,
-                    conv.otherUser.id,
-                    conv.resourceType
-                  )
-                }
-                className="mt-1 px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </li>
+  {/* Delete Button */}
+  <div className="flex justify-end">
+    <button
+      onClick={() =>
+        handleDeleteConversation(
+          conv.resourceId,
+          conv.otherUser.id,
+          conv.resourceType
+        )
+      }
+      className="mt-1 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+    >
+      Delete
+    </button>
+  </div>
+</li>
+
            );
           })}
       </ul>
