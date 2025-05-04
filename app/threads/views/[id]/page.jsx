@@ -230,99 +230,95 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   </div>
 )}
 
-      {thread.question && (
-        <p className="text-base text-gray-900 mb-8 border-b">
-          {thread.question}
-        </p>
+ {/* Title */}
+ {thread.title && (
+      <div className="my-2 px-4">
+        <h2 className="text-2xl font-bold text-center break-words">{thread.title}</h2>
+      </div>
+    )}
+
+    {/* Category & Posted Info */}
+    <div className="text-sm text-gray-600 mb-2 px-4 text-left flex flex-wrap gap-4">
+      {thread.category && (
+        <span>
+          <strong>Category:</strong> {thread.category}
+        </span>
       )}
-
-      {thread.title && (
-        <Link
-          href={`/support/report?type=thread&id=${threadId}&title=${encodeURIComponent(
-            thread.title
-          )}`}
-          className="text-sm text-red-600 underline ml-2"
-        >
-          Report this thread
-        </Link>
+      {thread.owner?.name && (
+        <span>
+          <strong>Posted By:</strong> {thread.owner?.name}
+        </span>
       )}
+      {thread.createdAt && (
+        <span>
+          <strong>Posted:</strong> {format(new Date(thread.createdAt), 'dd MMM yyyy')}
+        </span>
+      )}
+    </div>
 
-{currentUser && (
-  <div className="flex justify-end mb-2">
-    <button
-      onClick={handleToggleMute}
-      className={`text-xs px-3 py-1 rounded-full border w-auto inline-block ${
-        isMuted
-          ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-          : 'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300'
-      } transition-colors duration-200`}
-    >
-      {isMuted ? 'Unmute' : 'Mute'}
-    </button>
-  </div>
-)}
+    {/* Question */}
+    {thread.question && (
+      <div className="border border-gray-300 rounded p-4 mx-4 mb-4 bg-white shadow">
+        <h3 className="font-semibold mb-2">Question</h3>
+        <p className="text-gray-800 text-justify">{thread.question}</p>
+      </div>
+    )}
 
-
-
-      
-
-      {/* ✅ Useful Answers */}
-      {usefulAnswers.length > 0 && (
-        <div className="mb-10 p-1  border border-green-600 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">
-            Useful Answers
-          </h2>
-          {usefulAnswers.map((msg) => (
-            <div
-              key={msg._id}
-              className="mb-2 p-1 bg-green-50 rounded-lg shadow-sm"
-            >
-              <p className="text-sm font-semibold text-gray-800">
-                {msg.sender?.name || 'Former Member'}
-              </p>
-              <p className="text-gray-700">{msg.message}</p>
-              <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
-                <span>
-                  {new Date(msg.createdAt).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true,
-                  })}
-                </span>
-
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => handleLike(msg._id)}
-                    className={`flex items-center space-x-1 ${
-                      msg.likedBy?.includes(currentUser?._id)
-                        ? 'text-blue-500'
-                        : 'text-gray-500'
-                    }`}
-                  >
-                    👍 {msg.likes || 0}
-                  </button>
-
-                  <button
-                    onClick={() => handleUnlike(msg._id)}
-                    className={`flex items-center space-x-1 ${
-                      msg.dislikedBy?.includes(currentUser?._id)
-                        ? 'text-red-500'
-                        : 'text-gray-500'
-                    }`}
-                  >
-                    👎 {msg.dislikes || 0}
-                  </button>
-                </div>
+    {/* Useful Answers */}
+    {usefulAnswers.length > 0 && (
+      <div className="border border-green-600 rounded p-4 mx-4 mb-4 bg-green-50 shadow">
+        <h3 className="font-semibold mb-2 text-gray-900">Useful Answers</h3>
+        {usefulAnswers.map((msg) => (
+          <div
+            key={msg._id}
+            className="mb-3 p-2 bg-white border rounded shadow-sm"
+          >
+            <p className="text-sm font-semibold text-gray-800">
+              {msg.sender?.name || 'Former Member'}
+            </p>
+            <p className="text-gray-700 text-justify">{msg.message}</p>
+            <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
+              <span>
+                {new Date(msg.createdAt).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true,
+                })}
+              </span>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => handleLike(msg._id)}
+                  className={`flex items-center space-x-1 ${
+                    msg.likedBy?.includes(currentUser?._id)
+                      ? 'text-blue-500'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  👍 {msg.likes || 0}
+                </button>
+                <button
+                  onClick={() => handleUnlike(msg._id)}
+                  className={`flex items-center space-x-1 ${
+                    msg.dislikedBy?.includes(currentUser?._id)
+                      ? 'text-red-500'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  👎 {msg.dislikes || 0}
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
+    )}
 
-      {/* ✅ Message List */}
+    {/* Message Area */}
+    <div className="border border-gray-300 rounded p-4 mx-4 mb-4 bg-white shadow space-y-2">
+      {/* Message List */}
       <div
         ref={messagesContainerRef}
-        className="border rounded-lg p-1 mb-4 max-h-[700px] overflow-y-auto bg-white shadow-md"
+        className="max-h-[500px] overflow-y-auto pr-1"
       >
         {messages.length > 0 ? (
           messages.reduce((acc, msg, index) => {
@@ -333,9 +329,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             const showDateSeparator =
               !prevMsg || !isSameDay(msgDate, prevMsgDate);
 
-            // ✅ Determine side
             let isRightSide = false;
-
             if (currentUser) {
               isRightSide = msg.sender?._id === currentUser?._id;
             } else {
@@ -350,19 +344,19 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                   key={`date-${msg._id}`}
                   className="flex justify-center my-3 w-full"
                 >
-                  <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow">
-                    {new Date(msg.createdAt).toLocaleDateString()}
+                  <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow ">
+                    {msgDate.toLocaleDateString()}
                   </span>
                 </div>
               ),
               <div
                 key={msg._id}
-                className={`mb-1 flex px-2 ${
+                className={`mb-2 flex  ${
                   isRightSide ? 'justify-end' : 'justify-start'
                 }`}
               >
                 <div
-                  className={`relative max-w-[75%] min-w-[100px] p-2 rounded-lg shadow-md break-words whitespace-pre-wrap
+                  className={`relative max-w-[95%] min-w-[100px] px-1 rounded-lg shadow-md break-words whitespace-pre-wrap
                     ${
                       currentUser
                         ? isRightSide
@@ -384,7 +378,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                     </span>
                   </div>
 
-                  <p>{msg.message}</p>
+                  <p >{msg.message}</p>
 
                   <div className="flex items-center space-x-3 mt-2 text-xs">
                     <button
@@ -415,27 +409,38 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ✅ Message Box / Login Prompt */}
+      {/* Message Box or Login Prompt */}
       {currentUser ? (
-        <div className="flex items-center border rounded-lg p-2 shadow-md bg-white">
-          <textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 border-none outline-none p-2 resize-none h-auto overflow-auto"
-            rows="3"
-            style={{ minHeight: '4rem', maxHeight: '10rem' }}
-          />
-          <button
-            onClick={handleSendMessage}
-            className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
-            disabled={!newMessage.trim()}
-          >
-            Send
-          </button>
-        </div>
-      ) : (
-        <div className="border rounded-lg p-4 shadow-md bg-white text-center">
+  <div className="border rounded-lg shadow bg-white p-1 ">
+    <textarea
+      value={newMessage}
+      onChange={(e) => setNewMessage(e.target.value)}
+      placeholder="Type your message..."
+      rows={1}
+      className="w-full border-none outline-none resize-none p-1 text-sm sm:text-base overflow-y-auto"
+      style={{
+        minHeight: '2.5rem',
+        maxHeight: '8rem',
+        height: 'auto',
+      }}
+      onInput={(e) => {
+        e.target.style.height = 'auto';
+        e.target.style.height = `${e.target.scrollHeight}px`;
+      }}
+    />
+
+    <div className="flex justify-end mt-2">
+      <button
+        onClick={handleSendMessage}
+        disabled={!newMessage.trim()}
+        className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 disabled:opacity-50"
+      >
+        Send
+      </button>
+    </div>
+  </div>
+) : (
+        <div className="text-center mt-2">
           <p className="text-gray-700 mb-4">
             You must be logged in to comment or like messages.
           </p>
@@ -467,6 +472,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };
