@@ -12,6 +12,7 @@ import {
 } from '@/store/slices/users/userSlice';
 import { useRouter } from 'next/navigation';
 import { FaEdit, FaTrash } from 'react-icons/fa';
+import { MdNotificationsActive, MdNotificationsOff } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 
@@ -19,8 +20,7 @@ const ManageThreads = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { threads, status, error } = useSelector((state) => state.threads);
-
-  
+  const mutedThreads = useSelector((state) => state.user.mutedThreads || []);
 
   useEffect(() => {
     dispatch(fetchUserThreads());
@@ -33,7 +33,6 @@ const ManageThreads = () => {
     if (!confirmDelete) return;
 
     const result = await dispatch(deleteThread(threadId));
-
     if (deleteThread.fulfilled.match(result)) {
       toast.success('Thread deleted successfully!');
       dispatch(fetchUserThreads());
@@ -46,55 +45,52 @@ const ManageThreads = () => {
     router.push(`/threads/edit/${threadId}`);
   };
 
-  const handleToggleMute = () => {
-    if (isMuted) {
-      dispatch(unmuteThreadNotification(threadId));
-    } else {
-      dispatch(muteThreadNotification(threadId));
-    }
-  };
-
   return (
     <div>
       <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
         Manage Your Threads
       </h1>
+
       <Link
         href="/threads/new"
         onClick={() =>
-          localStorage.setItem(
-            'cancelRedirectUrl',
-            '/users/profile/managethreads'
-          )
+          localStorage.setItem('cancelRedirectUrl', '/users/profile/managethreads')
         }
         className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
       >
         + Post New Thread
       </Link>
 
-      {status === 'loading' && (
-        <p className="text-blue-500">Loading threads...</p>
-      )}
+      {status === 'loading' && <p className="text-blue-500">Loading threads...</p>}
       {error && <p className="text-red-500">{error}</p>}
       {threads.length === 0 && !error && status !== 'loading' && (
         <p>No threads found. Start a new discussion!</p>
       )}
 
-      {threads.length > 0 && (
-        <ul className="space-y-4">
-          {threads.map((thread) => (
+      <ul className="space-y-4">
+        {threads.map((thread) => {
+          const isMuted = mutedThreads.includes(thread._id);
+
+          const toggleMute = () => {
+            isMuted
+              ? dispatch(unmuteThreadNotification(thread._id))
+              : dispatch(muteThreadNotification(thread._id));
+          };
+
+          return (
             <li
               key={thread._id}
-              className="border rounded-lg p-4 flex justify-between items-center hover:bg-gray-100 transition-all duration-200"
+              className="border rounded-lg p-4 shadow-md hover:bg-gray-50 transition-all duration-200"
             >
+              {/* Thread Info */}
               <div
                 onClick={() => router.push(`/threads/views/${thread._id}`)}
-                className="cursor-pointer flex-1"
+                className="cursor-pointer"
               >
                 <h2 className="text-lg font-semibold text-blue-600 hover:underline">
                   {thread.title}
                 </h2>
-                <p className="text-sm text-gray-700 italic">
+                <p className="text-sm text-gray-700 italic line-clamp-2">
                   {thread.question}
                 </p>
                 <p className="text-sm text-gray-500">
@@ -104,26 +100,49 @@ const ManageThreads = () => {
                   Created on: {new Date(thread.createdAt).toLocaleDateString()}
                 </p>
               </div>
-              <div className="flex space-x-3">
+
+              {/* Mute Icon Row */}
+              <div className="flex justify-end mt-3">
+  <button
+    onClick={toggleMute}
+    className="flex items-center gap-2 text-sm text-gray-700 hover:text-teal-700"
+    title={isMuted ? 'Unmute Notifications' : 'Mute Notifications'}
+  >
+    {isMuted ? (
+      <>
+        <MdNotificationsOff size={20} className="text-red-500" />
+        Unmute Email Notifications
+      </>
+    ) : (
+      <>
+        <MdNotificationsActive size={20} className="text-green-600" />
+        Mute Email Notifications
+      </>
+    )}
+  </button>
+</div>
+
+
+              {/* Action Buttons */}
+              <div className="flex justify-between gap-4 mt-4">
                 <button
-                  className="text-blue-500 hover:text-blue-700"
-                  title="Edit Thread"
                   onClick={() => handleEditClick(thread._id)}
+                  className="flex-1 bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
                 >
-                  <FaEdit size={18} />
+                  Edit
                 </button>
+
                 <button
-                  className="text-red-500 hover:text-red-700"
-                  title="Delete Thread"
                   onClick={() => handleDelete(thread._id)}
+                  className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600"
                 >
-                  <FaTrash size={18} />
+                  Delete
                 </button>
               </div>
             </li>
-          ))}
-        </ul>
-      )}
+          );
+        })}
+      </ul>
     </div>
   );
 };
