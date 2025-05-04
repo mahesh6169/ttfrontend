@@ -63,13 +63,12 @@ const AddEventPage = () => {
     timeZone: '',
     venue: '',
     description: '',
-    organiserName: '',
-    organiserEmail: '',
-    organiserWebsite: '',
-    organiserPrimaryContactName: '',
-    organiserPrimaryContactPhone: '',
-    organiserSecondaryContactName: '',
-    organiserSecondaryContactPhone: '',
+    organiser: {
+      name: '',
+      email: '',
+      website: '',
+      contacts: [{ name: '', designation: '', phone: '' }],
+    },
     address: {
       formattedAddress: '',
       streetNumber: '',
@@ -117,16 +116,16 @@ const AddEventPage = () => {
       { condition: !formData.venue, message: 'Venue is required.' },
       { condition: !formData.description, message: 'Description is required.' },
       {
-        condition: !formData.organiserName,
+        condition: !formData.organiser?.name,
         message: 'Organiser name is required.',
       },
       {
-        condition: !formData.organiserPrimaryContactName,
-        message: 'Primary contact name is required.',
+        condition: !formData.organiser?.contacts?.[0]?.name,
+        message: 'At least one contact name is required.',
       },
       {
-        condition: !formData.organiserPrimaryContactPhone,
-        message: 'Primary contact phone is required.',
+        condition: !formData.organiser?.contacts?.[0]?.phone,
+        message: 'At least one contact phone is required.',
       },
       {
         condition: !formData.address.formattedAddress,
@@ -167,7 +166,9 @@ const AddEventPage = () => {
       if (key === 'images') {
         value.forEach((file) => formPayload.append('images', file));
       } else if (key === 'address') {
-        formPayload.append(key, JSON.stringify(value));
+        formPayload.append('address', JSON.stringify(value));
+      } else if (key === 'organiser') {
+        formPayload.append('organiser', JSON.stringify(value));
       } else if (key === 'dateTime') {
         const utcDate = zonedTimeToUtc(value, formData.timeZone);
         formPayload.append('dateTime', utcDate.toISOString());
@@ -175,6 +176,7 @@ const AddEventPage = () => {
         formPayload.append(key, value ?? '');
       }
     });
+    
 
     try {
       const resultAction = await dispatch(addEvent(formPayload));
@@ -395,30 +397,138 @@ const AddEventPage = () => {
           />
 
           {/* 7–13. Organiser Fields */}
-          {[
-            'organiserName',
-            'organiserEmail',
-            'organiserWebsite',
-            'organiserPrimaryContactName',
-            'organiserPrimaryContactPhone',
-            'organiserSecondaryContactName',
-            'organiserSecondaryContactPhone',
-          ].map((field) => (
-            <div key={field}>
-              <label className="block font-semibold">
-                {field
-                  .replace(/([A-Z])/g, ' $1')
-                  .replace(/^./, (str) => str.toUpperCase())}
-              </label>
-              <input
-                type={field.includes('Email') ? 'email' : 'text'}
-                name={field}
-                value={formData[field]}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-          ))}
+{/* 7. Organiser Fields */}
+<div>
+  <label className="block font-semibold">Organiser Name</label>
+  <input
+    type="text"
+    name="organiser.name"
+    value={formData.organiser.name}
+    onChange={(e) =>
+      setFormData((prev) => ({
+        ...prev,
+        organiser: { ...prev.organiser, name: e.target.value },
+      }))
+    }
+    className="w-full p-2 border rounded"
+  />
+</div>
+
+<div>
+  <label className="block font-semibold">Organiser Email</label>
+  <input
+    type="email"
+    name="organiser.email"
+    value={formData.organiser.email}
+    onChange={(e) =>
+      setFormData((prev) => ({
+        ...prev,
+        organiser: { ...prev.organiser, email: e.target.value },
+      }))
+    }
+    className="w-full p-2 border rounded"
+  />
+</div>
+
+<div>
+  <label className="block font-semibold">Organiser Website</label>
+  <input
+    type="text"
+    name="organiser.website"
+    value={formData.organiser.website}
+    onChange={(e) =>
+      setFormData((prev) => ({
+        ...prev,
+        organiser: { ...prev.organiser, website: e.target.value },
+      }))
+    }
+    className="w-full p-2 border rounded"
+  />
+</div>
+
+{/* 🔁 Organiser Contacts Dynamic List */}
+<div className="border rounded p-3 bg-gray-50">
+  <label className="block font-semibold mb-2">Organiser Contacts</label>
+  {formData.organiser.contacts.map((contact, idx) => (
+    <div key={idx} className="mb-2 space-y-1 border-b pb-2">
+      <input
+        type="text"
+        placeholder="Name"
+        value={contact.name}
+        onChange={(e) => {
+          const updated = [...formData.organiser.contacts];
+          updated[idx].name = e.target.value;
+          setFormData((prev) => ({
+            ...prev,
+            organiser: { ...prev.organiser, contacts: updated },
+          }));
+        }}
+        className="w-full p-1 border rounded"
+      />
+      <input
+        type="text"
+        placeholder="Designation"
+        value={contact.designation}
+        onChange={(e) => {
+          const updated = [...formData.organiser.contacts];
+          updated[idx].designation = e.target.value;
+          setFormData((prev) => ({
+            ...prev,
+            organiser: { ...prev.organiser, contacts: updated },
+          }));
+        }}
+        className="w-full p-1 border rounded"
+      />
+      <input
+        type="text"
+        placeholder="Phone"
+        value={contact.phone}
+        onChange={(e) => {
+          const updated = [...formData.organiser.contacts];
+          updated[idx].phone = e.target.value;
+          setFormData((prev) => ({
+            ...prev,
+            organiser: { ...prev.organiser, contacts: updated },
+          }));
+        }}
+        className="w-full p-1 border rounded"
+      />
+      <button
+        type="button"
+        onClick={() => {
+          const filtered = formData.organiser.contacts.filter(
+            (_, i) => i !== idx
+          );
+          setFormData((prev) => ({
+            ...prev,
+            organiser: { ...prev.organiser, contacts: filtered },
+          }));
+        }}
+        className="text-sm text-red-600 mt-1"
+      >
+        Remove
+      </button>
+    </div>
+  ))}
+  {formData.organiser.contacts.length < 10 && (
+    <button
+      type="button"
+      onClick={() =>
+        setFormData((prev) => ({
+          ...prev,
+          organiser: {
+            ...prev.organiser,
+            contacts: [...prev.organiser.contacts, { name: '', designation: '', phone: '' }],
+          },
+        }))
+      }
+      className="text-sm text-blue-600 underline"
+    >
+      + Add Contact
+    </button>
+  )}
+</div>
+
 
           {/* 14. Upload Images */}
           <ImageUploader

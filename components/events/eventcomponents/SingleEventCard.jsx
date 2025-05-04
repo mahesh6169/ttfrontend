@@ -206,35 +206,52 @@ const SingleEventCard = ({ event, chatProps }) => {
   </div>
 
   {/* Event Organiser */}
-  {(event.organiser?.name || event.organiser?.primaryContact?.name) && (
-    <div className="border border-gray-300 p-4 rounded text-left">
-      <h3 className="font-semibold mb-2">Event Organiser</h3>
-      {event.organiser?.name && (
-        <p>
-          <strong>Name:</strong> {event.organiser.name}
-        </p>
-      )}
-      {event.organiser?.website && (
-        <p>
-          <strong>Website:</strong> {event.organiser.website}
-        </p>
-      )}
-      {event.organiser?.primaryContact?.name && (
-        <p>
-          <strong>Primary Contact:</strong>{' '}
-          {event.organiser.primaryContact.name} /{' '}
-          {event.organiser.primaryContact.phone}
-        </p>
-      )}
-      {event.organiser?.secondaryContact?.name && (
-        <p>
-          <strong>Secondary Contact:</strong>{' '}
-          {event.organiser.secondaryContact.name} /{' '}
-          {event.organiser.secondaryContact.phone}
-        </p>
-      )}
-    </div>
-  )}
+  {/* Event Organiser */}
+{event.organiser?.name && (
+  <div className="border border-gray-300 p-4 rounded text-left">
+    <h3 className="font-semibold mb-2">Event Organiser</h3>
+
+    {event.organiser.name && (
+      <p>
+        <strong>Name:</strong> {event.organiser.name}
+      </p>
+    )}
+    {event.organiser.email && (
+      <p>
+        <strong>Email:</strong> {event.organiser.email}
+      </p>
+    )}
+    {event.organiser.website && (
+      <p>
+        <strong>Website:</strong>{' '}
+        <a
+          href={event.organiser.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline"
+        >
+          {event.organiser.website}
+        </a>
+      </p>
+    )}
+
+    {Array.isArray(event.organiser.contacts) && event.organiser.contacts.length > 0 && (
+      <div className="mt-3">
+        <strong>Contacts:</strong>
+        <ul className="list-disc list-inside space-y-1 mt-1">
+          {event.organiser.contacts.map((c, idx) => (
+            <li key={idx}>
+              {c.name && <span>{c.name}</span>}
+              {c.designation && <span> ({c.designation})</span>}
+              {c.phone && <span> — {c.phone}</span>}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </div>
+)}
+
     {/* Chat on mobile (optional) */}
     {chatProps && (
     <div className="block md:hidden border border-gray-200 rounded p-1">
