@@ -21,6 +21,8 @@ import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { FaTimes } from 'react-icons/fa';
+import { MdNotificationsActive, MdNotificationsOff } from "react-icons/md";
+
 
 const ThreadChatPage = () => {
   const { id: threadId } = useParams();
@@ -165,14 +167,16 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     .slice(0, 3);
 
   return (
-    <div className="border rounded shadow-md mx-auto">  
-         {/* 🖼️ Image Preview Section */}
+    
+    <div className="border  rounded shadow-md mx-auto">  
+
+ {/* 🖼️ Image Preview Section */}
 {thread.images?.length > 0 && (
-  <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded mb-4">
+  <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded mb-4 ">
     <img
       src={thread.images[currentImageIndex].url}
       alt="Thread Image"
-      className="object-cover h-full w-full cursor-pointer"
+      className="object-cover h-full w-full cursor-pointer "
       onClick={() => setIsFullscreen(true)}
     />
 
@@ -232,13 +236,13 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
  {/* Title */}
  {thread.title && (
-      <div className="my-2 px-4">
+      <div className="my-2 px-4 ">
         <h2 className="text-2xl font-bold text-center break-words">{thread.title}</h2>
       </div>
     )}
 
     {/* Category & Posted Info */}
-    <div className="text-sm text-gray-600 mb-2 px-4 text-left flex flex-wrap gap-4">
+    <div className="text-sm text-gray-600 mb-2 px-4 text-left flex flex-wrap gap-4 ">
       {thread.category && (
         <span>
           <strong>Category:</strong> {thread.category}
@@ -256,9 +260,36 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       )}
     </div>
 
+{/* Mute Notifications */}
+{currentUser && (
+  <div className="flex justify-end mb-2">
+    <button
+      onClick={handleToggleMute}
+      className={`flex items-center gap-2 text-xs px-3 py-1 rounded-full border w-auto inline-block ${
+        isMuted
+          ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+          : 'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300'
+      } transition-colors duration-200`}
+    >
+      {isMuted ? (
+        <>
+          <MdNotificationsOff className="text-base" />
+          Unmute Email Notifications
+        </>
+      ) : (
+        <>
+          <MdNotificationsActive className="text-base" />
+          Mute Email Notifications
+        </>
+      )}
+    </button>
+  </div>
+)}
+
+
     {/* Question */}
     {thread.question && (
-      <div className="border border-gray-300 rounded p-4 mx-4 mb-4 bg-white shadow">
+      <div className="border border-gray-300 rounded mb-4 bg-white shadow">
         <h3 className="font-semibold mb-2">Question</h3>
         <p className="text-gray-800 text-justify">{thread.question}</p>
       </div>
@@ -266,7 +297,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     {/* Useful Answers */}
     {usefulAnswers.length > 0 && (
-      <div className="border border-green-600 rounded p-4 mx-4 mb-4 bg-green-50 shadow">
+      <div className="border  rounded  mb-4 bg-green-50 shadow">
         <h3 className="font-semibold mb-2 text-gray-900">Useful Answers</h3>
         {usefulAnswers.map((msg) => (
           <div
@@ -314,11 +345,11 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     )}
 
     {/* Message Area */}
-    <div className="border border-gray-300 rounded p-4 mx-4 mb-4 bg-white shadow space-y-2">
+    <div className="border rounded  mb-4 bg-white shadow space-y-2">
       {/* Message List */}
       <div
         ref={messagesContainerRef}
-        className="max-h-[500px] overflow-y-auto pr-1"
+        className="max-h-[500px] overflow-y-auto pr-1 border"
       >
         {messages.length > 0 ? (
           messages.reduce((acc, msg, index) => {
@@ -356,7 +387,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 }`}
               >
                 <div
-                  className={`relative max-w-[95%] min-w-[100px] px-1 rounded-lg shadow-md break-words whitespace-pre-wrap
+                  className={`relative max-w-[95%] min-w-[100px] px-2 rounded-lg shadow-md break-words whitespace-pre-wrap
                     ${
                       currentUser
                         ? isRightSide
@@ -411,7 +442,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
       {/* Message Box or Login Prompt */}
       {currentUser ? (
-  <div className="border rounded-lg shadow bg-white p-1 ">
+  <div className="border rounded-lg shadow bg-white p-1  ">
     <textarea
       value={newMessage}
       onChange={(e) => setNewMessage(e.target.value)}

@@ -21,6 +21,8 @@ export default function ProfilePage() {
     error: advertError 
   } = useSelector((state) => state.userAdverts);
 
+  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [advertToDelete, setAdvertToDelete] = useState(null);
 

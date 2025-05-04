@@ -6,6 +6,10 @@ import {
   fetchUserThreads,
   deleteThread,
 } from '@/store/slices/threads/threadSlice';
+import {
+  muteThreadNotification,
+  unmuteThreadNotification,
+} from '@/store/slices/users/userSlice';
 import { useRouter } from 'next/navigation';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
@@ -16,6 +20,7 @@ const ManageThreads = () => {
   const router = useRouter();
   const { threads, status, error } = useSelector((state) => state.threads);
 
+  
 
   useEffect(() => {
     dispatch(fetchUserThreads());
@@ -39,6 +44,14 @@ const ManageThreads = () => {
 
   const handleEditClick = (threadId) => {
     router.push(`/threads/edit/${threadId}`);
+  };
+
+  const handleToggleMute = () => {
+    if (isMuted) {
+      dispatch(unmuteThreadNotification(threadId));
+    } else {
+      dispatch(muteThreadNotification(threadId));
+    }
   };
 
   return (
