@@ -42,6 +42,9 @@ const ThreadChatPage = () => {
   const isMuted = useSelector((state) =>
     state.user.mutedThreads?.includes(threadId)
   );
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
 
   // ✅ Visitor Sender-Side Assignment..
@@ -135,6 +138,21 @@ const ThreadChatPage = () => {
     }
   };
   
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) =>
+      thread.images && thread.images.length > 0 ? (prev + 1) % thread.images.length : 0
+    );
+  };
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) =>
+      thread.images && thread.images.length > 0
+        ? prev === 0
+          ? thread.images.length - 1
+          : prev - 1
+        : 0
+    );
+  }
 
   const sortedMessages = [...messages].sort(
     (a, b) => b.likes - b.dislikes - (a.likes - a.dislikes)
@@ -145,21 +163,67 @@ const ThreadChatPage = () => {
     .slice(0, 3);
 
   return (
-    <div className="flex flex-col justify-center min-h-screen">
-      <h1 className="text-lg font-bold mb-2">
-        {thread.title || 'Thread Discussion'}
-      </h1>
-      
+    <div className="flex flex-col justify-center min-h-screen">  
+         {thread.images?.length > 0 && (
+  <div className="relative w-full  bg-gray-200 flex items-center justify-center overflow-hidden rounded mb-4">
+    <img
+      src={thread.images[currentImageIndex].url}
+      alt="Thread Image"
+      className="object-cover h-full w-full cursor-pointer"
+      onClick={() => setIsFullscreen(true)}
+    />
+    {thread.images.length > 1 && (
+      <>
+        <button
+          onClick={handlePrevImage}
+          className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+        >
+          ‹
+        </button>
+        <button
+          onClick={handleNextImage}
+          className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+        >
+          ›
+        </button>
+      </>
+    )}
+  </div>
+)}
 
-      {thread.images?.[0]?.url && (
-        <div className="relative w-full h-[500px] bg-gray-200 flex items-center justify-center overflow-hidden rounded mb-4">
-          <img
-            src={thread.images[0].url}
-            alt="Thread Image"
-            className="object-cover h-full w-full"
-          />
-        </div>
-      )}
+{isFullscreen && (
+  <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+    <img
+      src={thread.images[currentImageIndex].url}
+      alt="Thread Full"
+      className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
+    />
+
+    {/* Close Button */}
+    <button
+      onClick={() => setIsFullscreen(false)}
+      className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+    >
+      ✕
+    </button>
+
+    {/* Prev/Next Buttons */}
+    <button
+      onClick={handlePrevImage}
+      className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+    >
+      ‹
+    </button>
+    <button
+      onClick={handleNextImage}
+      className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+    >
+      ›
+    </button>
+  </div>
+)}
+
+
 
       {thread.question && (
         <p className="text-base text-gray-900 mb-8 border-b">
