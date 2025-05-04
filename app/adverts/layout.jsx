@@ -4,7 +4,7 @@ import LeftAd from '@/components/ads/LeftAd';
 import RightAd from '@/components/ads/RightAd';
 import Footer from '@/components/Footer';
 
-const FunctionsLayout = ({ children }) => {
+const AdvertsLayout = ({ children }) => {
   return (
     <main id="Parent" className="container my-2 mx-auto">
       <TopAd />
@@ -21,4 +21,4 @@ const FunctionsLayout = ({ children }) => {
   );
 };
 
-export default FunctionsLayout;
+export default AdvertsLayout;

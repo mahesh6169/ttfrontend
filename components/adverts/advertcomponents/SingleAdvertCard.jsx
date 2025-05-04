@@ -3,6 +3,7 @@ import { FaTimes, FaHeart } from 'react-icons/fa';
 import { format, differenceInDays } from 'date-fns';
 import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
 import SendMessage from '@/components/chat/SendMessage';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 
 const FALLBACK_IMAGE_URL =
@@ -26,8 +27,10 @@ const FALLBACK_IMAGE_URL =
 
   const handleImageClick = () => setIsFullscreen(true);
   const handleCloseFullscreen = () => setIsFullscreen(false);
+
   const handleNextImage = () =>
     setCurrentImageIndex((prev) => (prev + 1) % advert.images.length);
+
   const handlePrevImage = () =>
     setCurrentImageIndex((prev) =>
       prev === 0 ? advert.images.length - 1 : prev - 1
@@ -60,6 +63,23 @@ const FALLBACK_IMAGE_URL =
           />
         )}
 
+         {advert.images?.length > 1 && (
+                  <>
+                    <button
+                      onClick={handlePrevImage}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+                    >
+                      <FaChevronLeft />
+                    </button>
+                    <button
+                      onClick={handleNextImage}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+                    >
+                      <FaChevronRight />
+                    </button>
+                  </>
+                )}
+
         {/* Wishlist Button */}
         <button
           onClick={() => toggleWishlist(advert._id)}
@@ -80,34 +100,38 @@ const FALLBACK_IMAGE_URL =
 
       {/* Fullscreen Modal */}
       {isFullscreen && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-          <div className="relative w-full h-full flex items-center justify-center">
-            <img
-              src={advert.images[currentImageIndex].url}
-              alt={advert.title || 'Advert Image'}
-              className="max-w-full max-h-full object-contain"
-            />
-            <button
-              onClick={handleCloseFullscreen}
-              className="absolute top-1/3 bg-white text-black p-2 rounded-full shadow hover:bg-gray-200 transition z-50"
-            >
-              <FaTimes size={30} />
-            </button>
-            <button
-              onClick={handlePrevImage}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white text-black p-2 rounded-full shadow hover:bg-gray-200 transition"
-            >
-              Prev
-            </button>
-            <button
-              onClick={handleNextImage}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white text-black p-2 rounded-full shadow hover:bg-gray-200 transition"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+    {/* Image itself fills screen with padding and proper scaling */}
+    <img
+      src={advert.images[currentImageIndex].url}
+      alt={advert.title || 'Advert Image'}
+      className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
+    />
+
+    {/* Close Button */}
+    <button
+      onClick={handleCloseFullscreen}
+      className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+    >
+      <FaTimes size={30} />
+    </button>
+
+    {/* Prev/Next Buttons */}
+    <button
+      onClick={handlePrevImage}
+      className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+    >
+      Prev
+    </button>
+    <button
+      onClick={handleNextImage}
+      className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+    >
+      Next
+    </button>
+  </div>
+)}
+
 
       {/* Title */}
       {advert.title && (

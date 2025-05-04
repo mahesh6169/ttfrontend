@@ -10,6 +10,7 @@ import Pagination from '@/components/Pagination';
 import SelectSlider from '@/components/SelectSlider';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { format, parse, addMonths } from 'date-fns';
 
 const libraries = ['places'];
@@ -206,7 +207,7 @@ const EventsPage = () => {
             className="px-2 py-1 rounded bg-teal-700 text-lime-100 hover:bg-teal-800"
             aria-label="Previous Month"
           >
-            ◀
+            <FaChevronLeft />
           </button>
           <span className="font-semibold min-w-[120px] text-center text-xs sm:text-base">
             {isMonthSelected 
@@ -218,7 +219,7 @@ const EventsPage = () => {
             className="px-2 py-1 rounded bg-teal-700 text-lime-100 hover:bg-teal-800"
             aria-label="Next Month"
           >
-            ▶
+            <FaChevronRight />
           </button>
         </div>
       </div>

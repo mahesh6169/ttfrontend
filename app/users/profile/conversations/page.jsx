@@ -74,10 +74,10 @@ const ConversationsPage = () => {
         alt={conv.title}
         className="w-10 h-10 rounded-md object-cover shrink-0"
       />
-      <h2 className="text-sm font-medium ">{conv.title}</h2>
+      <h2 className="text-xs sm:text-sm font-medium ">{conv.title}</h2>
     </div>
 
-    <p className="text-xs text-teal-700 sm:text-start">
+    <p className="text-xs sm:text-sm font-medium text-teal-700 sm:text-start">
       Chat with {conv.otherUser.name}
     </p>
   </div>

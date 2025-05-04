@@ -5,8 +5,11 @@ import { FaTimes, FaHeart } from 'react-icons/fa';
 import { MdLocationOn } from 'react-icons/md';
 import { differenceInDays, format } from 'date-fns';
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
+import SendMessage from '@/components/chat/SendMessage';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
-const SingleEventCard = ({ event }) => {
+
+const SingleEventCard = ({ event, chatProps }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -70,9 +73,9 @@ const SingleEventCard = ({ event }) => {
       : format(new Date(event.createdAt), 'dd MMM yyyy');
 
   return (
-    <div className="border p-4 rounded shadow-md bg-white max-w-[800px] mx-auto">
+    <div className="border rounded shadow-md mx-auto">
       {/* Image Section */}
-      <div className="relative w-full h-[500px] bg-gray-200 flex items-center justify-center overflow-hidden rounded">
+      <div className="relative w-full mx-auto bg-gray-200 flex  overflow-hidden rounded">
         {event.images?.length > 0 ? (
           <img
             src={event.images[currentImageIndex].url}
@@ -88,15 +91,15 @@ const SingleEventCard = ({ event }) => {
           <>
             <button
               onClick={handlePrevImage}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
             >
-              Prev
+              <FaChevronLeft />
             </button>
             <button
               onClick={handleNextImage}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
             >
-              Next
+              <FaChevronRight />
             </button>
           </>
         )}
@@ -115,92 +118,141 @@ const SingleEventCard = ({ event }) => {
       </div>
 
       {isFullscreen && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-          <div className="relative w-full h-full flex items-center justify-center">
-            <img
-              src={event.images[currentImageIndex].url}
-              alt="Event Full"
-              className="max-w-full max-h-full object-contain"
-            />
-            <button
-              onClick={() => setIsFullscreen(false)}
-              className="absolute top-4 right-4 bg-white p-2 rounded-full"
-            >
-              <FaTimes size={24} />
-            </button>
-            <button
-              onClick={handlePrevImage}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full"
-            >
-              Prev
-            </button>
-            <button
-              onClick={handleNextImage}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+    <img
+      src={event.images[currentImageIndex].url}
+      alt="Event Full"
+      className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
+    />
+
+    {/* Close Button */}
+    <button
+      onClick={() => setIsFullscreen(false)}
+      className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+    >
+      <FaTimes size={30} />
+    </button>
+
+    {/* Prev/Next Buttons */}
+    <button
+      onClick={handlePrevImage}
+      className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+    >
+      <FaChevronLeft />
+    </button>
+    <button
+      onClick={handleNextImage}
+      className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+    >
+      <FaChevronRight />
+    </button>
+  </div>
+)}
+
 
       {/* Event Info */}
       <div className="p-4 space-y-4">
-        <h2 className="text-3xl font-bold text-center">{event.title}</h2>
-        <div className="text-xs text-left text-gray-500">{event.category}</div>
+  {/* Title */}
+  {event.title && (
+    <div className="my-2 px-2">
+      <h2 className="text-2xl font-bold text-center break-words">{event.title}</h2>
+    </div>
+  )}
 
-        <div className="flex justify-between text-base text-gray-700">
-          <span>
-            <strong>Posted By:</strong> {event.postedBy?.name || 'N/A'}
-          </span>
-          <span>
-            <strong>Posted:</strong> {postedText}
-          </span>
-        </div>
+  {/* Category */}
+  {event.category && (
+    <div className="text-sm text-gray-600 mb-2 px-2 text-left">
+      <strong>Category:</strong> {event.category}
+    </div>
+  )}
 
-        <div>
-          <h3 className="font-bold text-lg mb-2">Event Details</h3>
-          <p>🗓️ {eventDateStr}</p>
-          <p>
-            ⏰ {eventTimeStr} {eventZoneCity}
-            {showLocalTime && <> || {localTimeStr} {localZoneCity}</>}
-          </p>
-          <p className="mt-2 flex gap-2 items-start">
-            📍{' '}
-            <span className="flex flex-col">
-              <span>{event.venue}</span>
-              <span>{event.address?.formattedAddress}</span>
-            </span>
-          </p>
-        </div>
+  {/* Posted By */}
+  {(event.postedBy?.name || postedText) && (
+    <div className="flex justify-start gap-4 text-sm text-gray-600 mb-2 px-2 text-left">
+      {event.postedBy?.name && (
+        <span>
+          <strong>Posted By:</strong> {event.postedBy.name}
+        </span>
+      )}
+      {postedText && (
+        <span>
+          <strong>Posted:</strong> {postedText}
+        </span>
+      )}
+    </div>
+  )}
 
-        <div>
-          <h3 className="font-bold text-lg mb-2">Event Organiser</h3>
-          <p>
-            <strong>Name:</strong> {event.organiser?.name}
-          </p>
-          <p>
-            <strong>Website:</strong> {event.organiser?.website || 'N/A'}
-          </p>
-          <p>
-            <strong>Primary Contact:</strong>{' '}
-            {event.organiser?.primaryContact?.name} /{' '}
-            {event.organiser?.primaryContact?.phone}
-          </p>
-          {event.organiser?.secondaryContact?.name && (
-            <p>
-              <strong>Secondary Contact:</strong>{' '}
-              {event.organiser.secondaryContact.name} /{' '}
-              {event.organiser.secondaryContact.phone}
-            </p>
+  {/* Event Details */}
+  <div className="border border-gray-300 p-4 rounded text-left">
+    <h3 className="font-semibold mb-2">Event Details</h3>
+    {eventDateStr && <p className="text-gray-700">🗓️ {eventDateStr}</p>}
+    {eventTimeStr && (
+      <p className="text-gray-700">
+        ⏰ {eventTimeStr} {eventZoneCity}
+        {showLocalTime && <> || {localTimeStr} {localZoneCity}</>}
+      </p>
+    )}
+    {(event.venue || event.address?.formattedAddress) && (
+      <p className="mt-2 flex gap-2 items-start text-gray-700">
+        <MdLocationOn className="text-xl mt-0.5" />
+        <span className="flex flex-col">
+          {event.venue && <span>{event.venue}</span>}
+          {event.address?.formattedAddress && (
+            <span>{event.address.formattedAddress}</span>
           )}
-        </div>
+        </span>
+      </p>
+    )}
+  </div>
 
-        <div>
-          <h3 className="font-bold text-lg mb-2">Description</h3>
-          <p className="text-gray-700">{event.description}</p>
-        </div>
-      </div>
+  {/* Event Organiser */}
+  {(event.organiser?.name || event.organiser?.primaryContact?.name) && (
+    <div className="border border-gray-300 p-4 rounded text-left">
+      <h3 className="font-semibold mb-2">Event Organiser</h3>
+      {event.organiser?.name && (
+        <p>
+          <strong>Name:</strong> {event.organiser.name}
+        </p>
+      )}
+      {event.organiser?.website && (
+        <p>
+          <strong>Website:</strong> {event.organiser.website}
+        </p>
+      )}
+      {event.organiser?.primaryContact?.name && (
+        <p>
+          <strong>Primary Contact:</strong>{' '}
+          {event.organiser.primaryContact.name} /{' '}
+          {event.organiser.primaryContact.phone}
+        </p>
+      )}
+      {event.organiser?.secondaryContact?.name && (
+        <p>
+          <strong>Secondary Contact:</strong>{' '}
+          {event.organiser.secondaryContact.name} /{' '}
+          {event.organiser.secondaryContact.phone}
+        </p>
+      )}
+    </div>
+  )}
+    {/* Chat on mobile (optional) */}
+    {chatProps && (
+    <div className="block md:hidden border border-gray-200 rounded p-1">
+      <SendMessage {...chatProps} />
+    </div>
+  )}
+
+  {/* Description */}
+  {event.description && (
+    <div className="border border-gray-300 p-4 rounded text-left">
+      <h3 className="font-semibold mb-2">Description</h3>
+      <p className="text-gray-800 text-justify">{event.description}</p>
+    </div>
+  )}
+
+
+</div>
+
     </div>
   );
 };

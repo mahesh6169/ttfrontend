@@ -11,6 +11,7 @@ import SelectSlider from '@/components/SelectSlider';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { RiAdvertisementLine } from "react-icons/ri";
 
+
 import Link from 'next/link';
 
 const libraries = ['places'];

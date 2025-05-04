@@ -126,7 +126,7 @@ useEffect(() => {
     className="inline-flex items-center gap-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium cursor-pointer"
   >
     <RiArrowGoBackFill className="text-xs sm:text-base" />
-    <span>Back to Adverts</span>
+    <span>Back</span>
   </span>
 </div>
       {/* Header */}

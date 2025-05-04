@@ -7,6 +7,8 @@ import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SingleEventCard from '@/components/events/eventcomponents/SingleEventCard';
 import SendMessage from '@/components/chat/SendMessage';
+import { RiArrowGoBackFill } from "react-icons/ri";
+import { MdReport } from "react-icons/md";
 import Link from 'next/link';
 
 const EventDetail = () => {
@@ -41,26 +43,46 @@ const EventDetail = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Go Back Button */}
-      <div className="text-left">
-        <button
-          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-          onClick={() => router.back()}
-        >
-          Go Back
-        </button>
-      </div>
+    <div className="flex flex-col gap-2 px-2">
+      {/* Row 1: Back & Report */}
+      <div className=" mt-4 flex justify-between">
+  {/* Back to Adverts */}
+  <span
+    onClick={() => router.back()}
+    className="flex items-center gap-2 bg-yellow-400  text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium"
+  >
+    <RiArrowGoBackFill className="text-xs sm:text-base " />
+    <span>Back to Events</span>
+  </span>
+
+  {/* Report this Advert */}
+  <Link
+    href={`/support/report?type=advert&id=${id}&title=${encodeURIComponent(selectedEvent.title)}`}
+    className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800"
+  >
+    <MdReport className="text-lg" />
+    <span>Report this Event</span>
+  </Link>
+</div>
 
       {/* Layout: Card + Chat */}
-      <div className="flex flex-col lg:flex-row gap-2">
+      <div className="flex flex-col lg:flex-row gap-4">
         {/* Event Details */}
-        <div className="flex-[7] border-r bg-white">
-          <SingleEventCard event={selectedEvent} />
+        <div className="flex-[7] bg-white w-full">
+          <SingleEventCard 
+          event={selectedEvent}
+          chatProps={{
+            resourceId: id,
+            resourceType: 'event',
+            participantId: selectedEvent.postedBy?._id,
+            owner: selectedEvent.postedBy?.name,
+            preserveRedirectUrl: `/events/views/${id}`,
+          }} 
+          />
         </div>
 
-        {/* Chat Container */}
-        <div className="flex-[3] bg-white shadow rounded-none p-4">
+        {/* Chat Container: desktop only */}
+        <div className="hidden lg:block flex-[3] shadow p-2 self-start">
           <SendMessage
             resourceId={id}
             resourceType="event"
