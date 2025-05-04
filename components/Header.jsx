@@ -144,18 +144,18 @@ const Header = () => {
 
       {isMobileMenuOpen && (
         <>
-          <div className="fixed top-0 left-0 h-full w-64 bg-white z-50 shadow-lg transform transition-transform duration-300 ease-in-out translate-x-0">
-            <div className="flex items-center justify-between p-4 border-b shadow-sm">
+          <div className="fixed top-0 left-0 h-full w-64 z-50 shadow-lg transform transition-transform duration-300 ease-in-out translate-x-0 bg-teal-700">
+            <div className="flex items-center justify-between p-4 border-b shadow-sm text-lime-100">
               <h2 className="text-lg font-semibold">Account</h2>
               <button
                 onClick={toggleMobileMenu}
-                className="p-2 bg-gray-100 rounded-md shadow"
+                className="p-2 bg-teal-700 rounded-md shadow"
               >
                 <IoClose size={20} />
               </button>
             </div>
 
-            <nav className="p-4 space-y-2">
+            <nav className="p-4 space-y-2 text-lime-100">
               {isAuthenticated ? (
                 <>
                   <NavLink
