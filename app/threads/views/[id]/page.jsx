@@ -19,6 +19,8 @@ import {
 import threadSocket from '@/config/threadSocket';
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaTimes } from 'react-icons/fa';
 
 const ThreadChatPage = () => {
   const { id: threadId } = useParams();
@@ -163,34 +165,37 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     .slice(0, 3);
 
   return (
-    <div className="flex flex-col justify-center min-h-screen">  
-         {thread.images?.length > 0 && (
-  <div className="relative w-full  bg-gray-200 flex items-center justify-center overflow-hidden rounded mb-4">
+    <div className="border rounded shadow-md mx-auto">  
+         {/* 🖼️ Image Preview Section */}
+{thread.images?.length > 0 && (
+  <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded mb-4">
     <img
       src={thread.images[currentImageIndex].url}
       alt="Thread Image"
       className="object-cover h-full w-full cursor-pointer"
       onClick={() => setIsFullscreen(true)}
     />
+
     {thread.images.length > 1 && (
       <>
         <button
           onClick={handlePrevImage}
           className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
         >
-          ‹
+          <FaChevronLeft />
         </button>
         <button
           onClick={handleNextImage}
           className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
         >
-          ›
+          <FaChevronRight />
         </button>
       </>
     )}
   </div>
 )}
 
+{/* 🖼️ Fullscreen Image Viewer */}
 {isFullscreen && (
   <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
     <img
@@ -199,31 +204,31 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
     />
 
-    {/* Close Button */}
+    {/* ✖️ Close Button */}
     <button
       onClick={() => setIsFullscreen(false)}
       className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
     >
-      ✕
+      <FaTimes size={30} />
     </button>
 
-    {/* Prev/Next Buttons */}
+    {/* ⬅️ Prev Button */}
     <button
       onClick={handlePrevImage}
       className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
     >
-      ‹
+      <FaChevronLeft />
     </button>
+
+    {/* ➡️ Next Button */}
     <button
       onClick={handleNextImage}
       className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
     >
-      ›
+      <FaChevronRight />
     </button>
   </div>
 )}
-
-
 
       {thread.question && (
         <p className="text-base text-gray-900 mb-8 border-b">
