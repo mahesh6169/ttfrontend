@@ -9,6 +9,7 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
+import { useRef } from 'react';
 
 const libraries = ['places'];
 
@@ -67,6 +68,7 @@ const EditThreadPage = () => {
   const [autocomplete, setAutocomplete] = useState(null);
   const [errors, setErrors] = useState({});
   const [locationInput, setLocationInput] = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (threadId) {
@@ -119,14 +121,36 @@ useEffect(() => {
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    if (files.length + preview.length > 3) {
-      toast.warning('You can upload up to 3 images only.');
+  
+    if (files.length + preview.length > 5) {
+      toast.error('You can upload up to 5 images only.');
       return;
     }
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
+  
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    const validFiles = files.filter((file) => {
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`Unsupported file type: ${file.type}`);
+        return false;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Each image must be under 10MB.');
+        return false;
+      }
+      return true;
+    });
+  
+    const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
     setPreview((prev) => [...prev, ...newPreviews]);
-    setFormData((prev) => ({ ...prev, images: [...prev.images, ...files] }));
+  
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, ...validFiles],
+    }));
+  
+    if (fileInputRef.current) fileInputRef.current.value = ''; // 👈 Reset file input
   };
+  
 
   const handleRemoveImage = (index) => {
     if (index < existingImages.length) {
@@ -347,14 +371,15 @@ useEffect(() => {
         </div>
 
         <div>
-          <label className="block font-semibold mb-1">Images (max 3)</label>
+          <label className="block font-semibold mb-1">Images (max 5)</label>
           <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full p-2 border rounded"
-          />
+  ref={fileInputRef} // 👈 Add this ref here
+  type="file"
+  multiple
+  accept="image/*"
+  onChange={handleFileChange}
+  className="w-full p-2 border rounded"
+/>
           <div className="flex gap-4 mt-4 flex-wrap">
             {preview.map((src, idx) => (
               <div key={idx} className="relative">

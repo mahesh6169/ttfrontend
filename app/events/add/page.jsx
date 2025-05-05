@@ -197,7 +197,7 @@ const AddEventPage = () => {
 
       {!isLoggedIn ? (
         <div className="border rounded-lg p-4 shadow-md bg-white text-center">
-          <p className="text-gray-700 mb-4">
+          <p className="text-gray-700 mb-4 text-xs sm:text-base">
             You must be logged in to add a new advert.
           </p>
           <div className="flex justify-center space-x-4">
@@ -206,16 +206,16 @@ const AddEventPage = () => {
               onClick={() => {
                 localStorage.setItem('redirectAfterLogin', '/events/add');
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
             >
               Login
             </Link>
             <Link
-              href="/users/register?preserveRedirect=true"
+              href="/register?preserveRedirect=true"
               onClick={() => {
                 localStorage.setItem('redirectAfterLogin', '/events/add');
               }}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
             >
               Register
             </Link>
@@ -553,7 +553,7 @@ const AddEventPage = () => {
           <div className="flex gap-4 mt-4">
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded"
             >
               Add Event
             </button>
@@ -562,9 +562,9 @@ const AddEventPage = () => {
               onClick={() => {
                 const backTo = localStorage.getItem('cancelRedirectUrl');
                 localStorage.removeItem('cancelRedirectUrl');
-                router.push(backTo || '/');
+                router.push(backTo || '/events');
               }}
-              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+              className="bg-red-400 text-white hover:bg-red-600   px-4 py-2 rounded "
             >
               Cancel
             </button>

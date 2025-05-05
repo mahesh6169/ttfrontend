@@ -124,7 +124,7 @@ const ThreadsPage = () => {
             href="/threads/new"
             className="bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-semibold transition duration-200"
           >
-            Create New Thread
+            Create New Topic
           </Link>
         </div>
       </div>

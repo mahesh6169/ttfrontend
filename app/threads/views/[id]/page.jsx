@@ -172,11 +172,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
  {/* 🖼️ Image Preview Section */}
 {thread.images?.length > 0 && (
-  <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded mb-4 ">
+  <div className="relative flex justify-center items-center w-full bg-white py-4 mb-4">
+  <div className="relative max-w-xs sm:max-w-md w-full rounded shadow overflow-hidden bg-gray-50">
     <img
       src={thread.images[currentImageIndex].url}
       alt="Thread Image"
-      className="object-cover h-full w-full cursor-pointer "
+      className="w-full h-60 object-contain cursor-pointer"
       onClick={() => setIsFullscreen(true)}
     />
 
@@ -197,6 +198,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       </>
     )}
   </div>
+</div>
+
 )}
 
 {/* 🖼️ Fullscreen Image Viewer */}
@@ -289,63 +292,71 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     {/* Question */}
     {thread.question && (
-      <div className="border border-gray-300 rounded mb-4 bg-white shadow">
-        <h3 className="font-semibold mb-2">Question</h3>
+      <div className=" px-2 rounded mb-6 bg-white shadow">
+        
         <p className="text-gray-800 text-justify">{thread.question}</p>
       </div>
     )}
 
     {/* Useful Answers */}
-    {usefulAnswers.length > 0 && (
-      <div className="border  rounded  mb-4 bg-green-50 shadow">
-        <h3 className="font-semibold mb-2 text-gray-900">Useful Answers</h3>
-        {usefulAnswers.map((msg) => (
-          <div
-            key={msg._id}
-            className="mb-3 p-2 bg-white border rounded shadow-sm"
-          >
-            <p className="text-sm font-semibold text-gray-800">
-              {msg.sender?.name || 'Former Member'}
-            </p>
-            <p className="text-gray-700 text-justify">{msg.message}</p>
-            <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
-              <span>
-                {new Date(msg.createdAt).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: true,
-                })}
-              </span>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => handleLike(msg._id)}
-                  className={`flex items-center space-x-1 ${
-                    msg.likedBy?.includes(currentUser?._id)
-                      ? 'text-blue-500'
-                      : 'text-gray-500'
-                  }`}
-                >
-                  👍 {msg.likes || 0}
-                </button>
-                <button
-                  onClick={() => handleUnlike(msg._id)}
-                  className={`flex items-center space-x-1 ${
-                    msg.dislikedBy?.includes(currentUser?._id)
-                      ? 'text-red-500'
-                      : 'text-gray-500'
-                  }`}
-                >
-                  👎 {msg.dislikes || 0}
-                </button>
-              </div>
-            </div>
+    {usefulAnswers.length > 0 ? (
+  <div className=" rounded mb-4  shadow">
+    <h3 className="font-semibold mb-2 text-gray-900 text-base sm:text-lg">Comments marked as useful :</h3>
+    {usefulAnswers.map((msg) => (
+      <div
+        key={msg._id}
+        className="mb-6 p-2 bg-white rounded shadow-sm"
+      >
+        <p className="text-sm font-semibold text-gray-800">
+          {msg.sender?.name || 'Former Member'}
+        </p>
+        <p className="text-gray-700 text-justify italic">{msg.message}</p>
+        <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
+          <span>
+            {new Date(msg.createdAt).toLocaleTimeString([], {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            })}
+          </span>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => handleLike(msg._id)}
+              className={`flex items-center space-x-1 ${
+                msg.likedBy?.includes(currentUser?._id)
+                  ? 'text-blue-500'
+                  : 'text-gray-500'
+              }`}
+            >
+              👍 {msg.likes || 0}
+            </button>
+            <button
+              onClick={() => handleUnlike(msg._id)}
+              className={`flex items-center space-x-1 ${
+                msg.dislikedBy?.includes(currentUser?._id)
+                  ? 'text-red-500'
+                  : 'text-gray-500'
+              }`}
+            >
+              👎 {msg.dislikes || 0}
+            </button>
           </div>
-        ))}
+        </div>
       </div>
-    )}
+    ))}
+  </div>
+) : (
+  <div className=" rounded my-6  shadow">
+    <h3 className="font-semibold mb-2 text-gray-900">Comments marked as useful</h3>
+  <div className="border rounded mb-4 bg-yellow-50 shadow p-4 text-center text-sm text-gray-700">
+    ⭐️⭐️ Please click  <strong>thumbs up 👍</strong> icon to mark comments as useful ⭐️⭐️
+  </div>
+  </div>
+)}
+
 
     {/* Message Area */}
-    <div className="border rounded  mb-4 bg-white shadow space-y-2">
+    <div className="rounded  mb-4 bg-white shadow space-y-2">
       {/* Message List */}
       <div
         ref={messagesContainerRef}

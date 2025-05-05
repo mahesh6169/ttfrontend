@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createThread } from '@/store/slices/threads/threadSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
+import { toast } from 'react-toastify';
 
 const libraries = ['places'];
 
@@ -41,6 +42,7 @@ const CreateThreadPage = () => {
 
   const isLoggedIn = useSelector((state) => state.user.tokenValidated);
   const { user } = useSelector((state) => state.user) || {};
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -72,17 +74,35 @@ const CreateThreadPage = () => {
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    if (files.length + preview.length > 3) {
-      alert('You can upload up to 3 images only.');
+  
+    if (files.length + preview.length > 5) {
+      toast.error('You can upload up to 5 images only.');
       return;
     }
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
+  
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    const validFiles = files.filter(file => {
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`Unsupported file type: ${file.type}`);
+        return false;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Each image must be under 10MB.');
+        return false;
+      }
+      return true;
+    });
+  
+    const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
     setPreview((prev) => [...prev, ...newPreviews]);
+  
     setFormData((prev) => ({
       ...prev,
-      images: [...prev.images, ...files],
+      images: [...prev.images, ...validFiles],
     }));
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
+  
 
   const handleRemoveImage = (index) => {
     setPreview((prev) => prev.filter((_, i) => i !== index));
@@ -204,30 +224,30 @@ const CreateThreadPage = () => {
   };
 
   return (
-    <div className="max-w-lg mx-auto mt-08 p-6 border rounded-lg shadow-lg bg-white">
-      <h1 className="text-2xl font-bold mb-4">Create a New Thread</h1>
+    <div className="max-w-lg mx-auto mt-08 p-6 border rounded-lg shadow-lg bg-white mt-4">
+      <h1 className="text-2xl font-bold mb-4">Create a New Topic</h1>
 
       {!isLoggedIn ? (
         <div className="border rounded-lg p-4 shadow-md bg-white text-center">
-          <p className="text-gray-700 mb-4">
-            You must be logged in to add a new thread.
+          <p className="text-gray-700 mb-4 text-xs sm:text-base">
+            You must be logged in to create new topic.
           </p>
           <div className="flex justify-center space-x-4">
             <Link
-              href="/users/login?preserveRedirect=true"
+              href="/login?preserveRedirect=true"
               onClick={() => {
                 localStorage.setItem('redirectAfterLogin', '/threads/new');
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
             >
               Login
             </Link>
             <Link
-              href="/users/register?preserveRedirect=true"
+              href="/register?preserveRedirect=true"
               onClick={() => {
                 localStorage.setItem('redirectAfterLogin', '/threads/new');
               }}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
             >
               Register
             </Link>
@@ -239,7 +259,7 @@ const CreateThreadPage = () => {
             <input
               type="text"
               name="title"
-              placeholder="Thread Title"
+              placeholder="Topic Title"
               value={formData.title}
               onChange={handleChange}
               className={`w-full p-2 border rounded-lg ${
@@ -255,10 +275,10 @@ const CreateThreadPage = () => {
           <div>
             <textarea
               name="question"
-              placeholder="Describe your question..."
+              placeholder="Describe what would you like to ask"
               value={formData.question}
               onChange={handleChange}
-              className={`w-full p-2 border rounded-lg ${
+              className={`w-full p-2 border rounded h-48 ${
                 errors.question ? 'border-red-500' : ''
               }`}
               required
@@ -293,7 +313,7 @@ const CreateThreadPage = () => {
           {/* Location/Suburb Selector - Fixed to allow typing */}
           <div>
             <label className="block font-medium">
-              Location <span className="text-red-500">*</span>
+              Suburb <span className="text-red-500">*</span>
             </label>
             <LoadScriptNext
               googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
@@ -309,7 +329,7 @@ const CreateThreadPage = () => {
               >
                 <input
                   type="text"
-                  placeholder="Enter your suburb"
+                  placeholder="Enter your suburb only to be listed in search results"
                   className={`w-full p-2 border rounded ${
                     errors.suburb ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -328,6 +348,7 @@ const CreateThreadPage = () => {
           <div>
             <label className="block font-semibold">Upload Images (Max 3)</label>
             <input
+             ref={fileInputRef}
               type="file"
               multiple
               accept="image/*"
@@ -357,17 +378,17 @@ const CreateThreadPage = () => {
           <div className="flex gap-4 mt-4">
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded"
             >
               Create Thread
             </button>
             <button
               type="button"
-              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-400"
+              className="bg-red-400 text-white hover:bg-red-600   px-4 py-2 rounded"
               onClick={() => {
                 const backTo = localStorage.getItem('cancelRedirectUrl');
                 localStorage.removeItem('cancelRedirectUrl');
-                router.push(backTo || '/');
+                router.push(backTo || '/threads');
               }}
             >
               Cancel

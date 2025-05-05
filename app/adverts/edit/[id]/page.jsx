@@ -205,43 +205,64 @@ const EditAdvertPage = () => {
   // Handle text/checkbox changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
+  
     setFormData((prev) => {
       let updatedData = { ...prev };
-    
+  
       if (type === 'checkbox') {
         updatedData[name] = checked;
-      } else if (name.startsWith('address.')) {
-        const key = name.split('.')[1];
-        updatedData.address = { ...prev.address, [key]: value };
+      } else if (name.startsWith('address')) {
+        const [, key] = name.split('.');
+        updatedData.address = {
+          ...prev.address,
+          [key]: value,
+          location: prev.address.location, // Preserve location
+        };
       } else {
         updatedData[name] = value;
       }
-    
-      // ✅ Reset "condition" if the selected category does NOT require it
+  
+      // ✅ Reset "condition" if not required
       if (name === 'category') {
+        const shouldHideHire = CATEGORIES_HIDE_ISFORHIRE.includes(value);
+        const shouldHideShare = CATEGORIES_HIDE_ISFORSHARE.includes(value);
+        const isCategoryWithoutPrice = CATEGORIES_NOT_REQUIRING_PRICE.includes(value);
+  
         if (!CATEGORIES_REQUIRING_CONDITION.includes(value)) {
-          updatedData.condition = '';
+          updatedData.condition = null;
         }
-    
-        // ✅ Reset "isForHire" if the selected category should hide hire
-        if (CATEGORIES_HIDE_ISFORHIRE.includes(value)) {
+  
+        if (shouldHideHire) {
           updatedData.isForHire = false;
-          updatedData.hirePrice = 0;            // Optional: reset hirePrice
-          updatedData.hireUnit = 'hour';        // Optional: reset unit if you want
+          updatedData.hirePrice = 0;
+          updatedData.hireUnit = 'hour';
         }
-
-        if (CATEGORIES_HIDE_ISFORSHARE.includes(value)) {
+  
+        if (shouldHideShare) {
           updatedData.isForShare = false;
           updatedData.sharePrice = 0;
           updatedData.shareUnit = 'week';
-        }        
+        }
+  
+        if (isCategoryWithoutPrice) {
+          updatedData.isForSale = false;
+          updatedData.sellPrice = 0;
+          updatedData.isForRent = false;
+          updatedData.rentPrice = 0;
+          updatedData.rentUnit = 'week';
+          updatedData.isForHire = false;
+          updatedData.hirePrice = 0;
+          updatedData.hireUnit = 'hour';
+          updatedData.isForShare = false;
+          updatedData.sharePrice = 0;
+          updatedData.shareUnit = 'week';
+        }
       }
-    
+  
       return updatedData;
     });
-    
   };
+  
 
   // Handle new image files chosen
   const handleFileChange = (e) => {
@@ -293,7 +314,7 @@ const EditAdvertPage = () => {
       { condition: !formData.category, message: 'Category is required.' },
       {
         condition: shouldShowCondition && !formData.condition,
-        message: 'Condition is required for this category.',
+        message: 'Condition is required.',
       },
       {
         condition: !formData.isOffered && !formData.isWanted,
@@ -306,7 +327,23 @@ const EditAdvertPage = () => {
           !formData.isForRent &&
           !formData.isForShare &&
           !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category),
-        message: 'Price option is required.',
+        message: 'Price Type is required.',
+      },
+      {
+        condition: formData.isForSale && (!formData.sellPrice || formData.sellPrice <= 0),
+        message: 'Sell price is required.',
+      },
+      {
+        condition: formData.isForHire && (!formData.hirePrice || formData.hirePrice <= 0),
+        message: 'Hire price is required.',
+      },
+      {
+        condition: formData.isForRent && (!formData.rentPrice || formData.rentPrice <= 0),
+        message: 'Rent price is required.',
+      },
+      {
+        condition: formData.isForShare && (!formData.sharePrice || formData.sharePrice <= 0),
+        message: 'Share price must be greater than 0.',
       },
       {
         condition: !formData.description,
@@ -504,7 +541,7 @@ const EditAdvertPage = () => {
             onChange={handleChange}
             onFocus={() => handleFocus('description')}
             onBlur={handleBlur}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded h-48"
           />
           {focusedField === 'description' && (
             <div className="text-sm text-gray-500 mt-1 space-y-1">

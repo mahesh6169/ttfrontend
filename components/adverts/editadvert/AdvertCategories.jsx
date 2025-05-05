@@ -65,9 +65,7 @@ export const CATEGORY_OPTIONS = [
         email: 'Required to avoid spam.',
         name: 'Required to avoid spam.',
         description: [
-          ' Hint: ',
-          'Provide detailed information about your advert.',
-          'Include dimensions, condition, and any special features.',
+          ' Hint: Provide detailed information about your advert.',
         ],
         address: [
           ' Hint: ',

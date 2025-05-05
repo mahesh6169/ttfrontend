@@ -538,7 +538,7 @@ const handlePlaceChanged = () => {
                 onChange={handleChange}
                 onFocus={() => handleFocus('description')}
                 onBlur={handleBlur}
-                className="w-full p-05 border rounded h-48"
+                className="w-full p-2 border rounded h-48"
               />
               {focusedField === 'description' && (
                 <div className="text-sm text-gray-500 mt-1 space-y-1">
@@ -577,14 +577,14 @@ const handlePlaceChanged = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded"
               >
                 Add Advert
               </button>
               {/* cancel Button */}
               <button
                 type="button"
-                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-400"
+                className="bg-red-400 text-white hover:bg-red-600   px-4 py-2 rounded "
                 onClick={() => {
                   const backTo = localStorage.getItem('cancelRedirectUrl');
                   localStorage.removeItem('cancelRedirectUrl');

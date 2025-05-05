@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { toast } from 'react-toastify';
 
 const ImageUploader = ({
@@ -11,29 +11,60 @@ const ImageUploader = ({
   formData,
   setFormData,
 }) => {
-  // Handle new image file selection
+  const fileInputRef = useRef(null);
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+  const maxSize = 10 * 1024 * 1024; // 10MB
+
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
+    const errors = [];
+    const validFiles = [];
 
-    // Max 3 images total
+    for (const file of files) {
+      if (!allowedTypes.includes(file.type)) {
+        errors.push(`Invalid Image type`);
+      } else if (file.size > maxSize) {
+        errors.push(`${file.name}: File size exceeds 10MB`);
+      } else {
+        validFiles.push(file);
+      }
+    }
+
     const totalImagesCount =
-      existingImages.length + preview.length + files.length;
+      existingImages.length + preview.length + validFiles.length;
 
-    if (totalImagesCount > 3) {
-      toast.error('You can have up to 3 images total.');
+    if (totalImagesCount > 5) {
+      errors.push('Maximum of 5 images allowed (including existing images)');
+    }
+
+    if (errors.length > 0) {
+      toast.error(
+        <div className="space-y-1">
+          {errors.map((msg, idx) => (
+            <p key={idx} className="text-sm text-red-600">{msg}</p>
+          ))}
+        </div>,
+        {
+          position: 'top-right',
+          autoClose: 6000,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        }
+      );
       return;
     }
 
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
     setPreview((prev) => [...prev, ...newPreviews]);
-
     setFormData((prev) => ({
       ...prev,
-      images: [...prev.images, ...files],
+      images: [...prev.images, ...validFiles],
     }));
+
+    fileInputRef.current.value = '';
   };
 
-  // Remove newly selected image
   const handleRemoveNewImage = (index) => {
     setPreview((prev) => prev.filter((_, i) => i !== index));
     setFormData((prev) => ({
@@ -42,14 +73,12 @@ const ImageUploader = ({
     }));
   };
 
-  // Remove existing image from DB
   const handleRemoveExistingImage = (index) => {
     setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
     <div>
-      {/* Existing Images */}
       {existingImages.length > 0 && (
         <div className="mb-4">
           <label className="block font-bold mb-2">Existing Images</label>
@@ -75,16 +104,19 @@ const ImageUploader = ({
         </div>
       )}
 
-      {/* New Image Upload */}
       <div className="mb-4">
         <label className="block font-bold">
-          Upload New Images (Max Total 3)
+          Upload New Images
+          <span className="block text-xs font-normal text-gray-600">
+            (Max 5 total — JPEG & PNG format only)
+          </span>
         </label>
         <input
           type="file"
           multiple
           accept="image/*"
           onChange={handleFileChange}
+          ref={fileInputRef}
           className="w-full p-2 border rounded"
         />
         {preview.length > 0 && (
