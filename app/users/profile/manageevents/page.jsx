@@ -60,8 +60,8 @@ const ManageEventsPage = () => {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-center mb-6">Manage My Events</h1>
+    <div className="m-2">
+      <h1 className="text-2xl font-bold text-center mb-6 text-teal-700" >Manage My Events</h1>
       <Link
         href="/events/add"
         onClick={() =>
@@ -70,7 +70,7 @@ const ManageEventsPage = () => {
             '/users/profile/manageevents'
           )
         }
-        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+        className="block my-2 p-2 bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 font-semibold lg:w-1/4 text-center rounded"
       >
         + Post New Event
       </Link>
@@ -115,7 +115,7 @@ const ManageEventsPage = () => {
           className={`px-4 py-1 rounded ${
             isExpired
               ? 'bg-gray-400 text-white cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100'
           }`}
           disabled={isExpired}
         >

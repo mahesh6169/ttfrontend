@@ -143,105 +143,125 @@ const Header = () => {
       </div>
 
       {isMobileMenuOpen && (
+  <>
+    <div className="fixed top-0 left-0 h-full w-50 z-50 shadow-lg transform transition-transform duration-300 ease-in-out translate-x-0 bg-teal-700">
+      {isAuthenticated ? (
         <>
-          <div className="fixed top-0 left-0 h-full w-64 z-50 shadow-lg transform transition-transform duration-300 ease-in-out translate-x-0 bg-teal-700">
-            <div className="flex items-center justify-between p-4 border-b shadow-sm text-lime-100">
-              <h2 className="text-lg font-semibold">Account</h2>
-              <button
-                onClick={toggleMobileMenu}
-                className="p-2 bg-teal-700 rounded-md shadow"
-              >
-                <IoClose size={20} />
-              </button>
-            </div>
-
-            <nav className="p-4 space-y-2 text-lime-100">
-              {isAuthenticated ? (
-                <>
-                  <NavLink
-                    href={profileLink}
-                    icon={<CgProfile size={18} />}
-                    text={user.name}
-                    mobile
-                    onClick={toggleMobileMenu}
-                  />
-                  <NavLink
-                    href={`${baseProfilePath}/settings`}
-                    icon={<FaUser />}
-                    text="Settings"
-                    pathname={pathname}
-                    mobile
-                    onClick={toggleMobileMenu}
-                  />
-                  <NavLink
-                    href={`${baseProfilePath}/manageads`}
-                    icon={<FaAd />}
-                    text="Manage Ads"
-                    pathname={pathname}
-                    mobile
-                    onClick={toggleMobileMenu}
-                  />
-                  <NavLink
-                    href={`${baseProfilePath}/managethreads`}
-                    icon={<BsChatText />}
-                    text="Manage Threads"
-                    pathname={pathname}
-                    mobile
-                    onClick={toggleMobileMenu}
-                  />
-                  <NavLink
-                    href={`${baseProfilePath}/favourites`}
-                    icon={<MdFavorite />}
-                    text="Favourites"
-                    pathname={pathname}
-                    mobile
-                    onClick={toggleMobileMenu}
-                  />
-                  <NavLink
-                    href={`${baseProfilePath}/conversations`}
-                    icon={<FaEnvelope />}
-                    text="Messages"
-                    pathname={pathname}
-                    mobile
-                    onClick={toggleMobileMenu}
-                  />
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="block hover:underline w-full text-start px-4 py-2"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <NavLink
-                    href="/login"
-                    text="Login"
-                    pathname={pathname}
-                    mobile
-                    onClick={toggleMobileMenu}
-                  />
-                  <NavLink
-                    href="/register"
-                    text="Register"
-                    pathname={pathname}
-                    mobile
-                    onClick={toggleMobileMenu}
-                  />
-                </>
-              )}
-            </nav>
+          <div className="flex items-center justify-between p-4 border-b shadow-sm text-lime-100">
+            <NavLink
+              href={profileLink}
+              icon={<CgProfile size={18} />}
+              text={user.name}
+              mobile
+              onClick={toggleMobileMenu}
+            />
+            <button
+              onClick={toggleMobileMenu}
+              className="p-2 bg-teal-700 rounded-md shadow"
+            >
+              <IoClose size={20} />
+            </button>
           </div>
 
-          <div
-            className="fixed inset-0 bg-black opacity-30 z-40"
-            onClick={() => setMobileMenuOpen(false)}
-          />
+          <nav className="p-4 space-y-2 text-lime-100">
+            <NavLink
+              href={`${baseProfilePath}/settings`}
+              icon={<FaUser />}
+              text="Settings"
+              pathname={pathname}
+              mobile
+              onClick={toggleMobileMenu}
+            />
+            <NavLink
+              href={`${baseProfilePath}/manageads`}
+              icon={<FaAd />}
+              text="Manage Ads"
+              pathname={pathname}
+              mobile
+              onClick={toggleMobileMenu}
+            />
+            <NavLink
+              href={`${baseProfilePath}/manageevents`}
+              icon={<FaCalendarAlt />}
+              text="Manage Events"
+              pathname={pathname}
+              mobile
+              onClick={toggleMobileMenu}
+            />
+            <NavLink
+              href={`${baseProfilePath}/managethreads`}
+              icon={<BsChatText />}
+              text="Manage Threads"
+              pathname={pathname}
+              mobile
+              onClick={toggleMobileMenu}
+            />
+            <NavLink
+              href={`${baseProfilePath}/favourites`}
+              icon={<MdFavorite />}
+              text="Favourites"
+              pathname={pathname}
+              mobile
+              onClick={toggleMobileMenu}
+            />
+            <NavLink
+              href={`${baseProfilePath}/conversations`}
+              icon={<FaEnvelope />}
+              text="Messages"
+              pathname={pathname}
+              mobile
+              onClick={toggleMobileMenu}
+            />
+            <button
+              onClick={() => {
+                handleLogout();
+                setMobileMenuOpen(false);
+              }}
+              className="block hover:underline w-full text-start px-4 py-2"
+            >
+              Logout
+            </button>
+          </nav>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between p-4 border-b shadow-sm text-lime-100">
+            <h2 className="text-lg font-semibold">Welcome</h2>
+            <button
+              onClick={toggleMobileMenu}
+              className="p-2 bg-teal-700 rounded-md shadow"
+            >
+              <IoClose size={20} />
+            </button>
+          </div>
+
+          <nav className="p-4 space-y-2 text-lime-100">
+            <NavLink
+              href="/login"
+              text="Login"
+              pathname={pathname}
+              mobile
+              onClick={toggleMobileMenu}
+            />
+            <NavLink
+              href="/register"
+              text="Register"
+              pathname={pathname}
+              mobile
+              onClick={toggleMobileMenu}
+            />
+          </nav>
         </>
       )}
+    </div>
+
+    <div
+      className="fixed inset-0 bg-black opacity-30 z-40"
+      onClick={() => setMobileMenuOpen(false)}
+    />
+  </>
+)}
+
     </header>
   );
 };
@@ -249,7 +269,13 @@ const Header = () => {
 export default Header;
 
 const NavLink = ({ href, icon, text, pathname, mobile = false, onClick }) => {
-  const isActive = pathname === href;
+  // Check if the current path includes the href (for nested routes)
+  // or if it's an exact match (for top-level routes)
+  const isActive = pathname === href || 
+                   (pathname?.includes('/users/profile/') && href.includes('/users/profile/') && 
+                    pathname?.includes(href.split('/').pop())) ||
+                   (pathname?.includes('/admin/profile/') && href.includes('/admin/profile/') && 
+                    pathname?.includes(href.split('/').pop()));
 
   return (
     <Link

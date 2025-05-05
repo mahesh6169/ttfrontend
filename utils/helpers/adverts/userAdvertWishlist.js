@@ -6,6 +6,7 @@ import {
   addToWishlist,
   removeFromWishlist,
 } from '@/store/slices/users/userSlice';
+import { toast } from 'react-toastify';
 
 export function useAdvertWishlist() {
   const dispatch = useDispatch();
@@ -31,7 +32,7 @@ export function useAdvertWishlist() {
   // Toggle logic
   const toggleWishlist = async (advertId) => {
     if (!isAuthenticated) {
-      alert('Please log in to use the wishlist feature.');
+      toast.error('Please log in to use the wishlist feature.');
       return;
     }
 

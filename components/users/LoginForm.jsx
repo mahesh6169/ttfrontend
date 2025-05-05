@@ -187,7 +187,7 @@ const Login = () => {
             <div className="text-right mt-1 text-sm">
               <Link
                 href="/users/pwdreset"
-                className="text-blue-600 hover:underline"
+                className="text-teal-700 hover:underline"
               >
                 Forgot your password?
               </Link>
@@ -222,7 +222,7 @@ const Login = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            className="w-full bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 py-2  transition"
             disabled={isLoading}
           >
             {isLoading ? 'Logging in...' : 'Login'}
@@ -235,7 +235,7 @@ const Login = () => {
             Don't have an account?{' '}
             <Link
               href="/register"
-              className="text-blue-600 hover:underline"
+              className="text-teal-700 hover:underline"
             >
               Register here
             </Link>

@@ -46,18 +46,18 @@ const AdvertFavourites = () => {
 
   if (!advertWishlist || advertWishlist.length === 0) {
     return (
-      <div className="text-center py-10">
-        <p className="text-lg md:text-2xl font-bold mb-2 text-left">
-          No Favorites In adverts
+      <div className="text-center py-10 border border-gray-300 rounded-lg shadow-md mb-4">
+        <p className="text-base text-teal-700 font-bold mb-2 text-centre">
+          You have no favorites in adverts
         </p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
-        Your Favourites Adverts
+    <div className="container mx-auto py-8  ">
+      <h1 className="text-base text-teal-700 font-bold mb-2 text-centre">
+        Your Favourite Adverts
       </h1>
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
         {advertWishlist.map((advert) => (

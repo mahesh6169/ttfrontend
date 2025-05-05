@@ -414,7 +414,7 @@ const Register = () => {
               <Link
                 href="/support/terms"
                 target="_blank"
-                className="text-blue-600 underline"
+                className="text-teal-700 underline"
               >
                 Terms & Conditions
               </Link>{' '}
@@ -422,7 +422,7 @@ const Register = () => {
               <Link
                 href="/support/privacy"
                 target="_blank"
-                className="text-blue-600 underline"
+                className="text-teal-700 underline"
               >
                 Privacy Policy
               </Link>
@@ -449,7 +449,7 @@ const Register = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            className="w-full bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100  py-2 transition"
             disabled={loading || isSubmitting}
           >
             {loading || isSubmitting ? 'Registering...' : 'Register'}
@@ -461,7 +461,7 @@ const Register = () => {
         <div className="mt-6 text-center">
           <p>
             Already have an account?{' '}
-            <Link href="/login" className="text-blue-600 hover:underline">
+            <Link href="/login" className="text-teal-700 hover:underline">
               Login here
             </Link>
           </p>

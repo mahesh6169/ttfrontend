@@ -26,13 +26,13 @@ const Sidebar = ({ onLinkClick }) => {
   }, [router]);
 
   return (
-    <nav className="p-4">
-      <ul className="space-y-4">
+    <nav className="p-4 bg-teal-700 ">
+      <ul className="space-y-4 text-lime-100">
         {menuItems.map((item) => (
           <li
             key={item.href}
-            className={`flex items-center space-x-2 p-2 rounded hover:bg-gray-200 ${
-              pathname === item.href ? 'bg-gray-300 font-bold' : ''
+            className={`flex items-center space-x-2 p-2 rounded hover:bg-lime-50 hover:text-teal-700 ${
+              pathname === item.href ? 'bg-lime-100 text-teal-700 font-bold' : ''
             }`}
           >
             {item.icon}

@@ -46,8 +46,8 @@ const ManageThreads = () => {
   };
 
   return (
-    <div>
-      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
+    <div className='m-2'>
+      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center text-teal-700">
         Manage Your Threads
       </h1>
 
@@ -56,7 +56,7 @@ const ManageThreads = () => {
         onClick={() =>
           localStorage.setItem('cancelRedirectUrl', '/users/profile/managethreads')
         }
-        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+        className="block my-2 p-2 bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 font-semibold lg:w-1/4 text-center rounded"
       >
         + Post New Thread
       </Link>
@@ -87,7 +87,7 @@ const ManageThreads = () => {
                 onClick={() => router.push(`/threads/views/${thread._id}`)}
                 className="cursor-pointer"
               >
-                <h2 className="text-lg font-semibold text-blue-600 hover:underline">
+                <h2 className="text-lg font-semibold ">
                   {thread.title}
                 </h2>
                 <p className="text-sm text-gray-700 italic line-clamp-2">
@@ -124,17 +124,17 @@ const ManageThreads = () => {
 
 
               {/* Action Buttons */}
-              <div className="flex justify-between gap-4 mt-4">
+              <div className="flex justify-end  gap-4 mt-4 ">
                 <button
                   onClick={() => handleEditClick(thread._id)}
-                  className="flex-1 bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+                  className="px-4 py-2 bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100 rounded"
                 >
                   Edit
                 </button>
 
                 <button
                   onClick={() => handleDelete(thread._id)}
-                  className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600"
+                  className="px-4 py-2 bg-red-500 text-white hover:bg-red-600 rounded"
                 >
                   Delete
                 </button>

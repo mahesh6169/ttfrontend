@@ -67,11 +67,10 @@ export const CATEGORY_OPTIONS = [
         email: 'Required to avoid spam.',
         name: 'Required to avoid spam.',
         description: [
-          ' Hint: ',
-          'Provide detailed information about your advert.',
+          ' Hint: Provide detailed information about your advert.',
         ],
         address: [
           ' Hint: ',
-          'If you dont have business address, please provide your suburb to get listed on search results.',
+          'If you dont have business address, please provide your suburb only to get listed on search results.',
         ],
       };

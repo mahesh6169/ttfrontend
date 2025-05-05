@@ -101,8 +101,8 @@ export default function ProfilePage() {
     }
 
   return (
-    <div >
-      <h1 className="text-lg md:text-2xl font-bold mb-2 text-center">
+    <div className='m-2' >
+      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center text-teal-700">
         Manage Ads
       </h1>
       <Link
@@ -110,7 +110,7 @@ export default function ProfilePage() {
         onClick={() =>
           localStorage.setItem('cancelRedirectUrl', '/users/profile/manageads')
         }
-        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+        className="block my-2 p-2 bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 font-semibold lg:w-1/4 text-center rounded"
       >
         + Post New Advertisement
       </Link>
@@ -126,12 +126,12 @@ export default function ProfilePage() {
   return (
     <div
       key={advert._id}
-      className="p-4 border border-gray-300 rounded shadow hover:shadow-lg transition"
+      className=" p-4 border border-gray-300 rounded shadow hover:shadow-lg transition"
     >
       <div className="flex items-center justify-between gap-2 mb-2">
-        <h3 className="text-xs font-bold truncate">{advert.title}</h3>
+        <h3 className="text-xs font-bold truncate max-w-[60%]">{advert.title}</h3>
         <span
-          className={`text-xs font-semibold ${
+          className={`text-xs font-semibold whitespace-nowrap ${
             isExpired ? 'text-red-600' : 'text-gray-600'
           }`}
         >
@@ -156,7 +156,7 @@ export default function ProfilePage() {
           className={`flex-1 py-1 px-4 rounded transition ${
             isExpired
               ? 'bg-gray-400 text-white cursor-not-allowed'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
+              : 'bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100'
           }`}
         >
           Edit
@@ -168,7 +168,7 @@ export default function ProfilePage() {
           className={`flex-1 py-1 px-4 rounded transition ${
             canRenew
               ? 'bg-green-600 text-white hover:bg-green-700'
-              : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+              : 'bg-gray-400 text-white cursor-not-allowed'
           }`}
         >
           Renew

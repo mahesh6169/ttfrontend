@@ -5,8 +5,8 @@ import EventFavourites from '@/components/users/EventFavourites';
 
 const FavouritesPage = () => {
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <h1 className="text-2xl font-bold text-center mb-6">Your Favourites</h1>
+    <div className="m-2">
+      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center text-teal-700">Your Favourites</h1>
       <AdvertFavourites />
       <EventFavourites />
     </div>

@@ -129,7 +129,7 @@ export default function Settings() {
 
   return (
     <div className="max-w-xl mx-auto p-4 bg-white rounded shadow">
-      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center">
+      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center text-teal-700">
         Account Settings
       </h1>
 
@@ -215,7 +215,7 @@ export default function Settings() {
         {/* Update Button */}
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          className="w-full bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 py-2 rounded  transition"
           disabled={loading}
         >
           {loading ? 'Updating...' : 'Update Details'}

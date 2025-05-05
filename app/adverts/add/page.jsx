@@ -174,24 +174,39 @@ const handlePlaceChanged = () => {
       if (name === 'category') {
         const shouldHideHire = CATEGORIES_HIDE_ISFORHIRE.includes(value);
         const shouldHideShare = CATEGORIES_HIDE_ISFORSHARE.includes(value);
-    
+        const isCategoryWithoutPrice = CATEGORIES_NOT_REQUIRING_PRICE.includes(value);
+      
         if (!CATEGORIES_REQUIRING_CONDITION.includes(value)) {
           updatedData.condition = null;
         }
-    
-        // ✅ Reset isForHire if the category hides Hire:
+      
         if (shouldHideHire) {
           updatedData.isForHire = false;
           updatedData.hirePrice = 0;
-          updatedData.hireUnit = 'hour'; // Optional: reset to default unit
+          updatedData.hireUnit = 'hour';
         }
-          // ✅ Reset isForShare if the category hides Share:
+      
         if (shouldHideShare) {
           updatedData.isForShare = false;
           updatedData.sharePrice = 0;
           updatedData.shareUnit = 'week';
         }
+      
+        if (isCategoryWithoutPrice) {
+          updatedData.isForSale = false;
+          updatedData.sellPrice = 0;
+          updatedData.isForRent = false;
+          updatedData.rentPrice = 0;
+          updatedData.rentUnit = 'week';
+          updatedData.isForHire = false;
+          updatedData.hirePrice = 0;
+          updatedData.hireUnit = 'hour';
+          updatedData.isForShare = false;
+          updatedData.sharePrice = 0;
+          updatedData.shareUnit = 'week';
+        }
       }
+      
     
       return updatedData;
     });
@@ -220,7 +235,7 @@ const handlePlaceChanged = () => {
       {
         condition:
           shouldShowCondition && formData.isForSale && !formData.condition,
-        message: 'Condition is required for this category.',
+        message: 'Condition is required.',
       },
 
       {
@@ -234,7 +249,23 @@ const handlePlaceChanged = () => {
           !formData.isForRent &&
           !formData.isForShare &&
           !CATEGORIES_NOT_REQUIRING_PRICE.includes(formData.category),
-        message: 'Price is required.',
+        message: 'Price Type is required.',
+      },
+      {
+        condition: formData.isForSale && (!formData.sellPrice || formData.sellPrice <= 0),
+        message: 'Sell price is required.',
+      },
+      {
+        condition: formData.isForHire && (!formData.hirePrice || formData.hirePrice <= 0),
+        message: 'Hire price is required.',
+      },
+      {
+        condition: formData.isForRent && (!formData.rentPrice || formData.rentPrice <= 0),
+        message: 'Rent price is required.',
+      },
+      {
+        condition: formData.isForShare && (!formData.sharePrice || formData.sharePrice <= 0),
+        message: 'Share price must be greater than 0.',
       },
       {
         condition: !formData.description,
@@ -366,7 +397,7 @@ const handlePlaceChanged = () => {
         dispatch(clearAdverts());
       } else {
         console.error('❌ Dispatch failed:', resultAction);
-        throw new Error(resultAction.payload || 'Failed to add advert.');
+        toast.error(resultAction.payload || 'Failed to add advert.');
       }
     } catch (error) {
       console.error('Error adding advert:', error);
@@ -376,10 +407,10 @@ const handlePlaceChanged = () => {
 
   return (
     <div className="p-8 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Add New Advert</h1>
+      <h1 className="text-2xl font-bold mb-4 text-teal-700">Add New Advert</h1>
       {!tokenValidated ? (
         <div className="border rounded-lg p-4 shadow-md bg-white text-center">
-          <p className="text-gray-700 mb-4">
+          <p className="text-gray-700 mb-4 text-xs sm:text-base">
             You must be logged in to add a new advert.
           </p>
           <div className="flex justify-center space-x-4">
@@ -388,16 +419,16 @@ const handlePlaceChanged = () => {
               onClick={() => {
                 localStorage.setItem('redirectAfterLogin', '/adverts/add');
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
             >
               Login
             </Link>
             <Link
-              href="/users/register?preserveRedirect=true"
+              href="/register?preserveRedirect=true"
               onClick={() => {
                 localStorage.setItem('redirectAfterLogin', '/adverts/add');
               }}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
             >
               Register
             </Link>
@@ -405,9 +436,7 @@ const handlePlaceChanged = () => {
         </div>
       ) : (
         <>
-          {status === 'loading' && (
-            <p className="text-blue-500 mb-4">Adding advert...</p>
-          )}
+          
           {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
           {successMessage && (
             <p className="text-green-500 mb-4">{successMessage}</p>
