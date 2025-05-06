@@ -268,7 +268,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   <div className="flex justify-end mb-2">
     <button
       onClick={handleToggleMute}
-      className={`flex items-center gap-2 text-xs px-3 py-1 rounded-full border w-auto inline-block ${
+      className={`flex items-center gap-2 text-xs px-3 py-1 rounded-full border w-auto ${
         isMuted
           ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
           : 'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300'
@@ -301,7 +301,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     {/* Useful Answers */}
     {usefulAnswers.length > 0 ? (
   <div className=" rounded mb-4  shadow">
-    <h3 className="font-semibold mb-2 text-gray-900 text-base sm:text-lg">Comments marked as useful :</h3>
+    <h3 className="font-semibold mb-2 px-4 bg-teal-900 text-lime-100  w-fit ">Comments marked as useful</h3>
     {usefulAnswers.map((msg) => (
       <div
         key={msg._id}
@@ -347,7 +347,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   </div>
 ) : (
   <div className=" rounded my-6  shadow">
-    <h3 className="font-semibold mb-2 text-gray-900">Comments marked as useful</h3>
+    <h3 className="font-semibold mb-2 px-4 bg-teal-900 text-lime-100  w-fit ">Comments marked as useful</h3>
   <div className="border rounded mb-4 bg-yellow-50 shadow p-4 text-center text-sm text-gray-700">
     ⭐️⭐️ Please click  <strong>thumbs up 👍</strong> icon to mark comments as useful ⭐️⭐️
   </div>
@@ -356,165 +356,166 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
 
     {/* Message Area */}
-    <div className="rounded  mb-4 bg-white shadow space-y-2">
-      {/* Message List */}
-      <div
-        ref={messagesContainerRef}
-        className="max-h-[500px] overflow-y-auto pr-1 border"
-      >
-        {messages.length > 0 ? (
-          messages.reduce((acc, msg, index) => {
-            const prevMsg = messages[index - 1];
-            const msgDate = new Date(msg.createdAt);
-            const prevMsgDate = prevMsg ? new Date(prevMsg.createdAt) : null;
+{/* Message Area */}
+<div className="rounded mb-4 bg-white shadow space-y-2">
 
-            const showDateSeparator =
-              !prevMsg || !isSameDay(msgDate, prevMsgDate);
-
-            let isRightSide = false;
-            if (currentUser) {
-              isRightSide = msg.sender?._id === currentUser?._id;
-            } else {
-              const senderId = msg.sender?._id || msg.sender?.name;
-              isRightSide = senderSides[senderId] === 'right';
-            }
-
-            return [
-              ...acc,
-              showDateSeparator && (
-                <div
-                  key={`date-${msg._id}`}
-                  className="flex justify-center my-3 w-full"
-                >
-                  <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow ">
-                    {msgDate.toLocaleDateString()}
-                  </span>
-                </div>
-              ),
-              <div
-                key={msg._id}
-                className={`mb-2 flex  ${
-                  isRightSide ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                <div
-                  className={`relative max-w-[95%] min-w-[100px] px-2 rounded-lg shadow-md break-words whitespace-pre-wrap
-                    ${
-                      currentUser
-                        ? isRightSide
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-700 text-white'
-                        : 'bg-gray-100 text-black'
-                    }`}
-                >
-                  <div className="flex justify-between items-center mb-1 text-xs">
-                    <p className="text-sm font-semibold">
-                      {msg.sender?.name || 'Former Member'}
-                    </p>
-                    <span className="ml-2">
-                      {msgDate.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true,
-                      })}
-                    </span>
-                  </div>
-
-                  <p >{msg.message}</p>
-
-                  <div className="flex items-center space-x-3 mt-2 text-xs">
-                    <button
-                      onClick={() => handleLike(msg._id)}
-                      className="flex items-center space-x-1 hover:text-yellow-400"
-                      disabled={!currentUser}
-                    >
-                      👍 <span>{msg.likes || 0}</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleUnlike(msg._id)}
-                      className="flex items-center space-x-1 hover:text-red-400"
-                      disabled={!currentUser}
-                    >
-                      👎 <span>{msg.dislikes || 0}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>,
-            ];
-          }, [])
-        ) : (
-          <p className="text-gray-500 text-center">
-            No messages yet. Start the conversation!
-          </p>
-        )}
-        <div ref={messagesEndRef} />
+  {/* ✅ Message Box at the Top */}
+  {currentUser ? (
+    <div className="border rounded-lg shadow bg-white p-1">
+      <textarea
+        value={newMessage}
+        onChange={(e) => setNewMessage(e.target.value)}
+        placeholder="Join the conversation..."
+        rows={1}
+        className="w-full border-none outline-none resize-none p-1 text-sm sm:text-base overflow-y-auto"
+        style={{
+          minHeight: '2.5rem',
+          maxHeight: '8rem',
+          height: 'auto',
+        }}
+        onInput={(e) => {
+          e.target.style.height = 'auto';
+          e.target.style.height = `${e.target.scrollHeight}px`;
+        }}
+      />
+      <div className="flex justify-end mt-2">
+        <button
+          onClick={handleSendMessage}
+          disabled={!newMessage.trim()}
+          className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 disabled:opacity-50"
+        >
+          Send
+        </button>
       </div>
-
-      {/* Message Box or Login Prompt */}
-      {currentUser ? (
-  <div className="border rounded-lg shadow bg-white p-1  ">
-    <textarea
-      value={newMessage}
-      onChange={(e) => setNewMessage(e.target.value)}
-      placeholder="Type your message..."
-      rows={1}
-      className="w-full border-none outline-none resize-none p-1 text-sm sm:text-base overflow-y-auto"
-      style={{
-        minHeight: '2.5rem',
-        maxHeight: '8rem',
-        height: 'auto',
-      }}
-      onInput={(e) => {
-        e.target.style.height = 'auto';
-        e.target.style.height = `${e.target.scrollHeight}px`;
-      }}
-    />
-
-    <div className="flex justify-end mt-2">
-      <button
-        onClick={handleSendMessage}
-        disabled={!newMessage.trim()}
-        className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 disabled:opacity-50"
-      >
-        Send
-      </button>
     </div>
+  ) : (
+    <div className="text-center my-6">
+      <p className="text-gray-700 mb-4 text-xs sm:text-base ">
+        You must be logged in to comment or like messages.
+      </p>
+      <div className="flex justify-center space-x-4">
+        <Link
+          href={`/users/login?preserveRedirect=true`}
+          onClick={() => {
+            localStorage.setItem(
+              'redirectAfterLogin',
+              `/threads/views/${threadId}`
+            );
+          }}
+          className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
+        >
+          Login
+        </Link>
+        <Link
+          href={`/users/register?preserveRedirect=true`}
+          onClick={() => {
+            localStorage.setItem(
+              'redirectAfterLogin',
+              `/threads/views/${threadId}`
+            );
+          }}
+          className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
+        >
+          Register
+        </Link>
+      </div>
+    </div>
+  )}
+
+  {/* ✅ Message List Below */}
+  <div
+    ref={messagesContainerRef}
+    className="max-h-[500px] overflow-y-auto pr-1 border"
+  >
+    {messages.length > 0 ? (
+      [...messages].reverse().reduce((acc, msg, index, reversed) => {
+        const nextMsg = reversed[index - 1];
+        const msgDate = new Date(msg.createdAt);
+        const nextMsgDate = nextMsg ? new Date(nextMsg.createdAt) : null;
+
+        const showDateSeparator =
+          !nextMsg || !isSameDay(msgDate, nextMsgDate);
+
+        let isRightSide = false;
+        if (currentUser) {
+          isRightSide = msg.sender?._id === currentUser?._id;
+        } else {
+          const senderId = msg.sender?._id || msg.sender?.name;
+          isRightSide = senderSides[senderId] === 'right';
+        }
+
+        return [
+          ...acc,
+          showDateSeparator && (
+            <div
+              key={`date-${msg._id}`}
+              className="flex justify-center my-3 w-full"
+            >
+              <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow ">
+                {msgDate.toLocaleDateString()}
+              </span>
+            </div>
+          ),
+          <div
+            key={msg._id}
+            className={`mb-2 flex ${
+              isRightSide ? 'justify-end' : 'justify-start'
+            }`}
+          >
+            <div
+              className={`relative max-w-[95%] min-w-[100px] px-2 rounded-lg shadow-md break-words whitespace-pre-wrap
+                ${
+                  currentUser
+                    ? isRightSide
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-700 text-white'
+                    : 'bg-gray-700 text-white'
+                }`}
+            >
+              <div className="flex justify-between items-center mb-1 text-xs">
+                <p className="text-sm font-semibold">
+                  {msg.sender?.name || 'Former Member'}
+                </p>
+                <span className="ml-2">
+                  {msgDate.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                  })}
+                </span>
+              </div>
+
+              <p>{msg.message}</p>
+
+              <div className="flex items-center space-x-3 mt-2 text-xs">
+                <button
+                  onClick={() => handleLike(msg._id)}
+                  className="flex items-center space-x-1 hover:text-yellow-400"
+                  disabled={!currentUser}
+                >
+                  👍 <span>{msg.likes || 0}</span>
+                </button>
+
+                <button
+                  onClick={() => handleUnlike(msg._id)}
+                  className="flex items-center space-x-1 hover:text-red-400"
+                  disabled={!currentUser}
+                >
+                  👎 <span>{msg.dislikes || 0}</span>
+                </button>
+              </div>
+            </div>
+          </div>,
+        ];
+      }, [])
+    ) : (
+      <p className="text-gray-500 text-center">
+        No messages yet. Start the conversation!
+      </p>
+    )}
   </div>
-) : (
-        <div className="text-center mt-2">
-          <p className="text-gray-700 mb-4">
-            You must be logged in to comment or like messages.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Link
-              href={`/users/login?preserveRedirect=true`}
-              onClick={() => {
-                localStorage.setItem(
-                  'redirectAfterLogin',
-                  `/threads/views/${threadId}`
-                );
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Login
-            </Link>
-            <Link
-              href={`/users/register?preserveRedirect=true`}
-              onClick={() => {
-                localStorage.setItem(
-                  'redirectAfterLogin',
-                  `/threads/views/${threadId}`
-                );
-              }}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              Register
-            </Link>
-          </div>
-        </div>
-      )}
-    </div>
+</div>
+
     </div>
   );
 };

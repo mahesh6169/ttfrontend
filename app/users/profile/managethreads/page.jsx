@@ -93,16 +93,13 @@ const ManageThreads = () => {
                 <p className="text-sm text-gray-700 italic line-clamp-2">
                   {thread.question}
                 </p>
-                <p className="text-sm text-gray-500">
-                  Started by {thread.owner?.name || 'Unknown'}
-                </p>
                 <p className="text-xs text-gray-400">
                   Created on: {new Date(thread.createdAt).toLocaleDateString()}
                 </p>
               </div>
 
               {/* Mute Icon Row */}
-              <div className="flex justify-end mt-3">
+              <div className="flex justify-start mt-3">
   <button
     onClick={toggleMute}
     className="flex items-center gap-2 text-sm text-gray-700 hover:text-teal-700"
@@ -124,7 +121,7 @@ const ManageThreads = () => {
 
 
               {/* Action Buttons */}
-              <div className="flex justify-end  gap-4 mt-4 ">
+              <div className="flex justify-start  gap-4 mt-2 ">
                 <button
                   onClick={() => handleEditClick(thread._id)}
                   className="px-4 py-2 bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100 rounded"

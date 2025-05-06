@@ -105,7 +105,7 @@ const ReportForm = () => {
         <button
           type="submit"
           disabled={reportStatus === 'loading'}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
+          className="bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded  disabled:opacity-50"
         >
           {reportStatus === 'loading' ? 'Submitting...' : 'Submit Report'}
         </button>
