@@ -292,16 +292,16 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     {/* Question */}
     {thread.question && (
-      <div className=" px-2 rounded mb-6 bg-white shadow">
-        
+      <div className=" px-2 rounded my-6 bg-white shadow">        
+        <h3 className="font-semibold mb-2 px-4 w-fit ">Topic Descritpion</h3>
         <p className="text-gray-800 text-justify">{thread.question}</p>
       </div>
     )}
 
     {/* Useful Answers */}
     {usefulAnswers.length > 0 ? (
-  <div className=" rounded mb-4  shadow">
-    <h3 className="font-semibold mb-2 px-4 bg-teal-900 text-lime-100  w-fit ">Comments marked as useful</h3>
+  <div className=" rounded my-6  shadow">
+    <h3 className="font-semibold mb-2 px-4 w-fit ">Comments marked as useful</h3>
     {usefulAnswers.map((msg) => (
       <div
         key={msg._id}
@@ -355,9 +355,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 )}
 
 
-    {/* Message Area */}
+
 {/* Message Area */}
-<div className="rounded mb-4 bg-white shadow space-y-2">
+<div className="rounded my-6 bg-white shadow space-y-2">
 
   {/* ✅ Message Box at the Top */}
   {currentUser ? (
@@ -389,37 +389,47 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       </div>
     </div>
   ) : (
-    <div className="text-center my-6">
-      <p className="text-gray-700 mb-4 text-xs sm:text-base ">
-        You must be logged in to comment or like messages.
-      </p>
-      <div className="flex justify-center space-x-4">
-        <Link
-          href={`/users/login?preserveRedirect=true`}
-          onClick={() => {
-            localStorage.setItem(
-              'redirectAfterLogin',
-              `/threads/views/${threadId}`
-            );
-          }}
-          className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
-        >
-          Login
-        </Link>
-        <Link
-          href={`/users/register?preserveRedirect=true`}
-          onClick={() => {
-            localStorage.setItem(
-              'redirectAfterLogin',
-              `/threads/views/${threadId}`
-            );
-          }}
-          className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
-        >
-          Register
-        </Link>
-      </div>
-    </div>
+    <div className="border rounded-lg shadow bg-white p-4 my-6">
+  <textarea
+    disabled
+    placeholder=" 🔒 Login to join the conversation..."
+    rows={1}
+    className="w-full border border-gray-300 bg-gray-100 text-gray-500 resize-none p-2 text-sm sm:text-base rounded"
+    style={{
+      minHeight: '2.5rem',
+      maxHeight: '8rem',
+      height: 'auto',
+    }}
+  />
+
+  <div className="flex justify-center gap-4">
+    <Link
+      href={`/users/login?preserveRedirect=true`}
+      onClick={() => {
+        localStorage.setItem(
+          'redirectAfterLogin',
+          `/threads/views/${threadId}`
+        );
+      }}
+      className="px-4 py-2 text-sm sm:text-base bg-teal-600 text-lime-100 rounded hover:bg-teal-700"
+    >
+      Login
+    </Link>
+    <Link
+      href={`/users/register?preserveRedirect=true`}
+      onClick={() => {
+        localStorage.setItem(
+          'redirectAfterLogin',
+          `/threads/views/${threadId}`
+        );
+      }}
+      className="px-4 py-2 text-sm sm:text-base bg-teal-600 text-lime-100 rounded hover:bg-teal-700"
+    >
+      Register
+    </Link>
+  </div>
+</div>
+
   )}
 
   {/* ✅ Message List Below */}
@@ -491,7 +501,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 <button
                   onClick={() => handleLike(msg._id)}
                   className="flex items-center space-x-1 hover:text-yellow-400"
-                  disabled={!currentUser}
+                  disabled={false}
                 >
                   👍 <span>{msg.likes || 0}</span>
                 </button>
@@ -499,7 +509,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 <button
                   onClick={() => handleUnlike(msg._id)}
                   className="flex items-center space-x-1 hover:text-red-400"
-                  disabled={!currentUser}
+                  disabled={false}
                 >
                   👎 <span>{msg.dislikes || 0}</span>
                 </button>
