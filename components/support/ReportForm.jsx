@@ -1,17 +1,19 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { submitReport, resetReportStatus } from '@/store/slices/supportSlice';
+import { submitReport } from '@/store/slices/supportSlice';
 import ReCAPTCHA from 'react-google-recaptcha';
-
+import { toast } from 'react-toastify';
+import { isFormSubmittedTooQuickly, isHoneypotTriggered } from '@/utils/forms/antiBot';
+import { sanitizeInput, validateReportForm } from '@/utils/forms/validation';
 
 const ReportForm = () => {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
-  const { reportStatus, reportError } = useSelector((state) => state.support);
   const [captchaToken, setCaptchaToken] = useState(null);
 
   const title = searchParams.get('title') || '';
@@ -21,6 +23,8 @@ const ReportForm = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [honeypot, setHoneypot] = useState('');
+  const [formLoadTime, setFormLoadTime] = useState(Date.now());
 
   useEffect(() => {
     if (user) {
@@ -29,38 +33,61 @@ const ReportForm = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    return () => {
-      dispatch(resetReportStatus());
-    };
-  }, [dispatch]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    if (!captchaToken) {
-      alert('Please complete the CAPTCHA before submitting.');
+
+    if (isHoneypotTriggered(honeypot)) {
+      toast.error('Bot submission blocked.');
       return;
     }
-  
+
+    if (isFormSubmittedTooQuickly(formLoadTime)) {
+      toast.error('Form submitted too quickly. Please try again.');
+      return;
+    }
+
+    const errors = validateReportForm({
+      senderName: name,
+      senderEmail: email,
+      message,
+    });
+
+    if (Object.keys(errors).length > 0) {
+      toast.error(
+        <div className="space-y-1">
+          {Object.values(errors).map((msg, i) => (
+            <p key={i} className="text-sm text-red-600">{msg}</p>
+          ))}
+        </div>
+      );
+      return;
+    }
+
     dispatch(
       submitReport({
-        title,
+        title: sanitizeInput(title),
         id,
         type,
-        message,
-        senderName: name,
-        senderEmail: email,
-        captchaToken, // 👈 Include the token in your payload
+        senderName: sanitizeInput(name),
+        senderEmail: sanitizeInput(email),
+        message: sanitizeInput(message),
+        captchaToken,
       })
     )
       .unwrap()
       .then(() => {
         setMessage('');
-        setCaptchaToken(null); // Optional: Reset CAPTCHA after successful submission
+        setCaptchaToken(null);
+
+        toast.success('Report submitted successfully.');
+        setTimeout(() => {
+          router.push('/');
+        }, 1500);
+      })
+      .catch((err) => {
+        toast.error(err || 'Failed to submit report. Please try again.');
       });
   };
-  
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-6">
@@ -72,10 +99,19 @@ const ReportForm = () => {
       <form onSubmit={handleSubmit}>
         <input
           type="text"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+          className="hidden"
+          tabIndex="-1"
+          autoComplete="off"
+        />
+
+        <input
+          type="text"
           className="w-full border p-2 rounded mb-2"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Your Name (optional)"
+          placeholder="Your Name"
         />
 
         <input
@@ -83,41 +119,29 @@ const ReportForm = () => {
           className="w-full border p-2 rounded mb-2"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Your Email (optional but helpful)"
+          placeholder="Your Email "
         />
 
         <textarea
-          required
           className="w-full border p-2 rounded mb-2"
           rows={5}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Explain the issue clearly..."
         />
-        
-        <ReCAPTCHA
-  sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-  onChange={(token) => setCaptchaToken(token)}
-  onExpired={() => setCaptchaToken(null)}
-/>
 
+        <ReCAPTCHA
+          sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+          onChange={(token) => setCaptchaToken(token)}
+          onExpired={() => setCaptchaToken(null)}
+        />
 
         <button
           type="submit"
-          disabled={reportStatus === 'loading'}
-          className="bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded  disabled:opacity-50"
+          className="bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded"
         >
-          {reportStatus === 'loading' ? 'Submitting...' : 'Submit Report'}
+          Submit Report
         </button>
-
-        {reportStatus === 'success' && (
-          <p className="text-green-600 mt-2">Report submitted successfully.</p>
-        )}
-        {reportStatus === 'failed' && (
-          <p className="text-red-600 mt-2">
-            Something went wrong. {reportError || 'Please try again.'}
-          </p>
-        )}
       </form>
     </div>
   );

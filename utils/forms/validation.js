@@ -108,4 +108,97 @@ export const ALLOWED_EMAIL_DOMAINS = [
     return errors;
   }
   
+  export function validateContactForm(formData) {
+    const errors = {};
+  
+    const titlePattern = /^[a-zA-Z0-9\s.,!?'"()-]+$/;
+    const namePattern = /^[a-zA-Z\s'-]+$/;
+  
+    // Title
+    if (!formData.title?.trim()) {
+      errors.title = 'Subject/title is required';
+    } else if (formData.title.length > 100) {
+      errors.title = 'Title must be 100 characters or fewer';
+    } else if (!titlePattern.test(formData.title)) {
+      errors.title = 'Title must only contain letters, numbers, and basic punctuation';
+    }
+  
+    // Name
+    if (!formData.senderName?.trim()) {
+      errors.senderName = 'Name is required';
+    } else if (formData.senderName.length > 20) {
+      errors.senderName = 'Name must be 20 characters or fewer';
+    } else if (!namePattern.test(formData.senderName)) {
+      errors.senderName = 'Name must only contain letters, spaces, hyphens, or apostrophes';
+    }
+  
+    // Email
+    if (!formData.senderEmail?.trim()) {
+      errors.senderEmail = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.senderEmail)) {
+      errors.senderEmail = 'Email format is invalid';
+    } else if (!isValidEmailDomain(formData.senderEmail)) {
+      errors.senderEmail = 'Please use a valid email provider';
+    }
+  
+    // Message
+    if (!formData.message?.trim()) {
+      errors.message = 'Message is required';
+    } else if (formData.message.length > 1000) {
+      errors.message = 'Message should not exceed 1000 characters';
+    }
+  
+    // Category
+    // Category
+if (!formData.category?.trim()) {
+  errors.category = 'Category is required';
+} else if (
+  formData.category === 'Other' ||
+  (formData.category && !['Feature Request', 'Advertisement', 'Technical Support', 'Bug Report'].includes(formData.category))
+) {
+  // If user entered a custom category (like Other), validate it like title
+  if (formData.category.length > 100) {
+    errors.category = 'Category (Other) must be 100 characters or fewer';
+  } else if (!/^[a-zA-Z0-9\s.,!?'"()-]+$/.test(formData.category)) {
+    errors.category = 'Category must only contain letters, numbers, and basic punctuation';
+  }
+}
+
+  
+    return errors;
+  }
+  
+  
+  export function validateReportForm(formData) {
+    const errors = {};
+  
+    const namePattern = /^[a-zA-Z\s'-]+$/;
+  
+    // Name
+    if (!formData.senderName?.trim()) {
+      errors.senderName = 'Name is required';
+    } else if (formData.senderName.length > 20) {
+      errors.senderName = 'Name must be 20 characters or fewer';
+    } else if (!namePattern.test(formData.senderName)) {
+      errors.senderName = 'Name must only contain letters, spaces, hyphens, or apostrophes';
+    }
+  
+    // Email
+    if (!formData.senderEmail?.trim()) {
+      errors.senderEmail = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.senderEmail)) {
+      errors.senderEmail = 'Email format is invalid';
+    } else if (!isValidEmailDomain(formData.senderEmail)) {
+      errors.senderEmail = 'Please use a valid email provider';
+    }
+  
+    // Message
+    if (!formData.message?.trim()) {
+      errors.message = 'Message is required';
+    } else if (formData.message.length > 1000) {
+      errors.message = 'Message should not exceed 1000 characters';
+    }
+  
+    return errors;
+  }
   
