@@ -219,8 +219,15 @@ const CreateThreadPage = () => {
     // Append images
     formData.images.forEach((file) => formPayload.append('images', file));
 
-    await dispatch(createThread(formPayload));
-    router.push('/threads');
+    const resultAction = await dispatch(createThread(formPayload));
+
+if (createThread.fulfilled.match(resultAction)) {
+  toast.success('Thread created successfully!');
+  router.push('/threads');
+} else {
+  toast.error(resultAction?.error?.message || 'Failed to create thread.');
+}
+
   };
 
   return (
