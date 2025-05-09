@@ -9,6 +9,8 @@ import {
 import ConfirmModal from '@/components/ConfirmModal';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import socket from '@/config/socket';
+
 
 const ConversationsPage = () => {
   const dispatch = useDispatch();
@@ -24,6 +26,19 @@ const [pendingDelete, setPendingDelete] = useState(null);
   useEffect(() => {
     dispatch(fetchConversations());
   }, [dispatch]);
+
+  useEffect(() => {
+    const handleNewMessage = () => {
+      dispatch(fetchConversations());
+    };
+  
+    socket.on('newMessage', handleNewMessage);
+  
+    return () => {
+      socket.off('newMessage', handleNewMessage);
+    };
+  }, [dispatch]);
+  
 
   useEffect(() => {
     if (deleteConversationStatus === 'success') {
@@ -49,7 +64,7 @@ const [pendingDelete, setPendingDelete] = useState(null);
 
   return (
     <div>
-      <h1 className="text-base sm:text-2xl font-bold mb-4 text-center">
+      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center text-teal-700">
         Chat Messages
       </h1>
 

@@ -14,7 +14,7 @@ const Sidebar = ({ onLinkClick }) => {
     { label: 'Settings', href: '/users/profile/settings', icon: <FaUser /> },
     { label: 'Manage Ads', href: '/users/profile/manageads', icon: <FaAd /> },
     { label: 'Manage Events', href: '/users/profile/manageevents', icon: <FaCalendarAlt /> }, // ✅ NEW ITEM.
-    { label: 'Manage Threads', href: '/users/profile/managethreads', icon: <BsChatText /> },
+    { label: 'Manage Topics', href: '/users/profile/managethreads', icon: <BsChatText /> },
     { label: 'Favourites', href: '/users/profile/favourites', icon: <MdFavorite /> },
     { label: 'Messages', href: '/users/profile/conversations', icon: <FaEnvelope /> },
   ];

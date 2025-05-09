@@ -61,7 +61,7 @@ const ManageEventsPage = () => {
 
   return (
     <div className="m-2">
-      <h1 className="text-2xl font-bold text-center mb-6 text-teal-700" >Manage My Events</h1>
+      <h1 className="text-2xl font-bold text-center mb-6 text-teal-700" >Manage Events</h1>
       <Link
         href="/events/add"
         onClick={() =>
