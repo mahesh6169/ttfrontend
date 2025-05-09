@@ -343,37 +343,55 @@ const ThreadsPage = () => {
       ) : threads.length > 0 ? (
         <div className="space-y-4 px-4">
           {threads.map((thread) => (
-            <div
-              key={thread._id}
-              className="border rounded-lg p-4 hover:bg-teal-50 cursor-pointer shadow-sm transition-colors duration-200"
-              onClick={() => router.push(`/threads/views/${thread._id}`)}
-            >
-              <div className="flex flex-col space-y-1">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-base font-semibold text-teal-800">{thread.title}</h2>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    thread.commentCount > 0 
-                      ? 'bg-teal-100 text-teal-700' 
-                      : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    💬 {thread.commentCount > 0 ? `${thread.commentCount} comment${thread.commentCount > 1 ? 's' : ''}` : 'No comments'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-start gap-2">
-                  <p className="text-sm text-gray-700 italic line-clamp-2 flex-1">{thread.question}</p>
-                  {thread.images?.[0]?.url && (
-                    <img src={thread.images[0].url} alt="Thread" className="w-16 h-16 object-cover rounded shrink-0" />
-                  )}
-                </div>
-                <div className="flex flex-wrap justify-start items-center text-xs sm:text-sm text-gray-500">
-                  <p>Posted by: {thread.ownerName || 'Former Member'}</p>
-                  <p className="ml-3">| Posted: {getPostedText(thread.createdAt)}</p>
-                  {thread.category && <p className="ml-3">| Category: {thread.category}</p>}
-                  {thread.distance && <p className="ml-3">| Distance: {thread.distance.toFixed(1)} km</p>}
-                </div>
-              </div>
-            </div>
-          ))}
+  <div
+    key={thread._id}
+    className="border rounded-lg p-4 bg-gray-100 hover:bg-gray-200 cursor-pointer shadow-sm transition-colors duration-200"
+    onClick={() => router.push(`/threads/views/${thread._id}`)}
+  >
+    <div className="flex justify-between items-start gap-4">
+      {/* Left content */}
+      <div className="flex-1 space-y-1">
+        {/* Title + Question */}
+        <div className="mb-2">
+          <h2 className="text-sm sm:text-base font-bold text-gray-800">{thread.title}</h2>
+          <p className="text-sm text-gray-600 italic line-clamp-2">{thread.question}</p>
+        </div>
+
+        {/* Row 1: owner + date */}
+        <div className="flex flex-wrap gap-x-2 text-xs  text-gray-600 ">
+          <span>{thread.ownerName || 'Former Member'}</span>
+          <span>|</span>
+          <span>{getPostedText(thread.createdAt)}</span>
+        </div>
+
+        
+
+        {/* Comment count */}
+        <div className="mt-1">
+          <span className={`text-xs px-2 py-0.5 rounded-full ${
+            thread.commentCount > 0 
+              ? 'bg-teal-900 text-gray-100' 
+              : 'bg-gray-300 text-gray-900'
+          }`}>
+            💬 {thread.commentCount > 0
+              ? `${thread.commentCount} comment${thread.commentCount > 1 ? 's' : ''}`
+              : 'No comments'}
+          </span>
+        </div>
+      </div>
+
+      {/* Right image */}
+      {thread.images?.[0]?.url && (
+        <img
+          src={thread.images[0].url}
+          alt="Thread"
+          className=" w-16 h-16 sm:w-40 sm:h-20 object-cover rounded shrink-0"
+        />
+      )}
+    </div>
+  </div>
+))}
+
         </div>
       ) : (
         <div className="text-center p-4 text-gray-500">No threads available. Start a new discussion!</div>

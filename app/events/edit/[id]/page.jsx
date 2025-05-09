@@ -133,7 +133,9 @@ const EditEventPage = () => {
           name: org.name || '',
           email: org.email || '',
           website: org.website || '',
-          contacts: org.contacts?.length > 0 ? org.contacts : [{ name: '', designation: '', phone: '' }],
+          contacts: Array.isArray(org.contacts) && org.contacts.length > 0
+  ? org.contacts.map((c) => ({ ...c }))
+  : [{ name: '', designation: '', phone: '' }],
         },
         address: {
           ...prev.address,
@@ -441,7 +443,7 @@ if (!formData.organiser?.contacts?.[0]?.phone) missing.push('organiser contact p
         {/* 7–13. Organiser Fields */}
         {/* Organiser Info */}
 <div>
-  <label className="block font-semibold">Organiser Name</label>
+  <label className="block font-semibold">Organiser/Orgnisation Name</label>
   <input
     type="text"
     name="organiser.name"
@@ -489,7 +491,7 @@ if (!formData.organiser?.contacts?.[0]?.phone) missing.push('organiser contact p
 </div>
 
 <div className="border rounded p-3 bg-gray-50">
-  <label className="block font-semibold mb-2">Organiser Contacts</label>
+  <label className="block font-semibold mb-2">Coordinator Contacts</label>
   {formData.organiser?.contacts?.map((contact, idx) => (
     <div key={idx} className="mb-2 border-b pb-2">
       <input
@@ -508,7 +510,7 @@ if (!formData.organiser?.contacts?.[0]?.phone) missing.push('organiser contact p
       />
       <input
         type="text"
-        placeholder="Designation"
+        placeholder="Coordinator Role"
         value={contact.designation}
         onChange={(e) => {
           const updated = [...formData.organiser.contacts];
@@ -632,7 +634,7 @@ if (!formData.organiser?.contacts?.[0]?.phone) missing.push('organiser contact p
         <div className="flex gap-4">
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded "
           >
             Update Event
           </button>

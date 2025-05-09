@@ -3,6 +3,7 @@
 import React from 'react';
 import EventCard from '@/components/events/eventcomponents/EventCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SkeletonLoader from '../../SkeletonLoader'; 
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 
 const EventGrid = ({ events, eventStatus }) => {
@@ -13,21 +14,26 @@ const EventGrid = ({ events, eventStatus }) => {
     toggleEventWishlist,
   } = useEventWishlist();
 
-  if (eventStatus === 'loading' || eventWishlistStatus === 'loading') {
-    return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+ // 👉 Loading State (use Skeleton if still initializing or actively loading)
+ if (
+  (eventStatus === 'idle' || eventStatus === 'loading' || eventWishlistStatus === 'loading') &&
+  (!events || events.length === 0)
+) {
+  return (
+    <div className="flex justify-center items-center min-h-[300px]">
+      <SkeletonLoader />
+    </div>
+  );
+}
 
-  if (!events || events.length === 0) {
-    return (
-      <div className="flex justify-center items-center text-center p-8">
-        <p className="text-lg text-gray-500">No events found.</p>
-      </div>
-    );
-  }
+// 👉 Empty State
+if (eventStatus === 'success' && (!events || events.length === 0)) {
+  return (
+    <div className="flex justify-center items-center text-center p-8">
+      <p className="text-xs sm:text-sm text-gray-800">No Events Listed</p>
+    </div>
+  );
+}
 
   return (
     <div id="EventGrid">

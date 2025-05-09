@@ -182,7 +182,7 @@ const AddEventPage = () => {
       const resultAction = await dispatch(addEvent(formPayload));
       if (addEvent.fulfilled.match(resultAction)) {
         toast.success('Event added successfully!');
-        router.push('/events');
+        router.push('/users/profile/manageevents');
       } else {
         throw new Error(resultAction.payload || 'Failed to add event.');
       }
@@ -399,7 +399,7 @@ const AddEventPage = () => {
           {/* 7–13. Organiser Fields */}
 {/* 7. Organiser Fields */}
 <div>
-  <label className="block font-semibold">Organiser Name</label>
+  <label className="block font-semibold">Organiser/Orgnisation Name</label>
   <input
     type="text"
     name="organiser.name"
@@ -448,7 +448,7 @@ const AddEventPage = () => {
 
 {/* 🔁 Organiser Contacts Dynamic List */}
 <div className="border rounded p-3 bg-gray-50">
-  <label className="block font-semibold mb-2">Organiser Contacts</label>
+  <label className="block font-semibold mb-2">Coordinator Contacts</label>
   {formData.organiser.contacts.map((contact, idx) => (
     <div key={idx} className="mb-2 space-y-1 border-b pb-2">
       <input
@@ -467,8 +467,8 @@ const AddEventPage = () => {
       />
       <input
         type="text"
-        placeholder="Designation"
-        value={contact.designation}
+        placeholder="Coordinator Role"
+        value={contact.designation} 
         onChange={(e) => {
           const updated = [...formData.organiser.contacts];
           updated[idx].designation = e.target.value;

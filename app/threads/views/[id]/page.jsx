@@ -22,6 +22,7 @@ import { zonedTimeToUtc } from 'date-fns-tz';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { FaTimes } from 'react-icons/fa';
 import { MdNotificationsActive, MdNotificationsOff } from "react-icons/md";
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 
 const ThreadChatPage = () => {
@@ -168,7 +169,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   return (
     
-    <div className="border  rounded shadow-md mx-auto">  
+    <div className="border rounded shadow-md mx-auto my-6 px-2">  
 
  {/* 🖼️ Image Preview Section */}
 {thread.images?.length > 0 && (
@@ -240,7 +241,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
  {/* Title */}
  {thread.title && (
       <div className="my-2 px-4 ">
-        <h2 className="text-2xl font-bold text-center break-words">{thread.title}</h2>
+        <h2 className="text-base sm:text-lg text-center font-medium my-1 px-2 text-gray-800 break-words ">{thread.title}</h2>
       </div>
     )}
 
@@ -259,6 +260,11 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       {thread.createdAt && (
         <span>
           <strong>Posted:</strong> {format(new Date(thread.createdAt), 'dd MMM yyyy')}
+        </span>
+      )}
+       {(thread.category || thread.suburb?.name) && (
+        <span>
+          <strong>Location:</strong> {thread.suburb?.name}
         </span>
       )}
     </div>
@@ -292,25 +298,29 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     {/* Question */}
     {thread.question && (
-      <div className=" px-2 rounded my-6 bg-white shadow">        
-        <h3 className="font-semibold mb-2 px-4 w-fit ">Topic Descritpion</h3>
-        <p className="text-gray-800 text-justify">{thread.question}</p>
+      <div className=" px-2 rounded my-6 bg-white shadow py-2">        
+        <h3 className="text-sm sm:text-base text-start font-medium mb-2">Topic Descritpion</h3>
+        <div className="text-sm sm:text-base text-gray-800 text-justify space-y-2">
+  {thread.question.split('\n').map((para, idx) => (
+    <p key={idx} className="whitespace-pre-wrap">{para}</p>
+  ))}
+</div>
       </div>
     )}
 
     {/* Useful Answers */}
     {usefulAnswers.length > 0 ? (
-  <div className=" rounded my-6  shadow">
-    <h3 className="font-semibold mb-2 px-4 w-fit ">Comments marked as useful</h3>
+  <div className=" rounded my-6  shadow py-2 px-2">
+    <h3 className="text-sm sm:text-base text-start font-medium mb-2">Comments marked as useful</h3>
     {usefulAnswers.map((msg) => (
       <div
         key={msg._id}
-        className="mb-6 p-2 bg-white rounded shadow-sm"
+        className="mb-6 p-2 bg-yellow-50 rounded shadow-sm"
       >
         <p className="text-sm font-semibold text-gray-800">
           {msg.sender?.name || 'Former Member'}
         </p>
-        <p className="text-gray-700 text-justify italic">{msg.message}</p>
+        <p className="text-sm sm:text-base text-gray-700 text-justify italic">{msg.message}</p>
         <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
           <span>
             {new Date(msg.createdAt).toLocaleTimeString([], {
@@ -348,7 +358,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 ) : (
   <div className=" rounded my-6  shadow">
     <h3 className="font-semibold mb-2 px-4 bg-teal-900 text-lime-100  w-fit ">Comments marked as useful</h3>
-  <div className="border rounded mb-4 bg-yellow-50 shadow p-4 text-center text-sm text-gray-700">
+  <div className="border rounded mb-4 bg-yellow-50 shadow p-4 text-center text-sm sm:text-base text-gray-700">
     ⭐️⭐️ Please click  <strong>thumbs up 👍</strong> icon to mark comments as useful ⭐️⭐️
   </div>
   </div>
@@ -404,7 +414,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   <div className="flex justify-center gap-4">
     <Link
-      href={`/users/login?preserveRedirect=true`}
+      href={`/login?preserveRedirect=true`}
       onClick={() => {
         localStorage.setItem(
           'redirectAfterLogin',
@@ -482,8 +492,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                     : 'bg-gray-700 text-white'
                 }`}
             >
-              <div className="flex justify-between items-center mb-1 text-xs">
-                <p className="text-sm font-semibold">
+              <div className="flex justify-between items-center mb-1 text-sm sm:text-base text-yellow-400">
+                <p className="text-sm font-bold ">
                   {msg.sender?.name || 'Former Member'}
                 </p>
                 <span className="ml-2">
@@ -495,7 +505,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 </span>
               </div>
 
-              <p>{msg.message}</p>
+              <p className="ml-4 text-sm sm:text-base whitespace-pre-wrap">{msg.message}</p>
 
               <div className="flex items-center space-x-3 mt-2 text-xs">
                 <button

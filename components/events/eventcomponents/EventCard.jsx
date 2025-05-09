@@ -70,35 +70,35 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
 
         {/* Title */}
         <div className="flex items-center px-2">
-  <h2 className="text-sm sm:text-base font-bold truncate">
+  <h2 className="text-xs sm:text-sm text-center font-medium my-1 px-2 truncate text-gray-800">
     {title}
   </h2>
   {(event.recurrence?.isRecurring || event.isRecurringInstance) && (
     <MdRepeat 
-      className="ml-1 text-blue-500 flex-shrink-0" 
+      className="ml-1 text-gray-800 flex-shrink-0" 
       title="Recurring Event"
     />
   )}
 </div>
 
         {/* Date & Time */}
-        <div className="flex items-center text-sm text-gray-600  px-2">
+        <div className="flex items-center text-sm text-gray-600  px-1 mb-1">
           <BsCalendar2Event className="mr-1" />
-          <span className="text-xs sm:text-sm md:text-base text-gray-500">
+          <span className="text-xs font-medium text-gray-600">
             {formattedDate}
           </span>
         </div>
 
         {/* Location & Posted Info */}
         <div className="flex items-center gap-1 px-2 truncate">
-          <MdLocationOn className="text-xs flex-shrink-0" />
-          <span className="text-xs sm:text-sm md:text-base text-gray-500">
+          <MdLocationOn className="text-xs font-medium text-gray-600 flex-shrink-0" />
+          <span className="text-xs font-medium  text-gray-600">
             {address?.suburb || address?.state
               ? [address?.suburb, address?.state].filter(Boolean).join(', ')
               : venue}
           </span>
         </div>
-        <div className="text-xs sm:text-sm md:text-base  text-gray-500 text-right whitespace-nowrap px-2">
+        <div className="text-xs font-medium text-gray-600 text-right whitespace-nowrap px-2 mb-1">
           {postedText}
         </div>
       </Link>
