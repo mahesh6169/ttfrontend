@@ -244,6 +244,7 @@ const handlePlaceChanged = () => {
       },
       {
         condition:
+           formData.isOffered && 
           !formData.isForSale &&
           !formData.isForHire &&
           !formData.isForRent &&

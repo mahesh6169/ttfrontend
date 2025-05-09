@@ -16,19 +16,21 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist}) => {
   // 📦 Determine which price to display
 let priceLabel = null;
 
+
 if (advert.isForSale && advert.sellPrice > 0) {
   priceLabel = `$${advert.sellPrice}`;
 } else if (advert.isForHire && advert.hirePrice > 0) {
-  priceLabel = `$${advert.hirePrice} p/${advert.hireUnit}`;
+  priceLabel = `For Hire - $${advert.hirePrice} p/${advert.hireUnit}`;
 } else if (advert.isForRent && advert.rentPrice > 0) {
-  priceLabel = `$${advert.rentPrice} p/${advert.rentUnit}`;
+  priceLabel = `For Rent - $${advert.rentPrice} p/${advert.rentUnit} `;
 } else if (advert.isForShare && advert.sharePrice > 0) {
-  priceLabel = `$${advert.sharePrice} p/${advert.shareUnit}`;
+  priceLabel = `For Share - $${advert.sharePrice} p/${advert.shareUnit}`;
 }
 
 
+
   return (
-<div id="AdvertCard" className="relative border rounded-lg shadow-md  bg-gray-50 hover:bg-gray-100">
+<div id="AdvertCard" className="relative border rounded-lg shadow-md  bg-gray-100 hover:bg-gray-200">
   {/* Wishlist Button - Top Right */}
   <button
     onClick={onWishlistToggle}
@@ -52,26 +54,23 @@ if (advert.isForSale && advert.sellPrice > 0) {
       </div>
     )}
 
-    {/* Price Box - Positioned on Top of Image */}
-    {priceLabel && (
-  <div className="absolute top-2 left-2 bg-gray-300 text-gray-900 font-bold px-2 py-1 rounded-md text-sm sm:text-base ">
-    {priceLabel}
-  </div>
-)}
+    
 
   </div>
 
   {/* Title Box */}
-  <h2 className="text-sm sm:text-base font-bold my-1 px-2 truncate">
+  <h2 className="text-xs sm:text-sm text-center font-medium my-1 px-2 truncate text-gray-800">
     {advert.title}
   </h2>
 
-  {/* Address Box */}
+  <div className="text-xs font-medium my-1 px-2 text-gray-800 h-4">
+  {advert.isWanted ? 'Wanted $$$' : (priceLabel || '\u00A0')}
+</div>
 
   {/* Location block */}
   <div className="flex items-center gap-1 px-2 truncate ">
-    <MdLocationOn className="text-xs flex-shrink-0" />
-    <span className="text-xs sm:text-sm md:text-base text-gray-500">
+    <MdLocationOn className="text-xs font-medium text-gray-600 flex-shrink-0" />
+    <span className="text-xs font-medium  text-gray-600">
       {/* Display suburb and state if available, otherwise show venue */}
       {advert.address?.suburb || advert.address?.state
         ? [advert.address?.suburb, advert.address?.state].filter(Boolean).join(', ')
@@ -80,7 +79,7 @@ if (advert.isForSale && advert.sellPrice > 0) {
   </div>
 
   {/* Posted date */}
-  <div className="text-xs sm:text-sm md:text-base text-gray-500 text-right whitespace-nowrap px-2">{postedText}</div>
+  <div className="text-xs font-medium text-gray-600 text-right whitespace-nowrap px-2 mb-1">{postedText}</div>
 
   </Link>
 </div>

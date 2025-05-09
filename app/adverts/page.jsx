@@ -73,7 +73,9 @@ const AdvertsPage = () => {
 
   // 🔥 Dispatcher based on selected mode
   useEffect(() => {
-    if (mode === 'all') {
+    console.log('useEffect triggered with mode:', mode);
+  console.log('all state:', all);
+    if (mode === 'all' ) {
       dispatch(fetchAdvertsAll());
     } else if (mode === 'categories') {
       dispatch(fetchAdvertsByCategory());

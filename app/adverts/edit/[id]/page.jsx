@@ -221,7 +221,36 @@ const EditAdvertPage = () => {
       } else {
         updatedData[name] = value;
       }
-  
+      
+
+      // When user switches to "Wanted" mode
+    if (name === 'isWanted' && checked) {
+      // Disable "Offered" mode
+      updatedData.isOffered = false;
+      
+      // Reset all price-related fields explicitly
+      updatedData.isForSale = false;
+      updatedData.sellPrice = 0;
+      updatedData.isForHire = false;
+      updatedData.hirePrice = 0;
+      updatedData.hireUnit = 'hour';
+      updatedData.isForRent = false;
+      updatedData.rentPrice = 0;
+      updatedData.rentUnit = 'week';
+      updatedData.isForShare = false;
+      updatedData.sharePrice = 0;
+      updatedData.shareUnit = 'week';
+    }
+    
+    // When user switches to "Offered" mode
+    if (name === 'isOffered' && checked) {
+      // Disable "Wanted" mode
+      updatedData.isWanted = false;
+      
+      // Don't reset price fields when switching TO offered mode
+      // This lets users keep their previous price settings
+    }
+      
       // ✅ Reset "condition" if not required
       if (name === 'category') {
         const shouldHideHire = CATEGORIES_HIDE_ISFORHIRE.includes(value);
@@ -258,7 +287,21 @@ const EditAdvertPage = () => {
           updatedData.shareUnit = 'week';
         }
       }
-  
+    
+      if (updatedData.isWanted) {
+        updatedData.isOffered = false;
+        updatedData.isForSale = false;
+        updatedData.sellPrice = 0;
+        updatedData.isForHire = false;
+        updatedData.hirePrice = 0;
+        updatedData.hireUnit = 'hour';
+        updatedData.isForRent = false;
+        updatedData.rentPrice = 0;
+        updatedData.rentUnit = 'week';
+        updatedData.isForShare = false;
+        updatedData.sharePrice = 0;
+        updatedData.shareUnit = 'week';
+      }
       return updatedData;
     });
   };
@@ -313,7 +356,7 @@ const EditAdvertPage = () => {
       { condition: !formData.title, message: 'Title is required.' },
       { condition: !formData.category, message: 'Category is required.' },
       {
-        condition: shouldShowCondition && !formData.condition,
+        condition: shouldShowCondition && formData.isForSale && !formData.condition,
         message: 'Condition is required.',
       },
       {
@@ -322,6 +365,7 @@ const EditAdvertPage = () => {
       },
       {
         condition:
+          formData.isOffered && 
           !formData.isForSale &&
           !formData.isForHire &&
           !formData.isForRent &&

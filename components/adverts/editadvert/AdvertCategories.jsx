@@ -1,5 +1,6 @@
 export const CATEGORY_OPTIONS = [
-  'Baby & Children',
+  'Books Art & Collectables',
+  'Baby & Children',  
   'Music & Games',
   'Cars & Vehicles',
   'Fashion & Accessories',
@@ -60,6 +61,7 @@ export const CATEGORY_OPTIONS = [
   ];
   
 
+  
     // Field-specific hints.
     export const FIELD_HINTS = {
         email: 'Required to avoid spam.',

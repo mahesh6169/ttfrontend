@@ -17,6 +17,7 @@ export const fetchAdvertsAll = createAsyncThunk(
         page: all.page,
         limit: all.limit,
       };
+      console.log('[fetchAdvertsAll] filters.all:', all);
       const response = await axios.get(`${API_BASE_URL}/all`, { params });
       return response.data;
     } catch (error) {
