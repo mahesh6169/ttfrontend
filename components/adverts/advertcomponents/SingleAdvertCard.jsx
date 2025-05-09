@@ -136,13 +136,13 @@ const FALLBACK_IMAGE_URL =
       {/* Title */}
       {advert.title && (
         <div className="my-2 px-2"> 
-         <h2 className="text-base sm:text-lg text-center font-medium my-1 px-2 text-gray-800 break-words ">{advert.title}</h2>
+         <h2 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words ">{advert.title}</h2>
          </div>
       )}
     
       {/* Posted By */}
       {advert.postedBy?.name && (
-  <div className="flex justify-start gap-4 text-xs sm:text-sm text-gray-800 text-left mb-2 px-2">
+  <div className="flex justify-start gap-1 sm:gap-4 text-sm sm:text-base text-gray-800 text-left mb-2 px-2">
     <span>
       <strong>Posted By:</strong> {advert.postedBy.name}
     </span>
@@ -164,7 +164,7 @@ const FALLBACK_IMAGE_URL =
       {/* Address */}
       {advert.address?.formattedAddress && (
         <div> 
-    <p className="text-xs sm:text-sm text-gray-800 mb-2 px-2 text-left">
+    <p className="text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
     <strong>Address:</strong> {advert.address.formattedAddress}
   </p>
   </div>
@@ -172,7 +172,7 @@ const FALLBACK_IMAGE_URL =
 
 
       {/* Row: Category, Ad Type, Condition */}
-      <div className="flex justify-start sm:gap-4 text-xs sm:text-sm text-gray-800 mb-2 px-2 text-left">
+      <div className="flex justify-start gap-1 sm:gap-4 text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
   {advert.category && (
     <p>
       <strong>Category:</strong> {advert.category}
@@ -180,7 +180,7 @@ const FALLBACK_IMAGE_URL =
   )}
   {(advert.isWanted || advert.isOffered) && (
     <p>
-      <strong>Ad Type:</strong>{' '}
+      <strong> Ad Type:</strong>{' '}
       {advert.isWanted ? 'Wanted' : advert.isOffered ? 'Offered' : ''}
     </p>
   )}
@@ -190,14 +190,14 @@ const FALLBACK_IMAGE_URL =
 
       {/* Row: Price */}
       {getPriceLabel() && (
-  <p className="text-xs sm:text-sm text-gray-800 mb-2 px-2 text-left">
+  <p className="text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
     <strong>{getPriceLabel().label}:</strong> {getPriceLabel().value}
   </p>
 )}
 
   {/* Row: Condition */}
 {advert.condition && (
-    <p className="text-xs sm:text-sm text-gray-800 mb-2 px-2 text-left">
+    <p className="text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
       <strong>Condition:</strong> {advert.condition}
     </p>
   )}
@@ -213,8 +213,8 @@ const FALLBACK_IMAGE_URL =
       {/* Description */}
       {advert.description && (
   <div className="border px-2 rounded shadow-md text-left my-8 mx-2">
-    <h3 className="text-sm sm:text-base text-start font-medium mb-2">Description</h3>
-    <div className="text-xs sm:text-sm text-gray-800 text-justify space-y-2">
+    <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Description</h3>
+    <div className="text-sm sm:text-base text-gray-800 text-justify space-y-2">
       {advert.description.split('\n').map((para, idx) => (
         <p key={idx} className="whitespace-pre-wrap">{para}</p>
       ))}

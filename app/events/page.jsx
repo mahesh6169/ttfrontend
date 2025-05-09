@@ -176,9 +176,9 @@ const EventsPage = () => {
       {/* Discover Events - Centered header with gradient background */}
       <div className="my-2 px-4 py-6 bg-gradient-to-br from-teal-950 to-teal-100 shadow-sm rounded-md flex justify-center">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-yellow-400 tracking-tight flex items-center gap-2 text-center animate-[pulsezoom_1.5s_ease-in-out_infinite]">
-          <span>Plan</span>
+          <span>Discover</span>
           <span className="text-yellow-400">•</span>
-          <span>Attend</span>
+          <span>Organise</span>
           <span className="text-yellow-400">•</span>
           <span>Connect</span>
         </h1>

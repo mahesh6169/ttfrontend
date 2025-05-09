@@ -155,20 +155,20 @@ const SingleEventCard = ({ event, chatProps }) => {
   {/* Title */}
   {event.title && (
     <div className="my-2 px-2">
-      <h2 className="text-base sm:text-lg text-center font-medium my-1 px-2 text-gray-800 break-words ">{event.title}</h2>
+      <h2 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words ">{event.title}</h2>
     </div>
   )}
 
   {/* Category */}
   {event.category && (
-    <div className="flex justify-start sm:gap-4 text-xs sm:text-sm text-gray-800 mb-2 px-2 text-left">
+    <div className="flex justify-start text-sm sm:text-base text-gray-800  px-2 text-left">
       <strong>Category:</strong> {event.category}
     </div>
   )}
 
   {/* Posted By */}
   {(event.postedBy?.name || postedText) && (
-    <div className="flex justify-start gap-4 text-xs sm:text-sm text-gray-800 text-left mb-2 px-2">
+    <div className="flex flex-col sm:flex-row justify-start gap-1 sm:gap-4 text-sm sm:text-base text-gray-800 text-left mb-2 px-2">
       {event.postedBy?.name && (
         <span>
           <strong>Posted By:</strong> {event.postedBy.name}
@@ -184,18 +184,18 @@ const SingleEventCard = ({ event, chatProps }) => {
 
   {/* Event Details */}
   <div className="border border-gray-300 p-4 rounded text-left">
-    <h3 className="text-sm sm:text-base text-start font-medium mb-2">Event Details</h3>
-    {eventDateStr && <p className="text-xs sm:text-sm text-gray-800">🗓️ {eventDateStr}</p>}
+    <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Event Details</h3>
+    {eventDateStr && <p className="text-sm sm:text-base text-gray-800">🗓️ {eventDateStr}</p>}
     {eventTimeStr && (
-      <p className="text-xs sm:text-sm text-gray-800">
+      <p className="text-sm sm:text-base text-gray-800">
         ⏰ {eventTimeStr} {eventZoneCity}
         {showLocalTime && <> || {localTimeStr} {localZoneCity}</>}
       </p>
     )}
     {(event.venue || event.address?.formattedAddress) && (
       <p className="mt-2 flex gap-2 items-start text-gray-700">
-        <MdLocationOn className="text-xs sm:text-sm text-gray-800" />
-        <span className="flex flex-col text-xs sm:text-sm text-gray-800">
+        <MdLocationOn className="text-sm sm:text-base text-gray-800" />
+        <span className="flex flex-col text-sm sm:text-base text-gray-800">
           {event.venue && <span>{event.venue}</span>}
           {event.address?.formattedAddress && (
             <span>{event.address.formattedAddress}</span>
@@ -209,20 +209,20 @@ const SingleEventCard = ({ event, chatProps }) => {
   {/* Event Organiser */}
 {event.organiser?.name && (
   <div className="border border-gray-300 p-4 rounded text-left">
-    <h3 className="text-sm sm:text-base text-start font-medium mb-2">Organiser Details</h3>
+    <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Organiser Details</h3>
 
     {event.organiser.name && (
-      <p className="text-xs sm:text-sm text-gray-800 px-2">
+      <p className="text-sm sm:text-base text-gray-800 px-2">
         <strong>Name/Organisation:</strong> {event.organiser.name}
       </p>
     )}
     {event.organiser.email && (
-      <p className="text-xs sm:text-sm text-gray-800 px-2">
+      <p className="text-sm sm:text-base text-gray-800 px-2">
         <strong>Email:</strong> {event.organiser.email}
       </p>
     )}
     {event.organiser.website && (
-      <p className="text-xs sm:text-sm text-gray-800 px-2">
+      <p className="text-sm sm:text-base text-gray-800 px-2">
         <strong>Website:</strong>{' '}
         <a
           href={event.organiser.website}
@@ -237,11 +237,11 @@ const SingleEventCard = ({ event, chatProps }) => {
 
     {Array.isArray(event.organiser.contacts) && event.organiser.contacts.length > 0 && (
       <div className="mt-3">
-      <strong className="text-sm sm:text-base text-start font-medium mb-2">Coordinator Contacts</strong>
+      <strong className="text-sm sm:text-base text-start font-semibold mb-2">Coordinator Contacts</strong>
       <ul className="list-disc list-inside ">
         {event.organiser.contacts.map((c, idx) => (
           <li key={idx}>
-            <span className="text-xs sm:text-sm text-gray-800 ">
+            <span className="text-sm sm:text-base text-gray-800 ">
               {c.name && <span>{c.name}</span>}
               {c.designation && <span> ({c.designation})</span>}
               {c.phone && <span> — {c.phone}</span>}
@@ -265,8 +265,8 @@ const SingleEventCard = ({ event, chatProps }) => {
   {/* Description */}
   {event.description && (
     <div className="border px-2 rounded shadow-md text-left my-8 mx-2">
-    <h3 className="text-sm sm:text-base text-start font-medium mb-2">Description</h3>
-    <div className="text-xs sm:text-sm text-gray-800 text-justify space-y-2">
+    <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Description</h3>
+    <div className="text-sm sm:text-base text-gray-800 text-justify space-y-2">
       {event.description.split('\n').map((para, idx) => (
         <p key={idx} className="whitespace-pre-wrap">{para}</p>
       ))}

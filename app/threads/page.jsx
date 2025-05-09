@@ -136,7 +136,7 @@ const ThreadsPage = () => {
           <span className="text-yellow-400">•</span>
           <span>Discuss</span>
           <span className="text-yellow-400">•</span>
-          <span>Connect</span>
+          <span>Learn</span>
         </h1>
       </div>
 

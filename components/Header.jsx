@@ -14,6 +14,8 @@ import {
   FaAd,
   FaEnvelope,
 } from 'react-icons/fa';
+import { MdOutlineGroups2 } from "react-icons/md";
+import { RiAdvertisementFill } from "react-icons/ri";
 import { IoClose } from 'react-icons/io5';
 import { CgProfile } from 'react-icons/cg';
 import { TbLogout, TbLogin } from 'react-icons/tb';
@@ -50,92 +52,101 @@ const Header = () => {
 
   return (
     <header className="bg-teal-700 shadow">
-      <div className="container mx-auto py-2 space-y-2 text-lime-100">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-2xl font-extrabold"
-          >
-            <FaHashtag size={28} /> Telugu
-          </Link>
+  <div className="container mx-auto py-2 space-y-2 text-lime-100 relative">
 
-          <div className="hidden md:flex items-center gap-6 ml-auto">
+    {/* Top Row */}
+    <div className="flex items-center justify-between">
+      {/* Logo */}
+      <Link
+        href="/"
+        className="flex items-center gap-2 text-3xl font-extrabold"
+      >
+        Telugufy
+      </Link>
+
+      {/* Center Nav - Desktop Only */}
+      <div className="hidden md:flex gap-6 absolute left-1/2 transform -translate-x-1/2">
+        <NavLink
+          href="/adverts"
+          icon={<RiAdvertisementFill size={20} />}
+          text="Adverts"
+          pathname={pathname}
+        />
+        <NavLink
+          href="/events"
+          icon={<FaCalendarAlt size={20} />}
+          text="Events"
+          pathname={pathname}
+        />
+        <NavLink
+          href="/threads"
+          icon={<MdOutlineGroups2 size={30} />}
+          text="Forum"
+          pathname={pathname}
+        />
+      </div>
+
+      {/* Right Nav - Auth Links */}
+      <div className="hidden md:flex items-center gap-4 ml-auto">
+        {isAuthenticated ? (
+          <>
             <NavLink
-              href="/adverts"
-              icon={<FaHome size={20} />}
-              text="Home"
+              href={profileLink}
+              icon={<CgProfile size={20} />}
+              text={user.name}
+              pathname={pathname}
+            />
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 hover:underline"
+            >
+              <TbLogout size={20} />
+              <span>Logout</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <NavLink
+              href="/login"
+              icon={<TbLogin size={20} />}
+              text="Login"
               pathname={pathname}
             />
             <NavLink
-              href="/events"
-              icon={<FaCalendarAlt size={20} />}
-              text="Events"
+              href="/register"
+              text="Register"
               pathname={pathname}
             />
-            <NavLink
-              href="/threads"
-              icon={<FaHashtag size={20} />}
-              text="Threads"
-              pathname={pathname}
-            />
+          </>
+        )}
+      </div>
 
-            {isAuthenticated ? (
-              <>
-                <NavLink
-                  href={profileLink}
-                  icon={<CgProfile size={20} />}
-                  text={user.name}
-                  pathname={pathname}
-                />
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 hover:underline"
-                >
-                  <TbLogout size={20} />
-                  <span>Logout</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <NavLink
-                  href="/login"
-                  icon={<TbLogin size={20} />}
-                  text="Login"
-                  pathname={pathname}
-                />
-                <NavLink
-                  href="/register"
-                  text="Register"
-                  pathname={pathname}
-                />
-              </>
-            )}
-          </div>
+      {/* Hamburger for Mobile */}
+      <button className="md:hidden" onClick={toggleMobileMenu}>
+        <FaBars className="w-6 h-6" />
+      </button>
+    </div>
 
-          <button className="md:hidden" onClick={toggleMobileMenu}>
-            <FaBars className="w-6 h-6" />
-          </button>
-        </div>
 
         <div className="flex md:hidden items-center justify-around  pt-2 text-lime-200">
           <NavLink
             href="/"
-            icon={<FaHome size={18} />}
-            text="Home"
+            icon={<RiAdvertisementFill size={20} />}
+            text="Adverts"
             pathname={pathname}
             mobile
           />
           <NavLink
             href="/events"
-            icon={<FaCalendarAlt size={18} />}
+            icon={<FaCalendarAlt size={20} />}
             text="Events"
             pathname={pathname}
             mobile
           />
           <NavLink
             href="/threads"
-            icon={<FaHashtag size={18} />}
-            text="Threads"
+            icon={<MdOutlineGroups2 size={28} />}
+            text="Forum"
             pathname={pathname}
             mobile
           />
@@ -191,7 +202,7 @@ const Header = () => {
             <NavLink
               href={`${baseProfilePath}/managethreads`}
               icon={<BsChatText />}
-              text="Manage Threads"
+              text="Manage Topics"
               pathname={pathname}
               mobile
               onClick={toggleMobileMenu}

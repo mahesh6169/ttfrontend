@@ -23,6 +23,8 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { FaTimes } from 'react-icons/fa';
 import { MdNotificationsActive, MdNotificationsOff } from "react-icons/md";
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { RiArrowGoBackFill } from "react-icons/ri";
+import { MdReport } from "react-icons/md";
 
 
 const ThreadChatPage = () => {
@@ -37,6 +39,8 @@ const ThreadChatPage = () => {
   const messages =
     useSelector((state) => state.threads.messages[threadId]) || [];
   const currentUser = useSelector((state) => state.user.user);
+  const threadStatus = useSelector((state) => state.threads.status);
+
 
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -167,9 +171,45 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     .filter((msg) => msg.likes - msg.dislikes > 0)
     .slice(0, 3);
 
+    if ((threadStatus === 'idle' || threadStatus === 'loading') && !thread._id) {
+      return (
+        <div className="flex justify-center items-center min-h-[300px]">
+          <LoadingSpinner />
+        </div>
+      );
+    }
+    if (threadStatus === 'success' && !thread._id) {
+      return (
+        <div className="flex justify-center items-center text-center p-8">
+          <p className="text-xs sm:text-sm text-gray-800">No Thread Found</p>
+        </div>
+      );
+    }    
+    
+
   return (
     
-    <div className="border rounded shadow-md mx-auto my-6 px-2">  
+  <div className="border rounded shadow-md mx-auto my-4 px-2"> 
+  {/* Row 1: Back & Report */}
+        <div className=" mt-4 flex justify-between">
+    {/* Back to Adverts */}
+    <span
+      onClick={() => router.back()}
+      className="flex items-center gap-2 bg-yellow-400  text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium"
+    >
+      <RiArrowGoBackFill className="text-xs sm:text-base " />
+      <span>Back to Topics</span>
+    </span>
+  
+    {/* Report this Advert */}
+    <Link
+      href={`/support/report?type=Topic&id=${thread._id}&title=${encodeURIComponent(thread.title)}`}
+      className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800"
+    >
+      <MdReport className="text-lg" />
+      <span>Report this topic</span>
+    </Link>
+  </div> 
 
  {/* 🖼️ Image Preview Section */}
 {thread.images?.length > 0 && (
@@ -241,7 +281,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
  {/* Title */}
  {thread.title && (
       <div className="my-2 px-4 ">
-        <h2 className="text-base sm:text-lg text-center font-medium my-1 px-2 text-gray-800 break-words ">{thread.title}</h2>
+        <h2 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words ">{thread.title}</h2>
       </div>
     )}
 
@@ -298,8 +338,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     {/* Question */}
     {thread.question && (
-      <div className=" px-2 rounded my-6 bg-white shadow py-2">        
-        <h3 className="text-sm sm:text-base text-start font-medium mb-2">Topic Descritpion</h3>
+      <div className=" p-4 rounded my-6 bg-white shadow py-2">        
+        <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Topic Descritpion</h3>
         <div className="text-sm sm:text-base text-gray-800 text-justify space-y-2">
   {thread.question.split('\n').map((para, idx) => (
     <p key={idx} className="whitespace-pre-wrap">{para}</p>
@@ -310,8 +350,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     {/* Useful Answers */}
     {usefulAnswers.length > 0 ? (
-  <div className=" rounded my-6  shadow py-2 px-2">
-    <h3 className="text-sm sm:text-base text-start font-medium mb-2">Comments marked as useful</h3>
+  <div className=" rounded my-6 bg-white  shadow py-2 px-2">
+    <h3 className="text-sm sm:text-base text-start font-semibold ">Comments marked as useful</h3>
+    <p className='text-xs mb-2 bg-yellow-50 w-fit'>⭐️⭐️ Please click  <strong>thumbs up 👍</strong> icon to mark comments as useful ⭐️⭐️</p>
     {usefulAnswers.map((msg) => (
       <div
         key={msg._id}
@@ -356,11 +397,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     ))}
   </div>
 ) : (
-  <div className=" rounded my-6  shadow">
-    <h3 className="font-semibold mb-2 px-4 bg-teal-900 text-lime-100  w-fit ">Comments marked as useful</h3>
-  <div className="border rounded mb-4 bg-yellow-50 shadow p-4 text-center text-sm sm:text-base text-gray-700">
-    ⭐️⭐️ Please click  <strong>thumbs up 👍</strong> icon to mark comments as useful ⭐️⭐️
-  </div>
+  <div className=" rounded my-6  bg-white  shadow py-2 px-2 h-20">
+    <h3 className="text-sm sm:text-base text-start font-semibold">Comments marked as useful</h3>
+    <p className='text-xs mb-2 bg-yellow-50 w-fit'>⭐️⭐️ Please click  <strong>thumbs up 👍</strong> icon to mark comments as useful ⭐️⭐️</p>
   </div>
 )}
 
@@ -399,10 +438,10 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       </div>
     </div>
   ) : (
-    <div className="border rounded-lg shadow bg-white p-4 my-6">
+    <div className="border rounded-lg shadow bg-white p-4 my-6 ">
   <textarea
     disabled
-    placeholder=" 🔒 Login to join the conversation..."
+    placeholder=" 🔒 Log in to join the conversation..."
     rows={1}
     className="w-full border border-gray-300 bg-gray-100 text-gray-500 resize-none p-2 text-sm sm:text-base rounded"
     style={{
@@ -529,9 +568,10 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         ];
       }, [])
     ) : (
-      <p className="text-gray-500 text-center">
-        No messages yet. Start the conversation!
-      </p>
+      <div className="h-40 flex items-center justify-center bg-gray-50 border border-gray-300 rounded text-gray-500 text-sm sm:text-base text-center shadow-sm px-4">
+  No messages yet. Start the conversation!
+</div>
+
     )}
   </div>
 </div>
