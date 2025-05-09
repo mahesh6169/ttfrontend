@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 const socket = io(process.env.NEXT_PUBLIC_BACKEND_BASE_URL, {
    withCredentials: true,
    transports: ['websocket'], 
-   autoConnect: true,
+   autoConnect: false,
    reconnection: true,
    reconnectionAttempts: Infinity,
    reconnectionDelay: 1000,  

@@ -3,6 +3,8 @@ import TermsModal from '@/components/support/TermsModal';
 import { ToastContainer } from 'react-toastify';
 import { Providers } from '@/store/providers';
 import '@/assets/styles/globals.css';
+import { SocketListener } from '@/components/chat/SocketListener';
+
 
 export const metadata = {
   title: 'Marketplace',
@@ -15,6 +17,7 @@ const ParentLayout = ({ children }) => {
     <html lang="en">
       <body>
         <Providers>
+         <SocketListener />
           <Header />
            {/* <TermsModal /> */} 
           {children}

@@ -20,7 +20,7 @@ import { IoClose } from 'react-icons/io5';
 import { CgProfile } from 'react-icons/cg';
 import { TbLogout, TbLogin } from 'react-icons/tb';
 import { MdFavorite } from 'react-icons/md';
-import { BsChatText } from 'react-icons/bs';
+import { BsChatText, BsChatDots } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 
 const Header = () => {
@@ -33,6 +33,7 @@ const Header = () => {
   const isAuthenticated = tokenValidated && !!user._id;
   const baseProfilePath = user?.role === 'admin' ? '/admin/profile' : '/users/profile/';
   const profileLink = `${baseProfilePath}/manageads`;
+  const unreadExists = useSelector((state) => state.messages.unreadExists);
 
 
 
@@ -96,6 +97,17 @@ const Header = () => {
               text={user.name}
               pathname={pathname}
             />
+            {/* 🔔 NEW MESSAGE ICON */}
+    <NavLink
+      href="/users/profile/conversations"
+      icon={
+        <div className={`relative ${unreadExists ? 'text-red-700 animate-pulse' : ''}`}>
+          <BsChatDots size={22} />
+        </div>
+      }
+      text="Messages"
+      pathname={pathname}
+    />
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 hover:underline"

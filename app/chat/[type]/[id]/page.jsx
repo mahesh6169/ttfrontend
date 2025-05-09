@@ -8,6 +8,7 @@ import {
   sendMessage,
   addNewMessage,
   markMessageAsRead,
+  setUnreadExists,
 } from '@/store/slices/shared/messageSlice';
 import socket from '@/config/socket';
 import { useSearchParams, useParams } from 'next/navigation';
@@ -68,14 +69,27 @@ const ChatPage = () => {
 
   // Handle incoming socket messages
   useEffect(() => {
-    const handleNew = (msg) => {
+    const handleNewMessage = (msg) => {
+      // Recipient only: check for duplicates before adding
       if (!activeConversation?.messages?.some((m) => m._id === msg._id)) {
         dispatch(addNewMessage(msg));
       }
     };
-    socket.on('newMessage', handleNew);
-    return () => socket.off('newMessage', handleNew);
+  
+    const handleMessageSent = (msg) => {
+      // Sender only: add directly
+      dispatch(addNewMessage(msg));
+    };
+  
+    socket.on('newMessage', handleNewMessage);
+    socket.on('messageSent', handleMessageSent);
+  
+    return () => {
+      socket.off('newMessage', handleNewMessage);
+      socket.off('messageSent', handleMessageSent);
+    };
   }, [dispatch, activeConversation]);
+  
 
   // Handle read from socket
 // Handle read from socket
@@ -98,6 +112,24 @@ useEffect(() => {
     document.addEventListener('visibilitychange', reconnect);
     return () => document.removeEventListener('visibilitychange', reconnect);
   }, []);
+
+//
+  useEffect(() => {
+    if (!activeConversation?.messages || !currentUserId) return;
+  
+    const hasUnread = activeConversation.messages.some((msg) => {
+      const isNotMine =
+        (msg.senderRole === 'owner' && msg.owner !== currentUserId) ||
+        (msg.senderRole === 'participant' && msg.participant !== currentUserId);
+  
+      return isNotMine && msg.readBy !== currentUserId;
+    });
+  
+    if (!hasUnread) {
+      dispatch(setUnreadExists(false));
+    }
+  }, [activeConversation?.messages, currentUserId, dispatch]);
+  
 
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;

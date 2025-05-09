@@ -96,6 +96,7 @@ const messageSlice = createSlice({
     status: 'idle',
     error: null,
     deleteConversationStatus: 'idle',
+    unreadExists: false,
   },
   reducers: {
     setActiveConversation(state, { payload }) {
@@ -115,6 +116,7 @@ const messageSlice = createSlice({
       state.status = 'idle';
       state.error = null;
     },
+
     addNewMessage(state, { payload }) {
       state.activeConversation.messages.push(payload);
     },
@@ -125,9 +127,11 @@ const messageSlice = createSlice({
         message.readBy = userId;                // ✅ Correct field is readBy (not readUser)
         message.isRead = true;                  // Optional, for your UI logic
       }
-    }
+    },
+    setUnreadExists(state, action) {
+      state.unreadExists = action.payload;
+    },
     
-    ,
   },
   extraReducers: (builder) => {
     builder
@@ -200,6 +204,7 @@ export const {
   resetMessagesState,
   addNewMessage,
   markMessageAsRead,
+  setUnreadExists,
 } = messageSlice.actions;
 
 export default messageSlice.reducer;
