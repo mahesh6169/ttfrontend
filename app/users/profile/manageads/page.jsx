@@ -194,12 +194,13 @@ export default function ProfilePage() {
 
       {/* Reusable Confirm Modal */}
       <ConfirmModal
-        isOpen={isModalOpen}
-        onConfirm={handleDelete}
-        onCancel={() => setIsModalOpen(false)}
-        title="Confirm Deletion"
-        message="Are you sure you want to delete this advert?"
-      />
+  isOpen={isModalOpen}
+  onConfirm={handleDelete}
+  onCancel={() => setIsModalOpen(false)}
+  title={<span className="text-xs text-gray-800 font-bold">Confirm Deletion</span>}
+  message={<span className="text-xs text-gray-800">Are you sure you want to delete this advert?</span>}
+/>
+
     </div>
   );
 }

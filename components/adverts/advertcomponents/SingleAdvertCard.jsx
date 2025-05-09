@@ -184,11 +184,7 @@ const FALLBACK_IMAGE_URL =
       {advert.isWanted ? 'Wanted' : advert.isOffered ? 'Offered' : ''}
     </p>
   )}
-  {advert.condition && (
-    <p>
-      <strong>Condition:</strong> {advert.condition}
-    </p>
-  )}
+
 </div>
 
 

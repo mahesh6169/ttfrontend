@@ -131,9 +131,9 @@ const EditAdvertPage = () => {
     }
   }, [currentAdvert]);
 
-  const shouldShowCondition = CATEGORIES_REQUIRING_CONDITION.includes(
-    formData.category
-  );
+  const shouldShowCondition =
+  formData.isOffered &&
+  CATEGORIES_REQUIRING_CONDITION.includes(formData.category);
 
   const shouldShowPrice =
     formData.isOffered &&
@@ -240,6 +240,7 @@ const EditAdvertPage = () => {
       updatedData.isForShare = false;
       updatedData.sharePrice = 0;
       updatedData.shareUnit = 'week';
+      updatedData.condition = null;
     }
     
     // When user switches to "Offered" mode
