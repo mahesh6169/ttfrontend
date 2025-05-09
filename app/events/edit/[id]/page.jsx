@@ -246,7 +246,7 @@ if (!formData.organiser?.contacts?.[0]?.phone) missing.push('organiser contact p
       const result = await dispatch(updateEventById({ id, data: formPayload }));
       if (updateEventById.fulfilled.match(result)) {
         toast.success('Event updated successfully!');
-        router.push('/events');
+        router.push('/users/profile/manageevents');
       } else {
         throw new Error(result.payload || 'Failed to update event');
       }
