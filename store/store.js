@@ -14,10 +14,12 @@ import adminManageAdvertReducer from './slices/admin/adverts/adminManageAdvertSl
 import adminManageEventReducer from './slices/admin/events/adminManageEventSlice'; // Import adminManageEventSlice
 import supportReducer from './slices/supportSlice'; // Import supportSlice
 import events from '@/app/events/page';
+import advertV2Reducer from './slices/adverts/advertSlice.v2';  
 
 const store = configureStore({
     reducer: {
         advert: advertReducer,
+        advertsV2: advertV2Reducer,
         user: userReducer,
         userAdverts: userAdvertReducer, // Add userAdvertReducer.
         messages: messages, // Add messages
