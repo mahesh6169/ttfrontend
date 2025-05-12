@@ -24,26 +24,33 @@ const MODES = [
 ];
 
 const categoryOptions = [
-  
-  'Books Art & Collectables',
+  'Books, Art & Collectables',
   'Baby & Children',
   'Music & Games',
   'Cars & Vehicles',
   'Fashion & Accessories',
-  'Academics Tutors & Arts',
+  'Academic Tutors & Education',
+  'Arts, Dance & Cultural Tutors',
   'Electronics & Computers',
   'Home & Garden',
-  'Jobs',
   'Miscellaneous',
   'Pets',
   'Party Hires & Services',
   'Health, Sport & Fitness',
   'Food & Catering Services',
-  'Home Improvement & Repairs',
+  'Home Repairs & Improvements',
+  'Jobs',
   'Real Estate',
-  'Professional Services',
-  'Business & Stores',
-  'Overseas',
+  'Business & Professional Services',
+  'Retail Shops & Stores',
+  'Transport & Ride Services',
+  'Legal & Immigration Services ',
+  'Financial & Insurance Services',
+  'Travel & Tourism Services',
+  'Cleaning & Maintenance Services',
+  'Construction & Renovation Services',
+  'Marketing & Advertising Services',
+  'IT & Software Services',
 ];
 
 const cityOptions = [
