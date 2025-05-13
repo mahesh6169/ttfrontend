@@ -47,19 +47,18 @@ const AdvertForm = ({
   // Initialize form with existing data (for edit mode)
   useEffect(() => {
     if (initialData) {
-      setFormData(prev => ({
-        ...prev,
+      setFormData({
         ...initialData,
         fields: initialData.fields || {},
         pricing: initialData.pricing || [],
-        images: [] // Don't prefill existing images as new uploads
-      }));
+        images: [], // ✅ reset uploaded images (new ones)
+        existingImages: initialData.existingImages || [] // ✅ ensure this stays in formData for submission
+      });
   
-      if (initialData.images) {
-        setPreview([]); // Prevent rendering images as previews
-      }
+      setPreview([]); // ✅ prevent accidental preview
     }
   }, [initialData]);
+  
   
 
   // Update category config when category changes
@@ -157,7 +156,8 @@ const submitData = {
   address: formData.address,  // Don't stringify here
   fields: formData.fields,    // Don't stringify here
   pricing: formData.pricing,  // Don't stringify here
-  images: formData.images
+  images: formData.images,
+  existingImages: formData.existingImages || [] 
 };
 
 onSubmit(submitData);
@@ -285,7 +285,13 @@ onSubmit(submitData);
   formData={formData}
   setFormData={setFormData}
   maxImages={categoryConfig?.validation?.maxImages || 5}
-  existingImages={initialData?.images || []}
+  existingImages={formData.existingImages || []}
+  setExistingImages={(imgs) =>
+    setFormData((prev) => ({
+      ...prev,
+      existingImages: imgs
+    }))
+  }
 />
 
       {/* Error Display */}
