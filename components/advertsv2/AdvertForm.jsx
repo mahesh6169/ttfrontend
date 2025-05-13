@@ -275,6 +275,7 @@ onSubmit(submitData);
       <AddressInput
         formData={formData}
         setFormData={setFormData}
+        disabled={isLoading}
       />
 
       {/* Images */}

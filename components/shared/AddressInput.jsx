@@ -10,11 +10,14 @@ const AddressInput = ({
   setFormData,
   errors = [],
   placeholder = 'Enter your address or suburb',
+  disabled = false
 }) => {
   const [formattedAddress, setFormattedAddress] = useState(
     formData?.address?.formattedAddress || ''
   );
   const autocompleteRef = useRef(null);
+  const [isUserInput, setIsUserInput] = useState(false);
+  const previousFormDataAddress = useRef(formData?.address?.formattedAddress);
 
   const handlePlaceChanged = () => {
     const place = autocompleteRef.current.getPlace();
@@ -50,14 +53,40 @@ const AddressInput = ({
       address: parsed,
     }));
     setFormattedAddress(parsed.formattedAddress);
+    setIsUserInput(true);
   };
 
-  // ✅ Fix: Sync formatted address from formData (for edit mode)
+  // Only sync from formData when it's actually different and user hasn't typed
   useEffect(() => {
-    if (formData?.address?.formattedAddress) {
-      setFormattedAddress(formData.address.formattedAddress);
+    if (!isUserInput && 
+        formData?.address?.formattedAddress !== previousFormDataAddress.current) {
+      setFormattedAddress(formData?.address?.formattedAddress || '');
+      previousFormDataAddress.current = formData?.address?.formattedAddress;
     }
-  }, [formData?.address?.formattedAddress]);
+  }, [formData?.address?.formattedAddress, isUserInput]);
+
+  // Handle manual input
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setFormattedAddress(value);
+    setIsUserInput(true);
+    
+    // Update formData with the manually typed address
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        formattedAddress: value
+      }
+    }));
+  };
+
+  // Reset user input flag when component unmounts
+  useEffect(() => {
+    return () => {
+      setIsUserInput(false);
+    };
+  }, []);
 
   return (
     <div>
@@ -78,7 +107,8 @@ const AddressInput = ({
             placeholder={placeholder}
             className="w-full p-2 border rounded"
             value={formattedAddress}
-            onChange={(e) => setFormattedAddress(e.target.value)}
+            onChange={handleInputChange}
+            disabled={disabled}
           />
         </Autocomplete>
       </LoadScriptNext>

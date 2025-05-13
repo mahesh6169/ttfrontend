@@ -5,6 +5,7 @@ import userReducer from './slices/users/userSlice';
 import userAdvertReducer from './slices/adverts/userAdvertsSlice'; // Import userAdvertReducer
 import messages from './slices/shared/messageSlice'; // Import messageSlice
 import filterReducer from './slices/adverts/filterSlice'; // Import filterSlice
+import searchAdvertsReducer from './slices/adverts/searchAdvertsSlice';
 import filterEventReducer from './slices/events/filterEventSlice'; // Import filterEventSlice
 import threadReducer from './slices/threads/threadSlice'; // Import threadSlice
 import adminReducer from './slices/admin/users/adminSlice'; // Import adminSlice
@@ -24,6 +25,7 @@ const store = configureStore({
         userAdverts: userAdvertReducer, // Add userAdvertReducer.
         messages: messages, // Add messages
         filters: filterReducer, // Add filterReducer
+        searchAdverts: searchAdvertsReducer, // Add searchAdvertsReducer
         threads: threadReducer, // Add threadReducer
         admin: adminReducer, // Add adminReducer
         events: eventReducer, // Add eventReducer
