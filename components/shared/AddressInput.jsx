@@ -1,4 +1,3 @@
-// components/shared/AddressAutoComplete.jsx
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -10,7 +9,7 @@ const AddressInput = ({
   formData,
   setFormData,
   errors = [],
-   placeholder = 'Enter your address or suburb',
+  placeholder = 'Enter your address or suburb',
 }) => {
   const [formattedAddress, setFormattedAddress] = useState(
     formData?.address?.formattedAddress || ''
@@ -46,16 +45,22 @@ const AddressInput = ({
       if (types.includes('postal_code')) parsed.postalCode = comp.long_name;
     });
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      address: parsed
+      address: parsed,
     }));
     setFormattedAddress(parsed.formattedAddress);
   };
 
+  // ✅ Fix: Sync formatted address from formData (for edit mode)
+  useEffect(() => {
+    if (formData?.address?.formattedAddress) {
+      setFormattedAddress(formData.address.formattedAddress);
+    }
+  }, [formData?.address?.formattedAddress]);
 
   return (
-  <div>
+    <div>
       <label className="block font-bold mb-2 text-gray-700">
         Address <span className="text-red-500">*</span>
       </label>
@@ -70,7 +75,7 @@ const AddressInput = ({
         >
           <input
             type="text"
-            placeholder="Enter your address or suburb"
+            placeholder={placeholder}
             className="w-full p-2 border rounded"
             value={formattedAddress}
             onChange={(e) => setFormattedAddress(e.target.value)}

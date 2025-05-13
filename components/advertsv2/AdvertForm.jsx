@@ -47,16 +47,20 @@ const AdvertForm = ({
   // Initialize form with existing data (for edit mode)
   useEffect(() => {
     if (initialData) {
-      setFormData({
+      setFormData(prev => ({
+        ...prev,
         ...initialData,
         fields: initialData.fields || {},
-        pricing: initialData.pricing || []
-      });
+        pricing: initialData.pricing || [],
+        images: [] // Don't prefill existing images as new uploads
+      }));
+  
       if (initialData.images) {
-        setPreview(initialData.images.map(img => img.url));
+        setPreview([]); // Prevent rendering images as previews
       }
     }
   }, [initialData]);
+  
 
   // Update category config when category changes
   useEffect(() => {
