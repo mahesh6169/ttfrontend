@@ -8,7 +8,7 @@ const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/advertsV2`;
 export const searchAdverts = createAsyncThunk(
     'search/searchAdverts',
     async (_, { getState, rejectWithValue }) => {
-      const { filters, pagination } = getState().searchAdverts; // Changed from .search to .searchAdverts
+      const { filters, pagination } = getState().searchAdverts;
       
       try {
         const params = {
@@ -20,12 +20,19 @@ export const searchAdverts = createAsyncThunk(
         return response.data.data;
       } catch (error) {
         console.error('Search Error:', error.response?.data || error.message);
-        return rejectWithValue(error.response?.data || 'Failed to search adverts');
+        
+        // Extract error message from response
+        const errorMessage = error.response?.data?.message || 
+                            error.response?.data?.error ||
+                            error.message ||
+                            'Failed to search adverts';
+                            
+        return rejectWithValue(errorMessage);
       }
     }
   );
 
-  
+
 // Thunk for fetching filter options
 export const fetchFilterOptions = createAsyncThunk(
   'search/fetchFilterOptions',
@@ -173,6 +180,7 @@ const searchAdvertsSlice = createSlice({
       })
       .addCase(searchAdverts.fulfilled, (state, action) => {
         state.status = 'success';
+        state.error = null;
         state.adverts = action.payload.adverts;
         state.meta = action.payload.meta;
       })
