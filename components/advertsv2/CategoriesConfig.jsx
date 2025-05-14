@@ -7,7 +7,17 @@ export const CATEGORY_CONFIG = {
         type: 'text',
         label: 'Brand',
         placeholder: 'e.g., Apple, Samsung',
+        hint: 'Enter the manufacturer name',
         required: true,
+        validation: {
+          pattern: /^[a-zA-Z0-9\s&-]+$/,
+          maxLength: 50
+        },
+        errorMessages: {
+          required: 'Brand name is required',
+          pattern: 'Brand can only contain letters, numbers, spaces, & and -',
+          maxLength: 'Brand name is too long (max 50 characters)'
+        },
         showWhen: { adType: 'offered' }
       },
       model: {
@@ -23,22 +33,10 @@ export const CATEGORY_CONFIG = {
         required: true,
         showWhen: { adType: 'offered' }
       },
-      warranty: {
-        type: 'select',
-        label: 'Warranty',
-        options: ['No Warranty', 'Under Warranty', 'Extended Warranty'],
-        showWhen: { adType: 'offered' }
-      },
-      storageCapacity: {
-        type: 'select',
-        label: 'Storage',
-        options: ['64GB', '128GB', '256GB', '512GB', '1TB'],
-        showWhen: { brand: ['Apple', 'Samsung'] }
-      }
     },
     pricing: {
       sell: { enabled: true, label: 'Sell Price' },
-      rent: { enabled: true, label: 'Rent', units: ['week', 'month'] },
+      rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
       hire: false,
       share: false
     },
@@ -145,7 +143,7 @@ export const CATEGORY_CONFIG = {
     },
     pricing: {
       sell: { enabled: true, label: 'Sell Price' },
-      rent: { enabled: true, label: 'Rent', units: ['week', 'month'] },
+      rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
       hire: false,
       share: { enabled: true, label: 'Share', units: ['week', 'month'] }
     },

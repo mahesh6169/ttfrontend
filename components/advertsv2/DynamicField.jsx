@@ -118,6 +118,9 @@ const DynamicField = ({ fieldKey, fieldConfig, value, onChange, formData, errors
         {fieldConfig.required && <span className="text-red-500 ml-1">*</span>}
       </label>
       {renderField()}
+      {fieldConfig.hint && !hasError && (
+      <p className="text-gray-500 text-sm mt-1">{fieldConfig.hint}</p>
+    )}
       {hasError && (
         <p className="text-red-500 text-sm mt-1">{fieldError}</p>
       )}

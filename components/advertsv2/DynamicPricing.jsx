@@ -10,23 +10,15 @@ const DynamicPricing = ({ pricingConfig, pricing, onChange, adType, errors = [] 
   }
 
   const handleToggle = (priceType) => {
-    const updatedPricing = [...pricing];
-    const existingIndex = updatedPricing.findIndex(p => p.priceType === priceType);
+    // For single selection mode - clear all and add only the selected type
+    const config = pricingConfig[priceType];
+    const newPricing = [{
+      priceType,
+      amount: 0,
+      unit: config.units ? config.units[0] : undefined
+    }];
     
-    if (existingIndex >= 0) {
-      // Remove if exists
-      updatedPricing.splice(existingIndex, 1);
-    } else {
-      // Add new
-      const config = pricingConfig[priceType];
-      updatedPricing.push({
-        priceType,
-        amount: 0,
-        unit: config.units ? config.units[0] : undefined
-      });
-    }
-    
-    onChange(updatedPricing);
+    onChange(newPricing);
   };
 
   const handlePriceChange = (priceType, field, value) => {
@@ -58,11 +50,26 @@ const DynamicPricing = ({ pricingConfig, pricing, onChange, adType, errors = [] 
     return null;
   }
 
+  // Get the first available price type to use as default if nothing is selected
+  const defaultPriceType = availablePriceTypes[0].type;
+  
+  // Ensure we have at least one pricing option selected
+  React.useEffect(() => {
+    if (pricing.length === 0 && availablePriceTypes.length > 0) {
+      const config = pricingConfig[defaultPriceType];
+      onChange([{
+        priceType: defaultPriceType,
+        amount: 0,
+        unit: config.units ? config.units[0] : undefined
+      }]);
+    }
+  }, []);
+
   return (
     <div className="mb-6">
-      <label className="block font-bold mb-2 text-gray-700">Pricing Options</label>
+      <label className="block font-bold mb-2 text-gray-700">Pricing Option</label>
       
-      {/* Price Type Toggle Buttons */}
+      {/* Price Type Toggle Buttons - Only one can be selected */}
       <div className="flex border border-gray-300 rounded overflow-hidden mb-4">
         {availablePriceTypes.map(({ type, label }, index) => {
           const isActive = !!getActivePrice(type);
