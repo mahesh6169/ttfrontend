@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import SingleAdvertCard from '@/components/adverts/advertcomponents/SingleAdvertCard';
 import SendMessage from '@/components/chat/SendMessage';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchAdvertById } from '@/store/slices/adverts/advertSlice';
+import { getAdvertById } from '@/store/slices/adverts/advertSlice';
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
 import Link from 'next/link';
@@ -15,13 +15,13 @@ const AdvertDetail = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { selectedAdvert, status, error } = useSelector(
+  const { advert, fetchStatus: status, error } = useSelector(
     (state) => state.advert
   );
   const { user } = useSelector((state) => state.user);
 
   useEffect(() => {
-    dispatch(fetchAdvertById(id));
+    dispatch(getAdvertById(id));
   }, [dispatch, id]);
 
   if (status === 'loading') {
@@ -32,7 +32,7 @@ const AdvertDetail = () => {
     return <div className="text-center text-red-500">{error}</div>;
   }
 
-  if (!selectedAdvert) {
+  if (!advert) {
     return <div className="text-center text-gray-500">No advert found.</div>;
   }
 
@@ -51,7 +51,7 @@ const AdvertDetail = () => {
 
   {/* Report this Advert */}
   <Link
-    href={`/support/report?type=advert&id=${id}&title=${encodeURIComponent(selectedAdvert.title)}`}
+    href={`/support/report?type=advert&id=${id}&title=${encodeURIComponent(advert.title)}`}
     className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800"
   >
     <MdReport className="text-lg" />
@@ -64,13 +64,13 @@ const AdvertDetail = () => {
         {/* Advert Details */}
         <div className="flex-[7] bg-white w-full">
           <SingleAdvertCard
-            advert={selectedAdvert}
+            advert={advert}
             chatProps={{
               resourceId: id,
               resourceType: 'advert',
-              participantId: selectedAdvert.postedBy?._id,
-              owner: selectedAdvert.postedBy?.name,
-              preserveRedirectUrl: `/adverts/views/${id}`,
+              participantId: advert.postedBy?._id,
+              owner: advert.postedBy?.name,
+              preserveRedirectUrl: `/adverts2/views/${id}`,
             }}
           />
         </div>
@@ -80,9 +80,9 @@ const AdvertDetail = () => {
           <SendMessage
             resourceId={id}
             resourceType="advert"
-            participantId={selectedAdvert.postedBy?._id}
-            owner={selectedAdvert.postedBy?.name}
-            preserveRedirectUrl={`/adverts/views/${id}`}
+            participantId={advert.postedBy?._id}
+            owner={advert.postedBy?.name}
+            preserveRedirectUrl={`/adverts2/views/${id}`}
           />
         </div>
       </div>

@@ -20,36 +20,6 @@ export const deleteUserAdvert = createAsyncThunk(
   }
 );
 
-// Thunk to fetch an advert by ID for editing
-export const editAdvertById = createAsyncThunk(
-  'userAdverts/fetchAdvertById',
-  async (id, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/edit/${id}`, {
-        withCredentials: true,
-      });
-      return response.data.advert;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch advert details.');
-    }
-  }
-);
-
-// Thunk to update an advert by ID
-export const updateAdvertById = createAsyncThunk(
-  'userAdverts/updateAdvertById',
-  async ({ id, data }, { rejectWithValue }) => {
-    try {
-      const response = await axios.put(`${API_BASE_URL}/edit/${id}`, data, {
-        withCredentials: true,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return response.data; // { success: true, message: '', advert: {...} }
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update advert.');
-    }
-  }
-);
 
 export const renewUserAdvert = createAsyncThunk(
   'userAdverts/renewUserAdvert',
@@ -115,35 +85,7 @@ const userAdvertSlice = createSlice({
         state.error = action.payload || 'Failed to delete advert';
       })
 
-      // Fetch Advert By Id
-      .addCase(editAdvertById.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-      })
-      .addCase(editAdvertById.fulfilled, (state, action) => {
-        state.status = 'success';
-        state.currentAdvert = action.payload;
-      })
-      .addCase(editAdvertById.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
-      })
-
-      // Update Advert By Id
-      .addCase(updateAdvertById.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-      })
-      .addCase(updateAdvertById.fulfilled, (state, action) => {
-        state.status = 'success';
-        if (action.payload.advert) {
-          state.currentAdvert = action.payload.advert;
-        }
-      })
-      .addCase(updateAdvertById.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
-      })
+    
 
       // Renew Advert
       .addCase(renewUserAdvert.pending, (state) => {

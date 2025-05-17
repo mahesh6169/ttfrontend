@@ -43,7 +43,7 @@ if (advert.isForSale && advert.sellPrice > 0) {
   </button>
   
 
-  <Link href={`/adverts2/views/${advert._id}`}>
+  <Link href={`/adverts/views/${advert._id}`}>
   {/* Image Box (50% height, full width) */}
   <div className="relative w-full h-40 sm:h-48 md:h-56">
     {advert.images?.length > 0 ? (

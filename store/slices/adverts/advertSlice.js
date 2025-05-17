@@ -1,150 +1,160 @@
-// store/slices/advertSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/adverts`;
 
+/* ------------------ Thunks ------------------ */
 
-export const fetchAdverts = createAsyncThunk(
-    'adverts/fetchAdverts',
-    async (token, { rejectWithValue }) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/fetchAdverts`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (response.status === 404) {
-                return []; // No adverts found.
-            }
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                return rejectWithValue(errorData.message || 'Failed to fetch adverts');
-            }
-
-            return response.json();
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
+// Fetch advert by ID
+export const getAdvertById = createAsyncThunk(
+  'adverts/getAdvertById',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/byid/${id}`);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || { message: 'Failed to fetch advert' });
     }
+  }
 );
 
-export const fetchAdvertById = createAsyncThunk(
-    'adverts/fetchAdvertById',
-    async (id, { rejectWithValue }) => {
-        try {
-            const response = await fetch(
-                `${API_BASE_URL}/views/${id}`
-            );
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                return rejectWithValue(errorData.message || 'Failed to fetch advert');
-            }
-
-            return response.json();
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
-    }
-);
-
+// Add advert
 export const addAdvert = createAsyncThunk(
-    'adverts/addAdvert',
-    async (advertData, { rejectWithValue }) => {
-      console.log("🔹 Sending API request with data:", advertData);
-      try {
-        const response = await axios.post(
-          `${API_BASE_URL}/addadvert`,
-          advertData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-            withCredentials: true, // ✅ Required for sending cookies!
-          }
-        );
-  
-        if (response.data.success) {
-          return response.data.advert;
-        } else {
-          return rejectWithValue(response.data.message || 'Failed to add advert');
-        }
-      } catch (error) {
-        console.error('addAdvert Thunk - Error:', error);
-        const errorMessage =
-          error.response?.data?.message ||
-          'addAdvert thunk unable to reach addAdvert Controller due to a network/server issue';
-        return rejectWithValue(errorMessage);
-      }
+  'adverts/addAdvert',
+  async (formData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/addAdvert`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || { message: 'Failed to create advert' });
     }
-  );
-  
+  }
+);
 
+// Update advert
+export const updateAdvert = createAsyncThunk(
+  'adverts/updateAdvert',
+  async ({ id, formData }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/updateAdvert/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || { message: 'Failed to update advert' });
+    }
+  }
+);
+
+/* ------------------ Slice ------------------ */
 
 const advertSlice = createSlice({
-    name: 'advert',
-    initialState: {
-        adverts: [],
-        selectedAdvert: null,
-        status: 'idle',
-        error: null,
+  name: 'advert',
+  initialState: {
+    advert: null,
+    fetchStatus: 'idle',    // For getAdvertById
+    createStatus: 'idle',   // For addAdvert
+    updateStatus: 'idle',   // For updateAdvert
+    success: null,
+    message: null,
+    error: null,
+    errors: [], // validation errors
+  },
+  reducers: {
+    clearAdvert(state) {
+      state.advert = null;
+      state.fetchStatus = 'idle';
+      state.createStatus = 'idle';
+      state.updateStatus = 'idle';
+      state.success = null;
+      state.message = null;
+      state.error = null;
+      state.errors = [];
     },
-    reducers: {
-        clearAdverts(state) {
-            state.adverts = []; // Clear adverts list
-            state.status = 'idle'; // Reset status
-            state.error = null;
-        },
-    },
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchAdverts.pending, (state) => {
-                state.status = 'loading';
-            })
-            .addCase(fetchAdverts.fulfilled, (state, action) => {
-                state.status = 'success';
-                // Deduplicate adverts by _id
-                const combinedAdverts = [...state.adverts, ...action.payload];
-                const uniqueAdverts = [
-                    ...new Map(combinedAdverts.map((advert) => [advert._id, advert])).values(),
-                ];
+    clearErrorsAndStatus(state) {
+      // Preserve advert data
+      state.fetchStatus = 'idle';
+      state.createStatus = 'idle';
+      state.updateStatus = 'idle';
+      state.success = null;
+      state.message = null;
+      state.error = null;
+      state.errors = [];
+    }
+  },
+  extraReducers: (builder) => {
+    // Fetch advert cases
+    builder
+      .addCase(getAdvertById.pending, (state) => {
+        state.fetchStatus = 'loading';
+        state.error = null;
+        state.errors = [];
+        state.message = null;
+        state.success = null;
+      })
+      .addCase(getAdvertById.fulfilled, (state, action) => {
+        state.fetchStatus = 'succeeded';
+        state.success = action.payload.success ?? true;
+        state.message = action.payload.message || 'Success';
+        state.advert = action.payload.data?.advert || null;
+      })
+      .addCase(getAdvertById.rejected, (state, action) => {
+        state.fetchStatus = 'failed';
+        state.success = action.payload?.success ?? false;
+        state.message = action.payload?.message || 'Request failed';
+        state.error = action.payload?.error || null;
+        state.errors = action.payload?.errors || [];
+      })
 
-                state.adverts = uniqueAdverts; // Set deduplicated adverts in the state
-            })
-            .addCase(fetchAdverts.rejected, (state, action) => {
-                state.status = 'failed';
-                state.error = action.error.message;
-            })
+      // Add advert cases
+      .addCase(addAdvert.pending, (state) => {
+        state.createStatus = 'loading';
+        state.error = null;
+        state.errors = [];
+        state.message = null;
+        state.success = null;
+      })
+      .addCase(addAdvert.fulfilled, (state, action) => {
+        state.createStatus = 'succeeded';
+        state.success = action.payload.success ?? true;
+        state.message = action.payload.message || 'Success';
+        state.advert = action.payload.data?.advert || null;
+      })
+      .addCase(addAdvert.rejected, (state, action) => {
+        state.createStatus = 'failed';
+        state.success = action.payload?.success ?? false;
+        state.message = action.payload?.message || 'Request failed';
+        state.error = action.payload?.error || null;
+        state.errors = action.payload?.errors || [];
+      })
 
-            // Fetch Advert By ID Reducers
-            .addCase(fetchAdvertById.pending, (state) => {
-                state.status = 'loading';
-                state.selectedAdvert = null;
-                state.error = null;
-            })
-            .addCase(fetchAdvertById.fulfilled, (state, action) => {
-                state.status = 'success';
-                state.selectedAdvert = action.payload;
-            })
-            .addCase(fetchAdvertById.rejected, (state, action) => {
-                state.status = 'failed';
-                state.error = action.payload || action.error.message;
-            })
-
-            // Add Advert Extra Reducers
-            .addCase(addAdvert.pending, (state) => {
-                state.status = 'loading';
-            })
-            .addCase(addAdvert.fulfilled, (state) => {
-                state.status = 'success';
-            })
-            .addCase(addAdvert.rejected, (state, action) => {
-                state.status = 'failed';
-                state.error = action.payload || action.error.message;
-            });
-    },
+      // Update advert cases
+      .addCase(updateAdvert.pending, (state) => {
+        state.updateStatus = 'loading';
+        state.error = null;
+        state.errors = [];
+        state.message = null;
+        state.success = null;
+      })
+      .addCase(updateAdvert.fulfilled, (state, action) => {
+        state.updateStatus = 'succeeded';
+        state.success = action.payload.success ?? true;
+        state.message = action.payload.message || 'Success';
+        state.advert = action.payload.data?.advert || null;
+      })
+      .addCase(updateAdvert.rejected, (state, action) => {
+        state.updateStatus = 'failed';
+        state.success = action.payload?.success ?? false;
+        state.message = action.payload?.message || 'Request failed';
+        state.error = action.payload?.error || null;
+        state.errors = action.payload?.errors || [];
+      });
+  },
 });
 
-export const { clearAdverts } = advertSlice.actions;
+export const { clearAdvert, clearErrorsAndStatus } = advertSlice.actions;
 export default advertSlice.reducer;
