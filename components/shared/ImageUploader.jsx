@@ -100,30 +100,30 @@ const ImageUploader = ({
   return (
     <div>
       {/* Existing Images Section (only for edit mode) */}
-      {mode === 'edit' && existingImages.length > 0 && (  // CHANGED: Uses mode prop directly
-      <div className="mb-4">
-        <label className="block font-bold mb-2">Existing Images</label>
-        <div className="flex gap-4 flex-wrap">
-          {existingImages.map((imgObj, idx) => (
-            <div key={idx} className="relative inline-block">
-              <img
-                src={imgObj.url}
-                alt={`Existing image ${idx + 1}`}
-                className="w-24 h-24 object-cover border rounded"
-              />
-              <button
-                type="button"
-                onClick={() => handleRemoveExistingImage(idx)}
-                className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
-                title="Remove this existing image"
-              >
-                X
-              </button>
-            </div>
-          ))}
+      {mode === 'edit' && Array.isArray(existingImages) && existingImages.length > 0 && (
+  <div className="mb-4">
+    <label className="block font-bold mb-2">Existing Images</label>
+    <div className="flex gap-4 flex-wrap">
+      {existingImages.map((imgObj, idx) => (
+        <div key={idx} className="relative inline-block">
+          <img
+            src={imgObj.url}
+            alt={`Existing image ${idx + 1}`}
+            className="w-24 h-24 object-cover border rounded"
+          />
+          <button
+            type="button"
+            onClick={() => handleRemoveExistingImage(idx)}
+            className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
+            title="Remove this existing image"
+          >
+            X
+          </button>
         </div>
-      </div>
-    )}
+      ))}
+    </div>
+  </div>
+)}
 
       {/* Upload Section */}
       <div>

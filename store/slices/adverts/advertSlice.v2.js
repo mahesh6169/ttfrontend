@@ -56,7 +56,9 @@ const advertSlice = createSlice({
   name: 'advertsV2',
   initialState: {
     advert: null,
-    status: 'idle',
+    fetchStatus: 'idle',    // For getAdvertById
+    createStatus: 'idle',   // For addAdvert
+    updateStatus: 'idle',   // For updateAdvert
     success: null,
     message: null,
     error: null,
@@ -65,51 +67,94 @@ const advertSlice = createSlice({
   reducers: {
     clearAdvert(state) {
       state.advert = null;
-      state.status = 'idle';
+      state.fetchStatus = 'idle';
+      state.createStatus = 'idle';
+      state.updateStatus = 'idle';
       state.success = null;
       state.message = null;
       state.error = null;
       state.errors = [];
     },
-  },
-  extraReducers: (builder) => {
-    const handlePending = (state) => {
-      state.status = 'loading';
+    clearErrorsAndStatus(state) {
+      // Preserve advert data
+      state.fetchStatus = 'idle';
+      state.createStatus = 'idle';
+      state.updateStatus = 'idle';
+      state.success = null;
+      state.message = null;
       state.error = null;
       state.errors = [];
-      state.message = null;
-      state.success = null;
-    };
-
-    const handleFulfilled = (state, action) => {
-      state.status = 'succeeded';
-      state.success = action.payload.success ?? true;
-      state.message = action.payload.message || 'Success';
-      state.advert = action.payload.data?.advert || null;
-    };
-
-    const handleRejected = (state, action) => {
-        state.status = 'failed';
+    }
+  },
+  extraReducers: (builder) => {
+    // Fetch advert cases
+    builder
+      .addCase(getAdvertById.pending, (state) => {
+        state.fetchStatus = 'loading';
+        state.error = null;
+        state.errors = [];
+        state.message = null;
+        state.success = null;
+      })
+      .addCase(getAdvertById.fulfilled, (state, action) => {
+        state.fetchStatus = 'succeeded';
+        state.success = action.payload.success ?? true;
+        state.message = action.payload.message || 'Success';
+        state.advert = action.payload.data?.advert || null;
+      })
+      .addCase(getAdvertById.rejected, (state, action) => {
+        state.fetchStatus = 'failed';
         state.success = action.payload?.success ?? false;
         state.message = action.payload?.message || 'Request failed';
         state.error = action.payload?.error || null;
         state.errors = action.payload?.errors || [];
-      };
+      })
 
-    builder
-      .addCase(getAdvertById.pending, handlePending)
-      .addCase(getAdvertById.fulfilled, handleFulfilled)
-      .addCase(getAdvertById.rejected, handleRejected)
+      // Add advert cases
+      .addCase(addAdvert.pending, (state) => {
+        state.createStatus = 'loading';
+        state.error = null;
+        state.errors = [];
+        state.message = null;
+        state.success = null;
+      })
+      .addCase(addAdvert.fulfilled, (state, action) => {
+        state.createStatus = 'succeeded';
+        state.success = action.payload.success ?? true;
+        state.message = action.payload.message || 'Success';
+        state.advert = action.payload.data?.advert || null;
+      })
+      .addCase(addAdvert.rejected, (state, action) => {
+        state.createStatus = 'failed';
+        state.success = action.payload?.success ?? false;
+        state.message = action.payload?.message || 'Request failed';
+        state.error = action.payload?.error || null;
+        state.errors = action.payload?.errors || [];
+      })
 
-      .addCase(addAdvert.pending, handlePending)
-      .addCase(addAdvert.fulfilled, handleFulfilled)
-      .addCase(addAdvert.rejected, handleRejected)
-
-      .addCase(updateAdvert.pending, handlePending)
-      .addCase(updateAdvert.fulfilled, handleFulfilled)
-      .addCase(updateAdvert.rejected, handleRejected);
+      // Update advert cases
+      .addCase(updateAdvert.pending, (state) => {
+        state.updateStatus = 'loading';
+        state.error = null;
+        state.errors = [];
+        state.message = null;
+        state.success = null;
+      })
+      .addCase(updateAdvert.fulfilled, (state, action) => {
+        state.updateStatus = 'succeeded';
+        state.success = action.payload.success ?? true;
+        state.message = action.payload.message || 'Success';
+        state.advert = action.payload.data?.advert || null;
+      })
+      .addCase(updateAdvert.rejected, (state, action) => {
+        state.updateStatus = 'failed';
+        state.success = action.payload?.success ?? false;
+        state.message = action.payload?.message || 'Request failed';
+        state.error = action.payload?.error || null;
+        state.errors = action.payload?.errors || [];
+      });
   },
 });
 
-export const { clearAdvert } = advertSlice.actions;
+export const { clearAdvert, clearErrorsAndStatus } = advertSlice.actions;
 export default advertSlice.reducer;

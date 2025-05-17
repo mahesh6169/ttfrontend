@@ -1,9 +1,11 @@
+// app/adverts2/edit/[id]/page.jsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAdvertById, updateAdvert, clearAdvert } from '@/store/slices/adverts/advertSlice.v2';
+import { getAdvertById, updateAdvert, clearAdvert, clearErrorsAndStatus } from '@/store/slices/adverts/advertSlice.v2';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import AdvertForm from '@/components/advertsv2/AdvertForm';
 import { toast } from 'react-toastify';
 
@@ -11,11 +13,13 @@ const EditAdvertPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { id } = useParams();
-  const { advert, status, success, message, errors } = useSelector(state => state.advertsV2);
+  const { advert, fetchStatus, updateStatus, success, message, errors } = useSelector(state => state.advertsV2);
+  const { user } = useSelector(state => state.user);
 
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [formData, setFormData] = useState(null); // Store the submitted form data
 
-  // ✅ Fetch advert on load
+  // Fetch advert on load
   useEffect(() => {
     if (id) {
       dispatch(getAdvertById(id));
@@ -24,107 +28,145 @@ const EditAdvertPage = () => {
     return () => dispatch(clearAdvert());
   }, [id, dispatch]);
 
-  // ✅ Prepare and submit FormData
+  // Prepare and submit FormData
   const handleSubmit = (data) => {
+    console.log('=== UPDATING ADVERT ===');
+    console.log("Raw form data received:", data);
+    
+    dispatch(clearErrorsAndStatus());
     const formData = new FormData();
+    
+    // Explicitly set critical fields first
+    console.log("Adding title:", data.title);
+    formData.append('title', data.title || '');
+    
+    console.log("Adding description:", data.description);
+    formData.append('description', data.description || '');
+    
+    console.log("Adding category:", data.category);
+    formData.append('category', data.category || '');
+    
+    console.log("Adding adType:", data.adType);
+    formData.append('adType', data.adType || 'offered');
+    
+    // Handle nested objects only if not already added
     const jsonKeys = ['fields', 'pricing', 'address'];
-
     Object.entries(data).forEach(([key, value]) => {
+      // Skip the keys we've already handled directly
+      if (key === 'title' || key === 'description' || key === 'category' || key === 'adType') {
+        console.log(`Skipping ${key} as it was already added directly`);
+        return;
+      }
+      
       if (jsonKeys.includes(key)) {
+        console.log(`Adding ${key} as JSON:`, value);
         formData.append(key, JSON.stringify(value));
       } else if (key === 'images') {
-        value.forEach(file => {
+        console.log(`Processing ${value.length} images`);
+        value.forEach((file, index) => {
           if (file instanceof File) {
+            console.log(`Adding image ${index}:`, file.name);
             formData.append('images', file);
           }
         });
-      } else if (key !== 'existingImages') {
+      } else if (key === 'existingImages') {
+        // Handle existingImages properly
+        if (Array.isArray(value) && value.length > 0) {
+          console.log(`Processing ${value.length} existing images`);
+          value.forEach((img, index) => {
+            const imgData = typeof img === 'string' ? img : JSON.stringify(img);
+            console.log(`Adding existing image ${index}:`, typeof imgData === 'string' ? imgData.substring(0, 30) + '...' : imgData);
+            formData.append('existingImages', imgData);
+          });
+        } else {
+          console.log('No existing images to process');
+        }
+      } else {
+        console.log(`Adding other field ${key}:`, value);
         formData.append(key, value);
       }
     });
-
-    // ✅ Fixed: Ensure existing images are properly stringified
-    if (Array.isArray(data.existingImages)) {
-      data.existingImages.forEach(img => {
-        // Always stringify the image object, even if it's already a string
-        const imgData = typeof img === 'string' ? img : JSON.stringify(img);
-        formData.append('existingImages', imgData);
-      });
-    } else if (data.existingImages) {
-      // Handle case where existingImages might not be an array
-      console.warn('⚠️ existingImages is not an array:', data.existingImages);
-      formData.append('existingImages', JSON.stringify(data.existingImages));
+    
+    console.log('About to dispatch updateAdvert with formData');
+    console.log("FormData entries:");
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}: ${value instanceof File ? `File: ${value.name}` : (typeof value === 'string' && value.length > 100 ? value.substring(0, 100) + '...' : value)}`);
     }
-
-    // Debug logging to verify what's being sent
-    console.log('📤 Submitting update with existing images:', data.existingImages);
+    
+    // Store the submitted data to show optimistic UI updates
+    setFormData(data);
+    setHasSubmitted(true);
     
     dispatch(updateAdvert({ id, formData }));
-    setHasSubmitted(true);
   };
 
-  // ✅ Handle redirect on success
+  // Handle redirect on success
   useEffect(() => {
-    if (hasSubmitted && success && status === 'succeeded' && advert?._id) {
+    if (hasSubmitted && success && updateStatus === 'succeeded') {
       toast.success("Advert updated successfully!");
       setTimeout(() => {
         router.push('/users/profile/manageads');
         dispatch(clearAdvert());
       }, 1000);
     }
-  }, [hasSubmitted, success, status, router, dispatch, advert]);
+  }, [hasSubmitted, success, updateStatus, router, dispatch]);
 
-  // ✅ Log backend errors
-  useEffect(() => {
-    if (message && success === false) {
-      console.error("❌ Advert update failed:", message);
-      if (errors && errors.length > 0) {
-        console.error("❌ Validation errors:", errors);
-      }
-    }
-  }, [message, success, errors]);
+  // Create a merged data object for display
+  // This prioritizes the submitted form data while waiting for the update to complete
+  const displayData = hasSubmitted && formData && updateStatus === 'loading' 
+    ? { ...advert, ...formData } 
+    : advert;
 
   return (
     <div className="max-w-4xl mx-auto py-10">
       <h1 className="text-2xl font-bold mb-6">Edit Advert</h1>
 
-      {status === 'loading' && (
-        <p className="text-blue-700 mb-4">Loading advert...</p>
-      )}
-
-      {message && success === false && (
-        <div className="mb-4 text-red-600 bg-red-50 p-4 rounded border border-red-200">
-          <p className="font-semibold">Error:</p>
-          <p>{message}</p>
+      {fetchStatus === 'loading' && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
+          <p className="text-blue-700">Loading advert...</p>
         </div>
       )}
 
+      {updateStatus === 'loading' && (
+        <LoadingSpinner message="Updating advert..." />
+      )}
+
       {errors && errors.length > 0 && (
-        <div className="mb-4 text-red-600 bg-red-50 p-4 rounded border border-red-200">
-          <p className="font-semibold">Validation Errors:</p>
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded">
+          <p className="font-bold text-red-700 mb-2">Validation Errors:</p>
           <ul className="list-disc list-inside">
-            {errors.map((e, i) => <li key={i}>{e}</li>)}
+            {errors.map((error, index) => (
+              <li key={index} className="text-red-600">{error}</li>
+            ))}
           </ul>
         </div>
       )}
 
-      {/* ✅ If advert fetch failed but status is success */}
-      {status === 'succeeded' && !advert && (
+      {message && success === false && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded">
+          <p className="text-red-700">{message}</p>
+        </div>
+      )}
+      
+      {/* If advert fetch failed but status is success */}
+      {fetchStatus === 'succeeded' && !displayData && (
         <div className="text-red-600 mb-4">
           Advert not found or you're not authorized to edit it.
         </div>
       )}
 
-      {/* ✅ Render form if advert is fetched */}
-      {advert && (
+      {/* Render form if advert is fetched */}
+      {displayData && (
         <AdvertForm
           initialData={{
-            ...advert,
-            existingImages: advert.images || []
+            ...displayData,
+            existingImages: displayData.images || []
           }}
           onSubmit={handleSubmit}
-          isLoading={status === 'loading'}
+          isLoading={fetchStatus === 'loading' || updateStatus === 'loading'}
           errors={errors}
+          userRole={user?.role || 'user'}
+          key={hasSubmitted ? 'updating' : 'initial'} // Force re-render when submitting
         />
       )}
     </div>

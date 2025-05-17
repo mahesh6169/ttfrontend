@@ -112,27 +112,29 @@ export const CATEGORY_CONFIG = {
       propertyType: {
         type: 'select',
         label: 'Property Type',
-        options: ['House', 'Apartment', 'Townhouse', 'Land', 'Commercial'],
+        options: ['House', 'Room','Commercial', 'Land'],
         required: true
       },
       bedrooms: {
         type: 'number',
         label: 'Bedrooms',
         min: 0,
-        max: 10,
-        showWhen: { propertyType: ['House', 'Apartment', 'Townhouse'] }
+        max: 6,
+        showWhen: { propertyType: ['House', 'Room']}
       },
       bathrooms: {
         type: 'number',
         label: 'Bathrooms',
         min: 0,
-        max: 10,
-        showWhen: { propertyType: ['House', 'Apartment', 'Townhouse'] }
+        max: 6,
+        showWhen: { propertyType: ['House', 'Room'] }
       },
       parkingSpaces: {
         type: 'number',
         label: 'Parking Spaces',
-        min: 0
+        min: 0,
+        max: 6,
+        showWhen: { propertyType: ['House', 'Room'] }
       },
       landSize: {
         type: 'number',

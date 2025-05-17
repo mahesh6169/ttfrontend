@@ -644,6 +644,7 @@ const userSlice = createSlice({
           name: payload.user.name,
           email: payload.user.email,
           isAccountVerified: payload.user.isAccountVerified,
+          role: payload.user.role,
         };
         state.mutedThreads = payload.user.mutedThreads || [];
       })
