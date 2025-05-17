@@ -56,7 +56,7 @@ export const CATEGORY_FIELDS = {
       label: 'Bedrooms',
       min: 0,
       max: 6,
-      order: 22,
+      order: 31,
       showWhen: {
         priceType: ['sell', 'rent', 'share'],
         propertyType: ['Room', 'House', 'Commercial']
@@ -67,7 +67,7 @@ export const CATEGORY_FIELDS = {
       label: 'Parking',
       min: 0,
       max: 2,
-      order: 23,
+      order: 32,
       showWhen: {
         priceType: ['sell', 'rent', 'share'],
         propertyType: ['Room', 'House', 'Commercial']

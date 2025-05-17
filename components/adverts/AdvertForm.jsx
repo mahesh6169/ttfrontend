@@ -77,7 +77,10 @@ const AdvertForm = ({
           unit: firstOption.units?.[0] || ''
         }];
         setFormData(prev => ({ ...prev, pricing: defaultPricing }));
-        setSelectedPriceType(firstType);
+        setSelectedPriceType(firstType); // Make sure to set this value
+      } else if (formData.pricing.length > 0) {
+        // If pricing exists but selectedPriceType is empty, set it from existing pricing
+        setSelectedPriceType(formData.pricing[0].priceType);
       }
     }
   }, [categoryConfig?.pricingOptions, formData.category]);

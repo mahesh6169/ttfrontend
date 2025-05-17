@@ -140,13 +140,19 @@ export const shouldShowPricingOption = (category, pricingType, formData) => {
   const option = config.options[pricingType];
   if (!option || !option.enabled) return false;
 
+  // For Real Estate, if no property type is selected yet, show all enabled pricing options
+  // so that the pricing type section appears initially
+  if (category === 'Real Estate' && !formData.propertyType) {
+    return true;
+  }
+
+  // Once a property type is selected, apply the proper filtering
   if (option.showWhen) {
     for (const [field, allowedValues] of Object.entries(option.showWhen)) {
-      if (!allowedValues.includes(formData.fields?.[field])) {
+      if (!allowedValues.includes(formData[field])) {
         return false;
       }
     }
   }
-
   return true;
 };
