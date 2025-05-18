@@ -97,6 +97,7 @@ const messageSlice = createSlice({
     error: null,
     deleteConversationStatus: 'idle',
     unreadExists: false,
+    inActiveChat: false,
   },
   reducers: {
     setActiveConversation(state, { payload }) {
@@ -115,6 +116,7 @@ const messageSlice = createSlice({
       };
       state.status = 'idle';
       state.error = null;
+      state.inActiveChat = false;
     },
 
     addNewMessage(state, { payload }) {
@@ -131,7 +133,9 @@ const messageSlice = createSlice({
     setUnreadExists(state, action) {
       state.unreadExists = action.payload;
     },
-    
+    setInActiveChat(state, action) {
+      state.inActiveChat = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -166,6 +170,7 @@ const messageSlice = createSlice({
           participants,
           messages: messages || [],
         };
+        state.inActiveChat = true;
       })
       
       .addCase(fetchMessages.rejected, (state, { payload }) => {
@@ -205,6 +210,7 @@ export const {
   addNewMessage,
   markMessageAsRead,
   setUnreadExists,
+  setInActiveChat,
 } = messageSlice.actions;
 
 export default messageSlice.reducer;

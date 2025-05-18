@@ -9,6 +9,7 @@ import {
   addNewMessage,
   markMessageAsRead,
   setUnreadExists,
+  setInActiveChat, // Import the new action
 } from '@/store/slices/shared/messageSlice';
 import socket from '@/config/socket';
 import { useSearchParams, useParams } from 'next/navigation';
@@ -18,7 +19,7 @@ import { RiArrowGoBackFill } from "react-icons/ri";
 import Link from 'next/link';
 
 const ChatPage = () => {
-   const router = useRouter();
+  const router = useRouter();
   const { type: resourceType, id: resourceId } = useParams();
   const searchParams = useSearchParams();
   const otherUserId = searchParams.get('otherUser');
@@ -33,6 +34,16 @@ const ChatPage = () => {
   const { resource, participants } = activeConversation || {};
   const { owner, participant } = participants || {};
   const myRole = owner?.id === currentUserId ? 'owner' : participant?.id === currentUserId ? 'participant' : null;
+
+  // Set inActiveChat to true when entering the chat page
+  useEffect(() => {
+    dispatch(setInActiveChat(true));
+    
+    // Set inActiveChat to false when leaving the chat page
+    return () => {
+      dispatch(setInActiveChat(false));
+    };
+  }, [dispatch]);
 
   // Fetch messages
   useEffect(() => {
@@ -65,8 +76,6 @@ const ChatPage = () => {
   
   }, [activeConversation?.messages, myRole, currentUserId]);
   
-  
-
   // Handle incoming socket messages
   useEffect(() => {
     const handleNewMessage = (msg) => {
@@ -90,16 +99,14 @@ const ChatPage = () => {
     };
   }, [dispatch, activeConversation]);
   
-
   // Handle read from socket
-// Handle read from socket
-useEffect(() => {
-  const handler = ({ messageId, userId }) => {
-    dispatch(markMessageAsRead({ messageId, userId }));  // ✅ Pass both messageId and userId
-  };
-  socket.on('messageRead', handler);
-  return () => socket.off('messageRead', handler);
-}, [dispatch]);
+  useEffect(() => {
+    const handler = ({ messageId, userId }) => {
+      dispatch(markMessageAsRead({ messageId, userId }));
+    };
+    socket.on('messageRead', handler);
+    return () => socket.off('messageRead', handler);
+  }, [dispatch]);
 
 
   // Reconnect socket
@@ -113,7 +120,7 @@ useEffect(() => {
     return () => document.removeEventListener('visibilitychange', reconnect);
   }, []);
 
-//
+  // Check for unread messages
   useEffect(() => {
     if (!activeConversation?.messages || !currentUserId) return;
   
@@ -152,15 +159,15 @@ useEffect(() => {
 
   return (
     <div className="mt-4 px-2 sm:px-4">
-       <div className="mb-2">
-  <span
-    onClick={() => router.back()}
-    className="inline-flex items-center gap-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium cursor-pointer"
-  >
-    <RiArrowGoBackFill className="text-xs sm:text-base" />
-    <span>Back</span>
-  </span>
-</div>
+      <div className="mb-2">
+        <span
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium cursor-pointer"
+        >
+          <RiArrowGoBackFill className="text-xs sm:text-base" />
+          <span>Back</span>
+        </span>
+      </div>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <Link href={`/${resourceType}s/views/${resourceId}`}>
@@ -203,8 +210,8 @@ useEffect(() => {
                     </div>
                     <p>{msg.message}</p>
                     {String(msg.readBy) === String(otherUserId) && (
-  <div className="text-xs text-green-300 text-right mt-1">(read)</div>
-)}
+                      <div className="text-xs text-green-300 text-right mt-1">(read)</div>
+                    )}
                   </div>
                 </div>,
               ];
@@ -217,39 +224,36 @@ useEffect(() => {
       </div>
 
       {/* Input */}
-{/* Input */}
-<div className="border rounded-lg shadow bg-white p-2">
-  {/* Auto-growing Textarea */}
-  <textarea
-    value={newMessage}
-    onChange={(e) => setNewMessage(e.target.value)}
-    placeholder="Type your message..."
-    rows={1}
-    className="w-full border-none outline-none resize-none p-2 text-sm sm:text-base overflow-y-auto"
-    style={{
-      minHeight: '2.5rem',
-      maxHeight: '8rem',
-      height: 'auto',
-    }}
-    onInput={(e) => {
-      e.target.style.height = 'auto';
-      e.target.style.height = `${e.target.scrollHeight}px`;
-    }}
-  />
+      <div className="border rounded-lg shadow bg-white p-2">
+        {/* Auto-growing Textarea */}
+        <textarea
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type your message..."
+          rows={1}
+          className="w-full border-none outline-none resize-none p-2 text-sm sm:text-base overflow-y-auto"
+          style={{
+            minHeight: '2.5rem',
+            maxHeight: '8rem',
+            height: 'auto',
+          }}
+          onInput={(e) => {
+            e.target.style.height = 'auto';
+            e.target.style.height = `${e.target.scrollHeight}px`;
+          }}
+        />
 
-  {/* Send Button Row */}
-  <div className="flex justify-end mt-2">
-    <button
-      onClick={handleSendMessage}
-      disabled={!newMessage.trim()}
-      className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 disabled:opacity-50"
-    >
-      Send
-    </button>
-  </div>
-</div>
-
-
+        {/* Send Button Row */}
+        <div className="flex justify-end mt-2">
+          <button
+            onClick={handleSendMessage}
+            disabled={!newMessage.trim()}
+            className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 disabled:opacity-50"
+          >
+            Send
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
