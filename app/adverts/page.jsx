@@ -33,6 +33,18 @@ const AdvertsPage = () => {
   // Modal filter states
   const [tempFilters, setTempFilters] = useState({});
 
+  //Add state for sort menu
+const [showSortMenu, setShowSortMenu] = useState(false);
+
+const sortOptions = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  // Add more options in the future
+  // { value: 'price_low', label: 'Price: low to high' },
+  // { value: 'price_high', label: 'Price: high to low' },
+  // { value: 'distance', label: 'Distance' },
+];
+
   // Initialize temporary filters
   useEffect(() => {
     setTempFilters({
@@ -104,6 +116,18 @@ const AdvertsPage = () => {
     });
     setLocationInput('');
   };
+
+//  function to handle sort changes
+const handleSortChange = (sortValue) => {
+  dispatch(updateFilter({ filterType: 'sortBy', value: sortValue }));
+  setShowSortMenu(false);
+};
+
+//current sort label for display
+const getCurrentSortLabel = () => {
+  const option = sortOptions.find(opt => opt.value === filters.sortBy);
+  return option?.label || 'Newest first';
+};
 
   const applyFilters = () => {
     // Apply all temporary filters to the store
@@ -416,12 +440,40 @@ const AdvertsPage = () => {
               )}
             </button>
             
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-              </svg>
-              <span className="font-medium">Sort</span>
-            </button>
+            <div className="relative">
+  <button 
+    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+    onClick={() => setShowSortMenu(!showSortMenu)}
+  >
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+    </svg>
+    <span className="font-medium">Sort: {getCurrentSortLabel()}</span>
+  </button>
+  
+  {/* Sort dropdown menu */}
+  {showSortMenu && (
+    <>
+      <div 
+        className="fixed inset-0 z-20" 
+        onClick={() => setShowSortMenu(false)}
+      ></div>
+      <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-30 border border-gray-200 py-1">
+        {sortOptions.map((option) => (
+          <button
+            key={option.value}
+            onClick={() => handleSortChange(option.value)}
+            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
+              filters.sortBy === option.value ? 'bg-gray-50 font-medium' : ''
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </>
+  )}
+</div>
           </div>
         </div>
 

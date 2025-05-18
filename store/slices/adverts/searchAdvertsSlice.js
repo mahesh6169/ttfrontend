@@ -161,11 +161,18 @@ export const {
 } = searchAdvertsSlice.actions;
 
 // Selectors
+// Selectors
 export const selectActiveFilters = (state) => {
   const { filters } = state.searchAdverts; 
   const active = {};
   
   Object.entries(filters).forEach(([key, value]) => {
+    // Special case for sortBy - we always have a sort, but we don't want to count the default as an active filter
+    if (key === 'sortBy' && value === 'newest') {
+      return;
+    }
+    
+    // For all other filters
     if (
       value !== null && 
       value !== '' && 
