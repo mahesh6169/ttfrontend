@@ -80,11 +80,19 @@ const ImageUploader = ({
     }));
   };
 
+  // Fixed handleRemoveExistingImage function
   const handleRemoveExistingImage = (index) => {
-    if (setExistingImages) {
-      setExistingImages((prev) => prev.filter((_, i) => i !== index));
+    // Find the original index in the full array
+    const filteredImages = existingImages
+      .map((imgObj, i) => ({ ...imgObj, _origIndex: i }))
+      .filter(imgObj => imgObj && typeof imgObj === 'object' && imgObj.url && typeof imgObj.url === 'string');
+    const origIndex = filteredImages[index]?._origIndex;
+    if (setExistingImages && origIndex !== undefined) {
+      setExistingImages((prev) => prev.filter((_, i) => i !== origIndex));
     }
   };
+  
+  
 
   // Reset after successful submit (for add form)
   useEffect(() => {
@@ -101,36 +109,44 @@ const ImageUploader = ({
     <div>
       {/* Existing Images Section (only for edit mode) */}
       {mode === 'edit' && Array.isArray(existingImages) && existingImages.length > 0 && (
-  <div className="mb-4">
-    <label className="block font-bold mb-2">Existing Images</label>
-    <div className="flex gap-4 flex-wrap">
-      {existingImages.map((imgObj, idx) => (
-        <div key={idx} className="relative inline-block">
-          <img
-            src={imgObj.url}
-            alt={`Existing image ${idx + 1}`}
-            className="w-24 h-24 object-cover border rounded"
-          />
-          <button
-            type="button"
-            onClick={() => handleRemoveExistingImage(idx)}
-            className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
-            title="Remove this existing image"
-          >
-            X
-          </button>
-        </div>
-      ))}
+        <div className="mb-4">
+          <label className="block font-bold mb-2">Existing Images</label>
+          <div className="flex gap-4 flex-wrap">
+          {existingImages
+  .map((imgObj, i) => ({ ...imgObj, _origIndex: i }))
+  .filter(imgObj => imgObj && typeof imgObj === 'object' && imgObj.url && typeof imgObj.url === 'string')
+  .map((imgObj, idx) => (
+    <div key={imgObj.url || idx} className="relative inline-block">
+      <img
+        src={imgObj.url}
+        alt={`Existing image ${idx + 1}`}
+        className="w-24 h-24 object-cover border rounded"
+        onError={(e) => {
+          e.target.src = 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => handleRemoveExistingImage(idx)}
+        className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded hover:bg-red-600"
+        title="Remove this existing image"
+        data-index={idx}
+      >
+        X
+      </button>
     </div>
-  </div>
-)}
+  ))}
+
+          </div>
+        </div>
+      )}
 
       {/* Upload Section */}
       <div>
         <label className="block font-bold mb-2">
-        Upload {mode === 'edit' && existingImages.length > 0 ? 'New ' : ''}Images
+          Upload {mode === 'edit' && existingImages.length > 0 ? 'New ' : ''}Images
           <span className="block text-xs font-normal text-gray-600">
-          (Max {maxImages} {mode === 'edit' && existingImages.length > 0 ? 'total' : ''} — JPEG & PNG format only)
+            (Max {maxImages} {mode === 'edit' && existingImages.length > 0 ? 'total' : ''} — JPEG & PNG format only)
           </span>
         </label>
         <input
@@ -155,7 +171,7 @@ const ImageUploader = ({
                 <button
                   type="button"
                   onClick={() => handleRemoveImage(index)}
-                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
+                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded hover:bg-red-600"
                   title="Remove this image"
                 >
                   X

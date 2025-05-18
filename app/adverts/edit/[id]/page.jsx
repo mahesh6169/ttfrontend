@@ -8,6 +8,7 @@ import { getAdvertById, updateAdvert, clearAdvert, clearErrorsAndStatus } from '
 import LoadingSpinner from '@/components/LoadingSpinner';
 import AdvertForm from '@/components/adverts/AdvertForm';
 import { toast } from 'react-toastify';
+import RequireLogin from '@/components/Auth/RequireLogin';
 
 const EditAdvertPage = () => {
   const dispatch = useDispatch();
@@ -57,7 +58,7 @@ const EditAdvertPage = () => {
         console.log(`Skipping ${key} as it was already added directly`);
         return;
       }
-      
+    
       if (jsonKeys.includes(key)) {
         console.log(`Adding ${key} as JSON:`, value);
         formData.append(key, JSON.stringify(value));
@@ -70,22 +71,27 @@ const EditAdvertPage = () => {
           }
         });
       } else if (key === 'existingImages') {
-        // Handle existingImages properly
-        if (Array.isArray(value) && value.length > 0) {
-          console.log(`Processing ${value.length} existing images`);
-          value.forEach((img, index) => {
-            const imgData = typeof img === 'string' ? img : JSON.stringify(img);
-            console.log(`Adding existing image ${index}:`, typeof imgData === 'string' ? imgData.substring(0, 30) + '...' : imgData);
-            formData.append('existingImages', imgData);
-          });
-        } else {
-          console.log('No existing images to process');
+        // *** FIX STARTS HERE ***
+        // Always send existingImages, even if empty
+        if (Array.isArray(value)) {
+          if (value.length === 0) {
+            // Send an explicit empty array as a string
+            formData.append('existingImages', JSON.stringify([]));
+            console.log('No existing images left, sending empty array');
+          } else {
+            value.forEach((img, index) => {
+              const imgData = typeof img === 'string' ? img : JSON.stringify(img);
+              formData.append('existingImages', imgData);
+            });
+          }
         }
+        // *** FIX ENDS HERE ***
       } else {
         console.log(`Adding other field ${key}:`, value);
         formData.append(key, value);
       }
     });
+    
     
     console.log('About to dispatch updateAdvert with formData');
     console.log("FormData entries:");
@@ -120,6 +126,7 @@ const EditAdvertPage = () => {
   return (
     <div className="max-w-4xl mx-auto py-10">
       <h1 className="text-2xl font-bold mb-6">Edit Advert</h1>
+      <RequireLogin message="You must be logged in to add a new event.">
 
       {fetchStatus === 'loading' && (
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
@@ -169,6 +176,7 @@ const EditAdvertPage = () => {
           key={hasSubmitted ? 'updating' : 'initial'} // Force re-render when submitting
         />
       )}
+       </RequireLogin>
     </div>
   );
 };

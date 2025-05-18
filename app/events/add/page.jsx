@@ -9,6 +9,7 @@ import { CATEGORY_OPTIONS } from '@/components/events/addevents/EventCategories'
 import AddressInput from '@/components/events/addevents/AddressInput';
 import ImageUploader from '@/components/events/addevents/ImageUploader';
 import { zonedTimeToUtc } from 'date-fns-tz';
+import RequireLogin from '@/components/Auth/RequireLogin';
 import Link from 'next/link';
 
 const AU_TIMEZONES = [
@@ -195,33 +196,7 @@ const AddEventPage = () => {
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Add New Event</h1>
 
-      {!isLoggedIn ? (
-        <div className="border rounded-lg p-4 shadow-md bg-white text-center">
-          <p className="text-gray-700 mb-4 text-xs sm:text-base">
-            You must be logged in to add a new advert.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Link
-              href="/login?preserveRedirect=true"
-              onClick={() => {
-                localStorage.setItem('redirectAfterLogin', '/events/add');
-              }}
-              className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register?preserveRedirect=true"
-              onClick={() => {
-                localStorage.setItem('redirectAfterLogin', '/events/add');
-              }}
-              className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
-            >
-              Register
-            </Link>
-          </div>
-        </div>
-      ) : (
+      <RequireLogin message="You must be logged in to add a new event.">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 1. Title */}
           <div>
@@ -570,7 +545,7 @@ const AddEventPage = () => {
             </button>
           </div>
         </form>
-      )}
+      </RequireLogin>
     </div>
   );
 };

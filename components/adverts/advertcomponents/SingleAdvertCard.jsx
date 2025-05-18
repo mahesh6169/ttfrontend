@@ -5,11 +5,10 @@ import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
 import SendMessage from '@/components/chat/SendMessage';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
-
 const FALLBACK_IMAGE_URL =
   'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
 
-  const SingleAdvertCard = ({ advert, chatProps }) => {
+const SingleAdvertCard = ({ advert, chatProps }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const {
@@ -36,18 +35,40 @@ const FALLBACK_IMAGE_URL =
       prev === 0 ? advert.images.length - 1 : prev - 1
     );
 
-    const getPriceLabel = () => {
-      if (advert.isForSale) return { label: 'For Sale', value: `$${advert.sellPrice}` };
-      if (advert.isForHire) return { label: 'For Hire', value: `$${advert.hirePrice} / ${advert.hireUnit}` };
-      if (advert.isForRent) return { label: 'For Rent', value: `$${advert.rentPrice} / ${advert.rentUnit}` };
-      if (advert.isForShare) return { label: 'For Share', value: `$${advert.sharePrice} / ${advert.shareUnit}` };
+  // New function to get price information based on the pricing array
+  const getPriceLabel = (pricing) => {
+    if (!pricing || !Array.isArray(pricing) || pricing.length === 0) {
       return null;
-    };
+    }
+
+    // Find all pricing entries with an amount > 0
+    const activePricings = pricing.filter(price => price.amount > 0);
+    if (activePricings.length === 0) return null;
+
+    return activePricings.map(price => {
+      const unit = price.unit ? ` p/${price.unit}` : '';
+      
+      switch(price.priceType) {
+        case 'sale':
+          return { label: 'For Sale', value: `$${price.amount}` };
+        case 'hire':
+          return { label: 'For Hire', value: `$${price.amount}${unit}` };
+        case 'rent':
+          return { label: 'For Rent', value: `$${price.amount}${unit}` };
+        case 'share':
+          return { label: 'For Share', value: `$${price.amount}${unit}` };
+        default:
+          return { label: 'Price', value: `$${price.amount}${unit}` };
+      }
+    });
+  };
+
+  const priceLabels = getPriceLabel(advert.pricing);
 
   return (
-    <div id="SingleAdvertCard" className="border rounded shadow-md mx-auto ">
-      {/* Image Section */}
-      <div className="relative w-full mx-auto bg-gray-200 flex  overflow-hidden rounded">
+    <div id="SingleAdvertCard" className="border rounded shadow-md mx-auto">
+      {/* Image Section - Keeping as is */}
+      <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded">
         {advert.images?.length > 0 ? (
           <img
             src={advert.images[currentImageIndex].url} 
@@ -63,22 +84,22 @@ const FALLBACK_IMAGE_URL =
           />
         )}
 
-         {advert.images?.length > 1 && (
-                  <>
-                    <button
-                      onClick={handlePrevImage}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
-                    >
-                      <FaChevronLeft />
-                    </button>
-                    <button
-                      onClick={handleNextImage}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
-                    >
-                      <FaChevronRight />
-                    </button>
-                  </>
-                )}
+        {advert.images?.length > 1 && (
+          <>
+            <button
+              onClick={handlePrevImage}
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+            >
+              <FaChevronLeft />
+            </button>
+            <button
+              onClick={handleNextImage}
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+            >
+              <FaChevronRight />
+            </button>
+          </>
+        )}
 
         {/* Wishlist Button */}
         <button
@@ -98,132 +119,119 @@ const FALLBACK_IMAGE_URL =
         </button>
       </div>
 
-      {/* Fullscreen Modal */}
+      {/* Fullscreen Modal - Keeping as is */}
       {isFullscreen && (
-  <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
-    {/* Image itself fills screen with padding and proper scaling */}
-    <img
-      src={advert.images[currentImageIndex].url}
-      alt={advert.title || 'Advert Image'}
-      className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
-    />
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+          <img
+            src={advert.images[currentImageIndex].url}
+            alt={advert.title || 'Advert Image'}
+            className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
+          />
 
-    {/* Close Button */}
-    <button
-      onClick={handleCloseFullscreen}
-      className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
-    >
-      <FaTimes size={30} />
-    </button>
+          <button
+            onClick={handleCloseFullscreen}
+            className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+          >
+            <FaTimes size={30} />
+          </button>
 
-    {/* Prev/Next Buttons */}
-    <button
-      onClick={handlePrevImage}
-      className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
-    >
-      Prev
-    </button>
-    <button
-      onClick={handleNextImage}
-      className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
-    >
-      Next
-    </button>
-  </div>
-)}
-
+          <button
+            onClick={handlePrevImage}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+          >
+            Prev
+          </button>
+          <button
+            onClick={handleNextImage}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {/* Title */}
       {advert.title && (
         <div className="my-2 px-2"> 
-         <h2 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words ">{advert.title}</h2>
-         </div>
+          <h2 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words">{advert.title}</h2>
+        </div>
       )}
     
-      {/* Posted By */}
-      {advert.postedBy?.name && (
-  <div className="flex justify-start gap-1 sm:gap-4 text-sm sm:text-base text-gray-800 text-left mb-2 px-2">
-    <span>
-      <strong>Posted By:</strong> {advert.postedBy.name}
-    </span>
-    <span>
-      <strong>Posted:</strong>{' '}
-      {(() => {
-        const postedDaysAgo = differenceInDays(new Date(), new Date(advert.createdAt));
-        return postedDaysAgo <= 15
-          ? postedDaysAgo === 0
-            ? 'Today'
-            : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
-          : format(new Date(advert.createdAt), 'dd MMM yyyy');
-      })()}
-    </span>
-  </div>
-)}
+      {/* Posted By and Posted Date - New Layout */}
+      <div className="flex justify-start gap-1 sm:gap-4 text-sm sm:text-base text-gray-800 text-left mb-2 px-2">
+        {advert.postedBy?.name && (
+          <span>
+            <strong>Posted By:</strong> {advert.postedBy.name}
+          </span>
+        )}
+        <span>
+          <strong>Posted:</strong> {postedText}
+        </span>
+      </div>
 
-
-      {/* Address */}
-      {advert.address?.formattedAddress && (
-        <div> 
-    <p className="text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
-    <strong>Address:</strong> {advert.address.formattedAddress}
-  </p>
-  </div>
-)}
-
-
-      {/* Row: Category, Ad Type, Condition */}
+      {/* Ad Type and Category - New Layout */}
       <div className="flex justify-start gap-1 sm:gap-4 text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
-  {advert.category && (
-    <p>
-      <strong>Category:</strong> {advert.category}
-    </p>
-  )}
-  {(advert.isWanted || advert.isOffered) && (
-    <p>
-      <strong> Ad Type:</strong>{' '}
-      {advert.isWanted ? 'Wanted' : advert.isOffered ? 'Offered' : ''}
-    </p>
-  )}
+        {advert.adType && (
+          <span>
+            <strong>Ad Type:</strong> {advert.adType === 'wanted' ? 'Wanted' : 'Offered'}
+          </span>
+        )}
+        {advert.category && (
+          <span>
+            <strong>Category:</strong> {advert.category}
+          </span>
+        )}
+      </div>
 
-</div>
+      {/* Address - New Layout */}
+      {advert.address && (
+        <div className="text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
+          <strong>{advert.address.street ? 'Address:' : 'Location:'}</strong>{' '}
+          {advert.address.street 
+            ? advert.address.formattedAddress 
+            : `${advert.address.suburb}${advert.address.state ? ', ' + advert.address.state : ''}`}
+        </div>
+      )}
 
+      {/* Price - New Layout */}
+      {priceLabels && priceLabels.map((price, index) => (
+        <div key={index} className="text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
+          <strong>{price.label}:</strong> {price.value}
+        </div>
+      ))}
 
-      {/* Row: Price */}
-      {getPriceLabel() && (
-  <p className="text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
-    <strong>{getPriceLabel().label}:</strong> {getPriceLabel().value}
-  </p>
-)}
-
-  {/* Row: Condition */}
-{advert.condition && (
-    <p className="text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
-      <strong>Condition:</strong> {advert.condition}
-    </p>
-  )}
-
-{/* Chat Container */}
-{chatProps && (
-        <div className="block md:hidden  px-2">
+      {/* Chat Container - Keeping as is */}
+      {chatProps && (
+        <div className="block md:hidden px-2">
           <SendMessage {...chatProps} />
         </div>
       )}
 
+      {/* Dynamic Fields */}
+      {advert.fields && Object.keys(advert.fields).length > 0 && (
+        <div className="border px-2 rounded shadow-md text-left my-4 mx-2">
+          <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Additional Details</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {Object.entries(advert.fields).map(([key, value]) => (
+              <div key={key} className="text-sm sm:text-base text-gray-800">
+                <strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {value}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Description */}
       {advert.description && (
-  <div className="border px-2 rounded shadow-md text-left my-8 mx-2">
-    <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Description</h3>
-    <div className="text-sm sm:text-base text-gray-800 text-justify space-y-2">
-      {advert.description.split('\n').map((para, idx) => (
-        <p key={idx} className="whitespace-pre-wrap">{para}</p>
-      ))}
-    </div>
-  </div>
-)}
-
-
-
+        <div className="border px-2 rounded shadow-md text-left my-4 mx-2">
+          <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Description</h3>
+          <div className="text-sm sm:text-base text-gray-800 text-justify space-y-2">
+            {advert.description.split('\n').map((para, idx) => (
+              <p key={idx} className="whitespace-pre-wrap">{para}</p>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

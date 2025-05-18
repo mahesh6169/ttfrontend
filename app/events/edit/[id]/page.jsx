@@ -13,6 +13,7 @@ import { toast } from 'react-toastify';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { utcToZonedTime, formatInTimeZone, zonedTimeToUtc } from 'date-fns-tz';
 import { format } from 'date-fns';
+import RequireLogin from '@/components/Auth/RequireLogin';
 
 const AU_TIMEZONES = [
   {
@@ -268,6 +269,7 @@ if (!formData.organiser?.contacts?.[0]?.phone) missing.push('organiser contact p
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Edit Event</h1>
+      <RequireLogin message="You must be logged in to edit an event." >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* 1. Title */}
         <div>
@@ -647,6 +649,7 @@ if (!formData.organiser?.contacts?.[0]?.phone) missing.push('organiser contact p
           </button>
         </div>
       </form>
+      </RequireLogin>
     </div>
   );
 };

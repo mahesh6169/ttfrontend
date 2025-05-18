@@ -9,6 +9,7 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
+import RequireLogin from '@/components/Auth/RequireLogin';
 import { useRef } from 'react';
 
 const libraries = ['places'];
@@ -281,6 +282,7 @@ useEffect(() => {
   return (
     <div className="max-w-lg mx-auto p-6 mt-10 bg-white border rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold mb-4">Edit Thread</h1>
+      <RequireLogin message="You must be logged in to edit a thread." >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <input
@@ -416,6 +418,7 @@ useEffect(() => {
           </button>
         </div>
       </form>
+      </RequireLogin>
     </div>
   );
 };

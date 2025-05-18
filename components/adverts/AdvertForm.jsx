@@ -36,6 +36,7 @@ const AdvertForm = ({
   const [preview, setPreview] = useState([]);
   const [localErrors, setLocalErrors] = useState([]);
   const [selectedPriceType, setSelectedPriceType] = useState('');
+  const [existingImages, setExistingImages] = useState(initialData?.existingImages || []);
 
   // Handle initial data
   useEffect(() => {
@@ -45,16 +46,24 @@ const AdvertForm = ({
         fields: initialData.fields || {},
         pricing: initialData.pricing || [],
         images: [],
-        existingImages: initialData.existingImages || []
+        // REMOVE THIS LINE: existingImages: initialData.existingImages || []
       });
-      
+      setExistingImages(initialData.existingImages || []);
       if (initialData.pricing && initialData.pricing.length > 0) {
         setSelectedPriceType(initialData.pricing[0].priceType);
       }
-      
       setPreview([]);
     }
   }, [initialData]);
+
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      existingImages
+    }));
+  }, [existingImages]);
+  
+  
 
   // Update form sections when category or form data changes
   useEffect(() => {
@@ -286,7 +295,7 @@ const handleSubmit = (e) => {
     fields: formData.fields,
     pricing: formData.pricing,
     images: formData.images,
-    existingImages: formData.existingImages || []
+    existingImages: (formData.existingImages || []).filter(img => img && img.url),
   };
   
   onSubmit(submitData);
@@ -427,7 +436,7 @@ return (
       setFormData={setFormData}
       maxImages={10}
       existingImages={formData.existingImages || []}
-      setExistingImages={(imgs) => setFormData(prev => ({ ...prev, existingImages: imgs }))}
+      setExistingImages={setExistingImages}
     />
 
     {/* Errors */}

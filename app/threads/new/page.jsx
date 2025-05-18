@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
+import RequireLogin from '@/components/Auth/RequireLogin';
 
 const libraries = ['places'];
 
@@ -233,34 +234,8 @@ if (createThread.fulfilled.match(resultAction)) {
   return (
     <div className="max-w-lg mx-auto mt-08 p-6 border rounded-lg shadow-lg bg-white mt-4">
       <h1 className="text-2xl font-bold mb-4">Create a New Topic</h1>
-
-      {!isLoggedIn ? (
-        <div className="border rounded-lg p-4 shadow-md bg-white text-center">
-          <p className="text-gray-700 mb-4 text-xs sm:text-base">
-            You must be logged in to create new topic.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Link
-              href="/login?preserveRedirect=true"
-              onClick={() => {
-                localStorage.setItem('redirectAfterLogin', '/threads/new');
-              }}
-              className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register?preserveRedirect=true"
-              onClick={() => {
-                localStorage.setItem('redirectAfterLogin', '/threads/new');
-              }}
-              className="px-4 py-2 text-xs sm:text-base bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100"
-            >
-              Register
-            </Link>
-          </div>
-        </div>
-      ) : (
+      <RequireLogin message="You must be logged in to edit an event." >
+      
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <input
@@ -402,7 +377,7 @@ if (createThread.fulfilled.match(resultAction)) {
             </button>
           </div>
         </form>
-      )}
+</RequireLogin>
     </div>
   );
 };
