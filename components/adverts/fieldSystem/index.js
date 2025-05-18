@@ -1,6 +1,6 @@
 // components/advertsv2/fieldSystem/index.js
 
-// Import functions individually
+// Import from modules
 import {
   CATEGORY_ACCESS,
   getCategoriesForRole,
@@ -9,21 +9,26 @@ import {
   isAddressOptional
 } from './CategoryAccess';
 
-import { 
+import {
   getFieldsForCategory,
-  getOrderedFieldsForCategory 
+  getOrderedFieldsForCategory,
+  getFormStructure,
+  FORM_STRUCTURE
 } from './FieldRegistry';
 
-import { 
+import {
   PRICING_CONFIG,
   getPricingOptionsForCategory,
-  shouldShowPricingOption,
-  getFieldVisibilityForProperty 
+  getAvailablePricingOptions,
+  isPricingOptionValidForType,
+  shouldShowPricingOption
 } from './PricingConfig';
 
-import { 
+import {
+  FormEngine,
+  getFormEngine,
   DependencyResolver,
-  getDependencyResolver 
+  getDependencyResolver
 } from './DependencyResolver';
 
 // Export everything individually
@@ -35,10 +40,15 @@ export {
   isAddressOptional,
   getFieldsForCategory,
   getOrderedFieldsForCategory,
+  getFormStructure,
+  FORM_STRUCTURE,
   PRICING_CONFIG,
   getPricingOptionsForCategory,
+  getAvailablePricingOptions,
+  isPricingOptionValidForType,
   shouldShowPricingOption,
-  getFieldVisibilityForProperty,
+  FormEngine,
+  getFormEngine,
   DependencyResolver,
   getDependencyResolver
 };
@@ -53,55 +63,61 @@ export const FieldSystem = {
   // Field management
   getFieldsForCategory,
   getOrderedFieldsForCategory,
+  getFormStructure,
   
   // Pricing management
   getPricingOptionsForCategory,
-  shouldShowPricingOption,
+  getAvailablePricingOptions,
   
-  // Dependency resolution
+  // Engine access
+  getFormEngine,
   getDependencyResolver,
   
-  // Utility function to get complete form configuration
+  // Legacy method for backward compatibility
   getFormConfiguration: (category, userRole, formData = {}) => {
-    const resolver = getDependencyResolver(category, userRole, formData);
-      const visibleFieldMap = resolver.getVisibleFields();
-    const pricingOptions = resolver.getVisiblePricingOptions();
-    const pricingConfig = resolver.getPricingConfig();
-  
+    const engine = getFormEngine(category, userRole, formData);
+    const visibleFieldMap = engine.getVisibleFields();
+    const pricingOptions = engine.getAvailablePricingOptions();
+    const pricingConfig = engine.getPricingConfig();
+    
     const pricingField = {
       id: 'pricing',
       type: 'pricing',
       label: pricingConfig?.label || 'Pricing',
       options: pricingOptions,
-      order: pricingConfig?.order || 11
+      order: 10
     };
     
     const orderedFields = [
-      pricingField, // ✅ Inject pricing into field layout
+      pricingField,
       ...Object.entries(visibleFieldMap)
         .map(([id, config]) => {
-          const deps = resolver.getFieldDependencies(id);
           return {
             id,
             ...config,
             dependencies: {
-              showWhen: deps.showWhen,
-              hideWhen: deps.hideWhen,
-              requiredWhen: deps.requiredWhen
+              showWhen: config.dependencies || {},
+              hideWhen: {},
+              requiredWhen: {}
             }
           };
         })
     ].sort((a, b) => (a.order || 999) - (b.order || 999));
-  
+    
     return {
-      canAccess: resolver.canAccessCategory(),
-      fields: visibleFieldMap,           // Original object format
-      orderedFields,                     // New: sorted with metadata
+      canAccess: engine.canAccessCategory(),
+      fields: visibleFieldMap,
+      orderedFields,
       pricingOptions,
       pricingConfig
     };
-  }
+  },
   
+  // New method for section-based rendering
+  getFormSections: (category, userRole, formData = {}) => {
+    const engine = getFormEngine(category, userRole, formData);
+    return engine.getVisibleSections();
+  }
 };
 
 // Default export for easy importing

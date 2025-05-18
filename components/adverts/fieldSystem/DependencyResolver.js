@@ -1,124 +1,228 @@
-import { getFieldsForCategory } from './FieldRegistry';
-import { shouldShowPricingOption, PRICING_CONFIG } from './PricingConfig';
+// components/advertsv2/fieldSystem/DependencyResolver.js
+
+import { getFormStructure } from './FieldRegistry';
+import { getAvailablePricingOptions, PRICING_CONFIG } from './PricingConfig';
 import { canAccessCategory } from './CategoryAccess';
 
-export class DependencyResolver {
+export class FormEngine {
   constructor(category, userRole, formData = {}) {
     this.category = category;
     this.userRole = userRole;
     this.formData = formData;
+    this.structure = getFormStructure(category);
   }
 
   canAccessCategory() {
     return canAccessCategory(this.userRole, this.category);
   }
 
-  getVisibleFields() {
-    if (!this.canAccessCategory()) return [];
-
-    const allFields = getFieldsForCategory(this.category);
-    const visibleFields = {};
-
-    for (const [fieldId, fieldConfig] of Object.entries(allFields)) {
-      if (this.isFieldVisible(fieldId, fieldConfig)) {
-        visibleFields[fieldId] = fieldConfig;
-      }
+  // Get a field value from the form data
+  getFieldValue(fieldId) {
+    if (this.formData.fields && this.formData.fields[fieldId] !== undefined) {
+      return this.formData.fields[fieldId];
     }
-
-    return visibleFields;
+    return this.formData[fieldId];
   }
 
-  isFieldVisible(fieldId, fieldConfig) {
-    
-  
-    const deps = this.getFieldDependencies(fieldId);
-  
-    // Apply showWhen logic
-    for (const [depField, valuesToShow] of Object.entries(deps.showWhen)) {
-      let currentValue;
-      
-      // Special handling for priceType dependency
-      if (depField === 'priceType') {
-        // Always check the pricing array for the priceType value
-        currentValue = this.formData.pricing?.[0]?.priceType;
-      } else {
-        // For other fields, check in the usual places
-        currentValue = 
-          this.formData.fields?.[depField] ??
-          this.formData[depField];
+  // Get the value of the type field for this category
+  getTypeFieldValue() {
+    if (!this.structure || !this.structure.typeField) return null;
+    return this.getFieldValue(this.structure.typeField);
+  }
+
+  // Check if a section should be visible
+  isSectionVisible(section) {
+    if (section.requiresSection) {
+      const requiredSection = this.getSectionById(section.requiresSection);
+      if (!requiredSection || !this.isSectionComplete(requiredSection)) {
+        return false;
       }
-  
-      if (!valuesToShow.includes(currentValue)) return false;
     }
-  
-    // Apply hideWhen logic (similar change needed here)
-    for (const [depField, valuesToHide] of Object.entries(deps.hideWhen)) {
-      let currentValue;
-      
-      if (depField === 'priceType') {
-        currentValue = this.formData.pricing?.[0]?.priceType;
-      } else {
-        currentValue = 
-          this.formData.fields?.[depField] ??
-          this.formData[depField];
-      }
-  
-      if (valuesToHide.includes(currentValue)) return false;
-    }
-  
     return true;
   }
 
-  getVisiblePricingOptions() {
-    const pricingConfig = this.getPricingConfig();
-    if (!pricingConfig) return {};
-
-    const visibleOptions = {};
-    for (const [priceType, option] of Object.entries(pricingConfig.options)) {
-      if (shouldShowPricingOption(this.category, priceType, this.formData.fields || {})) {
-        visibleOptions[priceType] = option;
-      }
-    }
-
-    return visibleOptions;
+  // Get a section by its ID
+  getSectionById(sectionId) {
+    if (!this.structure || !this.structure.sections) return null;
+    return this.structure.sections.find(s => s.id === sectionId);
   }
 
+  // Check if a section is complete (all required fields filled)
+  isSectionComplete(section) {
+    // Handle pricing section (specialField)
+    if (section && section.specialField === 'pricing') {
+      return this.formData.pricing && this.formData.pricing.length > 0;
+    }
+
+    if (!section || !section.fields) {
+      return false;
+    }
+
+    // For regular sections, check required fields
+    for (const fieldId of section.fields) {
+      const fieldConfig = this.structure?.fields[fieldId];
+      if (!fieldConfig) continue;
+      if (fieldConfig.required && !this.getFieldValue(fieldId)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Get visible fields for a section
+  getVisibleFieldsForSection(section) {
+    if (!section || !section.fields) return [];
+    return section.fields
+      .map(fieldId => {
+        const fieldConfig = this.structure?.fields[fieldId];
+        if (!fieldConfig) return null;
+        if (this.isFieldVisible(fieldId, fieldConfig)) {
+          return { id: fieldId, ...fieldConfig };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+
+  // Check if a field should be visible based on dependencies
+  isFieldVisible(fieldId, fieldConfig) {
+    if (!fieldConfig) return false;
+    const dependencies = fieldConfig.dependencies || {};
+    for (const [depField, allowedValues] of Object.entries(dependencies)) {
+      let currentValue;
+      if (depField === 'priceType') {
+        currentValue = this.formData.pricing?.[0]?.priceType;
+      } else {
+        currentValue = this.getFieldValue(depField);
+      }
+      if (!currentValue || !allowedValues.includes(currentValue)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Get available pricing options based on the selected type
+  getAvailablePricingOptions() {
+    const typeValue = this.getTypeFieldValue();
+    return getAvailablePricingOptions(this.category, typeValue);
+  }
+
+  // Get pricing configuration
   getPricingConfig() {
     return PRICING_CONFIG[this.category];
   }
 
-  getFieldDependencies(fieldId) {
-    // First, get all fields for the category
-    const allFields = getFieldsForCategory(this.category);
-    
-    // Then retrieve the specific field config for the requested fieldId
-    const fieldConfig = allFields[fieldId];
-    
-    return {
-      showWhen: fieldConfig?.showWhen || {},
-      hideWhen: fieldConfig?.hideWhen || {},
-      requiredWhen: fieldConfig?.requiredWhen || {}
-    };
+  // Get all visible sections with their fields
+  getVisibleSections() {
+    if (!this.canAccessCategory() || !this.structure || !this.structure.sections) {
+      return [];
+    }
+    const visibleSections = [];
+    for (const section of this.structure.sections) {
+      if (!this.isSectionVisible(section)) continue;
+      // Special handling for pricing section
+      if (section.specialField === 'pricing') {
+        const pricingOptions = this.getAvailablePricingOptions();
+        if (Object.keys(pricingOptions).length > 0) {
+          visibleSections.push({
+            ...section,
+            pricingOptions,
+            pricingConfig: this.getPricingConfig()
+          });
+        }
+      } else {
+        // Regular section with fields
+        const visibleFields = this.getVisibleFieldsForSection(section);
+        if (visibleFields.length > 0 || section.alwaysShow) {
+          visibleSections.push({
+            ...section,
+            fields: visibleFields
+          });
+        }
+      }
+    }
+    return visibleSections.sort((a, b) => a.order - b.order);
   }
 
+  // Compatibility method for old interface
+  getVisibleFields() {
+    if (!this.canAccessCategory() || !this.structure || !this.structure.fields) {
+      return {};
+    }
+    const visibleFields = {};
+    for (const [fieldId, fieldConfig] of Object.entries(this.structure.fields)) {
+      if (this.isFieldVisible(fieldId, fieldConfig)) {
+        visibleFields[fieldId] = fieldConfig;
+      }
+    }
+    return visibleFields;
+  }
+
+  // Update form data
   updateFormData(newData) {
     this.formData = { ...this.formData, ...newData };
-    return this.getVisibleFields();
   }
 }
 
-let resolverInstance = null;
-
-export const getDependencyResolver = (category, userRole, formData) => {
-  if (
-    !resolverInstance ||
-    resolverInstance.category !== category ||
-    resolverInstance.userRole !== userRole
-  ) {
-    resolverInstance = new DependencyResolver(category, userRole, formData);
-  } else {
-    resolverInstance.updateFormData(formData);
+// For backward compatibility
+export class DependencyResolver {
+  constructor(category, userRole, formData = {}) {
+    this.engine = new FormEngine(category, userRole, formData);
   }
+  
+  canAccessCategory() {
+    return this.engine.canAccessCategory();
+  }
+  
+  getVisibleFields() {
+    return this.engine.getVisibleFields();
+  }
+  
+  isFieldVisible(fieldId, fieldConfig) {
+    return this.engine.isFieldVisible(fieldId, fieldConfig);
+  }
+  
+  getVisiblePricingOptions() {
+    return this.engine.getAvailablePricingOptions();
+  }
+  
+  getPricingConfig() {
+    return this.engine.getPricingConfig();
+  }
+  
+  getFieldDependencies(fieldId) {
+    const fieldConfig = this.engine.structure?.fields[fieldId];
+    return {
+      showWhen: fieldConfig?.dependencies || {},
+      hideWhen: {},
+      requiredWhen: {}
+    };
+  }
+  
+  updateFormData(newData) {
+    this.engine.updateFormData(newData);
+  }
+}
 
-  return resolverInstance;
+// Singleton pattern for backward compatibility
+let engineInstance = null;
+
+export const getFormEngine = (category, userRole, formData = {}) => {
+  if (
+    !engineInstance ||
+    engineInstance.category !== category ||
+    engineInstance.userRole !== userRole
+  ) {
+    engineInstance = new FormEngine(category, userRole, formData);
+  } else {
+    engineInstance.updateFormData(formData);
+  }
+  return engineInstance;
+};
+
+// For backward compatibility
+export const getDependencyResolver = (category, userRole, formData = {}) => {
+  const engine = getFormEngine(category, userRole, formData);
+  return new DependencyResolver(category, userRole, formData);
 };

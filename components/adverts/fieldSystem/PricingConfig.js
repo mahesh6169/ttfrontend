@@ -1,36 +1,7 @@
-// components/advertsv11/fieldSystem/PricingConfig.js
+// components/advertsv2/fieldSystem/PricingConfig.js
 
 export const PRICING_CONFIG = {
-  'Electronics & Computers': {
-    order: 11,
-    label: 'Pricing Options',
-    required: true,
-    options: {
-      sell: {
-        enabled: true,
-        label: 'Sell Price',
-        units: null
-      },
-      rent: {
-        enabled: true,
-        label: 'Rent',
-        units: ['day', 'week', 'month']
-      },
-      hire: {
-        enabled: true,
-        label: 'Hire',
-        units: ['hour', 'day', 'week']
-      },
-      share: {
-        enabled: false,
-        label: 'Share',
-        units: null
-      }
-    }
-  },
-
-  'Real Estate': {
-    order: 11,
+  'Books, Art & Collectables': {
     label: 'Pricing Options',
     required: true,
     options: {
@@ -38,93 +9,195 @@ export const PRICING_CONFIG = {
         enabled: true,
         label: 'Sell Price',
         units: null,
-        showWhen: {
-          propertyType: ['House', 'Land', 'Commercial']
-        }
       },
       rent: {
         enabled: true,
         label: 'Rent',
-        units: ['day', 'week', 'month', 'year'],
-        showWhen: {
-          propertyType: ['Room', 'House', 'Commercial']
-        }
-      },
-      share: {
-        enabled: true,
-        label: 'Share',
-        units: ['week', 'month'],
-        showWhen: {
-          propertyType: ['Room', 'House']
-        }
+        units: ['day', 'week', 'month'],
       },
       hire: {
-        enabled: false,
+        enabled: true,
         label: 'Hire',
-        units: null
+        units: ['hour', 'day', 'week'],
       }
     }
   },
-
-  'Cars & Vehicles': {
-    order: 11,
+  'Baby & Children': {
     label: 'Pricing Options',
     required: true,
     options: {
       sell: {
         enabled: true,
         label: 'Sell Price',
-        units: null
+        units: null,
       },
       rent: {
         enabled: true,
         label: 'Rent',
-        units: ['day', 'week', 'month']
+        units: ['day', 'week', 'month'],
       },
       hire: {
-        enabled: false,
+        enabled: true,
         label: 'Hire',
-        units: null
+        units: ['hour', 'day', 'week'],
+      }
+    }
+  },
+  'Music & Games': {
+  label: 'Pricing Options',
+  required: true,
+  options: {
+    sell: { enabled: true, label: 'Sell Price', units: null },
+    rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
+    hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
+  }
+},
+'Cars & Vehicles': {
+  label: 'Pricing Options',
+  required: true,
+  options: {
+    sell: {
+      enabled: true,
+      label: 'Sell Price',
+      units: null,
+      validFor: ['*'] // Valid for all vehicle types
+    },
+    rent: {
+      enabled: true,
+      label: 'Rent',
+      units: ['day', 'week', 'month'],
+      validFor: ['*'] // Valid for all vehicle types
+    },
+    hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'],  validFor: ['*'] }
+  }
+},
+
+  'Fashion & Accessories': {
+  label: 'Pricing Options',
+  required: true,
+  options: {
+    sell: { enabled: true, label: 'Sell Price', units: null },
+    rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
+    hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
+  }
+},
+
+'Health, Sport & Fitness': {
+  label: 'Pricing Options',
+  required: true,
+  options: {
+    sell: { enabled: true, label: 'Sell Price', units: null },
+    rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
+    hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
+  }
+},
+
+'Home & Garden': {
+  label: 'Pricing Options',
+  required: true,
+  options: {
+    sell: { enabled: true, label: 'Sell Price', units: null },
+    rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
+    hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
+  }
+},
+
+'Pets': {
+  label: 'Pricing Options',
+  required: true,
+  options: {
+    sell: { enabled: true, label: 'Sell Price', units: null },
+    rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
+    hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
+  }
+},
+'Electronics & Computers': {
+  label: 'Pricing Options',
+  required: true,
+  options: {
+    sell: {
+      enabled: true,
+      label: 'Sell Price',
+      units: null,
+      validFor: ['*'] // Valid for all brands - the wildcard means no restrictions
+    },
+    rent: {
+      enabled: true,
+      label: 'Rent',
+      units: ['day', 'week', 'month'],
+      validFor: ['*'] // Valid for all brands
+    },
+    hire: {
+      enabled: true,
+      label: 'Hire',
+      units: ['hour', 'day', 'week'],
+      validFor: ['*'] // Valid for all brands
+    }
+  }
+},
+  'Real Estate': {
+    label: 'Pricing Options',
+    required: true,
+    options: {
+      sell: {
+        enabled: true,
+        label: 'Sell Price',
+        units: null,
+        validFor: ['House', 'Land', 'Commercial'] // Only valid for these property types
+      },
+      rent: {
+        enabled: true,
+        label: 'Rent',
+        units: ['day', 'week', 'month', 'year'],
+        validFor: ['Room', 'House', 'Commercial'] // Only valid for these property types
       },
       share: {
-        enabled: false,
+        enabled: true,
         label: 'Share',
-        units: null
+        units: ['week', 'month'],
+        validFor: ['Room', 'House'] // Only valid for these property types
+      }
+    }
+  },
+
+  'Jobs': {
+    label: 'Compensation',
+    required: false,
+    options: {
+      salary: {
+        enabled: true,
+        label: 'Salary',
+        units: ['hour', 'month', 'year'],
+        validFor: ['Full-time', 'Part-time', 'Contract']
+      },
+      stipend: {
+        enabled: true,
+        label: 'Stipend',
+        units: ['week', 'month'],
+        validFor: ['Internship']
       }
     }
   },
 
   'Overseas Goods': {
-    order: 11,
-    label: 'Pricing Options',    
+    label: 'Pricing Options',
+    required: true,
     options: {
       sell: {
         enabled: true,
         label: 'Sell Price',
-        units: null
-      },
-      rent: {
-        enabled: false,
-        label: 'Rent',
-        units: null
-      },
-      hire: {
-        enabled: false,
-        label: 'Hire',
-        units: null
-      },
-      share: {
-        enabled: false,
-        label: 'Share',
-        units: null
+        units: null,
+        validFor: ['*'] // Valid for all goods types
       }
     }
   }
 };
 
+// Get all pricing options for a category
 export const getPricingOptionsForCategory = (category) => {
   const config = PRICING_CONFIG[category];
   if (!config) return {};
+  
   return Object.entries(config.options)
     .filter(([_, option]) => option.enabled)
     .reduce((acc, [key, option]) => {
@@ -133,26 +206,37 @@ export const getPricingOptionsForCategory = (category) => {
     }, {});
 };
 
-export const shouldShowPricingOption = (category, pricingType, formData) => {
+// Check if a pricing option is valid for the selected type
+export const isPricingOptionValidForType = (category, priceType, typeValue) => {
   const config = PRICING_CONFIG[category];
   if (!config) return false;
 
-  const option = config.options[pricingType];
+  const option = config.options[priceType];
   if (!option || !option.enabled) return false;
 
-  // For Real Estate, if no property type is selected yet, show all enabled pricing options
-  // so that the pricing type section appears initially
-  if (category === 'Real Estate' && !formData.propertyType) {
-    return true;
-  }
+  // If validFor contains a wildcard or the specific type value, it's valid
+  return option.validFor.includes('*') || option.validFor.includes(typeValue);
+};
 
-  // Once a property type is selected, apply the proper filtering
-  if (option.showWhen) {
-    for (const [field, allowedValues] of Object.entries(option.showWhen)) {
-      if (!allowedValues.includes(formData[field])) {
-        return false;
-      }
-    }
-  }
-  return true;
+// Get available pricing options based on the selected type
+export const getAvailablePricingOptions = (category, typeValue) => {
+  const allOptions = getPricingOptionsForCategory(category);
+  
+  if (!typeValue) return allOptions; // Return all if no type selected yet
+  
+  return Object.entries(allOptions)
+    .filter(([priceType]) => isPricingOptionValidForType(category, priceType, typeValue))
+    .reduce((acc, [key, option]) => {
+      acc[key] = option;
+      return acc;
+    }, {});
+};
+
+// Legacy method for backward compatibility
+export const shouldShowPricingOption = (category, priceType, formData) => {
+  const typeField = FORM_STRUCTURE[category]?.typeField;
+  if (!typeField) return true;
+  
+  const typeValue = formData[typeField];
+  return isPricingOptionValidForType(category, priceType, typeValue);
 };

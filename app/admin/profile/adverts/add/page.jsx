@@ -4,19 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { addAdvert, clearAdverts } from '@/store/slices/adverts/advertSlice';
-import {
-  CATEGORY_OPTIONS,
-  CATEGORIES_REQUIRING_CONDITION,
-  FIELD_HINTS,
-  CATEGORIES_NOT_REQUIRING_PRICE,
-  CATEGORIES_HIDE_ISFORHIRE,
-  CATEGORIES_HIDE_ISFORSHARE,
-} from '@/components/admin/advert/add/AdvertCategories';
-import AdTypeToggle from '@/components/admin/advert/add/AdTypeToggle';
-import PriceToggle from '@/components/admin/advert/add/PriceToggle';
-import AddressInput from '@/components/admin/advert/add/AddressInput';
-import ImageUploader from '@/components/admin/advert/add/ImageUploader';
-import ConditionToggle from '@/components/admin/advert/add/ConditionToggle';
+
+
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 
