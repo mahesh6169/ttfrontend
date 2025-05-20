@@ -118,7 +118,7 @@ export default function ProfilePage() {
       {adverts && adverts.length > 0 ? (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
     {adverts.map((advert) => {
-  const expiryTime = new Date(advert.willExpire).getTime();
+  const expiryTime = new Date(advert.expiresAt).getTime();
   const daysLeft = Math.floor((expiryTime - Date.now()) / (1000 * 60 * 60 * 24));
   const isExpired = daysLeft < 0;
   const canRenew = daysLeft <= 7;

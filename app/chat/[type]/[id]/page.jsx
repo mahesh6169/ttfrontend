@@ -10,6 +10,7 @@ import {
   markMessageAsRead,
   setUnreadExists,
   setInActiveChat, // Import the new action
+  recalculateUnreadStatus,
 } from '@/store/slices/shared/messageSlice';
 import socket from '@/config/socket';
 import { useSearchParams, useParams } from 'next/navigation';
@@ -39,11 +40,29 @@ const ChatPage = () => {
   useEffect(() => {
     dispatch(setInActiveChat(true));
     
-    // Set inActiveChat to false when leaving the chat page
+    // Set inActiveChat to false when leaving the chat page and recalculate status
     return () => {
       dispatch(setInActiveChat(false));
+      if (currentUserId) {
+        dispatch(recalculateUnreadStatus({ currentUserId }));
+      }
     };
-  }, [dispatch]);
+  }, [dispatch, currentUserId]);
+
+  // Then add a new separate useEffect for socket event recalculation:
+useEffect(() => {
+  const handleSocketMessageUpdate = () => {
+    if (currentUserId) {
+      dispatch(recalculateUnreadStatus({ currentUserId }));
+    }
+  };
+
+  socket.on('newMessage', handleSocketMessageUpdate);
+  
+  return () => {
+    socket.off('newMessage', handleSocketMessageUpdate);
+  };
+}, [dispatch, currentUserId]);
 
   // Fetch messages
   useEffect(() => {
@@ -84,7 +103,7 @@ const ChatPage = () => {
         dispatch(addNewMessage(msg));
       }
     };
-  
+
     const handleMessageSent = (msg) => {
       // Sender only: add directly
       dispatch(addNewMessage(msg));
@@ -158,7 +177,8 @@ const ChatPage = () => {
   if (!resource) return <div className="text-center text-gray-500">No conversation found.</div>;
 
   return (
-    <div className="mt-4 px-2 sm:px-4">
+    <div className="mt-4 px-2 sm:px-4 ">
+       <div className="max-w-2xl w-full mx-auto">
       <div className="mb-2">
         <span
           onClick={() => router.back()}
@@ -178,82 +198,99 @@ const ChatPage = () => {
         </Link>
       </div>
 
-      {/* Messages */}
-      <div className="border rounded-lg p-3 mb-4 overflow-y-auto bg-white shadow-md max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-14rem)]">
-        {activeConversation.messages.length > 0 ? (
-          <>
-            {activeConversation.messages.reduce((acc, msg, index) => {
-              const prevMsg = activeConversation.messages[index - 1];
-              const msgDate = new Date(msg.createdAt);
-              const prevMsgDate = prevMsg ? new Date(prevMsg.createdAt) : null;
-              const showDateSeparator = !prevMsg || !isSameDay(msgDate, prevMsgDate);
 
-              const isMyMessage = msg.senderRole === myRole;
-              const alignment = isMyMessage ? 'justify-end' : 'justify-start';
-              const bubbleColor = isMyMessage ? 'bg-green-600 text-white' : 'bg-gray-700 text-white';
-              const senderName = isMyMessage
-                ? myRole === 'owner' ? owner?.name : participant?.name
-                : msg.senderRole === 'owner' ? owner?.name : participant?.name;
+      {/* Messages Container */}
+<div className="relative h-[55vh] sm:h-[60vh] max-h-[65vh] min-h-[20vh] border rounded-xl overflow-y-auto bg-gray-50 shadow-inner px-2 py-3 mb-3 flex flex-col gap-2">
+  {activeConversation.messages.length > 0 ? (
+    <>
+      {activeConversation.messages.reduce((acc, msg, index) => {
+        const prevMsg = activeConversation.messages[index - 1];
+        const msgDate = new Date(msg.createdAt);
+        const prevMsgDate = prevMsg ? new Date(prevMsg.createdAt) : null;
+        const showDateSeparator = !prevMsg || !isSameDay(msgDate, prevMsgDate);
 
-              return [
-                ...acc,
-                showDateSeparator && (
-                  <div key={`date-${msg._id}`} className="flex justify-center my-3 w-full">
-                    <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow">{msgDate.toLocaleDateString()}</span>
-                  </div>
-                ),
-                <div key={msg._id} className={`flex ${alignment} mb-2`}>
-                  <div className={`w-full max-w-[85%] sm:max-w-[70%] px-4 py-2 rounded-lg shadow ${bubbleColor} break-words whitespace-pre-wrap`}>
-                    <div className="flex justify-between items-center text-xs mb-1">
-                      <span className="font-semibold">{senderName}</span>
-                      <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-                    </div>
-                    <p>{msg.message}</p>
-                    {String(msg.readBy) === String(otherUserId) && (
-                      <div className="text-xs text-green-300 text-right mt-1">(read)</div>
-                    )}
-                  </div>
-                </div>,
-              ];
-            }, [])}
-            <div ref={messagesEndRef} />
-          </>
-        ) : (
-          <div className="text-center text-gray-500">No messages yet. Start the conversation!</div>
-        )}
-      </div>
+        const isMyMessage = msg.senderRole === myRole;
+        const alignment = isMyMessage ? 'justify-end' : 'justify-start';
+        const bubbleColor = isMyMessage
+          ? 'bg-green-600 text-white'
+          : 'bg-white text-gray-900 border border-gray-200';
+
+        const senderName = isMyMessage
+          ? myRole === 'owner' ? owner?.name : participant?.name
+          : msg.senderRole === 'owner' ? owner?.name : participant?.name;
+
+        return [
+          ...acc,
+          showDateSeparator && (
+            <div key={`date-${msg._id}`} className="flex justify-center my-2 w-full">
+              <span className="bg-gray-300/80 text-gray-700 text-xs py-1 px-3 rounded-full shadow-sm">
+                {msgDate.toLocaleDateString()}
+              </span>
+            </div>
+          ),
+          <div
+            key={msg._id}
+            className={`flex ${alignment} w-full`}
+          >
+            <div
+              className={`max-w-[80%] sm:max-w-[60%] px-4 py-2 rounded-2xl shadow ${bubbleColor} break-words whitespace-pre-wrap transition-all duration-150`}
+            >
+              <div className="flex items-center gap-x-2 text-xs mb-1 opacity-80">
+  <span className="font-semibold">{senderName}</span>
+  {/* Optional dot divider */}
+  <span className="text-gray-300 text-lg leading-none select-none">•</span>
+  <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+</div>
+
+              <p className="text-base">{msg.message}</p>
+              {String(msg.readBy) === String(otherUserId) && (
+                <div className="text-xs text-green-300 text-right mt-1">(read)</div>
+              )}
+            </div>
+          </div>,
+        ];
+      }, [])}
+      <div ref={messagesEndRef} />
+    </>
+  ) : (
+    <div className="flex-1 flex items-center justify-center text-center text-gray-400 text-sm">
+      No messages yet. Start the conversation!
+    </div>
+  )}
+</div>
+
 
       {/* Input */}
-      <div className="border rounded-lg shadow bg-white p-2">
-        {/* Auto-growing Textarea */}
-        <textarea
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
-          rows={1}
-          className="w-full border-none outline-none resize-none p-2 text-sm sm:text-base overflow-y-auto"
-          style={{
-            minHeight: '2.5rem',
-            maxHeight: '8rem',
-            height: 'auto',
-          }}
-          onInput={(e) => {
-            e.target.style.height = 'auto';
-            e.target.style.height = `${e.target.scrollHeight}px`;
-          }}
-        />
+      {/* Message Input Bar */}
+<div className="flex items-end gap-2 p-3 border rounded-xl shadow bg-white mt-4">
+  {/* Auto-growing Textarea */}
+  <textarea
+    value={newMessage}
+    onChange={(e) => setNewMessage(e.target.value)}
+    placeholder="Type your message..."
+    rows={1}
+    className="flex-1 min-h-[2.5rem] max-h-32 resize-none border-none outline-none p-3 rounded-lg bg-gray-50 text-base focus:bg-white focus:ring-2 focus:ring-yellow-400 transition"
+    style={{ height: 'auto' }}
+    onInput={e => {
+      e.target.style.height = 'auto';
+      e.target.style.height = `${e.target.scrollHeight}px`;
+    }}
+  />
 
-        {/* Send Button Row */}
-        <div className="flex justify-end mt-2">
-          <button
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
-            className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 disabled:opacity-50"
-          >
-            Send
-          </button>
-        </div>
-      </div>
+  {/* Send Button */}
+  <button
+    onClick={handleSendMessage}
+    disabled={!newMessage.trim()}
+    className="flex items-center gap-1 px-4 py-2 bg-yellow-400 text-teal-700 rounded-xl font-semibold shadow hover:bg-teal-700 hover:text-lime-100 transition-colors duration-150 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+    aria-label="Send message"
+    type="button"
+  >
+    Send
+    {/* Optionally add a send icon here, e.g. <FiSend className="ml-1" /> */}
+  </button>
+</div>
+
+    </div>
     </div>
   );
 };

@@ -5,6 +5,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   fetchConversations,
   deleteConversation,
+  setInActiveChat,
+  recalculateUnreadStatus,
 } from '@/store/slices/shared/messageSlice';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useRouter } from 'next/navigation';
@@ -23,6 +25,8 @@ const [pendingDelete, setPendingDelete] = useState(null);
     (state) => state.messages
   );
 
+  const { user } = useSelector((state) => state.user); 
+
   useEffect(() => {
     dispatch(fetchConversations());
   }, [dispatch]);
@@ -30,14 +34,15 @@ const [pendingDelete, setPendingDelete] = useState(null);
   useEffect(() => {
     const handleNewMessage = () => {
       dispatch(fetchConversations());
+      
+      if (user && user._id) {
+        dispatch(recalculateUnreadStatus({ currentUserId: user._id }));
+      }
     };
   
     socket.on('newMessage', handleNewMessage);
-  
-    return () => {
-      socket.off('newMessage', handleNewMessage);
-    };
-  }, [dispatch]);
+    return () => socket.off('newMessage', handleNewMessage);
+  }, [dispatch, user]);
   
 
   useEffect(() => {
@@ -45,6 +50,14 @@ const [pendingDelete, setPendingDelete] = useState(null);
       dispatch(fetchConversations());
     }
   }, [deleteConversationStatus, dispatch]);
+
+  useEffect(() => {
+    dispatch(setInActiveChat(true));
+    
+    return () => {
+      dispatch(setInActiveChat(false));
+    };
+  }, [dispatch]);
 
   const handleDeleteConversation = (resourceId, otherUserId, resourceType) => {
     setPendingDelete({ resourceId, otherUserId, resourceType });

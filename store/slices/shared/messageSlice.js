@@ -135,7 +135,33 @@ const messageSlice = createSlice({
     },
     setInActiveChat(state, action) {
       state.inActiveChat = action.payload;
+      if (action.payload === true) {
+        state.unreadExists = false;
+      }
     },
+    recalculateUnreadStatus(state, { payload }) {
+      const currentUserId = payload?.currentUserId;
+      
+      if (!currentUserId || !state.conversations || !state.conversations.length) {
+        return;
+      }
+      
+      const hasUnread = state.conversations.some(conv => {
+        if (!conv.lastMessage || !conv.otherUser) return false;
+        
+        // Check if the last message is from the other user
+        const isFromOtherUser = conv.lastMessage.senderId === conv.otherUser.id;
+        
+        // Check if the message is unread
+        const isUnread = (isFromOtherUser && 
+                          (!conv.lastMessage.readBy || 
+                           conv.lastMessage.readBy !== currentUserId));
+        
+        return isUnread;
+      });
+      
+      state.unreadExists = hasUnread;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -211,6 +237,7 @@ export const {
   markMessageAsRead,
   setUnreadExists,
   setInActiveChat,
+  recalculateUnreadStatus,
 } = messageSlice.actions;
 
 export default messageSlice.reducer;

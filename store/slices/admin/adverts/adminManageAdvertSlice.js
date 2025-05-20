@@ -48,13 +48,22 @@ export const sendAdvertReminder = createAsyncThunk(
         {},
         { withCredentials: true }
       );
-      return { advertId, type, message: response.data.message };
+      
+      // Return more data from the response if available
+      return { 
+        advertId, 
+        type, 
+        message: response.data.message,
+        // If your API returns the updated advert, include it here
+        updatedAdvert: response.data.advert 
+      };
     } catch (err) {
       console.error(`❌ Reminder ${type} Email Error:`, err.response?.data || err.message);
       return rejectWithValue(err.response?.data?.message || 'Failed to send reminder');
     }
   }
 );
+
 
 
 // ✅ Slice
@@ -115,13 +124,6 @@ const adminManageAdvertSlice = createSlice({
     })
     .addCase(sendAdvertReminder.fulfilled, (state, action) => {
       state.status = 'success';
-      // Optionally update the advert's reminder sent status
-      const { advertId, type } = action.payload;
-      const advert = state.manageAdverts.find(ad => ad._id === advertId);
-      if (advert) {
-        if (type === '14') advert.renewalStatus = 'pendingNotification2';
-        if (type === '7') advert.renewalStatus = 'valid';
-      }
     })
     .addCase(sendAdvertReminder.rejected, (state, action) => {
       state.status = 'failed';

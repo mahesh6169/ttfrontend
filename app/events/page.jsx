@@ -2,411 +2,596 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateEventFilter,
-  fetchAllEvents, fetchEventsByCategory, fetchEventsCustomCategory,
-  fetchEventsByLocation, resetEventFilters } from '@/store/slices/events/filterEventSlice';
+import { 
+  searchEvents, 
+  fetchFilterOptions,
+  toggleCategory,
+  setLocation,
+  setMonth,
+  updateFilter,
+  clearAllFilters,
+  updatePagination
+} from '@/store/slices/events/searchEventsSlice';
 import EventsGrid from '@/components/events/eventcomponents/EventsGrid';
 import Pagination from '@/components/Pagination';
-import SelectSlider from '@/components/SelectSlider';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import { format, parse, addMonths } from 'date-fns';
 
 const libraries = ['places'];
 
-const MODES = [
-  { label: 'All', value: 'all' },
-  { label: 'Categories', value: 'categories' },
-  { label: 'Cities', value: 'locations' },
-  { label: 'Custom ', value: 'customCategories' },
-];
+// Generate month options for the dropdown
+const generateMonthOptions = () => {
+  const months = [];
+  const currentDate = new Date();
+  
+  // Add current month and next 11 months
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
+    const monthStr = format(date, 'yyyy-MM');
+    const monthDisplay = format(date, 'MMMM yyyy');
+    months.push({ value: monthStr, label: monthDisplay });
+  }
+  
+  return months;
+};
 
-const categoryOptions = [
-  'Technology',
-  'Real Estate',
-  'Spiritual & Devotional',
-  'Community & Cultural',
-  'Education',
-  'Migration',
-  'Sports',
-  'Entertainment & Music',
-  'Miscellaneous',
-  'Travel & Adventure',
-  'Art & Exhibitions',
-  'Volunteering & Charity',
-  'Family & Kids',
-];
-
-const cityOptions = [
-  { name: 'Sydney', coordinates: '151.2093,-33.8688' },
-  { name: 'Melbourne', coordinates: '144.9631,-37.8136' },
-  { name: 'Brisbane', coordinates: '153.0281,-27.4679' },
-  { name: 'Perth', coordinates: '115.8605,-31.9505' },
-  { name: 'Adelaide', coordinates: '138.6007,-34.9285' },
-  { name: 'Hobart', coordinates: '147.3272,-42.8821' },
-  { name: 'Darwin', coordinates: '130.8456,-12.4634' },
-  { name: 'Canberra', coordinates: '149.1300,-35.2809' },
-];
-
-const CUSTOM_CATEGORIES = [
-  'Technology',
-  'Real Estate',
-  'Community & Cultural',
-];
+const monthOptions = generateMonthOptions();
 
 const EventsPage = () => {
   const dispatch = useDispatch();
-  const { mode, all, categories, locations, customCategories, events, meta, status } = useSelector((state) => state.eventFilters);
-  const [locationInput, setLocationInput] = useState(all.locationInputText || '');
+  const { filters, pagination, events, meta, status, error, filterOptions } = useSelector((state) => state.searchEvents);
+  
+  // Local state for UI
+  const [locationInput, setLocationInput] = useState('');
   const [autocomplete, setAutocomplete] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchText, setSearchText] = useState(filters.searchText || '');
   
-  // Current month handling
-  const currentMonth = format(new Date(), 'yyyy-MM');
-  // Start with no month selected (empty string)
-  const [selectedMonthDisplay, setSelectedMonthDisplay] = useState(() => {
-    const currentMode = mode;
-    const selectedMonth = currentMode === 'all' 
-      ? all.selectedMonth 
-      : currentMode === 'categories'
-        ? categories.selectedMonth
-        : currentMode === 'locations'
-          ? locations.selectedMonth
-          : customCategories.selectedMonth;
-    
-    return selectedMonth || '';
-  });
-  
-  const [isMonthSelected, setIsMonthSelected] = useState(!!selectedMonthDisplay);
+  // Modal filter states
+  const [tempFilters, setTempFilters] = useState({});
 
-  // 🔥 Dispatcher based on selected mode
+  // Add state for sort menu
+  const [showSortMenu, setShowSortMenu] = useState(false);
+
+  const sortOptions = [
+    { value: 'date', label: 'Date (soonest first)' },
+    { value: 'distance', label: 'Distance (nearest first)' },
+  ];
+
+  // Initialize temporary filters
   useEffect(() => {
-    if (mode === 'all') {
-      dispatch(fetchAllEvents());
-    } else if (mode === 'categories') {
-      dispatch(fetchEventsByCategory());
-    } else if (mode === 'locations') {
-      dispatch(fetchEventsByLocation());
-    } else if (mode === 'customCategories') {
-      dispatch(fetchEventsCustomCategory());
+    setTempFilters({
+      categories: [...filters.categories],
+      location: filters.location,
+      month: filters.month,
+      sortBy: filters.sortBy,
+    });
+    // Set location input when filter modal opens
+    if (filters.location) {
+      setLocationInput(filters.location.name || '');
     }
-  }, [mode, all, categories, locations, customCategories, dispatch]);
+  }, [showFilters, filters]);
 
+  // Initial load - fetch filter options
+  useEffect(() => {
+    dispatch(fetchFilterOptions())
+      .unwrap()
+      .catch((error) => {
+        toast.error('Failed to load filter options');
+      });
+  }, [dispatch]);
 
-  const handleModeChange = (newMode) => {
-    dispatch(resetEventFilters(newMode));    // Reset filters per selected mode
-    setLocationInput('');                     // Reset local input
-    setSelectedMonthDisplay('');              // Reset month display to "Select Month"
-    setIsMonthSelected(false);                // Reset month selection state
-  };
+  // Search whenever filters change
+  useEffect(() => {
+    dispatch(searchEvents());
+  }, [filters, pagination.page, dispatch]);
 
   const handlePlaceChanged = () => {
     if (autocomplete) {
       const place = autocomplete.getPlace();
       if (place.geometry) {
-        const coordinates = {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-        };
-        dispatch(updateEventFilter({
-          mode: 'all',
-          values: {
-            location: `${coordinates.lng},${coordinates.lat}`,
-            locationInputText: place.formatted_address,
-          },
+        const coordinates = [
+          place.geometry.location.lng(),
+          place.geometry.location.lat()
+        ];
+        dispatch(setLocation({ 
+          coordinates, 
+          radius: 60,
+          name: place.formatted_address || 'Selected Location'
         }));
         setLocationInput(place.formatted_address);
       }
     }
   };
 
-  const handleClearFilters = () => {
-    dispatch(resetEventFilters(mode));
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
+  };
+
+  const handleClearLocation = () => {
+    dispatch(updateFilter({ filterType: 'location', value: null }));
     setLocationInput('');
-    setSelectedMonthDisplay('');
-    setIsMonthSelected(false);
+  };
+
+  const handleClearSearch = () => {
+    dispatch(updateFilter({ filterType: 'searchText', value: '' }));
+    setSearchText('');
+  };
+
+  const handleClearMonth = () => {
+    dispatch(setMonth(''));
+  };
+
+  // Modal functions
+  const handleClearAllTempFilters = () => {
+    setTempFilters({
+      categories: [],
+      location: null,
+      month: '',
+      sortBy: 'date',
+    });
+    setLocationInput('');
+  };
+
+  // Function to handle sort changes
+  const handleSortChange = (sortValue) => {
+    dispatch(updateFilter({ filterType: 'sortBy', value: sortValue }));
+    setShowSortMenu(false);
+  };
+
+  // Current sort label for display
+  const getCurrentSortLabel = () => {
+    const option = sortOptions.find(opt => opt.value === filters.sortBy);
+    return option?.label || 'Date (soonest first)';
+  };
+
+  const applyFilters = () => {
+    // Apply all temporary filters to the store
+    if (JSON.stringify(tempFilters.categories) !== JSON.stringify(filters.categories)) {
+      filters.categories.forEach(cat => {
+        if (!tempFilters.categories.includes(cat)) {
+          dispatch(toggleCategory(cat));
+        }
+      });
+      tempFilters.categories.forEach(cat => {
+        if (!filters.categories.includes(cat)) {
+          dispatch(toggleCategory(cat));
+        }
+      });
+    }
     
-    // Explicitly set selectedMonth to empty string to show all future events
-    dispatch(updateEventFilter({
-      mode: mode,
-      values: { selectedMonth: '' }
-    }));
+    // Apply location filter
+    if (tempFilters.location) {
+      dispatch(setLocation(tempFilters.location));
+    } else if (filters.location && !tempFilters.location) {
+      dispatch(updateFilter({ filterType: 'location', value: null }));
+    }
+    
+    // Apply month filter
+    if (tempFilters.month !== filters.month) {
+      dispatch(setMonth(tempFilters.month || ''));
+    }
+    
+    // Apply sort
+    dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
+    
+    setShowFilters(false);
+  };
+
+  useEffect(() => {
+    setSearchText(filters.searchText || '');
+  }, [filters.searchText]);
+
+  useEffect(() => {
+    if (status === 'failed' && error) {
+      toast.error(error.message || error || 'An error occurred');
+    }
+  }, [status, error]);
+
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (filters.categories.length > 0) count++;
+    if (filters.location) count++;
+    if (filters.searchText) count++;
+    if (filters.month) count++;
+    return count;
+  };
+
+  const formatMonth = (monthStr) => {
+    if (!monthStr) return '';
+    try {
+      const date = parse(monthStr, 'yyyy-MM', new Date());
+      return format(date, 'MMMM yyyy');
+    } catch (error) {
+      return monthStr;
+    }
   };
   
-  const handleMonthChange = (direction) => {
-    // If no month is currently selected, start with the current month
-    if (!isMonthSelected) {
-      setSelectedMonthDisplay(currentMonth);
-      setIsMonthSelected(true);
-      
-      dispatch(updateEventFilter({
-        mode: mode,
-        values: { selectedMonth: currentMonth }
-      }));
-      return;
-    }
-
-    // If month is already selected, navigate as usual
-    const currentDate = parse(selectedMonthDisplay, 'yyyy-MM', new Date());
-    const newDate = addMonths(currentDate, direction);
-    const formattedMonth = format(newDate, 'yyyy-MM');
-    
-    setSelectedMonthDisplay(formattedMonth);
-    
-    dispatch(updateEventFilter({
-      mode: mode,
-      values: { selectedMonth: formattedMonth }
-    }));
+  const handleMonthChange = (e) => {
+    const value = e.target.value;
+    setTempFilters({ ...tempFilters, month: value });
   };
 
   return (
-    <div className="flex flex-col">
-      <div className="my-2 px-4">
-        <div className="flex justify-start">
-          <Link
-            href="/events/add"
-            className="bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-semibold transition duration-200"
-          >
-            Post Event
-          </Link>
-        </div>
-      </div>
+    <div className="flex flex-col relative">
+      {/* Modal Overlay */}
+      {showFilters && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setShowFilters(false)}
+        ></div>
+      )}
 
-      {/* Discover Events - Centered header with gradient background */}
-      <div className="my-2 px-4 py-6 bg-gradient-to-br from-teal-950 to-teal-100 shadow-sm rounded-md flex justify-center">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-yellow-400 tracking-tight flex items-center gap-2 text-center animate-[pulsezoom_1.5s_ease-in-out_infinite]">
-          <span>Discover</span>
-          <span className="text-yellow-400">•</span>
-          <span>Organise</span>
-          <span className="text-yellow-400">•</span>
-          <span>Connect</span>
-        </h1>
-      </div>
+      {/* Filter Modal - Mobile and Desktop Overlay */}
+      <div className={`fixed z-50 bg-white sm:rounded-lg overflow-y-auto
+        w-full inset-y-0 right-0 sm:inset-0 sm:mx-auto sm:max-w-xl sm:top-20 sm:bottom-auto sm:shadow-lg
+        transition-all duration-300 ease-in-out
+        ${showFilters 
+          ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto' 
+          : 'translate-x-full sm:translate-x-0 sm:opacity-0 sm:scale-95 sm:pointer-events-none'}`}>
 
-      {/* 🌟 Mode Selector */}
-      <div className="flex justify-center mb-4 gap-2">
-        {MODES.map((m) => (
-          <button
-            key={m.value}
-            onClick={() => handleModeChange(m.value)}
-            className={`px-3 py-1 rounded text-xs sm:text-base font-semibold ${
-              mode === m.value ? 'bg-teal-700 text-lime-100' : 'text-teal-700 hover:bg-lime-100'
-            }`}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
-
-      {/* 🟢 Month Selection (common for all modes) */}
-      <div className="flex justify-center my-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleMonthChange(-1)}
-            className="px-2 py-1 rounded bg-teal-700 text-lime-100 hover:bg-teal-800"
-            aria-label="Previous Month"
-          >
-            <FaChevronLeft />
-          </button>
-          <span className="font-semibold min-w-[120px] text-center text-xs sm:text-base">
-            {isMonthSelected 
-              ? format(parse(selectedMonthDisplay, 'yyyy-MM', new Date()), 'MMMM yyyy')
-              : "Select Month"}
-          </span>
-          <button
-            onClick={() => handleMonthChange(1)}
-            className="px-2 py-1 rounded bg-teal-700 text-lime-100 hover:bg-teal-800"
-            aria-label="Next Month"
-          >
-            <FaChevronRight />
-          </button>
-        </div>
-      </div>
-
-      {/* 🟢 Filters for ALL mode */}
-      {mode === 'all' && (
-        <div className="flex flex-col text-xs sm:text-base md:flex-row justify-center gap-4 mb-4 px-4">
-          <SelectSlider
-            options={categoryOptions}
-            value={all.category || 'All Categories'}
-            onChange={(selected) =>
-              dispatch(
-                updateEventFilter({
-                  mode: 'all',
-                  values: { category: selected === 'All Categories' ? '' : selected },
-                })
-              )
-            }
-          />
-
-          <LoadScriptNext
-            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-            libraries={libraries}
-            onLoad={() => setIsScriptLoaded(true)}
-          >
-            {isScriptLoaded ? (
-              <Autocomplete
-                onLoad={setAutocomplete}
-                onPlaceChanged={handlePlaceChanged}
-                options={{ componentRestrictions: { country: 'AU' } }}
+        <div className="h-full overflow-y-auto">
+          {/* Modal Header */}
+          <div className="sticky top-0 flex items-center justify-between p-4 bg-white border-b z-10">
+            <h2 className="text-xl font-semibold">Filters</h2>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleClearAllTempFilters}
+                className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
               >
-                <input
-                  type="text"
-                  placeholder="Enter location"
-                  className="p-2 border rounded w-full md:w-96"
-                  value={locationInput}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setLocationInput(val);
-                    if (val === '')
-                      dispatch(updateEventFilter({ mode: 'all', values: { location: '' } }));
-                  }}
-                />
-              </Autocomplete>
-            ) : (
-              <div className="p-2 w-full md:w-96 bg-gray-100 text-gray-500 rounded border">Loading map…</div>
-            )}
-          </LoadScriptNext>
+                Clear
+              </button>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="text-2xl text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+          </div>
 
-          <input
-            type="number"
-            min="1"
-            placeholder="Proximity (km)"
-            className="p-2 border rounded"
-            value={all.proximity || ''}
-            onChange={(e) =>
-              dispatch(updateEventFilter({ mode: 'all', values: { proximity: parseInt(e.target.value) } }))
+          {/* Filter Content */}
+          <div className="p-4 pb-20">
+            {/* Month Selection */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-700 mb-3">Month</h3>
+              <select
+                value={tempFilters.month || ''}
+                onChange={handleMonthChange}
+                className="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              >
+                <option value="">All Upcoming Events</option>
+                {monthOptions.map(month => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Location with Radius */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-700 mb-3">Location</h3>
+              <LoadScriptNext
+                googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                libraries={libraries}
+                onLoad={() => setIsScriptLoaded(true)}
+              >
+                <Autocomplete
+                  onLoad={(autocompleteInstance) => setAutocomplete(autocompleteInstance)}
+                  onPlaceChanged={() => {
+                    if (autocomplete) {
+                      const place = autocomplete.getPlace();
+                      if (place.geometry) {
+                        const coordinates = [
+                          place.geometry.location.lng(),
+                          place.geometry.location.lat()
+                        ];
+                        const location = {
+                          coordinates,
+                          radius: tempFilters.location?.radius || 60,
+                          name: place.formatted_address || 'Selected Location'
+                        };
+                        setTempFilters({ ...tempFilters, location });
+                        setLocationInput(place.formatted_address);
+                      }
+                    }
+                  }}
+                  options={{
+                    componentRestrictions: { country: 'au' },
+                    types: ['geocode']
+                  }}
+                >
+                  <input
+                    type="text"
+                    placeholder="Enter location..."
+                    value={locationInput}
+                    onChange={(e) => setLocationInput(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </Autocomplete>
+              </LoadScriptNext>
+              
+              {tempFilters.location && (
+                <div className="mt-3">
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-sm text-gray-600">
+                      Search within:
+                    </label>
+                    <span className="text-sm font-medium text-gray-700">
+                      {tempFilters.location.radius} km
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="200"
+                    value={tempFilters.location.radius || 60}
+                    onChange={(e) => {
+                      const radius = parseInt(e.target.value);
+                      setTempFilters({
+                        ...tempFilters,
+                        location: { ...tempFilters.location, radius }
+                      });
+                    }}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer 
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 
+                      [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                      [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:bg-teal-700
+                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600 
+                      [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0
+                      [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:bg-teal-700"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>1 km</span>
+                    <span>200 km</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setTempFilters({ ...tempFilters, location: null });
+                      setLocationInput('');
+                    }}
+                    className="mt-3 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    Clear location
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Categories */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-700 mb-3">Categories</h3>
+              <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
+                <div className="space-y-2 p-2">
+                  {filterOptions.categories && filterOptions.categories.map((category) => (
+                    <label
+                      key={category}
+                      className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={tempFilters.categories?.includes(category) || false}
+                        onChange={() => {
+                          const currentCategories = tempFilters.categories || [];
+                          const newCategories = currentCategories.includes(category)
+                            ? currentCategories.filter(c => c !== category)
+                            : [...currentCategories, category];
+                          setTempFilters({ ...tempFilters, categories: newCategories });
+                        }}
+                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
+                      />
+                      <span className="ml-3 text-gray-700">{category}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {tempFilters.categories?.length > 0 && (
+                <p className="text-sm text-gray-600 mt-2">
+                  {tempFilters.categories.length} selected
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Apply Button */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
+            <button
+              onClick={applyFilters}
+              className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition-colors"
+            >
+              Show results
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="w-full">
+        {/* Post Event Button */}
+        <div className="my-1 px-3 sm:my-2 sm:px-4">
+          <div className="flex justify-start">
+            <Link
+              href="/events/add"
+              className="bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-2 py-1 text-xs rounded-tr-lg rounded-bl-lg shadow-lg font-semibold transition duration-200 sm:px-3 sm:py-1.5 sm:text-sm sm:rounded-tr-xl sm:rounded-bl-xl md:text-base"
+            >
+              Post Event
+            </Link>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="my-1 px-3 py-4 bg-gradient-to-br from-teal-950 to-teal-100 shadow-sm rounded-md flex justify-center sm:my-2 sm:px-4 sm:py-6">
+          <h1 className="text-lg font-extrabold text-yellow-400 tracking-tight flex items-center gap-1 text-center animate-[pulsezoom_1.5s_ease-in-out_infinite] sm:text-xl sm:gap-2 md:text-2xl lg:text-3xl">
+            <span>Discover</span>
+            <span className="text-yellow-400">•</span>
+            <span>Attend</span>
+            <span className="text-yellow-400">•</span>
+            <span>Connect</span>
+          </h1>
+        </div>
+
+        {/* Search Bar with Sort/Filter buttons */}
+        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
+          <form onSubmit={handleSearchSubmit} className="flex gap-2 mb-3">
+            <input
+              type="text"
+              placeholder="Search events..."
+              className="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+            <button
+              type="submit"
+              className="bg-teal-700 text-white px-4 py-2 rounded-lg hover:bg-teal-800 transition-colors text-sm font-medium"
+            >
+              Search
+            </button>
+          </form>
+
+          {/* Sort and Filter Buttons */}
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              <span className="font-medium">Filter</span>
+              {getActiveFilterCount() > 0 && (
+                <span className="bg-teal-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
+                  {getActiveFilterCount()}
+                </span>
+              )}
+            </button>
+            
+            <div className="relative">
+              <button 
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={() => setShowSortMenu(!showSortMenu)}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+                <span className="font-medium">Sort: {getCurrentSortLabel()}</span>
+              </button>
+              
+              {/* Sort dropdown menu */}
+              {showSortMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-20" 
+                    onClick={() => setShowSortMenu(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-1 w-56 bg-white rounded-md shadow-lg z-30 border border-gray-200 py-1">
+                    {sortOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleSortChange(option.value)}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
+                          filters.sortBy === option.value ? 'bg-gray-50 font-medium' : ''
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Active Filters Display */}
+        {getActiveFilterCount() > 0 && (
+          <div className="bg-gray-50 border-y">
+            <div className="px-3 py-3 sm:px-4 flex items-center gap-3 max-w-full">
+              <span className="text-sm text-gray-600 font-medium whitespace-nowrap flex-shrink-0">
+                Active filters:
+              </span>
+              
+              <div className="flex-1 overflow-x-auto">
+                <div className="flex gap-2 pb-1">
+                  {filters.categories.map((category) => (
+                    <span
+                      key={category}
+                      className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
+                    >
+                      {category}
+                      <button
+                        onClick={() => dispatch(toggleCategory(category))}
+                        className="hover:text-gray-900 font-bold ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  
+                  {filters.location && (
+                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                      </svg>
+                      {filters.location.radius}km from {filters.location.name.split(',')[0]}
+                      <button
+                        onClick={handleClearLocation}
+                        className="hover:text-gray-900 font-bold ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+
+                  {filters.searchText && (
+                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
+                      Search: "{filters.searchText}"
+                      <button
+                        onClick={handleClearSearch}
+                        className="hover:text-gray-900 font-bold ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+
+                  {filters.month && (
+                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
+                      Month: {formatMonth(filters.month)}
+                      <button
+                        onClick={handleClearMonth}
+                        className="hover:text-gray-900 font-bold ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Event Listing */}
+        <div className="px-3 sm:px-4">
+          <EventsGrid events={events} eventStatus={status} />
+        </div>
+
+        {/* Pagination */}
+        <div className="mt-4 mb-3 sm:mt-6 sm:mb-4">
+          <Pagination
+            currentPage={meta.currentPage}
+            totalPages={meta.totalPages || 1}
+            onPageChange={(pageNum) => 
+              dispatch(updatePagination({ page: pageNum }))
             }
           />
         </div>
-      )}
-
-      {/* 🟢 Filters for CATEGORIES mode */}
-      {mode === 'categories' && (
-        <div className="flex flex-col items-center mb-4 px-4">
-          <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
-            <div
-              className="grid grid-flow-col auto-cols-max gap-1 sm:gap-4"
-              style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
-            >
-              {categoryOptions.map((category) => (
-                <label
-                  key={category}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-lime-100 rounded"
-                >
-                  <input
-                    type="checkbox"
-                    checked={categories.selectedCategories.includes(category)}
-                    onChange={(e) => {
-                      const selected = categories.selectedCategories.includes(category)
-                        ? categories.selectedCategories.filter((c) => c !== category)
-                        : [...categories.selectedCategories, category];
-                      dispatch(
-                        updateEventFilter({
-                          mode: 'categories',
-                          values: { selectedCategories: selected },
-                        })
-                      );
-                    }}
-                  />
-                  <span className="text-xs sm:text-base">{category}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 🟢 Filters for Locations mode */}
-      {mode === 'locations' && (
-        <div className="flex flex-col items-center mb-4 px-4">
-          <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
-            <div
-              className="grid grid-flow-col auto-cols-max gap-1 sm:gap-4"
-              style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
-            >
-              {cityOptions.map((city) => (
-                <label
-                  key={city.name}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-lime-100 rounded sm:p-2"
-                >
-                  <input
-                    type="radio"
-                    name="city-selection"
-                    checked={locations.location === city.coordinates}
-                    onChange={() =>
-                      dispatch(
-                        updateEventFilter({
-                          mode: 'locations',
-                          values: { location: city.coordinates },
-                        })
-                      )
-                    }
-                  />
-                  <span className="text-xs sm:text-base">{city.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 🟢 Filters for Custom Categories mode */}
-      {mode === 'customCategories' && (
-        <div className="flex flex-col items-center mb-4 px-4">
-          <div className="w-full max-w-5xl border rounded p-3 overflow-x-auto">
-            <div
-              className="grid grid-flow-col auto-cols-max gap-1 sm:gap-4"
-              style={{ gridAutoRows: 'minmax(40px, auto)', minWidth: 'max-content' }}
-            >
-              {CUSTOM_CATEGORIES.map((category) => (
-                <label
-                  key={category}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-lime-100 rounded sm:p-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={customCategories.selectedCategories.includes(category)}
-                    onChange={() => {
-                      const selected = customCategories.selectedCategories.includes(category)
-                        ? customCategories.selectedCategories.filter((c) => c !== category)
-                        : [...customCategories.selectedCategories, category];
-                      dispatch(
-                        updateEventFilter({
-                          mode: 'customCategories',
-                          values: { selectedCategories: selected },
-                        })
-                      );
-                    }}
-                  />
-                  <span className="text-xs sm:text-base">{category}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 🔴 Clear Filters */}
-      <div className="flex justify-center mb-2">
-        <button
-          onClick={handleClearFilters}
-          className="text-xs sm:text-base bg-red-500 text-white px-3 py-1 rounded"
-        >
-          Clear Filters
-        </button>
       </div>
-
-      {/* 🔷 Event Listing */}
-      <EventsGrid events={events} eventStatus={status} />
-      <Pagination
-        currentPage={all.page}
-        totalPages={meta?.totalPages || 1}
-        onPageChange={(pageNum) =>
-          dispatch(updateEventFilter({ mode, values: { page: pageNum } }))
-        }
-      />
     </div>
   );
 };

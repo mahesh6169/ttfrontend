@@ -36,8 +36,18 @@ const ManageAdvertsPage = () => {
   };
 
   const handleReminder = async (advertId, type) => {
-    await dispatch(sendAdvertReminder({ advertId, type }));
-    dispatch(getManageAdverts()); // Refresh list
+    try {
+      const result = await dispatch(sendAdvertReminder({ advertId, type })).unwrap();
+      console.log("Reminder sent successfully:", result);
+      
+      // Add a small delay before refreshing to ensure the backend has processed the update
+      setTimeout(() => {
+        dispatch(getManageAdverts()); // Refresh list
+      }, 500);
+      
+    } catch (error) {
+      console.error("Failed to send reminder:", error);
+    }
   };
 
   return (

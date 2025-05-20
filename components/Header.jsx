@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter, usePathname } from 'next/navigation';
@@ -22,6 +22,10 @@ import { TbLogout, TbLogin } from 'react-icons/tb';
 import { MdFavorite } from 'react-icons/md';
 import { BsChatText, BsChatDots } from 'react-icons/bs';
 import { toast } from 'react-toastify';
+import { 
+  setInActiveChat, 
+  recalculateUnreadStatus 
+} from '@/store/slices/shared/messageSlice';
 
 const Header = () => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -39,6 +43,18 @@ const Header = () => {
 
   // Only show notification if there are unread messages AND user is not in an active chat
   const showNotification = unreadExists && !inActiveChat;
+
+  useEffect(() => {
+    if (!isAuthenticated || !user || !user._id) return;
+    
+    const isOnChatPage = 
+      pathname.includes('/chat/') || 
+      pathname.includes('/users/profile/conversations');
+    
+    dispatch(setInActiveChat(isOnChatPage));
+    dispatch(recalculateUnreadStatus({ currentUserId: user._id }));
+  }, [pathname, isAuthenticated, user, dispatch]);
+
 
   const handleLogout = async () => {
     try {
