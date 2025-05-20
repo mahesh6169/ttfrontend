@@ -22,7 +22,7 @@ const store = configureStore({
     reducer: {
         advert: advertReducer,
         user: userReducer,
-        userAdverts: userAdvertReducer, // Add userAdvertReducer.
+        userAdverts: userAdvertReducer, // Add userAdvertReducer..
         messages: messages, // Add messages
         searchAdverts: searchAdvertsReducer, // Add searchAdvertsReducer
         threads: threadReducer, // Add threadReducer
