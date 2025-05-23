@@ -8,10 +8,9 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { MdRepeat } from 'react-icons/md';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
-  const { title, dateTime, venue, address, images, createdAt, timeZone } =
-    event;
+  const { title, dateTime, venue, address, images, createdAt, timeZone } = event;
 
-  // 🕒 Format event date
+  // 🕒 Format event date in event timezone (or fallback to Sydney)
   const formattedDate = formatInTimeZone(
     dateTime,
     timeZone || 'Australia/Sydney',
@@ -22,17 +21,17 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   const postedDaysAgo = differenceInDays(new Date(), new Date(createdAt));
   const postedText =
     postedDaysAgo <= 15
-      ? `${
-          postedDaysAgo === 0
-            ? 'Today'
-            : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
-        }`
+      ? (
+        postedDaysAgo === 0
+          ? 'Today'
+          : `${postedDaysAgo} day${postedDaysAgo > 1 ? 's' : ''} ago`
+        )
       : format(new Date(createdAt), 'dd MMM yyyy');
 
   return (
     <div
       id="EventCard"
-      className="relative border rounded-lg shadow-md  bg-gray-100 hover:bg-gray-200"
+      className="relative border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200"
     >
       {/* Wishlist Button */}
       <button
@@ -45,7 +44,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
       >
         <FaHeart
-          className={`text-sm sm:text-base  ${
+          className={`text-sm sm:text-base ${
             isInWishlist ? 'text-white' : 'text-gray-700'
           }`}
         />
@@ -70,19 +69,19 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
 
         {/* Title */}
         <div className="flex items-center px-2">
-  <h2 className="text-xs sm:text-sm text-center font-medium my-1 px-2 truncate text-gray-800">
-    {title}
-  </h2>
-  {(event.recurrence?.isRecurring || event.isRecurringInstance) && (
-    <MdRepeat 
-      className="ml-1 text-gray-800 flex-shrink-0" 
-      title="Recurring Event"
-    />
-  )}
-</div>
+          <h2 className="text-xs sm:text-sm text-center font-medium my-1 px-2 truncate text-gray-800">
+            {title}
+          </h2>
+          {(event.recurrence?.isRecurring || event.isRecurringInstance) && (
+            <MdRepeat 
+              className="ml-1 text-gray-800 flex-shrink-0" 
+              title="Recurring Event"
+            />
+          )}
+        </div>
 
         {/* Date & Time */}
-        <div className="flex items-center text-sm text-gray-600  px-1 mb-1">
+        <div className="flex items-center text-sm text-gray-600 px-1 mb-1">
           <BsCalendar2Event className="mr-1" />
           <span className="text-xs font-medium text-gray-600">
             {formattedDate}
@@ -92,7 +91,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         {/* Location & Posted Info */}
         <div className="flex items-center gap-1 px-2 truncate">
           <MdLocationOn className="text-xs font-medium text-gray-600 flex-shrink-0" />
-          <span className="text-xs font-medium  text-gray-600">
+          <span className="text-xs font-medium text-gray-600">
             {address?.suburb || address?.state
               ? [address?.suburb, address?.state].filter(Boolean).join(', ')
               : venue}
@@ -102,7 +101,6 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
           {postedText}
         </div>
       </Link>
-
     </div>
   );
 };

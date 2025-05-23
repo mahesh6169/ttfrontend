@@ -6,6 +6,7 @@ import userAdvertReducer from './slices/adverts/userAdvertsSlice'; // Import use
 import messages from './slices/shared/messageSlice'; // Import messageSlice
 import searchAdvertsReducer from './slices/adverts/searchAdvertsSlice';
 import searchEventsReducer from './slices/events/searchEventsSlice'; // Import searchEventsSlice
+import freeEventReducer from './slices/events/freeEventSlice';
 import filterEventReducer from './slices/events/filterEventSlice'; // Import filterEventSlice
 import threadReducer from './slices/threads/threadSlice'; // Import threadSlice
 import searchThreadsReducer from './slices/threads/searchThreadsSlice'; // Import searchThreadsSlice
@@ -15,7 +16,7 @@ import filterThreadReducer from './slices/threads/filterThreadSlice'; // Import 
 import adminManageAdvertReducer from './slices/admin/adverts/adminManageAdvertSlice'; // Import adminManageAdvertSlice
 import adminManageEventReducer from './slices/admin/events/adminManageEventSlice'; // Import adminManageEventSlice
 import supportReducer from './slices/supportSlice'; // Import supportSlice
-import events from '@/app/events/page';
+
 
 
 const store = configureStore({
@@ -30,6 +31,7 @@ const store = configureStore({
         events: eventReducer, // Add eventReducer
         eventFilters: filterEventReducer, // Add filterEventReducer
         searchEvents: searchEventsReducer, // Add searchEventsReducer
+        freeEvents: freeEventReducer, // Add freeEventReducer
         filterThreads: filterThreadReducer, // Add filterThreadsReducer
         searchThreads: searchThreadsReducer, // Add searchThreadsReducer
         adminManageAdvert: adminManageAdvertReducer, // Add adminManageAdvertReducer
