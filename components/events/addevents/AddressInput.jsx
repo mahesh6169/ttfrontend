@@ -1,109 +1,117 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
-import { FIELD_HINTS } from './EventCategories'; // Adjust the import path as necessary
 
 const libraries = ['places'];
 
 const AddressInput = ({
   formData,
   setFormData,
-  focusedField,
-  handleFocus,
-  handleBlur,
+  errors = [],
+  placeholder = 'Enter your address or suburb',
+  disabled = false
 }) => {
-  const [autocomplete, setAutocomplete] = useState(null);
+  const [formattedAddress, setFormattedAddress] = useState(
+    formData?.address?.formattedAddress || ''
+  );
+  const autocompleteRef = useRef(null);
+  const [isUserInput, setIsUserInput] = useState(false);
+  const previousFormDataAddress = useRef(formData?.address?.formattedAddress);
 
   const handlePlaceChanged = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
+    const place = autocompleteRef.current.getPlace();
+    if (!place.geometry) return;
 
-      if (!place.geometry || !place.geometry.location) {
-        console.error('No valid location data found');
-        return;
-      }
+    const parsed = {
+      formattedAddress: place.formatted_address,
+      streetNumber: '',
+      street: '',
+      suburb: '',
+      state: '',
+      postalCode: '',
+      location: {
+        type: 'Point',
+        coordinates: [
+          place.geometry.location.lng(),
+          place.geometry.location.lat(),
+        ],
+      },
+    };
 
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
-      const formattedAddress = place.formatted_address || '';
-      const addressComponents = place.address_components || [];
+    place.address_components.forEach((comp) => {
+      const types = comp.types;
+      if (types.includes('street_number')) parsed.streetNumber = comp.long_name;
+      if (types.includes('route')) parsed.street = comp.long_name;
+      if (types.includes('locality')) parsed.suburb = comp.long_name;
+      if (types.includes('administrative_area_level_1')) parsed.state = comp.short_name;
+      if (types.includes('postal_code')) parsed.postalCode = comp.long_name;
+    });
 
-      let street = '',
-        suburb = '',
-        state = '',
-        postalCode = '';
-
-      addressComponents.forEach((component) => {
-        const types = component.types;
-        if (types.includes('route')) {
-          street = component.long_name;
-        }
-        if (types.includes('locality')) {
-          suburb = component.long_name;
-        }
-        if (types.includes('administrative_area_level_1')) {
-          state = component.short_name;
-        }
-        if (types.includes('postal_code')) {
-          postalCode = component.long_name;
-        }
-      });
-
-      setFormData((prev) => ({
-        ...prev,
-        address: {
-          formattedAddress,
-          street,
-          suburb,
-          state,
-          postalCode,
-          location: {
-            type: 'Point',
-            coordinates: [lng, lat],
-          },
-        },
-      }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      address: parsed,
+    }));
+    setFormattedAddress(parsed.formattedAddress);
+    setIsUserInput(true);
   };
+
+  // Only sync from formData when it's actually different and user hasn't typed
+  useEffect(() => {
+    if (!isUserInput && 
+        formData?.address?.formattedAddress !== previousFormDataAddress.current) {
+      setFormattedAddress(formData?.address?.formattedAddress || '');
+      previousFormDataAddress.current = formData?.address?.formattedAddress;
+    }
+  }, [formData?.address?.formattedAddress, isUserInput]);
+
+  // Handle manual input
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setFormattedAddress(value);
+    setIsUserInput(true);
+    
+    // Update formData with the manually typed address
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        formattedAddress: value
+      }
+    }));
+  };
+
+  // Reset user input flag when component unmounts
+  useEffect(() => {
+    return () => {
+      setIsUserInput(false);
+    };
+  }, []);
 
   return (
     <div>
-      <label className="block font-bold">Address</label>
-
+      <label className="block font-bold mb-2 text-gray-700">
+        Address <span className="text-red-500">*</span>
+      </label>
       <LoadScriptNext
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
         libraries={libraries}
       >
         <Autocomplete
-          onLoad={(auto) => setAutocomplete(auto)}
+          onLoad={(auto) => (autocompleteRef.current = auto)}
           onPlaceChanged={handlePlaceChanged}
-          options={{
-            componentRestrictions: { country: 'AU' },
-          }}
+          options={{ componentRestrictions: { country: 'AU' } }}
         >
           <input
             type="text"
-            placeholder="Enter an address"
+            placeholder={placeholder}
             className="w-full p-2 border rounded"
-            onFocus={() => handleFocus('address')}
-            onBlur={handleBlur}
-            defaultValue={formData.address?.formattedAddress || ''}
+            value={formattedAddress}
+            onChange={handleInputChange}
+            disabled={disabled}
           />
         </Autocomplete>
       </LoadScriptNext>
-
-      {focusedField === 'address' && (
-        <div className="text-sm text-gray-500 mt-1 space-y-1">
-          {Array.isArray(FIELD_HINTS.address) ? (
-            FIELD_HINTS.address.map((line, index) => (
-              <p key={index}>{line}</p>
-            ))
-          ) : (
-            <p>{FIELD_HINTS.address}</p>
-          )}
-        </div>
-      )}
     </div>
   );
 };

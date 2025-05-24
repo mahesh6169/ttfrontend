@@ -58,6 +58,7 @@ export const addPaidEvent = createAsyncThunk(
   }
 );
 
+
 // Update existing event
 export const updateEvent = createAsyncThunk(
   'events/updateEvent',
@@ -222,7 +223,6 @@ const eventSlice = createSlice({
     },
     
     // Form state
-    preview: [],
     formErrors: {},
     formStatus: 'idle', // separate status for form operations
     formError: null,
@@ -269,7 +269,11 @@ const eventSlice = createSlice({
             location: { type: 'Point', coordinates: [0, 0] }
           },
           category: eventData.category || '',
-          images: eventData.images || [],
+          images: eventData.images ? eventData.images.map(img => ({
+  url: typeof img === 'string' ? img : img.url,
+  isExisting: true,
+  id: `existing_${Math.random()}`
+})) : [],
           coordinators: eventData.coordinators || [{ name: '', role: '', phone: '', email: '' }],
           recurrence: eventData.recurrence || {
             isRecurring: false,
@@ -452,11 +456,41 @@ const eventSlice = createSlice({
       const index = action.payload;
       state.formData.seatingLayout = state.formData.seatingLayout.filter((_, i) => i !== index);
     },
-    
-    // Image previews
-    setPreview: (state, action) => {
-      state.preview = action.payload;
-    },
+
+    // Image management
+setImages: (state, action) => {
+  state.formData.images = action.payload.map(img => {
+    const { preview, url, id, name, size, type, isExisting, isNew } = img;
+    return { preview, url, id, name, size, type, isExisting, isNew };
+  });
+},
+
+addImages: (state, action) => {
+  const newImages = Array.isArray(action.payload) ? action.payload : [action.payload];
+  const safeNewImages = newImages.map(img => {
+    const { preview, url, id, name, size, type, isExisting, isNew } = img;
+    return { preview, url, id, name, size, type, isExisting, isNew };
+  });
+  state.formData.images = [...(state.formData.images || []), ...safeNewImages];
+},
+
+removeImage: (state, action) => {
+  const index = action.payload;
+  state.formData.images = state.formData.images.filter((_, i) => i !== index);
+},
+
+clearImages: (state) => {
+  if (state.formData.images) {
+    state.formData.images.forEach(image => {
+      if (image.preview && image.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(image.preview);
+      }
+    });
+  }
+  state.formData.images = [];
+},
+
+
     
     // Form Errors
     setErrors: (state, action) => {
@@ -476,52 +510,60 @@ const eventSlice = createSlice({
     
     // Reset form
     resetForm: (state) => {
-      state.currentStep = 1;
-      state.isEditMode = false;
-      state.editingEventId = null;
-      state.formData = {
-        title: '',
-        description: '',
-        dateTime: '',
-        timeZone: 'Australia/Sydney',
-        venue: '',
-        address: {
-          formattedAddress: '',
-          streetNumber: '',
-          street: '',
-          suburb: '',
-          state: '',
-          postalCode: '',
-          location: { type: 'Point', coordinates: [0, 0] }
-        },
-        category: '',
-        images: [],
-        coordinators: [{ name: '', role: '', phone: '', email: '' }],
-        recurrence: {
-          isRecurring: false,
-          repeatSchedule: [],
-          endDate: null,
-          parentEventId: null
-        },
-        isPaid: false,
-        capacity: 0,
-        maxAttendeesPerRegistration: 5,
-        registrationFields: [],
-        ticketTypes: [{ name: '', price: 0, quantity: 1, seatsRequired: 1 }],
-        seatingLayout: [],
-        seatingLayoutImage: null,
-        applyGST: true,
-        commissionRate: 0.05,
-        commissionType: 'percentage',
-        fixedCommissionAmount: 0,
-        stripeAccountId: '',
-      };
-      state.preview = [];
-      state.formErrors = {};
-      state.formStatus = 'idle';
-      state.formError = null;
-      state.successMessage = '';
+  // Clean up any object URLs before resetting
+  if (state.formData.images) {
+    state.formData.images.forEach(image => {
+      if (image.preview && image.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(image.preview);
+      }
+    });
+  }
+  
+  state.currentStep = 1;
+  state.isEditMode = false;
+  state.editingEventId = null;
+  state.formData = {
+    title: '',
+    description: '',
+    dateTime: '',
+    timeZone: 'Australia/Sydney',
+    venue: '',
+    address: {
+      formattedAddress: '',
+      streetNumber: '',
+      street: '',
+      suburb: '',
+      state: '',
+      postalCode: '',
+      location: { type: 'Point', coordinates: [0, 0] }
     },
+    category: '',
+    images: [],
+    coordinators: [{ name: '', role: '', phone: '', email: '' }],
+    recurrence: {
+      isRecurring: false,
+      repeatSchedule: [],
+      endDate: null,
+      parentEventId: null
+    },
+    isPaid: false,
+    capacity: 0,
+    maxAttendeesPerRegistration: 5,
+    registrationFields: [],
+    ticketTypes: [{ name: '', price: 0, quantity: 1, seatsRequired: 1 }],
+    seatingLayout: [],
+    seatingLayoutImage: null,
+    applyGST: true,
+    commissionRate: 0.05,
+    commissionType: 'percentage',
+    fixedCommissionAmount: 0,
+    stripeAccountId: '',
+  };
+  state.formErrors = {};
+  state.formStatus = 'idle';
+  state.formError = null;
+  state.successMessage = '';
+},
   },
   
   extraReducers: (builder) => {
@@ -698,7 +740,11 @@ export const {
   removeSeatingRow,
   
   // Images
-  setPreview,
+
+  setImages,
+addImages,
+removeImage,
+clearImages,
   
   // Form errors
   setErrors,

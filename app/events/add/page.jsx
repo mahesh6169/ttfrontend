@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react'; // updated import
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -15,7 +15,10 @@ import {
   addPaidEvent,
   setFormErrors,
   clearFormErrors,
+  updateField,
+  setImages, // <--- Add this
 } from '@/store/slices/events/eventSlice';
+
 import { zonedTimeToUtc } from 'date-fns-tz';
 
 // Step Components
@@ -37,13 +40,14 @@ const AddEventPage = () => {
     currentStep, 
     totalSteps, 
     formData,
-    preview,
     formErrors,
     formStatus,
     formError,
     successMessage,
     isEditMode
   } = useSelector((state) => state.events);
+
+const [localImageFiles, setLocalImageFiles] = useState([]);
 
   // Reset form when component mounts (only for new events, not edit mode)
   useEffect(() => {
@@ -73,144 +77,139 @@ const AddEventPage = () => {
     }
   }, [formStatus, successMessage]);
 
+  // Use this to update images from the uploader (strip files for Redux, keep locally)
+const handleImagesChange = (images) => {
+  // Extract files for new images (local only)
+  const files = images.filter(img => img.isNew && img.file).map(img => ({ file: img.file, id: img.id }));
+  setLocalImageFiles(files);
+
+  // Only keep metadata for Redux
+  const safeImages = images.map(({ preview, url, id, name, size, type, isExisting, isNew }) =>
+    ({ preview, url, id, name, size, type, isExisting, isNew })
+  );
+  dispatch(setImages(safeImages));
+};
+
   // Handle form submission - choose between free and paid event endpoints
   const handleSubmit = async () => {
-    // Validate form before submission
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      dispatch(setFormErrors(validationErrors));
-      
-      // Show toast with all errors
-      const errorMessages = Object.values(validationErrors).flat();
-      toast.error(
-        <div>
-          <p className="font-bold">Please fix the following errors:</p>
-          <ul className="list-disc pl-4">
-            {errorMessages.map((msg, i) => (
-              <li key={i}>{msg}</li>
-            ))}
-          </ul>
-        </div>
-      );
-      return;
-    }
+  // Validate form before submission
+  const validationErrors = validateForm();
+  if (Object.keys(validationErrors).length > 0) {
+    dispatch(setFormErrors(validationErrors));
 
-    // Clear previous errors
-    dispatch(clearFormErrors());
+    // Show toast with all errors
+    const errorMessages = Object.values(validationErrors).flat();
+    toast.error(
+      <div>
+        <p className="font-bold">Please fix the following errors:</p>
+        <ul className="list-disc pl-4">
+          {errorMessages.map((msg, i) => (
+            <li key={i}>{msg}</li>
+          ))}
+        </ul>
+      </div>
+    );
+    return;
+  }
 
-    // Prepare form data for submission
-    const submitFormData = prepareSubmissionData();
-    
-// In handleSubmit function, add this before dispatch:
-console.log('🔄 Recurrence data being sent:', formData.recurrence);
-console.log('🔄 Repeat schedule:', formData.recurrence?.repeatSchedule);
-
-    try {
-      // Choose the appropriate thunk based on event type
-      if (formData.isPaid) {
-        await dispatch(addPaidEvent(submitFormData)).unwrap();
-      } else {
-        await dispatch(addFreeEvent(submitFormData)).unwrap();
-      }
-      // Success is handled by the useEffect above
-    } catch (error) {
-      // Error is handled by the reducer and useEffect above
-      console.error('Form submission error:', error);
-    }
-  };
+  // Clear previous errors
+  dispatch(clearFormErrors());
 
   // Prepare form data for submission
-// In your page.jsx - Replace the prepareSubmissionData function with this WORKING version
+  const submitFormData = prepareSubmissionData();
 
+
+
+  try {
+    // Choose the appropriate thunk based on event type
+    if (formData.isPaid) {
+      await dispatch(addPaidEvent(submitFormData)).unwrap();
+    } else {
+      await dispatch(addFreeEvent(submitFormData)).unwrap();
+    }
+    // Success is handled by the useEffect above
+  } catch (error) {
+    // Error is handled by the reducer and useEffect above
+    // (You may leave this, or remove if not needed)
+    console.error('Form submission error:', error);
+  }
+};
+
+
+  // Prepare form data for submission
 const prepareSubmissionData = () => {
   const submitFormData = new FormData();
-  
+
   // Add basic fields
   Object.keys(formData).forEach(key => {
     if (key === 'images' || key === 'seatingLayoutImage') {
       // Skip file arrays, handled separately
       return;
     } else if (key === 'recurrence') {
-      // 🔧 FIXED: Add utcDateTime field for each schedule
+      // Add utcDateTime field for each schedule
       const recurrenceData = { ...formData[key] };
-      
-      if (recurrenceData.isRecurring && recurrenceData.repeatSchedule && recurrenceData.repeatSchedule.length > 0) {
-        console.log('🔄 Processing recurring schedules:', recurrenceData.repeatSchedule);
-        
-        recurrenceData.repeatSchedule = recurrenceData.repeatSchedule.map((schedule, index) => {
-  try {
-    // 👇👇 USE THIS LOGIC INSTEAD 👇👇
-    const mainEventLocalDate = new Date(formData.dateTime); // Local time as selected by the user
-    const dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
-    const mainEventDay = mainEventLocalDate.getDay();
-    const targetDay = dayMap[schedule.day];
-    let daysToAdd = (targetDay - mainEventDay + 7) % 7;
-    if (daysToAdd === 0) daysToAdd = 7; // Avoid same day as main event
-    const scheduleDate = new Date(mainEventLocalDate);
-    scheduleDate.setDate(mainEventLocalDate.getDate() + daysToAdd);
-    const [hours, minutes] = schedule.time.split(':');
-    scheduleDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
 
-    // Convert to UTC
-    const utcDateTime = zonedTimeToUtc(scheduleDate, formData.timeZone);
+      if (
+        recurrenceData.isRecurring &&
+        recurrenceData.repeatSchedule &&
+        recurrenceData.repeatSchedule.length > 0
+      ) {
+        recurrenceData.repeatSchedule = recurrenceData.repeatSchedule.map((schedule) => {
+          try {
+            const mainEventLocalDate = new Date(formData.dateTime);
+            const dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+            const mainEventDay = mainEventLocalDate.getDay();
+            const targetDay = dayMap[schedule.day];
+            let daysToAdd = (targetDay - mainEventDay + 7) % 7;
+            if (daysToAdd === 0) daysToAdd = 7;
+            const scheduleDate = new Date(mainEventLocalDate);
+            scheduleDate.setDate(mainEventLocalDate.getDate() + daysToAdd);
+            const [hours, minutes] = schedule.time.split(':');
+            scheduleDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
 
-    return {
-      day: schedule.day,
-      time: schedule.time,
-      utcDateTime: utcDateTime.toISOString(),
-      timeZone: formData.timeZone,
-    };
-  } catch (error) {
-    console.error('❌ Schedule conversion failed:', error);
-    return {
-      day: schedule.day,
-      time: schedule.time,
-      timeZone: formData.timeZone,
-      error: 'conversion_failed'
-    };
-  }
-});
+            // Convert to UTC
+            const utcDateTime = zonedTimeToUtc(scheduleDate, formData.timeZone);
 
-        
-        console.log('🔄 Final processed schedules:', recurrenceData.repeatSchedule);
+            return {
+              day: schedule.day,
+              time: schedule.time,
+              utcDateTime: utcDateTime.toISOString(),
+              timeZone: formData.timeZone,
+            };
+          } catch (error) {
+            return {
+              day: schedule.day,
+              time: schedule.time,
+              timeZone: formData.timeZone,
+              error: 'conversion_failed'
+            };
+          }
+        });
       }
-      
+
       // Convert endDate to UTC if it exists
       if (recurrenceData.endDate) {
         try {
           const endOfDay = new Date(recurrenceData.endDate + 'T23:59:59');
           const utcEndDate = zonedTimeToUtc(endOfDay, formData.timeZone);
           recurrenceData.endDate = utcEndDate.toISOString();
-          console.log('🕐 Converting recurrence end date:', {
-            original: recurrenceData.endDate,
-            timezone: formData.timeZone,
-            converted: utcEndDate.toISOString()
-          });
         } catch (error) {
-          console.error('Recurrence end date conversion failed:', error);
+          // If conversion fails, just keep as is
         }
       }
-      
-      console.log('🔄 Final recurrence data being sent:', recurrenceData);
+
       submitFormData.append(key, JSON.stringify(recurrenceData));
-      
     } else if (
       ['coordinators', 'ticketTypes', 'seatingLayout', 'registrationFields', 'address'].includes(key)
     ) {
       // Convert objects/arrays to JSON strings
       submitFormData.append(key, JSON.stringify(formData[key]));
     } else if (key === 'dateTime') {
-      // 🔧 Main event datetime conversion (unchanged)
+      // Main event datetime conversion
       try {
         const utcDate = zonedTimeToUtc(formData[key], formData.timeZone);
         submitFormData.append('dateTime', utcDate.toISOString());
-        console.log('🕐 Converting main event datetime:', {
-          original: formData[key],
-          timezone: formData.timeZone,
-          converted: utcDate.toISOString()
-        });
       } catch (error) {
-        console.error('Timezone conversion failed:', error);
         submitFormData.append('dateTime', formData[key]);
       }
     } else if (formData[key] !== null && formData[key] !== undefined) {
@@ -218,21 +217,31 @@ const prepareSubmissionData = () => {
       submitFormData.append(key, formData[key]);
     }
   });
-  
-  // Add images
-  if (formData.images && formData.images.length > 0) {
-    formData.images.forEach(image => {
-      submitFormData.append('images', image);
-    });
-  }
-  
+
+  // Add images from formData.images
+  // Add images from localImageFiles (new uploads)
+if (localImageFiles && localImageFiles.length > 0) {
+  localImageFiles.forEach(({ file }) => {
+    submitFormData.append('images', file);
+  });
+}
+// Add existing image URLs from Redux
+if (formData.images && formData.images.length > 0) {
+  formData.images.forEach(image => {
+    if (image.url && image.isExisting) {
+      submitFormData.append('existingImages', image.url);
+    }
+  });
+}
+
   // Add seating layout image if exists
   if (formData.seatingLayoutImage) {
     submitFormData.append('seatingLayoutImage', formData.seatingLayoutImage);
   }
-  
+
   return submitFormData;
 };
+
 
   // Enhanced form validation function
   const validateForm = () => {
@@ -498,6 +507,8 @@ const prepareSubmissionData = () => {
     );
   }
 
+
+
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <RequireLogin message="You must be logged in to add a new event.">
@@ -519,12 +530,13 @@ const prepareSubmissionData = () => {
         {/* Step Content */}
         <div className="mt-8 bg-white p-6 rounded-lg shadow-md border border-gray-200">
           {currentStep === 1 && (
-            <EventDetailsStep
-              formData={formData}
-              preview={preview}
-              errors={formErrors}
-            />
-          )}
+ <EventDetailsStep
+  formData={formData}
+  errors={formErrors}
+  onImagesChange={handleImagesChange}
+/>
+
+)}
 
           {currentStep === 2 && (
             <OrganiserDetailsStep

@@ -4,16 +4,16 @@ import React from 'react';
 import { useDispatch } from 'react-redux';
 import { 
   updateField, 
-  setAddress, 
-  setPreview,
+  setAddress,
   toggleRecurring,
   addRepeatSchedule,
   updateRepeatSchedule,
   removeRepeatSchedule,
-  setRecurrenceEndDate
+  setRecurrenceEndDate,
+  setImages 
 } from '@/store/slices/events/eventSlice';
-import AddressInput from '@/components/shared/AddressInput';
-import ImageUploader from '@/components/shared/ImageUploader';
+import AddressInput from '@/components/events/addevents/AddressInput';
+import ImageUploader from '@/components/events/addevents/ImageUploader';
 import { CATEGORY_OPTIONS } from '@/components/events/addevents/EventCategories';
 import { zonedTimeToUtc } from 'date-fns-tz';
 
@@ -28,7 +28,9 @@ const AU_TIMEZONES = [
   { label: 'Canberra (ACT)', value: 'Australia/Sydney', key: 'act' },
 ];
 
-const EventDetailsStep = ({ formData, preview, errors = {} }) => {
+const EventDetailsStep = ({ formData, errors = {}, onImagesChange }) => {
+
+
   const dispatch = useDispatch();
 
   const handleChange = (e) => {
@@ -39,14 +41,6 @@ const EventDetailsStep = ({ formData, preview, errors = {} }) => {
   const handleAddressChange = (address) => {
     console.log("Address being set in Redux:", address);
     dispatch(setAddress(address));
-  };
-
-  const handlePreviewChange = (newPreview) => {
-    dispatch(setPreview(newPreview));
-  };
-
-  const handleImageChange = (newImages) => {
-    dispatch(updateField({ field: 'images', value: newImages }));
   };
 
   // Recurring event handlers
@@ -69,6 +63,8 @@ const EventDetailsStep = ({ formData, preview, errors = {} }) => {
   const handleRecurrenceEndDateChange = (e) => {
     dispatch(setRecurrenceEndDate(e.target.value || null));
   };
+
+  
 
   // Simple format - no timezone conversion, just display what user typed
   const formatDateTimeLocal = (dateTime) => {
@@ -406,17 +402,14 @@ const EventDetailsStep = ({ formData, preview, errors = {} }) => {
       
       {/* Image Upload */}
       <div>
-        <ImageUploader
-          preview={preview}
-          setPreview={handlePreviewChange}
-          formData={formData}
-          setFormData={(newData) => {
-            if (newData.images) {
-              handleImageChange(newData.images);
-            }
-          }}
-          maxImages={5}
-        />
+       <ImageUploader
+  images={formData.images || []}
+  onImagesChange={onImagesChange}
+  maxImages={5}
+  className="space-y-2"
+/>
+
+
         {errors?.images && (
           <p className="mt-1 text-red-500 text-sm">
             {Array.isArray(errors.images) ? errors.images[0] : errors.images}
