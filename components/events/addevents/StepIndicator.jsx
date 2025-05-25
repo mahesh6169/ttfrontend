@@ -4,15 +4,44 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setStep } from '@/store/slices/events/eventSlice';
 
-const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
+const StepIndicator = ({ 
+  currentStep = 1, 
+  totalSteps = 4, 
+  mode = 'add', // 'add' | 'edit' | 'view'
+  readOnly = false 
+}) => {
   const dispatch = useDispatch();
-  const { formData, isEditMode } = useSelector((state) => state.events);
+  const { formData, isEditMode, hasUnsavedChanges, originalEventData } = useSelector((state) => state.events);
   
+  // Mode-specific configurations
+  const modeConfig = {
+    add: {
+      title: 'Create Event',
+      actionText: 'Creating',
+      color: 'teal',
+      icon: '📅'
+    },
+    edit: {
+      title: 'Edit Event',
+      actionText: 'Updating',
+      color: 'blue',
+      icon: '✏️'
+    },
+    view: {
+      title: 'View Event',
+      actionText: 'Viewing',
+      color: 'gray',
+      icon: '👁️'
+    }
+  };
+
+  const config = modeConfig[mode] || modeConfig.add;
+
   const steps = [
     { 
       number: 1, 
       title: 'Event Details',
-      description: 'Basic information & schedule',
+      description: mode === 'view' ? 'Basic information & schedule' : 'Basic information & schedule',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -32,7 +61,9 @@ const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
     { 
       number: 3, 
       title: 'Event Type',
-      description: 'Free or paid event',
+      description: formData?.isPaid !== undefined 
+        ? (formData.isPaid ? 'Paid event' : 'Free event')
+        : 'Free or paid event',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
@@ -53,8 +84,8 @@ const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
   ];
   
   const handleStepClick = (stepNumber) => {
-    // Only allow clicking on completed steps or current step
-    if (stepNumber <= currentStep) {
+    // Only allow clicking if not in view mode and on completed steps or current step
+    if (!readOnly && mode !== 'view' && stepNumber <= currentStep) {
       dispatch(setStep(stepNumber));
     }
   };
@@ -98,18 +129,56 @@ const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
     }
   };
 
-  // Check if this is a recurring event for display
+  // Check if this is a recurring event
   const isRecurringEvent = formData?.recurrence?.isRecurring || false;
+
+  // Get completion percentage
+  const getCompletionPercentage = () => {
+    const completedSteps = steps.filter((step, index) => isStepComplete(index + 1)).length;
+    return Math.round((completedSteps / totalSteps) * 100);
+  };
+
+  // Mode-specific colors and styles
+  const getColorClasses = (status, baseColor = config.color) => {
+    const colors = {
+      teal: {
+        completed: 'bg-teal-600 border-teal-600 text-white shadow-md',
+        current: 'border-teal-600 text-teal-600 bg-white shadow-lg ring-4 ring-teal-100',
+        upcoming: 'border-gray-300 text-gray-400 bg-white',
+        progressBar: 'bg-teal-600'
+      },
+      blue: {
+        completed: 'bg-blue-600 border-blue-600 text-white shadow-md',
+        current: 'border-blue-600 text-blue-600 bg-white shadow-lg ring-4 ring-blue-100',
+        upcoming: 'border-gray-300 text-gray-400 bg-white',
+        progressBar: 'bg-blue-600'
+      },
+      gray: {
+        completed: 'bg-gray-600 border-gray-600 text-white shadow-md',
+        current: 'border-gray-600 text-gray-600 bg-white shadow-lg ring-4 ring-gray-100',
+        upcoming: 'border-gray-300 text-gray-400 bg-white',
+        progressBar: 'bg-gray-600'
+      }
+    };
+    
+    return colors[baseColor]?.[status] || colors.teal[status];
+  };
 
   return (
     <div className="w-full">
-      {/* Header with event type indicators */}
+      {/* Header with mode-specific information */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <h3 className="text-lg font-medium text-gray-900">
-            {isEditMode ? 'Edit Event' : 'Create Event'}
-          </h3>
           <div className="flex items-center space-x-2">
+            <span className="text-2xl">{config.icon}</span>
+            <h3 className="text-lg font-medium text-gray-900">
+              {config.title}
+            </h3>
+          </div>
+          
+          {/* Mode and Status Indicators */}
+          <div className="flex items-center space-x-2">
+            {/* Event Type Badge */}
             {formData?.isPaid !== undefined && (
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 formData.isPaid 
@@ -119,6 +188,8 @@ const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
                 {formData.isPaid ? 'Paid Event' : 'Free Event'}
               </span>
             )}
+            
+            {/* Recurring Event Badge */}
             {isRecurringEvent && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                 <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,20 +198,77 @@ const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
                 Recurring
               </span>
             )}
+            
+            {/* Unsaved Changes Badge (Edit Mode Only) */}
+            {mode === 'edit' && hasUnsavedChanges && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                Unsaved Changes
+              </span>
+            )}
+            
+            {/* Read Only Badge */}
+            {mode === 'view' && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Read Only
+              </span>
+            )}
           </div>
         </div>
         
-        <div className="text-sm text-gray-500">
-          Step {currentStep} of {totalSteps}
+        <div className="text-right">
+          <div className="text-sm text-gray-500">
+            Step {currentStep} of {totalSteps}
+          </div>
+          {mode !== 'view' && (
+            <div className="text-xs text-gray-400">
+              {getCompletionPercentage()}% Complete
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Event Title Display (Edit/View Mode) */}
+      {(mode === 'edit' || mode === 'view') && formData?.title && (
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg border">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-medium text-gray-900 truncate">
+                {formData.title}
+              </h4>
+              {formData.dateTime && (
+                <p className="text-sm text-gray-500 mt-1">
+                  {new Date(formData.dateTime).toLocaleDateString('en-AU', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              )}
+            </div>
+            
+            {mode === 'edit' && originalEventData && (
+              <div className="text-xs text-gray-400">
+                Last updated: {new Date(originalEventData.updatedAt || originalEventData.createdAt).toLocaleDateString()}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Desktop Step Indicator */}
       <div className="hidden md:block">
         <div className="flex items-center justify-between">
           {steps.map((step, index) => {
             const status = getStepStatus(step.number);
-            const isClickable = step.number <= currentStep;
+            const isClickable = !readOnly && mode !== 'view' && step.number <= currentStep;
             
             return (
               <React.Fragment key={step.number}>
@@ -153,13 +281,7 @@ const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
                 >
                   {/* Step Circle */}
                   <div className={`relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-200 ${
-                    status === 'completed' 
-                      ? 'bg-teal-600 border-teal-600 text-white shadow-md' 
-                      : status === 'current'
-                        ? 'border-teal-600 text-teal-600 bg-white shadow-lg ring-4 ring-teal-100' 
-                        : hasStepErrors(step.number)
-                          ? 'border-red-300 text-red-400 bg-white'
-                          : 'border-gray-300 text-gray-400 bg-white'
+                    getColorClasses(status)
                   } ${isClickable ? 'group-hover:shadow-lg' : ''}`}>
                     {status === 'completed' ? (
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,7 +307,7 @@ const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
                   <div className="mt-3 text-center max-w-24">
                     <div className={`text-sm font-medium ${
                       status === 'current' || status === 'completed'
-                        ? 'text-teal-600' 
+                        ? `text-${config.color}-600` 
                         : 'text-gray-500'
                     }`}>
                       {step.title}
@@ -199,7 +321,7 @@ const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
                 {/* Line Connector */}
                 {index < steps.length - 1 && (
                   <div className={`flex-1 h-0.5 mx-4 transition-colors duration-200 ${
-                    currentStep > step.number ? 'bg-teal-600' : 'bg-gray-300'
+                    currentStep > step.number ? getColorClasses('completed').split(' ').find(c => c.startsWith('bg-')) : 'bg-gray-300'
                   }`}></div>
                 )}
               </React.Fragment>
@@ -213,9 +335,7 @@ const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-              getStepStatus(currentStep) === 'current'
-                ? 'border-teal-600 text-teal-600 bg-white' 
-                : 'border-gray-300 text-gray-400 bg-white'
+              getColorClasses(getStepStatus(currentStep))
             }`}>
               {steps[currentStep - 1]?.icon}
             </div>
@@ -237,7 +357,7 @@ const StepIndicator = ({ currentStep = 1, totalSteps = 4 }) => {
         {/* Progress Bar */}
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
-            className="bg-teal-600 h-2 rounded-full transition-all duration-300 ease-out"
+            className={`h-2 rounded-full transition-all duration-300 ease-out ${getColorClasses('completed').split(' ').find(c => c.startsWith('bg-'))}`}
             style={{ width: `${(currentStep / totalSteps) * 100}%` }}
           ></div>
         </div>
