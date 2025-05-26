@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
+
 const SuccessStep = ({ 
   event = {}, 
   mode = 'add', // 'add' | 'edit' | 'view'

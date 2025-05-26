@@ -85,10 +85,40 @@ export const updateFreeEvent = createAsyncThunk(
   }
 );
 
+// Update paid event
+export const updatePaidEvent = createAsyncThunk(
+  'events/updatePaidEvent',
+  async ({ eventId, formData }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/events/update-paid/${eventId}`,
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          withCredentials: true,
+        }
+      );
+
+      if (response.data.success) {
+        return response.data.event;
+      } else {
+        return rejectWithValue(response.data.message || 'Failed to update paid event');
+      }
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to update paid event'
+      );
+    }
+  }
+);
+
+
 // Update existing event
 export const updateEvent = createAsyncThunk(
   'events/updateEvent',
   async ({ eventId, formData }, { rejectWithValue }) => {
+     console.log("🚀 updateEvent thunk entered with:", { eventId, formData });
+    console.log("🔗 API URL will be:", `${API_BASE_URL}/events/update/${eventId}`);
     try {
       const response = await axios.put(
         `${API_BASE_URL}/events/update/${eventId}`,
@@ -121,7 +151,13 @@ export const fetchEventById = createAsyncThunk(
         `${API_BASE_URL}/events/views/${id}`,
         { withCredentials: true }
       );
-      return response.data;
+      
+      // ✅ Your API returns the event directly, not wrapped
+      if (response.data._id || response.data.id) {
+        return response.data; // Return the event directly
+      }
+      
+      return rejectWithValue('Invalid response format');
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Failed to fetch event'
@@ -218,11 +254,11 @@ const createDefaultFormData = () => ({
   // Ticketing
   isPaid: false,
   capacity: 0,
-  maxAttendeesPerRegistration: 5,
+  maxAttendeesPerRegistration: 10,
   registrationFields: [],
   
   // Paid Event Details
-  ticketTypes: [{ name: '', price: 0, quantity: 1, seatsRequired: 1 }],
+  ticketTypes: [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
   seatingLayout: [],
   seatingLayoutImage: null,
   
@@ -302,7 +338,7 @@ const processEventDataForEdit = (eventData) => {
     registrationFields: eventData.registrationFields || [],
     ticketTypes: (eventData.ticketTypes && eventData.ticketTypes.length > 0) 
       ? eventData.ticketTypes 
-      : [{ name: '', price: 0, quantity: 1, seatsRequired: 1 }],
+      : [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
     seatingLayout: eventData.seatingLayout || [],
     seatingLayoutImage: eventData.seatingLayoutImage || null,
     applyGST: eventData.applyGST !== false,
@@ -362,6 +398,8 @@ const eventSlice = createSlice({
       state.formError = null;
       state.initializationError = null;
     },
+
+
     
     // Set current operation mode
     setCurrentMode: (state, action) => {
@@ -371,6 +409,11 @@ const eventSlice = createSlice({
     // Enhanced edit mode management
     setEditMode: (state, action) => {
       const { isEdit, eventId = null, eventData = null, mode = 'edit' } = action.payload;
+
+       // 🔥 ADD ONLY THESE 3 LINES:
+  state.formStatus = 'idle';
+  state.successMessage = '';
+  state.formError = null;
       
       state.isEditMode = isEdit;
       state.editingEventId = eventId;
@@ -521,11 +564,11 @@ const eventSlice = createSlice({
       state.hasUnsavedChanges = true;
       // Initialize ticket types if switching to paid
       if (action.payload && state.formData.ticketTypes.length === 0) {
-        state.formData.ticketTypes = [{ name: '', price: 0, quantity: 1, seatsRequired: 1 }];
+        state.formData.ticketTypes = [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }];
       }
     },
     addTicketType: (state) => {
-      state.formData.ticketTypes.push({ name: '', price: 0, quantity: 1, seatsRequired: 1 });
+      state.formData.ticketTypes.push({ name: '', price: null, quantity: 0, startDate: null, expiryDate: null });
       state.hasUnsavedChanges = true;
     },
     updateTicketType: (state, action) => {
@@ -751,6 +794,36 @@ const eventSlice = createSlice({
         state.formStatus = 'failed';
         state.formError = action.payload || 'Failed to update free event';
       })
+
+      // Update Paid Event
+.addCase(updatePaidEvent.pending, (state) => {
+  state.formStatus = 'loading';
+  state.formError = null;
+})
+.addCase(updatePaidEvent.fulfilled, (state, action) => {
+  state.formStatus = 'succeeded';
+  state.successMessage = 'Paid event updated successfully!';
+  state.hasUnsavedChanges = false;
+
+  // Update in myEvents array
+  const eventIndex = state.myEvents.findIndex(event => event._id === action.payload._id);
+  if (eventIndex !== -1) {
+    state.myEvents[eventIndex] = action.payload;
+  }
+
+  // Update selectedEvent if it's the same event
+  if (state.selectedEvent?._id === action.payload._id) {
+    state.selectedEvent = action.payload;
+  }
+
+  // Update original event data for comparison
+  state.originalEventData = action.payload;
+})
+.addCase(updatePaidEvent.rejected, (state, action) => {
+  state.formStatus = 'failed';
+  state.formError = action.payload || 'Failed to update paid event';
+})
+
 
       // Update Event
       .addCase(updateEvent.pending, (state) => {

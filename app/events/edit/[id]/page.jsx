@@ -71,18 +71,12 @@ const EditEventPage = ({ params: paramsPromise }) => {
   // Handle successful event update
   const handleEventUpdated = (eventData) => {
     console.log('Event updated successfully:', eventData);
-    
-    // Show success message
-    toast.success('Event updated successfully!');
-    
-    // Optional: Redirect to event view or management page
-    // router.push(`/events/views/${eventData._id || eventData.id}`);
-    // router.push('/users/profile/manageevents');
   };
 
   // Handle edit cancellation
   const handleEditCancelled = () => {
     // Redirect back to manage events or event details
+      dispatch(resetForm());
     router.push('/users/profile/manageevents');
   };
 

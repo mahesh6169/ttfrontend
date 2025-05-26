@@ -10,6 +10,8 @@ import SendMessage from '@/components/chat/SendMessage';
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
 import Link from 'next/link';
+import SeatMap from '@/components/events/seatselection/SeatMap';
+
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -17,6 +19,16 @@ const EventDetail = () => {
   const dispatch = useDispatch();
 
   const { selectedEvent, status, error } = useSelector((state) => state.events);
+
+  // 🔍 DEBUG: Add these console logs
+  console.log('Redux state:', { selectedEvent, status, error });
+  console.log('Event ID from params:', id);
+
+  // ✅ FIX: Safe destructuring - use optional chaining instead
+  const showSeatSelection = selectedEvent?.isPaid && 
+                           selectedEvent?.seatingLayout && 
+                           selectedEvent?.seatingLayout.length > 0;
+
 
   useEffect(() => {
     if (id) {
@@ -105,9 +117,12 @@ const EventDetail = () => {
               participantId: selectedEvent.postedBy?._id,
               owner: selectedEvent.postedBy?.name,
               preserveRedirectUrl: `/events/views/${id}`,
-            }} 
+            }}
+             
           />
         </div>
+
+        
 
         {/* Chat Container: desktop only */}
         <div className="hidden lg:block flex-[3] shadow p-2 self-start">
@@ -128,6 +143,7 @@ const EventDetail = () => {
           </Link>
         </div>
       </div>
+      
     </div>
   );
 };

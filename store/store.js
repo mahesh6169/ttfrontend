@@ -12,6 +12,7 @@ import threadReducer from './slices/threads/threadSlice'; // Import threadSlice
 import searchThreadsReducer from './slices/threads/searchThreadsSlice'; // Import searchThreadsSlice
 import adminReducer from './slices/admin/users/adminSlice'; // Import adminSlice
 import eventReducer from './slices/events/eventSlice'; // Import eventSlice
+import seatSelectionReducer from './slices/events/seatSelectionSlice'; // Import seatSelectionSlice
 import filterThreadReducer from './slices/threads/filterThreadSlice'; // Import filterThreadSlice
 import adminManageAdvertReducer from './slices/admin/adverts/adminManageAdvertSlice'; // Import adminManageAdvertSlice
 import adminManageEventReducer from './slices/admin/events/adminManageEventSlice'; // Import adminManageEventSlice
@@ -31,6 +32,7 @@ const store = configureStore({
         events: eventReducer, // Add eventReducer
         eventFilters: filterEventReducer, // Add filterEventReducer
         searchEvents: searchEventsReducer, // Add searchEventsReducer
+        seatSelection: seatSelectionReducer, // Add seatSelectionReducer
         freeEvents: freeEventReducer, // Add freeEventReducer
         filterThreads: filterThreadReducer, // Add filterThreadsReducer
         searchThreads: searchThreadsReducer, // Add searchThreadsReducer

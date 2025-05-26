@@ -3,6 +3,7 @@
 'use client';
 
 import React, { useState } from 'react';
+
 import { format } from 'date-fns';
 import { 
   FaTimes, 
@@ -35,6 +36,7 @@ const SingleEventCard = ({ event, chatProps }) => {
 
   const { isInEventWishlist, toggleEventWishlist, isAuthenticated } = useEventWishlist();
   const isInWishlist = isInEventWishlist(event?._id);
+
 
   if (!event) {
     return (

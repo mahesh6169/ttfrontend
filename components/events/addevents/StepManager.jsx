@@ -16,7 +16,7 @@ import {
   resetForm,
   addFreeEvent,
   addPaidEvent,
-  updateEvent,
+  updatePaidEvent,
   updateFreeEvent,
   fetchEventById,
   setEditMode,
@@ -75,6 +75,17 @@ const StepManager = ({
   const isViewMode = mode === 'view';
   const isLoading = formStatus === 'loading' || isInitializing;
   const canEdit = !isViewMode;
+
+  useEffect(() => {
+  toast.dismiss();
+}, []);
+
+  useEffect(() => {
+    if (isEditingMode) {
+      dispatch(resetForm());
+      dispatch(clearEditMode());
+    }
+  }, [isEditingMode, dispatch]);
 
   // Initialize component based on mode
   useEffect(() => {
@@ -152,60 +163,20 @@ const StepManager = ({
   }, [formStatus, successMessage, onComplete, formData]);
 
   // Handle images change (strip files for Redux, keep locally)
-// REPLACE this function in your StepManager.jsx
-
-// Handle images change (strip files for Redux, keep locally) - FIXED VERSION
 const handleImagesChange = useCallback((images) => {
   console.log(`📸 StepManager: handleImagesChange called with ${images.length} images`);
   
-  // 🔧 ENHANCED DEBUG: Log each image's properties
-  images.forEach((img, index) => {
-    console.log(`📸 Image ${index + 1} details:`, {
-      id: img.id,
-      name: img.name,
-      isNew: img.isNew,
-      isExisting: img.isExisting,
-      hasFile: !!img.file,
-      hasPreview: !!img.preview,
-      hasUrl: !!img.url,
-      fileType: img.file ? img.file.type : 'no file',
-      fileSize: img.file ? img.file.size : 'no file'
-    });
-  });
+  // Extract files for new images (local only) - ENHANCED LOGGING
+  const files = images.filter(img => img.isNew && img.file).map(img => ({ 
+    file: img.file, 
+    id: img.id,
+    name: img.file.name,
+    size: img.file.size 
+  }));
   
-  // 🔧 ENHANCED FILTERING: More detailed filtering with logging
-  const newImagesWithFiles = images.filter(img => {
-    const hasNewFlag = img.isNew === true;
-    const hasFileObject = img.file && img.file instanceof File;
-    const shouldInclude = hasNewFlag && hasFileObject;
-    
-    console.log(`📸 Image ${img.name}: isNew=${hasNewFlag}, hasFile=${hasFileObject}, include=${shouldInclude}`);
-    
-    return shouldInclude;
-  });
-  
-  console.log(`📸 StepManager: Found ${newImagesWithFiles.length} new images with files out of ${images.length} total`);
-  
-  // Extract files for new images (local only)
-  const files = newImagesWithFiles.map((img, index) => {
-    const fileObj = { 
-      file: img.file, 
-      id: img.id,
-      name: img.file.name,
-      size: img.file.size 
-    };
-    
-    console.log(`📸 StepManager: Extracted file ${index + 1}:`, {
-      id: fileObj.id,
-      name: fileObj.name,
-      size: fileObj.size,
-      isFileInstance: fileObj.file instanceof File
-    });
-    
-    return fileObj;
-  });
-  
-  console.log(`📸 StepManager: Final extracted files count: ${files.length}`);
+  console.log(`📸 StepManager: Extracted ${files.length} files for local storage:`, 
+    files.map(f => ({ id: f.id, name: f.name, size: f.size }))
+  );
   
   setLocalImageFiles(files);
 
@@ -304,26 +275,36 @@ const handleImagesChange = useCallback((images) => {
     
     // Paid event specific validation
     if (formData.isPaid) {
-      if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
-        errors.ticketTypes = ['At least one ticket type is required for paid events'];
-      } else {
-        const ticketErrors = [];
-        formData.ticketTypes.forEach((ticket, index) => {
-          if (!ticket.name?.trim()) {
-            ticketErrors.push(`Ticket type ${index + 1} name is required`);
-          }
-          if (!ticket.price || ticket.price <= 0) {
-            ticketErrors.push(`Ticket type ${index + 1} price must be greater than 0`);
-          }
-          if (!ticket.quantity || ticket.quantity <= 0) {
-            ticketErrors.push(`Ticket type ${index + 1} quantity must be greater than 0`);
-          }
-          if (!ticket.seatsRequired || ticket.seatsRequired <= 0) {
-            ticketErrors.push(`Ticket type ${index + 1} seats required must be greater than 0`);
-          }
-        });
-        if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
+        if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
+    errors.ticketTypes = ['At least one ticket type is required for paid events'];
+  } else {
+    const ticketErrors = [];
+    formData.ticketTypes.forEach((ticket, index) => {
+      // Ticket name is required
+      if (!ticket.name?.trim()) {
+        ticketErrors.push(`Ticket type ${index + 1} name is required`);
       }
+      
+      // Price must be greater than 0
+      if (ticket.price === undefined || ticket.price === null || ticket.price === '') {
+  ticketErrors.push(`Ticket type ${index + 1} price is required`);
+}
+      
+      // Quantity validation: 0 means shares remaining pool (valid)
+      // No validation needed for quantity since 0 is valid (shares pool)
+      
+      // Date validation: startDate should be before expiryDate if both are set
+      if (ticket.startDate && ticket.expiryDate) {
+        const startDate = new Date(ticket.startDate);
+        const expiryDate = new Date(ticket.expiryDate);
+        if (startDate >= expiryDate) {
+          ticketErrors.push(`Ticket type ${index + 1} start date must be before expiry date`);
+        }
+      }
+    });
+    
+    if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
+  }
       
       // Seating layout validation (if provided)
       if (formData.seatingLayout && formData.seatingLayout.length > 0) {
@@ -406,24 +387,35 @@ const handleImagesChange = useCallback((images) => {
         
       case 4: // Ticket Config
         if (formData.isPaid) {
-          if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
-            errors.ticketTypes = ['At least one ticket type is required for paid events'];
-          } else {
-            const ticketErrors = [];
-            formData.ticketTypes.forEach((ticket, index) => {
-              if (!ticket.name?.trim()) {
-                ticketErrors.push(`Ticket type ${index + 1} name is required`);
-              }
-              if (!ticket.price || ticket.price <= 0) {
-                ticketErrors.push(`Ticket type ${index + 1} price must be greater than 0`);
-              }
-              if (!ticket.quantity || ticket.quantity <= 0) {
-                ticketErrors.push(`Ticket type ${index + 1} quantity must be greater than 0`);
-              }
-            });
-            if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
-          }
-        } else {
+  if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
+    errors.ticketTypes = ['At least one ticket type is required for paid events'];
+  } else {
+    const ticketErrors = [];
+    formData.ticketTypes.forEach((ticket, index) => {
+      // Name is required (has * in form)
+      if (!ticket.name?.trim()) {
+        ticketErrors.push(`Ticket type ${index + 1} name is required`);
+      }
+      
+      // Price is required and must be > 0 (has * in form)
+      if (ticket.price === undefined || ticket.price === null || ticket.price === '' || ticket.price <= 0) {
+        ticketErrors.push(`Ticket type ${index + 1} price must be greater than 0`);
+      }
+      
+      // Quantity can be 0 (shares pool) - no validation needed
+      
+      // Date validation: startDate should be before expiryDate if both are set
+      if (ticket.startDate && ticket.expiryDate) {
+        const startDate = new Date(ticket.startDate);
+        const expiryDate = new Date(ticket.expiryDate);
+        if (startDate >= expiryDate) {
+          ticketErrors.push(`Ticket type ${index + 1} start date must be before expiry date`);
+        }
+      }
+    });
+    if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
+  }
+} else {
           // Free event validation
           if (formData.maxAttendeesPerRegistration < 1) {
             errors.maxAttendeesPerRegistration = ['Maximum attendees per registration must be at least 1'];
@@ -598,7 +590,7 @@ const handleImagesChange = useCallback((images) => {
       if (isEditingMode) {
         // Update existing event - choose the appropriate thunk based on event type
         if (formData.isPaid) {
-          await dispatch(updateEvent({ eventId: editingEventId, formData: submitFormData })).unwrap();
+          await dispatch(updatePaidEvent({ eventId: editingEventId, formData: submitFormData })).unwrap();
         } else {
           await dispatch(updateFreeEvent({ eventId: editingEventId, formData: submitFormData })).unwrap();  // ✅ Use updateFreeEvent for free events
         }
@@ -661,11 +653,10 @@ const handleImagesChange = useCallback((images) => {
   }, [dispatch, isAddMode, router]);
 
   const handleManageEvents = useCallback(() => {
-    if (isAddMode) {
-      dispatch(resetForm());
-    }
-    router.push('/users/profile/manageevents');
-  }, [isAddMode, dispatch, router]);
+  dispatch(resetForm()); // Always reset form, for both add and edit
+  router.push('/users/profile/manageevents');
+}, [dispatch, router]);
+
 
   // Show loading spinner during initialization
   if (isInitializing) {
@@ -718,6 +709,8 @@ const handleImagesChange = useCallback((images) => {
       </div>
     );
   }
+
+ 
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
