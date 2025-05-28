@@ -109,25 +109,35 @@ const ManageEventsPage = () => {
           className="w-full h-40 object-cover rounded mb-2"
         />
       )}
-      <div className="flex justify-between mt-4">
-        <button
-          onClick={() => !isExpired && handleEdit(event)}
-          className={`px-4 py-1 rounded ${
-            isExpired
-              ? 'bg-gray-400 text-white cursor-not-allowed'
-              : 'bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100'
-          }`}
-          disabled={isExpired}
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => confirmDelete(event._id)}
-          className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
-        >
-          Delete
-        </button>
-      </div>
+<div className="flex flex-wrap gap-2 mt-4">
+  <button
+    onClick={() => !isExpired && handleEdit(event)}
+    className={`px-4 py-1 rounded ${
+      isExpired
+        ? 'bg-gray-400 text-white cursor-not-allowed'
+        : 'bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100'
+    }`}
+    disabled={isExpired}
+  >
+    Edit
+  </button>
+  <button
+    onClick={() => confirmDelete(event._id)}
+    className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
+  >
+    Delete
+  </button>
+  <Link
+    href={`/users/profile/manageevents/${event._id}/attendees/${event.isPaid ? 'paid' : 'free'}`}
+    className={`bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-700 ${
+      isExpired ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+    }`}
+    tabIndex={isExpired ? -1 : 0}
+  >
+    Manage Attendees
+  </Link>
+</div>
+
     </div>
   );
 })}

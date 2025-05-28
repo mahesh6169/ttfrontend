@@ -2,7 +2,8 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect  } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { format } from 'date-fns';
 import { 
@@ -27,8 +28,12 @@ import { MdLocationOn, MdEmail, MdPhone, MdPerson, MdEventSeat } from 'react-ico
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 import SendMessage from '@/components/chat/SendMessage';
 import EventRegistrationModal from '../registration/EventRegistrationModal';
+import EventCapacityDisplay from './EventCapacityDisplay';
+import { formatInTimeZone } from 'date-fns-tz';
+import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
 
 const SingleEventCard = ({ event, chatProps }) => {
+   const dispatch = useDispatch();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
@@ -36,6 +41,9 @@ const SingleEventCard = ({ event, chatProps }) => {
 
   const { isInEventWishlist, toggleEventWishlist, isAuthenticated } = useEventWishlist();
   const isInWishlist = isInEventWishlist(event?._id);
+
+    const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
+  const isRegistered = !!currentRegistration && currentRegistration.status === 'registered';
 
 
   if (!event) {
@@ -45,6 +53,12 @@ const SingleEventCard = ({ event, chatProps }) => {
       </div>
     );
   }
+
+  useEffect(() => {
+    if (event?._id) {
+      dispatch(checkRegistrationStatus(event._id));
+    }
+  }, [dispatch, event?._id]);
 
   const handleNextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % event.images.length);
@@ -65,20 +79,22 @@ const SingleEventCard = ({ event, chatProps }) => {
   };
 
   // Format date and time with timezone
-  const formatDateTime = (dateTime, timeZone) => {
-    try {
-      const date = new Date(dateTime);
-      return {
-        date: format(date, 'EEEE, MMMM do, yyyy'),
-        time: format(date, 'h:mm a'),
-        timeZone: timeZone || 'Australia/Sydney'
-      };
-    } catch (error) {
-      return { date: 'Invalid date', time: '', timeZone: '' };
-    }
-  };
+ // Use timezone-aware formatting
+const dateTimeZone = event.timeZone || 'Australia/Sydney';
 
-  const { date, time, timeZone } = formatDateTime(event.dateTime, event.timeZone);
+const formattedDate = formatInTimeZone(
+  event.dateTime,
+  dateTimeZone,
+  'EEEE, MMMM do, yyyy'
+);
+
+const formattedTime = formatInTimeZone(
+  event.dateTime,
+  dateTimeZone,
+  'h:mm a'
+);
+
+
 
   // Calculate pricing info for paid events
   const totalTickets = event.ticketTypes?.reduce((sum, ticket) => sum + (ticket.quantity || 0), 0) || 0;
@@ -239,9 +255,9 @@ const SingleEventCard = ({ event, chatProps }) => {
               Date & Time
             </h3>
             <div className="space-y-2">
-              <p className="text-gray-700">{date}</p>
-              <p className="text-gray-700">{time}</p>
-              <p className="text-sm text-gray-500">Timezone: {timeZone}</p>
+              <p className="text-gray-700">{formattedDate}</p>
+<p className="text-gray-700">{formattedTime}</p>
+<p className="text-sm text-gray-500">Timezone: {dateTimeZone}</p>
             </div>
           </div>
 
@@ -260,34 +276,74 @@ const SingleEventCard = ({ event, chatProps }) => {
           </div>
         </div>
 
-        {/* Event Type & Capacity */}
-        <div className="bg-blue-50 p-4 rounded-lg mb-6">
-          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-            <FaTicketAlt className="mr-2 text-green-600" />
-            Event Information
-          </h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Event Type</p>
-              <p className="font-medium text-gray-900">
-                {event.isPaid ? 'Paid Event' : 'Free Event'}
-              </p>
+        {/* Coordinators */}
+        {event.coordinators?.length > 0 && (
+          <div className="bg-yellow-50 p-4 rounded-lg mb-6">
+            <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+              <FaUserFriends className="mr-2 text-yellow-600" />
+              Event Coordinators
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              {event.coordinators.map((coordinator, index) => (
+                <div key={index} className="bg-white p-3 rounded border">
+                  <div className="space-y-1">
+                    <p className="font-medium text-gray-900">{coordinator.name}</p>
+                    {coordinator.role && (
+                      <p className="text-sm text-gray-600">{coordinator.role}</p>
+                    )}
+                    {coordinator.phone && (
+                      <p className="text-sm text-gray-600 flex items-center">
+                        <FaPhone className="mr-1" />
+                        {coordinator.phone}
+                      </p>
+                    )}
+                    {coordinator.email && (
+                      <p className="text-sm text-gray-600 flex items-center">
+                        <FaEnvelope className="mr-1" />
+                        {coordinator.email}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-            {event.capacity > 0 && (
-              <div>
-                <p className="text-sm text-gray-600">Capacity</p>
-                <p className="font-medium text-gray-900">{event.capacity} attendees</p>
-              </div>
-            )}
-            {event.maxAttendeesPerRegistration && (
-              <div>
-                <p className="text-sm text-gray-600">Max per Registration</p>
-                <p className="font-medium text-gray-900">{event.maxAttendeesPerRegistration} people</p>
-              </div>
-            )}
           </div>
-        </div>
+        )}
 
+        {/* Registration Fields */}
+        {event.registrationFields?.length > 0 && (
+          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 className="font-semibold text-gray-900 mb-3">Registration Requirements</h3>
+            <div className="space-y-2">
+              {event.registrationFields.map((field, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <span className="text-gray-700">
+                    {field.fieldName}
+                    {field.isRequired && <span className="text-red-500 ml-1">*</span>}
+                  </span>
+                  <span className="text-sm text-gray-500 capitalize">{field.fieldType}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Description */}
+        {event.description && (
+          <div className="mb-6">
+            <h3 className="font-semibold text-gray-900 mb-3">About This Event</h3>
+            <div className="prose max-w-none text-gray-700">
+              {event.description.split('\n').map((paragraph, index) => (
+                <p key={index} className="mb-3 whitespace-pre-wrap">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <EventCapacityDisplay eventId={event._id} isPaid={event.isPaid} />
+        
         {/* Ticket Types (for paid events) */}
         {event.isPaid && event.ticketTypes?.length > 0 && (
           <div className="bg-green-50 p-4 rounded-lg mb-6">
@@ -382,109 +438,6 @@ const SingleEventCard = ({ event, chatProps }) => {
           </div>
         )}
 
-        {/* Coordinators */}
-        {event.coordinators?.length > 0 && (
-          <div className="bg-yellow-50 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-              <FaUserFriends className="mr-2 text-yellow-600" />
-              Event Coordinators
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {event.coordinators.map((coordinator, index) => (
-                <div key={index} className="bg-white p-3 rounded border">
-                  <div className="space-y-1">
-                    <p className="font-medium text-gray-900">{coordinator.name}</p>
-                    {coordinator.role && (
-                      <p className="text-sm text-gray-600">{coordinator.role}</p>
-                    )}
-                    {coordinator.phone && (
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <FaPhone className="mr-1" />
-                        {coordinator.phone}
-                      </p>
-                    )}
-                    {coordinator.email && (
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <FaEnvelope className="mr-1" />
-                        {coordinator.email}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Registration Fields */}
-        {event.registrationFields?.length > 0 && (
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3">Registration Requirements</h3>
-            <div className="space-y-2">
-              {event.registrationFields.map((field, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <span className="text-gray-700">
-                    {field.fieldName}
-                    {field.isRequired && <span className="text-red-500 ml-1">*</span>}
-                  </span>
-                  <span className="text-sm text-gray-500 capitalize">{field.fieldType}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Description */}
-        {event.description && (
-          <div className="mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3">About This Event</h3>
-            <div className="prose max-w-none text-gray-700">
-              {event.description.split('\n').map((paragraph, index) => (
-                <p key={index} className="mb-3 whitespace-pre-wrap">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Registration/Purchase Button */}
-        <div className="mt-8 pt-6 border-t">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button
-              onClick={() => {
-                if (!isAuthenticated) {
-                  alert('Please log in to register for this event.');
-                  return;
-                }
-                setShowRegistrationForm(true);
-              }}
-              className={`flex-1 py-3 px-6 rounded-lg font-semibold text-white transition-colors ${
-                event.isPaid
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {event.isPaid ? 'Purchase Tickets' : 'Register for Event'}
-            </button>
-            
-            {chatProps && (
-              <button
-                onClick={() => {/* Toggle chat */}}
-                className="sm:w-auto px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Contact Organizer
-              </button>
-            )}
-          </div>
-          
-          {event.isPaid && (
-            <p className="text-sm text-gray-500 mt-2 text-center">
-              Secure payment processing • {event.applyGST ? 'Prices include GST' : 'GST may apply'}
-            </p>
-          )}
-        </div>
-
         {/* Mobile Chat */}
         {chatProps && (
           <div className="block lg:hidden mt-6 pt-6 border-t">
@@ -492,6 +445,62 @@ const SingleEventCard = ({ event, chatProps }) => {
           </div>
         )}
       </div>
+
+         {/* Registration/Purchase Button */}
+        <div className="mt-8 pt-6 border-t">
+            <div className="flex flex-col sm:flex-row gap-4">
+    {/* Only for free events: Show Unregister if registered, else Register */}
+    {!event.isPaid && isRegistered ? (
+      <button
+        onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
+        className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+        disabled={registrationStatus === 'loading'}
+      >
+        {registrationStatus === 'loading' ? 'Unregistering...' : 'Unregister from Event'}
+      </button>
+    ) : (
+      <button
+        onClick={() => {
+          if (!isAuthenticated) {
+            alert('Please log in to register for this event.');
+            return;
+          }
+          setShowRegistrationForm(true);
+        }}
+        className={`flex-1 py-3 px-6 rounded-lg font-semibold text-white transition-colors ${
+          event.isPaid
+            ? 'bg-green-600 hover:bg-green-700'
+            : 'bg-blue-600 hover:bg-blue-700'
+        }`}
+        disabled={registrationStatus === 'loading'}
+      >
+        {registrationStatus === 'loading'
+          ? event.isPaid
+            ? 'Processing...'
+            : 'Processing...'
+          : event.isPaid
+            ? 'Purchase Tickets'
+            : 'Register for Event'}
+      </button>
+    )}
+
+    {chatProps && (
+      <button
+        onClick={() => {/* Toggle chat */}}
+        className="sm:w-auto px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        Contact Organizer
+      </button>
+    )}
+  </div>
+
+          
+          {event.isPaid && (
+            <p className="text-sm text-gray-500 mt-2 text-center">
+              Secure payment processing • {event.applyGST ? 'Prices include GST' : 'GST may apply'}
+            </p>
+          )}
+        </div>
 
       {/* Registration Modal */}
       <EventRegistrationModal

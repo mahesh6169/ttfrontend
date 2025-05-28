@@ -326,31 +326,26 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
             </label>
             <div className="relative">
               <input
-                type="number"
-                min="0"
-                inputMode="numeric"
-                value={
-                  formData.capacity === 0 ? '' : String(formData.capacity || '')
-                }
-                onChange={(e) => {
-                  const val = e.target.value;
-                  dispatch(
-                    updateField({
-                      field: 'capacity',
-                      value: val === '' ? 0 : Math.max(0, Number(val)),
-                    })
-                  );
-                }}
-                onBlur={(e) => {
-                  if (e.target.value === '' || Number(e.target.value) < 0) {
-                    dispatch(updateField({ field: 'capacity', value: 0 }));
-                  }
-                }}
-                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-                  errors?.capacity ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Leave empty or 0 for unlimited"
-              />
+  type="number"
+  min="0"
+  inputMode="numeric"
+  value={formData.capacity === undefined || formData.capacity === null ? '' : String(formData.capacity)}
+  onChange={(e) => {
+    const val = e.target.value;
+    // Only allow numbers, blank will not be allowed on submit
+    dispatch(
+      updateField({
+        field: 'capacity',
+        value: val, // Save as string for validation step
+      })
+    );
+  }}
+  placeholder="Enter 0 for unlimited"
+  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+    errors?.capacity ? 'border-red-500' : 'border-gray-300'
+  }`}
+/>
+
 
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <span className="text-gray-500 text-sm">People</span>
@@ -511,75 +506,83 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
             />
           </div>
 
-          {/* Ticket Price */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Price (AUD) <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 text-sm">$</span>
-              </div>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={
-                  ticket?.price === 0
-                    ? 0
-                    : ticket?.price !== undefined && ticket?.price !== null
-                    ? ticket.price
-                    : ''
-                }
-                onChange={e =>
-                  dispatch(
-                    updateTicketType({
-                      index,
-                      field: 'price',
-                      value:
-                        e.target.value === ''
-                          ? ''
-                          : Math.max(0, Number(e.target.value)),
-                    })
-                  )
-                }
-                className="w-full pl-8 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                placeholder="0.00"
-                required
-              />
-            </div>
-          </div>
+
+
+{/* Ticket Price */}
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Price (AUD) <span className="text-red-500">*</span>
+  </label>
+  <div className="relative">
+    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <span className="text-gray-500 text-sm">$</span>
+    </div>
+    <input
+      type="number"
+      min="0.01"
+      step="0.01"
+      value={
+        ticket.price === undefined || ticket.price === null
+          ? ''
+          : ticket.price
+      }
+      onChange={e => {
+        // Allow user to backspace (set to empty string)
+        const val = e.target.value;
+        dispatch(
+          updateTicketType({
+            index,
+            field: 'price',
+            value: val, // Pass as string; final validation step will coerce/check
+          })
+        );
+      }}
+      className="w-full pl-8 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+      placeholder="Enter amount"
+      required
+    />
+  </div>
+  <p className="text-xs text-gray-500 mt-1">
+    Ticket price must be <span className="font-medium text-teal-700">greater than 0</span> (no free tickets).
+  </p>
+</div>
+
+
+
 
           {/* Ticket Quantity */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Quantity
-            </label>
-            <input
-              type="number"
-              min="0"
-              inputMode="numeric"
-              value={
-                ticket.quantity === undefined || ticket.quantity === null || ticket.quantity === 0
-                  ? ''
-                  : ticket.quantity
-              }
-              onChange={e =>
-                dispatch(
-                  updateTicketType({
-                    index,
-                    field: 'quantity',
-                    value: e.target.value === '' ? '' : Math.max(0, Number(e.target.value))
-                  })
-                )
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              placeholder="Leave empty or 0 to share remaining pool"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Leave empty or set to 0 to share the remaining ticket pool with other types
-            </p>
-          </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Quantity
+  </label>
+  <input
+    type="number"
+    min="0"
+    inputMode="numeric"
+    value={
+      ticket.quantity === undefined || ticket.quantity === null
+        ? ''
+        : ticket.quantity
+    }
+    onChange={e =>
+      dispatch(
+        updateTicketType({
+          index,
+          field: 'quantity',
+          value: e.target.value === '' ? '' : Math.max(0, Number(e.target.value))
+        })
+      )
+    }
+    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+    placeholder="Enter quantity or 0 to share remaining capacity"
+  />
+  <p className="text-xs text-gray-500 mt-1">
+    Enter number of tickets for this type.<br />
+    Leave as <span className="font-semibold text-teal-700">0</span> to share the remaining pool with other ticket types.
+  </p>
+</div>
+
+
 
           {/* Start Date */}
           <div>
