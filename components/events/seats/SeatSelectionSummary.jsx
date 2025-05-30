@@ -206,12 +206,7 @@ const SeatSelectionSummary = ({
           <span className="text-gray-900">${ticketSelection.totals.subtotal.toFixed(2)}</span>
         </div>
         
-        {ticketSelection.totals.gst > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">GST (10%)</span>
-            <span className="text-gray-900">${ticketSelection.totals.gst.toFixed(2)}</span>
-          </div>
-        )}
+        
         
         <div className="flex justify-between text-lg font-semibold text-gray-900 pt-2 border-t">
           <span>Total</span>

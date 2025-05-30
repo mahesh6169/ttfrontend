@@ -72,6 +72,30 @@ export default function StripeSetupPage() {
     }
   };
 
+  // ✅ NEW: Handle dashboard access
+  const handleViewDashboard = async () => {
+    setLoading(true);
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}/stripe/dashboard-link`,
+        {},
+        { withCredentials: true }
+      );
+      
+      if (data.success && data.url) {
+        // Open Stripe Express Dashboard in new tab
+        window.open(data.url, '_blank');
+      } else {
+        alert(data.error || 'Failed to generate dashboard link. Please try again.');
+      }
+    } catch (err) {
+      console.error('Dashboard link error:', err);
+      alert(err.response?.data?.error || 'Failed to generate dashboard link. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusBadge = () => {
     if (!accountStatus?.hasAccount) {
       return (
@@ -108,7 +132,7 @@ export default function StripeSetupPage() {
     if (!accountStatus?.hasAccount) {
       return (
         <button
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
           onClick={handleConnectStripe}
           disabled={loading}
         >
@@ -119,16 +143,47 @@ export default function StripeSetupPage() {
 
     if (accountStatus.charges_enabled && accountStatus.payouts_enabled) {
       return (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="text-green-600 font-medium">
             🎉 Your Stripe account is fully set up and ready to receive payments!
           </div>
-          <button
-            className="px-4 py-2 bg-gray-200 text-gray-600 rounded cursor-not-allowed"
-            disabled
-          >
-            Account Connected
-          </button>
+          
+          {/* ✅ NEW: Dashboard Access Buttons */}
+          <div className="flex space-x-3">
+            <button
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
+              onClick={handleViewDashboard}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Generating Link...
+                </>
+              ) : (
+                <>
+                  📊 View Dashboard
+                </>
+              )}
+            </button>
+            
+            <button
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-600 rounded cursor-not-allowed"
+              disabled
+            >
+              ✅ Connected
+            </button>
+          </div>
+          
+          <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
+            <p className="font-medium text-blue-800 mb-1">💡 Your Dashboard</p>
+            <ul className="text-blue-700 space-y-1">
+              <li>• View all your ticket sales and earnings</li>
+              <li>• Track payouts to your bank account</li>
+              <li>• Download tax documents and reports</li>
+              <li>• Update your payment settings</li>
+            </ul>
+          </div>
         </div>
       );
     }
@@ -140,7 +195,7 @@ export default function StripeSetupPage() {
             ⏳ Your account is under review by Stripe. This usually takes 1-2 business days.
           </div>
           <button
-            className="px-4 py-2 bg-gray-200 text-gray-600 rounded cursor-not-allowed"
+            className="w-full px-4 py-2 bg-gray-200 text-gray-600 rounded cursor-not-allowed"
             disabled
           >
             Under Review
@@ -151,7 +206,7 @@ export default function StripeSetupPage() {
 
     return (
       <button
-        className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+        className="w-full px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
         onClick={handleConnectStripe}
         disabled={loading}
       >

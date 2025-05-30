@@ -1,14 +1,14 @@
 import React, { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { FaUser, FaAd, FaEnvelope, FaCalendarAlt, FaMoneyCheckAlt } from 'react-icons/fa';
+import { FaUser, FaAd, FaEnvelope, FaCalendarAlt, FaMoneyCheckAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import { MdFavorite } from 'react-icons/md';
 import { BsChatText } from 'react-icons/bs';
 
 const Sidebar = ({ onLinkClick }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const [hovered, setHovered] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   const menuItems = [
     { label: 'Settings', href: '/users/profile/settings', icon: <FaUser /> },
@@ -38,55 +38,85 @@ const Sidebar = ({ onLinkClick }) => {
     });
   }, [router]);
 
+  // Check if any child route is active
+  const isChildActive = (children) => {
+    return children?.some(child => pathname === child.href) || false;
+  };
+
+  // Auto-open dropdown if a child route is active
+  useEffect(() => {
+    menuItems.forEach(item => {
+      if (item.children && isChildActive(item.children)) {
+        setOpenDropdown(item.label);
+      }
+    });
+  }, [pathname]);
+
+  const toggleDropdown = (label) => {
+    setOpenDropdown(openDropdown === label ? null : label);
+  };
+
   return (
     <nav className="p-4 bg-teal-700 relative">
       <ul className="space-y-2 text-lime-100">
         {menuItems.map(item =>
           item.children ? (
-            <li
-              key={item.label}
-              className="relative group"
-              onMouseEnter={() => setHovered(item.label)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div className={`flex items-center space-x-2 p-2 rounded hover:bg-lime-50 hover:text-teal-700 cursor-pointer`}>
+            <li key={item.label} className="relative">
+              {/* Parent menu item with click toggle */}
+              <div 
+                className={`flex items-center space-x-2 p-2 rounded hover:bg-lime-50 hover:text-teal-700 cursor-pointer transition-colors ${
+                  isChildActive(item.children) ? 'bg-lime-100 text-teal-700 font-bold' : ''
+                }`}
+                onClick={() => toggleDropdown(item.label)}
+              >
                 {item.icon}
-                <span>{item.label}</span>
-                <span className="ml-auto">&#9656;</span>
+                <span className="flex-1">{item.label}</span>
+                {/* Chevron that rotates based on state */}
+                <span className={`transition-transform duration-200 ${
+                  openDropdown === item.label ? 'rotate-90' : ''
+                }`}>
+                  <FaChevronRight size={12} />
+                </span>
               </div>
-              {/* Flyout submenu */}
-              {hovered === item.label && (
-                <ul className="absolute left-full top-0 ml-2 bg-white text-teal-700 rounded shadow-md py-2 z-20 min-w-max w-48">
+              
+              {/* Sliding dropdown submenu */}
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                openDropdown === item.label ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+              }`}>
+                <ul className="ml-4 mt-1 space-y-1 border-l-2 border-lime-200">
                   {item.children.map(child => (
                     <li key={child.href}>
                       <Link
                         href={child.href}
-                        className={`flex items-center gap-2 px-4 py-2 hover:bg-teal-100 ${
-                          pathname === child.href ? 'bg-teal-100 font-bold' : ''
+                        className={`flex items-center gap-2 pl-4 pr-2 py-2 rounded transition-colors ${
+                          pathname === child.href 
+                            ? 'bg-lime-100 text-teal-700 font-bold' 
+                            : 'hover:bg-lime-50 hover:text-teal-700'
                         }`}
                         onClick={onLinkClick}
                       >
                         {child.icon}
-                        {child.label}
+                        <span className="text-sm">{child.label}</span>
                       </Link>
                     </li>
                   ))}
                 </ul>
-              )}
+              </div>
             </li>
           ) : (
-            <li
-              key={item.href}
-              className={`flex items-center space-x-2 p-2 rounded hover:bg-lime-50 hover:text-teal-700 ${pathname === item.href ? 'bg-lime-100 text-teal-700 font-bold' : ''}`}
-            >
-              {item.icon}
+            <li key={item.href}>
               <Link
                 href={item.href}
-                className="block w-full"
+                className={`flex items-center space-x-2 p-2 rounded transition-colors block ${
+                  pathname === item.href 
+                    ? 'bg-lime-100 text-teal-700 font-bold' 
+                    : 'hover:bg-lime-50 hover:text-teal-700'
+                }`}
                 onMouseEnter={() => router.prefetch(item.href)}
                 onClick={onLinkClick}
               >
-                {item.label}
+                {item.icon}
+                <span>{item.label}</span>
               </Link>
             </li>
           )

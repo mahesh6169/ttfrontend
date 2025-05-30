@@ -263,10 +263,6 @@ const createDefaultFormData = () => ({
   seatingLayoutImage: null,
   
   // Financial
-  applyGST: true,
-  commissionRate: 0.05,
-  commissionType: 'percentage',
-  fixedCommissionAmount: 0,
   stripeAccountId: '',
 });
 
@@ -341,10 +337,6 @@ const processEventDataForEdit = (eventData) => {
       : [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
     seatingLayout: eventData.seatingLayout || [],
     seatingLayoutImage: eventData.seatingLayoutImage || null,
-    applyGST: eventData.applyGST !== false,
-    commissionRate: eventData.commissionRate || 0.05,
-    commissionType: eventData.commissionType || 'percentage',
-    fixedCommissionAmount: eventData.fixedCommissionAmount || 0,
     stripeAccountId: eventData.stripeAccountId || '',
   };
 };

@@ -2,6 +2,7 @@
 
 'use client';
 
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
@@ -37,6 +38,32 @@ import SuccessStep from './SuccessStep';
 // Auth Components
 import RequireLogin from '@/components/Auth/RequireLogin';
 import LoadingSpinner from '@/components/LoadingSpinner';
+
+// Debug utility function
+const debugLog = (context, message, data = null) => {
+  const timestamp = new Date().toISOString().substr(11, 12);
+  console.log(`🔍 [${timestamp}] [${context}] ${message}`, data || '');
+};
+
+// Deep inspection utility
+const inspectImageObject = (image, index, context) => {
+  const inspection = {
+    index,
+    id: image?.id,
+    name: image?.name,
+    isNew: image?.isNew,
+    isExisting: image?.isExisting,
+    hasFile: image?.file instanceof File,
+    fileSize: image?.file?.size,
+    fileType: image?.file?.type,
+    fileName: image?.file?.name,
+    preview: image?.preview?.substring(0, 50) + '...',
+    allProperties: Object.keys(image || {}),
+  };
+  debugLog(context, `Image ${index} inspection:`, inspection);
+  return inspection;
+};
+
 
 const StepManager = ({
   mode = 'add', // 'add' | 'edit' | 'view'
@@ -177,50 +204,118 @@ const StepManager = ({
   }, [formStatus, successMessage, onComplete, formData]);
 
   // Handle images change (strip files for Redux, keep locally)
-  const handleImagesChange = useCallback(
-    (images) => {
-      console.log(
-        `📸 StepManager: handleImagesChange called with ${images.length} images`
-      );
 
-      // Extract files for new images (local only) - ENHANCED LOGGING
-      const files = images
-        .filter((img) => img.isNew && img.file)
-        .map((img) => ({
-          file: img.file,
+// Fixed handleImagesChange function in StepManager.jsx
+
+const handleImagesChange = useCallback(
+  (images) => {
+    debugLog('StepManager', '📞 handleImagesChange called', {
+      totalImages: images.length,
+      timestamp: Date.now()
+    });
+    
+    // Deep inspection of incoming images
+    images.forEach((img, index) => {
+      inspectImageObject(img, index, 'StepManager-Incoming');
+    });
+    
+    // --- A. Sync Redux images (only metadata, no File object) ---
+    debugLog('StepManager', '📦 Creating safe images for Redux');
+    const safeImages = images.map((img, index) => {
+      const safe = {
+        preview: img.preview,
+        url: img.url,
+        id: img.id,
+        name: img.name,
+        size: img.size,
+        type: img.type,
+        isExisting: img.isExisting,
+        isNew: img.isNew,
+      };
+      debugLog('StepManager', `Safe image ${index}:`, safe);
+      return safe;
+    });
+    
+    debugLog('StepManager', '📤 Dispatching setImages to Redux');
+    dispatch(setImages(safeImages));
+
+    // --- B. CRITICAL FIX: Preserve existing File objects + add new ones ---
+    debugLog('StepManager', '💾 Processing local file state with preservation');
+    
+    setLocalImageFiles(prevFiles => {
+      debugLog('StepManager', `📁 Previous local files: ${prevFiles.length}`);
+      
+      // Create a map of existing File objects by ID for quick lookup
+      const existingFileMap = new Map();
+      prevFiles.forEach(localFile => {
+        existingFileMap.set(localFile.id, localFile);
+        debugLog('StepManager', `📁 Existing file mapped: ${localFile.id} -> ${localFile.name}`);
+      });
+      
+      // Process all current images and preserve/add File objects
+      const updatedFiles = [];
+      
+      images.forEach((img, index) => {
+        debugLog('StepManager', `Processing image ${index} for local files:`, {
           id: img.id,
-          name: img.file.name,
-          size: img.file.size,
-        }));
+          name: img.name,
+          isNew: img.isNew,
+          hasFile: img.file instanceof File,
+          fileSize: img.file?.size
+        });
+        
+        // Check if we already have this File object in our local state
+        if (existingFileMap.has(img.id)) {
+          // Preserve existing File object
+          const existingFile = existingFileMap.get(img.id);
+          updatedFiles.push(existingFile);
+          debugLog('StepManager', `✅ Preserved existing File object: ${existingFile.name}`, {
+            id: img.id,
+            fileSize: existingFile.file?.size
+          });
+        } else if (img.isNew && img.file && img.file instanceof File) {
+          // Add new File object
+          const localFile = {
+            file: img.file,
+            id: img.id,
+            name: img.file.name,
+            size: img.file.size,
+          };
+          
+          updatedFiles.push(localFile);
+          debugLog('StepManager', `✅ Added new File object: ${img.file.name}`, {
+            id: img.id,
+            fileSize: img.file.size,
+            isFile: img.file instanceof File
+          });
+        } else {
+          debugLog('StepManager', `⚠️ No File object for image: ${img.name}`, {
+            id: img.id,
+            isNew: img.isNew,
+            hasFile: img.file instanceof File,
+            reason: !img.isNew ? 'not new' : !img.file ? 'no file property' : 'file not File instance'
+          });
+        }
+      });
+      
+      debugLog('StepManager', `📁 Final local files state:`, {
+        previousCount: prevFiles.length,
+        finalCount: updatedFiles.length,
+        files: updatedFiles.map(f => ({ id: f.id, name: f.name, size: f.size }))
+      });
+      
+      return updatedFiles;
+    });
+    
+    debugLog('StepManager', '✅ handleImagesChange completed', {
+      reduxImages: safeImages.length,
+      newImages: images.filter(img => img.isNew).length,
+      existingImages: images.filter(img => img.isExisting).length
+    });
+  },
+  [dispatch]
+);
 
-      console.log(
-        `📸 StepManager: Extracted ${files.length} files for local storage:`,
-        files.map((f) => ({ id: f.id, name: f.name, size: f.size }))
-      );
-
-      setLocalImageFiles(files);
-
-      // Only keep metadata for Redux (strip File objects to avoid serialization issues)
-      const safeImages = images.map(
-        ({ preview, url, id, name, size, type, isExisting, isNew }) => ({
-          preview,
-          url,
-          id,
-          name,
-          size,
-          type,
-          isExisting,
-          isNew,
-        })
-      );
-
-      console.log(
-        `📸 StepManager: Storing ${safeImages.length} safe images in Redux`
-      );
-      dispatch(setImages(safeImages));
-    },
-    [dispatch]
-  );
 
   // Form validation function
   const validateForm = useCallback(() => {
@@ -576,183 +671,288 @@ if (
   }, [currentStep, formData, isAddMode]);
 
   // Prepare form data for submission
-  const prepareSubmissionData = useCallback(() => {
-    console.log(`📸 StepManager: Preparing submission data...`);
-    console.log(
-      `📸 Local image files: ${localImageFiles.length}`,
-      localImageFiles.map((f) => f.name)
-    );
-    console.log(
-      `📸 Redux images: ${formData.images?.length || 0}`,
-      formData.images?.map((img) => ({
-        id: img.id,
-        name: img.name,
-        isNew: img.isNew,
-        isExisting: img.isExisting,
-      }))
-    );
+const prepareSubmissionData = useCallback(() => {
+  debugLog('StepManager', '🚀 prepareSubmissionData started');
+  
+  debugLog('StepManager', `📊 Current state:`, {
+    localImageFiles: localImageFiles.length,
+    reduxImages: formData.images?.length || 0,
+    timestamp: Date.now()
+  });
+  
+  // Deep inspection of local files
+  localImageFiles.forEach((localFile, index) => {
+    debugLog('StepManager', `Local file ${index}:`, {
+      id: localFile.id,
+      name: localFile.name,
+      size: localFile.size,
+      hasFile: localFile.file instanceof File,
+      fileConstructor: localFile.file?.constructor?.name
+    });
+  });
+  
+  // Deep inspection of Redux images
+  (formData.images || []).forEach((reduxImg, index) => {
+    debugLog('StepManager', `Redux image ${index}:`, {
+      id: reduxImg.id,
+      name: reduxImg.name,
+      isNew: reduxImg.isNew,
+      isExisting: reduxImg.isExisting,
+      hasFile: reduxImg.file instanceof File // Should be false
+    });
+  });
 
-    const submitFormData = new FormData();
+  const submitFormData = new FormData();
 
-    // Add basic fields
-    Object.keys(formData).forEach((key) => {
-      if (key === 'images' || key === 'seatingLayoutImage') {
-        // Skip file arrays, handled separately
-        return;
-      } else if (key === 'recurrence') {
-        // Add utcDateTime field for each schedule
-        const recurrenceData = { ...formData[key] };
+  // Replace the comment "// Add basic fields (existing code)..." with this actual code:
 
-        if (
-          recurrenceData.isRecurring &&
-          recurrenceData.repeatSchedule &&
-          recurrenceData.repeatSchedule.length > 0
-        ) {
-          recurrenceData.repeatSchedule = recurrenceData.repeatSchedule.map(
-            (schedule) => {
-              try {
-                const mainEventLocalDate = new Date(formData.dateTime);
-                const dayMap = {
-                  Sun: 0,
-                  Mon: 1,
-                  Tue: 2,
-                  Wed: 3,
-                  Thu: 4,
-                  Fri: 5,
-                  Sat: 6,
-                };
-                const mainEventDay = mainEventLocalDate.getDay();
-                const targetDay = dayMap[schedule.day];
-                let daysToAdd = (targetDay - mainEventDay + 7) % 7;
-                if (daysToAdd === 0) daysToAdd = 7;
-                const scheduleDate = new Date(mainEventLocalDate);
-                scheduleDate.setDate(mainEventLocalDate.getDate() + daysToAdd);
-                const [hours, minutes] = schedule.time.split(':');
-                scheduleDate.setHours(
-                  parseInt(hours, 10),
-                  parseInt(minutes, 10),
-                  0,
-                  0
-                );
+// 🔧 ADD ALL FORM FIELDS TO FORMDATA
+debugLog('StepManager', '📝 Adding basic form fields to FormData');
 
-                // Convert to UTC
-                const utcDateTime = zonedTimeToUtc(
-                  scheduleDate,
-                  formData.timeZone
-                );
+// Basic event details
+if (formData.title) {
+  submitFormData.append('title', formData.title);
+  debugLog('StepManager', `📝 Added title: ${formData.title}`);
+}
 
-                return {
-                  day: schedule.day,
-                  time: schedule.time,
-                  utcDateTime: utcDateTime.toISOString(),
-                  timeZone: formData.timeZone,
-                };
-              } catch (error) {
-                return {
-                  day: schedule.day,
-                  time: schedule.time,
-                  timeZone: formData.timeZone,
-                  error: 'conversion_failed',
-                };
-              }
-            }
-          );
+if (formData.description) {
+  submitFormData.append('description', formData.description);
+  debugLog('StepManager', `📝 Added description: ${formData.description.substring(0, 50)}...`);
+}
+
+if (formData.venue) {
+  submitFormData.append('venue', formData.venue);
+  debugLog('StepManager', `📝 Added venue: ${formData.venue}`);
+}
+
+if (formData.category) {
+  submitFormData.append('category', formData.category);
+  debugLog('StepManager', `📝 Added category: ${formData.category}`);
+}
+
+if (formData.dateTime) {
+  // Convert to UTC if timezone is provided
+  let finalDateTime = formData.dateTime;
+  if (formData.timeZone) {
+    try {
+      const utcDateTime = zonedTimeToUtc(formData.dateTime, formData.timeZone);
+      finalDateTime = utcDateTime.toISOString();
+      debugLog('StepManager', `📝 Converted datetime from ${formData.dateTime} to UTC: ${finalDateTime}`);
+    } catch (error) {
+      debugLog('StepManager', `⚠️ DateTime conversion error: ${error.message}`);
+      finalDateTime = new Date(formData.dateTime).toISOString();
+    }
+  }
+  submitFormData.append('dateTime', finalDateTime);
+  debugLog('StepManager', `📝 Added dateTime: ${finalDateTime}`);
+}
+
+if (formData.timeZone) {
+  submitFormData.append('timeZone', formData.timeZone);
+  debugLog('StepManager', `📝 Added timeZone: ${formData.timeZone}`);
+}
+
+// Address - send as JSON string
+if (formData.address) {
+  submitFormData.append('address', JSON.stringify(formData.address));
+  debugLog('StepManager', `📝 Added address: ${formData.address.formattedAddress}`);
+}
+
+// Coordinators - send as JSON string
+if (formData.coordinators && formData.coordinators.length > 0) {
+  submitFormData.append('coordinators', JSON.stringify(formData.coordinators));
+  debugLog('StepManager', `📝 Added ${formData.coordinators.length} coordinators`);
+}
+
+// Event type
+submitFormData.append('isPaid', formData.isPaid ? 'true' : 'false');
+debugLog('StepManager', `📝 Added isPaid: ${formData.isPaid}`);
+
+// Free event specific fields
+if (!formData.isPaid) {
+  if (formData.capacity !== undefined && formData.capacity !== null) {
+    submitFormData.append('capacity', formData.capacity.toString());
+    debugLog('StepManager', `📝 Added capacity: ${formData.capacity}`);
+  }
+
+  if (formData.maxAttendeesPerRegistration) {
+    submitFormData.append('maxAttendeesPerRegistration', formData.maxAttendeesPerRegistration.toString());
+    debugLog('StepManager', `📝 Added maxAttendeesPerRegistration: ${formData.maxAttendeesPerRegistration}`);
+  }
+}
+
+// Paid event specific fields
+if (formData.isPaid) {
+  if (formData.capacity !== undefined && formData.capacity !== null) {
+    submitFormData.append('capacity', formData.capacity.toString());
+    debugLog('StepManager', `📝 Added capacity: ${formData.capacity}`);
+  }
+
+  if (formData.ticketTypes && formData.ticketTypes.length > 0) {
+    submitFormData.append('ticketTypes', JSON.stringify(formData.ticketTypes));
+    debugLog('StepManager', `📝 Added ${formData.ticketTypes.length} ticket types`);
+  }
+
+  if (formData.seatingLayout && formData.seatingLayout.length > 0) {
+    submitFormData.append('seatingLayout', JSON.stringify(formData.seatingLayout));
+    debugLog('StepManager', `📝 Added seating layout`);
+  }
+
+  if (formData.stripeAccountId) {
+    submitFormData.append('stripeAccountId', formData.stripeAccountId);
+    debugLog('StepManager', `📝 Added stripeAccountId`);
+  }
+}
+
+// Recurring event fields
+if (formData.recurrence && formData.recurrence.isRecurring) {
+  submitFormData.append('recurrence', JSON.stringify(formData.recurrence));
+  debugLog('StepManager', `📝 Added recurrence settings`);
+}
+
+// Registration fields
+if (formData.registrationFields && formData.registrationFields.length > 0) {
+  submitFormData.append('registrationFields', JSON.stringify(formData.registrationFields));
+  debugLog('StepManager', `📝 Added ${formData.registrationFields.length} registration fields`);
+}
+  
+  // 🔧 CRITICAL SECTION: Add ALL new image files with extensive validation
+  debugLog('StepManager', '📸 Processing local image files for FormData');
+  
+  if (localImageFiles && localImageFiles.length > 0) {
+    debugLog('StepManager', `📸 Processing ${localImageFiles.length} local image files`);
+    
+    let uploadedCount = 0;
+    let errorCount = 0;
+    
+    localImageFiles.forEach(({ file, id, name }, index) => {
+      debugLog('StepManager', `📸 Processing file ${index + 1}/${localImageFiles.length}:`, {
+        id,
+        name,
+        hasFile: file instanceof File,
+        fileSize: file?.size,
+        fileType: typeof file,
+        constructor: file?.constructor?.name
+      });
+      
+      // Validate that file is actually a File object
+      if (file instanceof File) {
+        debugLog('StepManager', `📸 ✅ Valid File object - adding to FormData:`, {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        });
+        
+        submitFormData.append('images', file, name);
+        uploadedCount++;
+        
+        // Double-check FormData entry
+        const formDataImages = submitFormData.getAll('images');
+        debugLog('StepManager', `📸 FormData now has ${formDataImages.length} images`);
+        
+      } else {
+        errorCount++;
+        debugLog('StepManager', `📸 ❌ Invalid file object:`, {
+          name,
+          id,
+          fileType: typeof file,
+          isNull: file === null,
+          isUndefined: file === undefined,
+          constructor: file?.constructor?.name,
+          properties: file ? Object.keys(file) : 'no properties'
+        });
+        
+        // Try to understand what went wrong
+        if (!file) {
+          debugLog('StepManager', `📸 🔍 File is ${file}, checking local state integrity`);
+        } else if (typeof file === 'object') {
+          debugLog('StepManager', `📸 🔍 File is object but not File instance:`, {
+            hasName: 'name' in file,
+            hasSize: 'size' in file,
+            hasType: 'type' in file,
+            allProps: Object.keys(file)
+          });
         }
-
-        // Convert endDate to UTC if it exists
-        if (recurrenceData.endDate) {
-          try {
-            const endOfDay = new Date(recurrenceData.endDate + 'T23:59:59');
-            const utcEndDate = zonedTimeToUtc(endOfDay, formData.timeZone);
-            recurrenceData.endDate = utcEndDate.toISOString();
-          } catch (error) {
-            // If conversion fails, just keep as is
-          }
-        }
-
-        submitFormData.append(key, JSON.stringify(recurrenceData));
-      } else if (
-        [
-          'coordinators',
-          'ticketTypes',
-          'seatingLayout',
-          'registrationFields',
-          'address',
-        ].includes(key)
-      ) {
-        // Convert objects/arrays to JSON strings
-        submitFormData.append(key, JSON.stringify(formData[key]));
-      } else if (key === 'dateTime') {
-        // Main event datetime conversion
-        try {
-          const utcDate = zonedTimeToUtc(formData[key], formData.timeZone);
-          submitFormData.append('dateTime', utcDate.toISOString());
-        } catch (error) {
-          submitFormData.append('dateTime', formData[key]);
-        }
-      } else if (formData[key] !== null && formData[key] !== undefined) {
-        // Add primitive values directly (skip null/undefined)
-        submitFormData.append(key, formData[key]);
       }
     });
-
-    // 🔧 CRITICAL FIX: Add ALL new image files
-    if (localImageFiles && localImageFiles.length > 0) {
-      console.log(
-        `📸 Adding ${localImageFiles.length} new images to FormData:`
-      );
-      localImageFiles.forEach(({ file, id, name }, index) => {
-        console.log(
-          `📸   ${index + 1}. ${name} (${file.size} bytes) - ID: ${id}`
-        );
-        submitFormData.append('images', file, name); // Include filename for better backend handling
+    
+    debugLog('StepManager', `📸 File processing summary:`, {
+      totalProcessed: localImageFiles.length,
+      successfulUploads: uploadedCount,
+      errors: errorCount,
+      formDataImageCount: submitFormData.getAll('images').length
+    });
+    
+    if (uploadedCount === 0 && localImageFiles.length > 0) {
+      debugLog('StepManager', '📸 🚨 CRITICAL ERROR: No valid File objects found!');
+      debugLog('StepManager', '📸 🔍 Local image files state:', localImageFiles);
+      
+      // Additional forensic analysis
+      debugLog('StepManager', '📸 🔍 Forensic analysis of local files:');
+      localImageFiles.forEach((item, idx) => {
+        debugLog('StepManager', `📸 🔍 Item ${idx}:`, {
+          itemType: typeof item,
+          itemKeys: Object.keys(item || {}),
+          fileProperty: item?.file,
+          fileType: typeof item?.file,
+          isFileInstance: item?.file instanceof File,
+          filePrototype: item?.file?.__proto__?.constructor?.name
+        });
       });
+    }
+  } else {
+    debugLog('StepManager', '📸 No local image files to upload');
+  }
+
+  // Add existing image data for backend processing
+  const existingImages = (formData.images || []).filter(
+    (image) => image.isExisting
+  );
+  
+  if (existingImages.length > 0) {
+    debugLog('StepManager', `📸 Adding ${existingImages.length} existing images`);
+    existingImages.forEach((image, index) => {
+      debugLog('StepManager', `📸 Existing image ${index + 1}:`, {
+        name: image.name,
+        url: image.url,
+        id: image.id
+      });
+    });
+    submitFormData.append('existingImages', JSON.stringify(existingImages));
+  }
+
+  // Final FormData verification
+  debugLog('StepManager', '📸 Final FormData verification:');
+  const finalImageFiles = submitFormData.getAll('images');
+  debugLog('StepManager', `📸 Total images in FormData: ${finalImageFiles.length}`);
+  
+  finalImageFiles.forEach((file, index) => {
+    debugLog('StepManager', `📸 FormData image ${index + 1}:`, {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      isFile: file instanceof File
+    });
+  });
+
+  // Debug: Log complete FormData contents
+  debugLog('StepManager', '📋 Complete FormData contents:');
+  for (let pair of submitFormData.entries()) {
+    if (pair[1] instanceof File) {
+      debugLog('StepManager', `📋 ${pair[0]}: File(${pair[1].name}, ${pair[1].size} bytes)`);
     } else {
-      console.log(`📸 No local image files to upload`);
+      const valuePreview = typeof pair[1] === 'string' 
+        ? pair[1].substring(0, 100) + (pair[1].length > 100 ? '...' : '')
+        : pair[1];
+      debugLog('StepManager', `📋 ${pair[0]}: ${valuePreview}`);
     }
+  }
 
-    // Add existing image data for backend processing
-    const existingImages = (formData.images || []).filter(
-      (image) => image.isExisting
-    );
-    if (existingImages.length > 0) {
-      console.log(
-        `📸 Adding ${existingImages.length} existing images to FormData:`
-      );
-      existingImages.forEach((image, index) => {
-        console.log(`📸   ${index + 1}. Existing: ${image.name || image.url}`);
-        // Send the full image object as JSON for existing images
-        submitFormData.append('existingImages', JSON.stringify(image));
-      });
-    }
+  debugLog('StepManager', '✅ prepareSubmissionData completed');
+  return submitFormData;
+}, [formData, localImageFiles]);
 
-    // Add seating layout image if exists
-    if (formData.seatingLayoutImage) {
-      submitFormData.append('seatingLayoutImage', formData.seatingLayoutImage);
-    }
-
-    // Debug: Log all FormData entries
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`📸 Final FormData contents:`);
-      for (let pair of submitFormData.entries()) {
-        if (pair[1] instanceof File) {
-          console.log(
-            `📸   ${pair[0]}: File(${pair[1].name}, ${pair[1].size} bytes)`
-          );
-        } else {
-          console.log(
-            `📸   ${pair[0]}: ${
-              typeof pair[1] === 'string'
-                ? pair[1].substring(0, 100) + '...'
-                : pair[1]
-            }`
-          );
-        }
-      }
-    }
-
-    return submitFormData;
-  }, [formData, localImageFiles]);
 
   // Handle form submission
   const handleSubmit = useCallback(async () => {

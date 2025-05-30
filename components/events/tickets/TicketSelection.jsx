@@ -46,7 +46,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
 
   // Calculate totals
   const calculateTotals = () => {
-    if (!event?.ticketTypes) return { subtotal: 0, gst: 0, total: 0, totalTickets: 0 };
+    if (!event?.ticketTypes) return { subtotal: 0, total: 0, totalTickets: 0 };
 
     let subtotal = 0;
     let totalTickets = 0;
@@ -57,10 +57,9 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
       totalTickets += quantity;
     });
 
-    const gst = event.applyGST ? subtotal * 0.1 : 0;
-    const total = subtotal + gst;
+const total = subtotal; 
 
-    return { subtotal, gst, total, totalTickets };
+    return { subtotal, total, totalTickets };
   };
 
   // Handle quantity change
@@ -159,7 +158,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
   };
 
   const { date, time } = getFormattedDateTime();
-  const { subtotal, gst, total, totalTickets } = calculateTotals();
+  const { subtotal, total, totalTickets } = calculateTotals();
 
   if (!isOpen) return null;
 
@@ -241,9 +240,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
                           <p className="text-2xl font-bold text-green-600">
                             ${ticketType.price?.toFixed(2) || '0.00'}
                           </p>
-                          {event.applyGST && (
-                            <p className="text-xs text-gray-500">incl. GST</p>
-                          )}
+                          
                         </div>
                       </div>
                       
@@ -330,13 +327,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
                   
-                  {event.applyGST && gst > 0 && (
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>GST (10%)</span>
-                      <span>${gst.toFixed(2)}</span>
-                    </div>
-                  )}
-                  
+                 
                   <div className="flex justify-between text-lg font-bold text-green-600 mt-2 pt-2 border-t">
                     <span>Total</span>
                     <span>${total.toFixed(2)}</span>

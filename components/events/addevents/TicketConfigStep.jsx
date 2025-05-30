@@ -326,26 +326,29 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
             </label>
             <div className="relative">
               <input
-  type="number"
-  min="0"
-  inputMode="numeric"
-  value={formData.capacity === undefined || formData.capacity === null ? '' : String(formData.capacity)}
-  onChange={(e) => {
-    const val = e.target.value;
-    // Only allow numbers, blank will not be allowed on submit
-    dispatch(
-      updateField({
-        field: 'capacity',
-        value: val, // Save as string for validation step
-      })
-    );
-  }}
-  placeholder="Enter 0 for unlimited"
-  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-    errors?.capacity ? 'border-red-500' : 'border-gray-300'
-  }`}
-/>
-
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={
+                  formData.capacity === undefined || formData.capacity === null
+                    ? ''
+                    : String(formData.capacity)
+                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // Only allow numbers, blank will not be allowed on submit
+                  dispatch(
+                    updateField({
+                      field: 'capacity',
+                      value: val, // Save as string for validation step
+                    })
+                  );
+                }}
+                placeholder="Enter 0 for unlimited"
+                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                  errors?.capacity ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
 
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <span className="text-gray-500 text-sm">People</span>
@@ -417,275 +420,303 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
       </div>
 
       {/* Ticket Types */}
-<div className="bg-white border border-gray-200 rounded-lg p-6">
-  <div className="flex items-center justify-between mb-4">
-    <div className="flex items-center">
-      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-        {/* SVG ICON */}
-      </div>
-      <div>
-        <h4 className="text-lg font-medium text-gray-900">Ticket Types</h4>
-        <p className="text-sm text-gray-500">
-          Create different ticket categories with various pricing
-        </p>
-      </div>
-    </div>
-
-    {/* Ticket Allocation Summary */}
-    <div className="text-right">
-      <p className="text-sm text-gray-500">Tickets Remaining</p>
-      <p
-        className={`text-lg font-semibold ${
-          typeof ticketAllocation.remaining === 'number' && ticketAllocation.remaining <= 10
-            ? 'text-red-600'
-            : 'text-blue-600'
-        }`}
-      >
-        {ticketAllocation.remaining === 'Unlimited'
-          ? 'Unlimited'
-          : `${ticketAllocation.remaining} / ${formData.capacity || 0}`}
-      </p>
-      {typeof ticketAllocation.remaining === 'number' && ticketAllocation.remaining <= 10 && (
-        <p className="text-xs text-red-500 mt-1">Running low on tickets!</p>
-      )}
-    </div>
-  </div>
-
-  <div className="space-y-4">
-    {(formData.ticketTypes || []).map((ticket, index) => (
-      <div key={index} className="border-2 border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
-        <div className="flex justify-between items-start mb-4">
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center mr-3">
-              <span className="text-sm font-medium text-teal-600">{index + 1}</span>
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+              {/* SVG ICON */}
             </div>
             <div>
-              <h5 className="font-medium text-gray-900">{ticket?.name || `Ticket Type ${index + 1}`}</h5>
+              <h4 className="text-lg font-medium text-gray-900">
+                Ticket Types
+              </h4>
               <p className="text-sm text-gray-500">
-                {ticket?.quantity && Number(ticket.quantity) > 0
-                  ? `${ticket.quantity} allocated tickets`
-                  : 'Shares remaining pool'}
+                Create different ticket categories with various pricing
               </p>
             </div>
           </div>
 
-          {(formData.ticketTypes || []).length > 1 && (
-  <button
-    type="button"
-    onClick={() => dispatch(removeTicketType(index))}
-    className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
-    title="Remove ticket type"
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  </button>
-)}
-
+          {/* Ticket Allocation Summary */}
+          <div className="text-right">
+            <p className="text-sm text-gray-500">Tickets Remaining</p>
+            <p
+              className={`text-lg font-semibold ${
+                typeof ticketAllocation.remaining === 'number' &&
+                ticketAllocation.remaining <= 10
+                  ? 'text-red-600'
+                  : 'text-blue-600'
+              }`}
+            >
+              {ticketAllocation.remaining === 'Unlimited'
+                ? 'Unlimited'
+                : `${ticketAllocation.remaining} / ${formData.capacity || 0}`}
+            </p>
+            {typeof ticketAllocation.remaining === 'number' &&
+              ticketAllocation.remaining <= 10 && (
+                <p className="text-xs text-red-500 mt-1">
+                  Running low on tickets!
+                </p>
+              )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Ticket Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ticket Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={ticket?.name || ''}
-              onChange={e =>
-                dispatch(
-                  updateTicketType({
-                    index,
-                    field: 'name',
-                    value: e.target.value,
-                  })
-                )
-              }
-              placeholder="e.g., Early Bird, Standard, Group"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              maxLength="100"
-              required
-            />
-          </div>
+        <div className="space-y-4">
+          {(formData.ticketTypes || []).map((ticket, index) => (
+            <div
+              key={index}
+              className="border-2 border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center mr-3">
+                    <span className="text-sm font-medium text-teal-600">
+                      {index + 1}
+                    </span>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-gray-900">
+                      {ticket?.name || `Ticket Type ${index + 1}`}
+                    </h5>
+                    <p className="text-sm text-gray-500">
+                      {ticket?.quantity && Number(ticket.quantity) > 0
+                        ? `${ticket.quantity} allocated tickets`
+                        : 'Shares remaining pool'}
+                    </p>
+                  </div>
+                </div>
 
+                {(formData.ticketTypes || []).length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => dispatch(removeTicketType(index))}
+                    className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
+                    title="Remove ticket type"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
 
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Ticket Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ticket Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={ticket?.name || ''}
+                    onChange={(e) =>
+                      dispatch(
+                        updateTicketType({
+                          index,
+                          field: 'name',
+                          value: e.target.value,
+                        })
+                      )
+                    }
+                    placeholder="e.g., Early Bird, Standard, Group"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    maxLength="100"
+                    required
+                  />
+                </div>
 
-{/* Ticket Price */}
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Price (AUD) <span className="text-red-500">*</span>
-  </label>
-  <div className="relative">
-    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-      <span className="text-gray-500 text-sm">$</span>
-    </div>
-    <input
-      type="number"
-      min="0.01"
-      step="0.01"
-      value={
-        ticket.price === undefined || ticket.price === null
-          ? ''
-          : ticket.price
-      }
-      onChange={e => {
-        // Allow user to backspace (set to empty string)
-        const val = e.target.value;
-        dispatch(
-          updateTicketType({
-            index,
-            field: 'price',
-            value: val, // Pass as string; final validation step will coerce/check
-          })
-        );
-      }}
-      className="w-full pl-8 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-      placeholder="Enter amount"
-      required
-    />
-  </div>
-  <p className="text-xs text-gray-500 mt-1">
-    Ticket price must be <span className="font-medium text-teal-700">greater than 0</span> (no free tickets).
-  </p>
-</div>
+                {/* Ticket Price */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Price (AUD) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 text-sm">$</span>
+                    </div>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={
+                        ticket.price === undefined || ticket.price === null
+                          ? ''
+                          : ticket.price
+                      }
+                      onChange={(e) => {
+                        // Allow user to backspace (set to empty string)
+                        const val = e.target.value;
+                        dispatch(
+                          updateTicketType({
+                            index,
+                            field: 'price',
+                            value: val, // Pass as string; final validation step will coerce/check
+                          })
+                        );
+                      }}
+                      className="w-full pl-8 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      placeholder="Enter amount"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ticket price must be{' '}
+                    <span className="font-medium text-teal-700">
+                      greater than 0
+                    </span>{' '}
+                    (no free tickets).
+                  </p>
+                </div>
 
+                {/* Ticket Quantity */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={
+                      ticket.quantity === undefined || ticket.quantity === null
+                        ? ''
+                        : ticket.quantity
+                    }
+                    onChange={(e) =>
+                      dispatch(
+                        updateTicketType({
+                          index,
+                          field: 'quantity',
+                          value:
+                            e.target.value === ''
+                              ? ''
+                              : Math.max(0, Number(e.target.value)),
+                        })
+                      )
+                    }
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Enter quantity or 0 to share remaining capacity"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter number of tickets for this type.
+                    <br />
+                    Leave as{' '}
+                    <span className="font-semibold text-teal-700">0</span> to
+                    share the remaining pool with other ticket types.
+                  </p>
+                </div>
 
+                {/* Start Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date
+                    <span className="text-xs text-gray-400 ml-1">
+                      (optional)
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    value={
+                      ticket.startDate ? ticket.startDate.slice(0, 10) : ''
+                    }
+                    onChange={(e) =>
+                      dispatch(
+                        updateTicketType({
+                          index,
+                          field: 'startDate',
+                          value: e.target.value
+                            ? new Date(
+                                e.target.value + 'T00:00:00'
+                              ).toISOString()
+                            : null,
+                        })
+                      )
+                    }
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    When this ticket type becomes available (in{' '}
+                    {formData.timeZone || 'event timezone'})
+                  </p>
+                </div>
 
-
-          {/* Ticket Quantity */}
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Quantity
-  </label>
-  <input
-    type="number"
-    min="0"
-    inputMode="numeric"
-    value={
-      ticket.quantity === undefined || ticket.quantity === null
-        ? ''
-        : ticket.quantity
-    }
-    onChange={e =>
-      dispatch(
-        updateTicketType({
-          index,
-          field: 'quantity',
-          value: e.target.value === '' ? '' : Math.max(0, Number(e.target.value))
-        })
-      )
-    }
-    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-    placeholder="Enter quantity or 0 to share remaining capacity"
-  />
-  <p className="text-xs text-gray-500 mt-1">
-    Enter number of tickets for this type.<br />
-    Leave as <span className="font-semibold text-teal-700">0</span> to share the remaining pool with other ticket types.
-  </p>
-</div>
-
-
-
-          {/* Start Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Start Date
-              <span className="text-xs text-gray-400 ml-1">(optional)</span>
-            </label>
-            <input
-              type="date"
-              value={ticket.startDate ? ticket.startDate.slice(0, 10) : ''}
-              onChange={e =>
-                dispatch(
-                  updateTicketType({
-                    index,
-                    field: 'startDate',
-                    value: e.target.value
-                      ? new Date(e.target.value + 'T00:00:00').toISOString()
-                      : null,
-                  })
-                )
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              When this ticket type becomes available (in {formData.timeZone || 'event timezone'})
-            </p>
-          </div>
-
-          {/* Expiry Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Expiry Date
-              <span className="text-xs text-gray-400 ml-1">(optional)</span>
-            </label>
-            <input
-              type="date"
-              value={ticket.expiryDate ? ticket.expiryDate.slice(0, 10) : ''}
-              onChange={e =>
-                dispatch(
-                  updateTicketType({
-                    index,
-                    field: 'expiryDate',
-                    value: e.target.value
-                      ? new Date(e.target.value + 'T23:59:59').toISOString()
-                      : null,
-                  })
-                )
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              When this ticket expires (end of day in {formData.timeZone || 'event timezone'})
-            </p>
-          </div>
+                {/* Expiry Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Expiry Date
+                    <span className="text-xs text-gray-400 ml-1">
+                      (optional)
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    value={
+                      ticket.expiryDate ? ticket.expiryDate.slice(0, 10) : ''
+                    }
+                    onChange={(e) =>
+                      dispatch(
+                        updateTicketType({
+                          index,
+                          field: 'expiryDate',
+                          value: e.target.value
+                            ? new Date(
+                                e.target.value + 'T23:59:59'
+                              ).toISOString()
+                            : null,
+                        })
+                      )
+                    }
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    When this ticket expires (end of day in{' '}
+                    {formData.timeZone || 'event timezone'})
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
-    ))}
-  </div>
 
-  {errors?.ticketTypes && (
-    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-      <div className="text-red-700 text-sm">
-        {Array.isArray(errors.ticketTypes) ? (
-          errors.ticketTypes.map((err, i) => <p key={i}>• {err}</p>)
-        ) : (
-          <p>• {errors.ticketTypes}</p>
+        {errors?.ticketTypes && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="text-red-700 text-sm">
+              {Array.isArray(errors.ticketTypes) ? (
+                errors.ticketTypes.map((err, i) => <p key={i}>• {err}</p>)
+              ) : (
+                <p>• {errors.ticketTypes}</p>
+              )}
+            </div>
+          </div>
         )}
+
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => dispatch(addTicketType())}
+            className="inline-flex items-center px-4 py-2 border border-dashed border-teal-300 rounded-lg text-teal-600 hover:text-teal-700 hover:border-teal-400 hover:bg-teal-50 transition-all duration-200 font-medium"
+          >
+            {/* SVG ICON */}
+            Add Another Ticket Type
+          </button>
+        </div>
       </div>
-    </div>
-  )}
-
-  <div className="mt-4 text-center">
-    <button
-      type="button"
-      onClick={() => dispatch(addTicketType())}
-      className="inline-flex items-center px-4 py-2 border border-dashed border-teal-300 rounded-lg text-teal-600 hover:text-teal-700 hover:border-teal-400 hover:bg-teal-50 transition-all duration-200 font-medium"
-    >
-      {/* SVG ICON */}
-      Add Another Ticket Type
-    </button>
-  </div>
-</div>
-{/* --- ADD BELOW --- */}
-<SeatingLayoutSection
-  formData={formData}
-  errors={errors}
-  dispatch={dispatch}
-/>
-<FinancialSettingsSection
-  formData={formData}
-  errors={errors}
-  dispatch={dispatch}
-/>
-
+      {/* --- ADD BELOW --- */}
+      <SeatingLayoutSection
+        formData={formData}
+        errors={errors}
+        dispatch={dispatch}
+      />
     </div>
   );
 };
@@ -911,242 +942,6 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
           </button>
         </div>
       )}
-    </div>
-  );
-};
-
-// Financial Settings Section Component
-const FinancialSettingsSection = ({ formData, errors, dispatch }) => {
-  return (
-    <div className="space-y-6">
-      {/* Commission Settings */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center mb-4">
-          <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-            <svg
-              className="w-5 h-5 text-orange-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-          <div>
-            <h4 className="text-lg font-medium text-gray-900">
-              Commission Settings
-            </h4>
-            <p className="text-sm text-gray-500">
-              Configure platform commission structure
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Commission Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Commission Type
-            </label>
-            <select
-              value={formData.commissionType || 'percentage'}
-              onChange={(e) =>
-                dispatch(
-                  updateField({
-                    field: 'commissionType',
-                    value: e.target.value,
-                  })
-                )
-              }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            >
-              <option value="percentage">Percentage</option>
-              <option value="fixed">Fixed Amount</option>
-            </select>
-          </div>
-
-          {/* Commission Rate/Amount */}
-          {(formData.commissionType || 'percentage') === 'percentage' ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Commission Rate (%)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={(formData.commissionRate || 0.05) * 100}
-                onChange={(e) =>
-                  dispatch(
-                    updateField({
-                      field: 'commissionRate',
-                      value: (parseFloat(e.target.value) || 0) / 100,
-                    })
-                  )
-                }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                placeholder="5.00"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Platform commission as percentage of ticket price
-              </p>
-            </div>
-          ) : (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fixed Commission (AUD)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 text-sm">$</span>
-                </div>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.fixedCommissionAmount || 0}
-                  onChange={(e) =>
-                    dispatch(
-                      updateField({
-                        field: 'fixedCommissionAmount',
-                        value: parseFloat(e.target.value) || 0,
-                      })
-                    )
-                  }
-                  className="w-full pl-8 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="0.00"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Fixed commission amount per ticket sold
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Tax Settings */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center mb-4">
-          <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-            <svg
-              className="w-5 h-5 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-          <div>
-            <h4 className="text-lg font-medium text-gray-900">Tax Settings</h4>
-            <p className="text-sm text-gray-500">
-              Configure GST and tax handling
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-start">
-          <div className="flex items-center h-5">
-            <input
-              type="checkbox"
-              id="applyGST"
-              checked={formData.applyGST !== false}
-              onChange={(e) =>
-                dispatch(
-                  updateField({
-                    field: 'applyGST',
-                    value: e.target.checked,
-                  })
-                )
-              }
-              className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-            />
-          </div>
-          <div className="ml-3 text-sm">
-            <label htmlFor="applyGST" className="font-medium text-gray-700">
-              Apply GST (10%) to ticket prices
-            </label>
-            <p className="text-gray-500 mt-1">
-              Enable this if your ticket prices should include GST. This affects
-              price display and tax reporting calculations.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Payment Information */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg
-              className="h-5 w-5 text-yellow-600"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h4 className="text-sm font-medium text-yellow-800 mb-2">
-              Payment Processing Information
-            </h4>
-            <div className="text-sm text-yellow-700 space-y-2">
-              <p>
-                <strong>Transaction Fees:</strong> 2.9% + $0.30 AUD per
-                transaction will be automatically deducted.
-              </p>
-              <p>
-                <strong>Payout Schedule:</strong> Funds are transferred to your
-                account within 2-7 business days after each event.
-              </p>
-              <p>
-                <strong>Account Setup:</strong> You'll need to complete your
-                payout account setup before you can receive payments.
-              </p>
-            </div>
-            <div className="mt-3">
-              <a
-                href="/users/profile/settings"
-                className="inline-flex items-center text-sm text-teal-600 hover:text-teal-500 font-medium"
-              >
-                Set up payment account
-                <svg
-                  className="ml-1 w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  ></path>
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
@@ -1501,12 +1296,6 @@ const TicketConfigStep = ({ formData = {}, errors = {} }) => {
                   {(formData.seatingLayout || []).length > 0
                     ? 'Configured'
                     : 'Not set'}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">GST Applied:</span>
-                <span className="ml-2 font-medium">
-                  {formData.applyGST !== false ? 'Yes' : 'No'}
                 </span>
               </div>
             </>

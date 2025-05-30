@@ -1,4 +1,4 @@
-// components/events/addevents/EventDetailsStep.jsx
+// components/events/addevents/EventDetailsStep.jsx - Mobile Optimized
 
 import React from 'react';
 import { useDispatch } from 'react-redux';
@@ -100,26 +100,21 @@ const EventDetailsStep = ({
     dispatch(setRecurrenceEndDate(e.target.value || null));
   };
 
-
-// Enhanced format with proper timezone handling for edit mode
+  // Enhanced format with proper timezone handling for edit mode
   const formatDateTimeLocal = (dateTime) => {
     if (!dateTime) return '';
     
     try {
-      // For editing existing events with UTC time from database
       if (typeof dateTime === 'string' && dateTime.includes('Z')) {
-        // Convert UTC to event timezone for proper display in edit mode
         const eventTimeZone = formData.timeZone || 'Australia/Sydney';
         const zonedDate = utcToZonedTime(dateTime, eventTimeZone);
         return format(zonedDate, 'yyyy-MM-dd\'T\'HH:mm');
       }
       
-      // If it's already in YYYY-MM-DDTHH:MM format (local input), return as-is
       if (typeof dateTime === 'string' && dateTime.includes('T') && !dateTime.includes('Z')) {
-        return dateTime.slice(0, 16); // Keep only YYYY-MM-DDTHH:MM
+        return dateTime.slice(0, 16);
       }
       
-      // For any other format, try to format it without timezone conversion
       const date = new Date(dateTime);
       if (isNaN(date.getTime())) return '';
       
@@ -135,9 +130,8 @@ const EventDetailsStep = ({
     }
   };
 
-  // Simple minimum date - just today in local browser time (only for add mode)
   const getMinDate = () => {
-    if (isViewMode || isEditMode) return ''; // No restriction for view/edit modes
+    if (isViewMode || isEditMode) return '';
     
     const now = new Date();
     const year = now.getFullYear();
@@ -148,22 +142,18 @@ const EventDetailsStep = ({
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
-  // Optional: Show what the selected time means in UTC (for preview only)
- // Enhanced UTC preview with better handling for edit mode
   const getUTCPreview = () => {
     if (!formData.dateTime || !formData.timeZone) return '';
     
     try {
       let dateToConvert = formData.dateTime;
       
-      // If we have a UTC date from database (edit mode), first convert to local timezone
       if (typeof dateToConvert === 'string' && dateToConvert.includes('Z')) {
         const eventTimeZone = formData.timeZone || 'Australia/Sydney';
         const zonedDate = utcToZonedTime(dateToConvert, eventTimeZone);
         dateToConvert = format(zonedDate, 'yyyy-MM-dd\'T\'HH:mm');
       }
       
-      // Now convert the local time to UTC for preview
       const utcDate = zonedTimeToUtc(dateToConvert, formData.timeZone);
       return utcDate.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
     } catch (error) {
@@ -171,9 +161,20 @@ const EventDetailsStep = ({
     }
   };
 
-  // Get field-specific styling based on mode and errors
+  // Enhanced mobile-first field styling with proper touch targets
   const getFieldClasses = (fieldName) => {
-    const baseClasses = 'w-full p-2 border rounded-lg transition-colors';
+    const baseClasses = 'w-full px-3 py-3 sm:py-2 border rounded-lg transition-colors text-base sm:text-sm';
+    const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50' : 'border-gray-300';
+    const readOnlyClasses = disabled 
+      ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
+      : 'focus:ring-2 focus:ring-teal-500 focus:border-teal-500 active:border-teal-500';
+    
+    return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
+  };
+
+  // Mobile-optimized select styling
+  const getSelectClasses = (fieldName) => {
+    const baseClasses = 'w-full px-3 py-3 sm:py-2 border rounded-lg transition-colors text-base sm:text-sm appearance-none bg-white';
     const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50' : 'border-gray-300';
     const readOnlyClasses = disabled 
       ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
@@ -211,39 +212,41 @@ const EventDetailsStep = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Mode-aware header */}
-      <div className="border-b border-gray-200 pb-4">
-        <h2 className="text-xl font-semibold mb-2 flex items-center">
-          {config.title}
-          {isEditMode && (
-            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              Editing
-            </span>
-          )}
-          {isViewMode && (
-            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              View Only
-            </span>
-          )}
+    <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
+      {/* Mobile-optimized header with better spacing */}
+      <div className="border-b border-gray-200 pb-3 sm:pb-4">
+        <h2 className="text-lg sm:text-xl font-semibold mb-2 flex flex-col sm:flex-row sm:items-center">
+          <span>{config.title}</span>
+          <div className="flex gap-2 mt-1 sm:mt-0 sm:ml-2">
+            {isEditMode && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                Editing
+              </span>
+            )}
+            {isViewMode && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                View Only
+              </span>
+            )}
+          </div>
         </h2>
-        <p className="text-gray-600">{config.subtitle}</p>
+        <p className="text-gray-600 text-sm sm:text-base">{config.subtitle}</p>
       </div>
       
-      {/* Title */}
-      <div>
-        <label className="block font-semibold mb-1">
+      {/* Title - Enhanced for mobile */}
+      <div className="space-y-2">
+        <label className="block font-semibold text-sm sm:text-base">
           Event Title <span className="text-red-500">*</span>
-          {isEditMode && (
-            <span className="text-sm font-normal text-gray-500 ml-2">
-              (This will update how your event appears to attendees)
-            </span>
-          )}
         </label>
+        {isEditMode && (
+          <p className="text-xs sm:text-sm text-gray-500">
+            This will update how your event appears to attendees
+          </p>
+        )}
         <input
           type="text"
           name="title"
@@ -255,77 +258,92 @@ const EventDetailsStep = ({
           maxLength="200"
         />
         {errors?.title && (
-          <p className="mt-1 text-red-500 text-sm">
+          <p className="text-red-500 text-xs sm:text-sm">
             {Array.isArray(errors.title) ? errors.title[0] : errors.title}
           </p>
         )}
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500">
           {getHelpText('title')}
         </p>
       </div>
 
-      {/* Category */}
-      <div>
-        <label className="block font-semibold mb-1">
+      {/* Category - Enhanced dropdown for mobile */}
+      <div className="space-y-2">
+        <label className="block font-semibold text-sm sm:text-base">
           Category
-          {isEditMode && (
-            <span className="text-sm font-normal text-gray-500 ml-2">
-              (Helps people find your event)
-            </span>
-          )}
         </label>
-        <select
-          name="category"
-          value={formData.category || ''}
-          onChange={handleChange}
-          disabled={disabled}
-          className={getFieldClasses('category')}
-        >
-          <option value="">
-            {disabled ? 'No category selected' : 'Select a category'}
-          </option>
-          {CATEGORY_OPTIONS.map((category) => (
-            <option key={category} value={category}>
-              {category}
+        {isEditMode && (
+          <p className="text-xs sm:text-sm text-gray-500">
+            Helps people find your event
+          </p>
+        )}
+        <div className="relative">
+          <select
+            name="category"
+            value={formData.category || ''}
+            onChange={handleChange}
+            disabled={disabled}
+            className={getSelectClasses('category')}
+          >
+            <option value="">
+              {disabled ? 'No category selected' : 'Select a category'}
             </option>
-          ))}
-        </select>
+            {CATEGORY_OPTIONS.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+          {/* Custom dropdown arrow for better mobile UX */}
+          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
         {!disabled && (
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500">
             Choose the category that best describes your event
           </p>
         )}
       </div>
 
-      {/* Time Zone - Moved up before Date & Time */}
-      <div>
-        <label className="block font-semibold mb-1">
+      {/* Time Zone - Mobile optimized */}
+      <div className="space-y-2">
+        <label className="block font-semibold text-sm sm:text-base">
           Event Time Zone <span className="text-red-500">*</span>
-          {isEditMode && (
-            <span className="text-sm font-normal text-gray-500 ml-2">
-              (Changing this will affect how times are displayed)
-            </span>
-          )}
         </label>
-        <select
-          name="timeZone"
-          value={formData.timeZone || 'Australia/Sydney'}
-          onChange={handleChange}
-          disabled={disabled}
-          className={getFieldClasses('timeZone')}
-        >
-          {AU_TIMEZONES.map((tz) => (
-            <option key={tz.key} value={tz.value}>
-              {tz.label}
-            </option>
-          ))}
-        </select>
+        {isEditMode && (
+          <p className="text-xs sm:text-sm text-gray-500">
+            Changing this will affect how times are displayed
+          </p>
+        )}
+        <div className="relative">
+          <select
+            name="timeZone"
+            value={formData.timeZone || 'Australia/Sydney'}
+            onChange={handleChange}
+            disabled={disabled}
+            className={getSelectClasses('timeZone')}
+          >
+            {AU_TIMEZONES.map((tz) => (
+              <option key={tz.key} value={tz.value}>
+                {tz.label}
+              </option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
         {errors?.timeZone && (
-          <p className="mt-1 text-red-500 text-sm">
+          <p className="text-red-500 text-xs sm:text-sm">
             {Array.isArray(errors.timeZone) ? errors.timeZone[0] : errors.timeZone}
           </p>
         )}
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-xs text-gray-500">
           {isViewMode 
             ? 'Time zone for this event'
             : 'Select the timezone where your event will take place'
@@ -333,16 +351,16 @@ const EventDetailsStep = ({
         </p>
       </div>
 
-      {/* Date & Time */}
-      <div>
-        <label className="block font-semibold mb-1">
+      {/* Date & Time - Enhanced mobile experience */}
+      <div className="space-y-2">
+        <label className="block font-semibold text-sm sm:text-base">
           Date & Time <span className="text-red-500">*</span>
-          {isEditMode && (
-            <span className="text-sm font-normal text-gray-500 ml-2">
-              (Attendees will be notified of any changes)
-            </span>
-          )}
         </label>
+        {isEditMode && (
+          <p className="text-xs sm:text-sm text-gray-500">
+            Attendees will be notified of any changes
+          </p>
+        )}
         <input
           type="datetime-local"
           name="dateTime"
@@ -353,101 +371,115 @@ const EventDetailsStep = ({
           className={getFieldClasses('dateTime')}
         />
         {errors?.dateTime && (
-          <p className="mt-1 text-red-500 text-sm">
+          <p className="text-red-500 text-xs sm:text-sm">
             {Array.isArray(errors.dateTime) ? errors.dateTime[0] : errors.dateTime}
           </p>
         )}
-        <div className="text-sm text-gray-500 mt-1">
+        <div className="text-xs text-gray-500 space-y-1">
           <p>{getHelpText('dateTime')}</p>
-          <p>Enter the date and time as it should appear in {formData.timeZone || 'Australia/Sydney'}</p>
-          {formData.dateTime && formData.timeZone && (
-            <p className="mt-1 text-blue-600">
-              This will be saved as: {getUTCPreview()}
-            </p>
-          )}
           {isEditMode && formData.dateTime && (
-            <p className="mt-1 text-amber-600 text-xs">
+            <p className="text-amber-600 font-medium">
               ⚠️ Changing the date/time will send update notifications to all registered attendees
             </p>
           )}
         </div>
       </div>
 
-      {/* Recurring Event Section */}
-      <div className="border rounded-lg p-4 bg-gray-50">
-        <div className="flex items-center mb-4">
+      {/* Recurring Event Section - Mobile optimized collapsible */}
+      <div className="border rounded-xl p-4 bg-gray-50">
+        <div className="flex items-start space-x-3 mb-3">
           <input
             type="checkbox"
             id="isRecurring"
             checked={formData.recurrence?.isRecurring || false}
             onChange={handleRecurringToggle}
             disabled={disabled}
-            className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500 disabled:opacity-50"
+            className="w-5 h-5 mt-0.5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 disabled:opacity-50"
           />
-          <label htmlFor="isRecurring" className="ml-2 block text-sm font-medium text-gray-900">
-            Make this a recurring event
+          <div className="flex-1">
+            <label htmlFor="isRecurring" className="block text-sm font-medium text-gray-900">
+              Make this a recurring event
+            </label>
             {isEditMode && formData.recurrence?.isRecurring && (
-              <span className="text-xs text-amber-600 block mt-1">
+              <p className="text-xs text-amber-600 mt-1">
                 ⚠️ Changes to recurring settings will affect all future instances
-              </span>
+              </p>
             )}
-          </label>
+          </div>
         </div>
         
         {formData.recurrence?.isRecurring && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+          <div className="space-y-4 mt-4 pt-4 border-t border-gray-200">
+            <p className="text-xs sm:text-sm text-gray-600">
               {isViewMode 
                 ? 'This event repeats on the following schedule:'
                 : 'Set up when this event repeats. The main event date above will be the first occurrence.'
               }
             </p>
             
-            {/* Repeat Schedule */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
+            {/* Repeat Schedule - Mobile-friendly layout */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium">
                 Repeat Schedule
-                {isEditMode && (
-                  <span className="text-xs text-gray-500 ml-2">
-                    (Existing attendees will see updated schedule)
-                  </span>
-                )}
               </label>
+              {isEditMode && (
+                <p className="text-xs text-gray-500">
+                  Existing attendees will see updated schedule
+                </p>
+              )}
+              
               {(formData.recurrence?.repeatSchedule || []).map((schedule, index) => (
-                <div key={index} className="flex items-center gap-3 mb-2 p-3 bg-white rounded border">
-                  <select
-                    value={schedule?.day || 'Mon'}
-                    onChange={(e) => handleUpdateRepeatSchedule(index, 'day', e.target.value)}
-                    disabled={disabled}
-                    className={`p-2 border rounded ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300'}`}
-                  >
-                    <option value="Mon">Monday</option>
-                    <option value="Tue">Tuesday</option>
-                    <option value="Wed">Wednesday</option>
-                    <option value="Thu">Thursday</option>
-                    <option value="Fri">Friday</option>
-                    <option value="Sat">Saturday</option>
-                    <option value="Sun">Sunday</option>
-                  </select>
-                  
-                  <input
-                    type="time"
-                    value={schedule?.time || '18:00'}
-                    onChange={(e) => handleUpdateRepeatSchedule(index, 'time', e.target.value)}
-                    disabled={disabled}
-                    className={`p-2 border rounded ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300'}`}
-                  />
+                <div key={index} className="bg-white rounded-lg border p-3 space-y-3">
+                  {/* Mobile-first: Stack day and time vertically on small screens */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Day</label>
+                      <div className="relative">
+                        <select
+                          value={schedule?.day || 'Mon'}
+                          onChange={(e) => handleUpdateRepeatSchedule(index, 'day', e.target.value)}
+                          disabled={disabled}
+                          className={`w-full px-3 py-2 border rounded-lg text-sm ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
+                        >
+                          <option value="Mon">Monday</option>
+                          <option value="Tue">Tuesday</option>
+                          <option value="Wed">Wednesday</option>
+                          <option value="Thu">Thursday</option>
+                          <option value="Fri">Friday</option>
+                          <option value="Sat">Saturday</option>
+                          <option value="Sun">Sunday</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Time</label>
+                      <input
+                        type="time"
+                        value={schedule?.time || '18:00'}
+                        onChange={(e) => handleUpdateRepeatSchedule(index, 'time', e.target.value)}
+                        disabled={disabled}
+                        className={`w-full px-3 py-2 border rounded-lg text-sm ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
+                      />
+                    </div>
+                  </div>
                   
                   {!disabled && (formData.recurrence?.repeatSchedule || []).length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveRepeatSchedule(index)}
-                      className="text-red-500 hover:text-red-700 p-1"
+                      className="flex items-center justify-center w-full sm:w-auto px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
                       title="Remove this schedule"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                       </svg>
+                      Remove Schedule
                     </button>
                   )}
                 </div>
@@ -457,9 +489,9 @@ const EventDetailsStep = ({
                 <button
                   type="button"
                   onClick={handleAddRepeatSchedule}
-                  className="text-teal-600 text-sm font-medium hover:underline flex items-center"
+                  className="w-full sm:w-auto flex items-center justify-center px-4 py-2 text-teal-600 font-medium hover:bg-teal-50 rounded-lg transition-colors border border-teal-200 text-sm"
                 >
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                   </svg>
                   Add Another Day/Time
@@ -468,15 +500,15 @@ const EventDetailsStep = ({
             </div>
             
             {/* End Date */}
-            <div>
-              <label className="block text-sm font-medium mb-1">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">
                 End Date (Optional)
-                {isEditMode && (
-                  <span className="text-xs text-gray-500 ml-2">
-                    (When to stop creating new instances)
-                  </span>
-                )}
               </label>
+              {isEditMode && (
+                <p className="text-xs text-gray-500">
+                  When to stop creating new instances
+                </p>
+              )}
               <input
                 type="date"
                 value={formData.recurrence?.endDate ? new Date(formData.recurrence.endDate).toISOString().split('T')[0] : ''}
@@ -485,7 +517,7 @@ const EventDetailsStep = ({
                 disabled={disabled}
                 className={getFieldClasses('recurrenceEndDate')}
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500">
                 {isViewMode 
                   ? (formData.recurrence?.endDate 
                       ? 'This recurring series ends on the specified date'
@@ -497,7 +529,7 @@ const EventDetailsStep = ({
             </div>
             
             {errors?.recurrence && (
-              <div className="text-red-500 text-sm">
+              <div className="text-red-500 text-xs sm:text-sm space-y-1">
                 {Array.isArray(errors.recurrence) 
                   ? errors.recurrence.map((err, i) => <p key={i}>• {err}</p>) 
                   : <p>• {errors.recurrence}</p>}
@@ -507,16 +539,16 @@ const EventDetailsStep = ({
         )}
       </div>
 
-      {/* Venue */}
-      <div>
-        <label className="block font-semibold mb-1">
+      {/* Venue - Enhanced for mobile */}
+      <div className="space-y-2">
+        <label className="block font-semibold text-sm sm:text-base">
           Venue <span className="text-red-500">*</span>
-          {isEditMode && (
-            <span className="text-sm font-normal text-gray-500 ml-2">
-              (Venue changes will be communicated to attendees)
-            </span>
-          )}
         </label>
+        {isEditMode && (
+          <p className="text-xs sm:text-sm text-gray-500">
+            Venue changes will be communicated to attendees
+          </p>
+        )}
         <input
           type="text"
           name="venue"
@@ -528,30 +560,28 @@ const EventDetailsStep = ({
           maxLength="200"
         />
         {errors?.venue && (
-          <p className="mt-1 text-red-500 text-sm">
+          <p className="text-red-500 text-xs sm:text-sm">
             {Array.isArray(errors.venue) ? errors.venue[0] : errors.venue}
           </p>
         )}
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500">
           {getHelpText('venue')}
         </p>
       </div>
 
-      {/* Address */}
-      <div>
+      {/* Address - Mobile optimized */}
+      <div className="space-y-2">
         <AddressInput 
           formData={formData} 
           setFormData={(newDataOrUpdater) => {
             if (disabled) return;
             
             console.log("setFormData called with:", newDataOrUpdater);
-            // Handle the updater function pattern
             if (typeof newDataOrUpdater === 'function') {
               const dummyPrev = { address: formData.address || {} };
               const result = newDataOrUpdater(dummyPrev);
               handleAddressChange(result.address);
             } 
-            // Handle direct object pattern
             else if (newDataOrUpdater && newDataOrUpdater.address) {
               handleAddressChange(newDataOrUpdater.address);
             }
@@ -562,88 +592,90 @@ const EventDetailsStep = ({
           mode={mode}
         />
         {isEditMode && (
-          <p className="text-xs text-amber-600 mt-1">
+          <p className="text-xs text-amber-600">
             ⚠️ Address changes will update location information for all attendees
           </p>
         )}
       </div>
 
-      {/* Description */}
-      <div>
-        <label className="block font-semibold mb-1">
+      {/* Description - Enhanced textarea for mobile */}
+      <div className="space-y-2">
+        <label className="block font-semibold text-sm sm:text-base">
           Description <span className="text-red-500">*</span>
-          {isEditMode && (
-            <span className="text-sm font-normal text-gray-500 ml-2">
-              (Updates will be visible to all attendees)
-            </span>
-          )}
         </label>
+        {isEditMode && (
+          <p className="text-xs sm:text-sm text-gray-500">
+            Updates will be visible to all attendees
+          </p>
+        )}
         <textarea
           name="description"
           value={formData.description || ''}
           onChange={handleChange}
           disabled={disabled}
-          className={getFieldClasses('description')}
-          rows="5"
+          className={`${getFieldClasses('description')} resize-none`}
+          rows="4"
           placeholder={disabled ? '' : 'Describe your event - what attendees can expect, agenda, special requirements, etc.'}
           maxLength="2000"
         />
-        <div className="flex justify-between items-center mt-1">
-          {errors?.description ? (
-            <p className="text-red-500 text-sm">
-              {Array.isArray(errors.description) ? errors.description[0] : errors.description}
-            </p>
-          ) : (
-            <p className="text-gray-500 text-sm">
-              {getHelpText('description')}
-            </p>
-          )}
-          <span className="text-xs text-gray-400">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-1">
+            {errors?.description ? (
+              <p className="text-red-500 text-xs sm:text-sm">
+                {Array.isArray(errors.description) ? errors.description[0] : errors.description}
+              </p>
+            ) : (
+              <p className="text-gray-500 text-xs">
+                {getHelpText('description')}
+              </p>
+            )}
+          </div>
+          <span className="text-xs text-gray-400 whitespace-nowrap">
             {(formData.description || '').length}/2000
           </span>
         </div>
       </div>
       
-      {/* Image Upload */}
-      <div>
+      {/* Image Upload - Mobile optimized */}
+      <div className="space-y-2">
         <ImageUploader
           images={formData.images || []}
           onImagesChange={disabled ? () => {} : onImagesChange}
           maxImages={5}
-          className="space-y-2"
+          className="space-y-3"
           disabled={disabled}
           mode={mode}
         />
         {errors?.images && (
-          <p className="mt-1 text-red-500 text-sm">
+          <p className="text-red-500 text-xs sm:text-sm">
             {Array.isArray(errors.images) ? errors.images[0] : errors.images}
           </p>
         )}
         {isEditMode && !disabled && (
-          <p className="text-xs text-amber-600 mt-1">
+          <p className="text-xs text-amber-600">
             💡 Image changes will update how your event appears in listings and to attendees
           </p>
         )}
       </div>
 
-      {/* Mode-specific information box */}
+      {/* Mode-specific information box - Mobile optimized */}
       {(isEditMode || isViewMode) && formData.title && (
-        <div className={`p-4 rounded-lg border ${
+        <div className={`p-3 sm:p-4 rounded-xl border ${
           isEditMode ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
         }`}>
-          <div className="flex">
-            <div className="flex-shrink-0">
+          <div className="flex flex-col sm:flex-row">
+            <div className="flex-shrink-0 mb-2 sm:mb-0 sm:mr-3">
               <svg className={`h-5 w-5 ${isEditMode ? 'text-blue-600' : 'text-gray-600'}`} 
                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <div className="ml-3">
-              <h4 className={`text-sm font-medium ${isEditMode ? 'text-blue-800' : 'text-gray-800'}`}>
+            <div className="flex-1">
+              <h4 className={`text-sm font-medium ${isEditMode ? 'text-blue-800' : 'text-gray-800'} mb-1`}>
                 {isEditMode ? 'Editing Event' : 'Event Information'}
               </h4>
-              <div className={`mt-1 text-sm ${isEditMode ? 'text-blue-700' : 'text-gray-600'}`}>
+              <div className={`text-xs sm:text-sm ${isEditMode ? 'text-blue-700' : 'text-gray-600'}`}>
                 {isEditMode ? (
                   <p>
                     Changes made to this event will be automatically saved and may trigger 
