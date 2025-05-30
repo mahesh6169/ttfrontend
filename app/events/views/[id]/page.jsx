@@ -10,7 +10,6 @@ import SendMessage from '@/components/chat/SendMessage';
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
 import Link from 'next/link';
-import SeatMap from '@/components/events/seatselection/SeatMap';
 
 
 const EventDetail = () => {

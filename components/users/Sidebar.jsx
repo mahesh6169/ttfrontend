@@ -12,6 +12,7 @@ const Sidebar = ({ onLinkClick }) => {
 
   const menuItems = [
     { label: 'Settings', href: '/users/profile/settings', icon: <FaUser /> },
+    { label: 'Stripe', href: '/users/profile/settings/stripeSetup', icon: <FaUser /> },
     { label: 'Manage Ads', href: '/users/profile/manageads', icon: <FaAd /> },
     {
       label: 'Events',
@@ -26,7 +27,8 @@ const Sidebar = ({ onLinkClick }) => {
     { label: 'Manage Topics', href: '/users/profile/managethreads', icon: <BsChatText /> },
     { label: 'Favourites', href: '/users/profile/favourites', icon: <MdFavorite /> },
     { label: 'Messages', href: '/users/profile/conversations', icon: <FaEnvelope /> },
-    { label: 'My Registrations', href: '/users/profile/myregistrations', icon: <FaCalendarAlt /> }
+    { label: 'My Registrations', href: '/users/profile/myregistrations', icon: <FaCalendarAlt /> },
+    { label: 'My Tickets', href: '/users/profile/mytickets', icon: <FaMoneyCheckAlt /> }
   ];
 
   useEffect(() => {

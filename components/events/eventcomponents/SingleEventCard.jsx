@@ -28,6 +28,7 @@ import { MdLocationOn, MdEmail, MdPhone, MdPerson, MdEventSeat } from 'react-ico
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 import SendMessage from '@/components/chat/SendMessage';
 import EventRegistrationModal from '../registration/EventRegistrationModal';
+import TicketSelection from '../tickets/TicketSelection';
 import EventCapacityDisplay from './EventCapacityDisplay';
 import { formatInTimeZone } from 'date-fns-tz';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
@@ -44,6 +45,8 @@ const SingleEventCard = ({ event, chatProps }) => {
 
     const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
   const isRegistered = !!currentRegistration && currentRegistration.status === 'registered';
+
+  const [showTicketSelection, setShowTicketSelection] = useState(false);
 
 
   if (!event) {
@@ -450,39 +453,47 @@ const formattedTime = formatInTimeZone(
         <div className="mt-8 pt-6 border-t">
             <div className="flex flex-col sm:flex-row gap-4">
     {/* Only for free events: Show Unregister if registered, else Register */}
-    {!event.isPaid && isRegistered ? (
-      <button
-        onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
-        className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
-        disabled={registrationStatus === 'loading'}
-      >
-        {registrationStatus === 'loading' ? 'Unregistering...' : 'Unregister from Event'}
-      </button>
-    ) : (
-      <button
-        onClick={() => {
-          if (!isAuthenticated) {
-            alert('Please log in to register for this event.');
-            return;
-          }
-          setShowRegistrationForm(true);
-        }}
-        className={`flex-1 py-3 px-6 rounded-lg font-semibold text-white transition-colors ${
-          event.isPaid
-            ? 'bg-green-600 hover:bg-green-700'
-            : 'bg-blue-600 hover:bg-blue-700'
-        }`}
-        disabled={registrationStatus === 'loading'}
-      >
-        {registrationStatus === 'loading'
-          ? event.isPaid
-            ? 'Processing...'
-            : 'Processing...'
-          : event.isPaid
-            ? 'Purchase Tickets'
-            : 'Register for Event'}
-      </button>
-    )}
+    {/* Handle Free vs Paid Events */}
+{event.isPaid ? (
+  // PAID EVENT: Show Purchase Tickets button
+  <button
+    onClick={() => {
+      if (!isAuthenticated) {
+        alert('Please log in to purchase tickets.');
+        return;
+      }
+      setShowTicketSelection(true);
+    }}
+    className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors"
+  >
+    Purchase Tickets
+  </button>
+) : (
+  // FREE EVENT: Show Register/Unregister logic
+  isRegistered ? (
+    <button
+      onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
+      className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+      disabled={registrationStatus === 'loading'}
+    >
+      {registrationStatus === 'loading' ? 'Unregistering...' : 'Unregister from Event'}
+    </button>
+  ) : (
+    <button
+      onClick={() => {
+        if (!isAuthenticated) {
+          alert('Please log in to register for this event.');
+          return;
+        }
+        setShowRegistrationForm(true);
+      }}
+      className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+      disabled={registrationStatus === 'loading'}
+    >
+      {registrationStatus === 'loading' ? 'Processing...' : 'Register for Event'}
+    </button>
+  )
+)}
 
     {chatProps && (
       <button
@@ -513,6 +524,12 @@ const formattedTime = formatInTimeZone(
   Registration Number: ${data.registration?.registrationNumber}
   You will receive a confirmation email shortly.`);
 }}
+      />
+       {/* ADD THIS: Ticket Selection Modal */}
+      <TicketSelection
+        event={event}
+        isOpen={showTicketSelection}
+        onClose={() => setShowTicketSelection(false)}
       />
     </div>
   );

@@ -470,15 +470,24 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
           </div>
 
           {(formData.ticketTypes || []).length > 1 && (
-            <button
-              type="button"
-              onClick={() => dispatch(removeTicketType(index))}
-              className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
-              title="Remove ticket type"
-            >
-              {/* SVG ICON */}
-            </button>
-          )}
+  <button
+    type="button"
+    onClick={() => dispatch(removeTicketType(index))}
+    className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
+    title="Remove ticket type"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  </button>
+)}
+
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -665,6 +674,17 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
     </button>
   </div>
 </div>
+{/* --- ADD BELOW --- */}
+<SeatingLayoutSection
+  formData={formData}
+  errors={errors}
+  dispatch={dispatch}
+/>
+<FinancialSettingsSection
+  formData={formData}
+  errors={errors}
+  dispatch={dispatch}
+/>
 
     </div>
   );
