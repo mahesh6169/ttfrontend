@@ -2,7 +2,6 @@
 
 'use client';
 
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
@@ -25,6 +24,7 @@ import {
   setFormErrors,
   clearFormErrors,
   setImages,
+  clearSuccessMessage,
 } from '@/store/slices/events/eventSlice';
 
 // Step Components
@@ -38,32 +38,6 @@ import SuccessStep from './SuccessStep';
 // Auth Components
 import RequireLogin from '@/components/Auth/RequireLogin';
 import LoadingSpinner from '@/components/LoadingSpinner';
-
-// Debug utility function
-const debugLog = (context, message, data = null) => {
-  const timestamp = new Date().toISOString().substr(11, 12);
-  console.log(`🔍 [${timestamp}] [${context}] ${message}`, data || '');
-};
-
-// Deep inspection utility
-const inspectImageObject = (image, index, context) => {
-  const inspection = {
-    index,
-    id: image?.id,
-    name: image?.name,
-    isNew: image?.isNew,
-    isExisting: image?.isExisting,
-    hasFile: image?.file instanceof File,
-    fileSize: image?.file?.size,
-    fileType: image?.file?.type,
-    fileName: image?.file?.name,
-    preview: image?.preview?.substring(0, 50) + '...',
-    allProperties: Object.keys(image || {}),
-  };
-  debugLog(context, `Image ${index} inspection:`, inspection);
-  return inspection;
-};
-
 
 const StepManager = ({
   mode = 'add', // 'add' | 'edit' | 'view'
@@ -107,6 +81,13 @@ const StepManager = ({
     toast.dismiss();
   }, []);
 
+  // Clear success messages when component unmounts or mode changes
+useEffect(() => {
+  return () => {
+    dispatch(clearSuccessMessage());
+  };
+}, [dispatch]);
+
   useEffect(() => {
     if (isEditingMode) {
       dispatch(resetForm());
@@ -126,17 +107,20 @@ const StepManager = ({
           dispatch(resetForm());
           dispatch(clearEditMode());
         } else if (isEditingMode && eventId) {
-          // Load existing event for editing
-          if (editingEventId !== eventId) {
-            const result = await dispatch(fetchEventById(eventId)).unwrap();
-            dispatch(
-              setEditMode({
-                isEdit: true,
-                eventId: eventId,
-                eventData: result,
-              })
-            );
-          }
+  // Clear any existing success messages when entering edit mode
+  dispatch(clearSuccessMessage());
+  
+  // Load existing event for editing
+  if (editingEventId !== eventId) {
+    const result = await dispatch(fetchEventById(eventId)).unwrap();
+    dispatch(
+      setEditMode({
+        isEdit: true,
+        eventId: eventId,
+        eventData: result,
+      })
+    );
+  }
         } else if (isViewMode && eventId) {
           // Load event for viewing (read-only)
           if (editingEventId !== eventId) {
@@ -174,15 +158,7 @@ const StepManager = ({
     editingEventId,
   ]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // Only reset if we're in add mode and haven't successfully submitted
-      if (isAddMode && formStatus !== 'succeeded') {
-        dispatch(resetForm());
-      }
-    };
-  }, [isAddMode, formStatus, dispatch]);
+
 
   // Show error toast when submission fails
   useEffect(() => {
@@ -204,25 +180,10 @@ const StepManager = ({
   }, [formStatus, successMessage, onComplete, formData]);
 
   // Handle images change (strip files for Redux, keep locally)
-
-// Fixed handleImagesChange function in StepManager.jsx
-
-const handleImagesChange = useCallback(
-  (images) => {
-    debugLog('StepManager', '📞 handleImagesChange called', {
-      totalImages: images.length,
-      timestamp: Date.now()
-    });
-    
-    // Deep inspection of incoming images
-    images.forEach((img, index) => {
-      inspectImageObject(img, index, 'StepManager-Incoming');
-    });
-    
-    // --- A. Sync Redux images (only metadata, no File object) ---
-    debugLog('StepManager', '📦 Creating safe images for Redux');
-    const safeImages = images.map((img, index) => {
-      const safe = {
+  const handleImagesChange = useCallback(
+    (images) => {
+      // --- A. Sync Redux images (only metadata, no File object) ---
+      const safeImages = images.map((img) => ({
         preview: img.preview,
         url: img.url,
         id: img.id,
@@ -231,91 +192,45 @@ const handleImagesChange = useCallback(
         type: img.type,
         isExisting: img.isExisting,
         isNew: img.isNew,
-      };
-      debugLog('StepManager', `Safe image ${index}:`, safe);
-      return safe;
-    });
-    
-    debugLog('StepManager', '📤 Dispatching setImages to Redux');
-    dispatch(setImages(safeImages));
+      }));
+      
+      dispatch(setImages(safeImages));
 
-    // --- B. CRITICAL FIX: Preserve existing File objects + add new ones ---
-    debugLog('StepManager', '💾 Processing local file state with preservation');
-    
-    setLocalImageFiles(prevFiles => {
-      debugLog('StepManager', `📁 Previous local files: ${prevFiles.length}`);
-      
-      // Create a map of existing File objects by ID for quick lookup
-      const existingFileMap = new Map();
-      prevFiles.forEach(localFile => {
-        existingFileMap.set(localFile.id, localFile);
-        debugLog('StepManager', `📁 Existing file mapped: ${localFile.id} -> ${localFile.name}`);
-      });
-      
-      // Process all current images and preserve/add File objects
-      const updatedFiles = [];
-      
-      images.forEach((img, index) => {
-        debugLog('StepManager', `Processing image ${index} for local files:`, {
-          id: img.id,
-          name: img.name,
-          isNew: img.isNew,
-          hasFile: img.file instanceof File,
-          fileSize: img.file?.size
+      // --- B. Preserve existing File objects + add new ones ---
+      setLocalImageFiles(prevFiles => {
+        // Create a map of existing File objects by ID for quick lookup
+        const existingFileMap = new Map();
+        prevFiles.forEach(localFile => {
+          existingFileMap.set(localFile.id, localFile);
         });
         
-        // Check if we already have this File object in our local state
-        if (existingFileMap.has(img.id)) {
-          // Preserve existing File object
-          const existingFile = existingFileMap.get(img.id);
-          updatedFiles.push(existingFile);
-          debugLog('StepManager', `✅ Preserved existing File object: ${existingFile.name}`, {
-            id: img.id,
-            fileSize: existingFile.file?.size
-          });
-        } else if (img.isNew && img.file && img.file instanceof File) {
-          // Add new File object
-          const localFile = {
-            file: img.file,
-            id: img.id,
-            name: img.file.name,
-            size: img.file.size,
-          };
-          
-          updatedFiles.push(localFile);
-          debugLog('StepManager', `✅ Added new File object: ${img.file.name}`, {
-            id: img.id,
-            fileSize: img.file.size,
-            isFile: img.file instanceof File
-          });
-        } else {
-          debugLog('StepManager', `⚠️ No File object for image: ${img.name}`, {
-            id: img.id,
-            isNew: img.isNew,
-            hasFile: img.file instanceof File,
-            reason: !img.isNew ? 'not new' : !img.file ? 'no file property' : 'file not File instance'
-          });
-        }
+        // Process all current images and preserve/add File objects
+        const updatedFiles = [];
+        
+        images.forEach((img) => {
+          // Check if we already have this File object in our local state
+          if (existingFileMap.has(img.id)) {
+            // Preserve existing File object
+            const existingFile = existingFileMap.get(img.id);
+            updatedFiles.push(existingFile);
+          } else if (img.isNew && img.file && img.file instanceof File) {
+            // Add new File object
+            const localFile = {
+              file: img.file,
+              id: img.id,
+              name: img.file.name,
+              size: img.file.size,
+            };
+            
+            updatedFiles.push(localFile);
+          }
+        });
+        
+        return updatedFiles;
       });
-      
-      debugLog('StepManager', `📁 Final local files state:`, {
-        previousCount: prevFiles.length,
-        finalCount: updatedFiles.length,
-        files: updatedFiles.map(f => ({ id: f.id, name: f.name, size: f.size }))
-      });
-      
-      return updatedFiles;
-    });
-    
-    debugLog('StepManager', '✅ handleImagesChange completed', {
-      reduxImages: safeImages.length,
-      newImages: images.filter(img => img.isNew).length,
-      existingImages: images.filter(img => img.isExisting).length
-    });
-  },
-  [dispatch]
-);
-
+    },
+    [dispatch]
+  );
 
   // Form validation function
   const validateForm = useCallback(() => {
@@ -424,7 +339,6 @@ const handleImagesChange = useCallback(
 
     // Paid event specific validation
     if (formData.isPaid) {
-      // ----- ADD THIS BLOCK HERE -----
       if (
         formData.capacity === '' ||
         formData.capacity === undefined ||
@@ -448,33 +362,28 @@ const handleImagesChange = useCallback(
           }
 
           // Price must be greater than 0
-          // Inside formData.ticketTypes.forEach in validateForm:
-if (
-  ticket.price === undefined ||
-  ticket.price === null ||
-  ticket.price === '' ||
-  isNaN(Number(ticket.price)) ||
-  Number(ticket.price) <= 0
-) {
-  ticketErrors.push(`Ticket type ${index + 1} price must be greater than 0`);
-}
+          if (
+            ticket.price === undefined ||
+            ticket.price === null ||
+            ticket.price === '' ||
+            isNaN(Number(ticket.price)) ||
+            Number(ticket.price) <= 0
+          ) {
+            ticketErrors.push(`Ticket type ${index + 1} price must be greater than 0`);
+          }
 
-
-          // Quantity validation: 0 means shares remaining pool (valid)
-          // No validation needed for quantity since 0 is valid (shares pool)
           // Ticket Quantity validation
-if (
-  ticket.quantity === undefined ||
-  ticket.quantity === null ||
-  ticket.quantity === '' ||
-  isNaN(Number(ticket.quantity)) ||
-  Number(ticket.quantity) < 0
-) {
-  ticketErrors.push(
-    `Ticket type ${index + 1} quantity is required and must be 0 (share pool) or a positive number`
-  );
-}
-
+          if (
+            ticket.quantity === undefined ||
+            ticket.quantity === null ||
+            ticket.quantity === '' ||
+            isNaN(Number(ticket.quantity)) ||
+            Number(ticket.quantity) < 0
+          ) {
+            ticketErrors.push(
+              `Ticket type ${index + 1} quantity is required and must be 0 (share pool) or a positive number`
+            );
+          }
 
           // Date validation: startDate should be before expiryDate if both are set
           if (ticket.startDate && ticket.expiryDate) {
@@ -623,20 +532,18 @@ if (
                 );
               }
 
-              // Quantity can be 0 (shares pool) - no validation needed
               // Ticket Quantity validation
-if (
-  ticket.quantity === undefined ||
-  ticket.quantity === null ||
-  ticket.quantity === '' ||
-  isNaN(Number(ticket.quantity)) ||
-  Number(ticket.quantity) < 0
-) {
-  ticketErrors.push(
-    `Ticket type ${index + 1} quantity is required and must be 0 (share pool) or a positive number`
-  );
-}
-
+              if (
+                ticket.quantity === undefined ||
+                ticket.quantity === null ||
+                ticket.quantity === '' ||
+                isNaN(Number(ticket.quantity)) ||
+                Number(ticket.quantity) < 0
+              ) {
+                ticketErrors.push(
+                  `Ticket type ${index + 1} quantity is required and must be 0 (share pool) or a positive number`
+                );
+              }
 
               // Date validation: startDate should be before expiryDate if both are set
               if (ticket.startDate && ticket.expiryDate) {
@@ -671,288 +578,118 @@ if (
   }, [currentStep, formData, isAddMode]);
 
   // Prepare form data for submission
-const prepareSubmissionData = useCallback(() => {
-  debugLog('StepManager', '🚀 prepareSubmissionData started');
-  
-  debugLog('StepManager', `📊 Current state:`, {
-    localImageFiles: localImageFiles.length,
-    reduxImages: formData.images?.length || 0,
-    timestamp: Date.now()
-  });
-  
-  // Deep inspection of local files
-  localImageFiles.forEach((localFile, index) => {
-    debugLog('StepManager', `Local file ${index}:`, {
-      id: localFile.id,
-      name: localFile.name,
-      size: localFile.size,
-      hasFile: localFile.file instanceof File,
-      fileConstructor: localFile.file?.constructor?.name
-    });
-  });
-  
-  // Deep inspection of Redux images
-  (formData.images || []).forEach((reduxImg, index) => {
-    debugLog('StepManager', `Redux image ${index}:`, {
-      id: reduxImg.id,
-      name: reduxImg.name,
-      isNew: reduxImg.isNew,
-      isExisting: reduxImg.isExisting,
-      hasFile: reduxImg.file instanceof File // Should be false
-    });
-  });
+  const prepareSubmissionData = useCallback(() => {
+    const submitFormData = new FormData();
 
-  const submitFormData = new FormData();
-
-  // Replace the comment "// Add basic fields (existing code)..." with this actual code:
-
-// 🔧 ADD ALL FORM FIELDS TO FORMDATA
-debugLog('StepManager', '📝 Adding basic form fields to FormData');
-
-// Basic event details
-if (formData.title) {
-  submitFormData.append('title', formData.title);
-  debugLog('StepManager', `📝 Added title: ${formData.title}`);
-}
-
-if (formData.description) {
-  submitFormData.append('description', formData.description);
-  debugLog('StepManager', `📝 Added description: ${formData.description.substring(0, 50)}...`);
-}
-
-if (formData.venue) {
-  submitFormData.append('venue', formData.venue);
-  debugLog('StepManager', `📝 Added venue: ${formData.venue}`);
-}
-
-if (formData.category) {
-  submitFormData.append('category', formData.category);
-  debugLog('StepManager', `📝 Added category: ${formData.category}`);
-}
-
-if (formData.dateTime) {
-  // Convert to UTC if timezone is provided
-  let finalDateTime = formData.dateTime;
-  if (formData.timeZone) {
-    try {
-      const utcDateTime = zonedTimeToUtc(formData.dateTime, formData.timeZone);
-      finalDateTime = utcDateTime.toISOString();
-      debugLog('StepManager', `📝 Converted datetime from ${formData.dateTime} to UTC: ${finalDateTime}`);
-    } catch (error) {
-      debugLog('StepManager', `⚠️ DateTime conversion error: ${error.message}`);
-      finalDateTime = new Date(formData.dateTime).toISOString();
+    // Basic event details
+    if (formData.title) {
+      submitFormData.append('title', formData.title);
     }
-  }
-  submitFormData.append('dateTime', finalDateTime);
-  debugLog('StepManager', `📝 Added dateTime: ${finalDateTime}`);
-}
 
-if (formData.timeZone) {
-  submitFormData.append('timeZone', formData.timeZone);
-  debugLog('StepManager', `📝 Added timeZone: ${formData.timeZone}`);
-}
+    if (formData.description) {
+      submitFormData.append('description', formData.description);
+    }
 
-// Address - send as JSON string
-if (formData.address) {
-  submitFormData.append('address', JSON.stringify(formData.address));
-  debugLog('StepManager', `📝 Added address: ${formData.address.formattedAddress}`);
-}
+    if (formData.venue) {
+      submitFormData.append('venue', formData.venue);
+    }
 
-// Coordinators - send as JSON string
-if (formData.coordinators && formData.coordinators.length > 0) {
-  submitFormData.append('coordinators', JSON.stringify(formData.coordinators));
-  debugLog('StepManager', `📝 Added ${formData.coordinators.length} coordinators`);
-}
+    if (formData.category) {
+      submitFormData.append('category', formData.category);
+    }
 
-// Event type
-submitFormData.append('isPaid', formData.isPaid ? 'true' : 'false');
-debugLog('StepManager', `📝 Added isPaid: ${formData.isPaid}`);
-
-// Free event specific fields
-if (!formData.isPaid) {
-  if (formData.capacity !== undefined && formData.capacity !== null) {
-    submitFormData.append('capacity', formData.capacity.toString());
-    debugLog('StepManager', `📝 Added capacity: ${formData.capacity}`);
-  }
-
-  if (formData.maxAttendeesPerRegistration) {
-    submitFormData.append('maxAttendeesPerRegistration', formData.maxAttendeesPerRegistration.toString());
-    debugLog('StepManager', `📝 Added maxAttendeesPerRegistration: ${formData.maxAttendeesPerRegistration}`);
-  }
-}
-
-// Paid event specific fields
-if (formData.isPaid) {
-  if (formData.capacity !== undefined && formData.capacity !== null) {
-    submitFormData.append('capacity', formData.capacity.toString());
-    debugLog('StepManager', `📝 Added capacity: ${formData.capacity}`);
-  }
-
-  if (formData.ticketTypes && formData.ticketTypes.length > 0) {
-    submitFormData.append('ticketTypes', JSON.stringify(formData.ticketTypes));
-    debugLog('StepManager', `📝 Added ${formData.ticketTypes.length} ticket types`);
-  }
-
-  if (formData.seatingLayout && formData.seatingLayout.length > 0) {
-    submitFormData.append('seatingLayout', JSON.stringify(formData.seatingLayout));
-    debugLog('StepManager', `📝 Added seating layout`);
-  }
-
-  if (formData.stripeAccountId) {
-    submitFormData.append('stripeAccountId', formData.stripeAccountId);
-    debugLog('StepManager', `📝 Added stripeAccountId`);
-  }
-}
-
-// Recurring event fields
-if (formData.recurrence && formData.recurrence.isRecurring) {
-  submitFormData.append('recurrence', JSON.stringify(formData.recurrence));
-  debugLog('StepManager', `📝 Added recurrence settings`);
-}
-
-// Registration fields
-if (formData.registrationFields && formData.registrationFields.length > 0) {
-  submitFormData.append('registrationFields', JSON.stringify(formData.registrationFields));
-  debugLog('StepManager', `📝 Added ${formData.registrationFields.length} registration fields`);
-}
-  
-  // 🔧 CRITICAL SECTION: Add ALL new image files with extensive validation
-  debugLog('StepManager', '📸 Processing local image files for FormData');
-  
-  if (localImageFiles && localImageFiles.length > 0) {
-    debugLog('StepManager', `📸 Processing ${localImageFiles.length} local image files`);
-    
-    let uploadedCount = 0;
-    let errorCount = 0;
-    
-    localImageFiles.forEach(({ file, id, name }, index) => {
-      debugLog('StepManager', `📸 Processing file ${index + 1}/${localImageFiles.length}:`, {
-        id,
-        name,
-        hasFile: file instanceof File,
-        fileSize: file?.size,
-        fileType: typeof file,
-        constructor: file?.constructor?.name
-      });
-      
-      // Validate that file is actually a File object
-      if (file instanceof File) {
-        debugLog('StepManager', `📸 ✅ Valid File object - adding to FormData:`, {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          lastModified: file.lastModified
-        });
-        
-        submitFormData.append('images', file, name);
-        uploadedCount++;
-        
-        // Double-check FormData entry
-        const formDataImages = submitFormData.getAll('images');
-        debugLog('StepManager', `📸 FormData now has ${formDataImages.length} images`);
-        
-      } else {
-        errorCount++;
-        debugLog('StepManager', `📸 ❌ Invalid file object:`, {
-          name,
-          id,
-          fileType: typeof file,
-          isNull: file === null,
-          isUndefined: file === undefined,
-          constructor: file?.constructor?.name,
-          properties: file ? Object.keys(file) : 'no properties'
-        });
-        
-        // Try to understand what went wrong
-        if (!file) {
-          debugLog('StepManager', `📸 🔍 File is ${file}, checking local state integrity`);
-        } else if (typeof file === 'object') {
-          debugLog('StepManager', `📸 🔍 File is object but not File instance:`, {
-            hasName: 'name' in file,
-            hasSize: 'size' in file,
-            hasType: 'type' in file,
-            allProps: Object.keys(file)
-          });
+    if (formData.dateTime) {
+      // Convert to UTC if timezone is provided
+      let finalDateTime = formData.dateTime;
+      if (formData.timeZone) {
+        try {
+          const utcDateTime = zonedTimeToUtc(formData.dateTime, formData.timeZone);
+          finalDateTime = utcDateTime.toISOString();
+        } catch (error) {
+          finalDateTime = new Date(formData.dateTime).toISOString();
         }
       }
-    });
+      submitFormData.append('dateTime', finalDateTime);
+    }
+
+    if (formData.timeZone) {
+      submitFormData.append('timeZone', formData.timeZone);
+    }
+
+    // Address - send as JSON string
+    if (formData.address) {
+      submitFormData.append('address', JSON.stringify(formData.address));
+    }
+
+    // Coordinators - send as JSON string
+    if (formData.coordinators && formData.coordinators.length > 0) {
+      submitFormData.append('coordinators', JSON.stringify(formData.coordinators));
+    }
+
+    // Event type
+    submitFormData.append('isPaid', formData.isPaid ? 'true' : 'false');
+
+    // Free event specific fields
+    if (!formData.isPaid) {
+      if (formData.capacity !== undefined && formData.capacity !== null) {
+        submitFormData.append('capacity', formData.capacity.toString());
+      }
+
+      if (formData.maxAttendeesPerRegistration) {
+        submitFormData.append('maxAttendeesPerRegistration', formData.maxAttendeesPerRegistration.toString());
+      }
+    }
+
+    // Paid event specific fields
+    if (formData.isPaid) {
+      if (formData.capacity !== undefined && formData.capacity !== null) {
+        submitFormData.append('capacity', formData.capacity.toString());
+      }
+
+      if (formData.ticketTypes && formData.ticketTypes.length > 0) {
+        submitFormData.append('ticketTypes', JSON.stringify(formData.ticketTypes));
+      }
+
+      if (formData.seatingLayout && formData.seatingLayout.length > 0) {
+        submitFormData.append('seatingLayout', JSON.stringify(formData.seatingLayout));
+      }
+
+      if (formData.stripeAccountId) {
+        submitFormData.append('stripeAccountId', formData.stripeAccountId);
+      }
+    }
+
+    // Recurring event fields
+    if (formData.recurrence && formData.recurrence.isRecurring) {
+      submitFormData.append('recurrence', JSON.stringify(formData.recurrence));
+    }
+
+    // Registration fields
+    if (formData.registrationFields && formData.registrationFields.length > 0) {
+      submitFormData.append('registrationFields', JSON.stringify(formData.registrationFields));
+    }
     
-    debugLog('StepManager', `📸 File processing summary:`, {
-      totalProcessed: localImageFiles.length,
-      successfulUploads: uploadedCount,
-      errors: errorCount,
-      formDataImageCount: submitFormData.getAll('images').length
-    });
-    
-    if (uploadedCount === 0 && localImageFiles.length > 0) {
-      debugLog('StepManager', '📸 🚨 CRITICAL ERROR: No valid File objects found!');
-      debugLog('StepManager', '📸 🔍 Local image files state:', localImageFiles);
-      
-      // Additional forensic analysis
-      debugLog('StepManager', '📸 🔍 Forensic analysis of local files:');
-      localImageFiles.forEach((item, idx) => {
-        debugLog('StepManager', `📸 🔍 Item ${idx}:`, {
-          itemType: typeof item,
-          itemKeys: Object.keys(item || {}),
-          fileProperty: item?.file,
-          fileType: typeof item?.file,
-          isFileInstance: item?.file instanceof File,
-          filePrototype: item?.file?.__proto__?.constructor?.name
-        });
+    // Add ALL new image files
+    if (localImageFiles && localImageFiles.length > 0) {
+      localImageFiles.forEach(({ file, name }) => {
+        // Validate that file is actually a File object
+        if (file instanceof File) {
+          submitFormData.append('images', file, name);
+        }
       });
     }
-  } else {
-    debugLog('StepManager', '📸 No local image files to upload');
-  }
 
-  // Add existing image data for backend processing
-  const existingImages = (formData.images || []).filter(
-    (image) => image.isExisting
-  );
-  
-  if (existingImages.length > 0) {
-    debugLog('StepManager', `📸 Adding ${existingImages.length} existing images`);
-    existingImages.forEach((image, index) => {
-      debugLog('StepManager', `📸 Existing image ${index + 1}:`, {
-        name: image.name,
-        url: image.url,
-        id: image.id
-      });
-    });
-    submitFormData.append('existingImages', JSON.stringify(existingImages));
-  }
-
-  // Final FormData verification
-  debugLog('StepManager', '📸 Final FormData verification:');
-  const finalImageFiles = submitFormData.getAll('images');
-  debugLog('StepManager', `📸 Total images in FormData: ${finalImageFiles.length}`);
-  
-  finalImageFiles.forEach((file, index) => {
-    debugLog('StepManager', `📸 FormData image ${index + 1}:`, {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      isFile: file instanceof File
-    });
-  });
-
-  // Debug: Log complete FormData contents
-  debugLog('StepManager', '📋 Complete FormData contents:');
-  for (let pair of submitFormData.entries()) {
-    if (pair[1] instanceof File) {
-      debugLog('StepManager', `📋 ${pair[0]}: File(${pair[1].name}, ${pair[1].size} bytes)`);
-    } else {
-      const valuePreview = typeof pair[1] === 'string' 
-        ? pair[1].substring(0, 100) + (pair[1].length > 100 ? '...' : '')
-        : pair[1];
-      debugLog('StepManager', `📋 ${pair[0]}: ${valuePreview}`);
+    // Add existing image data for backend processing
+    const existingImages = (formData.images || []).filter(
+      (image) => image.isExisting
+    );
+    
+    if (existingImages.length > 0) {
+      submitFormData.append('existingImages', JSON.stringify(existingImages));
     }
-  }
 
-  debugLog('StepManager', '✅ prepareSubmissionData completed');
-  return submitFormData;
-}, [formData, localImageFiles]);
-
+    return submitFormData;
+  }, [formData, localImageFiles]);
 
   // Handle form submission
   const handleSubmit = useCallback(async () => {
@@ -998,7 +735,7 @@ if (formData.registrationFields && formData.registrationFields.length > 0) {
               eventId: editingEventId,
               formData: submitFormData,
             })
-          ).unwrap(); // ✅ Use updateFreeEvent for free events
+          ).unwrap();
         }
       } else {
         // Create new event - choose the appropriate thunk based on event type
@@ -1023,24 +760,40 @@ if (formData.registrationFields && formData.registrationFields.length > 0) {
   ]);
 
   // Handle step navigation
-  const handleNext = useCallback(() => {
-    console.log('Current step data:', { step: currentStep, formData });
 
-    // Validate current step
-    const currentErrors = validateCurrentStep();
-    if (Object.keys(currentErrors).length > 0) {
-      dispatch(setFormErrors(currentErrors));
+const handleNext = useCallback(() => {
+  // Validate current step
+  const currentErrors = validateCurrentStep();
+  if (Object.keys(currentErrors).length > 0) {
+    dispatch(setFormErrors(currentErrors));
 
-      // Show error toast
-      toast.error('Please fix the errors before proceeding');
-      return;
-    }
+    // Show specific error messages instead of generic message
+    const errorMessages = Object.values(currentErrors).flat();
+    const errorCount = errorMessages.length;
+    
+    toast.error(
+      <div>
+        <p className="font-bold">
+          {errorCount === 1 
+            ? 'Please fix the following error:' 
+            : `Please fix the following ${errorCount} errors:`
+          }
+        </p>
+        <ul className="list-disc pl-4 mt-2">
+          {errorMessages.map((msg, i) => (
+            <li key={i} className="text-sm">{msg}</li>
+          ))}
+        </ul>
+      </div>
+    );
+    return;
+  }
 
-    // Clear errors and proceed
-    dispatch(clearFormErrors());
-    dispatch(nextStep());
-    window.scrollTo(0, 0);
-  }, [currentStep, validateCurrentStep, dispatch, formData]);
+  // Clear errors and proceed
+  dispatch(clearFormErrors());
+  dispatch(nextStep());
+  window.scrollTo(0, 0);
+}, [currentStep, validateCurrentStep, dispatch, formData]);
 
   const handlePrev = useCallback(() => {
     dispatch(clearFormErrors());
@@ -1057,13 +810,19 @@ if (formData.registrationFields && formData.registrationFields.length > 0) {
     }
   }, [allowCancel, isAddMode, dispatch, router]);
 
-  const handleAddAnother = useCallback(() => {
+const handleAddAnother = useCallback(() => {
+  // Give user feedback before resetting
+  toast.info('Preparing new event form...');
+  
+  // Small delay for better UX
+  setTimeout(() => {
     dispatch(resetForm());
     // Don't navigate if we're already in add mode
     if (!isAddMode) {
       router.push('/events/add');
     }
-  }, [dispatch, isAddMode, router]);
+  }, 800);
+}, [dispatch, isAddMode, router]);
 
   const handleManageEvents = useCallback(() => {
     dispatch(resetForm()); // Always reset form, for both add and edit

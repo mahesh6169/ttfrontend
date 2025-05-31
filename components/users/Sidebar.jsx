@@ -9,6 +9,7 @@ const Sidebar = ({ onLinkClick }) => {
   const pathname = usePathname();
   const router = useRouter();
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [navigatingTo, setNavigatingTo] = useState(null);
 
   const menuItems = [
     { label: 'Settings', href: '/users/profile/settings', icon: <FaUser /> },
@@ -56,6 +57,22 @@ const Sidebar = ({ onLinkClick }) => {
     setOpenDropdown(openDropdown === label ? null : label);
   };
 
+  const handleNavigation = (href) => {
+    // Prevent navigation if already navigating
+    if (navigatingTo) return;
+    
+    setNavigatingTo(href);
+    router.push(href);
+    
+    // Clear loading state after navigation
+    const timer = setTimeout(() => {
+      setNavigatingTo(null);
+      if (onLinkClick) onLinkClick();
+    }, 1000); // Adjust timing as needed
+    
+    return () => clearTimeout(timer);
+  };
+
   return (
     <nav className="p-4 bg-teal-700 relative">
       <ul className="space-y-2 text-lime-100">
@@ -86,18 +103,23 @@ const Sidebar = ({ onLinkClick }) => {
                 <ul className="ml-4 mt-1 space-y-1 border-l-2 border-lime-200">
                   {item.children.map(child => (
                     <li key={child.href}>
-                      <Link
-                        href={child.href}
-                        className={`flex items-center gap-2 pl-4 pr-2 py-2 rounded transition-colors ${
+                      <div
+                        className={`flex items-center gap-2 pl-4 pr-2 py-2 rounded transition-colors cursor-pointer ${
                           pathname === child.href 
                             ? 'bg-lime-100 text-teal-700 font-bold' 
-                            : 'hover:bg-lime-50 hover:text-teal-700'
-                        }`}
-                        onClick={onLinkClick}
+                            : navigatingTo === child.href
+                              ? 'bg-lime-200 text-teal-700'
+                              : 'hover:bg-lime-50 hover:text-teal-700'
+                        } ${navigatingTo === child.href ? 'opacity-75' : ''}`}
+                        onClick={() => handleNavigation(child.href)}
                       >
-                        {child.icon}
-                        <span className="text-sm">{child.label}</span>
-                      </Link>
+                        {navigatingTo === child.href ? (
+                          <div className="w-3 h-3 border-2 border-teal-700 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          child.icon
+                        )}
+                        <span className="text-sm">{navigatingTo === child.href ? 'Loading...' : child.label}</span>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -105,19 +127,24 @@ const Sidebar = ({ onLinkClick }) => {
             </li>
           ) : (
             <li key={item.href}>
-              <Link
-                href={item.href}
-                className={`flex items-center space-x-2 p-2 rounded transition-colors block ${
+              <div
+                className={`flex items-center space-x-2 p-2 rounded transition-colors cursor-pointer ${
                   pathname === item.href 
                     ? 'bg-lime-100 text-teal-700 font-bold' 
-                    : 'hover:bg-lime-50 hover:text-teal-700'
-                }`}
+                    : navigatingTo === item.href
+                      ? 'bg-lime-200 text-teal-700'
+                      : 'hover:bg-lime-50 hover:text-teal-700'
+                } ${navigatingTo === item.href ? 'opacity-75' : ''}`}
                 onMouseEnter={() => router.prefetch(item.href)}
-                onClick={onLinkClick}
+                onClick={() => handleNavigation(item.href)}
               >
-                {item.icon}
-                <span>{item.label}</span>
-              </Link>
+                {navigatingTo === item.href ? (
+                  <div className="w-4 h-4 border-2 border-teal-700 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  item.icon
+                )}
+                <span>{navigatingTo === item.href ? 'Loading...' : item.label}</span>
+              </div>
             </li>
           )
         )}

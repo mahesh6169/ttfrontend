@@ -252,7 +252,7 @@ const createDefaultFormData = () => ({
   },
   
   // Ticketing
-  isPaid: false,
+
   capacity: 0,
   maxAttendeesPerRegistration: 10,
   registrationFields: [],
@@ -363,6 +363,10 @@ const eventSlice = createSlice({
     formStatus: 'idle', // separate status for form operations
     formError: null,
     successMessage: '',
+
+    // Delete operation state
+deleteStatus: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+deleteError: null,
     
     // Edit mode state
     isEditMode: false,
@@ -715,6 +719,10 @@ const eventSlice = createSlice({
     clearSuccessMessage: (state) => {
       state.successMessage = '';
     },
+    // Delete status management
+clearDeleteError: (state) => {
+  state.deleteError = null;
+},
   },
   
   extraReducers: (builder) => {
@@ -891,24 +899,25 @@ const eventSlice = createSlice({
       })
       
       // Delete My Event
-      .addCase(deleteMyEvent.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(deleteMyEvent.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        // Remove the deleted event from myEvents array
-        state.myEvents = state.myEvents.filter(
-          event => event._id !== action.payload.eventId
-        );
-        // Clear selectedEvent if it was the deleted one
-        if (state.selectedEvent?._id === action.payload.eventId) {
-          state.selectedEvent = null;
-        }
-      })
-      .addCase(deleteMyEvent.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload || 'Failed to delete event';
-      });
+.addCase(deleteMyEvent.pending, (state) => {
+  state.deleteStatus = 'loading';
+  state.deleteError = null;
+})
+.addCase(deleteMyEvent.fulfilled, (state, action) => {
+  state.deleteStatus = 'succeeded';
+  // Remove the deleted event from myEvents array
+  state.myEvents = state.myEvents.filter(
+    event => event._id !== action.payload.eventId
+  );
+  // Clear selectedEvent if it was the deleted one
+  if (state.selectedEvent?._id === action.payload.eventId) {
+    state.selectedEvent = null;
+  }
+})
+.addCase(deleteMyEvent.rejected, (state, action) => {
+  state.deleteStatus = 'failed';
+  state.deleteError = action.payload || 'Failed to delete event';
+});
   },
 });
 
@@ -983,6 +992,9 @@ export const {
   
   // Success messages
   clearSuccessMessage,
+
+  // Delete management
+clearDeleteError,
   
   // Form management
   resetForm,

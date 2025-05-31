@@ -13,7 +13,7 @@ const ManageEventsPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { myEvents, loading, error } = useSelector((state) => state.events);
+  const { myEvents, loading, error, deleteStatus, deleteError, formStatus } = useSelector((state) => state.events);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
 
@@ -30,22 +30,31 @@ const ManageEventsPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async () => {
-    try {
-      const result = await dispatch(deleteMyEvent(eventToDelete));
+const handleDelete = async () => {
+  // Prevent multiple clicks
+  if (deleteStatus === 'loading') return;
+  
+  try {
+    const result = await dispatch(deleteMyEvent(eventToDelete));
 
-      if (deleteMyEvent.fulfilled.match(result)) {
-        toast.success('Event deleted successfully.');
-        dispatch(fetchMyEvents());
-      } else {
-        toast.error(result.payload || 'Failed to delete event.');
-      }
-    } catch (err) {
-      toast.error('Unexpected error occurred.');
-    } finally {
+    if (deleteMyEvent.fulfilled.match(result)) {
+      toast.success('Event deleted successfully.');
       setIsModalOpen(false);
+      setEventToDelete(null);
+    } else {
+      toast.error(result.payload || 'Failed to delete event.');
     }
-  };
+  } catch (err) {
+    toast.error('Unexpected error occurred.');
+  }
+};
+
+const handleModalCancel = () => {
+  // Prevent closing modal while deleting
+  if (deleteStatus === 'loading') return;
+  setIsModalOpen(false);
+  setEventToDelete(null);
+};
 
   if (loading) {
     return (
@@ -110,23 +119,29 @@ const ManageEventsPage = () => {
         />
       )}
 <div className="flex flex-wrap gap-2 mt-4">
-  <button
-    onClick={() => !isExpired && handleEdit(event)}
-    className={`px-4 py-1 rounded ${
-      isExpired
-        ? 'bg-gray-400 text-white cursor-not-allowed'
-        : 'bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100'
-    }`}
-    disabled={isExpired}
-  >
-    Edit
-  </button>
-  <button
-    onClick={() => confirmDelete(event._id)}
-    className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
-  >
-    Delete
-  </button>
+<button
+  onClick={() => !isExpired && handleEdit(event)}
+  className={`px-4 py-1 rounded flex items-center gap-1 ${
+    isExpired || formStatus === 'loading'
+      ? 'bg-gray-400 text-white cursor-not-allowed'
+      : 'bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100'
+  }`}
+  disabled={isExpired || formStatus === 'loading'}
+>
+  {formStatus === 'loading' && (
+    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+  )}
+  {formStatus === 'loading' ? 'Loading...' : 'Edit'}
+</button>
+<button
+  onClick={() => confirmDelete(event._id)}
+  disabled={deleteStatus === 'loading'}
+  className={`bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 ${
+    deleteStatus === 'loading' ? 'opacity-50 cursor-not-allowed' : ''
+  }`}
+>
+  Delete
+</button>
   <Link
     href={`/users/profile/manageevents/${event._id}/attendees/${event.isPaid ? 'paid' : 'free'}`}
     className={`bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-700 ${
@@ -145,12 +160,14 @@ const ManageEventsPage = () => {
       )}
 
       <ConfirmModal
-        isOpen={isModalOpen}
-        onConfirm={handleDelete}
-        onCancel={() => setIsModalOpen(false)}
-        title="Delete Event"
-        message="Are you sure you want to delete this event?"
-      />
+  isOpen={isModalOpen}
+  onConfirm={handleDelete}
+  onCancel={handleModalCancel}
+  title="Delete Event"
+  message={deleteStatus === 'loading' ? "Deleting event..." : "Are you sure you want to delete this event?"}
+  confirmText={deleteStatus === 'loading' ? "Deleting..." : "Delete"}
+  isLoading={deleteStatus === 'loading'}
+/>
     </div>
   );
 };

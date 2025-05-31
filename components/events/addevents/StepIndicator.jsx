@@ -63,7 +63,7 @@ const StepIndicator = ({
       title: 'Event Type',
       description: formData?.isPaid !== undefined 
         ? (formData.isPaid ? 'Paid event' : 'Free event')
-        : 'Free or paid event',
+        : 'Choose pricing model',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
@@ -96,27 +96,30 @@ const StepIndicator = ({
     return false; // Placeholder for future enhancement
   };
 
-  // Check if step is complete based on required data
-  const isStepComplete = (stepNumber) => {
-    switch (stepNumber) {
-      case 1:
-        return formData?.title && formData?.dateTime && formData?.venue && formData?.description;
-      case 2:
-        return formData?.coordinators?.length > 0 && 
-               formData.coordinators.every(coord => coord.name && coord.phone);
-      case 3:
-        return formData?.isPaid !== undefined;
-      case 4:
-        if (formData?.isPaid) {
-          return formData?.ticketTypes?.length > 0 && 
-                 formData.ticketTypes.every(ticket => ticket.name && ticket.price > 0);
-        } else {
-          return formData?.maxAttendeesPerRegistration > 0;
-        }
-      default:
-        return false;
-    }
-  };
+
+const isStepComplete = (stepNumber) => {
+  switch (stepNumber) {
+    case 1:
+      return formData?.title && formData?.dateTime && formData?.venue && formData?.description;
+    case 2:
+      return formData?.coordinators?.length > 0 && 
+             formData.coordinators.every(coord => coord.name && coord.phone);
+    case 3:
+      return formData?.isPaid !== undefined; // Step 3 complete when user chooses
+    case 4:
+      // Only check step 4 completion if step 3 is complete
+      if (formData?.isPaid === undefined) return false;
+      
+      if (formData?.isPaid) {
+        return formData?.ticketTypes?.length > 0 && 
+               formData.ticketTypes.every(ticket => ticket.name && ticket.price > 0);
+      } else {
+        return formData?.maxAttendeesPerRegistration > 0;
+      }
+    default:
+      return false;
+  }
+};
 
   // Get step status
   const getStepStatus = (stepNumber) => {
@@ -132,8 +135,15 @@ const StepIndicator = ({
   // Check if this is a recurring event
   const isRecurringEvent = formData?.recurrence?.isRecurring || false;
 
-  // Get completion percentage
+  // FIXED: Get completion percentage based on current step position, not completed steps
   const getCompletionPercentage = () => {
+    // For step-based progress: each completed step contributes to progress
+    // Step 1 = 25%, Step 2 = 50%, Step 3 = 75%, Step 4 = 100%
+    return Math.round((currentStep / totalSteps) * 100);
+  };
+
+  // Alternative: If you want completion based on actual form completion
+  const getFormCompletionPercentage = () => {
     const completedSteps = steps.filter((step, index) => isStepComplete(index + 1)).length;
     return Math.round((completedSteps / totalSteps) * 100);
   };
