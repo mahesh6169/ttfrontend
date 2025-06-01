@@ -1,11 +1,52 @@
 // components/events/addevents/EventTypeStep.jsx
 
-import React from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { toggleIsPaid } from '@/store/slices/events/eventSlice';
+import { validateToken } from '@/store/slices/users/userSlice';
 
 const EventTypeStep = ({ formData = {}, errors = {} }) => {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.user);
+  
+  // Local state for tracking setup status
+  const [isCheckingStripe, setIsCheckingStripe] = useState(false);
+  const [stripeSetupComplete, setStripeSetupComplete] = useState(false);
+
+// Check Stripe setup status
+useEffect(() => {
+  // Check if user is fully ready to accept payments
+  const isStripeFullySetup = user?.stripeAccountId && 
+                            user?.stripeChargesEnabled && 
+                            user?.stripeDetailsSubmitted && 
+                            user?.stripePayoutsEnabled;
+  
+  setStripeSetupComplete(isStripeFullySetup);
+}, [user?.stripeAccountId, user?.stripeChargesEnabled, user?.stripeDetailsSubmitted, user?.stripePayoutsEnabled]);
+
+  // Periodic check for Stripe setup completion (when user returns from setup)
+  useEffect(() => {
+    let intervalId;
+    
+    if (formData.isPaid && !stripeSetupComplete && !isCheckingStripe) {
+      intervalId = setInterval(async () => {
+        setIsCheckingStripe(true);
+        try {
+          await dispatch(validateToken()).unwrap();
+        } catch (error) {
+          console.log('Error refreshing user data:', error);
+        } finally {
+          setIsCheckingStripe(false);
+        }
+      }, 3000); // Check every 3 seconds
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [formData.isPaid, stripeSetupComplete, isCheckingStripe, dispatch]);
 
   const handlePaidToggle = (isPaid) => {
     dispatch(toggleIsPaid(isPaid));
@@ -28,6 +69,14 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
       return `Multiple times per week (${days})`;
     }
   };
+
+  // Handle opening Stripe setup in new window
+  // In EventTypeStep.jsx
+const handleStripeSetup = () => {
+  const currentPath = window.location.pathname;
+  const stripeSetupUrl = `/users/profile/settings/stripeSetup?returnTo=${encodeURIComponent(currentPath)}`;
+  window.open(stripeSetupUrl, '_blank');
+};
 
   return (
     <div className="space-y-6">
@@ -171,6 +220,16 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
                 <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
                   Premium
                 </span>
+                {formData.isPaid && !stripeSetupComplete && (
+                  <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full animate-pulse">
+                    Setup Required
+                  </span>
+                )}
+                {formData.isPaid && stripeSetupComplete && (
+                  <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                    ✓ Ready
+                  </span>
+                )}
               </div>
               <p className="text-gray-600 mt-2">
                 Sell tickets for your event with multiple pricing tiers and optional seating
@@ -224,6 +283,82 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
         </div>
       </div>
       
+      {/* Payment Setup Required Warning - Enhanced */}
+      {formData.isPaid && !stripeSetupComplete && (
+        <div className="p-6 bg-red-50 border-2 border-red-200 rounded-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-lg font-medium text-red-800 mb-2">Payment Account Setup Required</h3>
+              <div className="text-red-700 space-y-3">
+                <p>
+                  <strong>Action Required:</strong> You need to set up your payment processing account 
+                  before you can create paid events. This is required to securely handle ticket sales 
+                  and receive payments.
+                </p>
+                
+                <div className="bg-white rounded-lg p-4 border border-red-200">
+                  <h4 className="font-medium text-red-800 mb-2">What you'll need to set up:</h4>
+                  <ul className="text-sm text-red-700 space-y-1">
+                    <li>• Business or personal details</li>
+                    <li>• Bank account information for payouts</li>
+                    <li>• Tax information (ABN if applicable)</li>
+                    <li>• Identity verification documents</li>
+                  </ul>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={handleStripeSetup}
+                    className="inline-flex items-center px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                    </svg>
+                    Set Up Payment Account Now
+                  </button>
+                  
+                  {isCheckingStripe && (
+                    <div className="flex items-center px-4 py-3 bg-blue-100 text-blue-800 rounded-lg">
+                      <svg className="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Checking for setup completion...
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-sm bg-blue-50 border border-blue-200 rounded p-3">
+                  <p className="text-blue-800">
+                    <strong>💡 Tip:</strong> The setup process opens in a new window. Your event details 
+                    will be saved here, and you can continue once setup is complete.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Payment Setup Success */}
+      {formData.isPaid && stripeSetupComplete && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center">
+            <svg className="h-5 w-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <p className="text-green-800 font-medium">
+              ✓ Payment account is set up and ready! You can proceed to configure your ticket pricing.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Important Notes Section */}
       <div className="space-y-4">
         {/* Dynamic Important Note */}
@@ -239,13 +374,16 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
               <div className="mt-2 text-sm text-yellow-700">
                 {formData.isPaid ? (
                   <div className="space-y-2">
-                    <p>
-                      <strong>Payment Setup Required:</strong> You'll need to configure your payment settings 
-                      to receive funds. Make sure you've set up your payout details in your account settings.
-                    </p>
-                    <p>
-                      <strong>Transaction Fees:</strong> A processing fee of 2.9% + $0.30 AUD applies to each transaction.
-                    </p>
+                    {!stripeSetupComplete ? (
+                      <p>
+                        <strong>Setup Required:</strong> Complete your payment account setup above to proceed 
+                        with creating paid events.
+                      </p>
+                    ) : (
+                      <p>
+                        <strong>Payment Processing:</strong> A processing fee of 2.9% + $0.30 AUD applies to each transaction.
+                      </p>
+                    )}
                     {isRecurringEvent && (
                       <p>
                         <strong>Recurring Events:</strong> Each occurrence will be treated as a separate 
@@ -272,37 +410,6 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
             </div>
           </div>
         </div>
-
-        {/* Payment Setup Reminder for Paid Events */}
-        {formData.isPaid && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">Payment Account Setup</h3>
-                <div className="mt-2 text-sm text-blue-700">
-                  <p>
-                    Don't have payment processing set up yet? You can complete your event creation 
-                    and set up payments later, but you'll need to activate payments before selling tickets.
-                  </p>
-                  <a 
-                    href="/users/profile/settings" 
-                    className="mt-2 inline-flex items-center text-sm text-teal-600 hover:text-teal-500 font-medium"
-                  >
-                    Set up payment account
-                    <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Display any errors */}

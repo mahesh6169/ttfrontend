@@ -645,6 +645,10 @@ const userSlice = createSlice({
           email: payload.user.email,
           isAccountVerified: payload.user.isAccountVerified,
           role: payload.user.role,
+          stripeAccountId: payload.user.stripeAccountId || null,
+           stripeChargesEnabled: payload.user.stripeChargesEnabled || false,
+    stripeDetailsSubmitted: payload.user.stripeDetailsSubmitted || false,
+    stripePayoutsEnabled: payload.user.stripePayoutsEnabled || false,
         };
         state.mutedThreads = payload.user.mutedThreads || [];
       })

@@ -63,6 +63,8 @@ const StepManager = ({
     status,
   } = useSelector((state) => state.events);
 
+  const { user } = useSelector((state) => state.user);
+
   // Local state for image files (can't store File objects in Redux)
   const [localImageFiles, setLocalImageFiles] = useState([]);
 
@@ -577,6 +579,38 @@ useEffect(() => {
     return errors;
   }, [currentStep, formData, isAddMode]);
 
+const validateCurrentStepWithStripe = useCallback(() => {
+  const errors = validateCurrentStep(); // Get existing validation errors
+  
+  // Additional validation for step 3 (Event Type) - Stripe setup check
+  if (currentStep === 3 && formData.isPaid) {
+    const isStripeFullySetup = user?.stripeAccountId && 
+                              user?.stripeChargesEnabled && 
+                              user?.stripeDetailsSubmitted && 
+                              user?.stripePayoutsEnabled;
+    
+    if (!isStripeFullySetup) {
+      errors.stripeSetup = ['Payment account setup is required for paid events. Please complete the setup above.'];
+    }
+  }
+  
+  return errors;
+}, [currentStep, formData.isPaid, validateCurrentStep, user?.stripeAccountId, user?.stripeChargesEnabled, user?.stripeDetailsSubmitted, user?.stripePayoutsEnabled]);
+
+// Helper function to check if Next button should be disabled
+const isNextButtonDisabled = useCallback(() => {
+  // Check if we're on step 3 (Event Type) with paid event but no Stripe setup
+  if (currentStep === 3 && formData.isPaid) {
+    const isStripeFullySetup = user?.stripeAccountId && 
+                              user?.stripeChargesEnabled && 
+                              user?.stripeDetailsSubmitted && 
+                              user?.stripePayoutsEnabled;
+    return !isStripeFullySetup;
+  }
+  
+  return isLoading;
+}, [currentStep, formData.isPaid, isLoading, user?.stripeAccountId, user?.stripeChargesEnabled, user?.stripeDetailsSubmitted, user?.stripePayoutsEnabled]);
+
   // Prepare form data for submission
   const prepareSubmissionData = useCallback(() => {
     const submitFormData = new FormData();
@@ -763,9 +797,28 @@ useEffect(() => {
 
 const handleNext = useCallback(() => {
   // Validate current step
-  const currentErrors = validateCurrentStep();
+  const currentErrors = validateCurrentStepWithStripe();
+
   if (Object.keys(currentErrors).length > 0) {
     dispatch(setFormErrors(currentErrors));
+
+
+     // Special handling for Stripe setup errors
+    if (currentErrors.stripeSetup) {
+      toast.error(
+        <div>
+          <p className="font-bold">Payment Setup Required</p>
+          <p className="text-sm mt-1">
+            Please complete your payment account setup before proceeding with paid events.
+          </p>
+        </div>,
+        {
+          duration: 6000,
+          position: 'top-center',
+        }
+      );
+      return;
+    }
 
     // Show specific error messages instead of generic message
     const errorMessages = Object.values(currentErrors).flat();
@@ -793,7 +846,7 @@ const handleNext = useCallback(() => {
   dispatch(clearFormErrors());
   dispatch(nextStep());
   window.scrollTo(0, 0);
-}, [currentStep, validateCurrentStep, dispatch, formData]);
+}, [currentStep, validateCurrentStepWithStripe, dispatch]);
 
   const handlePrev = useCallback(() => {
     dispatch(clearFormErrors());
@@ -971,58 +1024,100 @@ const handleAddAnother = useCallback(() => {
               )}
 
               {currentStep < totalSteps ? (
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={isLoading}
-                  className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                  className={`px-6 py-2 ${
-                    isLoading
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-teal-600 hover:bg-teal-700'
-                  } text-white rounded-lg transition-colors flex items-center gap-2`}
-                >
-                  {isLoading ? (
-                    <>
-                      <svg
-                        className="animate-spin h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      {isEditingMode
-                        ? 'Updating Event...'
-                        : 'Creating Event...'}
-                    </>
-                  ) : isEditingMode ? (
-                    'Update Event'
-                  ) : (
-                    'Create Event'
-                  )}
-                </button>
-              )}
+  <button
+    type="button"
+    onClick={handleNext}
+    disabled={isNextButtonDisabled()}
+    className={`px-6 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+      isNextButtonDisabled()
+        ? 'bg-gray-400 cursor-not-allowed text-white'
+        : 'bg-teal-600 hover:bg-teal-700 text-white'
+    }`}
+    title={
+  currentStep === 3 && formData.isPaid && !(user?.stripeAccountId && user?.stripeChargesEnabled && user?.stripeDetailsSubmitted && user?.stripePayoutsEnabled)
+    ? 'Complete payment setup to proceed'
+    : ''
+}
+  >
+    {isNextButtonDisabled() && currentStep === 3 && formData.isPaid ? (
+      <>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        Payment Setup Required
+      </>
+    ) : isLoading ? (
+      <>
+        <svg
+          className="animate-spin h-4 w-4 text-white"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        Next
+      </>
+    ) : (
+      'Next'
+    )}
+  </button>
+) : (
+  <button
+    type="button"
+    onClick={handleSubmit}
+    disabled={isLoading}
+    className={`px-6 py-2 ${
+      isLoading
+        ? 'bg-gray-400 cursor-not-allowed'
+        : 'bg-teal-600 hover:bg-teal-700'
+    } text-white rounded-lg transition-colors flex items-center gap-2`}
+  >
+    {isLoading ? (
+      <>
+        <svg
+          className="animate-spin h-4 w-4 text-white"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        {isEditingMode
+          ? 'Updating Event...'
+          : 'Creating Event...'}
+      </>
+    ) : isEditingMode ? (
+      'Update Event'
+    ) : (
+      'Create Event'
+    )}
+  </button>
+)}
             </div>
           )}
 
