@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleIsPaid } from '@/store/slices/events/eventSlice';
 import { validateToken } from '@/store/slices/users/userSlice';
+import { toast } from 'react-toastify';
 
 const EventTypeStep = ({ formData = {}, errors = {} }) => {
   const dispatch = useDispatch();
@@ -13,16 +14,16 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
   const [isCheckingStripe, setIsCheckingStripe] = useState(false);
   const [stripeSetupComplete, setStripeSetupComplete] = useState(false);
 
-// Check Stripe setup status
-useEffect(() => {
-  // Check if user is fully ready to accept payments
-  const isStripeFullySetup = user?.stripeAccountId && 
-                            user?.stripeChargesEnabled && 
-                            user?.stripeDetailsSubmitted && 
-                            user?.stripePayoutsEnabled;
-  
-  setStripeSetupComplete(isStripeFullySetup);
-}, [user?.stripeAccountId, user?.stripeChargesEnabled, user?.stripeDetailsSubmitted, user?.stripePayoutsEnabled]);
+  // Check Stripe setup status
+  useEffect(() => {
+    // Check if user is fully ready to accept payments
+    const isStripeFullySetup = user?.stripeAccountId && 
+                              user?.stripeChargesEnabled && 
+                              user?.stripeDetailsSubmitted && 
+                              user?.stripePayoutsEnabled;
+    
+    setStripeSetupComplete(isStripeFullySetup);
+  }, [user?.stripeAccountId, user?.stripeChargesEnabled, user?.stripeDetailsSubmitted, user?.stripePayoutsEnabled]);
 
   // Periodic check for Stripe setup completion (when user returns from setup)
   useEffect(() => {
@@ -70,14 +71,70 @@ useEffect(() => {
     }
   };
 
-  // Handle opening Stripe setup in new window
-  // In EventTypeStep.jsx
-const handleStripeSetup = () => {
-  const currentPath = window.location.pathname;
-  const stripeSetupUrl = `/users/profile/settings/stripeSetup?returnTo=${encodeURIComponent(currentPath)}`;
-  window.open(stripeSetupUrl, '_blank');
-};
+  // Handle opening Stripe setup in new tab with auto-close logic
+  const handleStripeSetup = () => {
+    const currentPath = window.location.pathname + window.location.search;
+    const stripeSetupUrl = `/users/profile/settings/stripeSetup?returnTo=${encodeURIComponent(currentPath)}`;
+    
+    // Open in new tab/popup
+    const stripeWindow = window.open(stripeSetupUrl, '_blank', 'width=900,height=700,scrollbars=yes,resizable=yes');
+    
+    if (!stripeWindow) {
+      toast.error('Please allow popups for this site to complete Stripe setup');
+      return;
+    }
+    
+    // Listen for completion via polling (check every 2 seconds)
+    const pollInterval = setInterval(async () => {
+      try {
+        // Check if window is closed manually
+        if (stripeWindow.closed) {
+          clearInterval(pollInterval);
+          // Refresh user data when window closes
+          console.log('Stripe window closed, refreshing user data...');
+          await dispatch(validateToken());
+          return;
+        }
+        
+        // Check stripe status
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/stripe/account-status`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.charges_enabled && data.payouts_enabled) {
+            // Setup complete! 
+            clearInterval(pollInterval);
+            
+            // Refresh user data first
+            await dispatch(validateToken());
+            
+            // Show success message
+            toast.success('🎉 Stripe setup completed! You can now proceed with paid events.');
+            
+            // Don't close the window immediately - let the Stripe page handle it
+            console.log('Stripe setup complete detected');
+          }
+        }
+      } catch (error) {
+        console.log('Error checking Stripe status:', error);
+      }
+    }, 2000);
+    
+    // Clean up interval after 10 minutes to prevent memory leaks
+    setTimeout(() => {
+      clearInterval(pollInterval);
+    }, 600000);
+    
+    // Show helpful message
+    toast.info('Stripe setup opened in new tab. Complete the setup and the page will automatically detect when you\'re done!', {
+      autoClose: 5000
+    });
+  };
 
+  // Rest of your existing component code...
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold mb-4">Event Type</h2>
@@ -335,8 +392,8 @@ const handleStripeSetup = () => {
 
                 <div className="text-sm bg-blue-50 border border-blue-200 rounded p-3">
                   <p className="text-blue-800">
-                    <strong>💡 Tip:</strong> The setup process opens in a new window. Your event details 
-                    will be saved here, and you can continue once setup is complete.
+                    <strong>💡 Tip:</strong> The setup process opens in a new tab. Your event details 
+                    will be saved here, and this page will automatically detect when you're done!
                   </p>
                 </div>
               </div>
