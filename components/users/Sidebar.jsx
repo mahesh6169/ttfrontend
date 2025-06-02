@@ -14,6 +14,7 @@ const Sidebar = ({ onLinkClick }) => {
   const menuItems = [
     { label: 'Settings', href: '/users/profile/settings', icon: <FaUser /> },
     { label: 'Stripe', href: '/users/profile/settings/stripeSetup', icon: <FaUser /> },
+    { label: 'refunds', href: '/users/profile/refunds', icon: <FaMoneyCheckAlt /> },
     { label: 'Manage Ads', href: '/users/profile/manageads', icon: <FaAd /> },
     {
       label: 'Events',

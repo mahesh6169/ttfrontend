@@ -17,8 +17,7 @@ import filterThreadReducer from './slices/threads/filterThreadSlice'; // Import 
 import adminManageAdvertReducer from './slices/admin/adverts/adminManageAdvertSlice'; // Import adminManageAdvertSlice
 import adminManageEventReducer from './slices/admin/events/adminManageEventSlice'; // Import adminManageEventSlice
 import supportReducer from './slices/supportSlice'; // Import supportSlice
-
-
+import refundReducer from './slices/events/refundSlice'; // Import refundSlice
 
 const store = configureStore({
     reducer: {
@@ -39,6 +38,7 @@ const store = configureStore({
         adminManageAdvert: adminManageAdvertReducer, // Add adminManageAdvertReducer
         adminManageEvent: adminManageEventReducer, // Add adminManageEventReducer
         support: supportReducer, // Add supportReducer
+        refunds: refundReducer, // Add refundReducer
     },
 });
 
