@@ -9,8 +9,20 @@ import {
   fetchSeatAvailability,
   setCurrentEvent,
   setSessionId,
-  resetSeatSelection
+  resetSeatSelection,
+  selectSelectedSeats,
+  selectIsLoading as selectSeatLoading,
+  selectError as selectSeatError,
+  selectCurrentReservation
 } from '@/store/slices/events/seatSelectionSlice';
+import { 
+  updateSeatInfo,
+  setCurrentStep,
+  selectTicketPurchase,
+  selectSelectedTickets,
+  selectTicketTotals,
+  selectSeatInfo
+} from '@/store/slices/events/ticketPurchaseSlice';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SeatMapSelection from '@/components/events/seats/SeatMapSelection';
@@ -25,57 +37,100 @@ const SeatSelectionPage = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   
-  const [ticketSelection, setTicketSelection] = useState(null);
   const [initializationError, setInitializationError] = useState(null);
+  const [initializationAttempted, setInitializationAttempted] = useState(false);
 
-  // Redux state
+  // Redux state from both slices
   const { 
     seatingLayout, 
-    selectedSeats, 
-    isLoading, 
-    error,
+    isLoading: seatLoading, 
+    error: seatError,
     currentReservation 
   } = useSelector((state) => state.seatSelection);
   
+  const selectedSeats = useSelector(selectSelectedSeats);
   const { selectedEvent } = useSelector((state) => state.events);
+  
+  // Ticket purchase state
+  const ticketPurchaseState = useSelector(selectTicketPurchase);
+  const selectedTickets = useSelector(selectSelectedTickets);
+  const totals = useSelector(selectTicketTotals);
+  const seatInfo = useSelector(selectSeatInfo);
 
   // Initialize page data
   useEffect(() => {
     const initializePage = async () => {
       try {
-        // Validate ticket selection from sessionStorage
-        const storedSelection = sessionStorage.getItem('ticketSelection');
-        if (!storedSelection) {
-          setInitializationError('No ticket selection found. Please select tickets first.');
+        // Check if we have a valid ticket purchase session
+        const hasValidSession = ticketPurchaseState.sessionActive && 
+                               ticketPurchaseState.eventId === eventId &&
+                               selectedTickets.length > 0;
+
+        let ticketSelection = null;
+
+        if (hasValidSession) {
+          ticketSelection = {
+            eventId: ticketPurchaseState.eventId,
+            tickets: selectedTickets.reduce((acc, ticket) => {
+              acc[ticket.ticketTypeId] = ticket.quantity;
+              return acc;
+            }, {}),
+            totals: totals,
+            hasSeatingLayout: seatInfo.requiresSeats,
+            timestamp: Date.now()
+          };
+        } else {
+          // Fallback: Check sessionStorage
+          const storedSelection = sessionStorage.getItem('ticketSelection');
+          if (!storedSelection) {
+            setInitializationError('No ticket selection found. Please select tickets first.');
+            return;
+          }
+
+          ticketSelection = JSON.parse(storedSelection);
+          
+          // Validate ticket selection data
+          if (ticketSelection.eventId !== eventId || !ticketSelection.hasSeatingLayout) {
+            setInitializationError('Invalid ticket selection for this event.');
+            return;
+          }
+
+          // Check if ticket selection is not too old (30 minutes)
+          const selectionAge = Date.now() - ticketSelection.timestamp;
+          if (selectionAge > 30 * 60 * 1000) {
+            setInitializationError('Ticket selection has expired. Please select tickets again.');
+            return;
+          }
+        }
+
+        // Validate that seating is required
+        if (!ticketSelection.hasSeatingLayout) {
+          setInitializationError('This event does not require seat selection.');
           return;
         }
 
-        const parsedSelection = JSON.parse(storedSelection);
-        
-        // Validate ticket selection data
-        if (parsedSelection.eventId !== eventId || !parsedSelection.hasSeatingLayout) {
-          setInitializationError('Invalid ticket selection for this event.');
-          return;
-        }
+        // Calculate total seats needed
+        const totalSeatsNeeded = Object.values(ticketSelection.tickets).reduce((sum, qty) => sum + qty, 0);
 
-        // Check if ticket selection is not too old (30 minutes)
-        const selectionAge = Date.now() - parsedSelection.timestamp;
-        if (selectionAge > 30 * 60 * 1000) {
-          setInitializationError('Ticket selection has expired. Please select tickets again.');
-          return;
-        }
-
-        setTicketSelection(parsedSelection);
-
-        // Generate session ID
+        // Generate session ID for seat selection
         const sessionId = `seat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         dispatch(setSessionId(sessionId));
 
-        // Set current event context
+        // Set current event context for seat selection
         dispatch(setCurrentEvent({ 
           eventId, 
-          maxSeatsPerSelection: Object.values(parsedSelection.tickets).reduce((sum, qty) => sum + qty, 0)
+          maxSeatsPerSelection: totalSeatsNeeded
         }));
+
+        // Update ticket purchase slice with seat coordination info
+        dispatch(updateSeatInfo({
+          requiresSeats: true,
+          seatCount: totalSeatsNeeded,
+          selectedSeats: [] // Will be updated as user selects seats
+        }));
+
+        // Update current step in ticket purchase flow
+        dispatch(setCurrentStep('seat-selection'));
 
         // Fetch event details if not already loaded
         if (!selectedEvent || selectedEvent._id !== eventId) {
@@ -84,35 +139,42 @@ const SeatSelectionPage = () => {
 
         // Fetch seat availability
         const seatData = await dispatch(fetchSeatAvailability(eventId)).unwrap();
-        console.log('🎯 Seat data loaded:', seatData);
 
         // Validate seat data structure
         if (!seatData.seatingLayout || !Array.isArray(seatData.seatingLayout)) {
           throw new Error('Invalid seating layout data received from server');
         }
 
-        // Log seat structure for debugging
-        console.log('🎯 Seating layout structure:', {
-          rows: seatData.seatingLayout.length,
-          firstRowSeats: seatData.seatingLayout[0]?.seats?.length || 0,
-          sampleSeat: seatData.seatingLayout[0]?.seats?.[0]
-        });
+        setInitializationAttempted(true);
 
       } catch (error) {
-        console.error('❌ Error initializing seat selection:', error);
+        console.error('Error initializing seat selection:', error);
         setInitializationError(error.message || 'Failed to load seat selection data');
       }
     };
 
-    if (eventId) {
+    if (eventId && !initializationAttempted) {
       initializePage();
     }
 
     // Cleanup on unmount
     return () => {
-      dispatch(resetSeatSelection());
+      if (initializationAttempted) {
+        dispatch(resetSeatSelection());
+      }
     };
-  }, [eventId, dispatch, selectedEvent]);
+  }, [eventId, dispatch, selectedEvent, ticketPurchaseState.sessionActive, 
+      ticketPurchaseState.eventId, selectedTickets, totals, seatInfo.requiresSeats, initializationAttempted]);
+
+  // Sync selected seats between slices
+  useEffect(() => {
+    if (selectedSeats.length > 0) {
+      dispatch(updateSeatInfo({
+        selectedSeats: selectedSeats,
+        seatCount: selectedSeats.length
+      }));
+    }
+  }, [selectedSeats, dispatch]);
 
   // Handle back navigation
   const handleBack = () => {
@@ -121,25 +183,69 @@ const SeatSelectionPage = () => {
 
   // Handle proceed to checkout
   const handleProceedToCheckout = () => {
-    if (!ticketSelection || selectedSeats.length === 0) {
+    if (selectedSeats.length === 0) {
       alert('Please select your seats before proceeding.');
       return;
     }
 
-    // Update ticket selection with seat information
-    const updatedSelection = {
-      ...ticketSelection,
-      selectedSeats,
-      reservationId: currentReservation?.reservationId,
-      timestamp: Date.now()
-    };
+    // Validate seat count matches ticket count
+    const expectedSeatCount = seatInfo.seatCount || 0;
+    if (selectedSeats.length !== expectedSeatCount) {
+      alert(`Please select exactly ${expectedSeatCount} seat${expectedSeatCount !== 1 ? 's' : ''}.`);
+      return;
+    }
 
-    sessionStorage.setItem('ticketSelection', JSON.stringify(updatedSelection));
+    // Update ticket purchase slice with final seat selection
+    dispatch(updateSeatInfo({
+      selectedSeats: selectedSeats,
+      reservationId: currentReservation?.reservationId,
+      seatCount: selectedSeats.length
+    }));
+
+    // Set step to details (so checkout page shows the form)
+    dispatch(setCurrentStep('details'));
+
+    // Update sessionStorage as fallback during transition
+    const currentSelection = sessionStorage.getItem('ticketSelection');
+    if (currentSelection) {
+      const updatedSelection = {
+        ...JSON.parse(currentSelection),
+        selectedSeats,
+        reservationId: currentReservation?.reservationId,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem('ticketSelection', JSON.stringify(updatedSelection));
+    }
+
+    // Navigate to checkout
     router.push(`/checkout/events/${eventId}`);
   };
 
+  // Get ticket selection for display (prioritize Redux, fallback to sessionStorage)
+  const getTicketSelectionForDisplay = () => {
+    if (ticketPurchaseState.sessionActive && selectedTickets.length > 0) {
+      // Use Redux data
+      return {
+        eventId: ticketPurchaseState.eventId,
+        tickets: selectedTickets.reduce((acc, ticket) => {
+          acc[ticket.ticketTypeId] = ticket.quantity;
+          return acc;
+        }, {}),
+        totals: totals,
+        hasSeatingLayout: seatInfo.requiresSeats,
+        timestamp: Date.now()
+      };
+    } else {
+      // Fallback to sessionStorage
+      const stored = sessionStorage.getItem('ticketSelection');
+      return stored ? JSON.parse(stored) : null;
+    }
+  };
+
+  const ticketSelection = getTicketSelectionForDisplay();
+
   // Loading state
-  if (isLoading || !selectedEvent || !ticketSelection) {
+  if (seatLoading || !selectedEvent || !ticketSelection) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -151,12 +257,12 @@ const SeatSelectionPage = () => {
   }
 
   // Error state - show fallback component
-  if (initializationError || error) {
+  if (initializationError || seatError) {
     return (
       <SeatSelectionFallback 
         event={selectedEvent} 
         ticketSelection={ticketSelection}
-        error={initializationError || error}
+        error={initializationError || seatError}
       />
     );
   }
@@ -191,7 +297,10 @@ const SeatSelectionPage = () => {
               </button>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">{selectedEvent.title}</h1>
-                <p className="text-sm text-gray-500">Select your seats</p>
+                <p className="text-sm text-gray-500">
+                  Select {seatInfo.seatCount || 'your'} seat{(seatInfo.seatCount || 0) !== 1 ? 's' : ''}
+                  {seatInfo.seatCount > 0 && ` (${selectedSeats.length}/${seatInfo.seatCount} selected)`}
+                </p>
               </div>
             </div>
 
@@ -203,38 +312,67 @@ const SeatSelectionPage = () => {
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Seat map - takes up most space */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection} />
-            </div>
+        <div className="space-y-6">
+          
+          {/* Row 1: Seating Legend */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <SeatLegend />
           </div>
-
-          {/* Sidebar with summary and legend */}
-          <div className="lg:col-span-1 space-y-6">
+          
+          {/* Row 2: Seat Selection - Full width seat map */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Select Your Seats</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Choose {seatInfo.seatCount || 'your'} seat{(seatInfo.seatCount || 0) !== 1 ? 's' : ''} • 
+                {seatInfo.seatCount > 0 && ` ${selectedSeats.length}/${seatInfo.seatCount} selected`}
+              </p>
+            </div>
+            <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection} />
+          </div>
+          
+          {/* Row 3: Booking Summary */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <SeatSelectionSummary 
               event={selectedEvent} 
               ticketSelection={ticketSelection}
               onProceedToCheckout={handleProceedToCheckout}
+              selectedSeatsCount={selectedSeats.length}
+              requiredSeatsCount={seatInfo.seatCount || 0}
+              canProceed={selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0}
+              horizontal={true} // Pass this prop to make it horizontal layout
             />
-            <SeatLegend />
           </div>
+          
         </div>
       </div>
 
-      {/* Mobile sticky footer */}
+      {/* Mobile sticky footer - keep this for mobile */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
         <SeatSelectionSummary 
           event={selectedEvent} 
           ticketSelection={ticketSelection}
           onProceedToCheckout={handleProceedToCheckout}
+          selectedSeatsCount={selectedSeats.length}
+          requiredSeatsCount={seatInfo.seatCount || 0}
+          canProceed={selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0}
           compact={true}
         />
       </div>
 
       {/* Debug info (development only) */}
-      <SeatDebugInfo event={selectedEvent} ticketSelection={ticketSelection} />
+      {process.env.NODE_ENV === 'development' && (
+        <SeatDebugInfo 
+          event={selectedEvent} 
+          ticketSelection={ticketSelection}
+          reduxState={{
+            ticketPurchase: ticketPurchaseState,
+            selectedTickets,
+            seatInfo,
+            selectedSeats: selectedSeats.length
+          }}
+        />
+      )}
     </div>
   );
 };

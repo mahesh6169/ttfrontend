@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   FaTicketAlt, 
   FaCalendarAlt, 
@@ -20,66 +20,97 @@ import {
   FaExclamationTriangle
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
+import {
+  initializePurchaseSession,
+  updateTicketSelection,
+  setSeatRequirement,
+  setCurrentStep,
+  resetPurchaseSession,
+  updateBuyerInfo,
+  selectTicketPurchase,
+  selectSelectedTickets,
+  selectTicketTotals,
+  selectCanProceedToNext,
+  selectPurchaseError,
+  selectPurchaseLoading
+} from '@/store/slices/events/ticketPurchaseSlice';
 
 const TicketSelection = ({ event, isOpen, onClose }) => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
   
-  // State for selected tickets
-  const [selectedTickets, setSelectedTickets] = useState({});
+  // Redux state
+  const ticketPurchaseState = useSelector(selectTicketPurchase);
+  const selectedTickets = useSelector(selectSelectedTickets);
+  const totals = useSelector(selectTicketTotals);
+  const canProceedToNext = useSelector(selectCanProceedToNext);
+  const purchaseError = useSelector(selectPurchaseError);
+  const loading = useSelector(selectPurchaseLoading);
+  
+  // Local state for UI
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-
-  // Initialize selected tickets state
-  useEffect(() => {
-    if (event?.ticketTypes?.length > 0) {
-      const initialTickets = {};
-      event.ticketTypes.forEach(ticket => {
-        initialTickets[ticket._id] = 0;
-      });
-      setSelectedTickets(initialTickets);
-    }
-  }, [event]);
 
   // Check if event has seating layout
   const hasSeatingLayout = event?.seatingLayout && event.seatingLayout.length > 0;
 
-  // Calculate totals
-  const calculateTotals = () => {
-    if (!event?.ticketTypes) return { subtotal: 0, total: 0, totalTickets: 0 };
+  // Initialize purchase session when modal opens
+  useEffect(() => {
+    if (isOpen && event?._id) {
+      // Initialize purchase session
+      dispatch(initializePurchaseSession({ eventId: event._id }));
+      
+      // Set seat requirement
+      dispatch(setSeatRequirement(hasSeatingLayout));
+      
+      // Set current step to ticket selection
+      dispatch(setCurrentStep('ticket-selection'));
+      
+      // Pre-fill buyer info with user data if available
+      if (user) {
+        dispatch(updateBuyerInfo({
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          email: user.email || ''
+        }));
+      }
+    }
+  }, [isOpen, event?._id, hasSeatingLayout, user, dispatch]);
 
-    let subtotal = 0;
-    let totalTickets = 0;
-
-    event.ticketTypes.forEach(ticketType => {
-      const quantity = selectedTickets[ticketType._id] || 0;
-      subtotal += (ticketType.price || 0) * quantity;
-      totalTickets += quantity;
-    });
-
-const total = subtotal; 
-
-    return { subtotal, total, totalTickets };
-  };
+  // Cleanup when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      dispatch(resetPurchaseSession());
+    }
+  }, [isOpen, dispatch]);
 
   // Handle quantity change
   const handleQuantityChange = (ticketId, change) => {
-    setSelectedTickets(prev => {
-      const currentQuantity = prev[ticketId] || 0;
-      const newQuantity = Math.max(0, currentQuantity + change);
-      
-      // Find the ticket type to check max quantity
-      const ticketType = event.ticketTypes.find(t => t._id === ticketId);
-      const maxQuantity = Math.min(
-        ticketType?.quantity || 999,
-        event.maxAttendeesPerRegistration || 10
-      );
-      
-      return {
-        ...prev,
-        [ticketId]: Math.min(newQuantity, maxQuantity)
-      };
-    });
+    if (!event?.ticketTypes) return;
+    
+    const ticketType = event.ticketTypes.find(t => t._id === ticketId);
+    if (!ticketType) return;
+
+    // Get current quantity
+    const currentTicket = selectedTickets.find(t => t.ticketTypeId === ticketId);
+    const currentQuantity = currentTicket?.quantity || 0;
+    const newQuantity = Math.max(0, currentQuantity + change);
+    
+    // Calculate max quantity
+    const maxQuantity = Math.min(
+      ticketType.quantity || 999,
+      event.maxAttendeesPerRegistration || 10
+    );
+    
+    // Update Redux state
+    dispatch(updateTicketSelection({
+      ticketTypeId: ticketId,
+      quantity: Math.min(newQuantity, maxQuantity),
+      price: ticketType.price || 0,
+      name: ticketType.name,
+      maxQuantity: maxQuantity
+    }));
     
     // Clear any previous errors
     setErrors({});
@@ -87,16 +118,15 @@ const total = subtotal;
 
   // Validate selection
   const validateSelection = () => {
-    const { totalTickets } = calculateTotals();
     const newErrors = {};
 
-    if (totalTickets === 0) {
+    if (totals.totalQuantity === 0) {
       newErrors.selection = 'Please select at least one ticket';
       setErrors(newErrors);
       return false;
     }
 
-    if (totalTickets > (event.maxAttendeesPerRegistration || 10)) {
+    if (totals.totalQuantity > (event.maxAttendeesPerRegistration || 10)) {
       newErrors.selection = `Maximum ${event.maxAttendeesPerRegistration || 10} tickets per order`;
       setErrors(newErrors);
       return false;
@@ -119,23 +149,29 @@ const total = subtotal;
     setIsLoading(true);
 
     try {
-      // Store selected tickets in sessionStorage for checkout page
-      const ticketSelection = {
+      // Mark step as completed
+      dispatch(setCurrentStep(hasSeatingLayout ? 'seat-selection' : 'details'));
+      
+      // Store ticket selection in sessionStorage as fallback during transition
+      const ticketSelectionFallback = {
         eventId: event._id,
-        tickets: selectedTickets,
-        totals: calculateTotals(),
+        tickets: selectedTickets.reduce((acc, ticket) => {
+          acc[ticket.ticketTypeId] = ticket.quantity;
+          return acc;
+        }, {}),
+        totals: totals,
         hasSeatingLayout,
         timestamp: Date.now()
       };
       
-      sessionStorage.setItem('ticketSelection', JSON.stringify(ticketSelection));
+      sessionStorage.setItem('ticketSelection', JSON.stringify(ticketSelectionFallback));
 
       // Navigate based on seating layout
       if (hasSeatingLayout) {
-        // Phase 2: Navigate to seat selection
+        // Navigate to seat selection
         router.push(`/events/seats/${event._id}`);
       } else {
-        // Phase 1: Navigate directly to checkout
+        // Navigate directly to checkout
         router.push(`/checkout/events/${event._id}`);
       }
     } catch (error) {
@@ -158,7 +194,6 @@ const total = subtotal;
   };
 
   const { date, time } = getFormattedDateTime();
-  const { subtotal, total, totalTickets } = calculateTotals();
 
   if (!isOpen) return null;
 
@@ -217,7 +252,8 @@ const total = subtotal;
             
             {event.ticketTypes?.map((ticketType) => {
               const isAvailable = (ticketType.quantity || 0) > 0;
-              const selectedQty = selectedTickets[ticketType._id] || 0;
+              const selectedTicket = selectedTickets.find(t => t.ticketTypeId === ticketType._id);
+              const selectedQty = selectedTicket?.quantity || 0;
               const remainingQty = (ticketType.quantity || 999) - selectedQty;
               
               return (
@@ -240,7 +276,6 @@ const total = subtotal;
                           <p className="text-2xl font-bold text-green-600">
                             ${ticketType.price?.toFixed(2) || '0.00'}
                           </p>
-                          
                         </div>
                       </div>
                       
@@ -260,7 +295,7 @@ const total = subtotal;
                           <div className="flex items-center space-x-3">
                             <button
                               onClick={() => handleQuantityChange(ticketType._id, -1)}
-                              disabled={selectedQty === 0}
+                              disabled={selectedQty === 0 || loading.initializing}
                               className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <FaMinus className="text-xs" />
@@ -272,7 +307,11 @@ const total = subtotal;
                             
                             <button
                               onClick={() => handleQuantityChange(ticketType._id, 1)}
-                              disabled={selectedQty >= remainingQty || selectedQty >= (event.maxAttendeesPerRegistration || 10)}
+                              disabled={
+                                selectedQty >= remainingQty || 
+                                selectedQty >= (event.maxAttendeesPerRegistration || 10) ||
+                                loading.initializing
+                              }
                               className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <FaPlus className="text-xs" />
@@ -301,7 +340,7 @@ const total = subtotal;
           </div>
 
           {/* Order Summary */}
-          {totalTickets > 0 && (
+          {totals.totalQuantity > 0 && (
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <h4 className="text-lg font-semibold flex items-center mb-4">
                 <FaCalculator className="mr-2 text-green-600" />
@@ -309,14 +348,13 @@ const total = subtotal;
               </h4>
               
               <div className="space-y-2">
-                {event.ticketTypes?.map((ticketType) => {
-                  const quantity = selectedTickets[ticketType._id] || 0;
-                  if (quantity === 0) return null;
+                {selectedTickets?.map((selectedTicket) => {
+                  if (selectedTicket.quantity === 0) return null;
                   
                   return (
-                    <div key={ticketType._id} className="flex justify-between text-sm">
-                      <span>{ticketType.name} × {quantity}</span>
-                      <span>${((ticketType.price || 0) * quantity).toFixed(2)}</span>
+                    <div key={selectedTicket.ticketTypeId} className="flex justify-between text-sm">
+                      <span>{selectedTicket.name} × {selectedTicket.quantity}</span>
+                      <span>${(selectedTicket.price * selectedTicket.quantity).toFixed(2)}</span>
                     </div>
                   );
                 })}
@@ -324,13 +362,12 @@ const total = subtotal;
                 <div className="border-t pt-2 mt-3">
                   <div className="flex justify-between font-medium">
                     <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>${totals.subtotal.toFixed(2)}</span>
                   </div>
                   
-                 
                   <div className="flex justify-between text-lg font-bold text-green-600 mt-2 pt-2 border-t">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>${totals.total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -338,7 +375,7 @@ const total = subtotal;
           )}
 
           {/* Seating Info */}
-          {hasSeatingLayout && totalTickets > 0 && (
+          {hasSeatingLayout && totals.totalQuantity > 0 && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
               <div className="flex items-start">
                 <FaChair className="text-purple-600 mr-3 mt-1" />
@@ -355,7 +392,20 @@ const total = subtotal;
             </div>
           )}
 
-          {/* Errors */}
+          {/* Redux Error Display */}
+          {purchaseError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start">
+                <FaExclamationTriangle className="text-red-600 mr-3 mt-1" />
+                <div>
+                  <h4 className="font-medium text-red-800 mb-1">Purchase Error</h4>
+                  <p className="text-sm text-red-700">{purchaseError}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Local Errors */}
           {errors.selection && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <div className="flex items-start">
@@ -382,9 +432,9 @@ const total = subtotal;
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 rounded-b-lg">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600">
-              {totalTickets > 0 ? (
+              {totals.totalQuantity > 0 ? (
                 <span>
-                  {totalTickets} ticket{totalTickets !== 1 ? 's' : ''} selected
+                  {totals.totalQuantity} ticket{totals.totalQuantity !== 1 ? 's' : ''} selected
                   {hasSeatingLayout && ' • Seats to be selected next'}
                 </span>
               ) : (
@@ -395,23 +445,24 @@ const total = subtotal;
             <div className="flex space-x-3">
               <button
                 onClick={onClose}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={loading.initializing}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               
               <button
                 onClick={handleProceed}
-                disabled={totalTickets === 0 || isLoading}
+                disabled={!canProceedToNext || isLoading || loading.initializing}
                 className={`px-6 py-2 rounded-lg font-semibold flex items-center transition-all ${
-                  totalTickets > 0 && !isLoading
+                  canProceedToNext && !isLoading && !loading.initializing
                     ? hasSeatingLayout
                       ? 'bg-purple-600 hover:bg-purple-700 text-white'
                       : 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {isLoading ? (
+                {isLoading || loading.initializing ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Processing...

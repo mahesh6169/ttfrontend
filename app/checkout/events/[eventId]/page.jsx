@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   FaCalendarAlt, 
   FaClock, 
@@ -15,75 +15,70 @@ import {
   FaExclamationTriangle,
   FaArrowLeft,
   FaSpinner,
-  FaCheckCircle
+  FaCheckCircle,
+  FaChair
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import RequireLogin from '@/components/Auth/RequireLogin';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import StripePaymentForm from '@/components/payments/StripePaymentForm';
 import PaymentSummary from '@/components/payments/PaymentSummary';
+import {
+  initializePurchaseSession,
+  updateBuyerInfo,
+  setCurrentStep,
+  setSeatRequirement,
+  updateSeatInfo,
+  createPaymentIntent,
+  confirmPayment,
+  resetPurchaseSession,
+  clearError,
+  selectTicketPurchase,
+  selectSelectedTickets,
+  selectTicketTotals,
+  selectBuyerInfo,
+  selectSeatInfo,
+  selectPaymentStatus,
+  selectCurrentStep,
+  selectPurchaseLoading,
+  selectPurchaseError
+} from '@/store/slices/events/ticketPurchaseSlice';
 
 const CheckoutPage = () => {
   const params = useParams();
   const router = useRouter();
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
   
-  // State management
-  const [ticketSelection, setTicketSelection] = useState(null);
+  // Redux state
+  const ticketPurchaseState = useSelector(selectTicketPurchase);
+  const selectedTickets = useSelector(selectSelectedTickets);
+  const totals = useSelector(selectTicketTotals);
+  const buyerInfo = useSelector(selectBuyerInfo);
+  const seatInfo = useSelector(selectSeatInfo);
+  const paymentStatus = useSelector(selectPaymentStatus);
+  const currentStep = useSelector(selectCurrentStep);
+  const loading = useSelector(selectPurchaseLoading);
+  const purchaseError = useSelector(selectPurchaseError);
+  
+  console.log('Current step:', currentStep);
+  // Local state management
   const [event, setEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState({});
+  const [initializationAttempted, setInitializationAttempted] = useState(false);
   
-  // Payment states
-  const [clientSecret, setClientSecret] = useState(null);
-  const [paymentIntentId, setPaymentIntentId] = useState(null);
-  const [currentStep, setCurrentStep] = useState('details'); // 'details' | 'payment' | 'success'
-  
-  // Form state
-  const [buyerInfo, setBuyerInfo] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    agreeToTerms: false
-  });
+  // Payment states from Redux
+  const clientSecret = ticketPurchaseState.clientSecret;
+  const paymentIntentId = ticketPurchaseState.paymentIntent?.id;
 
-  // Load ticket selection and event data
+  // Load event and initialize checkout
   useEffect(() => {
     const loadCheckoutData = async () => {
       try {
         setIsLoading(true);
         
-        // Get ticket selection from sessionStorage
-        const storedSelection = sessionStorage.getItem('ticketSelection');
-        if (!storedSelection) {
-          alert('No ticket selection found. Please select tickets first.');
-          router.push(`/events/views/${params.eventId}`);
-          return;
-        }
-
-        const selection = JSON.parse(storedSelection);
-        
-        // Validate selection hasn't expired (10 minutes max)
-        const selectionAge = Date.now() - selection.timestamp;
-        if (selectionAge > 10 * 60 * 1000) {
-          alert('Your ticket selection has expired. Please select tickets again.');
-          sessionStorage.removeItem('ticketSelection');
-          router.push(`/events/views/${params.eventId}`);
-          return;
-        }
-
-        // Validate selection is for correct event
-        if (selection.eventId !== params.eventId) {
-          alert('Invalid ticket selection. Please select tickets again.');
-          sessionStorage.removeItem('ticketSelection');
-          router.push(`/events/views/${params.eventId}`);
-          return;
-        }
-
-        setTicketSelection(selection);
-
         // Load event details
         const eventResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/events/views/${params.eventId}`, {
           credentials: 'include'
@@ -96,16 +91,109 @@ const CheckoutPage = () => {
         const eventData = await eventResponse.json();
         setEvent(eventData);
 
-        // Pre-fill buyer info with user data
-        if (user) {
-          setBuyerInfo(prev => ({
-            ...prev,
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            email: user.email || ''
-          }));
+        // Check if we have ticket selection in Redux
+        const hasReduxSession = ticketPurchaseState.sessionActive && 
+                               ticketPurchaseState.eventId === params.eventId &&
+                               selectedTickets.length > 0;
+
+        if (hasReduxSession) {
+          console.log('✅ Using existing Redux session');
+          
+          // Update buyer info with user data if not already set
+          if (user && !buyerInfo.firstName && !buyerInfo.lastName) {
+            dispatch(updateBuyerInfo({
+              firstName: user.firstName || '',
+              lastName: user.lastName || '',
+              email: user.email || ''
+            }));
+          }
+          
+          // Set current step to checkout if coming from ticket selection
+          if (currentStep === 'ticket-selection') {
+            dispatch(setCurrentStep('checkout'));
+          }
+        } else {
+          // Fallback: Try to get data from sessionStorage and initialize Redux
+          console.log('⚠️ No Redux session found, checking sessionStorage fallback');
+          
+          const storedSelection = sessionStorage.getItem('ticketSelection');
+          if (!storedSelection) {
+            alert('No ticket selection found. Please select tickets first.');
+            router.push(`/events/views/${params.eventId}`);
+            return;
+          }
+
+          const selection = JSON.parse(storedSelection);
+          
+          // Validate selection hasn't expired (10 minutes max)
+          const selectionAge = Date.now() - selection.timestamp;
+          if (selectionAge > 10 * 60 * 1000) {
+            alert('Your ticket selection has expired. Please select tickets again.');
+            sessionStorage.removeItem('ticketSelection');
+            router.push(`/events/views/${params.eventId}`);
+            return;
+          }
+
+          // Validate selection is for correct event
+          if (selection.eventId !== params.eventId) {
+            alert('Invalid ticket selection. Please select tickets again.');
+            sessionStorage.removeItem('ticketSelection');
+            router.push(`/events/views/${params.eventId}`);
+            return;
+          }
+
+          console.log('🔄 Initializing Redux from sessionStorage');
+          
+          // Initialize Redux with sessionStorage data
+          await dispatch(initializePurchaseSession({ eventId: params.eventId }));
+          
+          // Populate Redux with ticket selection
+          if (selection.tickets && eventData.ticketTypes) {
+            for (const [ticketTypeId, quantity] of Object.entries(selection.tickets)) {
+              if (quantity > 0) {
+                const ticketType = eventData.ticketTypes.find(t => t._id === ticketTypeId);
+                if (ticketType) {
+                  dispatch(updateTicketSelection({
+                    ticketTypeId,
+                    quantity,
+                    price: ticketType.price || 0,
+                    name: ticketType.name,
+                    maxQuantity: ticketType.quantity
+                  }));
+                }
+              }
+            }
+          }
+          
+          // Set seat info if available
+          if (selection.hasSeatingLayout) {
+            dispatch(setSeatRequirement(true));
+            
+            // If coming from seat selection, update seat info
+            if (selection.selectedSeats && selection.selectedSeats.length > 0) {
+              dispatch(updateSeatInfo({
+                selectedSeats: selection.selectedSeats,
+                reservationId: selection.reservationId,
+                seatCount: selection.selectedSeats.length
+              }));
+            }
+          }
+          
+          // Pre-fill buyer info
+          if (user) {
+            dispatch(updateBuyerInfo({
+              firstName: user.firstName || '',
+              lastName: user.lastName || '',
+              email: user.email || ''
+            }));
+          }
+          
+          // Set step to details
+          dispatch(setCurrentStep('details'));
         }
 
+        setInitializationAttempted(true);
+        
       } catch (error) {
         console.error('Error loading checkout data:', error);
         alert('Error loading checkout page. Please try again.');
@@ -115,18 +203,19 @@ const CheckoutPage = () => {
       }
     };
 
-    if (params.eventId) {
+    if (params.eventId && !initializationAttempted) {
       loadCheckoutData();
     }
-  }, [params.eventId, router, user]);
+  }, [params.eventId, router, user, dispatch, ticketPurchaseState.sessionActive, 
+      ticketPurchaseState.eventId, selectedTickets.length, buyerInfo.firstName, 
+      buyerInfo.lastName, currentStep, initializationAttempted]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setBuyerInfo(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    const updateData = { [name]: type === 'checkbox' ? checked : value };
+    
+    dispatch(updateBuyerInfo(updateData));
     
     // Clear field-specific errors
     if (errors[name]) {
@@ -138,21 +227,21 @@ const CheckoutPage = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!buyerInfo.firstName.trim()) {
+    if (!buyerInfo.firstName?.trim()) {
       newErrors.firstName = 'First name is required';
     }
 
-    if (!buyerInfo.lastName.trim()) {
+    if (!buyerInfo.lastName?.trim()) {
       newErrors.lastName = 'Last name is required';
     }
 
-    if (!buyerInfo.email.trim()) {
+    if (!buyerInfo.email?.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerInfo.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (!buyerInfo.phone.trim()) {
+    if (!buyerInfo.phone?.trim()) {
       newErrors.phone = 'Phone number is required';
     } else if (!/^[\d\s\-\+\(\)]+$/.test(buyerInfo.phone)) {
       newErrors.phone = 'Please enter a valid phone number';
@@ -168,7 +257,10 @@ const CheckoutPage = () => {
 
   // Handle proceeding to payment step
   const handleProceedToPayment = async () => {
+    alert('BUTTON CLICKED!'); // Add this line first
+  console.log('🔥 BUTTON CLICKED - This should show up!');
     if (!validateForm()) {
+      console.log('FORM VALIDATION FAILED');
       return;
     }
 
@@ -176,32 +268,21 @@ const CheckoutPage = () => {
     setErrors({});
 
     try {
-      console.log('🚀 Creating payment intent...');
+      console.log('🚀 Creating payment intent with Redux...');
 
-      // Create Payment Intent
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/paid/create-payment-intent`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          tickets: ticketSelection.tickets,
-          buyerInfo
-        })
-      });
+      // Create payment intent using Redux
+      const result = await dispatch(createPaymentIntent({
+        eventId: params.eventId,
+        ticketData: selectedTickets,
+        buyerInfo
+      }));
 
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to create payment intent');
+      if (createPaymentIntent.fulfilled.match(result)) {
+        console.log('✅ Payment Intent created via Redux');
+        dispatch(setCurrentStep('payment'));
+      } else {
+        throw new Error(result.payload || 'Failed to create payment intent');
       }
-
-      console.log('✅ Payment Intent created:', data.paymentIntentId);
-      
-      setClientSecret(data.clientSecret);
-      setPaymentIntentId(data.paymentIntentId);
-      setCurrentStep('payment');
 
     } catch (error) {
       console.error('❌ Error creating payment intent:', error);
@@ -218,36 +299,29 @@ const CheckoutPage = () => {
     setIsProcessing(true);
 
     try {
-      console.log('🎉 Payment succeeded, confirming with backend...');
+      console.log('🎉 Payment succeeded, confirming with Redux...');
 
-      // Confirm payment and create tickets
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/paid/confirm-payment`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          paymentIntentId: paymentIntent.id,
-          tickets: ticketSelection.tickets,
-          buyerInfo
-          // No simulatePayment flag - this is real payment
-        })
-      });
+      // Confirm payment using Redux
+      const result = await dispatch(confirmPayment({
+        eventId: params.eventId,
+        paymentIntentId: paymentIntent.id,
+        paymentMethodId: paymentIntent.payment_method?.id,
+        tickets: selectedTickets.reduce((acc, ticket) => {
+          acc[ticket.ticketTypeId] = ticket.quantity;
+          return acc;
+        }, {}),
+        buyerInfo
+      }));
 
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to confirm payment');
+      if (confirmPayment.fulfilled.match(result)) {
+        console.log('✅ Payment confirmed via Redux');
+        // Redux will automatically set currentStep to 'complete'
+        
+        // Clear sessionStorage since we're using Redux now
+        sessionStorage.removeItem('ticketSelection');
+      } else {
+        throw new Error(result.payload || 'Failed to confirm payment');
       }
-
-      console.log('✅ Payment confirmed, tickets created:', data.ticketCount);
-
-      // Clear ticket selection
-      sessionStorage.removeItem('ticketSelection');
-      
-      // Move to success step
-      setCurrentStep('success');
 
     } catch (error) {
       console.error('❌ Error confirming payment:', error);
@@ -274,9 +348,8 @@ const CheckoutPage = () => {
 
   // Handle back to details step
   const handleBackToDetails = () => {
-    setCurrentStep('details');
-    setClientSecret(null);
-    setPaymentIntentId(null);
+    dispatch(setCurrentStep('details'));
+    dispatch(clearError());
     setErrors({});
   };
 
@@ -293,39 +366,44 @@ const CheckoutPage = () => {
 
   // Get selected tickets for display
   const getSelectedTickets = () => {
-    if (!event?.ticketTypes || !ticketSelection?.tickets) return [];
+    if (!event?.ticketTypes || !selectedTickets?.length) return [];
     
-    return event.ticketTypes
-      .map(ticketType => {
-        const quantity = ticketSelection.tickets[ticketType._id] || 0;
-        if (quantity === 0) return null;
-        
+    return selectedTickets
+      .filter(ticket => ticket.quantity > 0)
+      .map(ticket => {
+        const ticketType = event.ticketTypes.find(t => t._id === ticket.ticketTypeId);
         return {
+          ...ticket,
           ...ticketType,
-          quantity,
-          totalPrice: (ticketType.price || 0) * quantity
+          totalPrice: ticket.price * ticket.quantity,
+          // Add seat information if available
+          seats: seatInfo.selectedSeats || []
         };
-      })
-      .filter(Boolean);
+      });
   };
 
+  // Loading state
   if (isLoading) {
     return (
       <RequireLogin message="You must be logged in to complete your purchase.">
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <LoadingSpinner size="large" />
+          <div className="text-center">
+            <LoadingSpinner size="large" />
+            <p className="mt-4 text-gray-600">Loading checkout...</p>
+          </div>
         </div>
       </RequireLogin>
     );
   }
 
-  if (!ticketSelection || !event) {
+  // Error state - no ticket selection found
+  if (!event || selectedTickets.length === 0) {
     return (
       <RequireLogin message="You must be logged in to complete your purchase.">
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Checkout Error</h2>
-            <p className="text-gray-600 mb-6">Unable to load checkout information.</p>
+            <p className="text-gray-600 mb-6">No ticket selection found. Please select tickets first.</p>
             <button
               onClick={() => router.push(`/events/views/${params.eventId}`)}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -339,11 +417,10 @@ const CheckoutPage = () => {
   }
 
   const { date, time } = getFormattedDateTime();
-  const selectedTickets = getSelectedTickets();
-  const totals = ticketSelection.totals;
+  const selectedTicketsDisplay = getSelectedTickets();
 
   // Success Step
-  if (currentStep === 'success') {
+  if (currentStep === 'complete' || paymentStatus === 'succeeded') {
     return (
       <RequireLogin message="You must be logged in to complete your purchase.">
         <div className="min-h-screen bg-gray-50 py-8">
@@ -374,7 +451,10 @@ const CheckoutPage = () => {
                 </button>
                 
                 <button
-                  onClick={() => router.push(`/events/views/${params.eventId}`)}
+                  onClick={() => {
+                    dispatch(resetPurchaseSession());
+                    router.push(`/events/views/${params.eventId}`);
+                  }}
                   className="w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
                 >
                   Back to Event
@@ -459,6 +539,14 @@ const CheckoutPage = () => {
                           <FaMapMarkerAlt className="mr-2 text-red-600" />
                           <span>{event.venue}</span>
                         </div>
+                        {seatInfo.selectedSeats && seatInfo.selectedSeats.length > 0 && (
+                          <div className="flex items-center">
+                            <FaChair className="mr-2 text-purple-600" />
+                            <span>
+                              {seatInfo.selectedSeats.length} seat{seatInfo.selectedSeats.length !== 1 ? 's' : ''} selected
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -480,7 +568,7 @@ const CheckoutPage = () => {
                           <input
                             type="text"
                             name="firstName"
-                            value={buyerInfo.firstName}
+                            value={buyerInfo.firstName || ''}
                             onChange={handleInputChange}
                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                               errors.firstName ? 'border-red-500 bg-red-50' : 'border-gray-300'
@@ -500,7 +588,7 @@ const CheckoutPage = () => {
                           <input
                             type="text"
                             name="lastName"
-                            value={buyerInfo.lastName}
+                            value={buyerInfo.lastName || ''}
                             onChange={handleInputChange}
                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                               errors.lastName ? 'border-red-500 bg-red-50' : 'border-gray-300'
@@ -523,7 +611,7 @@ const CheckoutPage = () => {
                           <input
                             type="email"
                             name="email"
-                            value={buyerInfo.email}
+                            value={buyerInfo.email || ''}
                             onChange={handleInputChange}
                             className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                               errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
@@ -546,7 +634,7 @@ const CheckoutPage = () => {
                           <input
                             type="tel"
                             name="phone"
-                            value={buyerInfo.phone}
+                            value={buyerInfo.phone || ''}
                             onChange={handleInputChange}
                             className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                               errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'
@@ -564,7 +652,7 @@ const CheckoutPage = () => {
                         <input
                           type="checkbox"
                           name="agreeToTerms"
-                          checked={buyerInfo.agreeToTerms}
+                          checked={buyerInfo.agreeToTerms || false}
                           onChange={handleInputChange}
                           className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                         />
@@ -586,14 +674,14 @@ const CheckoutPage = () => {
                       {/* Proceed to Payment Button */}
                       <button
                         onClick={handleProceedToPayment}
-                        disabled={isProcessing}
+                        disabled={isProcessing || loading.creatingPayment}
                         className={`w-full mt-6 py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center ${
-                          isProcessing
+                          isProcessing || loading.creatingPayment
                             ? 'bg-gray-400 cursor-not-allowed'
                             : 'bg-blue-600 hover:bg-blue-700'
                         }`}
                       >
-                        {isProcessing ? (
+                        {isProcessing || loading.creatingPayment ? (
                           <>
                             <FaSpinner className="animate-spin mr-2" />
                             Preparing Payment...
@@ -604,11 +692,11 @@ const CheckoutPage = () => {
                       </button>
 
                       {/* Error Display */}
-                      {errors.payment && (
+                      {(errors.payment || purchaseError) && (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                           <div className="flex items-start">
                             <FaExclamationTriangle className="text-red-600 mr-3 mt-1" />
-                            <p className="text-sm text-red-700">{errors.payment}</p>
+                            <p className="text-sm text-red-700">{errors.payment || purchaseError}</p>
                           </div>
                         </div>
                       )}
@@ -617,18 +705,28 @@ const CheckoutPage = () => {
                 </>
               ) : (
                 /* Payment Step */
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold mb-6">Payment Information</h2>
-                  
-                  <StripePaymentForm
-                    clientSecret={clientSecret}
-                    buyerInfo={buyerInfo}
-                    totalAmount={totals.total}
-                    onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
-                    disabled={isProcessing}
-                  />
-                </div>
+<div className="bg-white rounded-lg shadow-md p-6">
+    <h2 className="text-xl font-semibold mb-6">Payment Information</h2>
+    
+    {/* ADD THIS CONDITIONAL RENDERING */}
+    {clientSecret ? (
+      <StripePaymentForm
+        clientSecret={clientSecret}
+        buyerInfo={buyerInfo}
+        totalAmount={totals.total}
+        onSuccess={handlePaymentSuccess}
+        onError={handlePaymentError}
+        disabled={isProcessing || loading.confirmingPayment}
+      />
+    ) : (
+      // Loading state while payment intent is being created
+      <div className="text-center py-12">
+        <FaSpinner className="animate-spin mx-auto text-4xl text-blue-600 mb-4" />
+        <p className="text-gray-600 text-lg">Preparing secure payment...</p>
+        <p className="text-gray-500 text-sm mt-2">This usually takes just a few seconds</p>
+      </div>
+    )}
+  </div>
               )}
             </div>
 
@@ -636,7 +734,7 @@ const CheckoutPage = () => {
             <div className="lg:col-span-1">
               <PaymentSummary
                 event={event}
-                selectedTickets={selectedTickets}
+                selectedTickets={selectedTicketsDisplay}
                 totals={totals}
                 buyerInfo={currentStep === 'payment' ? buyerInfo : null}
                 showEventDetails={true}

@@ -88,7 +88,7 @@ const SeatReservationTimer = () => {
       
       setShowExtendOption(false);
     } catch (error) {
-      console.error('❌ Failed to extend reservation:', error);
+      console.error('Failed to extend reservation:', error);
       alert('Failed to extend reservation. Please complete your purchase quickly.');
     } finally {
       setIsExtending(false);

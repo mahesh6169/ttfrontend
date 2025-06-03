@@ -29,110 +29,81 @@ const SeatMapSelection = ({ event, ticketSelection }) => {
   const requiredSeats = Object.values(ticketSelection.tickets).reduce((sum, qty) => sum + qty, 0);
 
   // Utility function to generate consistent seat IDs
-
-const generateSeatId = (seat, row, seatIndex) => {
-  // First priority: use backend's seatId field (A-1, B-2, etc.)
-  if (seat.seatId) {
-    return seat.seatId;
-  }
-  
-  // Second priority: use backend's id field
-  if (seat.id) {
-    return seat.id;
-  }
-  
-  // Fallback: generate from row and seat number to match backend format
-  const rowLabel = row.rowLabel || row.label || `R${seatIndex + 1}`;
-  const seatNumber = seat.seatNumber || seat.number || (seatIndex + 1);
-  return `${rowLabel}-${seatNumber}`;
-  
-  // Note: We removed seat._id as it's MongoDB's internal ID, not our application seatId
-};
+  const generateSeatId = (seat, row, seatIndex) => {
+    // First priority: use backend's seatId field (A-1, B-2, etc.)
+    if (seat.seatId) {
+      return seat.seatId;
+    }
+    
+    // Second priority: use backend's id field
+    if (seat.id) {
+      return seat.id;
+    }
+    
+    // Fallback: generate from row and seat number to match backend format
+    const rowLabel = row.rowLabel || row.label || `R${seatIndex + 1}`;
+    const seatNumber = seat.seatNumber || seat.number || (seatIndex + 1);
+    return `${rowLabel}-${seatNumber}`;
+  };
 
   // Auto-reserve seats when selection changes
   useEffect(() => {
-    console.log('🎯 Selection changed:', { 
-      selectedSeats, 
-      requiredSeats, 
-      hasReservation: !!currentReservation,
-      shouldReserve: selectedSeats.length > 0 && selectedSeats.length === requiredSeats && !currentReservation
-    });
-    
     if (selectedSeats.length > 0 && selectedSeats.length === requiredSeats && !currentReservation) {
-      console.log('🎯 Auto-reserving seats...');
       handleReserveSeats();
     }
   }, [selectedSeats, requiredSeats, currentReservation]);
 
   const handleSeatClick = (seatId, seatStatus) => {
-  console.log('🎯 Seat clicked:', { 
-    seatId, 
-    seatStatus, 
-    selectedSeats, 
-    requiredSeats,
-    currentReservation: !!currentReservation 
-  });
-
-  // Prevent selection if loading or seat is occupied/disabled
-  if (isLoading || seatStatus === 'occupied' || seatStatus === 'disabled') {
-    console.log('❌ Seat selection blocked:', { seatStatus, isLoading });
-    return;
-  }
-
-  // ✅ IMPROVED: Better seat limit validation
-  const isCurrentlySelected = selectedSeats.includes(seatId);
-  
-  if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
-    alert(`You can only select ${requiredSeats} seat${requiredSeats !== 1 ? 's' : ''} for your ${requiredSeats} ticket${requiredSeats !== 1 ? 's' : ''}. Please deselect a seat first if you want to choose a different one.`);
-    return;
-  }
-
-  // Validate seat exists in layout before dispatching
-  let seatExists = false;
-  let seatDetails = null;
-  
-  for (const row of seatingLayout) {
-    const seat = row.seats?.find(s => {
-      const currentSeatId = generateSeatId(s, row, 0);
-      return currentSeatId === seatId;
-    });
-    if (seat) {
-      seatExists = true;
-      seatDetails = {
-        row: row.rowLabel,
-        seatNumber: seat.seatNumber || seat.number,
-        status: seat.status
-      };
-      break;
+    // Prevent selection if loading or seat is occupied/disabled
+    if (isLoading || seatStatus === 'occupied' || seatStatus === 'disabled') {
+      return;
     }
-  }
 
-  if (!seatExists) {
-    console.error('❌ Attempted to select non-existent seat:', seatId);
-    alert('This seat is no longer available. Please refresh the page.');
-    return;
-  }
+    // Better seat limit validation
+    const isCurrentlySelected = selectedSeats.includes(seatId);
+    
+    if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
+      alert(`You can only select ${requiredSeats} seat${requiredSeats !== 1 ? 's' : ''} for your ${requiredSeats} ticket${requiredSeats !== 1 ? 's' : ''}. Please deselect a seat first if you want to choose a different one.`);
+      return;
+    }
 
-  console.log('✅ Seat validation passed:', { seatId, seatDetails });
-  dispatch(toggleSeat(seatId));
-};
+    // Validate seat exists in layout before dispatching
+    let seatExists = false;
+    let seatDetails = null;
+    
+    for (const row of seatingLayout) {
+      const seat = row.seats?.find(s => {
+        const currentSeatId = generateSeatId(s, row, 0);
+        return currentSeatId === seatId;
+      });
+      if (seat) {
+        seatExists = true;
+        seatDetails = {
+          row: row.rowLabel,
+          seatNumber: seat.seatNumber || seat.number,
+          status: seat.status
+        };
+        break;
+      }
+    }
+
+    if (!seatExists) {
+      console.error('Attempted to select non-existent seat:', seatId);
+      alert('This seat is no longer available. Please refresh the page.');
+      return;
+    }
+
+    dispatch(toggleSeat(seatId));
+  };
 
   const handleReserveSeats = async () => {
-  if (selectedSeats.length === 0 || pendingReservation) return;
+    if (selectedSeats.length === 0 || pendingReservation) return;
 
-  // ✅ NEW: Validate seat count matches ticket count
-  if (selectedSeats.length !== requiredSeats) {
-    alert(`Please select exactly ${requiredSeats} seat${requiredSeats !== 1 ? 's' : ''} for your ${requiredSeats} ticket${requiredSeats !== 1 ? 's' : ''}. Currently selected: ${selectedSeats.length}`);
-    return;
-  }
-
-  console.log('🎯 Attempting to reserve seats:', {
-    eventId: event._id,
-    selectedSeats,
-    sessionId,
-    requiredSeats,
-    seatCount: selectedSeats.length
-  });
+    // Validate seat count matches ticket count
+    if (selectedSeats.length !== requiredSeats) {
+      alert(`Please select exactly ${requiredSeats} seat${requiredSeats !== 1 ? 's' : ''} for your ${requiredSeats} ticket${requiredSeats !== 1 ? 's' : ''}. Currently selected: ${selectedSeats.length}`);
+      return;
+    }
 
     // Validate that all selected seats exist in the seating layout
     const invalidSeats = [];
@@ -162,13 +133,11 @@ const generateSeatId = (seat, row, seatIndex) => {
     }
 
     if (invalidSeats.length > 0) {
-      console.error('❌ Invalid seats found:', invalidSeats);
+      console.error('Invalid seats found:', invalidSeats);
       alert('Some selected seats are no longer available. Please refresh and try again.');
       dispatch(clearSelection());
       return;
     }
-
-    console.log('✅ Validated seats:', validatedSeats);
 
     setPendingReservation(true);
     try {
@@ -178,13 +147,10 @@ const generateSeatId = (seat, row, seatIndex) => {
         sessionId: sessionId || `web_${Date.now()}`
       };
 
-      console.log('🎯 Sending reservation request:', reservationData);
-
       const result = await dispatch(reserveSeats(reservationData)).unwrap();
       
-      console.log('✅ Seats reserved successfully:', result);
     } catch (error) {
-      console.error('❌ Failed to reserve seats:', error);
+      console.error('Failed to reserve seats:', error);
       
       // More specific error handling
       if (error.message && error.message.includes('not found')) {
@@ -210,34 +176,38 @@ const generateSeatId = (seat, row, seatIndex) => {
           reservationId: currentReservation.reservationId
         })).unwrap();
       } catch (error) {
-        console.error('❌ Failed to release reservation:', error);
+        console.error('Failed to release reservation:', error);
       }
     }
     dispatch(clearSelection());
   };
 
-  const getSeatColor = (seat) => {
-    // Generate consistent seat ID if missing
-    const seatId = seat.seatId || seat.id || `${seat.rowLabel || 'X'}-${seat.seatNumber || seat.number || '?'}`;
+  const getSeatStatus = (seat, seatId) => {
+    // Priority 1: Check if explicitly selected in current session (this drives visual state)
     const isSelected = selectedSeats.includes(seatId);
-    const isReservedByUser = currentReservation?.seatIds.includes(seatId);
+    if (isSelected) return 'selected';
     
-    if (isSelected || isReservedByUser) return 'selected';
-    return seat.status || 'available';
+    // Priority 2: Check if reserved by current user
+    const isReservedByUser = currentReservation?.seatIds.includes(seatId);
+    if (isReservedByUser) return 'selected';
+    
+    // Priority 3: Check backend seat status (from seatingLayout)
+    if (seat.status === 'occupied') return 'occupied';
+    if (seat.status === 'disabled') return 'disabled';
+    
+    // Priority 4: Check if reserved by another user
+    if (seat.reservedBy && seat.reservedUntil > new Date()) return 'reserved';
+    
+    // Default: available
+    return 'available';
   };
 
   const totalSeats = seatingLayout.reduce((total, row) => total + (row.seats?.length || 0), 0);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Select Your Seats</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Choose {requiredSeats} seat{requiredSeats !== 1 ? 's' : ''} • {selectedSeats.length} of {requiredSeats} selected
-          </p>
-        </div>
+    <div className="space-y-4">
+      {/* Top controls - compact */}
+      <div className="flex items-center justify-end">
 
         <div className="flex items-center space-x-3">
           {/* Toggle seating layout image */}
@@ -275,14 +245,7 @@ const generateSeatId = (seat, row, seatIndex) => {
         </div>
       )}
 
-      {/* Stage indicator */}
-      <div className="text-center">
-        <div className="inline-block bg-gray-800 text-white px-8 py-2 rounded-lg text-sm font-medium">
-          🎭 STAGE
-        </div>
-      </div>
-
-      {/* Seat map */}
+      {/* Seat map - maximized space */}
       <div className="relative">
         {seatingLayout.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
@@ -293,6 +256,13 @@ const generateSeatId = (seat, row, seatIndex) => {
           </div>
         ) : (
           <div className="overflow-x-auto">
+            {/* Stage indicator */}
+            <div className="text-center mb-6">
+              <div className="inline-block bg-gray-800 text-white px-8 py-2 rounded-lg text-sm font-medium">
+                🎭 STAGE
+              </div>
+            </div>
+            
             <div className="min-w-fit mx-auto space-y-3 p-4">
               {seatingLayout.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex items-center justify-center space-x-2">
@@ -315,7 +285,7 @@ const generateSeatId = (seat, row, seatIndex) => {
                           row={row}
                           isSelected={selectedSeats.includes(seatId)}
                           isReservedByUser={currentReservation?.seatIds.includes(seatId)}
-                          onClick={() => handleSeatClick(seatId, getSeatColor(seatWithId))}
+                          onClick={() => handleSeatClick(seatId, getSeatStatus(seatWithId, seatId))}
                           disabled={isLoading || pendingReservation}
                         />
                       );
@@ -345,63 +315,53 @@ const generateSeatId = (seat, row, seatIndex) => {
         )}
       </div>
 
-{/* Enhanced Selection progress */}
-{requiredSeats > 0 && (
-  <div className={`border rounded-lg p-4 ${
-    selectedSeats.length === requiredSeats ? 'bg-green-50 border-green-200' : 
-    selectedSeats.length > requiredSeats ? 'bg-red-50 border-red-200' : 
-    'bg-blue-50 border-blue-200'
-  }`}>
-    <div className="flex items-center justify-between">
-      <div className="flex items-center">
-        <svg className={`w-5 h-5 mr-2 ${
-          selectedSeats.length === requiredSeats ? 'text-green-600' : 
-          selectedSeats.length > requiredSeats ? 'text-red-600' : 
-          'text-blue-600'
-        }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
-            d={selectedSeats.length === requiredSeats ? 
-              "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" : 
-              "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"} />
-        </svg>
-        <span className={`text-sm font-medium ${
-          selectedSeats.length === requiredSeats ? 'text-green-800' : 
-          selectedSeats.length > requiredSeats ? 'text-red-800' : 
-          'text-blue-800'
+      {/* Selection progress - compact */}
+      {requiredSeats > 0 && (
+        <div className={`border rounded-lg p-3 ${
+          selectedSeats.length === requiredSeats ? 'bg-green-50 border-green-200' : 
+          selectedSeats.length > requiredSeats ? 'bg-red-50 border-red-200' : 
+          'bg-blue-50 border-blue-200'
         }`}>
-          {selectedSeats.length === 0 ? 
-            `Click on available seats to select them (need ${requiredSeats})` :
-           selectedSeats.length < requiredSeats ? 
-            `Select ${requiredSeats - selectedSeats.length} more seat${requiredSeats - selectedSeats.length !== 1 ? 's' : ''} (${selectedSeats.length}/${requiredSeats})` :
-           selectedSeats.length === requiredSeats ? 
-            `Perfect! All ${requiredSeats} seats selected: ${selectedSeats.join(', ')}` :
-            `Too many seats selected! Please deselect ${selectedSeats.length - requiredSeats} seat${selectedSeats.length - requiredSeats !== 1 ? 's' : ''}`}
-        </span>
-      </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <svg className={`w-4 h-4 mr-2 ${
+                selectedSeats.length === requiredSeats ? 'text-green-600' : 
+                selectedSeats.length > requiredSeats ? 'text-red-600' : 
+                'text-blue-600'
+              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+                  d={selectedSeats.length === requiredSeats ? 
+                    "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" : 
+                    "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"} />
+              </svg>
+              <span className={`text-sm font-medium ${
+                selectedSeats.length === requiredSeats ? 'text-green-800' : 
+                selectedSeats.length > requiredSeats ? 'text-red-800' : 
+                'text-blue-800'
+              }`}>
+                {selectedSeats.length === 0 ? 
+                  `Click on available seats to select them (need ${requiredSeats})` :
+                 selectedSeats.length < requiredSeats ? 
+                  `Select ${requiredSeats - selectedSeats.length} more seat${requiredSeats - selectedSeats.length !== 1 ? 's' : ''} (${selectedSeats.length}/${requiredSeats})` :
+                 selectedSeats.length === requiredSeats ? 
+                  `Perfect! All ${requiredSeats} seats selected: ${selectedSeats.join(', ')}` :
+                  `Too many seats selected! Please deselect ${selectedSeats.length - requiredSeats} seat${selectedSeats.length - requiredSeats !== 1 ? 's' : ''}`}
+              </span>
+            </div>
 
-      {/* Progress bar */}
-      <div className="flex items-center space-x-2">
-        <div className="w-32 bg-gray-200 rounded-full h-2">
-          <div 
-            className={`h-2 rounded-full transition-all duration-300 ${
-              selectedSeats.length === requiredSeats ? 'bg-green-600' : 
-              selectedSeats.length > requiredSeats ? 'bg-red-600' : 
-              'bg-blue-600'
-            }`}
-            style={{ width: `${Math.min(100, (selectedSeats.length / requiredSeats) * 100)}%` }}
-          ></div>
+            {/* Progress indicator */}
+            <div className="flex items-center space-x-2">
+              <span className={`text-sm font-medium ${
+                selectedSeats.length === requiredSeats ? 'text-green-800' : 
+                selectedSeats.length > requiredSeats ? 'text-red-800' : 
+                'text-blue-800'
+              }`}>
+                {selectedSeats.length}/{requiredSeats}
+              </span>
+            </div>
+          </div>
         </div>
-        <span className={`text-sm font-medium ${
-          selectedSeats.length === requiredSeats ? 'text-green-800' : 
-          selectedSeats.length > requiredSeats ? 'text-red-800' : 
-          'text-blue-800'
-        }`}>
-          {selectedSeats.length}/{requiredSeats}
-        </span>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* Current reservation info */}
       {currentReservation && (

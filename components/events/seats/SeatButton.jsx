@@ -14,7 +14,6 @@ const SeatButton = ({
 }) => {
   // Safety checks for required props
   if (!seat || !row) {
-    console.warn('SeatButton: Missing required props', { seat, row });
     return null;
   }
 
@@ -30,12 +29,19 @@ const SeatButton = ({
   const safeRow = {
     rowLabel: row.rowLabel || row.label || 'X'
   };
+
   // Determine seat status
   const getSeatStatus = () => {
-    if (isSelected || isReservedByUser) return 'selected';
+    // Priority: explicit selection state first
+    if (isSelected) return 'selected';
+    if (isReservedByUser) return 'selected';
+    
+    // Then check actual seat status
     if (safeSeat.status === 'occupied') return 'occupied';
     if (safeSeat.status === 'disabled') return 'disabled';
     if (safeSeat.reservedBy && safeSeat.reservedUntil > new Date()) return 'reserved';
+    
+    // Default to available
     return 'available';
   };
 
@@ -131,10 +137,10 @@ const SeatButton = ({
         )}
       </button>
 
-      {/* Tooltip */}
-      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+      {/* Tooltip - positioned to avoid stage overlap */}
+      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
         {getTooltipText()}
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
       </div>
     </div>
   );

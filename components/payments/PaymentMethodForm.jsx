@@ -15,7 +15,7 @@ import {
   FaExclamationCircle 
 } from 'react-icons/fa';
 
-const PaymentMethodForm = ({ disabled = false, onReady = () => {} }) => {
+const PaymentMethodForm = ({ disabled = false }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [cardComplete, setCardComplete] = useState(false);
@@ -48,14 +48,10 @@ const PaymentMethodForm = ({ disabled = false, onReady = () => {} }) => {
   };
 
   // Handle card element changes
-  const handleCardChange = (event) => {
-    setCardError(event.error ? event.error.message : '');
-    setCardComplete(event.complete);
-    
-    if (event.complete && !event.error) {
-      onReady();
-    }
-  };
+const handleCardChange = (event) => {
+  setCardError(event.error ? event.error.message : '');
+  setCardComplete(event.complete);
+};
 
   // Handle card element focus
   const handleCardFocus = () => {

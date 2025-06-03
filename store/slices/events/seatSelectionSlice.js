@@ -225,7 +225,7 @@ const seatSelectionSlice = createSlice({
         state.error = action.payload;
       });
     
-    // Reserve seats
+    // Reserve seats - FIXED: Don't modify seat statuses in layout
     builder
       .addCase(reserveSeats.pending, (state) => {
         state.isLoading = true;
@@ -239,16 +239,9 @@ const seatSelectionSlice = createSlice({
           reservedUntil: action.payload.reservedUntil
         };
         
-        // Update seat statuses to 'selected'
-        for (const seatId of action.payload.seatIds) {
-          for (const row of state.seatingLayout) {
-            const seat = row.seats.find(s => s.seatId === seatId);
-            if (seat) {
-              seat.status = 'selected';
-              seat.reservedUntil = action.payload.reservedUntil;
-            }
-          }
-        }
+        // DON'T update seat statuses in seatingLayout here
+        // Let the visual state be managed by selectedSeats array and isReservedByUser prop
+        // The seatingLayout should maintain the original backend seat statuses
       })
       .addCase(reserveSeats.rejected, (state, action) => {
         state.isLoading = false;
@@ -256,7 +249,7 @@ const seatSelectionSlice = createSlice({
         state.selectedSeats = []; // Clear selection on failure
       });
     
-    // Release reservation
+    // Release reservation - FIXED: Don't modify seat statuses in layout
     builder
       .addCase(releaseReservation.pending, (state) => {
         state.isLoading = true;
@@ -264,19 +257,9 @@ const seatSelectionSlice = createSlice({
       .addCase(releaseReservation.fulfilled, (state) => {
         state.isLoading = false;
         
-        // Update seat statuses back to 'available'
-        if (state.currentReservation) {
-          for (const seatId of state.currentReservation.seatIds) {
-            for (const row of state.seatingLayout) {
-              const seat = row.seats.find(s => s.seatId === seatId);
-              if (seat) {
-                seat.status = 'available';
-                seat.reservedBy = null;
-                seat.reservedUntil = null;
-              }
-            }
-          }
-        }
+        // DON'T update seat statuses in seatingLayout here
+        // The backend will handle updating the actual seat availability
+        // Frontend visual state is managed separately
         
         state.currentReservation = null;
         state.selectedSeats = [];
@@ -294,7 +277,7 @@ const seatSelectionSlice = createSlice({
           state.currentReservation.reservedUntil = action.payload.newExpiry;
         }
         
-        // Update seat statuses with new expiry
+        // Update seat reservation times in layout (this is metadata, not visual state)
         if (state.currentReservation) {
           for (const seatId of state.currentReservation.seatIds) {
             for (const row of state.seatingLayout) {

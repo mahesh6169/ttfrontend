@@ -197,18 +197,6 @@ const StripePaymentForm = ({
     },
   };
 
-  if (!clientSecret) {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <div className="flex items-center">
-          <FaExclamationTriangle className="text-yellow-600 mr-3" />
-          <p className="text-sm text-yellow-800">
-            Payment system is being initialized. Please wait...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <Elements stripe={stripePromise} options={options}>
