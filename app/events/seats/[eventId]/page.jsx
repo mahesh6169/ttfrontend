@@ -31,6 +31,7 @@ import SeatLegend from '@/components/events/seats/SeatLegend';
 import SeatReservationTimer from '@/components/events/seats/SeatReservationTimer';
 import SeatDebugInfo from '@/components/events/seats/SeatDebugInfo';
 import SeatSelectionFallback from '@/components/events/seats/SeatSelectionFallback';
+import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
 
 const SeatSelectionPage = () => {
   const { eventId } = useParams();
@@ -312,6 +313,7 @@ const SeatSelectionPage = () => {
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <SeatSocketListener />
         <div className="space-y-6">
           
           {/* Row 1: Seating Legend */}

@@ -204,7 +204,47 @@ const seatSelectionSlice = createSlice({
           break;
         }
       }
+    },
+
+    // Handle real-time seat updates from other users
+handleRemoteSeatUpdate: (state, action) => {
+  const { seatId, status, userId, reservedBy, reservedUntil } = action.payload;
+  
+  // Don't update if it's our own action
+  //if (userId === state.sessionId) return;
+  
+  // Find and update the seat
+  for (const row of state.seatingLayout) {
+    const seat = row.seats.find(s => s.seatId === seatId);
+    if (seat) {
+      seat.status = status;
+      seat.reservedBy = reservedBy || null;
+      seat.reservedUntil = reservedUntil || null;
+      
+      // If someone else selected a seat we had selected, remove from our selection
+      if (status === 'selected' && state.selectedSeats.includes(seatId)) {
+        state.selectedSeats = state.selectedSeats.filter(id => id !== seatId);
+      }
+      break;
     }
+  }
+},
+
+// Handle user disconnection
+handleUserDisconnected: (state, action) => {
+  const { userId } = action.payload;
+  
+  // Release any seats that were reserved by disconnected user
+  for (const row of state.seatingLayout) {
+    for (const seat of row.seats) {
+      if (seat.reservedBy === userId && seat.status === 'selected') {
+        seat.status = 'available';
+        seat.reservedBy = null;
+        seat.reservedUntil = null;
+      }
+    }
+  }
+},
   },
   
   extraReducers: (builder) => {
@@ -359,7 +399,9 @@ export const {
   updateReservationTimer,
   resetSeatSelection,
   clearError,
-  updateSeatStatus
+  updateSeatStatus,
+  handleRemoteSeatUpdate,
+  handleUserDisconnected
 } = seatSelectionSlice.actions;
 
 export default seatSelectionSlice.reducer;

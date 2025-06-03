@@ -5,44 +5,50 @@
 import React from 'react';
 
 const SeatLegend = () => {
-  const legendItems = [
-    {
-      status: 'available',
-      color: 'bg-green-100 text-green-800 border-green-300',
-      label: 'Available',
-      icon: '○',
-      description: 'Click to select'
-    },
-    {
-      status: 'selected',
-      color: 'bg-teal-600 text-white border-teal-700',
-      label: 'Selected',
-      icon: '✓',
-      description: 'Your selection'
-    },
-    {
-      status: 'occupied',
-      color: 'bg-red-100 text-red-800 border-red-300',
-      label: 'Occupied',
-      icon: '✗',
-      description: 'Already sold'
-    },
-    {
-      status: 'reserved',
-      color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      label: 'Reserved',
-      icon: '⏱',
-      description: 'Held by other user'
-    },
-    {
-      status: 'disabled',
-      color: 'bg-gray-100 text-gray-500 border-gray-300',
-      label: 'Unavailable',
-      icon: '⊘',
-      description: 'Not for sale'
-    }
-  ];
-
+ const legendItems = [
+  {
+    status: 'available',
+    color: 'bg-green-100 text-green-800 border-green-300',
+    label: 'Available',
+    icon: '○',
+    description: 'Click to select'
+  },
+  {
+    status: 'selected',
+    color: 'bg-teal-600 text-white border-teal-700',
+    label: 'Your Selection',
+    icon: '✓',
+    description: 'Your selected seats'
+  },
+  {
+    status: 'selected-by-other',
+    color: 'bg-amber-100 text-amber-800 border-amber-300',
+    label: 'Being Selected',
+    icon: '⏳',
+    description: 'Another user is selecting'
+  },
+  {
+    status: 'booked',
+    color: 'bg-red-100 text-red-800 border-red-300',
+    label: 'Booked',
+    icon: '✗',
+    description: 'Already purchased'
+  },
+  {
+    status: 'reserved',
+    color: 'bg-purple-100 text-purple-800 border-purple-300',
+    label: 'Reserved',
+    icon: '★',
+    description: 'Reserved by organizer'
+  },
+  {
+    status: 'disabled',
+    color: 'bg-gray-100 text-gray-500 border-gray-300',
+    label: 'Unavailable',
+    icon: '⊘',
+    description: 'Not for sale'
+  }
+];
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900 flex items-center">
