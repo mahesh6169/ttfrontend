@@ -169,8 +169,8 @@ useEffect(() => {
   }, [eventId]);
 
   const handleSeatClick = (seatId, seatStatus) => {
-    // Prevent selection if loading or seat is occupied/disabled
-    if (isLoading || seatStatus === 'occupied' || seatStatus === 'disabled') {
+    // Prevent selection if loading or seat is booked/disabled
+    if (isLoading || seatStatus === 'booked' || seatStatus === 'disabled') {
       return;
     }
 
@@ -352,7 +352,7 @@ useEffect(() => {
     if (isReservedByUser) return 'selected';
 
     // Priority 3: Check backend seat status (from seatingLayout)
-    if (seat.status === 'occupied') return 'occupied';
+    if (seat.status === 'booked') return 'booked';
     if (seat.status === 'disabled') return 'disabled';
 
     // Priority 4: Check if reserved by another user

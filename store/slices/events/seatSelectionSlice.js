@@ -378,7 +378,7 @@ export const selectOccupiedSeats = (state) => {
   const occupiedSeats = [];
   for (const row of state.seatSelection.seatingLayout) {
     for (const seat of row.seats) {
-      if (seat.status === 'occupied') {
+      if (seat.status === 'booked') {
         occupiedSeats.push(seat);
       }
     }
