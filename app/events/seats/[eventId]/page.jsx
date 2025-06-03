@@ -62,12 +62,12 @@ const SeatSelectionPage = () => {
   const totals = useSelector(selectTicketTotals);
   const seatInfo = useSelector(selectSeatInfo);
 
-  // ✅ ADD: Timer expiration handler at page level
+// ✅ SIMPLIFIED: Use eventId from useParams as single source of truth
 const handleTimerExpire = useCallback(() => {
   if (currentReservation?.reservationId && currentReservation?.reservedUntil && eventId) {
     console.log('Page-level timer expired, releasing reservation:', currentReservation.reservationId);
     dispatch(releaseReservation({
-      eventId: eventId,
+      eventId: eventId, // Always use eventId from useParams
       reservationId: currentReservation.reservationId
     }));
   }
@@ -153,6 +153,9 @@ const handleTimerExpire = useCallback(() => {
           await dispatch(fetchEventById(eventId)).unwrap();
         }
 
+        // ✅ ADD: Validate that loaded event matches URL parameter
+        validateEventId(selectedEvent || await dispatch(fetchEventById(eventId)).unwrap(), eventId);
+
         // Fetch seat availability
         const seatData = await dispatch(fetchSeatAvailability(eventId)).unwrap();
 
@@ -168,6 +171,16 @@ const handleTimerExpire = useCallback(() => {
         setInitializationError(error.message || 'Failed to load seat selection data');
       }
     };
+
+    // Add event ID validation
+const validateEventId = (loadedEvent, urlEventId) => {
+  if (!loadedEvent || !loadedEvent._id) {
+    throw new Error('Event not found');
+  }
+  if (loadedEvent._id !== urlEventId) {
+    throw new Error(`Event ID mismatch: URL has ${urlEventId} but loaded event has ${loadedEvent._id}`);
+  }
+};
 
     if (eventId && !initializationAttempted) {
       initializePage();
@@ -279,6 +292,7 @@ const handleTimerExpire = useCallback(() => {
         event={selectedEvent} 
         ticketSelection={ticketSelection}
         error={initializationError || seatError}
+         eventId={eventId}
       />
     );
   }
@@ -290,6 +304,7 @@ const handleTimerExpire = useCallback(() => {
         event={selectedEvent} 
         ticketSelection={ticketSelection}
         error="No seating layout has been configured for this event."
+         eventId={eventId}
       />
     );
   }
@@ -325,6 +340,7 @@ const handleTimerExpire = useCallback(() => {
   <SeatReservationTimer 
     expiryTime={currentReservation.reservedUntil}
     onExpire={handleTimerExpire}
+    eventId={eventId}
   />
 )}
           </div>
@@ -333,7 +349,7 @@ const handleTimerExpire = useCallback(() => {
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <SeatSocketListener />
+        <SeatSocketListener eventId={eventId}/>
         <div className="space-y-6">
           
           {/* Row 1: Seating Legend */}
@@ -350,7 +366,7 @@ const handleTimerExpire = useCallback(() => {
                 {seatInfo.seatCount > 0 && ` ${selectedSeats.length}/${seatInfo.seatCount} selected`}
               </p>
             </div>
-            <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection} />
+            <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection}  eventId={eventId}/>
           </div>
           
           {/* Row 3: Booking Summary */}
@@ -363,6 +379,7 @@ const handleTimerExpire = useCallback(() => {
               requiredSeatsCount={seatInfo.seatCount || 0}
               canProceed={selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0}
               horizontal={true} // Pass this prop to make it horizontal layout
+              eventId={eventId}
             />
           </div>
           
@@ -379,6 +396,7 @@ const handleTimerExpire = useCallback(() => {
           requiredSeatsCount={seatInfo.seatCount || 0}
           canProceed={selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0}
           compact={true}
+          eventId={eventId}
         />
       </div>
 
@@ -387,6 +405,7 @@ const handleTimerExpire = useCallback(() => {
         <SeatDebugInfo 
           event={selectedEvent} 
           ticketSelection={ticketSelection}
+           eventId={eventId}
           reduxState={{
             ticketPurchase: ticketPurchaseState,
             selectedTickets,

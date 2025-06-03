@@ -5,17 +5,17 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 
-const SeatSelectionFallback = ({ event, ticketSelection, error }) => {
+const SeatSelectionFallback = ({ event, ticketSelection, error, eventId }) => {
   const router = useRouter();
 
   const handleBackToEvent = () => {
-    router.push(`/events/views/${event._id}`);
+    router.push(`/events/views/${eventId}`);
   };
 
   const handleProceedWithoutSeats = () => {
     // For events that might not need specific seat selection
     // Navigate directly to checkout
-    router.push(`/checkout/events/${event._id}`);
+    router.push(`/checkout/events/${eventId}`);
   };
 
   return (

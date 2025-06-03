@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 
@@ -22,26 +22,10 @@ import SeatButton from './SeatButton';
 import socket from '@/config/socket';
 import SeatReservationTimer from './SeatReservationTimer';
 
-const SeatMapSelection = ({ event, ticketSelection }) => {
+const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
   const dispatch = useDispatch();
   const router = useRouter();
 
- const handleTimerExpire = () => {
-  const eventId = event?._id || currentEventId; // ✅ ADD: Use event._id as primary source
-  
-  if (currentReservation?.reservationId && currentReservation?.reservedUntil && eventId) {
-    console.log('Timer expired, releasing reservation:', currentReservation.reservationId); // ✅ ADD: Debug log
-    dispatch(releaseReservation({
-      eventId: eventId, // ✅ CHANGE: Use eventId variable
-      reservationId: currentReservation.reservationId
-    }));
-  } else {
-    console.warn('Timer expire called but missing required data:', { // ✅ ADD: Warning log
-      hasReservation: !!currentReservation,
-      hasEventId: !!eventId
-    });
-  }
-};
 
 const {
   seatingLayout,
@@ -50,11 +34,26 @@ const {
   maxSeatsPerSelection,
   sessionId,
   isLoading,
-  currentEventId, // ✅ ADD THIS LINE
 } = useSelector((state) => state.seatSelection);
 
   const { user } = useSelector((state) => state.user);
   const userId = user?._id;
+
+  const handleTimerExpire = useCallback(() => {
+  if (currentReservation?.reservationId && currentReservation?.reservedUntil) {
+    console.log('Timer expired, releasing reservation:', currentReservation.reservationId);
+    dispatch(releaseReservation({
+      eventId: eventId, // ✅ SIMPLIFIED: Use eventId prop directly
+      reservationId: currentReservation.reservationId
+    }));
+  } else {
+    console.warn('Timer expire called but missing required data:', {
+      hasReservation: !!currentReservation,
+      hasEventId: !!eventId
+    });
+  }
+}, [dispatch, currentReservation?.reservationId, currentReservation?.reservedUntil, eventId]);
+
 
   const [pendingReservation, setPendingReservation] = useState(false);
   const [showSeatingImage, setShowSeatingImage] = useState(false);
@@ -94,23 +93,24 @@ const {
   }, [selectedSeats, requiredSeats, currentReservation]);
 
   // Socket connection for real-time updates
-  useEffect(() => {
-    if (!event?._id) return;
+useEffect(() => {
+  if (!eventId) return; // ✅ SIMPLIFIED: Use eventId prop directly
 
-    // Wait for socket to be connected (SocketListener handles connection)
-    const checkAndJoinRoom = () => {
-      if (socket.connected) {
-        // Join event room
-        socket.emit('seat:join_event', event._id);
-        console.log('Joined seat selection room for event:', event._id);
-      } else {
-        console.log('Waiting for socket connection...');
-        // Retry after a short delay
-        setTimeout(checkAndJoinRoom, 500);
-      }
-    };
+  // Wait for socket to be connected (SocketListener handles connection)
+  const checkAndJoinRoom = () => {
+    if (socket.connected) {
+      // Join event room
+      socket.emit('seat:join_event', eventId); // ✅ Use eventId prop
+      console.log('Joined seat selection room for event:', eventId);
+    } else {
+      console.log('Waiting for socket connection...');
+      // Retry after a short delay
+      setTimeout(checkAndJoinRoom, 500);
+    }
+  };
 
-    checkAndJoinRoom();
+  checkAndJoinRoom();
+
 
     // Listen for seat updates from other users
     const handleSeatUpdate = (data) => {
@@ -129,7 +129,7 @@ const {
     const handleCleanupCompleted = () => {
       console.log('Seat cleanup completed, refreshing availability');
       // Refresh seat availability from backend
-      dispatch(fetchSeatAvailability(event._id));
+      dispatch(fetchSeatAvailability(eventId));
     };
 
     socket.on('seat:cleanup_completed', handleCleanupCompleted);
@@ -137,22 +137,22 @@ const {
     // Cleanup
     return () => {
       if (socket.connected) {
-        socket.emit('seat:leave_event', event._id);
+        socket.emit('seat:leave_event', eventId);
       }
       socket.off('seat:status_changed', handleSeatUpdate);
       socket.off('seat:user_disconnected', handleUserDisconnect);
       socket.off('seat:cleanup_completed', handleCleanupCompleted);
       console.log('Left seat selection room');
     };
-  }, [event?._id, dispatch]);
+  }, [eventId, dispatch]);
 
   // Handle socket reconnection
   useEffect(() => {
-    if (!event?._id) return;
+    if (!eventId) return;
 
     const handleReconnect = () => {
       console.log('Socket reconnected, rejoining event room');
-      socket.emit('seat:join_event', event._id);
+      socket.emit('seat:join_event', eventId);
     };
 
     const handleDisconnect = () => {
@@ -166,7 +166,7 @@ const {
       socket.off('connect', handleReconnect);
       socket.off('disconnect', handleDisconnect);
     };
-  }, [event?._id]);
+  }, [eventId]);
 
   const handleSeatClick = (seatId, seatStatus) => {
     // Prevent selection if loading or seat is occupied/disabled
@@ -221,7 +221,7 @@ const {
       if (currentReservation?.reservationId) {
         dispatch(
           releaseReservation({
-            eventId: event._id,
+            eventId: eventId,
             reservationId: currentReservation.reservationId,
           })
         );
@@ -233,7 +233,7 @@ const {
     // Emit to other users (optimistic update)
     if (socket.connected) {
       socket.emit('seat:status_update', {
-        eventId: event._id,
+        eventId: eventId,
         seatId: seatId,
         status: isCurrentlySelected ? 'available' : 'selected',
         userId: userId, // Add userId to the emit
@@ -297,7 +297,7 @@ const {
     setPendingReservation(true);
     try {
       const reservationData = {
-        eventId: event._id,
+        eventId: eventId,
         seatIds: selectedSeats,
         sessionId: sessionId || `web_${Date.now()}`,
       };
@@ -331,7 +331,7 @@ const {
       try {
         await dispatch(
           releaseReservation({
-            eventId: event._id,
+            eventId: eventId,
             reservationId: currentReservation.reservationId,
           })
         ).unwrap();
@@ -610,6 +610,7 @@ const {
             <SeatReservationTimer
               expiryTime={currentReservation.reservedUntil}
               onExpire={handleTimerExpire}
+              eventId={eventId}
             />
           )}
         </div>

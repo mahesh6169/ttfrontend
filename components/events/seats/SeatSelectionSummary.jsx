@@ -10,7 +10,8 @@ const SeatSelectionSummary = ({
   event, 
   ticketSelection, 
   onProceedToCheckout, 
-  compact = false 
+  compact = false,
+  eventId
 }) => {
   const { 
     selectedSeats, 

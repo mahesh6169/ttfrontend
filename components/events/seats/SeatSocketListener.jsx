@@ -11,9 +11,9 @@ import {
   selectSessionId
 } from '@/store/slices/events/seatSelectionSlice';
 
-const SeatSocketListener = () => {
+const SeatSocketListener = ({ eventId }) => {
   const dispatch = useDispatch();
-  const eventId = useSelector(selectCurrentEventId);
+
   const sessionId = useSelector(selectSessionId);
 
   useEffect(() => {

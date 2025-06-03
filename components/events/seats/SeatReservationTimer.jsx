@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 
-const SeatReservationTimer = ({ expiryTime, onExpire }) => {
+const SeatReservationTimer = ({ expiryTime, onExpire, eventId  }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isExpired, setIsExpired] = useState(false);
 
@@ -35,7 +35,7 @@ const SeatReservationTimer = ({ expiryTime, onExpire }) => {
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [expiryTime, handleExpire]);
+}, [expiryTime, handleExpire, eventId]); 
 
   // Format time as MM:SS
   const formatTime = (milliseconds) => {
