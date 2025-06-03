@@ -5,6 +5,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
+import { useCallback } from 'react';
+
 import { 
   fetchSeatAvailability,
   setCurrentEvent,
@@ -13,7 +15,9 @@ import {
   selectSelectedSeats,
   selectIsLoading as selectSeatLoading,
   selectError as selectSeatError,
-  selectCurrentReservation
+  selectCurrentReservation,
+  releaseReservation 
+
 } from '@/store/slices/events/seatSelectionSlice';
 import { 
   updateSeatInfo,
@@ -57,6 +61,17 @@ const SeatSelectionPage = () => {
   const selectedTickets = useSelector(selectSelectedTickets);
   const totals = useSelector(selectTicketTotals);
   const seatInfo = useSelector(selectSeatInfo);
+
+  // ✅ ADD: Timer expiration handler at page level
+const handleTimerExpire = useCallback(() => {
+  if (currentReservation?.reservationId && currentReservation?.reservedUntil && eventId) {
+    console.log('Page-level timer expired, releasing reservation:', currentReservation.reservationId);
+    dispatch(releaseReservation({
+      eventId: eventId,
+      reservationId: currentReservation.reservationId
+    }));
+  }
+}, [dispatch, currentReservation?.reservationId, currentReservation?.reservedUntil, eventId]);
 
   // Initialize page data
   useEffect(() => {
@@ -306,7 +321,12 @@ const SeatSelectionPage = () => {
             </div>
 
             {/* Reservation timer */}
-            <SeatReservationTimer />
+            {currentReservation?.reservedUntil && (
+  <SeatReservationTimer 
+    expiryTime={currentReservation.reservedUntil}
+    onExpire={handleTimerExpire}
+  />
+)}
           </div>
         </div>
       </div>

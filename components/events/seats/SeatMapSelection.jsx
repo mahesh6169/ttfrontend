@@ -26,12 +26,20 @@ const SeatMapSelection = ({ event, ticketSelection }) => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const handleTimerExpire = () => {
-  if (currentReservation?.reservationId && currentReservation?.reservedUntil) {
+ const handleTimerExpire = () => {
+  const eventId = event?._id || currentEventId; // ✅ ADD: Use event._id as primary source
+  
+  if (currentReservation?.reservationId && currentReservation?.reservedUntil && eventId) {
+    console.log('Timer expired, releasing reservation:', currentReservation.reservationId); // ✅ ADD: Debug log
     dispatch(releaseReservation({
-      eventId: currentEventId,
+      eventId: eventId, // ✅ CHANGE: Use eventId variable
       reservationId: currentReservation.reservationId
     }));
+  } else {
+    console.warn('Timer expire called but missing required data:', { // ✅ ADD: Warning log
+      hasReservation: !!currentReservation,
+      hasEventId: !!eventId
+    });
   }
 };
 
