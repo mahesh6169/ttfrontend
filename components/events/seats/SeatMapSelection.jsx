@@ -213,76 +213,92 @@ useEffect(() => {
     };
   }, [eventId, dispatch]);
 
-  // ✅ IMPROVED: Enhanced seat click handling with better validation
-  const handleSeatClick = (seatId, seatStatus) => {
-    console.log(`🪑 Seat clicked: ${seatId}, status: ${seatStatus}`);
+// ✅ ENHANCED: Improved seat click handling with symmetric auto-management
+const handleSeatClick = (seatId, seatStatus) => {
+  console.log(`🪑 Seat clicked: ${seatId}, status: ${seatStatus}`);
 
-    // Prevent selection if loading or seat is unavailable
-    if (isLoading || pendingReservation) {
-      console.log('⏳ Ignoring click - operation in progress');
-      return;
+  // Prevent selection if loading or seat is unavailable
+  if (isLoading || pendingReservation) {
+    console.log('⏳ Ignoring click - operation in progress');
+    return;
+  }
+
+  if (
+    seatStatus === 'booked' ||
+    seatStatus === 'disabled' ||
+    seatStatus === 'reserved'
+  ) {
+    console.log(`🚫 Cannot select seat ${seatId} - status: ${seatStatus}`);
+    return;
+  }
+
+  // Check if seat is being held by another user
+  if (seatStatus === 'selected-by-other') {
+    console.log(`👥 Seat ${seatId} is being held by another user`);
+    return;
+  }
+
+  const isCurrentlySelected = selectedSeats.includes(seatId);
+
+  // ✅ NEW: Enhanced selection limit validation with better messaging
+  if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
+    // More helpful message for users
+    const message = selectedSeats.length === requiredSeats 
+      ? `You have selected all ${requiredSeats} required seats. Deselect a seat first if you want to choose a different one.`
+      : `You can only select ${requiredSeats} seat${requiredSeats !== 1 ? 's' : ''} total. Please deselect some seats first.`;
+    
+    alert(message);
+    return;
+  }
+
+  // Validate seat exists in layout
+  const seatDetails = findSeatInLayout(seatId);
+  if (!seatDetails) {
+    console.error('❌ Attempted to select non-existent seat:', seatId);
+    alert('This seat is no longer available. Please refresh the page.');
+    return;
+  }
+
+  // ✅ ENHANCED: Handle seat selection/deselection with auto-management awareness
+  if (isCurrentlySelected) {
+    console.log(`🔄 Deselecting seat: ${seatId} (will trigger auto-release if needed)`);
+    dispatch(deselectSeat(seatId));
+    
+    // ✅ NEW: Provide immediate feedback about what will happen
+    const newCount = selectedSeats.length - 1;
+    if (newCount < requiredSeats && currentReservation) {
+      console.log(`ℹ️ Deselection will trigger auto-release (${newCount}/${requiredSeats} seats)`);
     }
-
-    if (
-      seatStatus === 'booked' ||
-      seatStatus === 'disabled' ||
-      seatStatus === 'reserved'
-    ) {
-      console.log(`🚫 Cannot select seat ${seatId} - status: ${seatStatus}`);
-      return;
+  } else {
+    console.log(`✅ Selecting seat: ${seatId} (will trigger auto-reserve if complete)`);
+    dispatch(selectSeat(seatId));
+    
+    // ✅ NEW: Provide immediate feedback about what will happen
+    const newCount = selectedSeats.length + 1;
+    if (newCount === requiredSeats && !currentReservation) {
+      console.log(`ℹ️ Selection will trigger auto-reservation (${newCount}/${requiredSeats} seats)`);
     }
+  }
 
-    // Check if seat is being held by another user
-    if (seatStatus === 'selected-by-other') {
-      console.log(`👥 Seat ${seatId} is being held by another user`);
-      return;
-    }
-
-    const isCurrentlySelected = selectedSeats.includes(seatId);
-
-    // Validate seat selection limits
-    if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
-      alert(
-        `You can only select ${requiredSeats} seat${
-          requiredSeats !== 1 ? 's' : ''
-        } for your ${requiredSeats} ticket${
-          requiredSeats !== 1 ? 's' : ''
-        }. Please deselect a seat first if you want to choose a different one.`
-      );
-      return;
-    }
-
-    // Validate seat exists in layout
-    const seatDetails = findSeatInLayout(seatId);
-    if (!seatDetails) {
-      console.error('❌ Attempted to select non-existent seat:', seatId);
-      alert('This seat is no longer available. Please refresh the page.');
-      return;
-    }
-
-    // Handle seat selection/deselection
-    if (isCurrentlySelected) {
-      console.log(`🔄 Deselecting seat: ${seatId}`);
-      dispatch(deselectSeat(seatId));
-    } else {
-      console.log(`✅ Selecting seat: ${seatId}`);
-      dispatch(selectSeat(seatId));
-    }
-
-    // ✅ IMPROVED: Emit socket event with more details
-    if (socket.connected) {
-      socket.emit('seat:status_update', {
-        eventId: eventId,
-        seatId: seatId,
-        status: isCurrentlySelected ? 'available' : 'selected',
-        userId: userId,
-        sessionId: sessionId,
-        timestamp: new Date(),
-      });
-    } else {
-      console.warn('⚠️ Socket not connected, seat update not broadcast');
-    }
-  };
+  // ✅ ENHANCED: Improved socket event with operation context
+  if (socket.connected) {
+    socket.emit('seat:status_update', {
+      eventId: eventId,
+      seatId: seatId,
+      status: isCurrentlySelected ? 'available' : 'selected',
+      userId: userId,
+      sessionId: sessionId,
+      timestamp: new Date(),
+      // ✅ NEW: Add context for auto-management
+      operationType: isCurrentlySelected ? 'deselect' : 'select',
+      willTriggerAutoAction: isCurrentlySelected 
+        ? (selectedSeats.length - 1 < requiredSeats && currentReservation)
+        : (selectedSeats.length + 1 === requiredSeats && !currentReservation)
+    });
+  } else {
+    console.warn('⚠️ Socket not connected, seat update not broadcast');
+  }
+};
 
   // ✅ NEW: Helper function to find seat in layout
   const findSeatInLayout = (seatId) => {
@@ -426,29 +442,37 @@ const handleAutoRelease = async () => {
     }
   };
 
-  // ✅ ENHANCED: Improved clear selection with reservation release
-  const handleClearSelection = async () => {
-    console.log('🗑️ Clearing seat selection...');
+// ✅ ENHANCED: Improved clear selection with explicit reservation release
+const handleClearSelection = async () => {
+  console.log('🗑️ Manual clear selection triggered...');
 
-    if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
-      try {
-        console.log('🔓 Releasing current reservation...');
-        await dispatch(
-          releaseReservation({
-            eventId: eventId,
-            seatIds: currentReservation.seatIds,
-            sessionId: currentReservation.sessionId || sessionId,
-          })
-        ).unwrap();
-        console.log('✅ Reservation released successfully');
-      } catch (error) {
-        console.error('❌ Failed to release reservation:', error);
-        // Continue with clearing selection even if release fails
-      }
+  // ✅ NEW: More informative logging
+  if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
+    console.log('🔓 Manually releasing current reservation:', {
+      reservationId: currentReservation.reservationId,
+      seatCount: currentReservation.seatIds.length,
+      seatsToRelease: currentReservation.seatIds
+    });
+    
+    try {
+      await dispatch(
+        releaseReservation({
+          eventId: eventId,
+          seatIds: currentReservation.seatIds,
+          sessionId: currentReservation.sessionId || sessionId,
+        })
+      ).unwrap();
+      console.log('✅ Manual reservation release successful');
+    } catch (error) {
+      console.error('❌ Failed to release reservation manually:', error);
+      // Continue with clearing selection even if release fails
     }
+  } else {
+    console.log('ℹ️ No active reservation to release, just clearing selection');
+  }
 
-    dispatch(clearSelection());
-  };
+  dispatch(clearSelection());
+};
 
   // ✅ IMPROVED: Enhanced seat status detection
   const getSeatStatus = (seat, seatId) => {
