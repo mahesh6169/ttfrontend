@@ -13,10 +13,13 @@ import {
   clearSelection,
   handleRemoteSeatUpdate,
   handleUserDisconnected,
+  handleSeatCleanup,
   setSessionId,
   fetchSeatAvailability,
   selectSeat,
   deselectSeat,
+  selectHasActiveReservation,
+  selectReservationTimeLeft,
 } from '@/store/slices/events/seatSelectionSlice';
 import SeatButton from './SeatButton';
 import socket from '@/config/socket';
@@ -26,34 +29,43 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-
-const {
-  seatingLayout,
-  selectedSeats,
-  currentReservation,
-  maxSeatsPerSelection,
-  sessionId,
-  isLoading,
-} = useSelector((state) => state.seatSelection);
+  const {
+    seatingLayout,
+    selectedSeats,
+    currentReservation,
+    maxSeatsPerSelection,
+    sessionId,
+    isLoading,
+    error,
+  } = useSelector((state) => state.seatSelection);
 
   const { user } = useSelector((state) => state.user);
   const userId = user?._id;
 
+  // ✅ FIXED: Enhanced timer expiration handling
   const handleTimerExpire = useCallback(() => {
-  if (currentReservation?.reservationId && currentReservation?.reservedUntil) {
-    console.log('Timer expired, releasing reservation:', currentReservation.reservationId);
-    dispatch(releaseReservation({
-      eventId: eventId, // ✅ SIMPLIFIED: Use eventId prop directly
-      reservationId: currentReservation.reservationId
-    }));
-  } else {
-    console.warn('Timer expire called but missing required data:', {
-      hasReservation: !!currentReservation,
-      hasEventId: !!eventId
-    });
-  }
-}, [dispatch, currentReservation?.reservationId, currentReservation?.reservedUntil, eventId]);
+    console.log('⏰ Timer expired, releasing reservation');
 
+    if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
+      dispatch(
+        releaseReservation({
+          eventId: eventId,
+          seatIds: currentReservation.seatIds,
+          sessionId: currentReservation.sessionId || sessionId,
+        })
+      )
+        .then(() => {
+          console.log('🔓 Reservation released due to timeout');
+        })
+        .catch((error) => {
+          console.error('❌ Failed to release expired reservation:', error);
+        });
+    } else {
+      console.warn('⚠️ Timer expired but no reservation data found');
+      // Clear selection as fallback
+      dispatch(clearSelection());
+    }
+  }, [dispatch, currentReservation, eventId, sessionId]);
 
   const [pendingReservation, setPendingReservation] = useState(false);
   const [showSeatingImage, setShowSeatingImage] = useState(false);
@@ -63,100 +75,133 @@ const {
     0
   );
 
-  // Utility function to generate consistent seat IDs
-  const generateSeatId = (seat, row, seatIndex) => {
-    // First priority: use backend's seatId field (A-1, B-2, etc.)
-    if (seat.seatId) {
-      return seat.seatId;
-    }
-
-    // Second priority: use backend's id field
-    if (seat.id) {
-      return seat.id;
-    }
-
-    // Fallback: generate from row and seat number to match backend format
-    const rowLabel = row.rowLabel || row.label || `R${seatIndex + 1}`;
-    const seatNumber = seat.seatNumber || seat.number || seatIndex + 1;
-    return `${rowLabel}-${seatNumber}`;
-  };
-
-  // Auto-reserve seats when selection changes
+  // ✅ IMPROVED: Auto-reserve with better validation
   useEffect(() => {
-    if (
+    const shouldAutoReserve =
       selectedSeats.length > 0 &&
       selectedSeats.length === requiredSeats &&
-      !currentReservation
-    ) {
+      !currentReservation &&
+      !pendingReservation &&
+      !isLoading;
+
+    if (shouldAutoReserve) {
+      console.log('🎫 Auto-reserving seats:', selectedSeats);
       handleReserveSeats();
     }
-  }, [selectedSeats, requiredSeats, currentReservation]);
+  }, [
+    selectedSeats,
+    requiredSeats,
+    currentReservation,
+    pendingReservation,
+    isLoading,
+  ]);
 
-  // Socket connection for real-time updates
+  // ✅ NEW: Auto-release when deselecting to incomplete count (mirrors auto-reserve)
 useEffect(() => {
-  if (!eventId) return; // ✅ SIMPLIFIED: Use eventId prop directly
+  const shouldAutoRelease =
+    selectedSeats.length < requiredSeats &&  // Less than required seats
+    selectedSeats.length >= 0 &&             // Valid count
+    currentReservation &&                     // Has active reservation
+    currentReservation.seatIds &&            // Has reserved seats
+    currentReservation.seatIds.length > 0 && // Not empty
+    !pendingReservation &&                   // Not currently processing
+    !isLoading;                              // Not loading
 
-  // Wait for socket to be connected (SocketListener handles connection)
-  const checkAndJoinRoom = () => {
-    if (socket.connected) {
-      // Join event room
-      socket.emit('seat:join_event', eventId); // ✅ Use eventId prop
-      console.log('Joined seat selection room for event:', eventId);
-    } else {
-      console.log('Waiting for socket connection...');
-      // Retry after a short delay
-      setTimeout(checkAndJoinRoom, 500);
+  if (shouldAutoRelease) {
+    console.log('🔓 Auto-releasing reservation due to incomplete selection:', {
+      selectedSeats: selectedSeats.length,
+      required: requiredSeats,
+      reservedSeats: currentReservation.seatIds
+    });
+    handleAutoRelease();
+  }
+}, [
+  selectedSeats.length,
+  requiredSeats,
+  currentReservation,
+  pendingReservation,
+  isLoading,
+]);
+
+  // ✅ ENHANCED: Socket connection with better error handling
+  useEffect(() => {
+    if (!eventId) {
+      console.warn('⚠️ No eventId provided for socket connection');
+      return;
     }
-  };
 
-  checkAndJoinRoom();
+    // Generate session ID if not exists
+    if (!sessionId) {
+      const newSessionId = `web_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+      dispatch(setSessionId(newSessionId));
+      console.log('🆔 Generated new session ID:', newSessionId);
+    }
 
+    const connectToRoom = () => {
+      if (socket.connected) {
+        socket.emit('seat:join_event', eventId);
+        console.log(`🔌 Joined seat room for event: ${eventId}`);
+      } else {
+        console.log('⏳ Waiting for socket connection...');
+        setTimeout(connectToRoom, 1000); // Retry after 1 second
+      }
+    };
 
-    // Listen for seat updates from other users
+    connectToRoom();
+
+    // ✅ FIXED: Updated socket event handlers for new backend structure
     const handleSeatUpdate = (data) => {
-      console.log('Received seat update:', data);
+      console.log('📡 Received seat update:', data);
       dispatch(handleRemoteSeatUpdate(data));
     };
 
     const handleUserDisconnect = (data) => {
-      console.log('User disconnected:', data.userId);
+      console.log('👤 User disconnected:', data.userId);
       dispatch(handleUserDisconnected(data));
     };
 
-    socket.on('seat:status_changed', handleSeatUpdate);
-    socket.on('seat:user_disconnected', handleUserDisconnect);
+    const handleCleanupCompleted = (data) => {
+      console.log('🧹 Seat cleanup completed:', data);
+      dispatch(handleSeatCleanup(data));
 
-    const handleCleanupCompleted = () => {
-      console.log('Seat cleanup completed, refreshing availability');
-      // Refresh seat availability from backend
-      dispatch(fetchSeatAvailability(eventId));
+      // Refresh seat availability after cleanup
+      if (data.seatsReleased > 0) {
+        dispatch(fetchSeatAvailability(eventId));
+      }
     };
 
+    // Register event listeners
+    socket.on('seat:status_changed', handleSeatUpdate);
+    socket.on('seat:user_disconnected', handleUserDisconnect);
     socket.on('seat:cleanup_completed', handleCleanupCompleted);
 
-    // Cleanup
+    // Cleanup function
     return () => {
       if (socket.connected) {
         socket.emit('seat:leave_event', eventId);
+        console.log(`🔌 Left seat room for event: ${eventId}`);
       }
       socket.off('seat:status_changed', handleSeatUpdate);
       socket.off('seat:user_disconnected', handleUserDisconnect);
       socket.off('seat:cleanup_completed', handleCleanupCompleted);
-      console.log('Left seat selection room');
     };
-  }, [eventId, dispatch]);
+  }, [eventId, dispatch, sessionId]);
 
-  // Handle socket reconnection
+  // ✅ ENHANCED: Socket reconnection handling
   useEffect(() => {
     if (!eventId) return;
 
     const handleReconnect = () => {
-      console.log('Socket reconnected, rejoining event room');
+      console.log('🔄 Socket reconnected, rejoining event room');
       socket.emit('seat:join_event', eventId);
+      // Refresh seat availability after reconnection
+      dispatch(fetchSeatAvailability(eventId));
     };
 
     const handleDisconnect = () => {
-      console.log('Socket disconnected');
+      console.log('🔌 Socket disconnected');
     };
 
     socket.on('connect', handleReconnect);
@@ -166,17 +211,36 @@ useEffect(() => {
       socket.off('connect', handleReconnect);
       socket.off('disconnect', handleDisconnect);
     };
-  }, [eventId]);
+  }, [eventId, dispatch]);
 
+  // ✅ IMPROVED: Enhanced seat click handling with better validation
   const handleSeatClick = (seatId, seatStatus) => {
-    // Prevent selection if loading or seat is booked/disabled
-    if (isLoading || seatStatus === 'booked' || seatStatus === 'disabled') {
+    console.log(`🪑 Seat clicked: ${seatId}, status: ${seatStatus}`);
+
+    // Prevent selection if loading or seat is unavailable
+    if (isLoading || pendingReservation) {
+      console.log('⏳ Ignoring click - operation in progress');
       return;
     }
 
-    // Better seat limit validation
+    if (
+      seatStatus === 'booked' ||
+      seatStatus === 'disabled' ||
+      seatStatus === 'reserved'
+    ) {
+      console.log(`🚫 Cannot select seat ${seatId} - status: ${seatStatus}`);
+      return;
+    }
+
+    // Check if seat is being held by another user
+    if (seatStatus === 'selected-by-other') {
+      console.log(`👥 Seat ${seatId} is being held by another user`);
+      return;
+    }
+
     const isCurrentlySelected = selectedSeats.includes(seatId);
 
+    // Validate seat selection limits
     if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
       alert(
         `You can only select ${requiredSeats} seat${
@@ -188,105 +252,125 @@ useEffect(() => {
       return;
     }
 
-    // Validate seat exists in layout before dispatching
-    let seatExists = false;
-    let seatDetails = null;
-
-    for (const row of seatingLayout) {
-      const seat = row.seats?.find((s) => {
-        const currentSeatId = generateSeatId(s, row, 0);
-        return currentSeatId === seatId;
-      });
-      if (seat) {
-        seatExists = true;
-        seatDetails = {
-          row: row.rowLabel,
-          seatNumber: seat.seatNumber || seat.number,
-          status: seat.status,
-        };
-        break;
-      }
-    }
-
-    if (!seatExists) {
-      console.error('Attempted to select non-existent seat:', seatId);
+    // Validate seat exists in layout
+    const seatDetails = findSeatInLayout(seatId);
+    if (!seatDetails) {
+      console.error('❌ Attempted to select non-existent seat:', seatId);
       alert('This seat is no longer available. Please refresh the page.');
       return;
     }
 
-    if (selectedSeats.includes(seatId)) {
+    // Handle seat selection/deselection
+    if (isCurrentlySelected) {
+      console.log(`🔄 Deselecting seat: ${seatId}`);
       dispatch(deselectSeat(seatId));
-
-      // Release only the deselected seat
-      if (currentReservation?.reservationId) {
-        dispatch(
-          releaseReservation({
-            eventId: eventId,
-            reservationId: currentReservation.reservationId,
-          })
-        );
-      }
     } else {
+      console.log(`✅ Selecting seat: ${seatId}`);
       dispatch(selectSeat(seatId));
     }
 
-    // Emit to other users (optimistic update)
+    // ✅ IMPROVED: Emit socket event with more details
     if (socket.connected) {
       socket.emit('seat:status_update', {
         eventId: eventId,
         seatId: seatId,
         status: isCurrentlySelected ? 'available' : 'selected',
-        userId: userId, // Add userId to the emit
+        userId: userId,
+        sessionId: sessionId,
+        timestamp: new Date(),
       });
     } else {
-      console.warn('Socket not connected, seat update not broadcast');
+      console.warn('⚠️ Socket not connected, seat update not broadcast');
     }
   };
 
-  const handleReserveSeats = async () => {
-    if (selectedSeats.length === 0 || pendingReservation) return;
+  // ✅ NEW: Helper function to find seat in layout
+  const findSeatInLayout = (seatId) => {
+    for (const row of seatingLayout) {
+      const seat = row.seats?.find((s) => s.seatId === seatId);
+      if (seat) {
+        return {
+          seat,
+          row: row.rowLabel,
+          seatNumber: seat.seatNumber || seat.number,
+          status: seat.status,
+        };
+      }
+    }
+    return null;
+  };
 
-    // Validate seat count matches ticket count
-    if (selectedSeats.length !== requiredSeats) {
-      alert(
-        `Please select exactly ${requiredSeats} seat${
-          requiredSeats !== 1 ? 's' : ''
-        } for your ${requiredSeats} ticket${
-          requiredSeats !== 1 ? 's' : ''
-        }. Currently selected: ${selectedSeats.length}`
-      );
+  // ✅ NEW: Auto-release helper function (mirrors handleReserveSeats pattern)
+const handleAutoRelease = async () => {
+  if (!currentReservation?.seatIds || currentReservation.seatIds.length === 0) {
+    console.log('⏸️ Cannot auto-release - no reservation found');
+    return;
+  }
+
+  console.log('🔓 Starting auto-release process for reservation:', currentReservation.reservationId);
+
+  try {
+    const releaseData = {
+      eventId: eventId,
+      seatIds: currentReservation.seatIds,
+      sessionId: currentReservation.sessionId || sessionId,
+    };
+
+    await dispatch(releaseReservation(releaseData)).unwrap();
+    console.log('✅ Auto-release completed successfully');
+  } catch (error) {
+    console.error('❌ Auto-release failed:', error);
+    
+    // Enhanced error handling
+    if (error.message && error.message.includes('not found')) {
+      console.log('ℹ️ Reservation already released, clearing local state');
+      dispatch(clearSelection());
+    } else {
+      console.error('🚨 Unexpected auto-release error, may need manual intervention');
+    }
+  }
+};
+
+  // ✅ ENHANCED: Improved seat reservation with better error handling
+  const handleReserveSeats = async () => {
+    if (selectedSeats.length === 0 || pendingReservation) {
+      console.log('⏸️ Cannot reserve - no seats selected or already pending');
       return;
     }
 
-    // Validate that all selected seats exist in the seating layout
+    // Validate seat count matches ticket count
+    if (selectedSeats.length !== requiredSeats) {
+      const message = `Please select exactly ${requiredSeats} seat${
+        requiredSeats !== 1 ? 's' : ''
+      } for your ${requiredSeats} ticket${
+        requiredSeats !== 1 ? 's' : ''
+      }. Currently selected: ${selectedSeats.length}`;
+
+      console.warn('⚠️ Seat count mismatch:', message);
+      alert(message);
+      return;
+    }
+
+    // Validate all selected seats exist and are available
     const invalidSeats = [];
     const validatedSeats = [];
 
     for (const seatId of selectedSeats) {
-      let seatExists = false;
-      for (const row of seatingLayout) {
-        const seat = row.seats?.find((s) => {
-          const currentSeatId = generateSeatId(s, row, 0);
-          return currentSeatId === seatId;
-        });
-        if (seat) {
-          seatExists = true;
-          validatedSeats.push({
-            seatId,
-            row: row.rowLabel,
-            seatNumber: seat.seatNumber || seat.number,
-            status: seat.status,
-          });
-          break;
-        }
-      }
-      if (!seatExists) {
+      const seatDetails = findSeatInLayout(seatId);
+      if (!seatDetails) {
         invalidSeats.push(seatId);
+      } else if (
+        seatDetails.status !== 'available' &&
+        seatDetails.status !== 'selected'
+      ) {
+        invalidSeats.push(seatId);
+      } else {
+        validatedSeats.push(seatDetails);
       }
     }
 
     if (invalidSeats.length > 0) {
-      console.error('Invalid seats found:', invalidSeats);
+      console.error('❌ Invalid seats found:', invalidSeats);
       alert(
         'Some selected seats are no longer available. Please refresh and try again.'
       );
@@ -295,28 +379,44 @@ useEffect(() => {
     }
 
     setPendingReservation(true);
+
     try {
+      console.log('🎫 Starting seat reservation process...');
+
       const reservationData = {
         eventId: eventId,
         seatIds: selectedSeats,
         sessionId: sessionId || `web_${Date.now()}`,
+        ticketTypeId: null, // Add if needed for specific ticket types
       };
 
       const result = await dispatch(reserveSeats(reservationData)).unwrap();
+      console.log('✅ Seats reserved successfully:', result);
     } catch (error) {
-      console.error('Failed to reserve seats:', error);
+      console.error('❌ Failed to reserve seats:', error);
 
-      // More specific error handling
-      if (error.message && error.message.includes('not found')) {
-        alert(
-          'One or more selected seats are no longer available. The page will refresh.'
-        );
-        window.location.reload();
-      } else if (error.message && error.message.includes('reserved')) {
-        alert(
-          'Some seats have been reserved by another user. Please select different seats.'
-        );
-        dispatch(clearSelection());
+      // Enhanced error handling with specific messages
+      if (error.message) {
+        if (error.message.includes('not found')) {
+          alert(
+            'One or more selected seats are no longer available. The page will refresh.'
+          );
+          window.location.reload();
+        } else if (
+          error.message.includes('reserved') ||
+          error.message.includes('selected')
+        ) {
+          alert(
+            'Some seats have been reserved by another user. Please select different seats.'
+          );
+          dispatch(clearSelection());
+        } else if (error.message.includes('expired')) {
+          alert('Your session has expired. Please refresh and try again.');
+          window.location.reload();
+        } else {
+          alert(`Failed to reserve seats: ${error.message}`);
+          dispatch(clearSelection());
+        }
       } else {
         alert('Failed to reserve seats. Please try again.');
         dispatch(clearSelection());
@@ -326,37 +426,52 @@ useEffect(() => {
     }
   };
 
+  // ✅ ENHANCED: Improved clear selection with reservation release
   const handleClearSelection = async () => {
-    if (currentReservation) {
+    console.log('🗑️ Clearing seat selection...');
+
+    if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
       try {
+        console.log('🔓 Releasing current reservation...');
         await dispatch(
           releaseReservation({
             eventId: eventId,
-            reservationId: currentReservation.reservationId,
+            seatIds: currentReservation.seatIds,
+            sessionId: currentReservation.sessionId || sessionId,
           })
         ).unwrap();
+        console.log('✅ Reservation released successfully');
       } catch (error) {
-        console.error('Failed to release reservation:', error);
+        console.error('❌ Failed to release reservation:', error);
+        // Continue with clearing selection even if release fails
       }
     }
+
     dispatch(clearSelection());
   };
 
+  // ✅ IMPROVED: Enhanced seat status detection
   const getSeatStatus = (seat, seatId) => {
-    // Priority 1: Check if explicitly selected in current session (this drives visual state)
-    const isSelected = selectedSeats.includes(seatId);
-    if (isSelected) return 'selected';
+    // Priority 1: Check if selected in current session
+    const isSelectedByUser = selectedSeats.includes(seatId);
+    if (isSelectedByUser) return 'selected';
 
     // Priority 2: Check if reserved by current user
-    const isReservedByUser = currentReservation?.seatIds.includes(seatId);
+    const isReservedByUser = currentReservation?.seatIds?.includes(seatId);
     if (isReservedByUser) return 'selected';
 
-    // Priority 3: Check backend seat status (from seatingLayout)
+    // Priority 3: Check backend seat status
     if (seat.status === 'booked') return 'booked';
     if (seat.status === 'disabled') return 'disabled';
+    if (seat.status === 'reserved') return 'reserved';
 
-    // Priority 4: Check if reserved by another user
-    if (seat.reservedBy && seat.reservedUntil > new Date()) return 'reserved';
+    // Priority 4: Check if held by another user (with valid expiry)
+    if (seat.status === 'selected' && seat.reservedBy && seat.reservedUntil) {
+      const isExpired = new Date(seat.reservedUntil) <= new Date();
+      if (!isExpired && seat.reservedBy !== userId) {
+        return 'selected-by-other';
+      }
+    }
 
     // Default: available
     return 'available';
@@ -367,12 +482,55 @@ useEffect(() => {
     0
   );
 
-
+  // ✅ IMPROVED: Error handling display
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
+          <svg
+            className="w-8 h-8 text-red-600 mx-auto mb-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+            />
+          </svg>
+          <h3 className="text-lg font-medium text-red-900 mb-2">
+            Seat Selection Error
+          </h3>
+          <p className="text-red-700 text-sm mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       {/* Top controls - compact */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          {/* Socket status indicator */}
+          <div className="flex items-center space-x-2 text-xs text-gray-500">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                socket.connected ? 'bg-green-500' : 'bg-red-500'
+              }`}
+            ></div>
+            <span>{socket.connected ? 'Live updates' : 'Connecting...'}</span>
+          </div>
+        </div>
+
         <div className="flex items-center space-x-3">
           {/* Toggle seating layout image */}
           {event.seatingLayoutImage?.url && (
@@ -388,7 +546,7 @@ useEffect(() => {
           {selectedSeats.length > 0 && (
             <button
               onClick={handleClearSelection}
-              disabled={isLoading}
+              disabled={isLoading || pendingReservation}
               className="px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
             >
               Clear Selection
@@ -444,7 +602,7 @@ useEffect(() => {
             <div className="min-w-fit mx-auto space-y-3 p-4">
               {seatingLayout.map((row, rowIndex) => (
                 <div
-                  key={rowIndex}
+                  key={`row-${rowIndex}-${row.rowLabel}`}
                   className="flex items-center justify-center space-x-2"
                 >
                   {/* Row label */}
@@ -454,31 +612,38 @@ useEffect(() => {
 
                   {/* Seats */}
                   <div className="flex space-x-1">
-                    {(row.seats || []).map((seat, seatIndex) => {
-                      // Generate consistent seat ID
-                      const seatId = generateSeatId(seat, row, seatIndex);
-                      const seatWithId = { ...seat, seatId };
+                    {(row.seats || [])
+                      .map((seat, seatIndex) => {
+                        // Use backend seatId - fail if not present
+                        const seatId = seat.seatId;
+                        if (!seatId) {
+                          console.error(
+                            '❌ Missing seatId for seat:',
+                            seat,
+                            'in row:',
+                            row.rowLabel
+                          );
+                          return null; // Skip rendering this seat
+                        }
 
-                      return (
-                        <SeatButton
-                          key={seatId}
-                          seat={seatWithId}
-                          row={row}
-                          isSelected={selectedSeats.includes(seatId)}
-                          isReservedByUser={currentReservation?.seatIds.includes(
-                            seatId
-                          )}
-                          onClick={() =>
-                            handleSeatClick(
-                              seatId,
-                              getSeatStatus(seatWithId, seatId)
-                            )
-                          }
-                          disabled={isLoading || pendingReservation}
-                          userId={userId}
-                        />
-                      );
-                    })}
+                        const seatStatus = getSeatStatus(seat, seatId);
+
+                        return (
+                          <SeatButton
+                            key={`${seatId}-${seatIndex}`}
+                            seat={{ ...seat, seatId }}
+                            row={row}
+                            isSelected={selectedSeats.includes(seatId)}
+                            isReservedByUser={currentReservation?.seatIds?.includes(
+                              seatId
+                            )}
+                            onClick={() => handleSeatClick(seatId, seatStatus)}
+                            disabled={isLoading || pendingReservation}
+                            userId={userId}
+                          />
+                        );
+                      })
+                      .filter(Boolean)}
                   </div>
 
                   {/* Row label (right side) */}
@@ -621,17 +786,11 @@ useEffect(() => {
         <p>
           Venue capacity: {totalSeats} seats • {event.venue}
         </p>
-      </div>
-      {/* Socket connection status */}
-      <div className="fixed bottom-4 left-4 flex items-center space-x-2 bg-white px-3 py-2 rounded-lg shadow-lg border">
-        <div
-          className={`w-3 h-3 rounded-full ${
-            socket.connected ? 'bg-green-500' : 'bg-red-500'
-          } animate-pulse`}
-        ></div>
-        <span className="text-xs text-gray-600">
-          {socket.connected ? 'Live updates active' : 'Connecting...'}
-        </span>
+        {sessionId && (
+          <p className="text-xs text-gray-400 mt-1">
+            Session: {sessionId.substring(0, 12)}...
+          </p>
+        )}
       </div>
     </div>
   );

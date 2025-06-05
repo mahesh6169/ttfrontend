@@ -378,7 +378,7 @@ const validateEventId = (loadedEvent, urlEventId) => {
               selectedSeatsCount={selectedSeats.length}
               requiredSeatsCount={seatInfo.seatCount || 0}
               canProceed={selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0}
-              horizontal={true} // Pass this prop to make it horizontal layout
+              horizontal={false} // Pass this prop to make it horizontal layout
               eventId={eventId}
             />
           </div>
