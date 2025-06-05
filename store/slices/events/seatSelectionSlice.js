@@ -25,6 +25,8 @@ export const reserveSeats = createAsyncThunk(
   'seats/reserve',
   async ({ eventId, seatIds, ticketTypeId, sessionId }, { rejectWithValue }) => {
     try {
+      console.log('🎫 Sending reservation request:', { eventId, seatIds, ticketTypeId, sessionId });
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/seats/reserve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -33,13 +35,22 @@ export const reserveSeats = createAsyncThunk(
       });
       
       const data = await response.json();
+      console.log('🎫 Reservation response received:', data);
       
       if (!response.ok) {
+        console.error('❌ Reservation failed:', data);
         return rejectWithValue(data.message || 'Failed to reserve seats');
+      }
+      
+      // Validate required fields before returning
+      if (!data.success || !data.reservationId) {
+        console.error('❌ Invalid response format:', data);
+        return rejectWithValue('Invalid response format from server');
       }
       
       return data;
     } catch (error) {
+      console.error('❌ Network error during reservation:', error);
       return rejectWithValue(error.message);
     }
   }
@@ -89,18 +100,12 @@ export const extendReservation = createAsyncThunk(
   }
 );
 
+// ✅ CLEANED UP: Removed unused properties
 const initialState = {
-  // Seat layout and availability
+  // Core seat data
   seatingLayout: [],
-  reservations: [],
-  
-  // User selections
   selectedSeats: [], // Array of seatIds like ["A-1", "B-3"]
-  selectedTicketType: null,
-  
-  // Current reservation
   currentReservation: null,
-  reservationTimer: null,
   
   // UI state
   isLoading: false,
@@ -108,11 +113,7 @@ const initialState = {
   
   // Event context
   currentEventId: null,
-  
-  // Selection limits
   maxSeatsPerSelection: 10,
-  
-  // Session tracking
   sessionId: null
 };
 
@@ -120,10 +121,9 @@ const seatSelectionSlice = createSlice({
   name: 'seatSelection',
   initialState,
   reducers: {
-    // Seat selection actions
+    // ✅ CORE: Seat selection actions (USED)
     selectSeat: (state, action) => {
       const seatId = action.payload;
-      
       if (!state.selectedSeats.includes(seatId)) {
         if (state.selectedSeats.length < state.maxSeatsPerSelection) {
           state.selectedSeats.push(seatId);
@@ -136,26 +136,11 @@ const seatSelectionSlice = createSlice({
       state.selectedSeats = state.selectedSeats.filter(id => id !== seatId);
     },
     
-    toggleSeat: (state, action) => {
-      const seatId = action.payload;
-      
-      if (state.selectedSeats.includes(seatId)) {
-        state.selectedSeats = state.selectedSeats.filter(id => id !== seatId);
-      } else if (state.selectedSeats.length < state.maxSeatsPerSelection) {
-        state.selectedSeats.push(seatId);
-      }
-    },
-    
     clearSelection: (state) => {
       state.selectedSeats = [];
     },
     
-    // Ticket type selection
-    setSelectedTicketType: (state, action) => {
-      state.selectedTicketType = action.payload;
-    },
-    
-    // Event context
+    // ✅ CORE: Event context (USED)
     setCurrentEvent: (state, action) => {
       const { eventId, maxSeatsPerSelection = 10 } = action.payload;
       state.currentEventId = eventId;
@@ -165,86 +150,57 @@ const seatSelectionSlice = createSlice({
       state.error = null;
     },
     
-    // Session management
+    // ✅ CORE: Session management (USED)
     setSessionId: (state, action) => {
       state.sessionId = action.payload;
     },
     
-    // Reservation timer
-    setReservationTimer: (state, action) => {
-      state.reservationTimer = action.payload;
-    },
-    
-    updateReservationTimer: (state, action) => {
-      if (state.currentReservation) {
-        state.reservationTimer = action.payload;
-      }
-    },
-    
-    // Clear all state
+    // ✅ CORE: State reset (USED)
     resetSeatSelection: (state) => {
       return { ...initialState, sessionId: state.sessionId };
     },
     
-    // Error handling
+    // ✅ CORE: Error handling (USED)
     clearError: (state) => {
       state.error = null;
     },
     
-    // Update seat status locally (optimistic updates)
-    updateSeatStatus: (state, action) => {
-      const { seatId, status, reservedBy, reservedUntil } = action.payload;
+    // ✅ CORE: Real-time updates (USED)
+    handleRemoteSeatUpdate: (state, action) => {
+      const { seatId, status, userId, reservedBy, reservedUntil } = action.payload;
       
+      // Find and update the seat in layout
       for (const row of state.seatingLayout) {
         const seat = row.seats.find(s => s.seatId === seatId);
         if (seat) {
           seat.status = status;
           seat.reservedBy = reservedBy || null;
           seat.reservedUntil = reservedUntil || null;
+          
+          // If someone else selected a seat we had selected, remove from our selection
+          if (status === 'selected' && state.selectedSeats.includes(seatId)) {
+            state.selectedSeats = state.selectedSeats.filter(id => id !== seatId);
+          }
           break;
         }
       }
     },
 
-    // Handle real-time seat updates from other users
-handleRemoteSeatUpdate: (state, action) => {
-  const { seatId, status, userId, reservedBy, reservedUntil } = action.payload;
-  
-  // Don't update if it's our own action
-  //if (userId === state.sessionId) return;
-  
-  // Find and update the seat
-  for (const row of state.seatingLayout) {
-    const seat = row.seats.find(s => s.seatId === seatId);
-    if (seat) {
-      seat.status = status;
-      seat.reservedBy = reservedBy || null;
-      seat.reservedUntil = reservedUntil || null;
+    // ✅ CORE: User disconnection handling (USED)
+    handleUserDisconnected: (state, action) => {
+      const { userId } = action.payload;
       
-      // If someone else selected a seat we had selected, remove from our selection
-      if (status === 'selected' && state.selectedSeats.includes(seatId)) {
-        state.selectedSeats = state.selectedSeats.filter(id => id !== seatId);
+      // Release any seats that were reserved by disconnected user
+      for (const row of state.seatingLayout) {
+        for (const seat of row.seats) {
+          if (seat.reservedBy === userId && seat.status === 'selected') {
+            seat.status = 'available';
+            seat.reservedBy = null;
+            seat.reservedUntil = null;
+          }
+        }
       }
-      break;
-    }
-  }
-},
-
-// Handle user disconnection
-handleUserDisconnected: (state, action) => {
-  const { userId } = action.payload;
-  
-  // Release any seats that were reserved by disconnected user
-  for (const row of state.seatingLayout) {
-    for (const seat of row.seats) {
-      if (seat.reservedBy === userId && seat.status === 'selected') {
-        seat.status = 'available';
-        seat.reservedBy = null;
-        seat.reservedUntil = null;
-      }
-    }
-  }
-},
+    },
   },
   
   extraReducers: (builder) => {
@@ -257,7 +213,6 @@ handleUserDisconnected: (state, action) => {
       .addCase(fetchSeatAvailability.fulfilled, (state, action) => {
         state.isLoading = false;
         state.seatingLayout = action.payload.seatingLayout || [];
-        state.reservations = action.payload.reservations || [];
         state.currentEventId = action.payload.eventId;
       })
       .addCase(fetchSeatAvailability.rejected, (state, action) => {
@@ -265,45 +220,51 @@ handleUserDisconnected: (state, action) => {
         state.error = action.payload;
       });
     
-    // Reserve seats - FIXED: Don't modify seat statuses in layout
+    // Reserve seats
     builder
       .addCase(reserveSeats.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(reserveSeats.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.currentReservation = {
-          reservationId: action.payload.reservationId,
-          seatIds: action.payload.seatIds,
-          reservedUntil: action.payload.reservedUntil
-        };
+        console.log('🎫 reserveSeats.fulfilled - Raw payload:', action.payload);
         
-        // DON'T update seat statuses in seatingLayout here
-        // Let the visual state be managed by selectedSeats array and isReservedByUser prop
-        // The seatingLayout should maintain the original backend seat statuses
+        state.isLoading = false;
+        state.error = null;
+        
+        // Map backend response correctly to currentReservation
+        const { reservationId, seatIds, reservedUntil, success } = action.payload;
+        
+        if (success && reservationId) {
+          state.currentReservation = {
+            reservationId: reservationId,
+            seatIds: seatIds || state.selectedSeats,
+            reservedUntil: reservedUntil,
+            sessionId: state.sessionId,
+            eventId: state.currentEventId
+          };
+          
+          console.log('🎫 currentReservation set successfully:', state.currentReservation);
+        } else {
+          console.error('❌ Invalid reservation response:', action.payload);
+          state.error = 'Invalid reservation response from server';
+        }
       })
       .addCase(reserveSeats.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-        state.selectedSeats = []; // Clear selection on failure
+        state.selectedSeats = [];
       });
     
-    // Release reservation - FIXED: Don't modify seat statuses in layout
+    // Release reservation
     builder
       .addCase(releaseReservation.pending, (state) => {
         state.isLoading = true;
       })
       .addCase(releaseReservation.fulfilled, (state) => {
         state.isLoading = false;
-        
-        // DON'T update seat statuses in seatingLayout here
-        // The backend will handle updating the actual seat availability
-        // Frontend visual state is managed separately
-        
         state.currentReservation = null;
         state.selectedSeats = [];
-        state.reservationTimer = null;
       })
       .addCase(releaseReservation.rejected, (state, action) => {
         state.isLoading = false;
@@ -317,7 +278,7 @@ handleUserDisconnected: (state, action) => {
           state.currentReservation.reservedUntil = action.payload.newExpiry;
         }
         
-        // Update seat reservation times in layout (this is metadata, not visual state)
+        // Update seat reservation times in layout
         if (state.currentReservation) {
           for (const seatId of state.currentReservation.seatIds) {
             for (const row of state.seatingLayout) {
@@ -332,74 +293,25 @@ handleUserDisconnected: (state, action) => {
   }
 });
 
-// Selectors
+// ✅ CLEANED UP: Only used selectors
 export const selectSeatingLayout = (state) => state.seatSelection.seatingLayout;
 export const selectSelectedSeats = (state) => state.seatSelection.selectedSeats;
-export const selectSelectedTicketType = (state) => state.seatSelection.selectedTicketType;
 export const selectCurrentReservation = (state) => state.seatSelection.currentReservation;
-export const selectReservationTimer = (state) => state.seatSelection.reservationTimer;
 export const selectIsLoading = (state) => state.seatSelection.isLoading;
 export const selectError = (state) => state.seatSelection.error;
 export const selectCurrentEventId = (state) => state.seatSelection.currentEventId;
 export const selectSessionId = (state) => state.seatSelection.sessionId;
 export const selectMaxSeatsPerSelection = (state) => state.seatSelection.maxSeatsPerSelection;
 
-// Derived selectors
-export const selectSelectedSeatsCount = (state) => state.seatSelection.selectedSeats.length;
-export const selectCanSelectMoreSeats = (state) => 
-  state.seatSelection.selectedSeats.length < state.seatSelection.maxSeatsPerSelection;
-export const selectHasActiveReservation = (state) => 
-  state.seatSelection.currentReservation !== null;
-export const selectReservationExpiry = (state) => 
-  state.seatSelection.currentReservation?.reservedUntil;
-
-// Seat status selectors
-export const selectSeatById = (state, seatId) => {
-  for (const row of state.seatSelection.seatingLayout) {
-    const seat = row.seats.find(s => s.seatId === seatId);
-    if (seat) return seat;
-  }
-  return null;
-};
-
-export const selectAvailableSeats = (state) => {
-  const availableSeats = [];
-  for (const row of state.seatSelection.seatingLayout) {
-    for (const seat of row.seats) {
-      if (seat.status === 'available') {
-        availableSeats.push(seat);
-      }
-    }
-  }
-  return availableSeats;
-};
-
-export const selectOccupiedSeats = (state) => {
-  const occupiedSeats = [];
-  for (const row of state.seatSelection.seatingLayout) {
-    for (const seat of row.seats) {
-      if (seat.status === 'booked') {
-        occupiedSeats.push(seat);
-      }
-    }
-  }
-  return occupiedSeats;
-};
-
-// Export actions
+// ✅ CLEANED UP: Only used actions
 export const {
   selectSeat,
   deselectSeat,
-  toggleSeat,
   clearSelection,
-  setSelectedTicketType,
   setCurrentEvent,
   setSessionId,
-  setReservationTimer,
-  updateReservationTimer,
   resetSeatSelection,
   clearError,
-  updateSeatStatus,
   handleRemoteSeatUpdate,
   handleUserDisconnected
 } = seatSelectionSlice.actions;

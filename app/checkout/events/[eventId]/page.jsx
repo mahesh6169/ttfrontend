@@ -41,7 +41,8 @@ import {
   selectPaymentStatus,
   selectCurrentStep,
   selectPurchaseLoading,
-  selectPurchaseError
+  selectPurchaseError,
+  updateTicketSelection
 } from '@/store/slices/events/ticketPurchaseSlice';
 
 const CheckoutPage = () => {
