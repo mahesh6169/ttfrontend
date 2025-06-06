@@ -5,7 +5,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { useCallback } from 'react';
 
 import { 
   fetchSeatAvailability,
@@ -15,8 +14,7 @@ import {
   selectSelectedSeats,
   selectIsLoading as selectSeatLoading,
   selectError as selectSeatError,
-  selectCurrentReservation,
-  releaseReservation 
+  selectCurrentReservation
 
 } from '@/store/slices/events/seatSelectionSlice';
 import { 
@@ -32,7 +30,6 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import SeatMapSelection from '@/components/events/seats/SeatMapSelection';
 import SeatSelectionSummary from '@/components/events/seats/SeatSelectionSummary';
 import SeatLegend from '@/components/events/seats/SeatLegend';
-import SeatReservationTimer from '@/components/events/seats/SeatReservationTimer';
 import SeatDebugInfo from '@/components/events/seats/SeatDebugInfo';
 import SeatSelectionFallback from '@/components/events/seats/SeatSelectionFallback';
 import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
@@ -61,17 +58,6 @@ const SeatSelectionPage = () => {
   const selectedTickets = useSelector(selectSelectedTickets);
   const totals = useSelector(selectTicketTotals);
   const seatInfo = useSelector(selectSeatInfo);
-
-// ✅ SIMPLIFIED: Use eventId from useParams as single source of truth
-const handleTimerExpire = useCallback(() => {
-  if (currentReservation?.reservationId && currentReservation?.reservedUntil && eventId) {
-    console.log('Page-level timer expired, releasing reservation:', currentReservation.reservationId);
-    dispatch(releaseReservation({
-      eventId: eventId, // Always use eventId from useParams
-      reservationId: currentReservation.reservationId
-    }));
-  }
-}, [dispatch, currentReservation?.reservationId, currentReservation?.reservedUntil, eventId]);
 
   // Initialize page data
   useEffect(() => {
@@ -173,14 +159,14 @@ const handleTimerExpire = useCallback(() => {
     };
 
     // Add event ID validation
-const validateEventId = (loadedEvent, urlEventId) => {
-  if (!loadedEvent || !loadedEvent._id) {
-    throw new Error('Event not found');
-  }
-  if (loadedEvent._id !== urlEventId) {
-    throw new Error(`Event ID mismatch: URL has ${urlEventId} but loaded event has ${loadedEvent._id}`);
-  }
-};
+    const validateEventId = (loadedEvent, urlEventId) => {
+      if (!loadedEvent || !loadedEvent._id) {
+        throw new Error('Event not found');
+      }
+      if (loadedEvent._id !== urlEventId) {
+        throw new Error(`Event ID mismatch: URL has ${urlEventId} but loaded event has ${loadedEvent._id}`);
+      }
+    };
 
     if (eventId && !initializationAttempted) {
       initializePage();
@@ -292,7 +278,7 @@ const validateEventId = (loadedEvent, urlEventId) => {
         event={selectedEvent} 
         ticketSelection={ticketSelection}
         error={initializationError || seatError}
-         eventId={eventId}
+        eventId={eventId}
       />
     );
   }
@@ -304,7 +290,7 @@ const validateEventId = (loadedEvent, urlEventId) => {
         event={selectedEvent} 
         ticketSelection={ticketSelection}
         error="No seating layout has been configured for this event."
-         eventId={eventId}
+        eventId={eventId}
       />
     );
   }
@@ -335,14 +321,14 @@ const validateEventId = (loadedEvent, urlEventId) => {
               </div>
             </div>
 
-            {/* Reservation timer */}
-            {currentReservation?.reservedUntil && (
-  <SeatReservationTimer 
-    expiryTime={currentReservation.reservedUntil}
-    onExpire={handleTimerExpire}
-    eventId={eventId}
-  />
-)}
+            {/* Timer removed - now handled at component level */}
+            <div className="flex items-center space-x-2">
+              {currentReservation && (
+                <div className="text-sm text-green-600 font-medium">
+                  Seats Reserved
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -366,7 +352,7 @@ const validateEventId = (loadedEvent, urlEventId) => {
                 {seatInfo.seatCount > 0 && ` ${selectedSeats.length}/${seatInfo.seatCount} selected`}
               </p>
             </div>
-            <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection}  eventId={eventId}/>
+            <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection} eventId={eventId}/>
           </div>
           
           {/* Row 3: Booking Summary */}
@@ -378,7 +364,7 @@ const validateEventId = (loadedEvent, urlEventId) => {
               selectedSeatsCount={selectedSeats.length}
               requiredSeatsCount={seatInfo.seatCount || 0}
               canProceed={selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0}
-              horizontal={false} // Pass this prop to make it horizontal layout
+              horizontal={false}
               eventId={eventId}
             />
           </div>
@@ -386,7 +372,7 @@ const validateEventId = (loadedEvent, urlEventId) => {
         </div>
       </div>
 
-      {/* Mobile sticky footer - keep this for mobile */}
+      {/* Mobile sticky footer */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
         <SeatSelectionSummary 
           event={selectedEvent} 
@@ -405,7 +391,7 @@ const validateEventId = (loadedEvent, urlEventId) => {
         <SeatDebugInfo 
           event={selectedEvent} 
           ticketSelection={ticketSelection}
-           eventId={eventId}
+          eventId={eventId}
           reduxState={{
             ticketPurchase: ticketPurchaseState,
             selectedTickets,
