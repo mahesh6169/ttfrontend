@@ -108,8 +108,8 @@ export const extendReservation = createAsyncThunk(
 
 // ✅ CLEANED UP: Aligned with new backend structure
 const initialState = {
-  // Core seat data
-  seatingLayout: [],
+  // Core seat data 
+  seatingLayout: [], // saves the seating layout on initial load
   selectedSeats: [], // Array of seatIds like ["A-1", "B-3"]
   currentReservation: null, // Will store: {eventId, userId, sessionId, reservedUntil, seatIds, seatCount}
   
@@ -172,47 +172,71 @@ const seatSelectionSlice = createSlice({
       state.error = null;
     },
     
-    // ✅ FIXED: Updated to handle new socket event structure
-    handleRemoteSeatUpdate: (state, action) => {
-      const { seatId, status, userId, reservedBy, reservedUntil, timestamp } = action.payload;
+// ✅ ENHANCED: Updated to handle release events better
+handleRemoteSeatUpdate: (state, action) => {
+  const { seatId, status, userId, reservedBy, reservedUntil, timestamp, operationType } = action.payload;
+  
+  console.log('🔄 Processing remote seat update:', action.payload);
+  
+  // Find and update the seat in layout
+  for (const row of state.seatingLayout) {
+    const seat = row.seats.find(s => s.seatId === seatId);
+    if (seat) {
+      const oldStatus = seat.status;
       
-      console.log('🔄 Processing remote seat update:', action.payload);
+      // Update seat properties
+      seat.status = status;
+      seat.reservedBy = reservedBy || null;
+      seat.reservedUntil = reservedUntil || null;
       
-      // Find and update the seat in layout
-      for (const row of state.seatingLayout) {
-        const seat = row.seats.find(s => s.seatId === seatId);
-        if (seat) {
-          const oldStatus = seat.status;
+      // ✅ NEW: Handle sessionId for releases
+      if (status === 'available') {
+        seat.sessionId = null;
+      }
+      
+      console.log(`🪑 Updated seat ${seatId}: ${oldStatus} → ${status}`);
+      
+      // ✅ ENHANCED: Better handling of seat conflicts and releases
+      if (status === 'selected' && reservedBy && reservedBy !== userId && state.selectedSeats.includes(seatId)) {
+        console.log(`🚫 Seat ${seatId} taken by another user, removing from selection`);
+        state.selectedSeats = state.selectedSeats.filter(id => id !== seatId);
+      }
+      
+      // ✅ NEW: Handle seats that become available (released by others or expired)
+      if (status === 'available' && oldStatus !== 'available') {
+        console.log(`🔓 Seat ${seatId} became available (${oldStatus} → ${status})`);
+        
+        // If this seat was in our reservation, update the reservation
+        if (state.currentReservation?.seatIds?.includes(seatId)) {
+          console.log(`🔄 Seat ${seatId} was in our reservation, updating reservation state`);
+          const updatedSeatIds = state.currentReservation.seatIds.filter(id => id !== seatId);
           
-          // Update seat properties
-          seat.status = status;
-          seat.reservedBy = reservedBy || null;
-          seat.reservedUntil = reservedUntil || null;
-          
-          console.log(`🪑 Updated seat ${seatId}: ${oldStatus} → ${status}`);
-          
-          // If someone else took a seat we had selected, remove from our selection
-          if (status === 'selected' && reservedBy && reservedBy !== userId && state.selectedSeats.includes(seatId)) {
-            console.log(`🚫 Seat ${seatId} taken by another user, removing from selection`);
-            state.selectedSeats = state.selectedSeats.filter(id => id !== seatId);
+          if (updatedSeatIds.length === 0) {
+            console.log('🗑️ All seats released, clearing reservation');
+            state.currentReservation = null;
+          } else {
+            state.currentReservation.seatIds = updatedSeatIds;
+            state.currentReservation.seatCount = updatedSeatIds.length;
+            console.log(`📝 Updated reservation: ${updatedSeatIds.length} seats remaining`);
           }
-          
-          // If a seat becomes available and we had it reserved, clear our reservation
-          if (status === 'available' && state.currentReservation?.seatIds?.includes(seatId)) {
-            console.log(`🔓 Seat ${seatId} released, updating reservation`);
-            const updatedSeatIds = state.currentReservation.seatIds.filter(id => id !== seatId);
-            if (updatedSeatIds.length === 0) {
-              state.currentReservation = null;
-            } else {
-              state.currentReservation.seatIds = updatedSeatIds;
-              state.currentReservation.seatCount = updatedSeatIds.length;
-            }
-          }
-          
-          break;
+        }
+        
+        // ✅ NEW: Remove from selected seats if it was released
+        if (state.selectedSeats.includes(seatId)) {
+          state.selectedSeats = state.selectedSeats.filter(id => id !== seatId);
+          console.log(`🔄 Removed released seat ${seatId} from selection`);
         }
       }
-    },
+      
+      // ✅ NEW: Log operation context if available
+      if (operationType) {
+        console.log(`🎯 Remote update context: ${operationType} operation`);
+      }
+      
+      break;
+    }
+  }
+},
 
     // ✅ FIXED: Enhanced user disconnection handling
     handleUserDisconnected: (state, action) => {
@@ -329,40 +353,74 @@ const seatSelectionSlice = createSlice({
         console.error('❌ Seat reservation failed:', action.payload);
       });
     
-    // ✅ FIXED: Release reservation - Updated for new API
-    builder
-      .addCase(releaseReservation.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(releaseReservation.fulfilled, (state, action) => {
-        state.isLoading = false;
-        
-        const { releasedSeats } = action.payload;
-        console.log('🔓 Released seats:', releasedSeats);
-        
-        // Update seat statuses in layout
-        if (releasedSeats && Array.isArray(releasedSeats)) {
-          for (const seatId of releasedSeats) {
-            for (const row of state.seatingLayout) {
-              const seat = row.seats.find(s => s.seatId === seatId);
-              if (seat) {
-                seat.status = 'available';
-                seat.reservedBy = null;
-                seat.reservedUntil = null;
-              }
+// ✅ ENHANCED: Release reservation - Updated for better state management
+builder
+  .addCase(releaseReservation.pending, (state) => {
+    state.isLoading = true;
+    // ✅ NEW: Clear error state when starting release
+    state.error = null;
+  })
+  .addCase(releaseReservation.fulfilled, (state, action) => {
+    state.isLoading = false;
+    
+    const { releasedSeats, success } = action.payload;
+    console.log('🔓 Released seats in Redux:', releasedSeats);
+    
+    // ✅ ENHANCED: Update seat statuses in layout with better validation
+    if (releasedSeats && Array.isArray(releasedSeats)) {
+      let updatedCount = 0;
+      
+      for (const seatId of releasedSeats) {
+        for (const row of state.seatingLayout) {
+          const seat = row.seats.find(s => s.seatId === seatId);
+          if (seat) {
+            // ✅ NEW: Only update if seat was actually reserved/selected
+            if (seat.status === 'selected' || seat.status === 'reserved') {
+              seat.status = 'available';
+              seat.reservedBy = null;
+              seat.reservedUntil = null;
+              seat.sessionId = null;
+              updatedCount++;
+              console.log(`🪑 Released seat ${seatId} in layout`);
             }
           }
         }
+      }
+      
+      console.log(`✅ Updated ${updatedCount} seats in seating layout`);
+    }
+    
+    // ✅ ENHANCED: Clear reservation and selection with validation
+    if (success) {
+      const previousReservation = state.currentReservation;
+      state.currentReservation = null;
+      
+      // ✅ NEW: Clear selected seats that were actually released
+      if (releasedSeats && Array.isArray(releasedSeats)) {
+        const seatsToKeep = state.selectedSeats.filter(seatId => !releasedSeats.includes(seatId));
+        state.selectedSeats = seatsToKeep;
         
-        // Clear reservation and selection
-        state.currentReservation = null;
+        console.log(`🔄 Updated selectedSeats: removed ${releasedSeats.length}, kept ${seatsToKeep.length}`);
+      } else {
+        // Fallback: clear all selections
         state.selectedSeats = [];
-      })
-      .addCase(releaseReservation.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-        console.error('❌ Failed to release reservation:', action.payload);
+      }
+      
+      console.log('✅ Reservation cleared successfully:', {
+        previousReservationId: previousReservation?.reservationId,
+        releasedSeatCount: releasedSeats?.length || 0,
+        remainingSelectedSeats: state.selectedSeats.length
       });
+    }
+  })
+  .addCase(releaseReservation.rejected, (state, action) => {
+    state.isLoading = false;
+    state.error = action.payload;
+    console.error('❌ Failed to release reservation in Redux:', action.payload);
+    
+    // ✅ NEW: Don't automatically clear state on failure - let user retry
+    // Only log the error, keep current state intact for potential retry
+  });
     
     // ✅ FIXED: Extend reservation - Updated for new API
     builder
@@ -431,7 +489,9 @@ export const {
   handleRemoteSeatUpdate,
   handleUserDisconnected,
   handleSeatCleanup,
-  updateSeatInLayout
+  updateSeatInLayout,
+  syncSelectedSeatsWithReservation
+
 } = seatSelectionSlice.actions;
 
 export default seatSelectionSlice.reducer;

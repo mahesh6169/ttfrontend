@@ -26,191 +26,182 @@ const SeatSocketListener = ({ eventId, children }) => {
     sessionId: null
   });
 
-  // ✅ ENHANCED: Robust socket connection and event room management
-  useEffect(() => {
-    if (!eventId || !sessionId) {
-      console.log('🔌 SeatSocketListener: Missing eventId or sessionId', { eventId, sessionId });
+// ✅ ENHANCED: Robust socket connection with proper cleanup
+useEffect(() => {
+  if (!eventId || !sessionId) {
+    console.log('🔌 SeatSocketListener: Missing eventId or sessionId', { eventId, sessionId });
+    return;
+  }
+
+  const state = connectionStateRef.current;
+  
+  // ✅ IMPROVED: Connection management
+  const ensureConnection = () => {
+    if (!socket.connected) {
+      console.log('🔌 SeatSocketListener: Connecting to socket...');
+      socket.connect();
+    }
+  };
+
+  // ✅ IMPROVED: Event room management with session tracking
+  const joinEventRoom = () => {
+    if (socket.connected && eventId && sessionId) {
+      if (state.eventId !== eventId || !state.hasJoinedEvent) {
+        // Leave previous room if different event
+        if (state.eventId && state.eventId !== eventId && state.hasJoinedEvent) {
+          console.log(`🚪 SeatSocketListener: Leaving previous event room: ${state.eventId}`);
+          socket.emit('seat:leave_event', state.eventId);
+        }
+
+        // Join new event room and set session
+        console.log(`🚪 SeatSocketListener: Joining event room: ${eventId}`);
+        socket.emit('seat:join_event', eventId);
+        socket.emit('seat:set_session', sessionId); // ✅ NEW: Send session ID
+        
+        // Update state
+        state.eventId = eventId;
+        state.hasJoinedEvent = true;
+        state.sessionId = sessionId;
+      }
+    }
+  };
+
+  // ✅ ENHANCED: Socket event handlers
+  const onConnect = () => {
+    console.log('✅ SeatSocketListener: Socket connected');
+    state.isConnected = true;
+    joinEventRoom();
+  };
+
+  const onDisconnect = (reason) => {
+    console.log('❌ SeatSocketListener: Socket disconnected:', reason);
+    state.isConnected = false;
+    state.hasJoinedEvent = false;
+  };
+
+  const onConnectError = (error) => {
+    console.error('🔥 SeatSocketListener: Connection error:', error);
+  };
+
+  const onReconnect = (attemptNumber) => {
+    console.log(`🔄 SeatSocketListener: Reconnected after ${attemptNumber} attempts`);
+    state.isConnected = true;
+    joinEventRoom();
+    
+    // Refresh seat availability after reconnection
+    if (eventId) {
+      dispatch(fetchSeatAvailability(eventId));
+    }
+  };
+
+  // ✅ ENHANCED: Seat-specific event handlers with bug fixes
+  const onSeatStatusChanged = (data) => {
+    console.log('📡 SeatSocketListener: seat:status_changed:', data);
+    
+    if (data.eventId && data.eventId !== eventId) {
+      console.log(`⚠️ Ignoring seat update for different event: ${data.eventId} vs ${eventId}`);
       return;
     }
 
-    const state = connectionStateRef.current;
+    dispatch(handleRemoteSeatUpdate(data));
+  };
+
+  const onUserDisconnected = (data) => {
+    console.log('👤 SeatSocketListener: seat:user_disconnected:', data);
     
-    // ✅ IMPROVED: Connection management
-    const ensureConnection = () => {
-      if (!socket.connected) {
-        console.log('🔌 SeatSocketListener: Connecting to socket...');
-        socket.connect();
-      }
-    };
-
-    // ✅ IMPROVED: Event room management
-    const joinEventRoom = () => {
-      if (socket.connected && eventId) {
-        if (state.eventId !== eventId || !state.hasJoinedEvent) {
-          // Leave previous room if different event
-          if (state.eventId && state.eventId !== eventId && state.hasJoinedEvent) {
-            console.log(`🚪 SeatSocketListener: Leaving previous event room: ${state.eventId}`);
-            socket.emit('seat:leave_event', state.eventId);
-          }
-
-          // Join new event room
-          console.log(`🚪 SeatSocketListener: Joining event room: ${eventId}`);
-          socket.emit('seat:join_event', eventId);
-          
-          // Update state
-          state.eventId = eventId;
-          state.hasJoinedEvent = true;
-          state.sessionId = sessionId;
-        }
-      }
-    };
-
-    // ✅ ENHANCED: Socket event handlers with better error handling
-    const onConnect = () => {
-      console.log('✅ SeatSocketListener: Socket connected');
-      state.isConnected = true;
-      joinEventRoom();
-    };
-
-    const onDisconnect = (reason) => {
-      console.log('❌ SeatSocketListener: Socket disconnected:', reason);
-      state.isConnected = false;
-      state.hasJoinedEvent = false;
-    };
-
-    const onConnectError = (error) => {
-      console.error('🔥 SeatSocketListener: Connection error:', error);
-    };
-
-    const onReconnect = (attemptNumber) => {
-      console.log(`🔄 SeatSocketListener: Reconnected after ${attemptNumber} attempts`);
-      state.isConnected = true;
-      joinEventRoom();
-      
-      // ✅ NEW: Refresh seat availability after reconnection
-      if (eventId) {
-        dispatch(fetchSeatAvailability(eventId));
-      }
-    };
-
-    // ✅ ENHANCED: Seat-specific event handlers
-    const onSeatStatusChanged = (data) => {
-      console.log('📡 SeatSocketListener: seat:status_changed:', data);
-      
-      // Validate event matches current event
-      if (data.eventId && data.eventId !== eventId) {
-        console.log(`⚠️ Ignoring seat update for different event: ${data.eventId} vs ${eventId}`);
-        return;
-      }
-
-      dispatch(handleRemoteSeatUpdate(data));
-    };
-
-    const onUserDisconnected = (data) => {
-      console.log('👤 SeatSocketListener: seat:user_disconnected:', data);
-      
-      // Validate event matches
-      if (data.eventId && data.eventId !== eventId) {
-        console.log(`⚠️ Ignoring user disconnect for different event: ${data.eventId} vs ${eventId}`);
-        return;
-      }
-
-      dispatch(handleUserDisconnected(data));
-    };
-
-    const onCleanupCompleted = (data) => {
-      console.log('🧹 SeatSocketListener: seat:cleanup_completed:', data);
-      
-      // Validate event matches
-      if (data.eventId && data.eventId !== eventId) {
-        console.log(`⚠️ Ignoring cleanup for different event: ${data.eventId} vs ${eventId}`);
-        return;
-      }
-
-      dispatch(handleSeatCleanup(data));
-      
-      // Refresh seat availability if seats were released
-      if (data.seatsReleased > 0) {
-        console.log(`🔄 Refreshing seat availability after cleanup (${data.seatsReleased} seats released)`);
-        dispatch(fetchSeatAvailability(eventId));
-      }
-    };
-
-    // ✅ NEW: Handle seat reservation errors
-    const onSeatReservationError = (data) => {
-      console.error('❌ SeatSocketListener: seat:reservation_error:', data);
-      
-      if (data.eventId && data.eventId !== eventId) {
-        return;
-      }
-
-      // Could dispatch an action to show error message
-      // For now, just log
-    };
-
-    // ✅ NEW: Handle seat updates batch (for performance)
-    const onSeatBatchUpdate = (data) => {
-      console.log('📦 SeatSocketListener: seat:batch_update:', data);
-      
-      if (data.eventId && data.eventId !== eventId) {
-        return;
-      }
-
-      // Process multiple seat updates at once
-      if (data.updates && Array.isArray(data.updates)) {
-        data.updates.forEach(update => {
-          dispatch(handleRemoteSeatUpdate(update));
-        });
-      }
-    };
-
-    // Register socket event listeners
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('connect_error', onConnectError);
-    socket.on('reconnect', onReconnect);
-    socket.on('seat:status_changed', onSeatStatusChanged);
-    socket.on('seat:user_disconnected', onUserDisconnected);
-    socket.on('seat:cleanup_completed', onCleanupCompleted);
-    socket.on('seat:reservation_error', onSeatReservationError);
-    socket.on('seat:batch_update', onSeatBatchUpdate);
-
-    // Initial connection setup
-    ensureConnection();
-    
-    // Join room if already connected
-    if (socket.connected) {
-      joinEventRoom();
+    if (data.eventId && data.eventId !== eventId) {
+      console.log(`⚠️ Ignoring user disconnect for different event: ${data.eventId} vs ${eventId}`);
+      return;
     }
 
-    // ✅ ENHANCED: Cleanup function
-    return () => {
-      console.log('🧹 SeatSocketListener: Cleaning up...');
-      
-      // Leave event room
-      if (state.hasJoinedEvent && state.eventId) {
-        console.log(`🚪 SeatSocketListener: Leaving event room: ${state.eventId}`);
-        socket.emit('seat:leave_event', state.eventId);
-      }
+    dispatch(handleUserDisconnected(data));
+    
+    // ✅ NEW: Refresh seat availability after user disconnect cleanup
+    if (data.seatsReleased && data.seatsReleased.length > 0) {
+      console.log(`🔄 Refreshing seats after user disconnect (${data.seatsReleased.length} seats released)`);
+      setTimeout(() => {
+        dispatch(fetchSeatAvailability(eventId));
+      }, 500); // Small delay to ensure backend cleanup is complete
+    }
+  };
 
-      // Remove event listeners
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('connect_error', onConnectError);
-      socket.off('reconnect', onReconnect);
-      socket.off('seat:status_changed', onSeatStatusChanged);
-      socket.off('seat:user_disconnected', onUserDisconnected);
-      socket.off('seat:cleanup_completed', onCleanupCompleted);
-      socket.off('seat:reservation_error', onSeatReservationError);
-      socket.off('seat:batch_update', onSeatBatchUpdate);
+  // ✅ NEW: Handle user cleanup completion (fixes amber stuck bug)
+  const onUserCleanupCompleted = (data) => {
+    console.log('🧹 SeatSocketListener: seat:user_cleanup_completed:', data);
+    
+    if (data.eventId && data.eventId !== eventId) {
+      return;
+    }
 
-      // Reset state
-      state.isConnected = false;
-      state.hasJoinedEvent = false;
-      state.eventId = null;
-      state.sessionId = null;
-    };
-  }, [dispatch, eventId, sessionId]);
+    // Dispatch cleanup action
+    dispatch(handleSeatCleanup(data));
+    
+    // Force refresh seat availability to clear any stuck states
+    if (data.seatsReleased > 0) {
+      console.log(`🔄 Force refreshing seats after cleanup (${data.seatsReleased} seats freed)`);
+      dispatch(fetchSeatAvailability(eventId));
+    }
+  };
+
+  const onCleanupCompleted = (data) => {
+    console.log('🧹 SeatSocketListener: seat:cleanup_completed:', data);
+    
+    if (data.eventId && data.eventId !== eventId) {
+      return;
+    }
+
+    dispatch(handleSeatCleanup(data));
+    
+    if (data.seatsReleased > 0) {
+      console.log(`🔄 Refreshing seat availability after cleanup (${data.seatsReleased} seats released)`);
+      dispatch(fetchSeatAvailability(eventId));
+    }
+  };
+
+  // Register socket event listeners
+  socket.on('connect', onConnect);
+  socket.on('disconnect', onDisconnect);
+  socket.on('connect_error', onConnectError);
+  socket.on('reconnect', onReconnect);
+  socket.on('seat:status_changed', onSeatStatusChanged);
+  socket.on('seat:user_disconnected', onUserDisconnected);
+  socket.on('seat:user_cleanup_completed', onUserCleanupCompleted); // ✅ NEW
+  socket.on('seat:cleanup_completed', onCleanupCompleted);
+
+  // Initial connection setup
+  ensureConnection();
+  
+  if (socket.connected) {
+    joinEventRoom();
+  }
+
+  // ✅ ENHANCED: Cleanup function with proper leave event
+  return () => {
+    console.log('🧹 SeatSocketListener: Cleaning up...');
+    
+    // Leave event room with session cleanup
+    if (state.hasJoinedEvent && state.eventId) {
+      console.log(`🚪 SeatSocketListener: Leaving event room: ${state.eventId}`);
+      socket.emit('seat:leave_event', state.eventId);
+    }
+
+    // Remove event listeners
+    socket.off('connect', onConnect);
+    socket.off('disconnect', onDisconnect);
+    socket.off('connect_error', onConnectError);
+    socket.off('reconnect', onReconnect);
+    socket.off('seat:status_changed', onSeatStatusChanged);
+    socket.off('seat:user_disconnected', onUserDisconnected);
+    socket.off('seat:user_cleanup_completed', onUserCleanupCompleted);
+    socket.off('seat:cleanup_completed', onCleanupCompleted);
+
+    // Reset state
+    state.isConnected = false;
+    state.hasJoinedEvent = false;
+    state.eventId = null;
+    state.sessionId = null;
+  };
+}, [dispatch, eventId, sessionId]);
 
   // ✅ NEW: Periodic heartbeat to maintain connection
   useEffect(() => {
@@ -269,24 +260,24 @@ const SeatSocketListener = ({ eventId, children }) => {
     };
   }, []);
 
-  // ✅ NEW: Debug information (development only)
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const logInterval = setInterval(() => {
-        const state = connectionStateRef.current;
-        console.log('🔍 SeatSocketListener Debug:', {
-          connected: socket.connected,
-          hasJoinedEvent: state.hasJoinedEvent,
-          eventId: state.eventId,
-          sessionId: state.sessionId?.substring(0, 12) + '...',
-          currentEventId,
-          listenerCount: socket.listenerCount('seat:status_changed')
-        });
-      }, 60000); // Every minute
+// ✅ SAFE DEBUG VERSION (optional - you can just delete this entirely)
+useEffect(() => {
+  if (process.env.NODE_ENV === 'development') {
+    const logInterval = setInterval(() => {
+      const state = connectionStateRef.current;
+      console.log('🔍 SeatSocketListener Debug:', {
+        connected: socket.connected,
+        hasJoinedEvent: state.hasJoinedEvent,
+        eventId: state.eventId,
+        sessionId: state.sessionId?.substring(0, 12) + '...',
+        currentEventId
+        // Removed problematic listenerCount
+      });
+    }, 60000);
 
-      return () => clearInterval(logInterval);
-    }
-  }, [currentEventId]);
+    return () => clearInterval(logInterval);
+  }
+}, [currentEventId]);
 
   // ✅ ENHANCED: Render children or status indicator
   if (children) {

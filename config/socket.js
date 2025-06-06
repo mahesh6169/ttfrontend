@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-// Socket.IO client connection:
+// Socket.IO client connection: Dialing backend server
 const socket = io(process.env.NEXT_PUBLIC_BACKEND_BASE_URL, {
    withCredentials: true,
    transports: ['websocket'], 

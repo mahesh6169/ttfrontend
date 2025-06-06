@@ -69,6 +69,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
 
   const [pendingReservation, setPendingReservation] = useState(false);
   const [showSeatingImage, setShowSeatingImage] = useState(false);
+  const [pendingAutoRelease, setPendingAutoRelease] = useState(false);
 
   const requiredSeats = Object.values(ticketSelection.tickets).reduce(
     (sum, qty) => sum + qty,
@@ -96,7 +97,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     isLoading,
   ]);
 
-  // ✅ NEW: Auto-release when deselecting to incomplete count (mirrors auto-reserve)
+// ✅ ENHANCED: Auto-release when deselecting to incomplete count with loading state
 useEffect(() => {
   const shouldAutoRelease =
     selectedSeats.length < requiredSeats &&  // Less than required seats
@@ -104,7 +105,8 @@ useEffect(() => {
     currentReservation &&                     // Has active reservation
     currentReservation.seatIds &&            // Has reserved seats
     currentReservation.seatIds.length > 0 && // Not empty
-    !pendingReservation &&                   // Not currently processing
+    !pendingReservation &&                   // Not currently processing reservation
+    !pendingAutoRelease &&                   // ✅ NEW: Not currently processing auto-release
     !isLoading;                              // Not loading
 
   if (shouldAutoRelease) {
@@ -120,6 +122,7 @@ useEffect(() => {
   requiredSeats,
   currentReservation,
   pendingReservation,
+  pendingAutoRelease, // ✅ NEW: Include in dependencies
   isLoading,
 ]);
 
@@ -218,8 +221,10 @@ const handleSeatClick = (seatId, seatStatus) => {
   console.log(`🪑 Seat clicked: ${seatId}, status: ${seatStatus}`);
 
   // Prevent selection if loading or seat is unavailable
-  if (isLoading || pendingReservation) {
-    console.log('⏳ Ignoring click - operation in progress');
+ if (isLoading || pendingReservation || pendingAutoRelease) {
+    const operation = pendingAutoRelease ? 'releasing reservation' : 
+                     pendingReservation ? 'reserving seats' : 'loading';
+    console.log(`⏳ Ignoring click - ${operation} in progress`);
     return;
   }
 
@@ -316,13 +321,15 @@ const handleSeatClick = (seatId, seatStatus) => {
     return null;
   };
 
-  // ✅ NEW: Auto-release helper function (mirrors handleReserveSeats pattern)
+// ✅ ENHANCED: Auto-release helper function with loading state management
 const handleAutoRelease = async () => {
   if (!currentReservation?.seatIds || currentReservation.seatIds.length === 0) {
     console.log('⏸️ Cannot auto-release - no reservation found');
     return;
   }
 
+  // ✅ NEW: Set loading state for auto-release
+  setPendingAutoRelease(true);
   console.log('🔓 Starting auto-release process for reservation:', currentReservation.reservationId);
 
   try {
@@ -344,6 +351,9 @@ const handleAutoRelease = async () => {
     } else {
       console.error('🚨 Unexpected auto-release error, may need manual intervention');
     }
+  } finally {
+    // ✅ NEW: Always clear loading state
+    setPendingAutoRelease(false);
   }
 };
 
@@ -654,17 +664,15 @@ const handleClearSelection = async () => {
 
                         return (
                           <SeatButton
-                            key={`${seatId}-${seatIndex}`}
-                            seat={{ ...seat, seatId }}
-                            row={row}
-                            isSelected={selectedSeats.includes(seatId)}
-                            isReservedByUser={currentReservation?.seatIds?.includes(
-                              seatId
-                            )}
-                            onClick={() => handleSeatClick(seatId, seatStatus)}
-                            disabled={isLoading || pendingReservation}
-                            userId={userId}
-                          />
+  key={`${seatId}-${seatIndex}`}
+  seat={{ ...seat, seatId }}
+  row={row}
+  isSelected={selectedSeats.includes(seatId)}
+  isReservedByUser={currentReservation?.seatIds?.includes(seatId)}
+  onClick={() => handleSeatClick(seatId, seatStatus)}
+  disabled={isLoading || pendingReservation || pendingAutoRelease} // ✅ ENHANCED: Include auto-release loading
+  userId={userId}
+/>
                         );
                       })
                       .filter(Boolean)}
@@ -681,13 +689,15 @@ const handleClearSelection = async () => {
         )}
 
         {/* Loading overlay */}
-        {(isLoading || pendingReservation) && (
-          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-lg">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-600">
-                {pendingReservation ? 'Reserving seats...' : 'Loading...'}
-              </p>
+        {(isLoading || pendingReservation || pendingAutoRelease) && (
+  <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-lg">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
+      <p className="mt-2 text-sm text-gray-600">
+        {pendingAutoRelease ? 'Releasing seats...' : 
+         pendingReservation ? 'Reserving seats...' : 
+         'Loading...'}
+      </p>
             </div>
           </div>
         )}
