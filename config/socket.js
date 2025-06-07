@@ -15,7 +15,7 @@ console.log("Attempting WebSocket connection to:", socket.io.uri);
 
 // Debugging logs for connection lifecycle events
 socket.on('connect', () => {
-    console.log(`Socket connected: ${socket.id}`); // Logs when the socket successfully connects
+    console.log(`Events Socket Listener connected: ${socket.id}`); // Logs when the socket successfully connects
 });
 
 socket.on('connect_error', (error) => {
@@ -40,6 +40,6 @@ socket.on('reconnect_failed', () => {
 });
 
 // Log connection status every 5 seconds
-setInterval(() => console.log('Socket alive:', socket.connected), 5000);
+setInterval(() => console.log('FrontEnd Socket Client alive:', socket.connected), 5000);
 
 export default socket;

@@ -37,11 +37,9 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
   const { user } = useSelector((state) => state.user);
   const userId = user?._id;
 
-  // ✅ FIXED: Enhanced timer expiration handling
+  // Handles automatic reservation release when the timer expires, with fallback to clear selection.
   const handleTimerExpire = useCallback(() => {
-    console.log('⏰ Timer expired, releasing reservation');
-
-    if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
+if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
       dispatch(
         releaseReservation({
           eventId: eventId,
@@ -50,14 +48,12 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
         })
       )
         .then(() => {
-          console.log('🔓 Reservation released due to timeout');
-        })
+})
         .catch((error) => {
           console.error('❌ Failed to release expired reservation:', error);
         });
     } else {
-      console.warn('⚠️ Timer expired but no reservation data found');
-      // Clear selection as fallback
+// Clear selection as fallback
       dispatch(clearSelection());
     }
   }, [dispatch, currentReservation, eventId, sessionId]);
@@ -71,7 +67,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     0
   );
 
-  // ✅ IMPROVED: Auto-reserve with better validation
+  // Automatically reserves seats when user selects exactly the required number of seats.
   useEffect(() => {
     const shouldAutoReserve =
       selectedSeats.length > 0 &&
@@ -81,8 +77,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
       !isLoading;
 
     if (shouldAutoReserve) {
-      console.log('🎫 Auto-reserving seats:', selectedSeats);
-      handleReserveSeats();
+handleReserveSeats();
     }
   }, [
     selectedSeats,
@@ -92,7 +87,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     isLoading,
   ]);
 
-  // ✅ ENHANCED: Auto-release when deselecting to incomplete count with loading state
+  // Automatically releases reservation when user deselects seats below the required count.
   useEffect(() => {
     const shouldAutoRelease =
       selectedSeats.length < requiredSeats && // Less than required seats
@@ -124,91 +119,56 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     isLoading,
   ]);
 
-  // ✅ ENHANCED: Improved seat click handling with symmetric auto-management
-  const handleSeatClick = (seatId, seatStatus) => {
-    console.log(`🪑 Seat clicked: ${seatId}, status: ${seatStatus}`);
+  // Handles seat selection/deselection with validation for availability, limits, and loading states.
+const handleSeatClick = (seatId, seatStatus) => {
+  // Prevent selection if loading or seat is unavailable
+  if (isLoading || pendingReservation || pendingAutoRelease) return;
 
-    // Prevent selection if loading or seat is unavailable
-    if (isLoading || pendingReservation || pendingAutoRelease) {
-      const operation = pendingAutoRelease
-        ? 'releasing reservation'
-        : pendingReservation
-        ? 'reserving seats'
-        : 'loading';
-      console.log(`⏳ Ignoring click - ${operation} in progress`);
-      return;
-    }
+  if (
+    seatStatus === 'booked' ||
+    seatStatus === 'disabled' ||
+    seatStatus === 'reserved'
+  ) return;
 
-    if (
-      seatStatus === 'booked' ||
-      seatStatus === 'disabled' ||
-      seatStatus === 'reserved'
-    ) {
-      console.log(`🚫 Cannot select seat ${seatId} - status: ${seatStatus}`);
-      return;
-    }
+  // Check if seat is being held by another user
+  if (seatStatus === 'selected-by-other') return;
 
-    // Check if seat is being held by another user
-    if (seatStatus === 'selected-by-other') {
-      console.log(`👥 Seat ${seatId} is being held by another user`);
-      return;
-    }
+  const isCurrentlySelected = selectedSeats.includes(seatId);
 
-    const isCurrentlySelected = selectedSeats.includes(seatId);
+  // Validate selection limit
+  if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
+    alert(
+      selectedSeats.length === requiredSeats
+        ? `You have selected all ${requiredSeats} required seats. Deselect a seat first if you want to choose a different one.`
+        : `You can only select ${requiredSeats} seat${
+            requiredSeats !== 1 ? 's' : ''
+          } total. Please deselect some seats first.`
+    );
+    return;
+  }
 
-    // ✅ NEW: Enhanced selection limit validation with better messaging
-    if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
-      // More helpful message for users
-      const message =
-        selectedSeats.length === requiredSeats
-          ? `You have selected all ${requiredSeats} required seats. Deselect a seat first if you want to choose a different one.`
-          : `You can only select ${requiredSeats} seat${
-              requiredSeats !== 1 ? 's' : ''
-            } total. Please deselect some seats first.`;
+  // Validate seat exists in layout
+  const seatDetails = findSeatInLayout(seatId);
+  if (!seatDetails) {
+    alert('This seat is no longer available. Please refresh the page.');
+    return;
+  }
 
-      alert(message);
-      return;
-    }
+  // ✅ SINGLE CLEAR LOG
+  console.log(`🎯 SeatMapSelection: Seat clicked: ${seatId} | Status: ${seatStatus}`);
 
-    // Validate seat exists in layout
-    const seatDetails = findSeatInLayout(seatId);
-    if (!seatDetails) {
-      console.error('❌ Attempted to select non-existent seat:', seatId);
-      alert('This seat is no longer available. Please refresh the page.');
-      return;
-    }
+  // Proceed with selection or deselection
+  if (isCurrentlySelected) {
+    dispatch(deselectSeat(seatId));
+    console.log(`🗑️ SeatMapSelection:  called deslect for seat ${seatId}`);
+  } else {
+    dispatch(selectSeat(seatId));
+    console.log(`✅ SeatMapSelection: called selectSeat for seat ${seatId}`);
+  }
+};
 
-    // ✅ ENHANCED: Handle seat selection/deselection with auto-management awareness
-    if (isCurrentlySelected) {
-      console.log(
-        `🔄 Deselecting seat: ${seatId} (will trigger auto-release if needed)`
-      );
-      dispatch(deselectSeat(seatId));
 
-      // ✅ NEW: Provide immediate feedback about what will happen
-      const newCount = selectedSeats.length - 1;
-      if (newCount < requiredSeats && currentReservation) {
-        console.log(
-          `ℹ️ Deselection will trigger auto-release (${newCount}/${requiredSeats} seats)`
-        );
-      }
-    } else {
-      console.log(
-        `✅ Selecting seat: ${seatId} (will trigger auto-reserve if complete)`
-      );
-      dispatch(selectSeat(seatId));
-
-      // ✅ NEW: Provide immediate feedback about what will happen
-      const newCount = selectedSeats.length + 1;
-      if (newCount === requiredSeats && !currentReservation) {
-        console.log(
-          `ℹ️ Selection will trigger auto-reservation (${newCount}/${requiredSeats} seats)`
-        );
-      }
-    }
-  };
-
-  // ✅ NEW: Helper function to find seat in layout
+  // Utility function to locate seat details within the seating layout structure.
   const findSeatInLayout = (seatId) => {
     for (const row of seatingLayout) {
       const seat = row.seats?.find((s) => s.seatId === seatId);
@@ -224,14 +184,13 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     return null;
   };
 
-  // ✅ ENHANCED: Auto-release helper function with loading state management
+  // Manages automatic reservation release with loading state and error handling.
   const handleAutoRelease = async () => {
     if (
       !currentReservation?.seatIds ||
       currentReservation.seatIds.length === 0
     ) {
-      console.log('⏸️ Cannot auto-release - no reservation found');
-      return;
+return;
     }
 
     // ✅ NEW: Set loading state for auto-release
@@ -249,14 +208,12 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
       };
 
       await dispatch(releaseReservation(releaseData)).unwrap();
-      console.log('✅ Auto-release completed successfully');
-    } catch (error) {
+} catch (error) {
       console.error('❌ Auto-release failed:', error);
 
       // Enhanced error handling
       if (error.message && error.message.includes('not found')) {
-        console.log('ℹ️ Reservation already released, clearing local state');
-        dispatch(clearSelection());
+dispatch(clearSelection());
       } else {
         console.error(
           '🚨 Unexpected auto-release error, may need manual intervention'
@@ -268,11 +225,10 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     }
   };
 
-  // ✅ ENHANCED: Improved seat reservation with better error handling
+  // Handles manual seat reservation with comprehensive validation and error messaging.
   const handleReserveSeats = async () => {
     if (selectedSeats.length === 0 || pendingReservation) {
-      console.log('⏸️ Cannot reserve - no seats selected or already pending');
-      return;
+return;
     }
 
     // Validate seat count matches ticket count
@@ -282,9 +238,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
       } for your ${requiredSeats} ticket${
         requiredSeats !== 1 ? 's' : ''
       }. Currently selected: ${selectedSeats.length}`;
-
-      console.warn('⚠️ Seat count mismatch:', message);
-      alert(message);
+alert(message);
       return;
     }
 
@@ -318,9 +272,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     setPendingReservation(true);
 
     try {
-      console.log('🎫 Starting seat reservation process...');
-
-      const reservationData = {
+const reservationData = {
         eventId: eventId,
         seatIds: selectedSeats,
         sessionId: sessionId || `web_${Date.now()}`,
@@ -328,8 +280,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
       };
 
       const result = await dispatch(reserveSeats(reservationData)).unwrap();
-      console.log('✅ Seats reserved successfully:', result);
-    } catch (error) {
+} catch (error) {
       console.error('❌ Failed to reserve seats:', error);
 
       // Enhanced error handling with specific messages
@@ -363,11 +314,9 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     }
   };
 
-  // ✅ ENHANCED: Improved clear selection with explicit reservation release
+  // Clears selected seats and releases any active reservations when user manually clears selection.
   const handleClearSelection = async () => {
-    console.log('🗑️ Manual clear selection triggered...');
-
-    // ✅ NEW: More informative logging
+// ✅ NEW: More informative logging
     if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
       console.log('🔓 Manually releasing current reservation:', {
         reservationId: currentReservation.reservationId,
@@ -383,8 +332,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
             sessionId: currentReservation.sessionId || sessionId,
           })
         ).unwrap();
-        console.log('✅ Manual reservation release successful');
-      } catch (error) {
+} catch (error) {
         console.error('❌ Failed to release reservation manually:', error);
         // Continue with clearing selection even if release fails
       }
@@ -397,7 +345,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     dispatch(clearSelection());
   };
 
-  // ✅ IMPROVED: Enhanced seat status detection
+  // Determines seat status (selected, reserved, booked, etc.) based on user selection and backend data.
   const getSeatStatus = (seat, seatId) => {
     // Priority 1: Check if selected in current session
     const isSelectedByUser = selectedSeats.includes(seatId);
@@ -429,7 +377,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     0
   );
 
-  // ✅ IMPROVED: Error handling display
+  // Renders error state with user-friendly message and refresh option when seat loading fails.
   if (error) {
     return (
       <div className="text-center py-8">
@@ -718,12 +666,13 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
             </span>
           </div>
           {currentReservation?.reservedUntil && (
-            <SeatReservationTimer
-              expiryTime={currentReservation.reservedUntil}
-              onExpire={handleTimerExpire}
-              eventId={eventId}
-            />
-          )}
+  <SeatReservationTimer
+    expiryTime={currentReservation.reservedUntil}
+    onExpire={handleTimerExpire}
+    eventId={eventId}
+    pauseWhenNavigating={true}  // ✅ NEW: Pause timer during navigation
+  />
+)}
         </div>
       )}
 

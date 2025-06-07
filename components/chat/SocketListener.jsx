@@ -10,20 +10,20 @@ export const SocketListener = () => {
   const { tokenValidated, user } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user?._id;
 
-  console.log('[SocketListener] mounted');
-  console.log('[SocketListener] User:', user?._id);
-  console.log('[SocketListener] isAuthenticated:', isAuthenticated);
+  //console.log('[SocketListener] mounted');
+  //console.log('[SocketListener] User:', user?._id);
+  //console.log('[SocketListener] isAuthenticated:', isAuthenticated);
 
   useEffect(() => {
     if (!isAuthenticated) return;
 
     if (!socket.connected) {
-      console.log('[SocketListener] Connecting socket...');
+      console.log(' Chat Socket Listener Connecting socket...');
       socket.connect();
     }
 
     const handleNewMessage = (msg) => {
-      console.log('[SocketListener] New message received:', msg);
+      console.log('Chat Socket Listener New message received:', msg);
       dispatch(setUnreadExists(true));
     };
 

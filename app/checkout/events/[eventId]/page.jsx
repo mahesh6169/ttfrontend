@@ -2,12 +2,12 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  FaCalendarAlt, 
-  FaClock, 
+import {
+  FaCalendarAlt,
+  FaClock,
   FaMapMarkerAlt,
   FaUser,
   FaEnvelope,
@@ -16,7 +16,7 @@ import {
   FaArrowLeft,
   FaSpinner,
   FaCheckCircle,
-  FaChair
+  FaChair,
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import RequireLogin from '@/components/Auth/RequireLogin';
@@ -42,15 +42,24 @@ import {
   selectCurrentStep,
   selectPurchaseLoading,
   selectPurchaseError,
-  updateTicketSelection
+  updateTicketSelection,
 } from '@/store/slices/events/ticketPurchaseSlice';
+import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
+import {
+  selectCurrentReservation,
+  releaseReservation,
+  clearSelection,
+  selectSessionId,
+  setCurrentReservation,
+} from '@/store/slices/events/seatSelectionSlice';
+import SeatReservationTimer from '@/components/events/seats/SeatReservationTimer';
 
 const CheckoutPage = () => {
   const params = useParams();
   const router = useRouter();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
-  
+
   // Redux state
   const ticketPurchaseState = useSelector(selectTicketPurchase);
   const selectedTickets = useSelector(selectSelectedTickets);
@@ -61,7 +70,42 @@ const CheckoutPage = () => {
   const currentStep = useSelector(selectCurrentStep);
   const loading = useSelector(selectPurchaseLoading);
   const purchaseError = useSelector(selectPurchaseError);
-  
+  const currentReservation = useSelector(selectCurrentReservation);
+  const seatSessionId = useSelector(selectSessionId);
+
+  // ✅ DEBUG: Add temporary logging to see what we have
+  console.log('🔍 CHECKOUT DEBUG:', {
+    currentReservation,
+    seatSessionId,
+    seatInfo,
+    'seatInfo.requiresSeats': seatInfo.requiresSeats,
+    'currentReservation exists': !!currentReservation,
+    'has reservedUntil': !!currentReservation?.reservedUntil,
+    'condition result': !!(currentReservation && seatInfo.requiresSeats),
+  });
+
+  // ADD THE NEW DEBUG BLOCK HERE:
+  console.log('🔍 CHECKOUT REDUX STATE DEBUG:', {
+    // Seat selection state
+    currentReservation,
+    seatSessionId,
+
+    // Seat info from ticket purchase
+    seatInfo,
+    'seatInfo.requiresSeats': seatInfo?.requiresSeats,
+    'seatInfo.selectedSeats': seatInfo?.selectedSeats,
+
+    // Timer condition check
+    'timer condition (currentReservation && seatInfo.requiresSeats)': !!(
+      currentReservation && seatInfo?.requiresSeats
+    ),
+    'currentReservation exists': !!currentReservation,
+    'has reservedUntil': !!currentReservation?.reservedUntil,
+
+    // Socket condition
+    'socket condition result': !!(seatInfo?.requiresSeats && params.eventId),
+  });
+
   console.log('Current step:', currentStep);
   // Local state management
   const [event, setEvent] = useState(null);
@@ -69,6 +113,119 @@ const CheckoutPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState({});
   const [initializationAttempted, setInitializationAttempted] = useState(false);
+
+// ✅ ENHANCED: Timer expiration handler for seat reservations
+  const handleTimerExpire = useCallback(() => {
+    console.log('⏰ Checkout: Timer expired, starting cleanup process');
+
+    // Show user-friendly confirmation dialog
+    const userConfirmed = window.confirm(
+      '⏰ Your seat reservation has expired!\n\n' +
+      'Your selected seats will be released and you\'ll be redirected to select new seats.\n\n' +
+      'Click OK to continue or Cancel to stay on this page (seats will still be released).'
+    );
+
+    const proceedWithCleanup = async () => {
+      if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
+        console.log('🔓 Releasing reservation:', currentReservation.seatIds);
+        
+        try {
+          // Release the reservation
+          await dispatch(
+            releaseReservation({
+              eventId: params.eventId,
+              seatIds: currentReservation.seatIds,
+              sessionId: currentReservation.sessionId || seatSessionId,
+            })
+          ).unwrap();
+
+          console.log('✅ Checkout: Reservation released successfully');
+          
+          // Clear seat info in ticket purchase slice
+          dispatch(updateSeatInfo({
+            selectedSeats: [],
+            reservationId: null,
+            seatCount: 0,
+            requiresSeats: seatInfo.requiresSeats // Keep this flag
+          }));
+
+          // Update sessionStorage to remove expired data
+          const storedSelection = sessionStorage.getItem('ticketSelection');
+          if (storedSelection) {
+            const selection = JSON.parse(storedSelection);
+            const updatedSelection = {
+              ...selection,
+              selectedSeats: [],
+              reservationId: null,
+              expired: true,
+              expiredAt: new Date().toISOString()
+            };
+            sessionStorage.setItem('ticketSelection', JSON.stringify(updatedSelection));
+          }
+
+          // Show success message and redirect
+          alert('✅ Your expired seats have been released. You can now select new seats.');
+          router.push(`/events/seats/${params.eventId}`);
+
+        } catch (error) {
+          console.error('❌ Checkout: Failed to release expired reservation:', error);
+          
+          // Even if API call fails, clean up local state
+          dispatch(clearSelection());
+          dispatch(updateSeatInfo({
+            selectedSeats: [],
+            reservationId: null,
+            seatCount: 0,
+            requiresSeats: seatInfo.requiresSeats
+          }));
+
+          // Clear sessionStorage
+          const storedSelection = sessionStorage.getItem('ticketSelection');
+          if (storedSelection) {
+            const selection = JSON.parse(storedSelection);
+            const updatedSelection = {
+              ...selection,
+              selectedSeats: [],
+              reservationId: null,
+              expired: true,
+              expiredAt: new Date().toISOString(),
+              error: error.message
+            };
+            sessionStorage.setItem('ticketSelection', JSON.stringify(updatedSelection));
+          }
+
+          alert('⚠️ Seat reservation expired. Redirecting to seat selection...');
+          router.push(`/events/seats/${params.eventId}`);
+        }
+      } else {
+        console.warn('⚠️ Checkout: Timer expired but no reservation data found');
+        
+        // Clear any stale state
+        dispatch(clearSelection());
+        dispatch(updateSeatInfo({
+          selectedSeats: [],
+          reservationId: null,
+          seatCount: 0,
+          requiresSeats: seatInfo.requiresSeats
+        }));
+
+        alert('🔄 Your session has expired. Please select seats again.');
+        router.push(`/events/seats/${params.eventId}`);
+      }
+    };
+
+    // Execute cleanup regardless of user choice
+    if (userConfirmed) {
+      // User confirmed, proceed immediately
+      proceedWithCleanup();
+    } else {
+      // User cancelled, but still need to clean up after a short delay
+      alert('ℹ️ Your seats will still be released due to expiration.');
+      setTimeout(() => {
+        proceedWithCleanup();
+      }, 2000); // 2 second delay
+    }
+  }, [dispatch, currentReservation, params.eventId, seatSessionId, router, seatInfo.requiresSeats]);
   
   // Payment states from Redux
   const clientSecret = ticketPurchaseState.clientSecret;
@@ -79,45 +236,107 @@ const CheckoutPage = () => {
     const loadCheckoutData = async () => {
       try {
         setIsLoading(true);
-        
+
         // Load event details
-        const eventResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/events/views/${params.eventId}`, {
-          credentials: 'include'
-        });
-        
+        const eventResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/views/${params.eventId}`,
+          {
+            credentials: 'include',
+          }
+        );
+
         if (!eventResponse.ok) {
           throw new Error('Failed to load event details');
         }
-        
+
         const eventData = await eventResponse.json();
         setEvent(eventData);
 
         // Check if we have ticket selection in Redux
-        const hasReduxSession = ticketPurchaseState.sessionActive && 
-                               ticketPurchaseState.eventId === params.eventId &&
-                               selectedTickets.length > 0;
+        const hasReduxSession =
+          ticketPurchaseState.sessionActive &&
+          ticketPurchaseState.eventId === params.eventId &&
+          selectedTickets.length > 0;
 
         if (hasReduxSession) {
           console.log('✅ Using existing Redux session');
-          
+
+          // ADD THIS DEBUG RIGHT HERE:
+  console.log('✅ Using existing Redux session - SEAT DATA CHECK:', {
+    'seatInfo from Redux': seatInfo,
+    'currentReservation from Redux': currentReservation,
+    'should show socket': !!(seatInfo?.requiresSeats && params.eventId),
+    'should show timer': !!(currentReservation && seatInfo?.requiresSeats)
+  });
+
           // Update buyer info with user data if not already set
           if (user && !buyerInfo.firstName && !buyerInfo.lastName) {
-            dispatch(updateBuyerInfo({
-              firstName: user.firstName || '',
-              lastName: user.lastName || '',
-              email: user.email || ''
-            }));
+            dispatch(
+              updateBuyerInfo({
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                email: user.email || '',
+              })
+            );
           }
-          
+
+          // ✅ NEW: Check if we have seat selection but missing reservation
+          if (
+            seatInfo.selectedSeats &&
+            seatInfo.selectedSeats.length > 0 &&
+            !currentReservation
+          ) {
+            console.log(
+              '⚠️ Have seats but missing reservation, checking sessionStorage for backup'
+            );
+
+            const storedSelection = sessionStorage.getItem('ticketSelection');
+            if (storedSelection) {
+              const selection = JSON.parse(storedSelection);
+
+              if (selection.reservationId && selection.reservedUntil) {
+                console.log(
+                  '🔄 Restoring missing reservation from sessionStorage backup'
+                );
+
+                dispatch(
+                  setCurrentReservation({
+                    eventId: params.eventId,
+                    userId: user?._id,
+                    sessionId: seatSessionId,
+                    reservationId: selection.reservationId,
+                    reservedUntil: selection.reservedUntil,
+                    seatIds: selection.selectedSeats || seatInfo.selectedSeats,
+                    seatCount: (
+                      selection.selectedSeats || seatInfo.selectedSeats
+                    ).length,
+                    seats: (
+                      selection.selectedSeats || seatInfo.selectedSeats
+                    ).map((seatId) => ({ seatId })),
+                  })
+                );
+              }
+            }
+          }
+
           // Set current step to checkout if coming from ticket selection
           if (currentStep === 'ticket-selection') {
             dispatch(setCurrentStep('checkout'));
           }
         } else {
           // Fallback: Try to get data from sessionStorage and initialize Redux
-          console.log('⚠️ No Redux session found, checking sessionStorage fallback');
-          
+          console.log(
+            '⚠️ No Redux session found, checking sessionStorage fallback'
+          );
+
           const storedSelection = sessionStorage.getItem('ticketSelection');
+// ADD THIS DEBUG RIGHT HERE:
+  console.log('⚠️ No Redux session - FALLBACK CHECK:', {
+    'storedSelection exists': !!storedSelection,
+    'parsed selection': storedSelection ? JSON.parse(storedSelection) : null
+  });
+
+
           if (!storedSelection) {
             alert('No ticket selection found. Please select tickets first.');
             router.push(`/events/views/${params.eventId}`);
@@ -125,11 +344,13 @@ const CheckoutPage = () => {
           }
 
           const selection = JSON.parse(storedSelection);
-          
+
           // Validate selection hasn't expired (10 minutes max)
           const selectionAge = Date.now() - selection.timestamp;
           if (selectionAge > 10 * 60 * 1000) {
-            alert('Your ticket selection has expired. Please select tickets again.');
+            alert(
+              'Your ticket selection has expired. Please select tickets again.'
+            );
             sessionStorage.removeItem('ticketSelection');
             router.push(`/events/views/${params.eventId}`);
             return;
@@ -144,57 +365,92 @@ const CheckoutPage = () => {
           }
 
           console.log('🔄 Initializing Redux from sessionStorage');
-          
+
           // Initialize Redux with sessionStorage data
-          await dispatch(initializePurchaseSession({ eventId: params.eventId }));
-          
+          await dispatch(
+            initializePurchaseSession({ eventId: params.eventId })
+          );
+
           // Populate Redux with ticket selection
           if (selection.tickets && eventData.ticketTypes) {
-            for (const [ticketTypeId, quantity] of Object.entries(selection.tickets)) {
+            for (const [ticketTypeId, quantity] of Object.entries(
+              selection.tickets
+            )) {
               if (quantity > 0) {
-                const ticketType = eventData.ticketTypes.find(t => t._id === ticketTypeId);
+                const ticketType = eventData.ticketTypes.find(
+                  (t) => t._id === ticketTypeId
+                );
                 if (ticketType) {
-                  dispatch(updateTicketSelection({
-                    ticketTypeId,
-                    quantity,
-                    price: ticketType.price || 0,
-                    name: ticketType.name,
-                    maxQuantity: ticketType.quantity
-                  }));
+                  dispatch(
+                    updateTicketSelection({
+                      ticketTypeId,
+                      quantity,
+                      price: ticketType.price || 0,
+                      name: ticketType.name,
+                      maxQuantity: ticketType.quantity,
+                    })
+                  );
                 }
               }
             }
           }
-          
-          // Set seat info if available
-          if (selection.hasSeatingLayout) {
-            dispatch(setSeatRequirement(true));
-            
-            // If coming from seat selection, update seat info
-            if (selection.selectedSeats && selection.selectedSeats.length > 0) {
-              dispatch(updateSeatInfo({
+
+          // If coming from seat selection, update seat info AND restore reservation
+          if (selection.selectedSeats && selection.selectedSeats.length > 0) {
+            dispatch(
+              updateSeatInfo({
                 selectedSeats: selection.selectedSeats,
                 reservationId: selection.reservationId,
-                seatCount: selection.selectedSeats.length
-              }));
+                seatCount: selection.selectedSeats.length,
+              })
+            );
+
+            // ✅ NEW: Restore the seat reservation in Redux if we have reservation data
+            if (selection.reservationId && selection.reservedUntil) {
+              console.log('🔄 Restoring seat reservation from sessionStorage');
+               console.log('🔄 RESTORING RESERVATION DEBUG:', {
+    'before dispatch - currentReservation': currentReservation,
+    'restoring data': {
+      eventId: params.eventId,
+      userId: user?._id,
+      sessionId: seatSessionId,
+      reservationId: selection.reservationId,
+      reservedUntil: selection.reservedUntil,
+      seatIds: selection.selectedSeats,
+    }
+  });
+
+              dispatch(
+                setCurrentReservation({
+                  eventId: params.eventId,
+                  userId: user?._id,
+                  sessionId: seatSessionId,
+                  reservationId: selection.reservationId,
+                  reservedUntil: selection.reservedUntil,
+                  seatIds: selection.selectedSeats,
+                  seatCount: selection.selectedSeats.length,
+                  seats: selection.selectedSeats.map((seatId) => ({ seatId })),
+                })
+              );
             }
           }
-          
+
           // Pre-fill buyer info
           if (user) {
-            dispatch(updateBuyerInfo({
-              firstName: user.firstName || '',
-              lastName: user.lastName || '',
-              email: user.email || ''
-            }));
+            dispatch(
+              updateBuyerInfo({
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                email: user.email || '',
+              })
+            );
           }
-          
+
           // Set step to details
           dispatch(setCurrentStep('details'));
         }
 
         setInitializationAttempted(true);
-        
       } catch (error) {
         console.error('Error loading checkout data:', error);
         alert('Error loading checkout page. Please try again.');
@@ -207,20 +463,30 @@ const CheckoutPage = () => {
     if (params.eventId && !initializationAttempted) {
       loadCheckoutData();
     }
-  }, [params.eventId, router, user, dispatch, ticketPurchaseState.sessionActive, 
-      ticketPurchaseState.eventId, selectedTickets.length, buyerInfo.firstName, 
-      buyerInfo.lastName, currentStep, initializationAttempted]);
+  }, [
+    params.eventId,
+    router,
+    user,
+    dispatch,
+    ticketPurchaseState.sessionActive,
+    ticketPurchaseState.eventId,
+    selectedTickets.length,
+    buyerInfo.firstName,
+    buyerInfo.lastName,
+    currentStep,
+    initializationAttempted,
+  ]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     const updateData = { [name]: type === 'checkbox' ? checked : value };
-    
+
     dispatch(updateBuyerInfo(updateData));
-    
+
     // Clear field-specific errors
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }));
+      setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
 
@@ -259,7 +525,7 @@ const CheckoutPage = () => {
   // Handle proceeding to payment step
   const handleProceedToPayment = async () => {
     alert('BUTTON CLICKED!'); // Add this line first
-  console.log('🔥 BUTTON CLICKED - This should show up!');
+    console.log('🔥 BUTTON CLICKED - This should show up!');
     if (!validateForm()) {
       console.log('FORM VALIDATION FAILED');
       return;
@@ -272,11 +538,13 @@ const CheckoutPage = () => {
       console.log('🚀 Creating payment intent with Redux...');
 
       // Create payment intent using Redux
-      const result = await dispatch(createPaymentIntent({
-        eventId: params.eventId,
-        ticketData: selectedTickets,
-        buyerInfo
-      }));
+      const result = await dispatch(
+        createPaymentIntent({
+          eventId: params.eventId,
+          ticketData: selectedTickets,
+          buyerInfo,
+        })
+      );
 
       if (createPaymentIntent.fulfilled.match(result)) {
         console.log('✅ Payment Intent created via Redux');
@@ -284,11 +552,11 @@ const CheckoutPage = () => {
       } else {
         throw new Error(result.payload || 'Failed to create payment intent');
       }
-
     } catch (error) {
       console.error('❌ Error creating payment intent:', error);
-      setErrors({ 
-        payment: error.message || 'Failed to initialize payment. Please try again.' 
+      setErrors({
+        payment:
+          error.message || 'Failed to initialize payment. Please try again.',
       });
     } finally {
       setIsProcessing(false);
@@ -303,31 +571,34 @@ const CheckoutPage = () => {
       console.log('🎉 Payment succeeded, confirming with Redux...');
 
       // Confirm payment using Redux
-      const result = await dispatch(confirmPayment({
-        eventId: params.eventId,
-        paymentIntentId: paymentIntent.id,
-        paymentMethodId: paymentIntent.payment_method?.id,
-        tickets: selectedTickets.reduce((acc, ticket) => {
-          acc[ticket.ticketTypeId] = ticket.quantity;
-          return acc;
-        }, {}),
-        buyerInfo
-      }));
+      const result = await dispatch(
+        confirmPayment({
+          eventId: params.eventId,
+          paymentIntentId: paymentIntent.id,
+          paymentMethodId: paymentIntent.payment_method?.id,
+          tickets: selectedTickets.reduce((acc, ticket) => {
+            acc[ticket.ticketTypeId] = ticket.quantity;
+            return acc;
+          }, {}),
+          buyerInfo,
+        })
+      );
 
       if (confirmPayment.fulfilled.match(result)) {
         console.log('✅ Payment confirmed via Redux');
         // Redux will automatically set currentStep to 'complete'
-        
+
         // Clear sessionStorage since we're using Redux now
         sessionStorage.removeItem('ticketSelection');
       } else {
         throw new Error(result.payload || 'Failed to confirm payment');
       }
-
     } catch (error) {
       console.error('❌ Error confirming payment:', error);
-      setErrors({ 
-        payment: error.message || 'Payment successful but failed to create tickets. Please contact support.' 
+      setErrors({
+        payment:
+          error.message ||
+          'Payment successful but failed to create tickets. Please contact support.',
       });
     } finally {
       setIsProcessing(false);
@@ -337,8 +608,8 @@ const CheckoutPage = () => {
   // Handle payment error
   const handlePaymentError = (error) => {
     console.error('❌ Payment failed:', error);
-    setErrors({ 
-      payment: error || 'Payment failed. Please try again.' 
+    setErrors({
+      payment: error || 'Payment failed. Please try again.',
     });
   };
 
@@ -357,28 +628,34 @@ const CheckoutPage = () => {
   // Format event date/time
   const getFormattedDateTime = () => {
     if (!event?.dateTime) return { date: '', time: '' };
-    
+
     const timeZone = event.timeZone || 'Australia/Sydney';
-    const date = formatInTimeZone(event.dateTime, timeZone, 'EEEE, MMMM do, yyyy');
+    const date = formatInTimeZone(
+      event.dateTime,
+      timeZone,
+      'EEEE, MMMM do, yyyy'
+    );
     const time = formatInTimeZone(event.dateTime, timeZone, 'h:mm a');
-    
+
     return { date, time };
   };
 
   // Get selected tickets for display
   const getSelectedTickets = () => {
     if (!event?.ticketTypes || !selectedTickets?.length) return [];
-    
+
     return selectedTickets
-      .filter(ticket => ticket.quantity > 0)
-      .map(ticket => {
-        const ticketType = event.ticketTypes.find(t => t._id === ticket.ticketTypeId);
+      .filter((ticket) => ticket.quantity > 0)
+      .map((ticket) => {
+        const ticketType = event.ticketTypes.find(
+          (t) => t._id === ticket.ticketTypeId
+        );
         return {
           ...ticket,
           ...ticketType,
           totalPrice: ticket.price * ticket.quantity,
           // Add seat information if available
-          seats: seatInfo.selectedSeats || []
+          seats: seatInfo.selectedSeats || [],
         };
       });
   };
@@ -387,6 +664,10 @@ const CheckoutPage = () => {
   if (isLoading) {
     return (
       <RequireLogin message="You must be logged in to complete your purchase.">
+        {/* Add socket listener for real-time seat updates */}
+        {seatInfo.requiresSeats && params.eventId && (
+          <SeatSocketListener eventId={params.eventId} />
+        )}
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <LoadingSpinner size="large" />
@@ -401,10 +682,18 @@ const CheckoutPage = () => {
   if (!event || selectedTickets.length === 0) {
     return (
       <RequireLogin message="You must be logged in to complete your purchase.">
+        {/* Add socket listener for real-time seat updates */}
+        {seatInfo.requiresSeats && params.eventId && (
+          <SeatSocketListener eventId={params.eventId} />
+        )}
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Checkout Error</h2>
-            <p className="text-gray-600 mb-6">No ticket selection found. Please select tickets first.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Checkout Error
+            </h2>
+            <p className="text-gray-600 mb-6">
+              No ticket selection found. Please select tickets first.
+            </p>
             <button
               onClick={() => router.push(`/events/views/${params.eventId}`)}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -416,7 +705,6 @@ const CheckoutPage = () => {
       </RequireLogin>
     );
   }
-
   const { date, time } = getFormattedDateTime();
   const selectedTicketsDisplay = getSelectedTickets();
 
@@ -428,13 +716,17 @@ const CheckoutPage = () => {
           <div className="max-w-2xl mx-auto px-4">
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
               <FaCheckCircle className="mx-auto text-6xl text-green-600 mb-6" />
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">Payment Successful!</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                Payment Successful!
+              </h1>
               <p className="text-lg text-gray-600 mb-6">
                 Your tickets have been purchased successfully.
               </p>
-              
+
               <div className="bg-green-50 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-green-800 mb-2">What's Next?</h3>
+                <h3 className="font-semibold text-green-800 mb-2">
+                  What's Next?
+                </h3>
                 <ul className="text-green-700 space-y-1">
                   <li>📧 Check your email for confirmation and tickets</li>
                   <li>🎫 Your tickets will be delivered within 5 minutes</li>
@@ -450,7 +742,7 @@ const CheckoutPage = () => {
                 >
                   View My Tickets
                 </button>
-                
+
                 <button
                   onClick={() => {
                     dispatch(resetPurchaseSession());
@@ -475,17 +767,25 @@ const CheckoutPage = () => {
           {/* Header */}
           <div className="mb-8">
             <button
-              onClick={currentStep === 'payment' ? handleBackToDetails : handleBackToTickets}
+              onClick={
+                currentStep === 'payment'
+                  ? handleBackToDetails
+                  : handleBackToTickets
+              }
               className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
             >
               <FaArrowLeft className="mr-2" />
-              {currentStep === 'payment' ? 'Back to Details' : 'Back to Ticket Selection'}
+              {currentStep === 'payment'
+                ? 'Back to Details'
+                : 'Back to Ticket Selection'}
             </button>
-            
-            <h1 className="text-3xl font-bold text-gray-900">Complete Your Purchase</h1>
+
+            <h1 className="text-3xl font-bold text-gray-900">
+              Complete Your Purchase
+            </h1>
             <p className="text-gray-600 mt-2">
-              {currentStep === 'details' 
-                ? 'Review your order and enter your details' 
+              {currentStep === 'details'
+                ? 'Review your order and enter your details'
                 : 'Enter your payment information'}
             </p>
           </div>
@@ -493,21 +793,41 @@ const CheckoutPage = () => {
           {/* Progress Indicator */}
           <div className="mb-8">
             <div className="flex items-center justify-center space-x-4">
-              <div className={`flex items-center ${currentStep === 'details' ? 'text-blue-600' : 'text-green-600'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  currentStep === 'details' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
-                }`}>
+              <div
+                className={`flex items-center ${
+                  currentStep === 'details' ? 'text-blue-600' : 'text-green-600'
+                }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    currentStep === 'details'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-green-600 text-white'
+                  }`}
+                >
                   {currentStep === 'details' ? '1' : <FaCheckCircle />}
                 </div>
                 <span className="ml-2 font-medium">Details</span>
               </div>
-              
-              <div className={`w-16 h-1 ${currentStep === 'payment' ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-              
-              <div className={`flex items-center ${currentStep === 'payment' ? 'text-blue-600' : 'text-gray-400'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  currentStep === 'payment' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-                }`}>
+
+              <div
+                className={`w-16 h-1 ${
+                  currentStep === 'payment' ? 'bg-blue-600' : 'bg-gray-200'
+                }`}
+              ></div>
+
+              <div
+                className={`flex items-center ${
+                  currentStep === 'payment' ? 'text-blue-600' : 'text-gray-400'
+                }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    currentStep === 'payment'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}
+                >
                   2
                 </div>
                 <span className="ml-2 font-medium">Payment</span>
@@ -523,10 +843,14 @@ const CheckoutPage = () => {
                 <>
                   {/* Event Info */}
                   <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <h2 className="text-xl font-semibold mb-4">Event Details</h2>
+                    <h2 className="text-xl font-semibold mb-4">
+                      Event Details
+                    </h2>
                     <div className="space-y-3">
-                      <h3 className="text-lg font-medium text-gray-900">{event.title}</h3>
-                      
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {event.title}
+                      </h3>
+
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center">
                           <FaCalendarAlt className="mr-2 text-blue-600" />
@@ -540,14 +864,17 @@ const CheckoutPage = () => {
                           <FaMapMarkerAlt className="mr-2 text-red-600" />
                           <span>{event.venue}</span>
                         </div>
-                        {seatInfo.selectedSeats && seatInfo.selectedSeats.length > 0 && (
-                          <div className="flex items-center">
-                            <FaChair className="mr-2 text-purple-600" />
-                            <span>
-                              {seatInfo.selectedSeats.length} seat{seatInfo.selectedSeats.length !== 1 ? 's' : ''} selected
-                            </span>
-                          </div>
-                        )}
+                        {seatInfo.selectedSeats &&
+                          seatInfo.selectedSeats.length > 0 && (
+                            <div className="flex items-center">
+                              <FaChair className="mr-2 text-purple-600" />
+                              <span>
+                                {seatInfo.selectedSeats.length} seat
+                                {seatInfo.selectedSeats.length !== 1 ? 's' : ''}{' '}
+                                selected
+                              </span>
+                            </div>
+                          )}
                       </div>
                     </div>
                   </div>
@@ -558,7 +885,7 @@ const CheckoutPage = () => {
                       <FaUser className="mr-2 text-blue-600" />
                       Buyer Information
                     </h2>
-                    
+
                     <div className="space-y-4">
                       <div className="grid md:grid-cols-2 gap-4">
                         {/* First Name */}
@@ -572,12 +899,16 @@ const CheckoutPage = () => {
                             value={buyerInfo.firstName || ''}
                             onChange={handleInputChange}
                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              errors.firstName ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                              errors.firstName
+                                ? 'border-red-500 bg-red-50'
+                                : 'border-gray-300'
                             }`}
                             placeholder="Enter your first name"
                           />
                           {errors.firstName && (
-                            <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+                            <p className="mt-1 text-sm text-red-600">
+                              {errors.firstName}
+                            </p>
                           )}
                         </div>
 
@@ -592,12 +923,16 @@ const CheckoutPage = () => {
                             value={buyerInfo.lastName || ''}
                             onChange={handleInputChange}
                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              errors.lastName ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                              errors.lastName
+                                ? 'border-red-500 bg-red-50'
+                                : 'border-gray-300'
                             }`}
                             placeholder="Enter your last name"
                           />
                           {errors.lastName && (
-                            <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+                            <p className="mt-1 text-sm text-red-600">
+                              {errors.lastName}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -615,13 +950,17 @@ const CheckoutPage = () => {
                             value={buyerInfo.email || ''}
                             onChange={handleInputChange}
                             className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                              errors.email
+                                ? 'border-red-500 bg-red-50'
+                                : 'border-gray-300'
                             }`}
                             placeholder="Enter your email address"
                           />
                         </div>
                         {errors.email && (
-                          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.email}
+                          </p>
                         )}
                       </div>
 
@@ -638,13 +977,17 @@ const CheckoutPage = () => {
                             value={buyerInfo.phone || ''}
                             onChange={handleInputChange}
                             className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                              errors.phone
+                                ? 'border-red-500 bg-red-50'
+                                : 'border-gray-300'
                             }`}
                             placeholder="Enter your phone number"
                           />
                         </div>
                         {errors.phone && (
-                          <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.phone}
+                          </p>
                         )}
                       </div>
 
@@ -659,17 +1002,27 @@ const CheckoutPage = () => {
                         />
                         <label className="ml-2 text-sm text-gray-600">
                           I agree to the{' '}
-                          <a href="/support/terms" target="_blank" className="text-blue-600 hover:underline">
+                          <a
+                            href="/support/terms"
+                            target="_blank"
+                            className="text-blue-600 hover:underline"
+                          >
                             Terms and Conditions
                           </a>{' '}
                           and{' '}
-                          <a href="/support/privacy" target="_blank" className="text-blue-600 hover:underline">
+                          <a
+                            href="/support/privacy"
+                            target="_blank"
+                            className="text-blue-600 hover:underline"
+                          >
                             Privacy Policy
                           </a>
                         </label>
                       </div>
                       {errors.agreeToTerms && (
-                        <p className="text-sm text-red-600">{errors.agreeToTerms}</p>
+                        <p className="text-sm text-red-600">
+                          {errors.agreeToTerms}
+                        </p>
                       )}
 
                       {/* Proceed to Payment Button */}
@@ -697,7 +1050,9 @@ const CheckoutPage = () => {
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                           <div className="flex items-start">
                             <FaExclamationTriangle className="text-red-600 mr-3 mt-1" />
-                            <p className="text-sm text-red-700">{errors.payment || purchaseError}</p>
+                            <p className="text-sm text-red-700">
+                              {errors.payment || purchaseError}
+                            </p>
                           </div>
                         </div>
                       )}
@@ -706,42 +1061,68 @@ const CheckoutPage = () => {
                 </>
               ) : (
                 /* Payment Step */
-<div className="bg-white rounded-lg shadow-md p-6">
-    <h2 className="text-xl font-semibold mb-6">Payment Information</h2>
-    
-    {/* ADD THIS CONDITIONAL RENDERING */}
-    {clientSecret ? (
-      <StripePaymentForm
-        clientSecret={clientSecret}
-        buyerInfo={buyerInfo}
-        totalAmount={totals.total}
-        onSuccess={handlePaymentSuccess}
-        onError={handlePaymentError}
-        disabled={isProcessing || loading.confirmingPayment}
-      />
-    ) : (
-      // Loading state while payment intent is being created
-      <div className="text-center py-12">
-        <FaSpinner className="animate-spin mx-auto text-4xl text-blue-600 mb-4" />
-        <p className="text-gray-600 text-lg">Preparing secure payment...</p>
-        <p className="text-gray-500 text-sm mt-2">This usually takes just a few seconds</p>
-      </div>
-    )}
-  </div>
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-xl font-semibold mb-6">
+                    Payment Information
+                  </h2>
+
+                  {/* ADD THIS CONDITIONAL RENDERING */}
+                  {clientSecret ? (
+                    <StripePaymentForm
+                      clientSecret={clientSecret}
+                      buyerInfo={buyerInfo}
+                      totalAmount={totals.total}
+                      onSuccess={handlePaymentSuccess}
+                      onError={handlePaymentError}
+                      disabled={isProcessing || loading.confirmingPayment}
+                    />
+                  ) : (
+                    // Loading state while payment intent is being created
+                    <div className="text-center py-12">
+                      <FaSpinner className="animate-spin mx-auto text-4xl text-blue-600 mb-4" />
+                      <p className="text-gray-600 text-lg">
+                        Preparing secure payment...
+                      </p>
+                      <p className="text-gray-500 text-sm mt-2">
+                        This usually takes just a few seconds
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
             {/* Order Summary Sidebar */}
             <div className="lg:col-span-1">
-              <PaymentSummary
-                event={event}
-                selectedTickets={selectedTicketsDisplay}
-                totals={totals}
-                buyerInfo={currentStep === 'payment' ? buyerInfo : null}
-                showEventDetails={true}
-                showBuyerInfo={currentStep === 'payment'}
-                className="sticky top-8"
-              />
+              <div className="space-y-4">
+                {/* Seat reservation timer for checkout */}
+                {currentReservation && currentReservation.reservedUntil && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-yellow-800 mb-2">
+                      🪑 Seat Reservation Active
+                    </h3>
+                    <p className="text-xs text-yellow-700 mb-3">
+                      Your seats are reserved. Complete payment before time
+                      expires.
+                    </p>
+                    <SeatReservationTimer
+                      expiryTime={currentReservation.reservedUntil}
+                      onExpire={handleTimerExpire}
+                      eventId={params.eventId}
+                    />
+                  </div>
+                )}
+
+                <PaymentSummary
+                  event={event}
+                  selectedTickets={selectedTicketsDisplay}
+                  totals={totals}
+                  buyerInfo={currentStep === 'payment' ? buyerInfo : null}
+                  showEventDetails={true}
+                  showBuyerInfo={currentStep === 'payment'}
+                  className="sticky top-8"
+                />
+              </div>
             </div>
           </div>
         </div>
