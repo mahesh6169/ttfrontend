@@ -35,7 +35,6 @@ import SeatSelectionFallback from '@/components/events/seats/SeatSelectionFallba
 import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
 
 const SeatSelectionPage = () => {
-  //console.log('SeatSelectionPage rendered');
   const { eventId } = useParams();
   const router = useRouter();
   const dispatch = useDispatch();
@@ -62,7 +61,6 @@ const SeatSelectionPage = () => {
 
   // Initialize page data
   useEffect(() => {
-    //console.log('SeatSelectionPage: useEffect/Initializing Seat Selection Page for event:', eventId);
     const initializePage = async () => {
       try {
         // Check if we have a valid ticket purchase session
@@ -147,13 +145,13 @@ const SeatSelectionPage = () => {
         // Fetch seat availability
         const seatData = await dispatch(fetchSeatAvailability(eventId)).unwrap();
         // Log the fetched seat data
-console.log('🪑SeatSelectionPage: Fetched seat data:', {
-  eventId,
-  seatData,
-  seatingLayoutLength: seatData?.seatingLayout?.length,
-  totalSeats: seatData?.seatingLayout?.reduce((total, row) => total + (row.seats?.length || 0), 0),
-  timestamp: new Date().toISOString()
-});
+        console.log('🪑SeatSelectionPage: Fetched seat data:', {
+          eventId,
+          seatData,
+          seatingLayoutLength: seatData?.seatingLayout?.length,
+          totalSeats: seatData?.seatingLayout?.reduce((total, row) => total + (row.seats?.length || 0), 0),
+          timestamp: new Date().toISOString()
+        });
 
         // Validate seat data structure
         if (!seatData.seatingLayout || !Array.isArray(seatData.seatingLayout)) {
@@ -182,14 +180,12 @@ console.log('🪑SeatSelectionPage: Fetched seat data:', {
       initializePage();
     }
 
-
   }, [eventId, dispatch, selectedEvent, ticketPurchaseState.sessionActive, 
       ticketPurchaseState.eventId, selectedTickets, totals, seatInfo.requiresSeats, initializationAttempted]);
 
 
   // Synchronizes selected seats between different Redux slices to maintain consistent state.
   useEffect(() => {
-    //console.log('SeatSelectionPage: useEffect/Syncing selected seats with ticket purchase slice');
     if (selectedSeats.length > 0) {
       dispatch(updateSeatInfo({
         selectedSeats: selectedSeats,

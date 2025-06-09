@@ -52,18 +52,28 @@ export const createPaymentIntent = createAsyncThunk(
   }
 );
 
+// ✅ FIXED: Simplified confirmPayment to match backend expectations
 export const confirmPayment = createAsyncThunk(
   'ticketPurchase/confirmPayment',
   async ({ eventId, paymentIntentId, paymentMethodId, tickets, buyerInfo }, { rejectWithValue }) => {
     
     try {
+      console.log('🔄 Redux confirmPayment sending to backend:', {
+        eventId,
+        paymentIntentId,
+        paymentMethodId,
+        tickets,
+        buyerInfo
+      });
+
       const response = await axios.post(
         `${API_BASE_URL}/events/${eventId}/paid/confirm-payment`,
         {
           paymentIntentId,
-          paymentMethodId,
-          tickets,
-          buyerInfo,
+          paymentMethodId, // Optional - may be undefined
+          tickets, // Object format: { ticketTypeId: quantity }
+          buyerInfo
+          // ✅ REMOVED: ticketData, selectedSeats, reservationId (backend doesn't use these)
         },
         {
           headers: { 'Content-Type': 'application/json' },

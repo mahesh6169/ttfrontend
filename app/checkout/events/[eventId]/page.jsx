@@ -54,6 +54,7 @@ import {
 } from '@/store/slices/events/seatSelectionSlice';
 import SeatReservationTimer from '@/components/events/seats/SeatReservationTimer';
 
+// ✅ REFACTORED: Timer expiration handler following SeatMapSelection pattern
 const CheckoutPage = () => {
   const params = useParams();
   const router = useRouter();
@@ -73,134 +74,95 @@ const CheckoutPage = () => {
   const currentReservation = useSelector(selectCurrentReservation);
   const seatSessionId = useSelector(selectSessionId);
 
-  // ✅ DEBUG: Add temporary logging to see what we have
-  console.log('🔍 CHECKOUT DEBUG:', {
-    currentReservation,
-    seatSessionId,
-    seatInfo,
-    'seatInfo.requiresSeats': seatInfo.requiresSeats,
-    'currentReservation exists': !!currentReservation,
-    'has reservedUntil': !!currentReservation?.reservedUntil,
-    'condition result': !!(currentReservation && seatInfo.requiresSeats),
-  });
-
-  // ADD THE NEW DEBUG BLOCK HERE:
-  console.log('🔍 CHECKOUT REDUX STATE DEBUG:', {
-    // Seat selection state
-    currentReservation,
-    seatSessionId,
-
-    // Seat info from ticket purchase
-    seatInfo,
-    'seatInfo.requiresSeats': seatInfo?.requiresSeats,
-    'seatInfo.selectedSeats': seatInfo?.selectedSeats,
-
-    // Timer condition check
-    'timer condition (currentReservation && seatInfo.requiresSeats)': !!(
-      currentReservation && seatInfo?.requiresSeats
-    ),
-    'currentReservation exists': !!currentReservation,
-    'has reservedUntil': !!currentReservation?.reservedUntil,
-
-    // Socket condition
-    'socket condition result': !!(seatInfo?.requiresSeats && params.eventId),
-  });
-
-  console.log('Current step:', currentStep);
-  // Local state management
+  // Local state management (only for UI, not for flow control)
   const [event, setEvent] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState({});
   const [initializationAttempted, setInitializationAttempted] = useState(false);
+  
+  // ✅ FIXED: Use Redux slice state instead of local state (like SeatMapSelection)
+  const { 
+    selectedSeats, 
+    isLoading: seatSliceLoading, 
+    error: seatSliceError 
+  } = useSelector((state) => state.seatSelection);
 
-// ✅ ENHANCED: Timer expiration handler for seat reservations
-  const handleTimerExpire = useCallback(() => {
-    console.log('⏰ Checkout: Timer expired, starting cleanup process');
+  // ✅ FIXED: Following SeatMapSelection pattern with Redux state management
+  const handleTimerExpire = useCallback(async () => {
+    // ✅ Use Redux loading state instead of local state (like SeatMapSelection)
+    if (seatSliceLoading) {
+      console.log('🔄 Seat slice already loading, skipping duplicate cleanup call');
+      return;
+    }
 
-    // Show user-friendly confirmation dialog
-    const userConfirmed = window.confirm(
-      '⏰ Your seat reservation has expired!\n\n' +
-      'Your selected seats will be released and you\'ll be redirected to select new seats.\n\n' +
-      'Click OK to continue or Cancel to stay on this page (seats will still be released).'
-    );
+    console.log('⏰ Checkout: Timer expired - starting sequential cleanup');
 
-    const proceedWithCleanup = async () => {
+    try {
+      // ✅ STEP 1: Release backend reservation (following SeatMapSelection pattern)
       if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
-        console.log('🔓 Releasing reservation:', currentReservation.seatIds);
+        console.log('🔓 Releasing expired reservation:', {
+          reservationId: currentReservation.reservationId,
+          seatCount: currentReservation.seatIds.length,
+          seatsToRelease: currentReservation.seatIds,
+        });
         
+        // ✅ CRITICAL: Use .unwrap() like SeatMapSelection to wait for completion
+        await dispatch(
+          releaseReservation({
+            eventId: params.eventId,
+            seatIds: currentReservation.seatIds,
+            sessionId: currentReservation.sessionId || seatSessionId,
+          })
+        ).unwrap();
+
+        console.log('✅ Backend reservation released successfully');
+      } else {
+        console.log('ℹ️ No backend reservation to release, just clearing selection');
+        // Clear selection as fallback (like SeatMapSelection)
+        dispatch(clearSelection());
+      }
+
+      // ✅ STEP 2: Update sessionStorage with expiry information
+      console.log('💾 Updating sessionStorage with expiry info...');
+      const expiryInfo = {
+        eventId: params.eventId,
+        expired: true,
+        expiredAt: new Date().toISOString(),
+        expiredFrom: 'checkout',
+        message: 'Your seat reservation expired during checkout. Please select seats again.'
+      };
+
+      const storedSelection = sessionStorage.getItem('ticketSelection');
+      if (storedSelection) {
         try {
-          // Release the reservation
-          await dispatch(
-            releaseReservation({
-              eventId: params.eventId,
-              seatIds: currentReservation.seatIds,
-              sessionId: currentReservation.sessionId || seatSessionId,
-            })
-          ).unwrap();
-
-          console.log('✅ Checkout: Reservation released successfully');
-          
-          // Clear seat info in ticket purchase slice
-          dispatch(updateSeatInfo({
+          const selection = JSON.parse(storedSelection);
+          const updatedSelection = {
+            ...selection,
             selectedSeats: [],
             reservationId: null,
-            seatCount: 0,
-            requiresSeats: seatInfo.requiresSeats // Keep this flag
-          }));
-
-          // Update sessionStorage to remove expired data
-          const storedSelection = sessionStorage.getItem('ticketSelection');
-          if (storedSelection) {
-            const selection = JSON.parse(storedSelection);
-            const updatedSelection = {
-              ...selection,
-              selectedSeats: [],
-              reservationId: null,
-              expired: true,
-              expiredAt: new Date().toISOString()
-            };
-            sessionStorage.setItem('ticketSelection', JSON.stringify(updatedSelection));
-          }
-
-          // Show success message and redirect
-          alert('✅ Your expired seats have been released. You can now select new seats.');
-          router.push(`/events/seats/${params.eventId}`);
-
-        } catch (error) {
-          console.error('❌ Checkout: Failed to release expired reservation:', error);
-          
-          // Even if API call fails, clean up local state
-          dispatch(clearSelection());
-          dispatch(updateSeatInfo({
-            selectedSeats: [],
-            reservationId: null,
-            seatCount: 0,
-            requiresSeats: seatInfo.requiresSeats
-          }));
-
-          // Clear sessionStorage
-          const storedSelection = sessionStorage.getItem('ticketSelection');
-          if (storedSelection) {
-            const selection = JSON.parse(storedSelection);
-            const updatedSelection = {
-              ...selection,
-              selectedSeats: [],
-              reservationId: null,
-              expired: true,
-              expiredAt: new Date().toISOString(),
-              error: error.message
-            };
-            sessionStorage.setItem('ticketSelection', JSON.stringify(updatedSelection));
-          }
-
-          alert('⚠️ Seat reservation expired. Redirecting to seat selection...');
-          router.push(`/events/seats/${params.eventId}`);
+            ...expiryInfo
+          };
+          sessionStorage.setItem('ticketSelection', JSON.stringify(updatedSelection));
+        } catch (parseError) {
+          console.warn('⚠️ Failed to parse existing ticket selection, creating new expiry record');
+          sessionStorage.setItem('ticketSelection', JSON.stringify(expiryInfo));
         }
       } else {
-        console.warn('⚠️ Checkout: Timer expired but no reservation data found');
-        
-        // Clear any stale state
+        sessionStorage.setItem('ticketSelection', JSON.stringify(expiryInfo));
+      }
+
+      console.log('✅ Timer expiry cleanup completed successfully');
+
+    } catch (error) {
+      console.error('❌ Failed to release reservation during expiry:', error);
+
+      // ✅ Enhanced error handling like SeatMapSelection
+      if (error.message && error.message.includes('not found')) {
+        console.log('ℹ️ Reservation already released or not found - continuing cleanup');
+        dispatch(clearSelection());
+      } else {
+        console.error('🚨 Unexpected expiry error, forcing local cleanup');
         dispatch(clearSelection());
         dispatch(updateSeatInfo({
           selectedSeats: [],
@@ -208,275 +170,95 @@ const CheckoutPage = () => {
           seatCount: 0,
           requiresSeats: seatInfo.requiresSeats
         }));
-
-        alert('🔄 Your session has expired. Please select seats again.');
-        router.push(`/events/seats/${params.eventId}`);
       }
-    };
 
-    // Execute cleanup regardless of user choice
-    if (userConfirmed) {
-      // User confirmed, proceed immediately
-      proceedWithCleanup();
-    } else {
-      // User cancelled, but still need to clean up after a short delay
-      alert('ℹ️ Your seats will still be released due to expiration.');
-      setTimeout(() => {
-        proceedWithCleanup();
-      }, 2000); // 2 second delay
+      // Set error flag in sessionStorage
+      sessionStorage.setItem('ticketSelection', JSON.stringify({
+        eventId: params.eventId,
+        expired: true,
+        expiredAt: new Date().toISOString(),
+        expiredFrom: 'checkout',
+        error: error.message,
+        message: 'Timer expired with errors - please select seats again'
+      }));
     }
-  }, [dispatch, currentReservation, params.eventId, seatSessionId, router, seatInfo.requiresSeats]);
-  
+  }, [dispatch, currentReservation, params.eventId, seatSessionId, seatInfo.requiresSeats, seatSliceLoading]);
+
+  // ✅ FIXED: Watch Redux slice state changes for redirect (like SeatMapSelection)
+  useEffect(() => {
+    // Only redirect when timer has expired AND Redux state confirms cleanup is complete
+    const shouldRedirect = 
+      !seatSliceLoading &&                                    // Not loading
+      !currentReservation &&                                  // No active reservation
+      (!selectedSeats || selectedSeats.length === 0) &&      // No selected seats
+      (!seatInfo.selectedSeats || seatInfo.selectedSeats.length === 0); // No seats in ticket slice
+
+    // Check if we're coming from a timer expiry (sessionStorage will have expired flag)
+    const storedSelection = sessionStorage.getItem('ticketSelection');
+    let hasExpired = false;
+    
+    if (storedSelection) {
+      try {
+        const selection = JSON.parse(storedSelection);
+        hasExpired = selection.expired && selection.expiredFrom === 'checkout';
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    if (shouldRedirect && hasExpired) {
+      console.log('🔄 Redux state cleanup verified, redirecting to seat selection');
+      
+      const queryParams = new URLSearchParams({
+        expired: 'true',
+        from: 'checkout',
+        timestamp: new Date().toISOString()
+      });
+      
+      router.push(`/events/seats/${params.eventId}?${queryParams.toString()}`);
+    }
+  }, [seatSliceLoading, currentReservation, selectedSeats, seatInfo.selectedSeats, params.eventId, router]);
+
+  // ✅ FIXED: Manual cleanup using Redux state (like SeatMapSelection)
+  const handleManualCleanup = useCallback(async () => {
+    console.log('🧹 Manual cleanup initiated from checkout page');
+    
+    if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
+      console.log('🔓 Manually releasing current reservation:', {
+        reservationId: currentReservation.reservationId,
+        seatCount: currentReservation.seatIds.length,
+        seatsToRelease: currentReservation.seatIds,
+      });
+
+      try {
+        // ✅ Use .unwrap() like SeatMapSelection
+        await dispatch(
+          releaseReservation({
+            eventId: params.eventId,
+            seatIds: currentReservation.seatIds,
+            sessionId: currentReservation.sessionId || seatSessionId,
+          })
+        ).unwrap();
+        
+        console.log('✅ Manual reservation release successful');
+      } catch (error) {
+        console.error('❌ Failed to release reservation manually:', error);
+        // Continue with clearing selection even if release fails (like SeatMapSelection)
+      }
+    } else {
+      console.log('ℹ️ No active reservation to release, just clearing selection');
+    }
+
+    // Clear all local state (like SeatMapSelection does)
+    dispatch(clearSelection());
+  }, [dispatch, currentReservation, params.eventId, seatSessionId]);
+
   // Payment states from Redux
   const clientSecret = ticketPurchaseState.clientSecret;
   const paymentIntentId = ticketPurchaseState.paymentIntent?.id;
 
-  // Load event and initialize checkout
-  useEffect(() => {
-    const loadCheckoutData = async () => {
-      try {
-        setIsLoading(true);
-
-        // Load event details
-        const eventResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/views/${params.eventId}`,
-          {
-            credentials: 'include',
-          }
-        );
-
-        if (!eventResponse.ok) {
-          throw new Error('Failed to load event details');
-        }
-
-        const eventData = await eventResponse.json();
-        setEvent(eventData);
-
-        // Check if we have ticket selection in Redux
-        const hasReduxSession =
-          ticketPurchaseState.sessionActive &&
-          ticketPurchaseState.eventId === params.eventId &&
-          selectedTickets.length > 0;
-
-        if (hasReduxSession) {
-          console.log('✅ Using existing Redux session');
-
-          // ADD THIS DEBUG RIGHT HERE:
-  console.log('✅ Using existing Redux session - SEAT DATA CHECK:', {
-    'seatInfo from Redux': seatInfo,
-    'currentReservation from Redux': currentReservation,
-    'should show socket': !!(seatInfo?.requiresSeats && params.eventId),
-    'should show timer': !!(currentReservation && seatInfo?.requiresSeats)
-  });
-
-          // Update buyer info with user data if not already set
-          if (user && !buyerInfo.firstName && !buyerInfo.lastName) {
-            dispatch(
-              updateBuyerInfo({
-                firstName: user.firstName || '',
-                lastName: user.lastName || '',
-                email: user.email || '',
-              })
-            );
-          }
-
-          // ✅ NEW: Check if we have seat selection but missing reservation
-          if (
-            seatInfo.selectedSeats &&
-            seatInfo.selectedSeats.length > 0 &&
-            !currentReservation
-          ) {
-            console.log(
-              '⚠️ Have seats but missing reservation, checking sessionStorage for backup'
-            );
-
-            const storedSelection = sessionStorage.getItem('ticketSelection');
-            if (storedSelection) {
-              const selection = JSON.parse(storedSelection);
-
-              if (selection.reservationId && selection.reservedUntil) {
-                console.log(
-                  '🔄 Restoring missing reservation from sessionStorage backup'
-                );
-
-                dispatch(
-                  setCurrentReservation({
-                    eventId: params.eventId,
-                    userId: user?._id,
-                    sessionId: seatSessionId,
-                    reservationId: selection.reservationId,
-                    reservedUntil: selection.reservedUntil,
-                    seatIds: selection.selectedSeats || seatInfo.selectedSeats,
-                    seatCount: (
-                      selection.selectedSeats || seatInfo.selectedSeats
-                    ).length,
-                    seats: (
-                      selection.selectedSeats || seatInfo.selectedSeats
-                    ).map((seatId) => ({ seatId })),
-                  })
-                );
-              }
-            }
-          }
-
-          // Set current step to checkout if coming from ticket selection
-          if (currentStep === 'ticket-selection') {
-            dispatch(setCurrentStep('checkout'));
-          }
-        } else {
-          // Fallback: Try to get data from sessionStorage and initialize Redux
-          console.log(
-            '⚠️ No Redux session found, checking sessionStorage fallback'
-          );
-
-          const storedSelection = sessionStorage.getItem('ticketSelection');
-// ADD THIS DEBUG RIGHT HERE:
-  console.log('⚠️ No Redux session - FALLBACK CHECK:', {
-    'storedSelection exists': !!storedSelection,
-    'parsed selection': storedSelection ? JSON.parse(storedSelection) : null
-  });
-
-
-          if (!storedSelection) {
-            alert('No ticket selection found. Please select tickets first.');
-            router.push(`/events/views/${params.eventId}`);
-            return;
-          }
-
-          const selection = JSON.parse(storedSelection);
-
-          // Validate selection hasn't expired (10 minutes max)
-          const selectionAge = Date.now() - selection.timestamp;
-          if (selectionAge > 10 * 60 * 1000) {
-            alert(
-              'Your ticket selection has expired. Please select tickets again.'
-            );
-            sessionStorage.removeItem('ticketSelection');
-            router.push(`/events/views/${params.eventId}`);
-            return;
-          }
-
-          // Validate selection is for correct event
-          if (selection.eventId !== params.eventId) {
-            alert('Invalid ticket selection. Please select tickets again.');
-            sessionStorage.removeItem('ticketSelection');
-            router.push(`/events/views/${params.eventId}`);
-            return;
-          }
-
-          console.log('🔄 Initializing Redux from sessionStorage');
-
-          // Initialize Redux with sessionStorage data
-          await dispatch(
-            initializePurchaseSession({ eventId: params.eventId })
-          );
-
-          // Populate Redux with ticket selection
-          if (selection.tickets && eventData.ticketTypes) {
-            for (const [ticketTypeId, quantity] of Object.entries(
-              selection.tickets
-            )) {
-              if (quantity > 0) {
-                const ticketType = eventData.ticketTypes.find(
-                  (t) => t._id === ticketTypeId
-                );
-                if (ticketType) {
-                  dispatch(
-                    updateTicketSelection({
-                      ticketTypeId,
-                      quantity,
-                      price: ticketType.price || 0,
-                      name: ticketType.name,
-                      maxQuantity: ticketType.quantity,
-                    })
-                  );
-                }
-              }
-            }
-          }
-
-          // If coming from seat selection, update seat info AND restore reservation
-          if (selection.selectedSeats && selection.selectedSeats.length > 0) {
-            dispatch(
-              updateSeatInfo({
-                selectedSeats: selection.selectedSeats,
-                reservationId: selection.reservationId,
-                seatCount: selection.selectedSeats.length,
-              })
-            );
-
-            // ✅ NEW: Restore the seat reservation in Redux if we have reservation data
-            if (selection.reservationId && selection.reservedUntil) {
-              console.log('🔄 Restoring seat reservation from sessionStorage');
-               console.log('🔄 RESTORING RESERVATION DEBUG:', {
-    'before dispatch - currentReservation': currentReservation,
-    'restoring data': {
-      eventId: params.eventId,
-      userId: user?._id,
-      sessionId: seatSessionId,
-      reservationId: selection.reservationId,
-      reservedUntil: selection.reservedUntil,
-      seatIds: selection.selectedSeats,
-    }
-  });
-
-              dispatch(
-                setCurrentReservation({
-                  eventId: params.eventId,
-                  userId: user?._id,
-                  sessionId: seatSessionId,
-                  reservationId: selection.reservationId,
-                  reservedUntil: selection.reservedUntil,
-                  seatIds: selection.selectedSeats,
-                  seatCount: selection.selectedSeats.length,
-                  seats: selection.selectedSeats.map((seatId) => ({ seatId })),
-                })
-              );
-            }
-          }
-
-          // Pre-fill buyer info
-          if (user) {
-            dispatch(
-              updateBuyerInfo({
-                firstName: user.firstName || '',
-                lastName: user.lastName || '',
-                email: user.email || '',
-              })
-            );
-          }
-
-          // Set step to details
-          dispatch(setCurrentStep('details'));
-        }
-
-        setInitializationAttempted(true);
-      } catch (error) {
-        console.error('Error loading checkout data:', error);
-        alert('Error loading checkout page. Please try again.');
-        router.push(`/events/views/${params.eventId}`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (params.eventId && !initializationAttempted) {
-      loadCheckoutData();
-    }
-  }, [
-    params.eventId,
-    router,
-    user,
-    dispatch,
-    ticketPurchaseState.sessionActive,
-    ticketPurchaseState.eventId,
-    selectedTickets.length,
-    buyerInfo.firstName,
-    buyerInfo.lastName,
-    currentStep,
-    initializationAttempted,
-  ]);
-
+  // ✅ MISSING FUNCTIONS: Add all the handler functions from original checkout
+  
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -524,10 +306,7 @@ const CheckoutPage = () => {
 
   // Handle proceeding to payment step
   const handleProceedToPayment = async () => {
-    alert('BUTTON CLICKED!'); // Add this line first
-    console.log('🔥 BUTTON CLICKED - This should show up!');
     if (!validateForm()) {
-      console.log('FORM VALIDATION FAILED');
       return;
     }
 
@@ -563,26 +342,36 @@ const CheckoutPage = () => {
     }
   };
 
-  // Handle successful payment
+// ✅ FIXED: Handle successful payment - simplified to match backend
   const handlePaymentSuccess = async (paymentIntent) => {
     setIsProcessing(true);
 
     try {
       console.log('🎉 Payment succeeded, confirming with Redux...');
 
-      // Confirm payment using Redux
-      const result = await dispatch(
-        confirmPayment({
-          eventId: params.eventId,
-          paymentIntentId: paymentIntent.id,
-          paymentMethodId: paymentIntent.payment_method?.id,
-          tickets: selectedTickets.reduce((acc, ticket) => {
-            acc[ticket.ticketTypeId] = ticket.quantity;
-            return acc;
-          }, {}),
-          buyerInfo,
-        })
-      );
+      // ✅ Convert selectedTickets array to tickets object that backend expects
+      const ticketsObject = selectedTickets.reduce((acc, ticket) => {
+        acc[ticket.ticketTypeId] = ticket.quantity;
+        return acc;
+      }, {});
+
+      console.log('🐛 checkoutpage: DEBUG: confirmPayment payload:', {
+        eventId: params.eventId,
+        paymentIntentId: paymentIntent.id,
+        paymentMethodId: paymentIntent.payment_method?.id,
+        tickets: ticketsObject,
+        buyerInfo
+      });
+
+      // ✅ FIXED: Simplified confirmPayment call to match backend expectations
+      const result = await dispatch(confirmPayment({
+        eventId: params.eventId,
+        paymentIntentId: paymentIntent.id,
+        paymentMethodId: paymentIntent.payment_method?.id, // Optional
+        tickets: ticketsObject, // Object format: { ticketTypeId: quantity }
+        buyerInfo
+        // ✅ REMOVED: All seat-related data - backend handles this automatically through event seatingLayout
+      }));
 
       if (confirmPayment.fulfilled.match(result)) {
         console.log('✅ Payment confirmed via Redux');
@@ -604,7 +393,6 @@ const CheckoutPage = () => {
       setIsProcessing(false);
     }
   };
-
   // Handle payment error
   const handlePaymentError = (error) => {
     console.error('❌ Payment failed:', error);
@@ -613,7 +401,7 @@ const CheckoutPage = () => {
     });
   };
 
-  // Handle back to ticket selection
+  // ✅ FIX: Add missing handleBackToTickets function
   const handleBackToTickets = () => {
     router.push(`/events/views/${params.eventId}`);
   };
@@ -660,11 +448,117 @@ const CheckoutPage = () => {
       });
   };
 
+  // ✅ ADD: Load event and initialize checkout useEffect
+  useEffect(() => {
+    const loadCheckoutData = async () => {
+      try {
+        setIsLoading(true);
+
+        // Load event details
+        const eventResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/views/${params.eventId}`,
+          {
+            credentials: 'include',
+          }
+        );
+
+        if (!eventResponse.ok) {
+          throw new Error('Failed to load event details');
+        }
+
+        const eventData = await eventResponse.json();
+        setEvent(eventData);
+
+        // Check if we have ticket selection in Redux
+        const hasReduxSession =
+          ticketPurchaseState.sessionActive &&
+          ticketPurchaseState.eventId === params.eventId &&
+          selectedTickets.length > 0;
+
+        if (hasReduxSession) {
+          console.log('✅ Using existing Redux session');
+
+          // Update buyer info with user data if not already set
+          if (user && !buyerInfo.firstName && !buyerInfo.lastName) {
+            dispatch(
+              updateBuyerInfo({
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                email: user.email || '',
+              })
+            );
+          }
+
+          // Set current step to checkout if coming from ticket selection
+          if (currentStep === 'ticket-selection') {
+            dispatch(setCurrentStep('checkout'));
+          }
+        } else {
+          // Fallback: Try to get data from sessionStorage and initialize Redux
+          console.log(
+            '⚠️ No Redux session found, checking sessionStorage fallback'
+          );
+
+          const storedSelection = sessionStorage.getItem('ticketSelection');
+
+          if (!storedSelection) {
+            alert('No ticket selection found. Please select tickets first.');
+            router.push(`/events/views/${params.eventId}`);
+            return;
+          }
+
+          const selection = JSON.parse(storedSelection);
+
+          // Validate selection hasn't expired (10 minutes max)
+          const selectionAge = Date.now() - selection.timestamp;
+          if (selectionAge > 10 * 60 * 1000) {
+            alert(
+              'Your ticket selection has expired. Please select tickets again.'
+            );
+            sessionStorage.removeItem('ticketSelection');
+            router.push(`/events/views/${params.eventId}`);
+            return;
+          }
+
+          // Validate selection is for correct event
+          if (selection.eventId !== params.eventId) {
+            alert('Invalid ticket selection. Please select tickets again.');
+            sessionStorage.removeItem('ticketSelection');
+            router.push(`/events/views/${params.eventId}`);
+            return;
+          }
+
+          // Initialize Redux and populate data
+          await dispatch(initializePurchaseSession({ eventId: params.eventId }));
+          
+          // Set step to details
+          dispatch(setCurrentStep('details'));
+        }
+
+        setInitializationAttempted(true);
+      } catch (error) {
+        console.error('Error loading checkout data:', error);
+        alert('Error loading checkout page. Please try again.');
+        router.push(`/events/views/${params.eventId}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (params.eventId && !initializationAttempted) {
+      loadCheckoutData();
+    }
+  }, [params.eventId, router, user, dispatch, initializationAttempted]);
+
+  // ✅ DERIVED VALUES
+  const { date, time } = getFormattedDateTime();
+  const selectedTicketsDisplay = getSelectedTickets();
+
+  // ✅ EARLY RETURNS
   // Loading state
   if (isLoading) {
     return (
       <RequireLogin message="You must be logged in to complete your purchase.">
-        {/* Add socket listener for real-time seat updates */}
         {seatInfo.requiresSeats && params.eventId && (
           <SeatSocketListener eventId={params.eventId} />
         )}
@@ -682,7 +576,6 @@ const CheckoutPage = () => {
   if (!event || selectedTickets.length === 0) {
     return (
       <RequireLogin message="You must be logged in to complete your purchase.">
-        {/* Add socket listener for real-time seat updates */}
         {seatInfo.requiresSeats && params.eventId && (
           <SeatSocketListener eventId={params.eventId} />
         )}
@@ -705,8 +598,6 @@ const CheckoutPage = () => {
       </RequireLogin>
     );
   }
-  const { date, time } = getFormattedDateTime();
-  const selectedTicketsDisplay = getSelectedTickets();
 
   // Success Step
   if (currentStep === 'complete' || paymentStatus === 'succeeded') {
@@ -762,6 +653,11 @@ const CheckoutPage = () => {
 
   return (
     <RequireLogin message="You must be logged in to complete your purchase.">
+      {/* Add socket listener for real-time seat updates */}
+      {seatInfo.requiresSeats && params.eventId && (
+        <SeatSocketListener eventId={params.eventId} />
+      )}
+      
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-6xl mx-auto px-4">
           {/* Header */}
@@ -1066,7 +962,6 @@ const CheckoutPage = () => {
                     Payment Information
                   </h2>
 
-                  {/* ADD THIS CONDITIONAL RENDERING */}
                   {clientSecret ? (
                     <StripePaymentForm
                       clientSecret={clientSecret}
@@ -1090,29 +985,53 @@ const CheckoutPage = () => {
                   )}
                 </div>
               )}
+              
+              {/* ✅ FIXED: Loading overlay using Redux slice state (like SeatMapSelection) */}
+              {seatSliceLoading && (
+                <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-lg z-50">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Releasing seats and redirecting...
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Order Summary Sidebar */}
             <div className="lg:col-span-1">
               <div className="space-y-4">
-                {/* Seat reservation timer for checkout */}
+                {/* ✅ Enhanced: Seat reservation timer with cleanup status */}
                 {currentReservation && currentReservation.reservedUntil && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <h3 className="text-sm font-medium text-yellow-800 mb-2">
-                      🪑 Seat Reservation Active
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-amber-800 mb-2 flex items-center">
+                      <FaChair className="mr-2" />
+                      Seat Reservation Active
                     </h3>
-                    <p className="text-xs text-yellow-700 mb-3">
-                      Your seats are reserved. Complete payment before time
-                      expires.
+                    <p className="text-xs text-amber-700 mb-3">
+                      Complete payment before timer expires or seats will be automatically released.
                     </p>
                     <SeatReservationTimer
                       expiryTime={currentReservation.reservedUntil}
                       onExpire={handleTimerExpire}
                       eventId={params.eventId}
+                      // ✅ FIXED: Use Redux slice loading state
+                      disabled={seatSliceLoading}
                     />
+                    
+                    {/* ✅ Optional manual release button */}
+                    <button
+                      onClick={handleManualCleanup}
+                      disabled={seatSliceLoading}
+                      className="mt-2 w-full px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded transition-colors disabled:opacity-50"
+                    >
+                      {seatSliceLoading ? 'Releasing...' : 'Release Seats Manually'}
+                    </button>
                   </div>
                 )}
 
+                {/* Your existing PaymentSummary component */}
                 <PaymentSummary
                   event={event}
                   selectedTickets={selectedTicketsDisplay}
