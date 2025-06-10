@@ -372,11 +372,6 @@ const reservationData = {
     return 'available';
   };
 
-  const totalSeats = seatingLayout.reduce(
-    (total, row) => total + (row.seats?.length || 0),
-    0
-  );
-
   // Renders error state with user-friendly message and refresh option when seat loading fails.
   if (error) {
     return (
@@ -675,20 +670,8 @@ const reservationData = {
 )}
         </div>
       )}
-
-      {/* Venue stats */}
-      <div className="text-center text-sm text-gray-500 border-t pt-4">
-        <p>
-          Venue capacity: {totalSeats} seats • {event.venue}
-        </p>
-        {sessionId && (
-          <p className="text-xs text-gray-400 mt-1">
-            Session: {sessionId.substring(0, 12)}...
-          </p>
-        )}
-      </div>
     </div>
   );
-};
+}
 
 export default SeatMapSelection;

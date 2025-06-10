@@ -257,6 +257,88 @@ const [isLoading, setIsLoading] = useState(true);
   const clientSecret = ticketPurchaseState.clientSecret;
   const paymentIntentId = ticketPurchaseState.paymentIntent?.id;
 
+  // ✅ NEW: Function to format selected seats for display
+  const formatSelectedSeats = () => {
+    // Use Redux seat selection state instead of ticketPurchaseSlice
+    const seatsToDisplay = selectedSeats || seatInfo.selectedSeats || [];
+    
+    if (!seatsToDisplay || seatsToDisplay.length === 0) {
+      return 'No seats selected';
+    }
+
+    // Handle case where seats are just IDs (strings like "A-1", "B-3")
+    if (typeof seatsToDisplay[0] === 'string') {
+      // Parse seat IDs and group consecutive seats
+      const parsedSeats = seatsToDisplay.map(seatId => {
+        // Assuming format like "A-1", "B-3", etc.
+        const parts = seatId.split('-');
+        if (parts.length >= 2) {
+          return {
+            seatId,
+            row: parts[0],
+            seatNumber: parseInt(parts[1]) || parts[1]
+          };
+        }
+        return { seatId, row: seatId, seatNumber: '' };
+      });
+
+      // Sort by row then seat number
+      const sortedSeats = parsedSeats.sort((a, b) => {
+        if (a.row !== b.row) {
+          return a.row.localeCompare(b.row);
+        }
+        if (typeof a.seatNumber === 'number' && typeof b.seatNumber === 'number') {
+          return a.seatNumber - b.seatNumber;
+        }
+        return String(a.seatNumber).localeCompare(String(b.seatNumber));
+      });
+
+      // Group consecutive seats in same row
+      const groupedSeats = [];
+      let currentGroup = [];
+      
+      sortedSeats.forEach((seat, index) => {
+        if (index === 0) {
+          currentGroup = [seat];
+        } else {
+          const prevSeat = sortedSeats[index - 1];
+          const isConsecutive = 
+            seat.row === prevSeat.row &&
+            typeof seat.seatNumber === 'number' &&
+            typeof prevSeat.seatNumber === 'number' &&
+            seat.seatNumber === prevSeat.seatNumber + 1;
+
+          if (isConsecutive) {
+            currentGroup.push(seat);
+          } else {
+            groupedSeats.push(currentGroup);
+            currentGroup = [seat];
+          }
+        }
+
+        if (index === sortedSeats.length - 1) {
+          groupedSeats.push(currentGroup);
+        }
+      });
+
+      // Format groups
+      const formattedGroups = groupedSeats.map(group => {
+        if (group.length === 1) {
+          return group[0].seatId;
+        } else {
+          const firstSeat = group[0];
+          const lastSeat = group[group.length - 1];
+          return `${firstSeat.row}-${firstSeat.seatNumber} to ${lastSeat.seatNumber}`;
+        }
+      });
+
+      return formattedGroups.join(', ');
+    }
+
+    // Handle case where seats are objects with full details
+    return seatsToDisplay.map(seat => seat.seatId || seat.id || 'Unknown').join(', ');
+  };
+
   // ✅ MISSING FUNCTIONS: Add all the handler functions from original checkout
   
   // Handle form input changes
@@ -734,46 +816,36 @@ const [isLoading, setIsLoading] = useState(true);
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2">
+              {/* ✅ Seat reservation timer - standalone */}
+                  {currentReservation && currentReservation.reservedUntil && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                      <h3 className="text-sm font-medium text-amber-800 mb-2 flex items-center">
+                        <FaChair className="mr-2" />
+                        Seat Reservation Active
+                      </h3>
+                      <p className="text-xs text-amber-700 mb-3">
+                        Complete payment before timer expires or seats will be automatically released.
+                      </p>
+                      <SeatReservationTimer
+                        expiryTime={currentReservation.reservedUntil}
+                        onExpire={handleTimerExpire}
+                        eventId={params.eventId}
+                        disabled={seatSliceLoading}
+                      />
+                      
+                      <button
+                        onClick={handleManualCleanup}
+                        disabled={seatSliceLoading}
+                        className="mt-2 w-full px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded transition-colors disabled:opacity-50"
+                      >
+                        {seatSliceLoading ? 'Releasing...' : 'Release Seats Manually'}
+                      </button>
+                    </div>
+                  )}
               {currentStep === 'details' ? (
                 /* Details Step */
                 <>
-                  {/* Event Info */}
-                  <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <h2 className="text-xl font-semibold mb-4">
-                      Event Details
-                    </h2>
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {event.title}
-                      </h3>
 
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <FaCalendarAlt className="mr-2 text-blue-600" />
-                          <span>{date}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <FaClock className="mr-2 text-green-600" />
-                          <span>{time}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <FaMapMarkerAlt className="mr-2 text-red-600" />
-                          <span>{event.venue}</span>
-                        </div>
-                        {seatInfo.selectedSeats &&
-                          seatInfo.selectedSeats.length > 0 && (
-                            <div className="flex items-center">
-                              <FaChair className="mr-2 text-purple-600" />
-                              <span>
-                                {seatInfo.selectedSeats.length} seat
-                                {seatInfo.selectedSeats.length !== 1 ? 's' : ''}{' '}
-                                selected
-                              </span>
-                            </div>
-                          )}
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Buyer Information Form */}
                   <div className="bg-white rounded-lg shadow-md p-6">
@@ -999,44 +1071,17 @@ const [isLoading, setIsLoading] = useState(true);
               )}
             </div>
 
-            {/* Order Summary Sidebar */}
+{/* Order Summary Sidebar */}
             <div className="lg:col-span-1">
               <div className="space-y-4">
-                {/* ✅ Enhanced: Seat reservation timer with cleanup status */}
-                {currentReservation && currentReservation.reservedUntil && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <h3 className="text-sm font-medium text-amber-800 mb-2 flex items-center">
-                      <FaChair className="mr-2" />
-                      Seat Reservation Active
-                    </h3>
-                    <p className="text-xs text-amber-700 mb-3">
-                      Complete payment before timer expires or seats will be automatically released.
-                    </p>
-                    <SeatReservationTimer
-                      expiryTime={currentReservation.reservedUntil}
-                      onExpire={handleTimerExpire}
-                      eventId={params.eventId}
-                      // ✅ FIXED: Use Redux slice loading state
-                      disabled={seatSliceLoading}
-                    />
-                    
-                    {/* ✅ Optional manual release button */}
-                    <button
-                      onClick={handleManualCleanup}
-                      disabled={seatSliceLoading}
-                      className="mt-2 w-full px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded transition-colors disabled:opacity-50"
-                    >
-                      {seatSliceLoading ? 'Releasing...' : 'Release Seats Manually'}
-                    </button>
-                  </div>
-                )}
-
                 {/* Your existing PaymentSummary component */}
                 <PaymentSummary
                   event={event}
                   selectedTickets={selectedTicketsDisplay}
                   totals={totals}
                   buyerInfo={currentStep === 'payment' ? buyerInfo : null}
+                  selectedSeats={seatInfo.selectedSeats}
+                  formatSelectedSeats={formatSelectedSeats}
                   showEventDetails={true}
                   showBuyerInfo={currentStep === 'payment'}
                   className="sticky top-8"

@@ -20,6 +20,8 @@ const PaymentSummary = ({
   selectedTickets, 
   totals, 
   buyerInfo,
+  selectedSeats,
+  formatSelectedSeats,
   showEventDetails = true,
   showBuyerInfo = true,
   className = ""
@@ -122,6 +124,16 @@ const PaymentSummary = ({
               <FaPhone className="mr-2 text-purple-600 w-4" />
               <span>{buyerInfo.phone}</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Selected Seats */}
+      {selectedSeats && selectedSeats.length > 0 && (
+        <div className="mb-6 pb-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">Seats Selected:</span>
+            <span className="text-sm text-gray-900">{formatSelectedSeats()}</span>
           </div>
         </div>
       )}

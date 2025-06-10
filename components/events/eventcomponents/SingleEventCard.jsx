@@ -2,9 +2,9 @@
 
 'use client';
 
-import React, { useState, useEffect  } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { 
   FaTimes, 
@@ -22,32 +22,29 @@ import {
   FaEnvelope,
   FaCalendarAlt,
   FaTag,
-  FaUserFriends
+  FaUserFriends,
+  FaShoppingCart
 } from 'react-icons/fa';
 import { MdLocationOn, MdEmail, MdPhone, MdPerson, MdEventSeat } from 'react-icons/md';
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 import SendMessage from '@/components/chat/SendMessage';
 import EventRegistrationModal from '../registration/EventRegistrationModal';
-import TicketSelection from '../tickets/TicketSelection';
 import EventCapacityDisplay from './EventCapacityDisplay';
 import { formatInTimeZone } from 'date-fns-tz';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
 
 const SingleEventCard = ({ event, chatProps }) => {
-   const dispatch = useDispatch();
+  const dispatch = useDispatch();
+  const router = useRouter();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
-  const [showSeatingLayout, setShowSeatingLayout] = useState(false);
 
   const { isInEventWishlist, toggleEventWishlist, isAuthenticated } = useEventWishlist();
   const isInWishlist = isInEventWishlist(event?._id);
 
-    const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
+  const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
   const isRegistered = !!currentRegistration && currentRegistration.status === 'registered';
-
-  const [showTicketSelection, setShowTicketSelection] = useState(false);
-
 
   if (!event) {
     return (
@@ -81,37 +78,31 @@ const SingleEventCard = ({ event, chatProps }) => {
     toggleEventWishlist(event._id);
   };
 
-  // Format date and time with timezone
- // Use timezone-aware formatting
-const dateTimeZone = event.timeZone || 'Australia/Sydney';
+  // Handle ticket purchase navigation
+  const handlePurchaseTickets = () => {
+    if (!isAuthenticated) {
+      alert('Please log in to purchase tickets.');
+      router.push('/login');
+      return;
+    }
+    // Navigate to the ticket selection page
+    router.push(`/events/tickets/${event._id}`);
+  };
 
-const formattedDate = formatInTimeZone(
-  event.dateTime,
-  dateTimeZone,
-  'EEEE, MMMM do, yyyy'
-);
+  // Use timezone-aware formatting
+  const dateTimeZone = event.timeZone || 'Australia/Sydney';
 
-const formattedTime = formatInTimeZone(
-  event.dateTime,
-  dateTimeZone,
-  'h:mm a'
-);
+  const formattedDate = formatInTimeZone(
+    event.dateTime,
+    dateTimeZone,
+    'EEEE, MMMM do, yyyy'
+  );
 
-
-
-  // Calculate pricing info for paid events
-  const totalTickets = event.ticketTypes?.reduce((sum, ticket) => sum + (ticket.quantity || 0), 0) || 0;
-  const minPrice = event.isPaid && event.ticketTypes?.length > 0 
-    ? Math.min(...event.ticketTypes.map(t => t.price || 0))
-    : 0;
-  const maxPrice = event.isPaid && event.ticketTypes?.length > 0 
-    ? Math.max(...event.ticketTypes.map(t => t.price || 0))
-    : 0;
-
-  // Calculate total seats from seating layout
-  const totalSeats = event.seatingLayout?.reduce((total, row) => 
-    total + (row.seats?.length || 0), 0
-  ) || 0;
+  const formattedTime = formatInTimeZone(
+    event.dateTime,
+    dateTimeZone,
+    'h:mm a'
+  );
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -259,8 +250,8 @@ const formattedTime = formatInTimeZone(
             </h3>
             <div className="space-y-2">
               <p className="text-gray-700">{formattedDate}</p>
-<p className="text-gray-700">{formattedTime}</p>
-<p className="text-sm text-gray-500">Timezone: {dateTimeZone}</p>
+              <p className="text-gray-700">{formattedTime}</p>
+              <p className="text-sm text-gray-500">Timezone: {dateTimeZone}</p>
             </div>
           </div>
 
@@ -372,72 +363,7 @@ const formattedTime = formatInTimeZone(
                   </div>
                 </div>
               ))}
-              <div className="mt-4 pt-3 border-t">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Price Range:</span>
-                  <span>${minPrice === maxPrice ? minPrice : `${minPrice} - ${maxPrice}`}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Total Tickets:</span>
-                  <span>{totalTickets}</span>
-                </div>
-              </div>
             </div>
-          </div>
-        )}
-
-        {/* Seating Layout */}
-        {event.seatingLayout?.length > 0 && (
-          <div className="bg-purple-50 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-              <FaChair className="mr-2 text-purple-600" />
-              Seating Layout
-            </h3>
-            <div className="flex justify-between items-center mb-3">
-              <p className="text-sm text-gray-600">Total Seats: {totalSeats}</p>
-              <button
-                onClick={() => setShowSeatingLayout(!showSeatingLayout)}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                {showSeatingLayout ? 'Hide Layout' : 'View Layout'}
-              </button>
-            </div>
-            
-            {showSeatingLayout && (
-              <div className="mt-4">
-                {event.seatingLayoutImage?.url ? (
-                  <img
-                    src={event.seatingLayoutImage.url}
-                    alt="Seating Layout"
-                    className="w-full max-w-md mx-auto rounded border"
-                  />
-                ) : (
-                  <div className="bg-white p-4 rounded border">
-                    {event.seatingLayout.map((row, rowIndex) => (
-                      <div key={rowIndex} className="flex items-center mb-2">
-                        <span className="w-8 text-sm font-medium mr-2">{row.rowLabel}</span>
-                        <div className="flex gap-1">
-                          {row.seats?.slice(0, 20).map((seat, seatIndex) => (
-                            <div
-                              key={seatIndex}
-                              className="w-6 h-6 bg-green-200 border border-green-300 rounded text-xs flex items-center justify-center"
-                              title={`${row.rowLabel}${seat.seatNumber}`}
-                            >
-                              {seat.seatNumber}
-                            </div>
-                          ))}
-                          {row.seats?.length > 20 && (
-                            <span className="text-xs text-gray-500 ml-1">
-                              +{row.seats.length - 20} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 
@@ -449,69 +375,62 @@ const formattedTime = formatInTimeZone(
         )}
       </div>
 
-         {/* Registration/Purchase Button */}
-        <div className="mt-8 pt-6 border-t">
-            <div className="flex flex-col sm:flex-row gap-4">
-    {/* Only for free events: Show Unregister if registered, else Register */}
-    {/* Handle Free vs Paid Events */}
-{event.isPaid ? (
-  // PAID EVENT: Show Purchase Tickets button
-  <button
-    onClick={() => {
-      if (!isAuthenticated) {
-        alert('Please log in to purchase tickets.');
-        return;
-      }
-      setShowTicketSelection(true);
-    }}
-    className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors"
-  >
-    Purchase Tickets
-  </button>
-) : (
-  // FREE EVENT: Show Register/Unregister logic
-  isRegistered ? (
-    <button
-      onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
-      className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
-      disabled={registrationStatus === 'loading'}
-    >
-      {registrationStatus === 'loading' ? 'Unregistering...' : 'Unregister from Event'}
-    </button>
-  ) : (
-    <button
-      onClick={() => {
-        if (!isAuthenticated) {
-          alert('Please log in to register for this event.');
-          return;
-        }
-        setShowRegistrationForm(true);
-      }}
-      className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-      disabled={registrationStatus === 'loading'}
-    >
-      {registrationStatus === 'loading' ? 'Processing...' : 'Register for Event'}
-    </button>
-  )
-)}
+      {/* Registration/Purchase Button */}
+      <div className="mt-8 pt-6 border-t">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Handle Free vs Paid Events */}
+          {event.isPaid ? (
+            // PAID EVENT: Show Purchase Tickets button (now navigates to page instead of modal)
+            <button
+              onClick={handlePurchaseTickets}
+              className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center"
+            >
+              <FaShoppingCart className="mr-2" />
+              Purchase Tickets
+            </button>
+          ) : (
+            // FREE EVENT: Show Register/Unregister logic
+            isRegistered ? (
+              <button
+                onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
+                className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                disabled={registrationStatus === 'loading'}
+              >
+                {registrationStatus === 'loading' ? 'Unregistering...' : 'Unregister from Event'}
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    alert('Please log in to register for this event.');
+                    return;
+                  }
+                  setShowRegistrationForm(true);
+                }}
+                className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                disabled={registrationStatus === 'loading'}
+              >
+                {registrationStatus === 'loading' ? 'Processing...' : 'Register for Event'}
+              </button>
+            )
+          )}
 
-    {chatProps && (
-      <button
-        onClick={() => {/* Toggle chat */}}
-        className="sm:w-auto px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-      >
-        Contact Organizer
-      </button>
-    )}
-  </div>
-
-          
-          {event.isPaid && (
-            <p className="text-sm text-gray-500 mt-2 text-center">
-              Secure payment processing • {event.applyGST ? 'Prices include GST' : 'GST may apply'}
-            </p>
+          {chatProps && (
+            <button
+              onClick={() => {/* Toggle chat */}}
+              className="sm:w-auto px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Contact Organizer
+            </button>
           )}
         </div>
+
+        {event.isPaid && (
+          <p className="text-sm text-gray-500 mt-2 text-center">
+            Secure payment processing • {event.applyGST ? 'Prices include GST' : 'GST may apply'}
+          </p>
+        )}
+      </div>
 
       {/* Registration Modal */}
       <EventRegistrationModal
@@ -519,17 +438,11 @@ const formattedTime = formatInTimeZone(
         isOpen={showRegistrationForm}
         onClose={() => setShowRegistrationForm(false)}
         onSuccess={(data) => {
-  console.log('Registration successful:', data);
-  alert(`🎉 Registration successful! 
-  Registration Number: ${data.registration?.registrationNumber}
-  You will receive a confirmation email shortly.`);
-}}
-      />
-       {/* ADD THIS: Ticket Selection Modal */}
-      <TicketSelection
-        event={event}
-        isOpen={showTicketSelection}
-        onClose={() => setShowTicketSelection(false)}
+          console.log('Registration successful:', data);
+          alert(`🎉 Registration successful! 
+          Registration Number: ${data.registration?.registrationNumber}
+          You will receive a confirmation email shortly.`);
+        }}
       />
     </div>
   );

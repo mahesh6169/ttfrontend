@@ -28,11 +28,11 @@ import {
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SeatMapSelection from '@/components/events/seats/SeatMapSelection';
-import SeatSelectionSummary from '@/components/events/seats/SeatSelectionSummary';
 import SeatLegend from '@/components/events/seats/SeatLegend';
 import SeatDebugInfo from '@/components/events/seats/SeatDebugInfo';
 import SeatSelectionFallback from '@/components/events/seats/SeatSelectionFallback';
 import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
+import { FaShoppingCart } from 'react-icons/fa';
 
 const SeatSelectionPage = () => {
   const { eventId } = useParams();
@@ -194,9 +194,9 @@ const SeatSelectionPage = () => {
     }
   }, [selectedSeats, dispatch]);
 
-  // Handles navigation back to event details and forward to checkout with seat validation.
+  // Handles navigation back to previous page
   const handleBack = () => {
-    router.push(`/events/views/${eventId}`);
+    router.back();
   };
 
   // Handle proceed to checkout
@@ -261,6 +261,9 @@ const SeatSelectionPage = () => {
   };
 
   const ticketSelection = getTicketSelectionForDisplay();
+
+  // Check if all required seats are selected
+  const canProceed = selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0;
 
   // Loading state
   if (seatLoading || !selectedEvent || !ticketSelection) {
@@ -356,38 +359,36 @@ const SeatSelectionPage = () => {
               </p>
             </div>
             <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection} eventId={eventId}/>
-          </div>
-          
-          {/* Row 3: Booking Summary */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <SeatSelectionSummary 
-              event={selectedEvent} 
-              ticketSelection={ticketSelection}
-              onProceedToCheckout={handleProceedToCheckout}
-              selectedSeatsCount={selectedSeats.length}
-              requiredSeatsCount={seatInfo.seatCount || 0}
-              canProceed={selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0}
-              horizontal={false}
-              eventId={eventId}
-            />
+            
+            {/* Proceed to Checkout Button - Only show when all seats are selected */}
+            {canProceed && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <button
+                  onClick={handleProceedToCheckout}
+                  className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center"
+                >
+                  <FaShoppingCart className="mr-2" />
+                  Proceed to Checkout
+                </button>
+              </div>
+            )}
           </div>
           
         </div>
       </div>
 
-      {/* Mobile sticky footer */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
-        <SeatSelectionSummary 
-          event={selectedEvent} 
-          ticketSelection={ticketSelection}
-          onProceedToCheckout={handleProceedToCheckout}
-          selectedSeatsCount={selectedSeats.length}
-          requiredSeatsCount={seatInfo.seatCount || 0}
-          canProceed={selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0}
-          compact={true}
-          eventId={eventId}
-        />
-      </div>
+      {/* Mobile sticky footer - Only show when all seats are selected */}
+      {canProceed && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+          <button
+            onClick={handleProceedToCheckout}
+            className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center"
+          >
+            <FaShoppingCart className="mr-2" />
+            Proceed to Checkout
+          </button>
+        </div>
+      )}
 
       {/* Debug info (development only) */}
       {process.env.NODE_ENV === 'development' && (
