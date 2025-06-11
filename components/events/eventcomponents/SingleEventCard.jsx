@@ -269,6 +269,69 @@ const SingleEventCard = ({ event, chatProps }) => {
             </div>
           </div>
         </div>
+          
+        {/* Event Organizer */}
+        {event.organizer && (
+          <div className="bg-blue-50 p-4 rounded-lg mb-6">
+            <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+              <FaUser className="mr-2 text-blue-600" />
+              Event Organizer
+            </h3>
+            <div className="bg-white p-4 rounded border">
+              <div className="space-y-2">
+                <p className="font-medium text-gray-900 text-lg">{event.organizer.name}</p>
+                {event.organizer.website && (
+                  <p className="text-sm text-gray-600 flex items-center">
+                    <span className="mr-1">🌐</span>
+                    <a 
+                      href={event.organizer.website} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {event.organizer.website}
+                    </a>
+                  </p>
+                )}
+                {event.organizer.contact && (
+                  <p className="text-sm text-gray-600 flex items-center">
+                    <FaPhone className="mr-1" />
+                    {event.organizer.contact}
+                  </p>
+                )}
+                {event.organizer.email && (
+                  <p className="text-sm text-gray-600 flex items-center">
+                    <FaEnvelope className="mr-1" />
+                    <a 
+                      href={`mailto:${event.organizer.email}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {event.organizer.email}
+                    </a>
+                  </p>
+                )}
+                {event.organizer.socialMedia && event.organizer.socialMedia.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-600 mb-2">Social Media:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {event.organizer.socialMedia.map((social, index) => (
+                        <a                          
+                          key={index}
+                          href={social.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 hover:bg-gray-200"
+                        >
+                          {social.platform}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Coordinators */}
         {event.coordinators?.length > 0 && (
