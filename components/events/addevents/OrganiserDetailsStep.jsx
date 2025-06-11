@@ -5,11 +5,35 @@ import { useDispatch } from 'react-redux';
 import {
   addCoordinator,
   updateCoordinator,
-  removeCoordinator
+  removeCoordinator,
+  updateOrganizerField,
+  addOrganizerSocialMedia,
+  updateOrganizerSocialMedia,
+  removeOrganizerSocialMedia
 } from '@/store/slices/events/eventSlice';
 
 const OrganiserDetailsStep = ({ formData = {}, errors = {} }) => {
   const dispatch = useDispatch();
+
+
+  // Organizer functions
+  const handleOrganizerChange = (field, value) => {
+    dispatch(updateOrganizerField({ field, value }));
+  };
+
+  const handleAddSocialMedia = () => {
+    dispatch(addOrganizerSocialMedia());
+  };
+
+  const handleUpdateSocialMedia = (index, field, value) => {
+    dispatch(updateOrganizerSocialMedia({ index, field, value }));
+  };
+
+  const handleRemoveSocialMedia = (index) => {
+    dispatch(removeOrganizerSocialMedia(index));
+  };
+
+  
 
   const handleAddCoordinator = () => {
     if ((formData.coordinators || []).length < 10) {
@@ -53,6 +77,143 @@ const OrganiserDetailsStep = ({ formData = {}, errors = {} }) => {
 
   return (
     <div className="space-y-6">
+
+      <div>
+               {/* Organizer Details Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+        <div className="flex items-center mb-4">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Event Organizer</h3>
+            <p className="text-sm text-gray-500">Organization or person hosting this event</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Organizer Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Organizer Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.organizer?.name || ''}
+              onChange={(e) => handleOrganizerChange('name', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
+              placeholder="Your name or organization name"
+              maxLength="100"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              This can be your personal name or your organization name
+            </p>
+          </div>
+
+          {/* Website */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Website
+            </label>
+            <input
+              type="url"
+              value={formData.organizer?.website || ''}
+              onChange={(e) => handleOrganizerChange('website', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
+              placeholder="https://yourwebsite.com"
+              maxLength="200"
+            />
+          </div>
+
+          {/* Contact */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contact Number
+            </label>
+            <input
+              type="tel"
+              value={formData.organizer?.contact || ''}
+              onChange={(e) => handleOrganizerChange('contact', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
+              placeholder="+61 4XX XXX XXX"
+              maxLength="20"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contact Email
+            </label>
+            <input
+              type="email"
+              value={formData.organizer?.email || ''}
+              onChange={(e) => handleOrganizerChange('email', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
+              placeholder="contact@example.com"
+              maxLength="100"
+            />
+          </div>
+        </div>
+
+        {/* Social Media */}
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Social Media Links
+          </label>
+          
+          {formData.organizer?.socialMedia && formData.organizer.socialMedia.length > 0 ? (
+            <div className="space-y-3">
+              {formData.organizer.socialMedia.map((social, index) => (
+                <div key={index} className="flex gap-3 items-start">
+                  <input
+                    type="text"
+                    value={social.platform || ''}
+                    onChange={(e) => handleUpdateSocialMedia(index, 'platform', e.target.value)}
+                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20"
+                    placeholder="Platform name (e.g., Facebook, Instagram)"
+                    maxLength="50"
+                  />
+                  <input
+                    type="url"
+                    value={social.url || ''}
+                    onChange={(e) => handleUpdateSocialMedia(index, 'url', e.target.value)}
+                    className="flex-[2] p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20"
+                    placeholder="https://facebook.com/yourpage"
+                    maxLength="200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSocialMedia(index)}
+                    className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Remove social media link"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">No social media links added yet</p>
+          )}
+
+          <button
+            type="button"
+            onClick={handleAddSocialMedia}
+            className="mt-3 inline-flex items-center px-4 py-2 border border-dashed border-blue-300 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 font-medium text-sm"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Add Social Media Link
+          </button>
+        </div>
+      </div>
+      </div>
       <div>
         <h2 className="text-xl font-semibold mb-2">Event Coordinators</h2>
         <p className="text-gray-600 text-sm">

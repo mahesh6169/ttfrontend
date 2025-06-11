@@ -306,6 +306,20 @@ useEffect(() => {
       if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;
     }
 
+      // Organizer validation
+    if (!formData.organizer?.name?.trim()) {
+      errors.organizer = ['Organizer name is required'];
+    }
+    
+    // Basic email validation for organizer if provided
+    if (
+      formData.organizer?.email &&
+      formData.organizer.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.organizer.email)
+    ) {
+      errors.organizer = (errors.organizer || []).concat(['Organizer email format is invalid']);
+    }
+
     // Recurring event validation
     if (formData.recurrence?.isRecurring) {
       if (
@@ -476,6 +490,12 @@ useEffect(() => {
         break;
 
       case 2: // Organiser Details
+        // Organizer validation
+        if (!formData.organizer?.name?.trim()) {
+          errors.organizer = ['Organizer name is required'];
+        }
+        
+        // Coordinators validation
         if (!formData.coordinators || formData.coordinators.length === 0) {
           errors.coordinators = ['At least one event coordinator is required'];
         } else {
@@ -658,6 +678,11 @@ const isNextButtonDisabled = useCallback(() => {
     // Coordinators - send as JSON string
     if (formData.coordinators && formData.coordinators.length > 0) {
       submitFormData.append('coordinators', JSON.stringify(formData.coordinators));
+    }
+
+     // Organizer - send as JSON string
+    if (formData.organizer) {
+      submitFormData.append('organizer', JSON.stringify(formData.organizer));
     }
 
     // Event type

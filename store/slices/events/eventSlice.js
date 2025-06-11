@@ -242,6 +242,15 @@ const createDefaultFormData = () => ({
   
   // Coordinators
   coordinators: [{ name: '', role: '', phone: '', email: '' }],
+
+  // Organizer
+  organizer: {
+    name: '',
+    website: '',
+    contact: '',
+    email: '',
+    socialMedia: []
+  },
   
   // Recurring Event Settings
   recurrence: {
@@ -322,6 +331,13 @@ const processEventDataForEdit = (eventData) => {
     coordinators: (eventData.coordinators && eventData.coordinators.length > 0) 
       ? eventData.coordinators 
       : [{ name: '', role: '', phone: '', email: '' }],
+      organizer: eventData.organizer || {
+      name: '',
+      website: '',
+      contact: '',
+      email: '',
+      socialMedia: []
+    },
     recurrence: {
       isRecurring: eventData.recurrence?.isRecurring || false,
       repeatSchedule: eventData.recurrence?.repeatSchedule || [],
@@ -525,6 +541,27 @@ deleteError: null,
     removeCoordinator: (state, action) => {
       const index = action.payload;
       state.formData.coordinators = state.formData.coordinators.filter((_, i) => i !== index);
+      state.hasUnsavedChanges = true;
+    },
+
+     // Organizer with change tracking
+    updateOrganizerField: (state, action) => {
+      const { field, value } = action.payload;
+      state.formData.organizer[field] = value;
+      state.hasUnsavedChanges = true;
+    },
+    addOrganizerSocialMedia: (state) => {
+      state.formData.organizer.socialMedia.push({ platform: '', url: '' });
+      state.hasUnsavedChanges = true;
+    },
+    updateOrganizerSocialMedia: (state, action) => {
+      const { index, field, value } = action.payload;
+      state.formData.organizer.socialMedia[index][field] = value;
+      state.hasUnsavedChanges = true;
+    },
+    removeOrganizerSocialMedia: (state, action) => {
+      const index = action.payload;
+      state.formData.organizer.socialMedia = state.formData.organizer.socialMedia.filter((_, i) => i !== index);
       state.hasUnsavedChanges = true;
     },
     
@@ -955,6 +992,12 @@ export const {
   addCoordinator,
   updateCoordinator,
   removeCoordinator,
+
+  // Organizer
+  updateOrganizerField,
+  addOrganizerSocialMedia,
+  updateOrganizerSocialMedia,
+  removeOrganizerSocialMedia,
   
   // Registration fields
   addRegistrationField,
