@@ -1,76 +1,53 @@
-// store/slices/events/refundSlice.js
-
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-// ========================================
-// ASYNC THUNKS - API CALLS
-// ========================================
+// Async thunks for API calls
 
-// Fetch refund history for an event
-export const fetchRefundHistory = createAsyncThunk(
-  'refunds/fetchHistory',
-  async (eventId, { rejectWithValue }) => {
+// Fetch organizer's events for dropdown (matches route: GET /api/events/refunds/my-events)
+export const fetchOrganizerEvents = createAsyncThunk(
+  'refunds/fetchOrganizerEvents',
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/events/${eventId}/refunds/history`,
-        { withCredentials: true }
-      );
-
-      if (response.data.success) {
-        return {
-          eventId,
-          refunds: response.data.refunds,
-          summary: response.data.summary
-        };
-      } else {
-        return rejectWithValue(response.data.message || 'Failed to fetch refund history');
-      }
+      const response = await axios.get(`${API_BASE_URL}/events/refunds/my-events`, {
+        withCredentials: true,
+      });
+      return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch refund history'
+        error.response?.data?.message || 'Failed to fetch events'
       );
     }
   }
 );
 
-// Fetch refundable tickets for an event
+// Fetch refundable tickets for a specific event (matches route: GET /api/events/:eventId/refunds/eligible)
 export const fetchRefundableTickets = createAsyncThunk(
   'refunds/fetchRefundableTickets',
-  async (eventId, { rejectWithValue }) => {
+  async ({ eventId, page = 1, limit = 20, search = '', searchType = 'all' }, { rejectWithValue }) => {
     try {
-      console.log('🔍 Fetching refundable tickets for event:', eventId);
-      
-      // ✅ FIXED: Use the new endpoint that gets ALL tickets for organizers
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(search && { search }),
+        ...(searchType && { searchType }),
+      });
+
       const response = await axios.get(
-        `${API_BASE_URL}/events/${eventId}/paid/all-tickets`,
-        { withCredentials: true }
+        `${API_BASE_URL}/events/${eventId}/refunds/eligible?${params}`,
+        {
+          withCredentials: true,
+        }
       );
-
-      if (response.data.success) {
-        console.log(`📊 Found ${response.data.tickets.length} total tickets for event`);
-        
-        // Filter for refundable tickets (confirmed/checked-in, not fully refunded)
-        const refundableTickets = response.data.tickets.filter(ticket => {
-          const isActiveStatus = ['confirmed', 'checked-in'].includes(ticket.status);
-          const isNotFullyRefunded = ticket.refundStatus !== 'completed';
-          return isActiveStatus && isNotFullyRefunded;
-        });
-
-        console.log(`✅ Found ${refundableTickets.length} refundable tickets`);
-
-        return {
-          eventId,
-          tickets: refundableTickets,
-          totalTickets: response.data.tickets.length
-        };
-      } else {
-        return rejectWithValue(response.data.message || 'Failed to fetch tickets');
-      }
+      
+      return {
+        ...response.data,
+        eventId,
+        page,
+        search,
+      };
     } catch (error) {
-      console.error('❌ Error fetching refundable tickets:', error);
       return rejectWithValue(
         error.response?.data?.message || 'Failed to fetch refundable tickets'
       );
@@ -78,629 +55,981 @@ export const fetchRefundableTickets = createAsyncThunk(
   }
 );
 
-// Initiate refund for a ticket
-export const initiateRefund = createAsyncThunk(
-  'refunds/initiateRefund',
-  async ({ eventId, ticketNumber, reason, refundAmount }, { rejectWithValue }) => {
+// Search tickets by invoice or ticket number (uses same endpoint with search params)
+export const searchTickets = createAsyncThunk(
+  'refunds/searchTickets',
+  async ({ eventId, searchTerm, searchType = 'all' }, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/events/${eventId}/refunds/eligible`,
+        {
+          params: {
+            search: searchTerm,
+            searchType, // 'invoiceNumber', 'ticketNumber', 'buyerName', 'buyerEmail', 'all'
+            limit: 100, // Get more results for search
+          },
+          withCredentials: true,
+        }
+      );
+      
+      return {
+        ...response.data,
+        searchTerm,
+        searchType,
+      };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Search failed'
+      );
+    }
+  }
+);
+
+// Check invoice refund eligibility for group refunds
+export const checkInvoiceEligibility = createAsyncThunk(
+  'refunds/checkInvoiceEligibility',
+  async ({ eventId, invoiceNumber }, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/events/${eventId}/refunds/eligible`,
+        {
+          params: {
+            search: invoiceNumber,
+            searchType: 'invoiceNumber',
+            limit: 100,
+          },
+          withCredentials: true,
+        }
+      );
+      
+      const tickets = response.data.tickets || [];
+      const invoiceTickets = tickets.filter(t => t.invoiceNumber === invoiceNumber);
+      
+      // Check for mixed refund scenarios
+      const hasRefundedTickets = invoiceTickets.some(t => t.refundStatus === 'refunded');
+      const paymentIntents = [...new Set(invoiceTickets.map(t => t.paymentIntentId))];
+      const hasConsistentPaymentIntent = paymentIntents.length === 1;
+      
+      return {
+        invoiceNumber,
+        tickets: invoiceTickets,
+        totalTickets: invoiceTickets.length,
+        totalAmount: invoiceTickets.reduce((sum, t) => sum + t.priceDetails.totalPrice, 0),
+        canProcessGroupRefund: !hasRefundedTickets && hasConsistentPaymentIntent && invoiceTickets.length > 0,
+        hasRefundedTickets,
+        hasConsistentPaymentIntent,
+        paymentIntentId: paymentIntents[0],
+        eligibilityReason: hasRefundedTickets 
+          ? 'Some tickets in this invoice have already been refunded'
+          : !hasConsistentPaymentIntent 
+          ? 'Tickets have inconsistent payment intents'
+          : invoiceTickets.length === 0
+          ? 'No tickets found for this invoice'
+          : 'Eligible for group refund'
+      };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to check invoice eligibility'
+      );
+    }
+  }
+);
+
+// Process individual ticket refund (PARTIAL REFUND)
+export const processIndividualRefund = createAsyncThunk(
+  'refunds/processIndividualRefund',
+  async ({ eventId, ticketNumber, refundAmount, reason }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/events/${eventId}/refunds/initiate`,
-        { ticketNumber, reason, refundAmount },
-        { 
-          headers: { 'Content-Type': 'application/json' },
-          withCredentials: true 
+        `${API_BASE_URL}/events/${eventId}/refunds/ticket`,
+        {
+          ticketNumber,
+          refundAmount,
+          reason,
+        },
+        {
+          withCredentials: true,
         }
       );
-
-      if (response.data.success) {
-        return {
-          eventId,
-          ticketNumber,
-          refundData: response.data.refund,
-          ticketData: response.data.ticket,
-          seatsReleased: response.data.seatsReleased,
-          inventoryRestored: response.data.inventoryRestored
-        };
-      } else {
-        return rejectWithValue(response.data.message || 'Failed to process refund');
-      }
+      
+      return {
+        ...response.data,
+        ticketNumber,
+        refundAmount,
+        reason,
+      };
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to process refund'
+        error.response?.data?.message || 'Failed to process individual refund'
       );
     }
   }
 );
 
-// Delete ticket (for cancellations)
-export const deleteTicket = createAsyncThunk(
-  'refunds/deleteTicket',
-  async ({ eventId, ticketNumber, reason }, { rejectWithValue }) => {
+// Process group refund by invoice (FULL TRANSACTION REFUND)
+export const processGroupRefund = createAsyncThunk(
+  'refunds/processGroupRefund',
+  async ({ eventId, invoiceNumber, reason }, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(
-        `${API_BASE_URL}/events/${eventId}/tickets/${ticketNumber}`,
-        { 
-          data: { reason },
-          headers: { 'Content-Type': 'application/json' },
-          withCredentials: true 
+      const response = await axios.post(
+        `${API_BASE_URL}/events/${eventId}/refunds/group`,
+        {
+          invoiceNumber,
+          reason,
+        },
+        {
+          withCredentials: true,
         }
       );
-
-      if (response.data.success) {
-        return {
-          eventId,
-          ticketNumber,
-          deletionReason: reason,
-          seatsReleased: response.data.seatsReleased,
-          inventoryRestored: response.data.inventoryRestored
-        };
-      } else {
-        return rejectWithValue(response.data.message || 'Failed to delete ticket');
-      }
+      
+      return {
+        ...response.data,
+        invoiceNumber,
+        reason,
+      };
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to delete ticket'
+        error.response?.data?.message || 'Failed to process group refund'
       );
     }
   }
 );
 
-// ========================================
-// INITIAL STATE
-// ========================================
-
+// Initial state
 const initialState = {
-  // UI State
-  loading: false,
-  processing: false,
-  error: null,
-  successMessage: '',
-  
-  // Data Collections
-  refundHistory: [], // Array of refund records
-  refundableTickets: [], // Array of tickets eligible for refund
-  refundSummary: null, // Event-level refund statistics
-  
-  // Current Operation State
-  selectedTicket: null, // Currently selected ticket for refund
-  selectedEvent: null, // Currently selected event
-  
-  // Modal State
-  refundModal: {
-    isOpen: false,
-    mode: 'refund', // 'refund' | 'delete'
-    ticketData: null,
-    step: 1 // Multi-step refund process
+  // Events management
+  events: {
+    list: [],
+    loading: false,
+    error: null,
   },
   
-  // Form State
-  refundForm: {
-    reason: '',
-    refundAmount: null,
-    isPartialRefund: false,
-    maxRefundable: 0
-  },
+  // Current selected event
+  selectedEvent: null,
   
-  // Filters and Search
-  filters: {
-    status: 'all', // 'all' | 'partial' | 'completed'
-    dateRange: null,
-    searchTerm: ''
-  },
-  
-  // Pagination
-  pagination: {
+  // Tickets management
+  tickets: {
+    list: [],
+    total: 0,
     currentPage: 1,
-    itemsPerPage: 10,
-    totalItems: 0
+    totalPages: 1,
+    limit: 20,
+    loading: false,
+    error: null,
   },
   
-  // Real-time Updates
-  lastUpdated: null,
-  autoRefresh: false
+  // Search functionality
+  search: {
+    term: '',
+    type: 'all', // 'invoiceNumber', 'ticketNumber', 'buyerName', 'buyerEmail', 'all'
+    results: [],
+    loading: false,
+    error: null,
+  },
+  
+  // Invoice eligibility checking
+  invoiceEligibility: {
+    data: null,
+    loading: false,
+    error: null,
+  },
+  
+  // Selected tickets for refund
+  selectedTickets: {
+    individual: [], // Array of ticket objects for individual refunds
+    grouped: {}, // Object with invoiceNumber as key, tickets array as value
+  },
+  
+  // Refund form data
+  refundForm: {
+    type: 'individual', // 'individual' or 'group'
+    reason: '',
+    customAmounts: {}, // ticketNumber: amount pairs for custom amounts
+  },
+  
+  // Refund processing states
+  processing: {
+    individual: {
+      loading: false,
+      error: null,
+      success: null,
+    },
+    group: {
+      loading: false,
+      error: null,
+      success: null,
+    },
+  },
+  
+  // UI states
+  ui: {
+    showRefundModal: false,
+    activeTab: 'individual', // 'individual' or 'group'
+    selectedInvoice: null,
+  },
+  
+  // Refund analytics
+  analytics: {
+    totalRefundsProcessed: 0,
+    totalAmountRefunded: 0,
+    lastRefundDate: null,
+  },
 };
-
-// ========================================
-// SLICE DEFINITION
-// ========================================
 
 const refundSlice = createSlice({
   name: 'refunds',
   initialState,
   reducers: {
-    // =====================================
-    // UI STATE MANAGEMENT
-    // =====================================
-    
-    setLoading: (state, action) => {
-      state.loading = action.payload;
-    },
-    
-    setProcessing: (state, action) => {
-      state.processing = action.payload;
-    },
-    
-    clearError: (state) => {
-      state.error = null;
-    },
-    
-    clearSuccessMessage: (state) => {
-      state.successMessage = '';
-    },
-    
-    clearMessages: (state) => {
-      state.error = null;
-      state.successMessage = '';
-    },
-    
-    // =====================================
-    // SELECTION MANAGEMENT
-    // =====================================
-    
-    setSelectedTicket: (state, action) => {
-      state.selectedTicket = action.payload;
-      
-      // Auto-populate refund form when ticket is selected
-      if (action.payload) {
-        const maxRefundable = action.payload.priceDetails?.totalPrice - (action.payload.refundedAmount || 0);
-        state.refundForm.maxRefundable = Math.max(0, maxRefundable);
-        state.refundForm.refundAmount = maxRefundable;
-        state.refundForm.isPartialRefund = false;
-      }
-    },
-    
+    // Event selection
     setSelectedEvent: (state, action) => {
       state.selectedEvent = action.payload;
-      // Clear ticket selection when event changes
-      state.selectedTicket = null;
-      state.refundableTickets = [];
-      state.refundHistory = [];
-    },
-    
-    clearSelection: (state) => {
-      state.selectedTicket = null;
-      state.selectedEvent = null;
-    },
-    
-    // =====================================
-    // MODAL MANAGEMENT
-    // =====================================
-    
-    openRefundModal: (state, action) => {
-      const { mode = 'refund', ticketData = null } = action.payload || {};
-      state.refundModal.isOpen = true;
-      state.refundModal.mode = mode;
-      state.refundModal.ticketData = ticketData;
-      state.refundModal.step = 1;
+      // Clear tickets when changing events
+      state.tickets.list = [];
+      state.tickets.total = 0;
+      state.tickets.currentPage = 1;
+      state.tickets.loading = false; // FIX: Reset loading state
+      state.tickets.error = null;    // FIX: Clear any errors
+  
+      state.selectedTickets.individual = [];
+      state.selectedTickets.grouped = {};
+      // Clear other related states
+      state.invoiceEligibility.data = null;
+      state.invoiceEligibility.loading = false;
+      state.invoiceEligibility.error = null;
       
-      // Set selected ticket if provided
-      if (ticketData) {
-        state.selectedTicket = ticketData;
-        const maxRefundable = ticketData.priceDetails?.totalPrice - (ticketData.refundedAmount || 0);
-        state.refundForm.maxRefundable = Math.max(0, maxRefundable);
-        state.refundForm.refundAmount = maxRefundable;
-      }
+      // Clear search results
+      state.search.results = [];
+      state.search.term = '';
+      state.search.loading = false;
+      state.search.error = null;
     },
     
-    closeRefundModal: (state) => {
-      state.refundModal.isOpen = false;
-      state.refundModal.mode = 'refund';
-      state.refundModal.ticketData = null;
-      state.refundModal.step = 1;
-      state.processing = false;
-      state.error = null;
-    },
-    
-    setModalStep: (state, action) => {
-      state.refundModal.step = action.payload;
-    },
-    
-    nextModalStep: (state) => {
-      state.refundModal.step += 1;
-    },
-    
-    prevModalStep: (state) => {
-      if (state.refundModal.step > 1) {
-        state.refundModal.step -= 1;
-      }
-    },
-    
-    // =====================================
-    // FORM MANAGEMENT
-    // =====================================
-    
-    updateRefundForm: (state, action) => {
-      const { field, value } = action.payload;
-      state.refundForm[field] = value;
-      
-      // Auto-detect partial refund
-      if (field === 'refundAmount') {
-        state.refundForm.isPartialRefund = value < state.refundForm.maxRefundable;
-      }
-    },
-    
-    resetRefundForm: (state) => {
-      state.refundForm = {
-        reason: '',
-        refundAmount: null,
-        isPartialRefund: false,
-        maxRefundable: 0
-      };
-    },
-    
-    setRefundAmount: (state, action) => {
-      const amount = action.payload;
-      state.refundForm.refundAmount = amount;
-      state.refundForm.isPartialRefund = amount < state.refundForm.maxRefundable;
-    },
-    
-    // =====================================
-    // FILTERS AND SEARCH
-    // =====================================
-    
-    updateFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
-      state.pagination.currentPage = 1; // Reset to first page when filtering
-    },
-    
-    clearFilters: (state) => {
-      state.filters = {
-        status: 'all',
-        dateRange: null,
-        searchTerm: ''
-      };
-      state.pagination.currentPage = 1;
-    },
-    
+    // Search management
     setSearchTerm: (state, action) => {
-      state.filters.searchTerm = action.payload;
-      state.pagination.currentPage = 1;
+      state.search.term = action.payload;
     },
     
-    // =====================================
-    // PAGINATION
-    // =====================================
-    
-    setPagination: (state, action) => {
-      state.pagination = { ...state.pagination, ...action.payload };
+    setSearchType: (state, action) => {
+      state.search.type = action.payload;
     },
     
+    clearSearchResults: (state) => {
+      state.search.results = [];
+      state.search.term = '';
+      state.search.error = null;
+    },
+    
+    // Ticket selection for refunds
+    toggleTicketSelection: (state, action) => {
+      const ticket = action.payload;
+      const index = state.selectedTickets.individual.findIndex(
+        t => t.ticketNumber === ticket.ticketNumber
+      );
+      
+      if (index > -1) {
+        state.selectedTickets.individual.splice(index, 1);
+      } else {
+        state.selectedTickets.individual.push(ticket);
+      }
+    },
+    
+    clearSelectedTickets: (state) => {
+      state.selectedTickets.individual = [];
+      state.selectedTickets.grouped = {};
+    },
+    
+    // Group ticket selection by invoice
+    selectInvoiceGroup: (state, action) => {
+      const { invoiceNumber, tickets } = action.payload;
+      state.selectedTickets.grouped[invoiceNumber] = tickets;
+    },
+    
+    deselectInvoiceGroup: (state, action) => {
+      const invoiceNumber = action.payload;
+      delete state.selectedTickets.grouped[invoiceNumber];
+    },
+    
+    // Refund form management
+    setRefundType: (state, action) => {
+      state.refundForm.type = action.payload;
+    },
+    
+    setRefundReason: (state, action) => {
+      state.refundForm.reason = action.payload;
+    },
+    
+    setCustomRefundAmount: (state, action) => {
+      const { ticketNumber, amount } = action.payload;
+      if (amount === null || amount === undefined || amount === '') {
+        delete state.refundForm.customAmounts[ticketNumber];
+      } else {
+        state.refundForm.customAmounts[ticketNumber] = amount;
+      }
+    },
+    
+    clearRefundForm: (state) => {
+      state.refundForm.reason = '';
+      state.refundForm.customAmounts = {};
+    },
+    
+    // UI state management
+    setShowRefundModal: (state, action) => {
+      state.ui.showRefundModal = action.payload;
+    },
+    
+    setActiveTab: (state, action) => {
+      state.ui.activeTab = action.payload;
+    },
+    
+    setSelectedInvoice: (state, action) => {
+      state.ui.selectedInvoice = action.payload;
+    },
+    
+    // Pagination
     setCurrentPage: (state, action) => {
-      state.pagination.currentPage = action.payload;
+      state.tickets.currentPage = action.payload;
     },
     
-    // =====================================
-    // DATA MANAGEMENT
-    // =====================================
-    
-    updateTicketInList: (state, action) => {
-      const { ticketNumber, updates } = action.payload;
-      
-      // Update in refundable tickets
-      const ticketIndex = state.refundableTickets.findIndex(
-        ticket => ticket.ticketNumber === ticketNumber
-      );
-      if (ticketIndex !== -1) {
-        state.refundableTickets[ticketIndex] = {
-          ...state.refundableTickets[ticketIndex],
-          ...updates
-        };
-      }
-      
-      // Update selected ticket if it matches
-      if (state.selectedTicket?.ticketNumber === ticketNumber) {
-        state.selectedTicket = { ...state.selectedTicket, ...updates };
-      }
+    setPageLimit: (state, action) => {
+      state.tickets.limit = action.payload;
     },
     
-    removeTicketFromList: (state, action) => {
-      const ticketNumber = action.payload;
-      
-      // Remove from refundable tickets
-      state.refundableTickets = state.refundableTickets.filter(
-        ticket => ticket.ticketNumber !== ticketNumber
-      );
-      
-      // Clear selection if it was the removed ticket
-      if (state.selectedTicket?.ticketNumber === ticketNumber) {
-        state.selectedTicket = null;
-      }
+    // Clear all errors
+    clearErrors: (state) => {
+      state.events.error = null;
+      state.tickets.error = null;
+      state.search.error = null;
+      state.processing.individual.error = null;
+      state.processing.group.error = null;
+      state.invoiceEligibility.error = null;
     },
     
-    addRefundToHistory: (state, action) => {
-      const refundRecord = action.payload;
-      state.refundHistory.unshift(refundRecord); // Add to beginning
-      state.lastUpdated = new Date().toISOString();
+    // Clear success messages
+    clearSuccessMessages: (state) => {
+      state.processing.individual.success = null;
+      state.processing.group.success = null;
     },
     
-    // =====================================
-    // AUTO-REFRESH
-    // =====================================
-    
-    setAutoRefresh: (state, action) => {
-      state.autoRefresh = action.payload;
+    // Clear invoice eligibility data
+    clearInvoiceEligibility: (state) => {
+      state.invoiceEligibility.data = null;
+      state.invoiceEligibility.error = null;
     },
     
-    updateLastRefreshed: (state) => {
-      state.lastUpdated = new Date().toISOString();
+    // Update analytics
+    updateRefundAnalytics: (state, action) => {
+      const { type, amount } = action.payload;
+      state.analytics.totalRefundsProcessed += 1;
+      state.analytics.totalAmountRefunded += amount;
+      state.analytics.lastRefundDate = new Date().toISOString();
     },
     
-    // =====================================
-    // RESET FUNCTIONS
-    // =====================================
-    
+    // Reset entire state
     resetRefundState: (state) => {
-      return { ...initialState };
+      return initialState;
     },
-    
-    resetForNewEvent: (state) => {
-      state.refundHistory = [];
-      state.refundableTickets = [];
-      state.refundSummary = null;
-      state.selectedTicket = null;
-      state.error = null;
-      state.successMessage = '';
-      state.filters = initialState.filters;
-      state.pagination = initialState.pagination;
-    }
   },
   
-  // ========================================
-  // EXTRA REDUCERS - ASYNC THUNK HANDLING
-  // ========================================
-  
   extraReducers: (builder) => {
-    // Fetch Refund History
+    // Fetch organizer events
     builder
-      .addCase(fetchRefundHistory.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+      .addCase(fetchOrganizerEvents.pending, (state) => {
+        state.events.loading = true;
+        state.events.error = null;
       })
-      .addCase(fetchRefundHistory.fulfilled, (state, action) => {
-        state.loading = false;
-        state.refundHistory = action.payload.refunds;
-        state.refundSummary = action.payload.summary;
-        state.lastUpdated = new Date().toISOString();
+      .addCase(fetchOrganizerEvents.fulfilled, (state, action) => {
+        state.events.loading = false;
+        state.events.list = action.payload.events || [];
+        state.events.error = null;
       })
-      .addCase(fetchRefundHistory.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
+      .addCase(fetchOrganizerEvents.rejected, (state, action) => {
+        state.events.loading = false;
+        state.events.error = action.payload;
+        state.events.list = [];
       });
     
-    // Fetch Refundable Tickets
+    // Fetch refundable tickets
     builder
       .addCase(fetchRefundableTickets.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        state.tickets.loading = true;
+        state.tickets.error = null;
       })
       .addCase(fetchRefundableTickets.fulfilled, (state, action) => {
-        state.loading = false;
-        state.refundableTickets = action.payload.tickets;
-        state.lastUpdated = new Date().toISOString();
+        state.tickets.loading = false;
+        state.tickets.list = action.payload.tickets || [];
+        state.tickets.total = action.payload.pagination?.totalTickets || 0;
+        state.tickets.currentPage = action.payload.pagination?.currentPage || 1;
+        state.tickets.totalPages = action.payload.pagination?.totalPages || 1;
+        state.tickets.error = null;
       })
       .addCase(fetchRefundableTickets.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
+        state.tickets.loading = false;
+        state.tickets.error = action.payload;
+        state.tickets.list = [];
       });
     
-    // Initiate Refund
+    // Search tickets
     builder
-      .addCase(initiateRefund.pending, (state) => {
-        state.processing = true;
-        state.error = null;
+      .addCase(searchTickets.pending, (state) => {
+        state.search.loading = true;
+        state.search.error = null;
       })
-      .addCase(initiateRefund.fulfilled, (state, action) => {
-        state.processing = false;
-        state.successMessage = 'Refund processed successfully';
+      .addCase(searchTickets.fulfilled, (state, action) => {
+        state.search.loading = false;
+        state.search.results = action.payload.tickets || [];
+        state.search.error = null;
+      })
+      .addCase(searchTickets.rejected, (state, action) => {
+        state.search.loading = false;
+        state.search.error = action.payload;
+        state.search.results = [];
+      });
+    
+    // Check invoice eligibility
+    builder
+      .addCase(checkInvoiceEligibility.pending, (state) => {
+        state.invoiceEligibility.loading = true;
+        state.invoiceEligibility.error = null;
+      })
+      .addCase(checkInvoiceEligibility.fulfilled, (state, action) => {
+        state.invoiceEligibility.loading = false;
+        state.invoiceEligibility.data = action.payload;
+        state.invoiceEligibility.error = null;
+      })
+      .addCase(checkInvoiceEligibility.rejected, (state, action) => {
+        state.invoiceEligibility.loading = false;
+        state.invoiceEligibility.error = action.payload;
+        state.invoiceEligibility.data = null;
+      });
+    
+    // Process individual refund
+    builder
+      .addCase(processIndividualRefund.pending, (state) => {
+        state.processing.individual.loading = true;
+        state.processing.individual.error = null;
+        state.processing.individual.success = null;
+      })
+      .addCase(processIndividualRefund.fulfilled, (state, action) => {
+        state.processing.individual.loading = false;
+        state.processing.individual.success = action.payload;
+        state.processing.individual.error = null;
         
-        const { ticketNumber, refundData, ticketData } = action.payload;
-        
-        // Update ticket in list
-        const ticketIndex = state.refundableTickets.findIndex(
-          ticket => ticket.ticketNumber === ticketNumber
+        // Remove the refunded ticket from lists
+        const ticketNumber = action.payload.ticketNumber;
+        state.tickets.list = state.tickets.list.filter(
+          ticket => ticket.ticketNumber !== ticketNumber
         );
-        if (ticketIndex !== -1) {
-          state.refundableTickets[ticketIndex] = {
-            ...state.refundableTickets[ticketIndex],
-            ...ticketData
-          };
-        }
-        
-        // Add to refund history (optimistic update)
-        const refundRecord = {
-          ticketNumber,
-          refundAmount: refundData.amount,
-          status: refundData.status,
-          refundDate: new Date().toISOString(),
-          stripeRefundId: refundData.stripeRefundId
-        };
-        state.refundHistory.unshift(refundRecord);
-        
-        // Update summary
-        if (state.refundSummary) {
-          state.refundSummary.totalRefunded = (
-            parseFloat(state.refundSummary.totalRefunded) + refundData.amount
-          ).toFixed(2);
-          state.refundSummary.refundCount += 1;
-        }
-        
-        // Close modal and reset form
-        state.refundModal.isOpen = false;
-        state.refundForm = initialState.refundForm;
-        state.selectedTicket = null;
-        state.lastUpdated = new Date().toISOString();
-      })
-      .addCase(initiateRefund.rejected, (state, action) => {
-        state.processing = false;
-        state.error = action.payload;
-      });
-    
-    // Delete Ticket
-    builder
-      .addCase(deleteTicket.pending, (state) => {
-        state.processing = true;
-        state.error = null;
-      })
-      .addCase(deleteTicket.fulfilled, (state, action) => {
-        state.processing = false;
-        state.successMessage = 'Ticket deleted successfully';
-        
-        const { ticketNumber } = action.payload;
-        
-        // Remove from refundable tickets
-        state.refundableTickets = state.refundableTickets.filter(
+        state.selectedTickets.individual = state.selectedTickets.individual.filter(
+          ticket => ticket.ticketNumber !== ticketNumber
+        );
+        state.search.results = state.search.results.filter(
           ticket => ticket.ticketNumber !== ticketNumber
         );
         
-        // Clear selection if it was the deleted ticket
-        if (state.selectedTicket?.ticketNumber === ticketNumber) {
-          state.selectedTicket = null;
+        // Update totals
+        state.tickets.total = Math.max(0, state.tickets.total - 1);
+        
+        // Update analytics
+        const refundAmount = action.payload.refund?.amount || 0;
+        state.analytics.totalRefundsProcessed += 1;
+        state.analytics.totalAmountRefunded += refundAmount;
+        state.analytics.lastRefundDate = new Date().toISOString();
+      })
+      .addCase(processIndividualRefund.rejected, (state, action) => {
+        state.processing.individual.loading = false;
+        state.processing.individual.error = action.payload;
+        state.processing.individual.success = null;
+      });
+    
+    // Process group refund
+    builder
+      .addCase(processGroupRefund.pending, (state) => {
+        state.processing.group.loading = true;
+        state.processing.group.error = null;
+        state.processing.group.success = null;
+      })
+      .addCase(processGroupRefund.fulfilled, (state, action) => {
+        state.processing.group.loading = false;
+        state.processing.group.success = action.payload;
+        state.processing.group.error = null;
+        
+        // ✅ UPDATED: Handle new group refund response structure
+        const invoiceNumber = action.payload.invoiceNumber;
+        const refundedTicketNumbers = action.payload.refund?.ticketNumbers || [];
+        
+        if (refundedTicketNumbers.length > 0) {
+          // Remove all tickets from the invoice from lists
+          state.tickets.list = state.tickets.list.filter(
+            ticket => !refundedTicketNumbers.includes(ticket.ticketNumber)
+          );
+          state.search.results = state.search.results.filter(
+            ticket => !refundedTicketNumbers.includes(ticket.ticketNumber)
+          );
+          
+          // Remove from grouped selection
+          delete state.selectedTickets.grouped[invoiceNumber];
+          
+          // Update totals
+          state.tickets.total = Math.max(0, state.tickets.total - refundedTicketNumbers.length);
         }
         
-        // Close modal and reset form
-        state.refundModal.isOpen = false;
-        state.refundForm = initialState.refundForm;
-        state.lastUpdated = new Date().toISOString();
+        // Update analytics with group refund data
+        const refundAmount = action.payload.refund?.totalAmount || 0;
+        state.analytics.totalRefundsProcessed += 1;
+        state.analytics.totalAmountRefunded += refundAmount;
+        state.analytics.lastRefundDate = new Date().toISOString();
+        
+        // Clear invoice eligibility data since the invoice is now refunded
+        if (state.invoiceEligibility.data?.invoiceNumber === invoiceNumber) {
+          state.invoiceEligibility.data = null;
+        }
       })
-      .addCase(deleteTicket.rejected, (state, action) => {
-        state.processing = false;
-        state.error = action.payload;
+      .addCase(processGroupRefund.rejected, (state, action) => {
+        state.processing.group.loading = false;
+        state.processing.group.error = action.payload;
+        state.processing.group.success = null;
       });
-  }
+  },
 });
 
-// ========================================
-// SELECTORS
-// ========================================
-
-// Basic selectors
-export const selectRefundLoading = (state) => state.refunds.loading;
-export const selectRefundProcessing = (state) => state.refunds.processing;
-export const selectRefundError = (state) => state.refunds.error;
-export const selectRefundSuccessMessage = (state) => state.refunds.successMessage;
-
-// Data selectors
-export const selectRefundHistory = (state) => state.refunds.refundHistory;
-export const selectRefundableTickets = (state) => state.refunds.refundableTickets;
-export const selectRefundSummary = (state) => state.refunds.refundSummary;
-export const selectSelectedTicket = (state) => state.refunds.selectedTicket;
-export const selectSelectedEvent = (state) => state.refunds.selectedEvent;
-
-// Modal selectors
-export const selectRefundModal = (state) => state.refunds.refundModal;
-export const selectRefundForm = (state) => state.refunds.refundForm;
-
-// Filter and pagination selectors
-export const selectRefundFilters = (state) => state.refunds.filters;
-export const selectRefundPagination = (state) => state.refunds.pagination;
-
-// Derived selectors
-export const selectFilteredRefundHistory = (state) => {
-  const { refundHistory, filters } = state.refunds;
-  
-  return refundHistory.filter(refund => {
-    // Status filter
-    if (filters.status !== 'all' && refund.refundStatus !== filters.status) {
-      return false;
-    }
-    
-    // Search term filter
-    if (filters.searchTerm) {
-      const searchTerm = filters.searchTerm.toLowerCase();
-      return (
-        refund.ticketNumber.toLowerCase().includes(searchTerm) ||
-        refund.user?.name?.toLowerCase().includes(searchTerm) ||
-        refund.user?.email?.toLowerCase().includes(searchTerm)
-      );
-    }
-    
-    return true;
-  });
-};
-
-export const selectFilteredRefundableTickets = (state) => {
-  const { refundableTickets, filters } = state.refunds;
-  
-  return refundableTickets.filter(ticket => {
-    // Search term filter
-    if (filters.searchTerm) {
-      const searchTerm = filters.searchTerm.toLowerCase();
-      return (
-        ticket.ticketNumber.toLowerCase().includes(searchTerm) ||
-        ticket.user?.name?.toLowerCase().includes(searchTerm) ||
-        ticket.user?.email?.toLowerCase().includes(searchTerm) ||
-        ticket.ticketType?.name?.toLowerCase().includes(searchTerm)
-      );
-    }
-    
-    return true;
-  });
-};
-
-// Statistics selectors
-export const selectRefundStatistics = (state) => {
-  const { refundHistory, refundableTickets } = state.refunds;
-  
-  return {
-    totalRefunds: refundHistory.length,
-    totalRefundableTickets: refundableTickets.length,
-    lastRefundDate: refundHistory[0]?.refundProcessedDate || null,
-    averageRefundAmount: refundHistory.length > 0 
-      ? refundHistory.reduce((sum, refund) => sum + (refund.refundedAmount || 0), 0) / refundHistory.length 
-      : 0
-  };
-};
-
-// ========================================
-// EXPORT ACTIONS
-// ========================================
-
+// Export actions
 export const {
-  // UI State
-  setLoading,
-  setProcessing,
-  clearError,
-  clearSuccessMessage,
-  clearMessages,
-  
-  // Selection
-  setSelectedTicket,
   setSelectedEvent,
-  clearSelection,
-  
-  // Modal
-  openRefundModal,
-  closeRefundModal,
-  setModalStep,
-  nextModalStep,
-  prevModalStep,
-  
-  // Form
-  updateRefundForm,
-  resetRefundForm,
-  setRefundAmount,
-  
-  // Filters
-  updateFilters,
-  clearFilters,
   setSearchTerm,
-  
-  // Pagination
-  setPagination,
+  setSearchType,
+  clearSearchResults,
+  toggleTicketSelection,
+  clearSelectedTickets,
+  selectInvoiceGroup,
+  deselectInvoiceGroup,
+  setRefundType,
+  setRefundReason,
+  setCustomRefundAmount,
+  clearRefundForm,
+  setShowRefundModal,
+  setActiveTab,
+  setSelectedInvoice,
   setCurrentPage,
-  
-  // Data Management
-  updateTicketInList,
-  removeTicketFromList,
-  addRefundToHistory,
-  
-  // Auto-refresh
-  setAutoRefresh,
-  updateLastRefreshed,
-  
-  // Reset
+  setPageLimit,
+  clearErrors,
+  clearSuccessMessages,
+  clearInvoiceEligibility,
+  updateRefundAnalytics,
   resetRefundState,
-  resetForNewEvent
 } = refundSlice.actions;
+
+// ===================================
+// BASE SELECTORS (Simple state access)
+// ===================================
+export const selectRefundState = (state) => state.refunds;
+export const selectEvents = (state) => state.refunds.events;
+export const selectSelectedEvent = (state) => state.refunds.selectedEvent;
+export const selectTicketsState = (state) => state.refunds.tickets;
+export const selectTicketsList = (state) => state.refunds.tickets.list;
+export const selectSearchState = (state) => state.refunds.search;
+export const selectSearchResults = (state) => state.refunds.search.results;
+export const selectSearchTerm = (state) => state.refunds.search.term;
+export const selectSelectedTickets = (state) => state.refunds.selectedTickets;
+export const selectRefundForm = (state) => state.refunds.refundForm;
+export const selectProcessing = (state) => state.refunds.processing;
+export const selectUI = (state) => state.refunds.ui;
+export const selectInvoiceEligibility = (state) => state.refunds.invoiceEligibility;
+export const selectAnalytics = (state) => state.refunds.analytics;
+
+// ===================================
+// MEMOIZED SELECTORS
+// ===================================
+
+// Tickets grouped by invoice number (main tickets list)
+export const selectTicketsByInvoice = createSelector(
+  [selectTicketsList],
+  (tickets) => {
+    return tickets.reduce((groups, ticket) => {
+      const invoiceNumber = ticket.invoiceNumber;
+      if (!groups[invoiceNumber]) {
+        groups[invoiceNumber] = [];
+      }
+      groups[invoiceNumber].push(ticket);
+      return groups;
+    }, {});
+  }
+);
+
+// Search results grouped by invoice number
+export const selectSearchTicketsByInvoice = createSelector(
+  [selectSearchResults],
+  (searchResults) => {
+    return searchResults.reduce((groups, ticket) => {
+      const invoiceNumber = ticket.invoiceNumber;
+      if (!groups[invoiceNumber]) {
+        groups[invoiceNumber] = [];
+      }
+      groups[invoiceNumber].push(ticket);
+      return groups;
+    }, {});
+  }
+);
+
+// Statistics for main tickets list
+export const selectTicketStatistics = createSelector(
+  [selectTicketsList],
+  (tickets) => ({
+    totalCount: tickets.length,
+    totalValue: tickets.reduce((sum, ticket) => sum + (ticket.priceDetails?.totalPrice || 0), 0),
+    uniqueInvoices: new Set(tickets.map(t => t.invoiceNumber)).size,
+    uniquePaymentIntents: new Set(tickets.map(t => t.paymentIntentId)).size,
+  })
+);
+
+// Statistics for search results
+export const selectSearchStatistics = createSelector(
+  [selectSearchResults],
+  (searchResults) => ({
+    totalCount: searchResults.length,
+    totalValue: searchResults.reduce((sum, ticket) => sum + (ticket.priceDetails?.totalPrice || 0), 0),
+    uniqueInvoices: new Set(searchResults.map(t => t.invoiceNumber)).size,
+    uniquePaymentIntents: new Set(searchResults.map(t => t.paymentIntentId)).size,
+  })
+);
+
+// Combined selectors that choose between regular and search results
+export const selectCurrentTickets = createSelector(
+  [selectSearchTerm, selectTicketsList, selectSearchResults],
+  (searchTerm, tickets, searchResults) => {
+    return searchTerm && searchResults.length > 0 ? searchResults : tickets;
+  }
+);
+
+export const selectCurrentTicketsByInvoice = createSelector(
+  [selectSearchTerm, selectTicketsByInvoice, selectSearchTicketsByInvoice],
+  (searchTerm, ticketsByInvoice, searchTicketsByInvoice) => {
+    return searchTerm ? searchTicketsByInvoice : ticketsByInvoice;
+  }
+);
+
+export const selectCurrentStatistics = createSelector(
+  [selectSearchTerm, selectTicketStatistics, selectSearchStatistics],
+  (searchTerm, ticketStats, searchStats) => {
+    return searchTerm ? searchStats : ticketStats;
+  }
+);
+
+// Search state selector
+export const selectSearch = createSelector(
+  [selectSearchState],
+  (searchState) => searchState
+);
+
+// ===================================
+// COMPLEX DERIVED SELECTORS
+// ===================================
+
+// Calculate total refund amount for selected individual tickets
+export const selectTotalRefundAmount = createSelector(
+  [selectSelectedTickets, selectRefundForm],
+  (selectedTickets, refundForm) => {
+    const { individual } = selectedTickets;
+    const { customAmounts } = refundForm;
+    
+    return individual.reduce((total, ticket) => {
+      const customAmount = customAmounts[ticket.ticketNumber];
+      const amount = customAmount !== undefined 
+        ? parseFloat(customAmount) || 0
+        : ticket.priceDetails?.totalPrice || 0;
+      return total + amount;
+    }, 0);
+  }
+);
+
+// Calculate group refund amount by invoice number
+export const selectGroupRefundAmount = createSelector(
+  [selectSelectedTickets],
+  (selectedTickets) => (invoiceNumber) => {
+    const groupedTickets = selectedTickets.grouped[invoiceNumber] || [];
+    return groupedTickets.reduce((total, ticket) => {
+      return total + (ticket.priceDetails?.totalPrice || 0);
+    }, 0);
+  }
+);
+
+// Enhanced invoice group eligibility checker
+export const selectInvoiceGroupEligibility = createSelector(
+  [selectTicketsByInvoice],
+  (ticketsByInvoice) => (invoiceNumber) => {
+    const invoiceTickets = ticketsByInvoice[invoiceNumber] || [];
+    
+    if (invoiceTickets.length === 0) {
+      return {
+        eligible: false,
+        reason: 'No tickets found for this invoice'
+      };
+    }
+    
+    const hasRefundedTickets = invoiceTickets.some(t => t.refundStatus === 'refunded');
+    const paymentIntents = [...new Set(invoiceTickets.map(t => t.paymentIntentId))];
+    const hasConsistentPaymentIntent = paymentIntents.length === 1;
+    
+    return {
+      eligible: !hasRefundedTickets && hasConsistentPaymentIntent,
+      reason: hasRefundedTickets 
+        ? 'Some tickets already refunded - use individual refunds'
+        : !hasConsistentPaymentIntent 
+        ? 'Inconsistent payment intents'
+        : 'Eligible for group refund',
+      ticketCount: invoiceTickets.length,
+      totalAmount: invoiceTickets.reduce((sum, t) => sum + (t.priceDetails?.totalPrice || 0), 0)
+    };
+  }
+);
+
+// Loading state aggregator
+export const selectIsLoading = createSelector(
+  [selectEvents, selectTicketsState, selectSearchState, selectProcessing, selectInvoiceEligibility],
+  (events, tickets, search, processing, invoiceEligibility) => {
+    return events.loading || 
+           tickets.loading || 
+           search.loading ||
+           processing.individual.loading ||
+           processing.group.loading ||
+           invoiceEligibility.loading;
+  }
+);
+
+// Error state aggregator
+export const selectHasErrors = createSelector(
+  [selectEvents, selectTicketsState, selectSearchState, selectProcessing, selectInvoiceEligibility],
+  (events, tickets, search, processing, invoiceEligibility) => {
+    return !!(events.error || 
+             tickets.error || 
+             search.error ||
+             processing.individual.error ||
+             processing.group.error ||
+             invoiceEligibility.error);
+  }
+);
+
+// Enhanced analytics with derived calculations
+export const selectRefundStats = createSelector(
+  [selectAnalytics, selectEvents],
+  (analytics, events) => {
+    return {
+      ...analytics,
+      averageRefundAmount: analytics.totalRefundsProcessed > 0 
+        ? (analytics.totalAmountRefunded / analytics.totalRefundsProcessed).toFixed(2)
+        : '0.00',
+      eventsWithRefunds: events.list.filter(e => e.hasRefundableTickets || e.refundedTickets > 0).length
+    };
+  }
+);
+
+// Pagination info selector
+export const selectPaginationInfo = createSelector(
+  [selectTicketsState],
+  (tickets) => ({
+    currentPage: tickets.currentPage,
+    totalPages: tickets.totalPages,
+    total: tickets.total,
+    limit: tickets.limit,
+    hasNextPage: tickets.currentPage < tickets.totalPages,
+    hasPrevPage: tickets.currentPage > 1,
+  })
+);
+
+// Selected tickets summary
+export const selectSelectedTicketsSummary = createSelector(
+  [selectSelectedTickets],
+  (selectedTickets) => {
+    const individualCount = selectedTickets.individual.length;
+    const groupedCount = Object.keys(selectedTickets.grouped).length;
+    const totalGroupedTickets = Object.values(selectedTickets.grouped)
+      .reduce((sum, tickets) => sum + tickets.length, 0);
+    
+    return {
+      individualCount,
+      groupedCount,
+      totalGroupedTickets,
+      totalSelected: individualCount + totalGroupedTickets,
+      hasSelectedTickets: individualCount > 0 || groupedCount > 0,
+    };
+  }
+);
+
+// Form validation selector
+export const selectRefundFormValidation = createSelector(
+  [selectRefundForm, selectSelectedTickets],
+  (refundForm, selectedTickets) => {
+    const hasReason = refundForm.reason.trim().length > 0;
+    const hasSelectedTickets = selectedTickets.individual.length > 0 || 
+                              Object.keys(selectedTickets.grouped).length > 0;
+    
+    const errors = [];
+    if (!hasReason) errors.push('Refund reason is required');
+    if (!hasSelectedTickets) errors.push('At least one ticket must be selected');
+    
+    // Validate custom amounts
+    const invalidCustomAmounts = [];
+    selectedTickets.individual.forEach(ticket => {
+      const customAmount = refundForm.customAmounts[ticket.ticketNumber];
+      if (customAmount !== undefined) {
+        const amount = parseFloat(customAmount);
+        const maxAmount = ticket.priceDetails?.totalPrice || 0;
+        if (isNaN(amount) || amount < 0) {
+          invalidCustomAmounts.push(`Invalid amount for ticket ${ticket.ticketNumber}`);
+        } else if (amount > maxAmount) {
+          invalidCustomAmounts.push(`Amount for ticket ${ticket.ticketNumber} exceeds maximum (${maxAmount})`);
+        }
+      }
+    });
+    
+    return {
+      isValid: hasReason && hasSelectedTickets && invalidCustomAmounts.length === 0,
+      hasReason,
+      hasSelectedTickets,
+      errors: [...errors, ...invalidCustomAmounts],
+      customAmountErrors: invalidCustomAmounts,
+    };
+  }
+);
+
+// Success messages selector
+export const selectSuccessMessages = createSelector(
+  [selectProcessing],
+  (processing) => {
+    const messages = [];
+    if (processing.individual.success) {
+      messages.push({
+        type: 'individual',
+        message: 'Individual refund processed successfully',
+        data: processing.individual.success
+      });
+    }
+    if (processing.group.success) {
+      messages.push({
+        type: 'group',
+        message: 'Group refund processed successfully',
+        data: processing.group.success
+      });
+    }
+    return messages;
+  }
+);
+
+// All errors selector
+export const selectAllErrors = createSelector(
+  [selectEvents, selectTicketsState, selectSearchState, selectProcessing, selectInvoiceEligibility],
+  (events, tickets, search, processing, invoiceEligibility) => {
+    const errors = [];
+    
+    if (events.error) errors.push({ type: 'events', message: events.error });
+    if (tickets.error) errors.push({ type: 'tickets', message: tickets.error });
+    if (search.error) errors.push({ type: 'search', message: search.error });
+    if (processing.individual.error) errors.push({ type: 'individual_refund', message: processing.individual.error });
+    if (processing.group.error) errors.push({ type: 'group_refund', message: processing.group.error });
+    if (invoiceEligibility.error) errors.push({ type: 'invoice_eligibility', message: invoiceEligibility.error });
+    
+    return errors;
+  }
+);
+
+// Invoice details selector with enhanced info
+export const selectInvoiceDetails = createSelector(
+  [selectTicketsByInvoice, selectSelectedTickets],
+  (ticketsByInvoice, selectedTickets) => (invoiceNumber) => {
+    const tickets = ticketsByInvoice[invoiceNumber] || [];
+    const isSelected = !!selectedTickets.grouped[invoiceNumber];
+    
+    if (tickets.length === 0) {
+      return null;
+    }
+    
+    const totalAmount = tickets.reduce((sum, t) => sum + (t.priceDetails?.totalPrice || 0), 0);
+    const paymentIntents = [...new Set(tickets.map(t => t.paymentIntentId))];
+    const buyers = [...new Set(tickets.map(t => `${t.buyer?.firstName} ${t.buyer?.lastName}`))];
+    const refundStatuses = [...new Set(tickets.map(t => t.refundStatus))];
+    
+    return {
+      invoiceNumber,
+      tickets,
+      ticketCount: tickets.length,
+      totalAmount,
+      paymentIntents,
+      hasMultiplePaymentIntents: paymentIntents.length > 1,
+      buyers,
+      refundStatuses,
+      hasRefundedTickets: refundStatuses.includes('refunded'),
+      canGroupRefund: paymentIntents.length === 1 && !refundStatuses.includes('refunded'),
+      isSelected,
+      createdAt: tickets[0]?.createdAt,
+      eventId: tickets[0]?.event,
+    };
+  }
+);
+
+// Current view selector (determines what data to show based on search state)
+export const selectCurrentView = createSelector(
+  [selectSearchTerm, selectSearchState, selectTicketsState],
+  (searchTerm, searchState, ticketsState) => {
+    return {
+      isSearching: !!searchTerm,
+      isSearchLoading: searchState.loading,
+      isTicketsLoading: ticketsState.loading,
+      hasSearchResults: searchState.results.length > 0,
+      showPagination: !searchTerm && ticketsState.totalPages > 1,
+      currentDataSource: searchTerm ? 'search' : 'tickets',
+    };
+  }
+);
+
+// Filter options selector (for advanced filtering)
+export const selectFilterOptions = createSelector(
+  [selectCurrentTickets],
+  (tickets) => {
+    const uniqueValues = tickets.reduce((acc, ticket) => {
+      // Payment methods
+      if (ticket.paymentMethod && !acc.paymentMethods.includes(ticket.paymentMethod)) {
+        acc.paymentMethods.push(ticket.paymentMethod);
+      }
+      
+      // Event types if available
+      if (ticket.eventType && !acc.eventTypes.includes(ticket.eventType)) {
+        acc.eventTypes.push(ticket.eventType);
+      }
+      
+      // Price ranges
+      const price = ticket.priceDetails?.totalPrice || 0;
+      if (price < 50) acc.priceRanges.under50++;
+      else if (price < 100) acc.priceRanges.under100++;
+      else if (price < 200) acc.priceRanges.under200++;
+      else acc.priceRanges.over200++;
+      
+      return acc;
+    }, {
+      paymentMethods: [],
+      eventTypes: [],
+      priceRanges: { under50: 0, under100: 0, under200: 0, over200: 0 }
+    });
+    
+    return uniqueValues;
+  }
+);
+
+// Performance metrics selector
+export const selectPerformanceMetrics = createSelector(
+  [selectTicketsState, selectSearchState, selectSelectedTickets],
+  (ticketsState, searchState, selectedTickets) => {
+    return {
+      totalTicketsLoaded: ticketsState.list.length,
+      searchResultsCount: searchState.results.length,
+      selectedIndividualCount: selectedTickets.individual.length,
+      selectedGroupsCount: Object.keys(selectedTickets.grouped).length,
+      memoryUsage: {
+        tickets: ticketsState.list.length,
+        searchResults: searchState.results.length,
+        selectedTickets: selectedTickets.individual.length + 
+                         Object.values(selectedTickets.grouped).reduce((sum, tickets) => sum + tickets.length, 0)
+      }
+    };
+  }
+);
 
 export default refundSlice.reducer;
