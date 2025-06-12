@@ -51,49 +51,70 @@ export default function RefundTicketCard({ ticket, isSelected, onToggleSelect })
     return customRefundAmount !== undefined ? customRefundAmount : ticket.priceDetails.totalPrice;
   };
 
-  const getSeatDisplayText = () => {
-    if (!ticket.seats || ticket.seats.length === 0) {
-      return 'General Admission';
-    }
-    return ticket.seats.map(seat => `${seat.row}${seat.seatNumber}`).join(', ');
-  };
+ const getSeatDisplayText = () => {
+  if (!ticket.seats || ticket.seats.length === 0) {
+    return 'General Admission';
+  }
+  return ticket.seats.map(seat => `${seat.row}${seat.seatNumber}`).join(', ');
+};
+
+// Check if ticket is refunded
+const isRefunded = ticket.refundStatus === 'refunded' || ticket.status === 'refunded';
 
   return (
-    <div className={`bg-white border rounded-lg shadow-sm transition-all duration-200 ${
-      isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-    }`}>
+     <div className={`bg-white border rounded-lg shadow-sm transition-all duration-200 ${
+    isRefunded 
+      ? 'border-red-200 bg-red-50 opacity-75' 
+      : isSelected 
+      ? 'border-blue-500 bg-blue-50' 
+      : 'border-gray-200 hover:border-gray-300'
+  }`}>
       {/* Main Card Content */}
       <div className="p-6">
         <div className="flex items-start justify-between">
           {/* Left Section - Ticket Info */}
           <div className="flex items-start space-x-4 flex-1">
-            {/* Selection Checkbox */}
-            <div className="flex-shrink-0 pt-1">
-              <button
-                onClick={onToggleSelect}
-                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                  isSelected
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                {isSelected && (
-                  <IoCheckmarkCircle className="w-3 h-3" />
-                )}
-              </button>
-            </div>
+{/* Selection Checkbox */}
+<div className="flex-shrink-0 pt-1">
+  <button
+    onClick={isRefunded ? undefined : onToggleSelect}
+    disabled={isRefunded}
+    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+      isRefunded
+        ? 'bg-red-100 border-red-300 cursor-not-allowed'
+        : isSelected
+        ? 'bg-blue-600 border-blue-600 text-white'
+        : 'border-gray-300 hover:border-gray-400'
+    }`}
+  >
+    {isRefunded ? (
+      <span className="text-red-600 text-xs">✕</span>
+    ) : isSelected ? (
+      <IoCheckmarkCircle className="w-3 h-3" />
+    ) : null}
+  </button>
+</div>
 
             {/* Ticket Details */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="flex items-center text-blue-600">
-                  <IoTicket className="h-5 w-5 mr-1" />
-                  <span className="text-sm font-mono font-medium">{ticket.ticketNumber}</span>
-                </div>
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {ticket.status}
-                </span>
-              </div>
+<div className="flex items-center space-x-3 mb-2">
+  <div className="flex items-center text-blue-600">
+    <IoTicket className="h-5 w-5 mr-1" />
+    <span className="text-sm font-mono font-medium">{ticket.ticketNumber}</span>
+  </div>
+  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+    isRefunded 
+      ? 'bg-red-100 text-red-800'
+      : 'bg-green-100 text-green-800'
+  }`}>
+    {isRefunded ? 'Refunded' : ticket.status}
+  </span>
+  {isRefunded && (
+    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+      {ticket.refundType === 'individual' ? 'Individual Refund' : 'Group Refund'}
+    </span>
+  )}
+</div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Buyer Information */}
@@ -155,8 +176,8 @@ export default function RefundTicketCard({ ticket, isSelected, onToggleSelect })
         </div>
 
         {/* Custom Refund Amount (when selected) */}
-        {isSelected && (
-          <div className="mt-4 pt-4 border-t border-blue-200">
+        {isSelected && !isRefunded && (
+  <div className="mt-4 pt-4 border-t border-blue-200">
             <div className="bg-blue-50 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <label className="text-sm font-medium text-blue-900">
@@ -203,7 +224,30 @@ export default function RefundTicketCard({ ticket, isSelected, onToggleSelect })
           </div>
         )}
       </div>
-
+{/* Refunded Notice */}
+{isRefunded && (
+  <div className="mt-4 pt-4 border-t border-red-200">
+    <div className="bg-red-50 rounded-lg p-4">
+      <div className="flex items-center">
+        <span className="text-red-600 mr-2">🔒</span>
+        <div>
+          <p className="text-sm font-medium text-red-900">
+            Ticket Already Refunded
+          </p>
+          <div className="text-sm text-red-700 mt-1">
+            <p>Refund Type: {ticket.refundType === 'individual' ? 'Individual (Partial)' : 'Group (Full Transaction)'}</p>
+            {ticket.refundedAt && (
+              <p>Refunded: {formatDate(ticket.refundedAt)}</p>
+            )}
+            {ticket.stripeRefundId && (
+              <p className="font-mono text-xs">ID: {ticket.stripeRefundId.slice(-8)}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       {/* Expanded Details */}
       {isExpanded && (
         <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">

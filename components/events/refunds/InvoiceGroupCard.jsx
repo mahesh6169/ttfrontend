@@ -89,16 +89,23 @@ export default function InvoiceGroupCard({
   };
 
   // Check if this invoice is eligible for group refund
-  const getEligibilityStatus = () => {
-    if (!invoiceEligibility.data || invoiceEligibility.data.invoiceNumber !== invoiceNumber) {
-      return { eligible: true, reason: 'Checking eligibility...' };
-    }
+const getEligibilityStatus = () => {
+  // Check if any tickets in this invoice are already refunded
+  const hasRefundedTickets = tickets.some(t => t.refundStatus === 'refunded' || t.status === 'refunded');
+  
+  if (hasRefundedTickets) {
+    return { eligible: false, reason: 'Some tickets in this invoice are already refunded' };
+  }
 
-    return {
-      eligible: invoiceEligibility.data.canProcessGroupRefund,
-      reason: invoiceEligibility.data.eligibilityReason
-    };
+  if (!invoiceEligibility.data || invoiceEligibility.data.invoiceNumber !== invoiceNumber) {
+    return { eligible: true, reason: 'Checking eligibility...' };
+  }
+
+  return {
+    eligible: invoiceEligibility.data.canProcessGroupRefund,
+    reason: invoiceEligibility.data.eligibilityReason
   };
+};
 
   const eligibilityStatus = getEligibilityStatus();
   const isEligible = eligibilityStatus.eligible;
@@ -111,12 +118,20 @@ export default function InvoiceGroupCard({
     onToggleSelect();
   };
 
-  return (
-    <div className={`bg-white border rounded-lg shadow-sm transition-all duration-200 ${
-      isSelected ? 'border-blue-500 bg-blue-50' : 
-      !isEligible ? 'border-red-200 bg-red-50' :
-      'border-gray-200 hover:border-gray-300'
-    }`}>
+// Check if all tickets are refunded
+const allTicketsRefunded = tickets.every(t => t.refundStatus === 'refunded' || t.status === 'refunded');
+const hasRefundedTickets = tickets.some(t => t.refundStatus === 'refunded' || t.status === 'refunded');
+
+return (
+  <div className={`bg-white border rounded-lg shadow-sm transition-all duration-200 ${
+    allTicketsRefunded
+      ? 'border-red-200 bg-red-50 opacity-75'
+      : isSelected 
+      ? 'border-blue-500 bg-blue-50' 
+      : !isEligible 
+      ? 'border-red-200 bg-red-50' 
+      : 'border-gray-200 hover:border-gray-300'
+  }`}>
       {/* Main Card Header */}
       <div className="p-6">
         <div className="flex items-start justify-between">
@@ -124,24 +139,27 @@ export default function InvoiceGroupCard({
           <div className="flex items-start space-x-4 flex-1">
             {/* Selection Checkbox */}
             <div className="flex-shrink-0 pt-1">
-              <button
-                onClick={handleToggleSelect}
-                disabled={!isEligible}
-                className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                  !isEligible 
-                    ? 'bg-red-100 border-red-300 cursor-not-allowed'
-                    : isSelected
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                {isSelected && isEligible && (
-                  <IoCheckmarkCircle className="w-4 h-4" />
-                )}
-                {!isEligible && (
-                  <IoWarningOutline className="w-4 h-4 text-red-600" />
-                )}
-              </button>
+<button
+  onClick={allTicketsRefunded ? undefined : handleToggleSelect}
+  disabled={!isEligible || allTicketsRefunded}
+  className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+    allTicketsRefunded
+      ? 'bg-red-100 border-red-300 cursor-not-allowed'
+      : !isEligible 
+      ? 'bg-red-100 border-red-300 cursor-not-allowed'
+      : isSelected
+      ? 'bg-blue-600 border-blue-600 text-white'
+      : 'border-gray-300 hover:border-gray-400'
+  }`}
+>
+  {allTicketsRefunded ? (
+    <span className="text-red-600 text-xs">✕</span>
+  ) : isSelected && isEligible ? (
+    <IoCheckmarkCircle className="w-4 h-4" />
+  ) : !isEligible ? (
+    <IoWarningOutline className="w-4 h-4 text-red-600" />
+  ) : null}
+</button>
             </div>
 
             {/* Invoice Details */}
@@ -151,9 +169,19 @@ export default function InvoiceGroupCard({
                   <IoReceiptOutline className="h-5 w-5 mr-2" />
                   <span className="text-lg font-semibold">{invoiceNumber}</span>
                 </div>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                  {ticketCount} Ticket{ticketCount !== 1 ? 's' : ''}
-                </span>
+<span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+  {ticketCount} Ticket{ticketCount !== 1 ? 's' : ''}
+</span>
+{allTicketsRefunded && (
+  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+    All Refunded
+  </span>
+)}
+{hasRefundedTickets && !allTicketsRefunded && (
+  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+    Mixed Status
+  </span>
+)}
                 {/* Eligibility Badge */}
                 {isEligible ? (
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">

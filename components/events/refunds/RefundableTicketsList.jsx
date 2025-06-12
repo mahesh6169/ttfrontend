@@ -275,34 +275,48 @@ export default function RefundableTicketsList({
       {activeTab === 'individual' ? (
         // Individual Tickets View
         <div className="space-y-4">
-          {sortedTickets.map((ticket) => (
-            <RefundTicketCard
-              key={ticket.ticketNumber}
-              ticket={ticket}
-              isSelected={selectedTickets.individual.some(t => t.ticketNumber === ticket.ticketNumber)}
-              onToggleSelect={() => dispatch(toggleTicketSelection(ticket))}
-            />
-          ))}
+{sortedTickets.map((ticket) => {
+  const isRefunded = ticket.refundStatus === 'refunded' || ticket.status === 'refunded';
+  return (
+    <RefundTicketCard
+      key={ticket.ticketNumber}
+      ticket={ticket}
+      isSelected={!isRefunded && selectedTickets.individual.some(t => t.ticketNumber === ticket.ticketNumber)}
+      onToggleSelect={() => {
+        if (!isRefunded) {
+          dispatch(toggleTicketSelection(ticket));
+        }
+      }}
+    />
+  );
+})}
         </div>
       ) : (
         // Group by Invoice View
         <div className="space-y-4">
-          {Object.entries(ticketsByInvoice).map(([invoiceNumber, invoiceTickets]) => (
-            <InvoiceGroupCard
-              key={invoiceNumber}
-              invoiceNumber={invoiceNumber}
-              tickets={invoiceTickets}
-              isSelected={!!selectedTickets.grouped[invoiceNumber]}
-              selectedEvent={selectedEvent}
-              onToggleSelect={() => {
-                if (selectedTickets.grouped[invoiceNumber]) {
-                  dispatch(deselectInvoiceGroup(invoiceNumber));
-                } else {
-                  dispatch(selectInvoiceGroup({ invoiceNumber, tickets: invoiceTickets }));
-                }
-              }}
-            />
-          ))}
+{Object.entries(ticketsByInvoice).map(([invoiceNumber, invoiceTickets]) => {
+  const hasRefundedTickets = invoiceTickets.some(t => t.refundStatus === 'refunded' || t.status === 'refunded');
+  const allTicketsRefunded = invoiceTickets.every(t => t.refundStatus === 'refunded' || t.status === 'refunded');
+  
+  return (
+    <InvoiceGroupCard
+      key={invoiceNumber}
+      invoiceNumber={invoiceNumber}
+      tickets={invoiceTickets}
+      isSelected={!allTicketsRefunded && !!selectedTickets.grouped[invoiceNumber]}
+      selectedEvent={selectedEvent}
+      onToggleSelect={() => {
+        if (allTicketsRefunded) return; // Don't allow selection if all refunded
+        
+        if (selectedTickets.grouped[invoiceNumber]) {
+          dispatch(deselectInvoiceGroup(invoiceNumber));
+        } else {
+          dispatch(selectInvoiceGroup({ invoiceNumber, tickets: invoiceTickets }));
+        }
+      }}
+    />
+  );
+})}
         </div>
       )}
 

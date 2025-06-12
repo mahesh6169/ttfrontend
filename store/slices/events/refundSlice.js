@@ -510,31 +510,43 @@ const refundSlice = createSlice({
         state.processing.individual.success = null;
       })
       .addCase(processIndividualRefund.fulfilled, (state, action) => {
-        state.processing.individual.loading = false;
-        state.processing.individual.success = action.payload;
-        state.processing.individual.error = null;
-        
-        // Remove the refunded ticket from lists
-        const ticketNumber = action.payload.ticketNumber;
-        state.tickets.list = state.tickets.list.filter(
-          ticket => ticket.ticketNumber !== ticketNumber
-        );
-        state.selectedTickets.individual = state.selectedTickets.individual.filter(
-          ticket => ticket.ticketNumber !== ticketNumber
-        );
-        state.search.results = state.search.results.filter(
-          ticket => ticket.ticketNumber !== ticketNumber
-        );
-        
-        // Update totals
-        state.tickets.total = Math.max(0, state.tickets.total - 1);
-        
-        // Update analytics
-        const refundAmount = action.payload.refund?.amount || 0;
-        state.analytics.totalRefundsProcessed += 1;
-        state.analytics.totalAmountRefunded += refundAmount;
-        state.analytics.lastRefundDate = new Date().toISOString();
-      })
+  state.processing.individual.loading = false;
+  state.processing.individual.success = action.payload;
+  state.processing.individual.error = null;
+  
+  // Update the refunded ticket status instead of removing it
+  const ticketNumber = action.payload.ticketNumber;
+  
+  // Update in main tickets list
+  const ticketIndex = state.tickets.list.findIndex(
+    ticket => ticket.ticketNumber === ticketNumber
+  );
+  if (ticketIndex > -1) {
+    state.tickets.list[ticketIndex].refundStatus = 'refunded';
+    state.tickets.list[ticketIndex].status = 'refunded';
+    state.tickets.list[ticketIndex].refundType = 'individual';
+    state.tickets.list[ticketIndex].stripeRefundId = action.payload.refund?.stripeRefundId;
+    state.tickets.list[ticketIndex].refundedAt = new Date().toISOString();
+  }
+  
+  // Update in search results
+  const searchIndex = state.search.results.findIndex(
+    ticket => ticket.ticketNumber === ticketNumber
+  );
+  if (searchIndex > -1) {
+    state.search.results[searchIndex].refundStatus = 'refunded';
+    state.search.results[searchIndex].status = 'refunded';
+    state.search.results[searchIndex].refundType = 'individual';
+    state.search.results[searchIndex].stripeRefundId = action.payload.refund?.stripeRefundId;
+    state.search.results[searchIndex].refundedAt = new Date().toISOString();
+  }
+  
+  // Update analytics
+  const refundAmount = action.payload.refund?.amount || 0;
+  state.analytics.totalRefundsProcessed += 1;
+  state.analytics.totalAmountRefunded += refundAmount;
+  state.analytics.lastRefundDate = new Date().toISOString();
+})
       .addCase(processIndividualRefund.rejected, (state, action) => {
         state.processing.individual.loading = false;
         state.processing.individual.error = action.payload;
