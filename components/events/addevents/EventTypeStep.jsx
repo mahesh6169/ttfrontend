@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { toggleIsPaid } from '@/store/slices/events/eventSlice';
+import { toggleIsPaid, updateRefundPolicy } from '@/store/slices/events/eventSlice';
 import { validateToken } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
 
@@ -51,6 +51,11 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
 
   const handlePaidToggle = (isPaid) => {
     dispatch(toggleIsPaid(isPaid));
+  };
+
+    // Handle refund policy changes
+  const handleRefundPolicyChange = (field, value) => {
+    dispatch(updateRefundPolicy({ field, value }));
   };
 
   // Check if this is a recurring event
@@ -339,6 +344,141 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
           </div>
         </div>
       </div>
+
+      {/* Refund Policy Section - Only show for paid events with Stripe setup complete */}
+      {formData.isPaid && stripeSetupComplete && (
+        <div className="mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Refund Policy
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Choose how processing fees are handled when refunds are issued to your customers.
+          </p>
+          
+          <div className="space-y-4">
+            {/* Processing Fee Policy Options */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-700">
+                Processing Fee Policy <span className="text-red-500">*</span>
+              </label>
+              
+              {/* Non-refundable option (default) */}
+              <div
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                  formData.refundPolicy?.processingFeePolicy === 'non-refundable'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={() => handleRefundPolicyChange('processingFeePolicy', 'non-refundable')}
+              >
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        formData.refundPolicy?.processingFeePolicy === 'non-refundable'
+                          ? 'border-blue-500 bg-white'
+                          : 'border-gray-400'
+                      }`}
+                    >
+                      {formData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium text-gray-800">Processing fees are non-refundable</h4>
+                      <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded-full">
+                        Standard
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      When refunds are issued, customers will receive the ticket price minus the $1 processing fee. 
+                      This is the most common approach used by ticketing platforms.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Refundable option */}
+              <div
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                  formData.refundPolicy?.processingFeePolicy === 'refunded'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={() => handleRefundPolicyChange('processingFeePolicy', 'refunded')}
+              >
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        formData.refundPolicy?.processingFeePolicy === 'refunded'
+                          ? 'border-blue-500 bg-white'
+                          : 'border-gray-400'
+                      }`}
+                    >
+                      {formData.refundPolicy?.processingFeePolicy === 'refunded' && (
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium text-gray-800">Processing fees are refunded</h4>
+                      <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full">
+                        Customer-Friendly
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Customers receive full refunds including the $1 processing fee. You absorb the platform fee loss 
+                      to provide a better customer experience.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Optional Policy Text */}
+            <div className="space-y-2">
+              <label htmlFor="policyText" className="text-sm font-medium text-gray-700">
+                Additional Policy Notes <span className="text-gray-400">(Optional)</span>
+              </label>
+              <textarea
+                id="policyText"
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                placeholder="Add any additional refund terms or conditions (e.g., refund deadlines, special circumstances, etc.)"
+                value={formData.refundPolicy?.policyText || ''}
+                onChange={(e) => handleRefundPolicyChange('policyText', e.target.value)}
+                maxLength={1000}
+              />
+              <div className="flex justify-between items-center text-xs text-gray-500">
+                <span>This will be shown to customers during checkout</span>
+                <span>{(formData.refundPolicy?.policyText || '').length}/1000</span>
+              </div>
+            </div>
+            
+            {/* Policy Preview */}
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <h5 className="text-sm font-medium text-blue-800 mb-2">Preview - What customers will see:</h5>
+              <div className="text-sm text-blue-700">
+                <p className="font-medium">
+                  {formData.refundPolicy?.processingFeePolicy === 'refunded' 
+                    ? '✓ Full refunds including processing fees' 
+                    : '⚠️ Processing fees ($1) are non-refundable'}
+                </p>
+                {formData.refundPolicy?.policyText && (
+                  <p className="mt-2 italic">"{formData.refundPolicy.policyText}"</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Payment Setup Required Warning - Enhanced */}
       {formData.isPaid && !stripeSetupComplete && (

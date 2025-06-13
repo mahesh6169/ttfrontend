@@ -117,6 +117,8 @@ const initialState = {
     lastName: '',
     email: '',
     phone: '',
+      agreedToTerms: false,
+  refundPolicyAccepted: false,
   },
   
   // Seat Information (coordination with seatSelectionSlice)
@@ -132,6 +134,14 @@ const initialState = {
   paymentIntentId: null,
   clientSecret: null,
   pricing: null,
+
+  // Refund Policy State
+refundPolicyInfo: {
+  policyType: null, // 'refunded' | 'non-refundable'
+  policyText: '',
+  policyDisplayed: false,
+  policyAccepted: false,
+},
   
   // Loading States
   loading: {
@@ -235,6 +245,25 @@ const ticketPurchaseSlice = createSlice({
       state.buyerInfo = { ...state.buyerInfo, ...action.payload };
     },
     
+    // Refund Policy Management
+setRefundPolicyInfo: (state, action) => {
+  state.refundPolicyInfo = { ...state.refundPolicyInfo, ...action.payload };
+},
+
+markRefundPolicyDisplayed: (state) => {
+  state.refundPolicyInfo.policyDisplayed = true;
+},
+
+acceptRefundPolicy: (state) => {
+  state.refundPolicyInfo.policyAccepted = true;
+  state.buyerInfo.refundPolicyAccepted = true;
+},
+
+clearRefundPolicyAcceptance: (state) => {
+  state.refundPolicyInfo.policyAccepted = false;
+  state.buyerInfo.refundPolicyAccepted = false;
+},
+
     // Seat Coordination
     setSeatRequirement: (state, action) => {
       state.seatInfo.requiresSeats = action.payload;
@@ -333,6 +362,10 @@ export const {
   clearError,
   setError,
   setPaymentStatus,
+   setRefundPolicyInfo,
+  markRefundPolicyDisplayed,
+  acceptRefundPolicy,
+  clearRefundPolicyAcceptance,
 } = ticketPurchaseSlice.actions;
 
 // Selectors
@@ -346,5 +379,6 @@ export const selectCurrentStep = (state) => state.ticketPurchase.currentStep;
 export const selectCanProceedToNext = (state) => state.ticketPurchase.canProceedToNext;
 export const selectPurchaseLoading = (state) => state.ticketPurchase.loading;
 export const selectPurchaseError = (state) => state.ticketPurchase.error;
+export const selectRefundPolicyInfo = (state) => state.ticketPurchase.refundPolicyInfo;
 
 export default ticketPurchaseSlice.reducer;

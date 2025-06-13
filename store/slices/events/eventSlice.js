@@ -273,7 +273,16 @@ const createDefaultFormData = () => ({
   
   // Financial
   stripeAccountId: '',
+
+  // Refund Policy (Paid Events Only)
+refundPolicy: {
+  processingFeePolicy: 'non-refundable', // 'refunded' or 'non-refundable'
+  policyText: ''
+},
+
 });
+
+
 
 // Helper function to safely convert images for edit mode
 const processImagesForEdit = (images) => {
@@ -354,6 +363,10 @@ const processEventDataForEdit = (eventData) => {
     seatingLayout: eventData.seatingLayout || [],
     seatingLayoutImage: eventData.seatingLayoutImage || null,
     stripeAccountId: eventData.stripeAccountId || '',
+    refundPolicy: eventData.refundPolicy || {
+  processingFeePolicy: 'non-refundable',
+  policyText: ''
+},
   };
 };
 
@@ -614,6 +627,21 @@ deleteError: null,
       state.formData.ticketTypes = state.formData.ticketTypes.filter((_, i) => i !== index);
       state.hasUnsavedChanges = true;
     },
+
+    // Refund Policy with change tracking (Paid Events Only)
+updateRefundPolicy: (state, action) => {
+  const { field, value } = action.payload;
+  state.formData.refundPolicy[field] = value;
+  state.hasUnsavedChanges = true;
+},
+
+setRefundPolicy: (state, action) => {
+  state.formData.refundPolicy = {
+    processingFeePolicy: action.payload.processingFeePolicy || 'non-refundable',
+    policyText: action.payload.policyText || ''
+  };
+  state.hasUnsavedChanges = true;
+},
     
     // Seating Layout with change tracking
     addSeatingRow: (state) => {
@@ -1011,6 +1039,10 @@ export const {
   updateTicketType,
   removeTicketType,
   
+// Refund policy
+updateRefundPolicy,
+setRefundPolicy,
+
   // Seating layout
   addSeatingRow,
   updateRowLabel,

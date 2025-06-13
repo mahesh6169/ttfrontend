@@ -31,7 +31,8 @@ import {
   selectTicketTotals,
   selectCanProceedToNext,
   selectPurchaseError,
-  selectPurchaseLoading
+  selectPurchaseLoading,
+   setRefundPolicyInfo
 } from '@/store/slices/events/ticketPurchaseSlice';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -78,6 +79,15 @@ const TicketSelectionPage = () => {
       
       // Set current step to ticket selection
       dispatch(setCurrentStep('ticket-selection'));
+      
+      // Set refund policy info if it's a paid event
+      if (selectedEvent.isPaid && selectedEvent.refundPolicy) {
+        dispatch(setRefundPolicyInfo({
+          policyType: selectedEvent.refundPolicy.processingFeePolicy || 'non-refundable',
+          policyText: selectedEvent.refundPolicy.policyText || '',
+          policyDisplayed: true
+        }));
+      }
       
       // Pre-fill buyer info with user data if available
       if (user) {
@@ -377,6 +387,68 @@ const TicketSelectionPage = () => {
               );
             })}
           </div>
+
+          {/* Refund Policy Display - Only show for paid events */}
+        {selectedEvent.isPaid && selectedEvent.refundPolicy && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1">
+                <h4 className="font-medium text-blue-800 mb-2 flex items-center">
+                  <span>Refund Policy</span>
+                  {selectedEvent.refundPolicy.processingFeePolicy === 'refunded' && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Customer-Friendly
+                    </span>
+                  )}
+                </h4>
+                
+                <div className="text-sm text-blue-700 space-y-2">
+                  {/* Processing Fee Policy */}
+                  <div className="flex items-start">
+                    {selectedEvent.refundPolicy.processingFeePolicy === 'refunded' ? (
+                      <>
+                        <svg className="w-4 h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>
+                          <strong>Full refunds including processing fees:</strong> If you need to cancel, you'll receive a complete refund including the $1 processing fee.
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 text-amber-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <span>
+                          <strong>Processing fees are non-refundable:</strong> If you need to cancel, you'll receive a refund of the ticket price minus the $1 processing fee.
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Additional Policy Text */}
+                  {selectedEvent.refundPolicy.policyText && (
+                    <div className="mt-3 p-3 bg-white bg-opacity-50 rounded border border-blue-200">
+                      <p className="text-sm text-blue-800 italic">
+                        "{selectedEvent.refundPolicy.policyText}"
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Policy Summary */}
+                  <div className="mt-3 text-xs text-blue-600 bg-white bg-opacity-30 rounded p-2">
+                    💡 <strong>Note:</strong> You'll need to acknowledge this refund policy during checkout before completing your purchase.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
           {/* Seating Info */}
           {hasSeatingLayout && totals.totalQuantity > 0 && (

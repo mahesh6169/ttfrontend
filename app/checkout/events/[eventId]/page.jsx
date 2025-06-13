@@ -23,6 +23,7 @@ import RequireLogin from '@/components/Auth/RequireLogin';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import StripePaymentForm from '@/components/payments/StripePaymentForm';
 import PaymentSummary from '@/components/payments/PaymentSummary';
+import RefundPolicyDisplay from '@/components/events/refunds/RefundPolicyDisplay';
 import {
   initializePurchaseSession,
   updateBuyerInfo,
@@ -43,6 +44,10 @@ import {
   selectPurchaseLoading,
   selectPurchaseError,
   updateTicketSelection,
+    setRefundPolicyInfo,
+  acceptRefundPolicy,
+  clearRefundPolicyAcceptance,
+  selectRefundPolicyInfo
 } from '@/store/slices/events/ticketPurchaseSlice';
 import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
 import {
@@ -71,6 +76,7 @@ const CheckoutPage = () => {
   const currentStep = useSelector(selectCurrentStep);
   const loading = useSelector(selectPurchaseLoading);
   const purchaseError = useSelector(selectPurchaseError);
+  const refundPolicyInfo = useSelector(selectRefundPolicyInfo);
   const currentReservation = useSelector(selectCurrentReservation);
   const seatSessionId = useSelector(selectSessionId);
 
@@ -354,7 +360,21 @@ const [isLoading, setIsLoading] = useState(true);
     }
   };
 
-  // Validate form
+   // Handle refund policy acceptance
+  const handleRefundPolicyAcceptance = (checked) => {
+    if (checked) {
+      dispatch(acceptRefundPolicy());
+    } else {
+      dispatch(clearRefundPolicyAcceptance());
+    }
+
+    // Clear refund policy errors
+    if (errors.refundPolicyAccepted) {
+      setErrors((prev) => ({ ...prev, refundPolicyAccepted: null }));
+    }
+  };
+
+// Validate form
   const validateForm = () => {
     const newErrors = {};
 
@@ -380,6 +400,11 @@ const [isLoading, setIsLoading] = useState(true);
 
     if (!buyerInfo.agreeToTerms) {
       newErrors.agreeToTerms = 'You must agree to the terms and conditions';
+    }
+
+    // Validate refund policy acceptance for paid events
+    if (event?.isPaid && event?.refundPolicy && !buyerInfo.refundPolicyAccepted) {
+      newErrors.refundPolicyAccepted = 'You must acknowledge the refund policy to proceed';
     }
 
     setErrors(newErrors);
@@ -431,27 +456,57 @@ const [isLoading, setIsLoading] = useState(true);
     try {
       console.log('🎉 Payment succeeded, confirming with Redux...');
 
+
+    // ✅ VALIDATION: Ensure refund policy acceptance for paid events
+    if (event?.isPaid && event?.refundPolicy && !buyerInfo.refundPolicyAccepted) {
+      throw new Error('Refund policy acceptance is required but was not confirmed. Please refresh and try again.');
+    }
+
       // ✅ Convert selectedTickets array to tickets object that backend expects
       const ticketsObject = selectedTickets.reduce((acc, ticket) => {
         acc[ticket.ticketTypeId] = ticket.quantity;
         return acc;
       }, {});
 
+      // ✅ ENHANCED: Include explicit refund policy acceptance data
+      const enhancedBuyerInfo = {
+        ...buyerInfo,
+        // Ensure refund policy acceptance is explicitly included
+        refundPolicyAccepted: buyerInfo.refundPolicyAccepted || false,
+        // Include policy details for audit trail
+        refundPolicyInfo: event?.isPaid && event?.refundPolicy ? {
+          policyType: event.refundPolicy.processingFeePolicy || 'non-refundable',
+          policyText: event.refundPolicy.policyText || '',
+          acceptedAt: buyerInfo.refundPolicyAccepted ? new Date().toISOString() : null
+        } : null
+      };
+
       console.log('🐛 checkoutpage: DEBUG: confirmPayment payload:', {
         eventId: params.eventId,
         paymentIntentId: paymentIntent.id,
         paymentMethodId: paymentIntent.payment_method?.id,
         tickets: ticketsObject,
-        buyerInfo
+        buyerInfo: enhancedBuyerInfo
       });
 
-      // ✅ FIXED: Simplified confirmPayment call to match backend expectations
+       // ✅ LOG: Refund policy acceptance details for audit
+    if (event?.isPaid && event?.refundPolicy) {
+      console.log('📋 Refund Policy Acceptance Details:', {
+        policyType: event.refundPolicy.processingFeePolicy,
+        policyText: event.refundPolicy.policyText ? 'Custom text provided' : 'No custom text',
+        userAccepted: buyerInfo.refundPolicyAccepted,
+        acceptedAt: buyerInfo.refundPolicyAccepted ? new Date().toISOString() : 'Not accepted',
+        buyerEmail: buyerInfo.email
+      });
+    }
+
+     // ✅ ENHANCED: Simplified confirmPayment call with explicit policy data
       const result = await dispatch(confirmPayment({
         eventId: params.eventId,
         paymentIntentId: paymentIntent.id,
         paymentMethodId: paymentIntent.payment_method?.id, // Optional
         tickets: ticketsObject, // Object format: { ticketTypeId: quantity }
-        buyerInfo
+        buyerInfo: enhancedBuyerInfo
         // ✅ REMOVED: All seat-related data - backend handles this automatically through event seatingLayout
       }));
 
@@ -574,6 +629,14 @@ const [isLoading, setIsLoading] = useState(true);
           // Set current step to checkout if coming from ticket selection
           if (currentStep === 'ticket-selection') {
             dispatch(setCurrentStep('checkout'));
+          }
+           // Initialize refund policy info for paid events
+          if (eventData.isPaid && eventData.refundPolicy) {
+            dispatch(setRefundPolicyInfo({
+              policyType: eventData.refundPolicy.processingFeePolicy || 'non-refundable',
+              policyText: eventData.refundPolicy.policyText || '',
+              policyDisplayed: true
+            }));
           }
         } else {
           // Fallback: Try to get data from sessionStorage and initialize Redux
@@ -991,6 +1054,43 @@ const [isLoading, setIsLoading] = useState(true);
                         <p className="text-sm text-red-600">
                           {errors.agreeToTerms}
                         </p>
+                      )}
+
+                       {/* Refund Policy Section - Only for paid events */}
+                      {event?.isPaid && event?.refundPolicy && (
+                        <div className="mt-6 border-t pt-6">
+                          <RefundPolicyDisplay 
+                            refundPolicy={event.refundPolicy}
+                            variant="checkout"
+                          />
+
+                          {/* Mandatory Refund Policy Acceptance */}
+                          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="flex items-start">
+                              <input
+                                type="checkbox"
+                                name="refundPolicyAccepted"
+                                checked={buyerInfo.refundPolicyAccepted || false}
+                                onChange={(e) => handleRefundPolicyAcceptance(e.target.checked)}
+                                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <label className="ml-2 text-sm text-gray-700">
+                                <span className="font-medium text-gray-900">
+                                  I acknowledge and accept the refund policy stated above. *
+                                </span>
+                                <br />
+                                <span className="text-gray-600 text-xs mt-1 block">
+                                  This policy will apply to any refunds processed for this purchase.
+                                </span>
+                              </label>
+                            </div>
+                            {errors.refundPolicyAccepted && (
+                              <p className="mt-2 text-sm text-red-600 ml-6">
+                                {errors.refundPolicyAccepted}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       )}
 
                       {/* Proceed to Payment Button */}

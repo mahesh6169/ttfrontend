@@ -14,6 +14,7 @@ import {
   FaPhone,
   FaTag
 } from 'react-icons/fa';
+import RefundPolicyDisplay from '@/components/events/refunds/RefundPolicyDisplay';
 
 const PaymentSummary = ({ 
   event, 
@@ -196,6 +197,28 @@ const PaymentSummary = ({
           <span>${totals.total?.toFixed(2)}</span>
         </div>
       </div>
+{/* Refund Policy Section - Only for paid events */}
+      {event.isPaid && event.refundPolicy && (
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-3">Refund Policy</h3>
+          <RefundPolicyDisplay 
+            refundPolicy={event.refundPolicy}
+            variant="card"
+            showNote={false}
+          />
+          
+          {/* Policy Status Indicator */}
+          {showBuyerInfo && buyerInfo?.refundPolicyAccepted && (
+            <div className="mt-3 flex items-center text-sm text-green-700 bg-green-50 rounded-lg p-2">
+              <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="font-medium">Policy acknowledged and accepted</span>
+            </div>
+          )}
+        </div>
+      )}
+      
 
       {/* Additional Information */}
       <div className="mt-6 pt-4 border-t border-gray-200">
@@ -224,6 +247,11 @@ const PaymentSummary = ({
         <a href="/support/privacy" target="_blank" className="text-blue-600 hover:underline">
           Privacy Policy
         </a>
+        {event.isPaid && event.refundPolicy && (
+          <span>
+            {', '}and acknowledge the refund policy stated above
+          </span>
+        )}
       </div>
     </div>
   );
