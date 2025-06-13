@@ -382,7 +382,7 @@ const eventSlice = createSlice({
     
     // Form state
     currentStep: 1,
-    totalSteps: 4,
+    totalSteps: 5,
     
     // Form data
     formData: createDefaultFormData(),

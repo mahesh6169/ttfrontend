@@ -33,6 +33,7 @@ import EventDetailsStep from './EventDetailsStep';
 import OrganiserDetailsStep from './OrganiserDetailsStep';
 import EventTypeStep from './EventTypeStep';
 import TicketConfigStep from './TicketConfigStep';
+import RefundPolicyStep from './RefundPolicyStep';
 import SuccessStep from './SuccessStep';
 
 // Auth Components
@@ -592,6 +593,16 @@ useEffect(() => {
         }
         break;
 
+         case 5: // Refund Policy
+        // Only validate refund policy for paid events
+        if (formData.isPaid) {
+          if (!formData.refundPolicy?.processingFeePolicy) {
+            errors.refundPolicy = ['Please select a refund policy option'];
+          }
+        }
+        // Free events skip refund policy validation
+        break;
+
       default:
         break;
     }
@@ -716,6 +727,10 @@ const isNextButtonDisabled = useCallback(() => {
       if (formData.stripeAccountId) {
         submitFormData.append('stripeAccountId', formData.stripeAccountId);
       }
+      
+       if (formData.refundPolicy) {
+    submitFormData.append('refundPolicy', JSON.stringify(formData.refundPolicy));
+  }
     }
 
     // Recurring event fields
@@ -1018,6 +1033,15 @@ const handleAddAnother = useCallback(() => {
 
           {currentStep === 4 && (
             <TicketConfigStep
+              formData={formData}
+              errors={formErrors}
+              mode={mode}
+              readOnly={isViewMode}
+            />
+          )}
+
+           {currentStep === 5 && (
+            <RefundPolicyStep
               formData={formData}
               errors={formErrors}
               mode={mode}
