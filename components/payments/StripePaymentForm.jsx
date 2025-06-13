@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -13,7 +13,7 @@ import PaymentMethodForm from './PaymentMethodForm';
 import { FaSpinner, FaLock, FaExclamationTriangle } from 'react-icons/fa';
 
 // Initialize Stripe outside component to avoid re-creating on each render
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+//const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 const PaymentForm = ({ 
   clientSecret, 
@@ -173,20 +173,35 @@ const PaymentForm = ({
 };
 
 const StripePaymentForm = ({ 
-  clientSecret, 
+  clientSecret,
+  stripeAccountId, 
   buyerInfo, 
   totalAmount,
   onSuccess, 
   onError,
   disabled = false 
 }) => {
-  // Stripe Elements options
+  // ✅ Create Stripe instance with connected account context
+  const stripePromise = useMemo(
+    () => {
+      console.log('🔧 Creating Stripe instance with account:', stripeAccountId);
+      return loadStripe(
+        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+        { 
+          stripeAccount: stripeAccountId
+        }
+      );
+    },
+    [stripeAccountId]
+  );
+
+  // Stripe Elements options (simplified)
   const options = {
     clientSecret,
     appearance: {
       theme: 'stripe',
       variables: {
-        colorPrimary: '#16a34a', // Green primary color
+        colorPrimary: '#16a34a',
         colorBackground: '#ffffff',
         colorText: '#1f2937',
         colorDanger: '#dc2626',
@@ -197,6 +212,10 @@ const StripePaymentForm = ({
     },
   };
 
+  console.log('🔍 Stripe Elements options:', {
+    hasClientSecret: !!options.clientSecret,
+    organizerAccount: stripeAccountId
+  });
 
   return (
     <Elements stripe={stripePromise} options={options}>

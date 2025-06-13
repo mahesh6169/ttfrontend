@@ -1037,6 +1037,7 @@ const [isLoading, setIsLoading] = useState(true);
                   {clientSecret ? (
                     <StripePaymentForm
                       clientSecret={clientSecret}
+                       stripeAccountId={ticketPurchaseState.stripeAccountId}
                       buyerInfo={buyerInfo}
                       totalAmount={totals.total}
                       onSuccess={handlePaymentSuccess}

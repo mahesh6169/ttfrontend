@@ -288,6 +288,7 @@ const ticketPurchaseSlice = createSlice({
         state.paymentStatus = 'pending';
         state.paymentIntentId = action.payload.paymentIntentId;
         state.paymentIntent = { id: action.payload.paymentIntentId };
+        state.stripeAccountId = action.payload.stripeAccountId;
         state.clientSecret = action.payload.clientSecret;
         state.pricing = action.payload.pricing;
         state.error = null;
