@@ -377,11 +377,6 @@ const EventDetailsStep = ({
         )}
         <div className="text-xs text-gray-500 space-y-1">
           <p>{getHelpText('dateTime')}</p>
-          {isEditMode && formData.dateTime && (
-            <p className="text-amber-600 font-medium">
-              ⚠️ Changing the date/time will send update notifications to all registered attendees
-            </p>
-          )}
         </div>
       </div>
 
@@ -590,12 +585,7 @@ const EventDetailsStep = ({
           placeholder={disabled ? 'Event address' : 'Enter event address'}
           disabled={disabled}
           mode={mode}
-        />
-        {isEditMode && (
-          <p className="text-xs text-amber-600">
-            ⚠️ Address changes will update location information for all attendees
-          </p>
-        )}
+        />        
       </div>
 
       {/* Description - Enhanced textarea for mobile */}
@@ -658,39 +648,7 @@ const EventDetailsStep = ({
         )}
       </div>
 
-      {/* Mode-specific information box - Mobile optimized */}
-      {(isEditMode || isViewMode) && formData.title && (
-        <div className={`p-3 sm:p-4 rounded-xl border ${
-          isEditMode ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-        }`}>
-          <div className="flex flex-col sm:flex-row">
-            <div className="flex-shrink-0 mb-2 sm:mb-0 sm:mr-3">
-              <svg className={`h-5 w-5 ${isEditMode ? 'text-blue-600' : 'text-gray-600'}`} 
-                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h4 className={`text-sm font-medium ${isEditMode ? 'text-blue-800' : 'text-gray-800'} mb-1`}>
-                {isEditMode ? 'Editing Event' : 'Event Information'}
-              </h4>
-              <div className={`text-xs sm:text-sm ${isEditMode ? 'text-blue-700' : 'text-gray-600'}`}>
-                {isEditMode ? (
-                  <p>
-                    Changes made to this event will be automatically saved and may trigger 
-                    notifications to registered attendees depending on the type of change.
-                  </p>
-                ) : (
-                  <p>
-                    This event information is displayed as configured by the event organizer.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
+import { useRef, useCallback } from 'react';
 
 import { 
   fetchSeatAvailability,
@@ -14,7 +15,9 @@ import {
   selectSelectedSeats,
   selectIsLoading as selectSeatLoading,
   selectError as selectSeatError,
-  selectCurrentReservation
+  selectCurrentReservation,
+  releaseReservation,
+  clearSelection
 
 } from '@/store/slices/events/seatSelectionSlice';
 import { 
@@ -41,6 +44,8 @@ const SeatSelectionPage = () => {
   
   const [initializationError, setInitializationError] = useState(null);
   const [initializationAttempted, setInitializationAttempted] = useState(false);
+
+   const latestReservationRef = useRef();
 
   // Redux state from both slices
   const { 
@@ -193,6 +198,132 @@ const SeatSelectionPage = () => {
       }));
     }
   }, [selectedSeats, dispatch]);
+
+  //Keep ref updated with latest reservation
+  useEffect(() => {
+    latestReservationRef.current = currentReservation;
+  }, [currentReservation])
+
+  // ✅ TASK 1: Keep ref updated with latest reservation
+  useEffect(() => {
+    latestReservationRef.current = currentReservation;
+  }, [currentReservation]);
+
+  // ✅ TASK 2: Centralized cleanup function with multiple strategies
+  const performCleanup = useCallback(async (reason = 'unknown') => {
+    const freshReservation = latestReservationRef.current;
+    
+    console.log(`🔧 CLEANUP: Starting cleanup (${reason})`, {
+      hasReservation: !!freshReservation,
+      seatCount: freshReservation?.seatIds?.length || 0,
+      eventId
+    });
+
+    if (freshReservation?.seatIds?.length > 0) {
+      try {
+        // Strategy 1: Normal release with sessionId
+        const result = await dispatch(releaseReservation({
+          eventId: eventId,
+          seatIds: freshReservation.seatIds,
+          sessionId: freshReservation.sessionId,
+        })).unwrap();
+        
+        console.log(`✅ CLEANUP (${reason}): Primary strategy succeeded`, result);
+        
+      } catch (error) {
+        console.error(`❌ CLEANUP (${reason}): Primary strategy failed`, error);
+        
+        // Strategy 2: Fallback - release all user's seats (ignore sessionId)
+        try {
+          console.log(`🔄 CLEANUP (${reason}): Trying fallback strategy`);
+          await dispatch(releaseReservation({
+            eventId: eventId,
+            seatIds: null, // Release all user's seats
+            sessionId: null, // Ignore sessionId matching
+          })).unwrap();
+          
+          console.log(`✅ CLEANUP (${reason}): Fallback strategy succeeded`);
+        } catch (fallbackError) {
+          console.error(`❌ CLEANUP (${reason}): Fallback strategy failed`, fallbackError);
+        }
+        
+        // Strategy 3: Force clear local state regardless
+        console.log(`🧹 CLEANUP (${reason}): Force clearing local state`);
+        dispatch(clearSelection());
+      }
+    } else {
+      console.log(`ℹ️ CLEANUP (${reason}): No reservation to clean up`);
+    }
+  }, [dispatch, eventId]);
+
+// ✅ TASK 2: Primary cleanup strategy - component unmount
+useEffect(() => {
+  return () => {
+    performCleanup('component-unmount');
+  };
+}, [performCleanup]);
+
+
+// ✅ TASK 2: Primary cleanup strategy - component unmount
+useEffect(() => {
+  return () => {
+    performCleanup('component-unmount');
+  };
+}, [performCleanup]);
+
+// ✅ TASK 2: Secondary cleanup strategies - page events
+useEffect(() => {
+  const handleBeforeUnload = () => {
+    const freshReservation = latestReservationRef.current;
+    if (freshReservation?.seatIds?.length > 0) {
+      // Use sendBeacon for reliable cleanup during page unload
+      try {
+        const data = JSON.stringify({
+          seatIds: freshReservation.seatIds,
+          sessionId: freshReservation.sessionId
+        });
+        
+        // Convert to proper request format for sendBeacon
+        const blob = new Blob([data], { type: 'application/json' });
+        
+        navigator.sendBeacon(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/seats/reserve`,
+          blob
+        );
+        console.log('📡 CLEANUP (beforeunload): Beacon sent for emergency cleanup');
+      } catch (error) {
+        console.error('❌ CLEANUP (beforeunload): Beacon failed:', error);
+      }
+    }
+  };
+
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') {
+      // User switched tabs or minimized browser
+      performCleanup('visibility-hidden');
+    }
+  };
+
+  const handlePageHide = () => {
+    // Page is being unloaded (more reliable than beforeunload)
+    const freshReservation = latestReservationRef.current;
+    if (freshReservation?.seatIds?.length > 0) {
+      performCleanup('page-hide');
+    }
+  };
+
+  // Register event listeners
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('pagehide', handlePageHide);
+
+  return () => {
+    // Cleanup event listeners
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('pagehide', handlePageHide);
+  };
+}, [performCleanup, eventId]);
 
   // Handles navigation back to previous page
   const handleBack = () => {

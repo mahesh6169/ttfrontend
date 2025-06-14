@@ -277,35 +277,23 @@ useEffect(() => {
     }
 
     // Coordinator validation
-    if (!formData.coordinators || formData.coordinators.length === 0) {
-      errors.coordinators = ['At least one event coordinator is required'];
-    } else {
-      const coordinatorErrors = [];
-      formData.coordinators.forEach((coord, index) => {
-        if (!coord.name?.trim() || !coord.phone?.trim()) {
-          coordinatorErrors.push(
-            `Coordinator ${index + 1} name and phone are required`
-          );
-        }
-        // Basic phone validation
-        if (coord.phone && !/^[\d\s\-\+\(\)]+$/.test(coord.phone)) {
-          coordinatorErrors.push(
-            `Coordinator ${index + 1} phone number format is invalid`
-          );
-        }
-        // Basic email validation if provided
-        if (
-          coord.email &&
-          coord.email.trim() &&
-          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(coord.email)
-        ) {
-          coordinatorErrors.push(
-            `Coordinator ${index + 1} email format is invalid`
-          );
-        }
-      });
-      if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;
+if (formData.coordinators && formData.coordinators.length > 0) {
+  const coordinatorErrors = [];
+  formData.coordinators.forEach((coord, index) => {
+    // Only validate if coordinator has ANY data entered
+    const hasAnyData = coord.name?.trim() || coord.phone?.trim() || coord.email?.trim() || coord.role?.trim();
+    
+    if (hasAnyData) {
+      // If they started filling it out, require name and phone
+      if (!coord.name?.trim() || !coord.phone?.trim()) {
+        coordinatorErrors.push(
+          `Coordinator ${index + 1}: If adding a coordinator, name and phone are required`
+        );
+      }
     }
+  });
+  if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;
+}
 
       // Organizer validation
     if (!formData.organizer?.name?.trim()) {
@@ -490,28 +478,32 @@ useEffect(() => {
           errors.address = ['Event address is required'];
         break;
 
-      case 2: // Organiser Details
-        // Organizer validation
-        if (!formData.organizer?.name?.trim()) {
-          errors.organizer = ['Organizer name is required'];
+case 2: // Organiser Details
+  // Organizer validation
+  if (!formData.organizer?.name?.trim()) {
+    errors.organizer = ['Organizer name is required'];
+  }
+  
+  // Coordinators validation - UPDATED: Now optional
+  if (formData.coordinators && formData.coordinators.length > 0) {
+    const coordinatorErrors = [];
+    formData.coordinators.forEach((coord, index) => {
+      // Only validate if coordinator has ANY data entered
+      const hasAnyData = coord.name?.trim() || coord.phone?.trim() || coord.email?.trim() || coord.role?.trim();
+      
+      if (hasAnyData) {
+        // If they started filling it out, require name and phone
+        if (!coord.name?.trim() || !coord.phone?.trim()) {
+          coordinatorErrors.push(
+            `Coordinator ${index + 1}: If adding a coordinator, name and phone are required`
+          );
         }
-        
-        // Coordinators validation
-        if (!formData.coordinators || formData.coordinators.length === 0) {
-          errors.coordinators = ['At least one event coordinator is required'];
-        } else {
-          const coordinatorErrors = [];
-          formData.coordinators.forEach((coord, index) => {
-            if (!coord.name?.trim() || !coord.phone?.trim()) {
-              coordinatorErrors.push(
-                `Coordinator ${index + 1} name and phone are required`
-              );
-            }
-          });
-          if (coordinatorErrors.length > 0)
-            errors.coordinators = coordinatorErrors;
-        }
-        break;
+      }
+    });
+    if (coordinatorErrors.length > 0)
+      errors.coordinators = coordinatorErrors;
+  }
+  break;
 
       case 3: // Event Type
         // No specific validation needed for step 3, just selection

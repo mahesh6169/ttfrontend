@@ -67,6 +67,7 @@ if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
     0
   );
 
+
   // Automatically reserves seats when user selects exactly the required number of seats.
   useEffect(() => {
     const shouldAutoReserve =
@@ -190,7 +191,9 @@ const handleSeatClick = (seatId, seatStatus) => {
       !currentReservation?.seatIds ||
       currentReservation.seatIds.length === 0
     ) {
-return;
+      console.log('🔓 No active reservation to auto-release');
+      dispatch(clearSelection()); // Just clear locally
+      return;
     }
 
     // ✅ NEW: Set loading state for auto-release
@@ -314,9 +317,8 @@ const reservationData = {
     }
   };
 
-  // Clears selected seats and releases any active reservations when user manually clears selection.
+// Clears selected seats and releases any active reservations when user manually clears selection.
   const handleClearSelection = async () => {
-// ✅ NEW: More informative logging
     if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
       console.log('🔓 Manually releasing current reservation:', {
         reservationId: currentReservation.reservationId,
@@ -332,14 +334,12 @@ const reservationData = {
             sessionId: currentReservation.sessionId || sessionId,
           })
         ).unwrap();
-} catch (error) {
+      } catch (error) {
         console.error('❌ Failed to release reservation manually:', error);
         // Continue with clearing selection even if release fails
       }
     } else {
-      console.log(
-        'ℹ️ No active reservation to release, just clearing selection'
-      );
+      console.log('ℹ️ No active reservation to release, just clearing selection');
     }
 
     dispatch(clearSelection());
