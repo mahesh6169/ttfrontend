@@ -538,9 +538,20 @@ const [isLoading, setIsLoading] = useState(true);
     });
   };
 
-  // ✅ FIX: Add missing handleBackToTickets function
+// ✅ FIX: Smart back navigation based on event type
   const handleBackToTickets = () => {
-    router.push(`/events/views/${params.eventId}`);
+    // Check if this event has seat selection
+    const hasSeats = seatInfo.requiresSeats || 
+                     event?.seatingLayout === 'assigned' ||
+                     (currentReservation && currentReservation.seatIds?.length > 0);
+
+    if (hasSeats) {
+      // For seated events, go back to seat selection
+      router.push(`/events/seats/${params.eventId}`);
+    } else {
+      // For non-seated events, go back to ticket selection
+      router.push(`/events/tickets/${params.eventId}`);
+    }
   };
 
   // Handle back to details step
@@ -818,7 +829,9 @@ const [isLoading, setIsLoading] = useState(true);
               <FaArrowLeft className="mr-2" />
               {currentStep === 'payment'
                 ? 'Back to Details'
-                : 'Back to Ticket Selection'}
+                : (seatInfo.requiresSeats || event?.seatingLayout === 'assigned' 
+                   ? 'Back to Seat Selection' 
+                   : 'Back to Ticket Selection')}
             </button>
 
             <h1 className="text-3xl font-bold text-gray-900">
@@ -880,31 +893,41 @@ const [isLoading, setIsLoading] = useState(true);
             {/* Main Content */}
             <div className="lg:col-span-2">
               {/* ✅ Seat reservation timer - standalone */}
-                  {currentReservation && currentReservation.reservedUntil && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-                      <h3 className="text-sm font-medium text-amber-800 mb-2 flex items-center">
-                        <FaChair className="mr-2" />
-                        Seat Reservation Active
-                      </h3>
-                      <p className="text-xs text-amber-700 mb-3">
-                        Complete payment before timer expires or seats will be automatically released.
-                      </p>
-                      <SeatReservationTimer
-                        expiryTime={currentReservation.reservedUntil}
-                        onExpire={handleTimerExpire}
-                        eventId={params.eventId}
-                        disabled={seatSliceLoading}
-                      />
-                      
-                      <button
-                        onClick={handleManualCleanup}
-                        disabled={seatSliceLoading}
-                        className="mt-2 w-full px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded transition-colors disabled:opacity-50"
-                      >
-                        {seatSliceLoading ? 'Releasing...' : 'Release Seats Manually'}
-                      </button>
-                    </div>
-                  )}
+{currentReservation && currentReservation.reservedUntil ? (
+  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+    <h3 className="text-sm font-medium text-amber-800 mb-2 flex items-center">
+      <FaChair className="mr-2" />
+      Seat Reservation Active
+    </h3>
+    <p className="text-xs text-amber-700 mb-3">
+      Complete payment before timer expires or seats will be automatically released.
+    </p>
+    <SeatReservationTimer
+      expiryTime={currentReservation.reservedUntil}
+      onExpire={handleTimerExpire}
+      eventId={params.eventId}
+      disabled={seatSliceLoading}
+    />
+    
+    <button
+      onClick={handleManualCleanup}
+      disabled={seatSliceLoading}
+      className="mt-2 w-full px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded transition-colors disabled:opacity-50"
+    >
+      {seatSliceLoading ? 'Releasing...' : 'Release Seats Manually'}
+    </button>
+  </div>
+) : seatInfo.requiresSeats && !currentReservation ? (
+  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <h3 className="text-sm font-medium text-red-800 mb-2 flex items-center">
+      <FaChair className="mr-2" />
+      Timer Expired
+    </h3>
+    <p className="text-xs text-red-700">
+      Please select your seats again using the "Back to Seat Selection" button above.
+    </p>
+  </div>
+) : null}
               {currentStep === 'details' ? (
                 /* Details Step */
                 <>

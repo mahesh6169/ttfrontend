@@ -46,6 +46,7 @@ const SeatSelectionPage = () => {
   const [initializationAttempted, setInitializationAttempted] = useState(false);
 
    const latestReservationRef = useRef();
+const isNavigatingToCheckoutRef = useRef(false);
 
   // Redux state from both slices
   const { 
@@ -211,6 +212,13 @@ const SeatSelectionPage = () => {
 
   // ✅ TASK 2: Centralized cleanup function with multiple strategies
   const performCleanup = useCallback(async (reason = 'unknown') => {
+
+ // ✅ Skip cleanup if navigating to checkout
+  if (isNavigatingToCheckoutRef.current && reason === 'component-unmount') {
+    console.log(`🔄 CLEANUP: Skipping ${reason} cleanup - navigating to checkout`);
+    return;
+  }
+
     const freshReservation = latestReservationRef.current;
     
     console.log(`🔧 CLEANUP: Starting cleanup (${reason})`, {
@@ -297,12 +305,23 @@ useEffect(() => {
     }
   };
 
-  const handleVisibilityChange = () => {
-    if (document.visibilityState === 'hidden') {
-      // User switched tabs or minimized browser
-      performCleanup('visibility-hidden');
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'hidden') {
+    // ✅ EXCEPTION: Don't cleanup when navigating to checkout
+    if (isNavigatingToCheckoutRef.current) {
+      console.log('🔄 VISIBILITY: Skipping cleanup - navigating to checkout');
+      // Clear flag after delay (in case navigation fails)
+      setTimeout(() => {
+        isNavigatingToCheckoutRef.current = false;
+      }, 2000);
+      return;
     }
-  };
+    
+    // Only cleanup for actual tab switches (not navigation)
+    console.log('🔄 VISIBILITY: User switched tabs/minimized - performing cleanup');
+    performCleanup('visibility-hidden');
+  }
+};
 
   const handlePageHide = () => {
     // Page is being unloaded (more reliable than beforeunload)
@@ -331,12 +350,15 @@ useEffect(() => {
   };
 
   // Handle proceed to checkout
-  const handleProceedToCheckout = () => {
-    if (selectedSeats.length === 0) {
-      alert('Please select your seats before proceeding.');
-      return;
-    }
-
+const handleProceedToCheckout = () => {
+  // ✅ Set flag to prevent visibility cleanup during navigation
+  isNavigatingToCheckoutRef.current = true;
+  
+  if (selectedSeats.length === 0) {
+    alert('Please select your seats before proceeding.');
+    isNavigatingToCheckoutRef.current = false; // Reset flag
+    return;
+  }
     // Validate seat count matches ticket count
     const expectedSeatCount = seatInfo.seatCount || 0;
     if (selectedSeats.length !== expectedSeatCount) {
