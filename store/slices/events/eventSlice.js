@@ -36,6 +36,8 @@ export const addPaidEvent = createAsyncThunk(
   'events/addPaidEvent',
   async (formData, { rejectWithValue }) => {
     try {
+
+      console.log("🔍EventSlice/AddPaidEvent FormData being sent to backend:", Array.from(formData.entries()));
       const response = await axios.post(
         `${API_BASE_URL}/events/add-paid-event`,
         formData,
@@ -63,6 +65,7 @@ export const updateFreeEvent = createAsyncThunk(
   'events/updateFreeEvent',
   async ({ eventId, formData }, { rejectWithValue }) => {
     try {
+      
       const response = await axios.put(
         `${API_BASE_URL}/events/update-free/${eventId}`,
         formData,
@@ -90,6 +93,7 @@ export const updatePaidEvent = createAsyncThunk(
   'events/updatePaidEvent',
   async ({ eventId, formData }, { rejectWithValue }) => {
     try {
+      console.log("🔍EventSlice/UpdatePaidEvent FormData being sent to backend:", Array.from(formData.entries()));
       const response = await axios.put(
         `${API_BASE_URL}/events/update-paid/${eventId}`,
         formData,
@@ -270,6 +274,7 @@ const createDefaultFormData = () => ({
   ticketTypes: [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
   seatingLayout: [],
   seatingLayoutImage: null,
+  organizerReservedSeats: '',
   
   // Financial
   stripeAccountId: '',
@@ -319,6 +324,7 @@ const processImagesForEdit = (images) => {
 // Helper function to safely process event data for edit mode
 const processEventDataForEdit = (eventData) => {
   if (!eventData) return createDefaultFormData();
+    console.log('🔍 EventSlice/processEventDataForEdit:', eventData);
   
   return {
     title: eventData.title || '',
@@ -362,6 +368,7 @@ const processEventDataForEdit = (eventData) => {
       : [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
     seatingLayout: eventData.seatingLayout || [],
     seatingLayoutImage: eventData.seatingLayoutImage || null,
+    organizerReservedSeats: eventData.organizerReservedSeats || '',
     stripeAccountId: eventData.stripeAccountId || '',
     refundPolicy: eventData.refundPolicy || {
   processingFeePolicy: 'non-refundable',

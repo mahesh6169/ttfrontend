@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEventById, clearSelectedEvent, clearError } from '@/store/slices/events/eventSlice';
+import { resetPurchaseSession } from '@/store/slices/events/ticketPurchaseSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SingleEventCard from '@/components/events/eventcomponents/SingleEventCard';
 import SendMessage from '@/components/chat/SendMessage';
@@ -34,6 +35,10 @@ const EventDetail = () => {
       // Clear any previous data and errors
       dispatch(clearSelectedEvent());
       dispatch(clearError());
+
+      // ✅ ADD: Reset any completed purchase sessions
+    dispatch(resetPurchaseSession());
+    
       // Fetch the event
       dispatch(fetchEventById(id));
     }

@@ -418,6 +418,19 @@ if (formData.coordinators && formData.coordinators.length > 0) {
         });
         if (seatingErrors.length > 0) errors.seatingLayout = seatingErrors;
       }
+       // Organizer reserved seats validation
+      if (formData.organizerReservedSeats && formData.organizerReservedSeats.trim()) {
+        const reservedSeatsStr = formData.organizerReservedSeats.trim();
+        const seatPattern = /^[A-Z]+\d+(-[A-Z]+\d+)?$/; // Matches A1 or A7-A9
+        const parts = reservedSeatsStr.split(',').map(part => part.trim()).filter(Boolean);
+        
+        const invalidSeats = parts.filter(part => !seatPattern.test(part));
+        if (invalidSeats.length > 0) {
+          errors.organizerReservedSeats = [
+            `Invalid seat format. Use individual seats (A1,A3) or ranges (A7-A9,A12). Invalid: ${invalidSeats.join(', ')}`
+          ];
+        }
+      }
     } else {
       // Free event specific validation
       if (formData.capacity && formData.capacity < 0) {
@@ -575,6 +588,19 @@ case 2: // Organiser Details
             });
             if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
           }
+           // Organizer reserved seats validation
+          if (formData.organizerReservedSeats && formData.organizerReservedSeats.trim()) {
+            const reservedSeatsStr = formData.organizerReservedSeats.trim();
+            const seatPattern = /^[A-Z]+\d+(-[A-Z]+\d+)?$/; // Matches A1 or A7-A9
+            const parts = reservedSeatsStr.split(',').map(part => part.trim()).filter(Boolean);
+            
+            const invalidSeats = parts.filter(part => !seatPattern.test(part));
+            if (invalidSeats.length > 0) {
+              errors.organizerReservedSeats = [
+                `Invalid seat format. Use individual seats (A1,A3) or ranges (A7-A9,A12). Invalid: ${invalidSeats.join(', ')}`
+              ];
+            }
+          }
         } else {
           // Free event validation
           if (formData.maxAttendeesPerRegistration < 1) {
@@ -714,6 +740,17 @@ const isNextButtonDisabled = useCallback(() => {
 
       if (formData.seatingLayout && formData.seatingLayout.length > 0) {
         submitFormData.append('seatingLayout', JSON.stringify(formData.seatingLayout));
+      }
+
+console.log("🔍 Debug organizerReservedSeats:", {
+  value: formData.organizerReservedSeats,
+  type: typeof formData.organizerReservedSeats,
+  length: formData.organizerReservedSeats?.length,
+  isPaid: formData.isPaid
+})
+
+       if (formData.organizerReservedSeats) {
+        submitFormData.append('organizerReservedSeats', formData.organizerReservedSeats);
       }
 
       if (formData.stripeAccountId) {
