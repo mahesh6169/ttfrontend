@@ -57,14 +57,41 @@ const TicketSelectionPage = () => {
   // Local state for UI
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [eventCapacity, setEventCapacity] = useState({
+    total: 0,
+    sold: 0,
+    remaining: 0,
+    isUnlimited: false,
+    status: 'available'
+  });
+  const [capacityLoading, setCapacityLoading] = useState(false);
 
   // Check if event has seating layout
   const hasSeatingLayout = selectedEvent?.seatingLayout && selectedEvent.seatingLayout.length > 0;
+
+  // Fetch real-time capacity data
+  const fetchEventCapacity = async () => {
+    if (!eventId) return;
+    
+    setCapacityLoading(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/capacity`);
+      const data = await response.json();
+      if (data.success) {
+        setEventCapacity(data.capacity);
+      }
+    } catch (error) {
+      console.error('Error fetching capacity:', error);
+    } finally {
+      setCapacityLoading(false);
+    }
+  };
 
   // Fetch event data on component mount
   useEffect(() => {
     if (eventId) {
       dispatch(fetchEventById(eventId));
+      fetchEventCapacity();
     }
   }, [eventId, dispatch]);
 
@@ -100,7 +127,6 @@ const TicketSelectionPage = () => {
     }
   }, [selectedEvent?._id, eventId, hasSeatingLayout, user, dispatch]);
 
-
   // Handle quantity change
   const handleQuantityChange = (ticketId, change) => {
     if (!selectedEvent?.ticketTypes) return;
@@ -113,11 +139,12 @@ const TicketSelectionPage = () => {
     const currentQuantity = currentTicket?.quantity || 0;
     const newQuantity = Math.max(0, currentQuantity + change);
     
-    // Calculate max quantity
-    const maxQuantity = Math.min(
-      ticketType.quantity || 999,
-      selectedEvent.maxAttendeesPerRegistration || 10
-    );
+    // Calculate max quantity based on capacity and max per order
+    const maxPerOrder = selectedEvent.maxAttendeesPerRegistration || 10;
+    const capacityLimit = typeof eventCapacity?.remaining === 'number' 
+      ? eventCapacity.remaining 
+      : maxPerOrder;
+    const maxQuantity = Math.min(maxPerOrder, capacityLimit);
     
     // Update Redux state
     dispatch(updateTicketSelection({
@@ -300,10 +327,17 @@ const TicketSelectionPage = () => {
             </h3>
             
             {selectedEvent.ticketTypes?.map((ticketType) => {
-              const isAvailable = (ticketType.quantity || 0) > 0;
+              // Use real-time capacity data instead of individual ticket quantities
+              const isAvailable = eventCapacity?.status === 'available' || !eventCapacity?.status;
               const selectedTicket = selectedTickets.find(t => t.ticketTypeId === ticketType._id);
               const selectedQty = selectedTicket?.quantity || 0;
-              const remainingQty = (ticketType.quantity || 999) - selectedQty;
+              
+              // Calculate remaining based on capacity and max per order
+              const maxPerOrder = selectedEvent.maxAttendeesPerRegistration || 10;
+              const capacityLimit = typeof eventCapacity?.remaining === 'number' 
+                ? eventCapacity.remaining 
+                : maxPerOrder;
+              const remainingQty = Math.min(maxPerOrder - selectedQty, capacityLimit);
               
               return (
                 <div
@@ -332,10 +366,15 @@ const TicketSelectionPage = () => {
                         <div className="flex items-center text-sm text-gray-600">
                           <FaUsers className="mr-1" />
                           <span>
-                            {isAvailable 
-                              ? `${ticketType.quantity} available`
-                              : 'Sold out'
-                            }
+                            {capacityLoading ? (
+                              'Loading availability...'
+                            ) : eventCapacity?.isUnlimited ? (
+                              'Unlimited capacity'
+                            ) : eventCapacity?.status === 'sold-out' ? (
+                              'Sold out'
+                            ) : (
+                              `${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
+                            )}
                           </span>
                         </div>
                         
@@ -359,7 +398,8 @@ const TicketSelectionPage = () => {
                               disabled={
                                 selectedQty >= remainingQty || 
                                 selectedQty >= (selectedEvent.maxAttendeesPerRegistration || 10) ||
-                                loading.initializing
+                                loading.initializing ||
+                                eventCapacity?.status === 'sold-out'
                               }
                               className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
