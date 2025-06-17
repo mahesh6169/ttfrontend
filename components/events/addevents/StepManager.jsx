@@ -374,6 +374,8 @@ if (formData.coordinators && formData.coordinators.length > 0) {
           // Ticket name is required
           if (!ticket.name?.trim()) {
             ticketErrors.push(`Ticket type ${index + 1} name is required`);
+            // Individual field error
+            errors[`ticketName_${index}`] = ['Ticket Name is required'];
           }
 
           // Price must be greater than 0
@@ -385,6 +387,8 @@ if (formData.coordinators && formData.coordinators.length > 0) {
             Number(ticket.price) <= 0
           ) {
             ticketErrors.push(`Ticket type ${index + 1} price must be greater than 0`);
+            // Individual field error
+            errors[`ticketPrice_${index}`] = ['Price must be greater than 0'];
           }
 
           // Ticket Quantity validation
@@ -398,6 +402,8 @@ if (formData.coordinators && formData.coordinators.length > 0) {
             ticketErrors.push(
               `Ticket type ${index + 1} quantity is required and must be 0 (share pool) or a positive number`
             );
+            // Individual field error
+            errors[`ticketQuantity_${index}`] = ['Quantity must be 0 or a positive number'];
           }
 
           // Date validation: startDate should be before expiryDate if both are set
@@ -448,10 +454,11 @@ if (formData.coordinators && formData.coordinators.length > 0) {
       }
       if (
         !formData.maxAttendeesPerRegistration ||
-        formData.maxAttendeesPerRegistration < 1
+        formData.maxAttendeesPerRegistration === '' ||
+        Number(formData.maxAttendeesPerRegistration) < 1
       ) {
         errors.maxAttendeesPerRegistration = [
-          'Maximum attendees per registration must be at least 1',
+          'Number should be 1 or above',
         ];
       }
     }
@@ -561,6 +568,8 @@ case 2: // Organiser Details
               // Name is required (has * in form)
               if (!ticket.name?.trim()) {
                 ticketErrors.push(`Ticket type ${index + 1} name is required`);
+                // Individual field error
+                errors[`ticketName_${index}`] = ['Ticket Name is required'];
               }
 
               // Price is required and must be > 0 (has * in form)
@@ -574,6 +583,8 @@ case 2: // Organiser Details
                 ticketErrors.push(
                   `Ticket type ${index + 1} price must be greater than 0`
                 );
+                // Individual field error
+                errors[`ticketPrice_${index}`] = ['Price must be greater than 0'];
               }
 
               // Ticket Quantity validation
@@ -587,6 +598,8 @@ case 2: // Organiser Details
                 ticketErrors.push(
                   `Ticket type ${index + 1} quantity is required and must be 0 (share pool) or a positive number`
                 );
+                // Individual field error
+                errors[`ticketQuantity_${index}`] = ['Quantity must be 0 or a positive number'];
               }
 
               // Date validation: startDate should be before expiryDate if both are set
@@ -603,6 +616,22 @@ case 2: // Organiser Details
               }
             });
             if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
+            // Check for capacity over-allocation
+        if (formData.capacity && Number(formData.capacity) > 0) {
+          const totalCapacity = Number(formData.capacity);
+          const allocatedTickets = formData.ticketTypes.reduce(
+            (total, ticket) => total + (Number(ticket.quantity) || 0),
+            0
+          );
+          
+          if (allocatedTickets > totalCapacity) {
+            const currentErrors = errors.ticketTypes || [];
+            errors.ticketTypes = [
+              ...currentErrors,
+              `Total ticket allocation (${allocatedTickets}) exceeds event capacity (${totalCapacity}). Please reduce ticket quantities or increase capacity.`
+            ];
+          }
+        }
           }
            // Organizer reserved seats validation
           if (formData.organizerReservedSeats && formData.organizerReservedSeats.trim()) {
@@ -619,9 +648,13 @@ case 2: // Organiser Details
           }
         } else {
           // Free event validation
-          if (formData.maxAttendeesPerRegistration < 1) {
+          if (
+            !formData.maxAttendeesPerRegistration ||
+            formData.maxAttendeesPerRegistration === '' ||
+            Number(formData.maxAttendeesPerRegistration) < 1
+          ) {
             errors.maxAttendeesPerRegistration = [
-              'Maximum attendees per registration must be at least 1',
+              'Number should be 1 or above',
             ];
           }
         }

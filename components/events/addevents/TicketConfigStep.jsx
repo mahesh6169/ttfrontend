@@ -137,15 +137,13 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
             </p>
           </div>
 
-          {/* Max Attendees Per Registration */}
+          {/* Maximum Attendees per Booking */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Max Attendees Per Registration
+              Maximum Attendees per Booking
             </label>
             <input
               type="number"
-              min="1"
-              max="20"
               inputMode="numeric"
               value={
                 formData.maxAttendeesPerRegistration === ''
@@ -153,27 +151,24 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                   : formData.maxAttendeesPerRegistration
               }
               onChange={(e) => {
-                const val = e.target.value;
-                dispatch(
-                  updateField({
-                    field: 'maxAttendeesPerRegistration',
-                    value:
-                      val === ''
-                        ? ''
-                        : Math.max(1, Math.min(20, Number(val) || 10)),
-                  })
-                );
-              }}
-              onBlur={(e) => {
-                if (e.target.value === '' || Number(e.target.value) < 1) {
-                  dispatch(
-                    updateField({
-                      field: 'maxAttendeesPerRegistration',
-                      value: 10,
-                    })
-                  );
-                }
-              }}
+  const val = e.target.value;
+  dispatch(
+    updateField({
+      field: 'maxAttendeesPerRegistration',
+      value: val, // Allow empty while typing
+    })
+  );
+}}
+onBlur={(e) => {
+  if (e.target.value === '' || Number(e.target.value) < 1) {
+    dispatch(
+      updateField({
+        field: 'maxAttendeesPerRegistration',
+        value: 10, // Default to 10
+      })
+    );
+  }
+}}
               className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
                 errors?.maxAttendeesPerRegistration
                   ? 'border-red-500'
@@ -187,8 +182,7 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               </p>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              How many people can be registered in a single booking (useful for
-              families/groups).
+              Limit how many people can register together in one booking
             </p>
           </div>
         </div>
@@ -232,26 +226,54 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
 
   // Calculate allocated tickets and remaining pool
-  const calculateTicketAllocation = () => {
-    const totalCapacity = formData.capacity || 0;
-    if (totalCapacity === 0) return { allocated: 0, remaining: 'Unlimited' };
+const calculateTicketAllocation = () => {
+  const totalCapacity = Number(formData.capacity) || 0;
+  if (totalCapacity === 0 || formData.capacity === '' || formData.capacity === '0') {
+    return { allocated: 0, remaining: 'Unlimited' };
+  }
+
+  const allocatedTickets = (formData.ticketTypes || []).reduce(
+    (total, ticket) => {
+      return total + (Number(ticket.quantity) || 0);
+    },
+    0
+  );
+
+  const remainingTickets = Math.max(0, totalCapacity - allocatedTickets);
+
+  return {
+    allocated: allocatedTickets,
+    remaining: remainingTickets,
+  };
+};
+
+  const ticketAllocation = calculateTicketAllocation();
+  
+  // Validate ticket allocation against capacity - moved inside component to recalculate on every render
+  const allocationValidation = React.useMemo(() => {
+    const totalCapacity = Number(formData.capacity) || 0;
+    if (totalCapacity === 0) return { isValid: true, message: '' }; // Unlimited capacity
 
     const allocatedTickets = (formData.ticketTypes || []).reduce(
       (total, ticket) => {
-        return total + (ticket.quantity || 0);
+        return total + (Number(ticket.quantity) || 0);
       },
       0
     );
 
+    const isOverAllocated = allocatedTickets > totalCapacity;
     const remainingTickets = Math.max(0, totalCapacity - allocatedTickets);
 
     return {
+      isValid: !isOverAllocated,
+      message: isOverAllocated 
+        ? `Total ticket allocation (${allocatedTickets}) exceeds capacity (${totalCapacity})`
+        : '',
       allocated: allocatedTickets,
       remaining: remainingTickets,
+      isOverAllocated
     };
-  };
-
-  const ticketAllocation = calculateTicketAllocation();
+  }, [formData.capacity, formData.ticketTypes]);
 
   return (
     <div className="space-y-6">
@@ -351,9 +373,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                 }`}
               />
 
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 text-sm">People</span>
-              </div>
+              
             </div>
             {errors?.capacity && (
               <p className="mt-1 text-red-500 text-sm">{errors.capacity}</p>
@@ -363,49 +383,47 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
             </p>
           </div>
 
-          {/* Max Attendees Per Registration */}
+          {/* Maximum Attendees per Booking */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Max Attendees Per Registration
+              Maximum Attendees per Booking
             </label>
             <input
-              type="number"
-              min="1"
-              inputMode="numeric"
-              value={
-                formData.maxAttendeesPerRegistration === undefined ||
-                formData.maxAttendeesPerRegistration === null ||
-                formData.maxAttendeesPerRegistration === ''
-                  ? 10
-                  : formData.maxAttendeesPerRegistration
-              }
-              onChange={(e) => {
-                const val = e.target.value;
-                // Don't allow empty or less than 1
-                dispatch(
-                  updateField({
-                    field: 'maxAttendeesPerRegistration',
-                    value: val === '' || Number(val) < 1 ? 10 : Number(val),
-                  })
-                );
-              }}
-              onBlur={(e) => {
-                if (e.target.value === '' || Number(e.target.value) < 1) {
-                  dispatch(
-                    updateField({
-                      field: 'maxAttendeesPerRegistration',
-                      value: 10,
-                    })
-                  );
-                }
-              }}
-              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-                errors?.maxAttendeesPerRegistration
-                  ? 'border-red-500'
-                  : 'border-gray-300'
-              }`}
-              placeholder="10"
-            />
+  type="number"
+  inputMode="numeric"
+  value={
+    formData.maxAttendeesPerRegistration === undefined ||
+    formData.maxAttendeesPerRegistration === null ||
+    formData.maxAttendeesPerRegistration === ''
+      ? ''
+      : formData.maxAttendeesPerRegistration
+  }
+  onChange={(e) => {
+    const val = e.target.value;
+    dispatch(
+      updateField({
+        field: 'maxAttendeesPerRegistration',
+        value: val, // Allow empty while typing
+      })
+    );
+  }}
+  onBlur={(e) => {
+    if (e.target.value === '' || Number(e.target.value) < 1) {
+      dispatch(
+        updateField({
+          field: 'maxAttendeesPerRegistration',
+          value: 10, // Default to 10
+        })
+      );
+    }
+  }}
+  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+    errors?.maxAttendeesPerRegistration
+      ? 'border-red-500'
+      : 'border-gray-300'
+  }`}
+  placeholder="Enter minimum 1"
+/>
 
             {errors?.maxAttendeesPerRegistration && (
               <p className="mt-1 text-red-500 text-sm">
@@ -413,8 +431,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               </p>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              How many people can be registered in a single booking (useful for
-              families/groups).
+              Limit how many people can register together in one booking.
             </p>
           </div>
         </div>
@@ -437,29 +454,43 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
             </div>
           </div>
 
-          {/* Ticket Allocation Summary */}
+         {/* Event Capacity Status */}
           <div className="text-right">
-            <p className="text-sm text-gray-500">Tickets Remaining</p>
-            <p
-              className={`text-lg font-semibold ${
-                typeof ticketAllocation.remaining === 'number' &&
-                ticketAllocation.remaining <= 10
-                  ? 'text-red-600'
-                  : 'text-blue-600'
-              }`}
-            >
-              {ticketAllocation.remaining === 'Unlimited'
-                ? 'Unlimited'
-                : `${ticketAllocation.remaining} / ${formData.capacity || 0}`}
-            </p>
-            {typeof ticketAllocation.remaining === 'number' &&
-              ticketAllocation.remaining <= 10 && (
-                <p className="text-xs text-red-500 mt-1">
-                  Running low on tickets!
+            <h4 className="text-lg font-medium text-gray-900">
+                Event Capacity Status
+              </h4>
+            {ticketAllocation.remaining === 'Unlimited' ? (
+              <p className="text-lg font-semibold text-blue-600">
+                Unlimited
+              </p>
+            ) : allocationValidation.isOverAllocated ? (
+              <div>
+                <p className="text-lg font-semibold text-red-600">
+                  Overbooked by {allocationValidation.allocated - Number(formData.capacity)}
                 </p>
-              )}
+                <p className="text-sm text-red-500 mt-1">
+                  (0 of {formData.capacity} remaining)
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p className={`text-lg font-semibold ${
+                  ticketAllocation.remaining <= 10 ? 'text-orange-600' : 'text-blue-600'
+                }`}>
+                  {ticketAllocation.remaining} of {formData.capacity} spots remaining
+                </p>
+                {ticketAllocation.remaining <= 10 && (
+                  <p className="text-xs text-orange-500 mt-1">
+                    Running low on tickets!
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
+
+        {/* Ticket Types List */}
 
         <div className="space-y-4">
           {(formData.ticketTypes || []).map((ticket, index) => (
@@ -530,13 +561,20 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                       )
                     }
                     placeholder="e.g., Early Bird, Standard, Group"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                      errors?.[`ticketName_${index}`] ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     maxLength="100"
                     required
                   />
+                  {errors?.[`ticketName_${index}`] && (
+                    <p className="mt-1 text-red-500 text-sm">
+                      {errors[`ticketName_${index}`][0]}
+                    </p>
+                  )}
                 </div>
 
-                {/* Ticket Price */}
+{/* Ticket Price */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Price (AUD) <span className="text-red-500">*</span>
@@ -565,11 +603,18 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                           })
                         );
                       }}
-                      className="w-full pl-8 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      className={`w-full pl-8 p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        errors?.[`ticketPrice_${index}`] ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder="Enter amount"
                       required
                     />
                   </div>
+                  {errors?.[`ticketPrice_${index}`] && (
+                    <p className="mt-1 text-red-500 text-sm">
+                      {errors[`ticketPrice_${index}`][0]}
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">
                     Ticket price must be{' '}
                     <span className="font-medium text-teal-700">
@@ -579,7 +624,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                   </p>
                 </div>
 
-                {/* Ticket Quantity */}
+{/* Ticket Quantity */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Quantity
@@ -593,28 +638,44 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                         ? ''
                         : ticket.quantity
                     }
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const newQuantity = e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
                       dispatch(
                         updateTicketType({
                           index,
                           field: 'quantity',
-                          value:
-                            e.target.value === ''
-                              ? ''
-                              : Math.max(0, Number(e.target.value)),
+                          value: newQuantity,
                         })
-                      )
-                    }
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      );
+                    }}
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                      errors?.[`ticketQuantity_${index}`] ? 'border-red-500' : 
+                      allocationValidation.isOverAllocated ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
                     placeholder="Enter quantity or 0 to share remaining capacity"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                   <p className="text-xs text-gray-500 mt-1">
                     Enter number of tickets for this type.
                     <br />
-                    Leave as{' '}
-                    <span className="font-semibold text-teal-700">0</span> to
-                    share the remaining pool with other ticket types.
+                    {Number(formData.capacity) > 0 ? (
+                      <>
+                        Leave as{' '}
+                        <span className="font-semibold text-teal-700">0</span> to
+                        share the remaining capacity pool with other ticket types.
+                      </>
+                    ) : (
+                      <>
+                        Leave as{' '}
+                        <span className="font-semibold text-teal-700">0</span> for
+                        unlimited tickets of this type.
+                      </>
+                    )}
                   </p>
+                  {allocationValidation.isOverAllocated && (
+                    <p className="text-xs text-red-500 mt-1 font-medium">
+                      Total allocation exceeds capacity!
+                    </p>
+                  )}
                 </div>
 
                 {/* Start Date */}
@@ -689,17 +750,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
           ))}
         </div>
 
-        {errors?.ticketTypes && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <div className="text-red-700 text-sm">
-              {Array.isArray(errors.ticketTypes) ? (
-                errors.ticketTypes.map((err, i) => <p key={i}>• {err}</p>)
-              ) : (
-                <p>• {errors.ticketTypes}</p>
-              )}
-            </div>
-          </div>
-        )}
+        
 
         <div className="mt-4 text-center">
           <button
@@ -711,6 +762,28 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
             Add Another Ticket Type
           </button>
         </div>
+        {/* Capacity Validation Warning */}
+        {allocationValidation.isOverAllocated && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Capacity Exceeded
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>
+                    {allocationValidation.message}. Please reduce ticket quantities or increase the total capacity.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       {/* --- ADD BELOW --- */}
       <SeatingLayoutSection
