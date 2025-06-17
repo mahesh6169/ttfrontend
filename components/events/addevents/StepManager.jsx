@@ -263,6 +263,15 @@ useEffect(() => {
       errors.venue = ['Venue is required'];
     }
 
+    if (!formData.category?.trim()) {
+  errors.category = ['Event category is required'];
+}
+
+if (!formData.timeZone?.trim()) {
+  errors.timeZone = ['Event timezone is required'];
+}
+
+
     // Address validation
     if (
       !formData.address ||
@@ -280,25 +289,26 @@ useEffect(() => {
 if (formData.coordinators && formData.coordinators.length > 0) {
   const coordinatorErrors = [];
   formData.coordinators.forEach((coord, index) => {
-    // Only validate if coordinator has ANY data entered
-    const hasAnyData = coord.name?.trim() || coord.phone?.trim() || coord.email?.trim() || coord.role?.trim();
-    
-    if (hasAnyData) {
-      // If they started filling it out, require name and phone
-      if (!coord.name?.trim() || !coord.phone?.trim()) {
-        coordinatorErrors.push(
-          `Coordinator ${index + 1}: If adding a coordinator, name and phone are required`
-        );
-      }
+    // If coordinator name is provided, then phone becomes required
+    if (coord.name?.trim() && !coord.phone?.trim()) {
+      coordinatorErrors.push(
+        `Coordinator ${index + 1}: Phone number is required when coordinator name is provided`
+      );
     }
   });
   if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;
 }
 
+
       // Organizer validation
     if (!formData.organizer?.name?.trim()) {
       errors.organizer = ['Organizer name is required'];
     }
+
+    if (!formData.organizer?.contact?.trim()) {
+  errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
+}
+
     
     // Basic email validation for organizer if provided
     if (
@@ -487,6 +497,8 @@ if (formData.coordinators && formData.coordinators.length > 0) {
           }
         }
         if (!formData.venue?.trim()) errors.venue = ['Venue is required'];
+        if (!formData.category?.trim()) errors.category = ['Event category is required'];
+        if (!formData.timeZone?.trim()) errors.timeZone = ['Event timezone is required'];
         if (!formData.address?.formattedAddress)
           errors.address = ['Event address is required'];
         break;
@@ -495,6 +507,10 @@ case 2: // Organiser Details
   // Organizer validation
   if (!formData.organizer?.name?.trim()) {
     errors.organizer = ['Organizer name is required'];
+  }
+
+  if (!formData.organizer?.contact?.trim()) {
+    errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
   }
   
   // Coordinators validation - UPDATED: Now optional

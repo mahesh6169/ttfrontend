@@ -15,6 +15,14 @@ import {
 const OrganiserDetailsStep = ({ formData = {}, errors = {} }) => {
   const dispatch = useDispatch();
 
+  // Add this error styling function
+const getFieldClasses = (fieldName) => {
+  const baseClasses = 'w-full p-3 border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20';
+  const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50 focus:border-red-500' : 'border-gray-300 focus:border-teal-500';
+  
+  return `${baseClasses} ${errorClasses}`;
+};
+
   // Organizer functions
   const handleOrganizerChange = (field, value) => {
     dispatch(updateOrganizerField({ field, value }));
@@ -113,13 +121,18 @@ const OrganiserDetailsStep = ({ formData = {}, errors = {} }) => {
               Organizer Name <span className="text-red-500">*</span>
             </label>
             <input
-              type="text"
-              value={formData.organizer?.name || ''}
-              onChange={(e) => handleOrganizerChange('name', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
-              placeholder="Your name or organization name"
-              maxLength="100"
-            />
+  type="text"
+  value={formData.organizer?.name || ''}
+  onChange={(e) => handleOrganizerChange('name', e.target.value)}
+  className={getFieldClasses('organizer')}
+  placeholder="Your name or organization name"
+  maxLength="100"
+/>
+{errors?.organizer && (
+  <p className="mt-1 text-red-500 text-xs sm:text-sm">
+    {Array.isArray(errors.organizer) ? errors.organizer[0] : errors.organizer}
+  </p>
+)}
             <p className="mt-1 text-xs text-gray-500">
               This can be your personal name or your organization name
             </p>
@@ -143,16 +156,21 @@ const OrganiserDetailsStep = ({ formData = {}, errors = {} }) => {
           {/* Contact */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contact Number
+              Contact Number <span className="text-red-500">*</span>
             </label>
-            <input
-              type="tel"
-              value={formData.organizer?.contact || ''}
-              onChange={(e) => handleOrganizerChange('contact', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
-              placeholder="+61 4XX XXX XXX"
-              maxLength="20"
-            />
+           <input
+  type="tel"
+  value={formData.organizer?.contact || ''}
+  onChange={(e) => handleOrganizerChange('contact', e.target.value)}
+  className={getFieldClasses('organizer')}
+  placeholder="+61 4XX XXX XXX"
+  maxLength="20"
+/>
+{errors?.organizer && (
+  <p className="mt-1 text-red-500 text-xs sm:text-sm">
+    {Array.isArray(errors.organizer) ? errors.organizer.find(err => err.includes('contact')) : ''}
+  </p>
+)}
           </div>
 
           {/* Email */}
@@ -369,7 +387,7 @@ const OrganiserDetailsStep = ({ formData = {}, errors = {} }) => {
               {/* Name */}
               <div className="lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name <span className="text-red-500">*</span>
+                  Full Name
                 </label>
                 <input
                   type="text"
@@ -415,7 +433,7 @@ const OrganiserDetailsStep = ({ formData = {}, errors = {} }) => {
               {/* Phone */}
               <div className="lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number <span className="text-red-500">*</span>
+                  Phone Number <span className="text-red-500" title="Required if name is provided">*</span>
                 </label>
                 <input
                   type="tel"

@@ -270,7 +270,7 @@ const EventDetailsStep = ({
       {/* Category - Enhanced dropdown for mobile */}
       <div className="space-y-2">
         <label className="block font-semibold text-sm sm:text-base">
-          Category
+          Category <span className="text-red-500">*</span>
         </label>
         {isEditMode && (
           <p className="text-xs sm:text-sm text-gray-500">
@@ -301,6 +301,11 @@ const EventDetailsStep = ({
             </svg>
           </div>
         </div>
+        {errors?.category && (
+          <p className="text-red-500 text-xs sm:text-sm">
+            {Array.isArray(errors.category) ? errors.category[0] : errors.category}
+          </p>
+        )}
         {!disabled && (
           <p className="text-xs text-gray-500">
             Choose the category that best describes your event
@@ -319,13 +324,16 @@ const EventDetailsStep = ({
           </p>
         )}
         <div className="relative">
-          <select
+<select
             name="timeZone"
-            value={formData.timeZone || 'Australia/Sydney'}
+            value={formData.timeZone || ''}
             onChange={handleChange}
             disabled={disabled}
             className={getSelectClasses('timeZone')}
           >
+            <option value="">
+              {disabled ? 'No timezone selected' : 'Select timezone'}
+            </option>
             {AU_TIMEZONES.map((tz) => (
               <option key={tz.key} value={tz.value}>
                 {tz.label}

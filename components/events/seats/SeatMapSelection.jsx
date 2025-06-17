@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 
@@ -39,7 +39,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
 
   // Handles automatic reservation release when the timer expires, with fallback to clear selection.
   const handleTimerExpire = useCallback(() => {
-if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
+    if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
       dispatch(
         releaseReservation({
           eventId: eventId,
@@ -47,13 +47,12 @@ if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
           sessionId: currentReservation.sessionId || sessionId,
         })
       )
-        .then(() => {
-})
+        .then(() => {})
         .catch((error) => {
           console.error('❌ Failed to release expired reservation:', error);
         });
     } else {
-// Clear selection as fallback
+      // Clear selection as fallback
       dispatch(clearSelection());
     }
   }, [dispatch, currentReservation, eventId, sessionId]);
@@ -61,12 +60,57 @@ if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
   const [pendingReservation, setPendingReservation] = useState(false);
   const [showSeatingImage, setShowSeatingImage] = useState(false);
   const [pendingAutoRelease, setPendingAutoRelease] = useState(false);
+  
+  // ✅ NEW: Track scroll position to prevent jump on re-render
+  const scrollContainerRef = useRef(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const scrollRestoreTimeoutRef = useRef(null);
 
   const requiredSeats = Object.values(ticketSelection.tickets).reduce(
     (sum, qty) => sum + qty,
     0
   );
 
+  // ✅ ENHANCED: Better scroll position preservation using useLayoutEffect
+  useLayoutEffect(() => {
+    if (scrollContainerRef.current && scrollPosition > 0) {
+      // Clear any pending scroll restore
+      if (scrollRestoreTimeoutRef.current) {
+        clearTimeout(scrollRestoreTimeoutRef.current);
+      }
+      
+      // Use requestAnimationFrame for smooth restoration
+      requestAnimationFrame(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollLeft = scrollPosition;
+        }
+      });
+    }
+  });
+
+  // ✅ ENHANCED: Debounced scroll position saving
+  const handleScroll = useCallback((e) => {
+    const newScrollPosition = e.target.scrollLeft;
+    
+    // Clear any pending scroll restore to avoid conflicts
+    if (scrollRestoreTimeoutRef.current) {
+      clearTimeout(scrollRestoreTimeoutRef.current);
+    }
+    
+    // Debounce scroll position updates
+    scrollRestoreTimeoutRef.current = setTimeout(() => {
+      setScrollPosition(newScrollPosition);
+    }, 50);
+  }, []);
+
+  // ✅ ENHANCED: Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollRestoreTimeoutRef.current) {
+        clearTimeout(scrollRestoreTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Automatically reserves seats when user selects exactly the required number of seats.
   useEffect(() => {
@@ -78,7 +122,7 @@ if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
       !isLoading;
 
     if (shouldAutoReserve) {
-handleReserveSeats();
+      handleReserveSeats();
     }
   }, [
     selectedSeats,
@@ -121,53 +165,52 @@ handleReserveSeats();
   ]);
 
   // Handles seat selection/deselection with validation for availability, limits, and loading states.
-const handleSeatClick = (seatId, seatStatus) => {
-  // Prevent selection if loading or seat is unavailable
-  if (isLoading || pendingReservation || pendingAutoRelease) return;
+  const handleSeatClick = (seatId, seatStatus) => {
+    // Prevent selection if loading or seat is unavailable
+    if (isLoading || pendingReservation || pendingAutoRelease) return;
 
-  if (
-    seatStatus === 'booked' ||
-    seatStatus === 'disabled' ||
-    seatStatus === 'reserved'
-  ) return;
+    if (
+      seatStatus === 'booked' ||
+      seatStatus === 'disabled' ||
+      seatStatus === 'reserved'
+    ) return;
 
-  // Check if seat is being held by another user
-  if (seatStatus === 'selected-by-other') return;
+    // Check if seat is being held by another user
+    if (seatStatus === 'selected-by-other') return;
 
-  const isCurrentlySelected = selectedSeats.includes(seatId);
+    const isCurrentlySelected = selectedSeats.includes(seatId);
 
-  // Validate selection limit
-  if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
-    alert(
-      selectedSeats.length === requiredSeats
-        ? `You have selected all ${requiredSeats} required seats. Deselect a seat first if you want to choose a different one.`
-        : `You can only select ${requiredSeats} seat${
-            requiredSeats !== 1 ? 's' : ''
-          } total. Please deselect some seats first.`
-    );
-    return;
-  }
+    // Validate selection limit
+    if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
+      alert(
+        selectedSeats.length === requiredSeats
+          ? `You have selected all ${requiredSeats} required seats. Deselect a seat first if you want to choose a different one.`
+          : `You can only select ${requiredSeats} seat${
+              requiredSeats !== 1 ? 's' : ''
+            } total. Please deselect some seats first.`
+      );
+      return;
+    }
 
-  // Validate seat exists in layout
-  const seatDetails = findSeatInLayout(seatId);
-  if (!seatDetails) {
-    alert('This seat is no longer available. Please refresh the page.');
-    return;
-  }
+    // Validate seat exists in layout
+    const seatDetails = findSeatInLayout(seatId);
+    if (!seatDetails) {
+      alert('This seat is no longer available. Please refresh the page.');
+      return;
+    }
 
-  // ✅ SINGLE CLEAR LOG
-  console.log(`🎯 SeatMapSelection: Seat clicked: ${seatId} | Status: ${seatStatus}`);
+    // ✅ SINGLE CLEAR LOG
+    console.log(`🎯 SeatMapSelection: Seat clicked: ${seatId} | Status: ${seatStatus}`);
 
-  // Proceed with selection or deselection
-  if (isCurrentlySelected) {
-    dispatch(deselectSeat(seatId));
-    console.log(`🗑️ SeatMapSelection:  called deslect for seat ${seatId}`);
-  } else {
-    dispatch(selectSeat(seatId));
-    console.log(`✅ SeatMapSelection: called selectSeat for seat ${seatId}`);
-  }
-};
-
+    // Proceed with selection or deselection
+    if (isCurrentlySelected) {
+      dispatch(deselectSeat(seatId));
+      console.log(`🗑️ SeatMapSelection:  called deslect for seat ${seatId}`);
+    } else {
+      dispatch(selectSeat(seatId));
+      console.log(`✅ SeatMapSelection: called selectSeat for seat ${seatId}`);
+    }
+  };
 
   // Utility function to locate seat details within the seating layout structure.
   const findSeatInLayout = (seatId) => {
@@ -211,12 +254,12 @@ const handleSeatClick = (seatId, seatStatus) => {
       };
 
       await dispatch(releaseReservation(releaseData)).unwrap();
-} catch (error) {
+    } catch (error) {
       console.error('❌ Auto-release failed:', error);
 
       // Enhanced error handling
       if (error.message && error.message.includes('not found')) {
-dispatch(clearSelection());
+        dispatch(clearSelection());
       } else {
         console.error(
           '🚨 Unexpected auto-release error, may need manual intervention'
@@ -228,10 +271,16 @@ dispatch(clearSelection());
     }
   };
 
-  // Handles manual seat reservation with comprehensive validation and error messaging.
+  // ✅ ENHANCED: Handles manual seat reservation with scroll position preservation
   const handleReserveSeats = async () => {
     if (selectedSeats.length === 0 || pendingReservation) {
-return;
+      return;
+    }
+
+    // ✅ SAVE: Capture current scroll position before state changes
+    const currentScrollPosition = scrollContainerRef.current?.scrollLeft || 0;
+    if (currentScrollPosition > 0) {
+      setScrollPosition(currentScrollPosition);
     }
 
     // Validate seat count matches ticket count
@@ -241,7 +290,7 @@ return;
       } for your ${requiredSeats} ticket${
         requiredSeats !== 1 ? 's' : ''
       }. Currently selected: ${selectedSeats.length}`;
-alert(message);
+      alert(message);
       return;
     }
 
@@ -275,7 +324,7 @@ alert(message);
     setPendingReservation(true);
 
     try {
-const reservationData = {
+      const reservationData = {
         eventId: eventId,
         seatIds: selectedSeats,
         sessionId: sessionId || `web_${Date.now()}`,
@@ -283,7 +332,15 @@ const reservationData = {
       };
 
       const result = await dispatch(reserveSeats(reservationData)).unwrap();
-} catch (error) {
+      
+      // ✅ RESTORE: Restore scroll position after successful reservation
+      setTimeout(() => {
+        if (scrollContainerRef.current && currentScrollPosition > 0) {
+          scrollContainerRef.current.scrollLeft = currentScrollPosition;
+        }
+      }, 100);
+      
+    } catch (error) {
       console.error('❌ Failed to reserve seats:', error);
 
       // Enhanced error handling with specific messages
@@ -317,7 +374,7 @@ const reservationData = {
     }
   };
 
-// Clears selected seats and releases any active reservations when user manually clears selection.
+  // Clears selected seats and releases any active reservations when user manually clears selection.
   const handleClearSelection = async () => {
     if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
       console.log('🔓 Manually releasing current reservation:', {
@@ -407,19 +464,25 @@ const reservationData = {
 
   return (
     <div className="space-y-4">
-      {/* Top controls - compact */}
-      <div className="flex items-center justify-between">
+      {/* ✅ MOBILE ENHANCED: Improved top controls - more mobile-friendly */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         <div className="flex items-center space-x-3">
+          {/* Selection count indicator - always visible on mobile */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
+            <span className="text-sm font-medium text-blue-800">
+              {selectedSeats.length}/{requiredSeats} selected
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Toggle seating layout image */}
           {event.seatingLayoutImage?.url && (
             <button
               onClick={() => setShowSeatingImage(!showSeatingImage)}
               className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
-              {showSeatingImage ? 'Hide' : 'Show'} Layout Image
+              {showSeatingImage ? 'Hide' : 'Show'} Layout
             </button>
           )}
 
@@ -430,7 +493,7 @@ const reservationData = {
               disabled={isLoading || pendingReservation}
               className="px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
             >
-              Clear Selection
+              Clear
             </button>
           )}
         </div>
@@ -450,8 +513,8 @@ const reservationData = {
         </div>
       )}
 
-      {/* Seat map - maximized space */}
-      <div className="relative">
+      {/* ✅ MOBILE ENHANCED: Improved seat map with horizontal scrolling */}
+      <div className="relative bg-white border border-gray-200 rounded-lg">
         {seatingLayout.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <svg
@@ -472,81 +535,123 @@ const reservationData = {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            {/* Stage indicator */}
-            <div className="text-center mb-6">
-              <div className="inline-block bg-gray-800 text-white px-8 py-2 rounded-lg text-sm font-medium">
+          <div>
+            {/* ✅ MOBILE ENHANCED: Better stage indicator */}
+            <div className="text-center py-3 border-b border-gray-200 bg-gray-50">
+              <div className="inline-block bg-gray-800 text-white px-4 sm:px-8 py-2 rounded-lg text-xs sm:text-sm font-medium">
                 🎭 STAGE
               </div>
             </div>
 
-            <div className="min-w-fit mx-auto space-y-3 p-4">
-              {seatingLayout.map((row, rowIndex) => (
-                <div
-                  key={`row-${rowIndex}-${row.rowLabel}`}
-                  className="flex items-center justify-center space-x-2"
-                >
-                  {/* Row label */}
-                  <div className="w-8 text-center font-semibold text-gray-700 text-sm">
-                    {row.rowLabel}
-                  </div>
+            {/* ✅ MOBILE ENHANCED: Horizontal scrollable seat container */}
+            <div 
+              ref={scrollContainerRef}
+              className="overflow-x-auto overflow-y-hidden"
+              onScroll={handleScroll}
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#CBD5E0 #F7FAFC',
+                scrollBehavior: 'smooth'
+              }}
+            >
+              <style jsx>{`
+                .seat-container::-webkit-scrollbar {
+                  height: 8px;
+                }
+                .seat-container::-webkit-scrollbar-track {
+                  background: #F7FAFC;
+                  border-radius: 4px;
+                }
+                .seat-container::-webkit-scrollbar-thumb {
+                  background: #CBD5E0;
+                  border-radius: 4px;
+                }
+                .seat-container::-webkit-scrollbar-thumb:hover {
+                  background: #A0AEC0;
+                }
+              `}</style>
+              
+              <div className="seat-container min-w-max p-4 space-y-2">
+                {seatingLayout.map((row, rowIndex) => (
+                  <div
+                    key={`row-${rowIndex}-${row.rowLabel}`}
+                    className="flex items-center gap-2 min-w-max"
+                  >
+                    {/* Left row label */}
+                    <div className="w-8 text-center font-bold text-gray-700 text-sm flex-shrink-0 sticky left-0 bg-white z-10 border-r border-gray-200 pr-2">
+                      {row.rowLabel}
+                    </div>
 
-                  {/* Seats */}
-                  <div className="flex space-x-1">
-                    {(row.seats || [])
-                      .map((seat, seatIndex) => {
-                        // Use backend seatId - fail if not present
-                        const seatId = seat.seatId;
-                        if (!seatId) {
-                          console.error(
-                            '❌ Missing seatId for seat:',
-                            seat,
-                            'in row:',
-                            row.rowLabel
+                    {/* Seats container */}
+                    <div className="flex gap-1 min-w-max px-2">
+                      {(row.seats || [])
+                        .map((seat, seatIndex) => {
+                          // Use backend seatId - fail if not present
+                          const seatId = seat.seatId;
+                          if (!seatId) {
+                            console.error(
+                              '❌ Missing seatId for seat:',
+                              seat,
+                              'in row:',
+                              row.rowLabel
+                            );
+                            return null; // Skip rendering this seat
+                          }
+
+                          const seatStatus = getSeatStatus(seat, seatId);
+
+                          return (
+                            <SeatButton
+                              key={`${seatId}-${seatIndex}`}
+                              seat={{ ...seat, seatId }}
+                              row={row}
+                              isSelected={selectedSeats.includes(seatId)}
+                              isReservedByUser={currentReservation?.seatIds?.includes(
+                                seatId
+                              )}
+                              onClick={() => handleSeatClick(seatId, seatStatus)}
+                              disabled={
+                                isLoading ||
+                                pendingReservation ||
+                                pendingAutoRelease
+                              }
+                              userId={userId}
+                            />
                           );
-                          return null; // Skip rendering this seat
-                        }
+                        })
+                        .filter(Boolean)}
+                    </div>
 
-                        const seatStatus = getSeatStatus(seat, seatId);
-
-                        return (
-                          <SeatButton
-                            key={`${seatId}-${seatIndex}`}
-                            seat={{ ...seat, seatId }}
-                            row={row}
-                            isSelected={selectedSeats.includes(seatId)}
-                            isReservedByUser={currentReservation?.seatIds?.includes(
-                              seatId
-                            )}
-                            onClick={() => handleSeatClick(seatId, seatStatus)}
-                            disabled={
-                              isLoading ||
-                              pendingReservation ||
-                              pendingAutoRelease
-                            } // ✅ ENHANCED: Include auto-release loading
-                            userId={userId}
-                          />
-                        );
-                      })
-                      .filter(Boolean)}
+                    {/* Right row label */}
+                    <div className="w-8 text-center font-bold text-gray-700 text-sm flex-shrink-0 sticky right-0 bg-white z-10 border-l border-gray-200 pl-2">
+                      {row.rowLabel}
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
 
-                  {/* Row label (right side) */}
-                  <div className="w-8 text-center font-semibold text-gray-700 text-sm">
-                    {row.rowLabel}
-                  </div>
-                </div>
-              ))}
+            {/* Scroll hint for mobile */}
+            <div className="md:hidden bg-blue-50 border-t border-blue-200 px-4 py-2 text-center">
+              <div className="flex items-center justify-center text-xs text-blue-600">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                </svg>
+                Swipe left/right to view all seats
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Loading overlay */}
+        {/* ✅ MOBILE ENHANCED: Better loading overlay */}
         {(isLoading || pendingReservation || pendingAutoRelease) && (
-          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-lg">
-            <div className="text-center">
+          <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded-lg z-10">
+            <div className="text-center p-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-gray-600 font-medium">
                 {pendingAutoRelease
                   ? 'Releasing seats...'
                   : pendingReservation
@@ -558,7 +663,7 @@ const reservationData = {
         )}
       </div>
 
-      {/* Selection progress - compact */}
+      {/* ✅ MOBILE ENHANCED: Improved selection progress */}
       {requiredSeats > 0 && (
         <div
           className={`border rounded-lg p-3 ${
@@ -569,10 +674,10 @@ const reservationData = {
               : 'bg-blue-50 border-blue-200'
           }`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-start sm:items-center">
               <svg
-                className={`w-4 h-4 mr-2 ${
+                className={`w-5 h-5 mr-2 mt-0.5 sm:mt-0 flex-shrink-0 ${
                   selectedSeats.length === requiredSeats
                     ? 'text-green-600'
                     : selectedSeats.length > requiredSeats
@@ -594,37 +699,40 @@ const reservationData = {
                   }
                 />
               </svg>
-              <span
-                className={`text-sm font-medium ${
-                  selectedSeats.length === requiredSeats
-                    ? 'text-green-800'
-                    : selectedSeats.length > requiredSeats
-                    ? 'text-red-800'
-                    : 'text-blue-800'
-                }`}
-              >
-                {selectedSeats.length === 0
-                  ? `Click on available seats to select them (need ${requiredSeats})`
-                  : selectedSeats.length < requiredSeats
-                  ? `Select ${requiredSeats - selectedSeats.length} more seat${
-                      requiredSeats - selectedSeats.length !== 1 ? 's' : ''
-                    } (${selectedSeats.length}/${requiredSeats})`
-                  : selectedSeats.length === requiredSeats
-                  ? `Perfect! All ${requiredSeats} seats selected: ${selectedSeats.join(
-                      ', '
-                    )}`
-                  : `Too many seats selected! Please deselect ${
-                      selectedSeats.length - requiredSeats
-                    } seat${
-                      selectedSeats.length - requiredSeats !== 1 ? 's' : ''
-                    }`}
-              </span>
+              <div className="flex-1">
+                <span
+                  className={`text-sm font-medium ${
+                    selectedSeats.length === requiredSeats
+                      ? 'text-green-800'
+                      : selectedSeats.length > requiredSeats
+                      ? 'text-red-800'
+                      : 'text-blue-800'
+                  }`}
+                >
+                  {selectedSeats.length === 0
+                    ? `Tap on available seats to select them (need ${requiredSeats})`
+                    : selectedSeats.length < requiredSeats
+                    ? `Select ${requiredSeats - selectedSeats.length} more seat${
+                        requiredSeats - selectedSeats.length !== 1 ? 's' : ''
+                      }`
+                    : selectedSeats.length === requiredSeats
+                    ? `Perfect! All ${requiredSeats} seats selected`
+                    : `Too many seats selected! Please deselect ${
+                        selectedSeats.length - requiredSeats
+                      }`}
+                </span>
+                {selectedSeats.length === requiredSeats && selectedSeats.length > 0 && (
+                  <div className="text-xs text-green-700 mt-1">
+                    Selected: {selectedSeats.join(', ')}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Progress indicator */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 self-end sm:self-auto">
               <span
-                className={`text-sm font-medium ${
+                className={`text-sm font-bold ${
                   selectedSeats.length === requiredSeats
                     ? 'text-green-800'
                     : selectedSeats.length > requiredSeats
@@ -644,7 +752,7 @@ const reservationData = {
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
           <div className="flex items-center">
             <svg
-              className="w-5 h-5 text-green-600 mr-2"
+              className="w-5 h-5 text-green-600 mr-2 flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -661,17 +769,17 @@ const reservationData = {
             </span>
           </div>
           {currentReservation?.reservedUntil && (
-  <SeatReservationTimer
-    expiryTime={currentReservation.reservedUntil}
-    onExpire={handleTimerExpire}
-    eventId={eventId}
-    pauseWhenNavigating={true}  // ✅ NEW: Pause timer during navigation
-  />
-)}
+            <SeatReservationTimer
+              expiryTime={currentReservation.reservedUntil}
+              onExpire={handleTimerExpire}
+              eventId={eventId}
+              pauseWhenNavigating={true}  // ✅ NEW: Pause timer during navigation
+            />
+          )}
         </div>
       )}
     </div>
   );
-}
+};
 
 export default SeatMapSelection;

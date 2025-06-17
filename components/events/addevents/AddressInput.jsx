@@ -10,7 +10,8 @@ const AddressInput = ({
   setFormData,
   errors = [],
   placeholder = 'Enter your address or suburb',
-  disabled = false
+  disabled = false,
+  mode = 'add' // Add mode prop
 }) => {
   const [formattedAddress, setFormattedAddress] = useState(
     formData?.address?.formattedAddress || ''
@@ -18,6 +19,17 @@ const AddressInput = ({
   const autocompleteRef = useRef(null);
   const [isUserInput, setIsUserInput] = useState(false);
   const previousFormDataAddress = useRef(formData?.address?.formattedAddress);
+
+  // Error styling function (matching EventDetailsStep.jsx)
+  const getFieldClasses = (hasErrors) => {
+    const baseClasses = 'w-full px-3 py-3 sm:py-2 border rounded-lg transition-colors text-base sm:text-sm';
+    const errorClasses = hasErrors ? 'border-red-500 bg-red-50' : 'border-gray-300';
+    const readOnlyClasses = disabled 
+      ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
+      : 'focus:ring-2 focus:ring-teal-500 focus:border-teal-500 active:border-teal-500';
+    
+    return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
+  };
 
   const handlePlaceChanged = () => {
     const place = autocompleteRef.current.getPlace();
@@ -88,11 +100,19 @@ const AddressInput = ({
     };
   }, []);
 
+  // Check if there are errors
+  const hasErrors = errors && (Array.isArray(errors) ? errors.length > 0 : errors);
+
   return (
-    <div>
-      <label className="block font-bold mb-2 text-gray-700">
-        Address <span className="text-red-500">*</span>
+    <div className="space-y-2">
+      <label className="block font-semibold text-sm sm:text-base">
+        Event Address <span className="text-red-500">*</span>
       </label>
+      {mode === 'edit' && (
+        <p className="text-xs sm:text-sm text-gray-500">
+          Address changes will be communicated to attendees
+        </p>
+      )}
       <LoadScriptNext
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
         libraries={libraries}
@@ -104,14 +124,30 @@ const AddressInput = ({
         >
           <input
             type="text"
-            placeholder={placeholder}
-            className="w-full p-2 border rounded"
+            placeholder={disabled ? 'Event address' : placeholder}
+            className={getFieldClasses(hasErrors)}
             value={formattedAddress}
             onChange={handleInputChange}
             disabled={disabled}
+            maxLength="500"
           />
         </Autocomplete>
       </LoadScriptNext>
+      
+      {/* Error Display */}
+      {hasErrors && (
+        <p className="text-red-500 text-xs sm:text-sm">
+          {Array.isArray(errors) ? errors[0] : errors}
+        </p>
+      )}
+      
+      {/* Help Text */}
+      <p className="text-xs text-gray-500">
+        {mode === 'view' 
+          ? 'Event location address'
+          : 'Enter the full address where your event will take place'
+        }
+      </p>
     </div>
   );
 };

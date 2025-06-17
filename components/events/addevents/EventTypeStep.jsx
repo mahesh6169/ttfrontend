@@ -276,9 +276,6 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
             <div className="ml-4 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold">Paid Event</h3>
-                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
-                  Premium
-                </span>
                 {formData.isPaid && !stripeSetupComplete && (
                   <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full animate-pulse">
                     Setup Required
@@ -319,18 +316,6 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
                   </svg>
                   Advanced attendee management
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Tax management (GST)
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Revenue tracking & reporting
-                </div>
               </div>
               {isRecurringEvent && (
                 <div className="mt-3 p-2 bg-blue-50 rounded text-sm text-blue-700">
@@ -364,12 +349,19 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
                 
                 <div className="bg-white rounded-lg p-4 border border-red-200">
                   <h4 className="font-medium text-red-800 mb-2">What you'll need to set up:</h4>
-                  <ul className="text-sm text-red-700 space-y-1">
-                    <li>• Business or personal details</li>
-                    <li>• Bank account information for payouts</li>
-                    <li>• Tax information (ABN if applicable)</li>
-                    <li>• Identity verification documents</li>
-                  </ul>
+                  <ul>
+  <li>• Personal details</li>
+  <li>
+    • Business details
+    <ul>
+      <li>💡 <strong>Tip:</strong> Industry – Choose "Event Ticketing"</li>
+      <li>💡 <strong>Tip:</strong> Website – "https://telugufy.com.au/"</li>
+    </ul>
+  </li>
+  <li>• Bank account information for payouts</li>
+  <li>• Identity verification documents</li>
+</ul>
+
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">

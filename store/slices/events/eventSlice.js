@@ -230,7 +230,7 @@ const createDefaultFormData = () => ({
   title: '',
   description: '',
   dateTime: '',
-  timeZone: 'Australia/Sydney',
+  timeZone: '',
   venue: '',
   address: {
     formattedAddress: '',
@@ -330,7 +330,7 @@ const processEventDataForEdit = (eventData) => {
     title: eventData.title || '',
     description: eventData.description || '',
     dateTime: eventData.dateTime || '',
-    timeZone: eventData.timeZone || 'Australia/Sydney',
+    timeZone: eventData.timeZone || '',
     venue: eventData.venue || '',
     address: eventData.address || {
       formattedAddress: '',
