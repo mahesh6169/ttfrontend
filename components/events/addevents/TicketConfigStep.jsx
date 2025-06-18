@@ -26,20 +26,7 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
     <div className="space-y-6">
       {/* Header with recurring event info */}
       <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Free Event Configuration
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Configure registration settings for your free event
-            {isRecurringEvent && (
-              <span className="block text-blue-600 font-medium mt-1">
-                These settings will apply to all instances of your recurring
-                event
-              </span>
-            )}
-          </p>
-        </div>
+
         {isRecurringEvent && (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
             <svg
@@ -225,74 +212,14 @@ onBlur={(e) => {
 const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
 
-  // Calculate allocated tickets and remaining pool
-const calculateTicketAllocation = () => {
-  const totalCapacity = Number(formData.capacity) || 0;
-  if (totalCapacity === 0 || formData.capacity === '' || formData.capacity === '0') {
-    return { allocated: 0, remaining: 'Unlimited' };
-  }
-
-  const allocatedTickets = (formData.ticketTypes || []).reduce(
-    (total, ticket) => {
-      return total + (Number(ticket.quantity) || 0);
-    },
-    0
-  );
-
-  const remainingTickets = Math.max(0, totalCapacity - allocatedTickets);
-
-  return {
-    allocated: allocatedTickets,
-    remaining: remainingTickets,
-  };
-};
-
-  const ticketAllocation = calculateTicketAllocation();
   
-  // Validate ticket allocation against capacity - moved inside component to recalculate on every render
-  const allocationValidation = React.useMemo(() => {
-    const totalCapacity = Number(formData.capacity) || 0;
-    if (totalCapacity === 0) return { isValid: true, message: '' }; // Unlimited capacity
 
-    const allocatedTickets = (formData.ticketTypes || []).reduce(
-      (total, ticket) => {
-        return total + (Number(ticket.quantity) || 0);
-      },
-      0
-    );
-
-    const isOverAllocated = allocatedTickets > totalCapacity;
-    const remainingTickets = Math.max(0, totalCapacity - allocatedTickets);
-
-    return {
-      isValid: !isOverAllocated,
-      message: isOverAllocated 
-        ? `Total ticket allocation (${allocatedTickets}) exceeds capacity (${totalCapacity})`
-        : '',
-      allocated: allocatedTickets,
-      remaining: remainingTickets,
-      isOverAllocated
-    };
-  }, [formData.capacity, formData.ticketTypes]);
 
   return (
     <div className="space-y-6">
       {/* Header with recurring event info */}
       <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Paid Event Configuration
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Set up ticket types, pricing, and payment settings
-            {isRecurringEvent && (
-              <span className="block text-blue-600 font-medium mt-1">
-                These pricing settings will apply to all instances of your
-                recurring event
-              </span>
-            )}
-          </p>
-        </div>
+
         {isRecurringEvent && (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
             <svg
@@ -442,7 +369,9 @@ const calculateTicketAllocation = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-              {/* SVG ICON */}
+               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+            </svg>
             </div>
             <div>
               <h4 className="text-lg font-medium text-gray-900">
@@ -454,39 +383,7 @@ const calculateTicketAllocation = () => {
             </div>
           </div>
 
-         {/* Event Capacity Status */}
-          <div className="text-right">
-            <h4 className="text-lg font-medium text-gray-900">
-                Event Capacity Status
-              </h4>
-            {ticketAllocation.remaining === 'Unlimited' ? (
-              <p className="text-lg font-semibold text-blue-600">
-                Unlimited
-              </p>
-            ) : allocationValidation.isOverAllocated ? (
-              <div>
-                <p className="text-lg font-semibold text-red-600">
-                  Overbooked by {allocationValidation.allocated - Number(formData.capacity)}
-                </p>
-                <p className="text-sm text-red-500 mt-1">
-                  (0 of {formData.capacity} remaining)
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className={`text-lg font-semibold ${
-                  ticketAllocation.remaining <= 10 ? 'text-orange-600' : 'text-blue-600'
-                }`}>
-                  {ticketAllocation.remaining} of {formData.capacity} spots remaining
-                </p>
-                {ticketAllocation.remaining <= 10 && (
-                  <p className="text-xs text-orange-500 mt-1">
-                    Running low on tickets!
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+
         </div>
 
 
@@ -510,9 +407,7 @@ const calculateTicketAllocation = () => {
                       {ticket?.name || `Ticket Type ${index + 1}`}
                     </h5>
                     <p className="text-sm text-gray-500">
-                      {ticket?.quantity && Number(ticket.quantity) > 0
-                        ? `${ticket.quantity} allocated tickets`
-                        : 'Shares remaining pool'}
+                      ${ticket?.price || '0'} AUD
                     </p>
                   </div>
                 </div>
@@ -572,6 +467,7 @@ const calculateTicketAllocation = () => {
                       {errors[`ticketName_${index}`][0]}
                     </p>
                   )}
+                  
                 </div>
 
 {/* Ticket Price */}
@@ -624,59 +520,7 @@ const calculateTicketAllocation = () => {
                   </p>
                 </div>
 
-{/* Ticket Quantity */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Quantity
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    value={
-                      ticket.quantity === undefined || ticket.quantity === null
-                        ? ''
-                        : ticket.quantity
-                    }
-                    onChange={(e) => {
-                      const newQuantity = e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
-                      dispatch(
-                        updateTicketType({
-                          index,
-                          field: 'quantity',
-                          value: newQuantity,
-                        })
-                      );
-                    }}
-                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-                      errors?.[`ticketQuantity_${index}`] ? 'border-red-500' : 
-                      allocationValidation.isOverAllocated ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter quantity or 0 to share remaining capacity"
-                  />
-                   <p className="text-xs text-gray-500 mt-1">
-                    Enter number of tickets for this type.
-                    <br />
-                    {Number(formData.capacity) > 0 ? (
-                      <>
-                        Leave as{' '}
-                        <span className="font-semibold text-teal-700">0</span> to
-                        share the remaining capacity pool with other ticket types.
-                      </>
-                    ) : (
-                      <>
-                        Leave as{' '}
-                        <span className="font-semibold text-teal-700">0</span> for
-                        unlimited tickets of this type.
-                      </>
-                    )}
-                  </p>
-                  {allocationValidation.isOverAllocated && (
-                    <p className="text-xs text-red-500 mt-1 font-medium">
-                      Total allocation exceeds capacity!
-                    </p>
-                  )}
-                </div>
+
 
                 {/* Start Date */}
                 <div>
@@ -758,32 +602,13 @@ const calculateTicketAllocation = () => {
             onClick={() => dispatch(addTicketType())}
             className="inline-flex items-center px-4 py-2 border border-dashed border-teal-300 rounded-lg text-teal-600 hover:text-teal-700 hover:border-teal-400 hover:bg-teal-50 transition-all duration-200 font-medium"
           >
-            {/* SVG ICON */}
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
             Add Another Ticket Type
           </button>
         </div>
-        {/* Capacity Validation Warning */}
-        {allocationValidation.isOverAllocated && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">
-                  Capacity Exceeded
-                </h3>
-                <div className="mt-2 text-sm text-red-700">
-                  <p>
-                    {allocationValidation.message}. Please reduce ticket quantities or increase the total capacity.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
       </div>
       {/* --- ADD BELOW --- */}
       <SeatingLayoutSection
@@ -1113,7 +938,7 @@ const TicketConfigStep = ({ formData = {}, errors = {} }) => {
       </div>
 
       {/* Conditional Content Based on Event Type */}
-      {formData.isPaid ? (
+       {formData.isPaid ? (
         <PaidEventConfig
           formData={formData}
           errors={errors}
@@ -1127,68 +952,7 @@ const TicketConfigStep = ({ formData = {}, errors = {} }) => {
         />
       )}
 
-      {/* Configuration Summary */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">
-          Configuration Summary
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-          {formData.isPaid ? (
-            <>
-              <div>
-                <span className="text-gray-500">Ticket Types:</span>
-                <span className="ml-2 font-medium">
-                  {(formData.ticketTypes || []).length}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Seating Layout:</span>
-                <span className="ml-2 font-medium">
-                  {(formData.seatingLayout || []).length > 0
-                    ? 'Configured'
-                    : 'Not set'}
-                </span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <span className="text-gray-500">Capacity:</span>
-                <span className="ml-2 font-medium">
-                  {(formData.capacity || 0) === 0
-                    ? 'Unlimited'
-                    : formData.capacity}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Max Per Registration:</span>
-                <span className="ml-2 font-medium">
-                  {formData.maxAttendeesPerRegistration || 5}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Event Type:</span>
-                <span className="ml-2 font-medium">Free Registration</span>
-              </div>
-            </>
-          )}
-          <div>
-            <span className="text-gray-500">Custom Fields:</span>
-            <span className="ml-2 font-medium">
-              {(formData.registrationFields || []).length}
-            </span>
-          </div>
-          {isRecurringEvent && (
-            <div className="md:col-span-2 lg:col-span-3">
-              <span className="text-gray-500">Recurring Schedule:</span>
-              <span className="ml-2 font-medium text-purple-600">
-                {(formData.recurrence?.repeatSchedule || []).length} scheduled
-                occurrences
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
+
     </div>
   );
 };

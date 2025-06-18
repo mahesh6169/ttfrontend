@@ -391,20 +391,7 @@ if (formData.coordinators && formData.coordinators.length > 0) {
             errors[`ticketPrice_${index}`] = ['Price must be greater than 0'];
           }
 
-          // Ticket Quantity validation
-          if (
-            ticket.quantity === undefined ||
-            ticket.quantity === null ||
-            ticket.quantity === '' ||
-            isNaN(Number(ticket.quantity)) ||
-            Number(ticket.quantity) < 0
-          ) {
-            ticketErrors.push(
-              `Ticket type ${index + 1} quantity is required and must be 0 (share pool) or a positive number`
-            );
-            // Individual field error
-            errors[`ticketQuantity_${index}`] = ['Quantity must be 0 or a positive number'];
-          }
+          
 
           // Date validation: startDate should be before expiryDate if both are set
           if (ticket.startDate && ticket.expiryDate) {
@@ -587,21 +574,7 @@ case 2: // Organiser Details
                 errors[`ticketPrice_${index}`] = ['Price must be greater than 0'];
               }
 
-              // Ticket Quantity validation
-              if (
-                ticket.quantity === undefined ||
-                ticket.quantity === null ||
-                ticket.quantity === '' ||
-                isNaN(Number(ticket.quantity)) ||
-                Number(ticket.quantity) < 0
-              ) {
-                ticketErrors.push(
-                  `Ticket type ${index + 1} quantity is required and must be 0 (share pool) or a positive number`
-                );
-                // Individual field error
-                errors[`ticketQuantity_${index}`] = ['Quantity must be 0 or a positive number'];
-              }
-
+             
               // Date validation: startDate should be before expiryDate if both are set
               if (ticket.startDate && ticket.expiryDate) {
                 const startDate = new Date(ticket.startDate);
@@ -616,22 +589,7 @@ case 2: // Organiser Details
               }
             });
             if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
-            // Check for capacity over-allocation
-        if (formData.capacity && Number(formData.capacity) > 0) {
-          const totalCapacity = Number(formData.capacity);
-          const allocatedTickets = formData.ticketTypes.reduce(
-            (total, ticket) => total + (Number(ticket.quantity) || 0),
-            0
-          );
-          
-          if (allocatedTickets > totalCapacity) {
-            const currentErrors = errors.ticketTypes || [];
-            errors.ticketTypes = [
-              ...currentErrors,
-              `Total ticket allocation (${allocatedTickets}) exceeds event capacity (${totalCapacity}). Please reduce ticket quantities or increase capacity.`
-            ];
-          }
-        }
+      
           }
            // Organizer reserved seats validation
           if (formData.organizerReservedSeats && formData.organizerReservedSeats.trim()) {
