@@ -1,5 +1,3 @@
-// components/events/addevents/RefundPolicyStep.jsx
-
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { updateRefundPolicy } from '@/store/slices/events/eventSlice';
@@ -12,6 +10,7 @@ const RefundPolicyStep = ({
 }) => {
   const dispatch = useDispatch();
   const disabled = readOnly || mode === 'view';
+  const [showPreviewModal, setShowPreviewModal] = React.useState(false);
 
   // Handle refund policy changes
   const handleRefundPolicyChange = (field, value) => {
@@ -128,17 +127,48 @@ const RefundPolicyStep = ({
                     )}
                   </div>
                 </div>
-                <div className="ml-3">
+                <div className="ml-3 w-full">
                   <div className="flex items-center gap-2">
                     <h4 className="font-medium text-gray-800">Processing fees are non-refundable</h4>
                     <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded-full">
-                      Standard
+                      Customer absorbs processing fees
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    When refunds are issued, customers will receive the ticket price minus the $1 processing fee. 
-                    This is the most common approach used by ticketing platforms.
-                  </p>
+                  
+                  {/* Refund Breakdown Table */}
+                  <div className="mt-3 bg-amber-50 rounded-lg p-3 border border-amber-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-amber-800">💡 Refund Example - $10 Ticket</span>
+                      <button 
+                        type="button"
+                        className="text-xs text-amber-700 hover:text-amber-800 flex items-center gap-1"
+                      >
+                        📋 Copy
+                      </button>
+                    </div>
+                    <div className="overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-amber-100 text-amber-800">
+                            <th className="text-left py-1 px-2 rounded-tl">Ticket Price</th>
+                            <th className="text-left py-1 px-2">Platform Fee</th>
+                            <th className="text-left py-1 px-2">Stripe Fee (1.7% + $0.30)</th>
+                            <th className="text-left py-1 px-2 rounded-tr">Refund to Customer</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="bg-white text-gray-700">
+                            <td className="py-1 px-2 font-medium">$10.00</td>
+                            <td className="py-1 px-2">$0.53</td>
+                            <td className="py-1 px-2">$0.47</td>
+                            <td className="py-1 px-2 font-bold text-gray-700">$9.00</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-xs text-amber-700 mt-2">
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -166,17 +196,48 @@ const RefundPolicyStep = ({
                     )}
                   </div>
                 </div>
-                <div className="ml-3">
+                <div className="ml-3 w-full">
                   <div className="flex items-center gap-2">
                     <h4 className="font-medium text-gray-800">Processing fees are refunded</h4>
-                    <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full">
-                      Customer-Friendly
+                    <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded-full">
+                      Organiser absorbs processing fees
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Customers receive full refunds including the $1 processing fee. You absorb the platform fee loss 
-                    to provide a better customer experience.
-                  </p>
+                  
+                  {/* Refund Breakdown Table for Full Refund */}
+                  <div className="mt-3 bg-amber-50 rounded-lg p-3 border border-amber-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-amber-800">💡 Refund Example - $10 Ticket</span>
+                      <button 
+                        type="button"
+                        className="text-xs text-amber-700 hover:text-amber-800 flex items-center gap-1"
+                      >
+                        📋 Copy
+                      </button>
+                    </div>
+                    <div className="overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-amber-100 text-amber-800">
+                            <th className="text-left py-1 px-2 rounded-tl">Ticket Price</th>
+                            <th className="text-left py-1 px-2">Platform Fee</th>
+                            <th className="text-left py-1 px-2">Stripe Fee (1.7% + $0.30)</th>
+                            <th className="text-left py-1 px-2 rounded-tr">Refund to Customer</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="bg-white text-gray-700">
+                            <td className="py-1 px-2 font-medium">$10.00</td>
+                            <td className="py-1 px-2">$0.53</td>
+                            <td className="py-1 px-2">$0.47</td>
+                            <td className="py-1 px-2 font-bold text-gray-700">$10.00</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-xs text-amber-700 mt-2">
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -200,23 +261,21 @@ const RefundPolicyStep = ({
               maxLength={1000}
             />
             <div className="flex justify-between items-center text-xs text-gray-500">
-              <span>This will be shown to customers during checkout</span>
               <span>{(formData.refundPolicy?.policyText || '').length}/1000</span>
             </div>
           </div>
           
           {/* Policy Preview */}
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h5 className="text-sm font-medium text-blue-800 mb-2">Preview - What customers will see:</h5>
-            <div className="text-sm text-blue-700">
-              <p className="font-medium">
-                {formData.refundPolicy?.processingFeePolicy === 'refunded' 
-                  ? '✓ Full refunds including processing fees' 
-                  : '⚠️ Processing fees ($1) are non-refundable'}
-              </p>
-              {formData.refundPolicy?.policyText && (
-                <p className="mt-2 italic">"{formData.refundPolicy.policyText}"</p>
-              )}
+            <div className="flex items-center justify-between mb-2">
+              <h5 className="text-sm font-medium text-blue-800">Preview - What customers will see</h5>
+              <button 
+                type="button"
+                onClick={() => setShowPreviewModal(true)}
+                className="text-xs text-blue-700 hover:text-blue-800 font-medium px-2 py-1 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
+              >
+                [view details]
+              </button>
             </div>
           </div>
         </div>
@@ -274,6 +333,132 @@ const RefundPolicyStep = ({
                 Changes to your refund policy will only apply to new ticket purchases. 
                 Existing ticket holders remain under the original policy they agreed to.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Preview Modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowPreviewModal(false)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Customer Checkout Preview</h3>
+                <button 
+                  onClick={() => setShowPreviewModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              {/* Mock Order Summary */}
+              <div className="space-y-4">
+                <div className="border-b pb-3">
+                  <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                    <span className="w-4 h-4 bg-green-600 rounded mr-2"></span>
+                    Order Summary
+                  </h4>
+                  
+                  <div className="space-y-1 text-sm">
+                    <div className="flex items-center text-blue-600">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Sunday 6 July 2025
+                    </div>
+                    <div className="flex items-center text-green-600">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      1:00 am
+                    </div>
+                    <div className="flex items-center text-red-600">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      </svg>
+                      Test 112
+                    </div>
+                    <div className="flex items-center text-purple-600">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                      Technology
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-b pb-3">
+                  <h4 className="font-medium text-gray-900 mb-2">Selected Tickets</h4>
+                  <div className="flex justify-between text-sm">
+                    <div>
+                      <div className="font-medium">test</div>
+                      <div className="text-gray-600">Quantity: 1 • $10.00 each</div>
+                    </div>
+                    <div className="font-medium">$10.00</div>
+                  </div>
+                </div>
+                
+                <div className="border-b pb-3">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Subtotal</span>
+                    <span>$10.00</span>
+                  </div>
+                  <div className="flex justify-between font-medium text-green-600">
+                    <span>Total</span>
+                    <span>$10.00</span>
+                  </div>
+                </div>
+                
+                <div>
+                  {formData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
+                    <div className="bg-gray-50 rounded p-3 border">
+                      <div className="flex items-start text-sm">
+                        <svg className="w-4 h-4 text-gray-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                          <p className="font-medium text-gray-900">Refund Policy by organiser</p>
+                          <div className="mt-1 text-gray-700">
+                            Processing fees are non-refundable
+                          </div>
+                          {formData.refundPolicy?.policyText && (
+                            <div className="mt-2">
+                              <p className="font-medium text-gray-700">Additional Policy Notes</p>
+                              <p className="text-gray-600 italic">"{formData.refundPolicy.policyText}"</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {formData.refundPolicy?.processingFeePolicy === 'refunded' && (
+                    <div className="bg-gray-50 rounded p-3 border">
+                      <div className="flex items-start text-sm">
+                        <svg className="w-4 h-4 text-gray-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                          <p className="font-medium text-gray-900">Refund Policy by organiser</p>
+                          <div className="mt-1 text-gray-700">
+                            Processing fees are refunded
+                          </div>
+                          {formData.refundPolicy?.policyText && (
+                            <div className="mt-2">
+                              <p className="font-medium text-gray-700">Additional Policy Notes</p>
+                              <p className="text-gray-600 italic">"{formData.refundPolicy.policyText}"</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
