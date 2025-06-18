@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 
 const SuccessStep = ({ 
   event = {}, 
-  mode = 'add', // 'add' | 'edit' | 'view'
+  mode = 'add', // 'add' | 'edit'
   onAddAnother, 
   onManageEvents,
   onViewEvent,
@@ -18,7 +18,7 @@ const SuccessStep = ({
   const modeConfig = {
     add: {
       title: '🎉 Event Created Successfully!',
-      subtitle: 'Your event has been created and is now ready for attendees to register.',
+      subtitle: ' has been created and is now ready for attendees to register.',
       icon: '✅',
       color: 'teal',
       primaryAction: 'Manage My Events',
@@ -26,19 +26,11 @@ const SuccessStep = ({
     },
     edit: {
       title: '✅ Event Updated Successfully!', 
-      subtitle: 'Your changes have been saved and attendees will be notified of important updates.',
+      subtitle: ' have been updated.',
       icon: '🔄',
       color: 'blue',
       primaryAction: 'View Updated Event',
       secondaryAction: 'Manage My Events'
-    },
-    view: {
-      title: '📋 Event Information',
-      subtitle: 'Complete event details and information.',
-      icon: '👁️',
-      color: 'gray',
-      primaryAction: 'Back to Events',
-      secondaryAction: 'Edit Event'
     }
   };
 
@@ -70,104 +62,7 @@ const SuccessStep = ({
     }, 0);
   };
 
-  // Get event status message based on mode
-  const getEventStatusMessage = () => {
-    switch (mode) {
-      case 'add':
-        if (isRecurringEvent) {
-          return 'and all recurring instances are now ready for attendees to register';
-        }
-        return event.status === 'draft' ? 'and is now ready to be published' : 'and is now ready for attendees to register';
-      
-      case 'edit':
-        if (isRecurringEvent) {
-          return 'All changes have been applied to future recurring instances. Registered attendees have been notified of important updates.';
-        }
-        return 'Changes have been saved successfully. Registered attendees have been notified of important updates.';
-      
-      case 'view':
-        return 'View all event details and information below.';
-      
-      default:
-        return '';
-    }
-  };
 
-  // Mode-specific next steps
-  const getNextSteps = () => {
-    switch (mode) {
-      case 'add':
-        return [
-          {
-            step: 1,
-            title: 'Review Your Event',
-            description: 'Check all details are correct before publishing',
-            color: 'teal'
-          },
-          {
-            step: 2,
-            title: event.isPaid ? 'Setup Payments' : 'Share Your Event',
-            description: event.isPaid 
-              ? 'Complete payment account setup to receive funds'
-              : 'Start promoting your event to attract attendees',
-            color: 'teal'
-          },
-          {
-            step: 3,
-            title: 'Manage Registrations',
-            description: 'Track attendees and manage check-ins',
-            color: 'teal'
-          }
-        ];
-      
-      case 'edit':
-        return [
-          {
-            step: 1,
-            title: 'Changes Applied',
-            description: 'Your updates are now live and visible to attendees',
-            color: 'blue'
-          },
-          {
-            step: 2,
-            title: 'Attendee Notifications',
-            description: 'Important changes have been automatically communicated',
-            color: 'blue'
-          },
-          {
-            step: 3,
-            title: 'Monitor Impact',
-            description: 'Check registration status and attendee feedback',
-            color: 'blue'
-          }
-        ];
-      
-      case 'view':
-        return [
-          {
-            step: 1,
-            title: 'Event Details',
-            description: 'Complete information about this event',
-            color: 'gray'
-          },
-          {
-            step: 2,
-            title: 'Registration',
-            description: 'Join this event if registration is open',
-            color: 'gray'
-          },
-          {
-            step: 3,
-            title: 'Share Event',
-            description: 'Tell others about this event',
-            color: 'gray'
-          }
-        ];
-      
-      default:
-        return [];
-    }
-  };
 
   // Handle primary action based on mode
   const handlePrimaryAction = () => {
@@ -177,9 +72,6 @@ const SuccessStep = ({
         break;
       case 'edit':
         if (onViewEvent) onViewEvent();
-        break;
-      case 'view':
-        if (onManageEvents) onManageEvents();
         break;
       default:
         if (onManageEvents) onManageEvents();
@@ -194,9 +86,6 @@ const SuccessStep = ({
         break;
       case 'edit':
         if (onManageEvents) onManageEvents();
-        break;
-      case 'view':
-        if (onEditEvent) onEditEvent();
         break;
       default:
         if (onAddAnother) onAddAnother();
@@ -217,12 +106,6 @@ const SuccessStep = ({
         secondary: 'border-blue-600 text-blue-600 hover:bg-blue-50',
         accent: 'text-blue-600',
         bg: 'bg-blue-100'
-      },
-      gray: {
-        primary: 'bg-gray-600 hover:bg-gray-700 text-white',
-        secondary: 'border-gray-600 text-gray-600 hover:bg-gray-50',
-        accent: 'text-gray-600',
-        bg: 'bg-gray-100'
       }
     };
     
@@ -245,10 +128,7 @@ const SuccessStep = ({
           Your event <span className="font-semibold text-gray-900">"{event.title || 'Untitled Event'}"</span> {config.subtitle}
         </p>
         
-        {/* Mode-specific status message */}
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          {getEventStatusMessage()}
-        </p>
+
         
         {/* Event Type & Recurring Badges */}
         <div className="flex items-center justify-center space-x-3 mb-6 mt-4">
@@ -287,7 +167,6 @@ const SuccessStep = ({
           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getColorClasses('bg')} ${getColorClasses('accent')}`}>
             {mode === 'add' && '✨ New Event'}
             {mode === 'edit' && '🔄 Updated'}
-            {mode === 'view' && '👁️ Viewing'}
           </span>
         </div>
       </div>
@@ -332,10 +211,7 @@ const SuccessStep = ({
               </div>
             )}
             
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500">Coordinators:</span>
-              <span className="font-medium">{(event.coordinators || []).length}</span>
-            </div>
+
           </div>
         </div>
 
@@ -354,9 +230,25 @@ const SuccessStep = ({
           <div className="space-y-3 text-sm">
             {event.isPaid ? (
               <>
+                {/* Display ticket types with names and prices */}
+                {(event.ticketTypes || []).length > 0 && (
+                  <div className="space-y-2">
+                    {event.ticketTypes.map((ticket, index) => (
+                      <div key={index} className="flex justify-between items-center">
+                        <span className="text-gray-500">{ticket.name || `Ticket ${index + 1}`}:</span>
+                        <span className="font-medium">
+                          ${(ticket.price || 0).toLocaleString('en-AU', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Ticket Types:</span>
-                  <span className="font-medium">{(event.ticketTypes || []).length}</span>
+                  <span className="text-gray-500">Refund Policy:</span>
+                  <span className="font-medium">
+                    {event.refundPolicy?.processingFeePolicy === 'refunded' ? 'Refundable' : 'Non-refundable'}
+                  </span>
                 </div>
                 
                 {calculateTotalRevenue() > 0 && (
@@ -436,24 +328,6 @@ const SuccessStep = ({
           </div>
         </div>
       )}
-
-      {/* Next Steps */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-          {mode === 'view' ? 'Event Options' : "What's Next?"}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          {getNextSteps().map((step, index) => (
-            <div key={index} className="text-center">
-              <div className={`w-8 h-8 ${getColorClasses('bg')} rounded-full flex items-center justify-center mx-auto mb-2`}>
-                <span className={`${getColorClasses('accent')} font-semibold`}>{step.step}</span>
-              </div>
-              <p className="font-medium">{step.title}</p>
-              <p className="text-gray-500 mt-1">{step.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
       
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -464,7 +338,6 @@ const SuccessStep = ({
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {mode === 'add' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />}
             {mode === 'edit' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />}
-            {mode === 'view' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />}
           </svg>
           {config.primaryAction}
         </button>
@@ -476,7 +349,6 @@ const SuccessStep = ({
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {mode === 'add' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />}
             {mode === 'edit' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />}
-            {mode === 'view' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />}
           </svg>
           {config.secondaryAction}
         </button>
@@ -514,7 +386,7 @@ const SuccessStep = ({
             Event Dashboard
           </Link>
           
-          {event.isPaid && mode !== 'view' && (
+          {event.isPaid && (
             <Link 
               href="/users/profile/settings" 
               className={`inline-flex items-center ${getColorClasses('accent')} hover:underline font-medium transition-colors`}

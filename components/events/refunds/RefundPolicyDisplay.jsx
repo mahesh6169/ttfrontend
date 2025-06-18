@@ -92,55 +92,27 @@ const RefundPolicyDisplay = ({
 
   const colors = getColors();
 
-  // Get icon based on policy type and variant
-  const getPolicyIcon = () => {
-    if (isCustomerFriendly) {
-      return (
-        <svg className="w-4 h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-        </svg>
-      );
-    } else {
-      return (
-        <svg className="w-4 h-4 text-amber-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-        </svg>
-      );
-    }
-  };
-
-  // Get policy text based on type
+  // Get simple policy text (matching RefundPolicyStep approach)
   const getPolicyText = () => {
     if (isCustomerFriendly) {
-      return {
-        title: 'Full refunds including processing fees',
-        description: "If you need to cancel, you'll receive a complete refund including the $1 processing fee."
-      };
+      return 'Processing fees are refunded';
     } else {
-      return {
-        title: 'Processing fees are non-refundable',
-        description: "If you need to cancel, you'll receive a refund of the ticket price minus the $1 processing fee."
-      };
+      return 'Processing fees are non-refundable';
     }
   };
-
-  const policyText = getPolicyText();
 
   // Compact variant for smaller spaces
   if (variant === 'compact') {
     return (
       <div className={`${getVariantStyles()} ${className}`}>
         <div className="flex items-start text-sm">
-          {getPolicyIcon()}
+          <svg className="w-4 h-4 text-gray-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           <div className="flex-1">
             <span className={`font-medium ${colors.primary}`}>
-              {policyText.title}
+              {getPolicyText()}
             </span>
-            {isCustomerFriendly && (
-              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                Customer-Friendly
-              </span>
-            )}
           </div>
         </div>
         {refundPolicy.policyText && (
@@ -152,7 +124,7 @@ const RefundPolicyDisplay = ({
     );
   }
 
-  // Full variant (default)
+  // Full variant (default) - Simplified like RefundPolicyStep
   return (
     <div className={`${getVariantStyles()} ${className}`}>
       <div className="flex items-start">
@@ -162,22 +134,24 @@ const RefundPolicyDisplay = ({
           </svg>
         </div>
         <div className="ml-3 flex-1">
-          <h4 className={`font-medium ${colors.primary} mb-2 flex items-center`}>
-            <span>Refund Policy</span>
-            {isCustomerFriendly && (
-              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                Customer-Friendly
-              </span>
-            )}
+          <h4 className={`font-medium ${colors.primary} mb-2`}>
+            Refund Policy
           </h4>
           
           <div className={`text-sm ${colors.secondary} space-y-2`}>
-            {/* Processing Fee Policy */}
+            {/* Simple Policy Statement */}
             <div className="flex items-start">
-              {getPolicyIcon()}
-              <span>
-                <strong>{policyText.title}:</strong> {policyText.description}
-              </span>
+              <svg className="w-4 h-4 text-amber-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <div>
+                <div className="font-medium mb-1">{getPolicyText()}</div>
+                <div className="text-xs text-gray-600 leading-relaxed">
+                  Processing fees include platform fees ($0.50) and payment processing (1.7% + $0.30 per transaction).
+                  <br />
+                  Example: For a $10 ticket, the processing fee would be approximately $1.00.
+                </div>
+              </div>
             </div>
 
             {/* Additional Policy Text */}

@@ -118,7 +118,7 @@ const initialState = {
     email: '',
     phone: '',
       agreedToTerms: false,
-  refundPolicyAccepted: false,
+      refundPolicyAccepted: false,
   },
   
   // Seat Information (coordination with seatSelectionSlice)
