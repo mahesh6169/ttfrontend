@@ -30,26 +30,34 @@ const EventRegistrationModal = ({ event, isOpen, onClose, onSuccess }) => {
 
   // Handle modal close (MOVED UP - defined before useEffects)
   const handleClose = () => {
-    setAttendees([{ name: '', age: '' }]);
-    setFormResponses({});
-    setErrors({});
-    dispatch(clearRegistrationError());
-    dispatch(clearSuccessMessage());
-    onClose();
-  };
+  setAttendees([{ name: '', age: '' }]);
+  setFormResponses({});
+  setErrors({});
+  setShowSuccessMessage(false);
+  dispatch(clearRegistrationError());
+  dispatch(clearSuccessMessage());
+  onClose();
+};
 
   // Handle successful registration
-  useEffect(() => {
-    if (registrationStatus === 'succeeded' && currentRegistration) {
-      console.log("✅ Modal: Registration succeeded, calling onSuccess");
-      onSuccess?.({ 
-        success: true, 
-        message: successMessage,
-        registration: currentRegistration 
-      });
-      handleClose(); // ✅ Now this is defined!
-    }
-  }, [registrationStatus, currentRegistration, successMessage, onSuccess]);
+useEffect(() => {
+  if (registrationStatus === 'succeeded' && currentRegistration) {
+    console.log("✅ Modal: Registration succeeded");
+    setShowSuccessMessage(true);
+    
+    // Call onSuccess callback
+    onSuccess?.({ 
+      success: true, 
+      message: successMessage,
+      registration: currentRegistration 
+    });
+    
+    // Auto-close after 3 seconds
+    setTimeout(() => {
+      handleClose();
+    }, 3000);
+  }
+}, [registrationStatus, currentRegistration, successMessage, onSuccess]);
 
   // Clear errors when modal opens
   useEffect(() => {
@@ -360,7 +368,30 @@ const formatEventDate = (dateTime, timeZone) => {
           </button>
         </div>
 
+                {/* Success Message */}
+        {showSuccessMessage && (
+          <div className="p-6 border-b bg-green-50">
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-3">
+                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-green-900 mb-2">Registration Successful! 🎉</h3>
+                <p className="text-sm text-green-700 mb-2">
+                  Registration Number: <strong>{currentRegistration?.registrationNumber}</strong>
+                </p>
+                <p className="text-xs text-green-600">
+                  You will receive a confirmation email shortly. This modal will close automatically.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Content */}
+        {!showSuccessMessage ? (
         <form onSubmit={handleSubmit} className="p-6">
           
           {/* Event Info */}
@@ -495,6 +526,16 @@ const formatEventDate = (dateTime, timeZone) => {
             </button>
           </div>
         </form>
+         ) : (
+          <div className="p-6 text-center">
+            <button
+              onClick={handleClose}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
