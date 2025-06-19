@@ -264,8 +264,9 @@ const createDefaultFormData = () => ({
     parentEventId: null
   },
   
-  // Ticketing
 
+  // Ticketing
+   isPaid: null,
   capacity: 0,
   maxAttendeesPerRegistration: 10,
   registrationFields: [],
@@ -284,6 +285,9 @@ refundPolicy: {
   processingFeePolicy: 'non-refundable', // 'refunded' or 'non-refundable'
   policyText: ''
 },
+
+// GST Configuration (Paid Events Only)
+gstIncluded: false,
 
 });
 
@@ -374,6 +378,7 @@ const processEventDataForEdit = (eventData) => {
   processingFeePolicy: 'non-refundable',
   policyText: ''
 },
+gstIncluded: eventData.gstIncluded || false,
   };
 };
 
@@ -647,6 +652,12 @@ setRefundPolicy: (state, action) => {
     processingFeePolicy: action.payload.processingFeePolicy || 'non-refundable',
     policyText: action.payload.policyText || ''
   };
+  state.hasUnsavedChanges = true;
+},
+
+// GST Configuration with change tracking
+updateGstIncluded: (state, action) => {
+  state.formData.gstIncluded = action.payload;
   state.hasUnsavedChanges = true;
 },
     
@@ -1049,6 +1060,9 @@ export const {
 // Refund policy
 updateRefundPolicy,
 setRefundPolicy,
+
+// GST configuration
+updateGstIncluded,
 
   // Seating layout
   addSeatingRow,

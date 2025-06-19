@@ -325,6 +325,22 @@ const TicketSelectionPage = () => {
               <FaTicketAlt className="mr-2 text-blue-600" />
               Available Tickets
             </h3>
+
+            {/* Event Capacity Info */}
+            <div className="flex items-center text-sm text-gray-600 mb-4">
+              <FaUsers className="mr-2" />
+              <span>
+                {capacityLoading ? (
+                  'Loading availability...'
+                ) : eventCapacity?.isUnlimited ? (
+                  'Unlimited capacity'
+                ) : eventCapacity?.status === 'sold-out' ? (
+                  'Event sold out'
+                ) : (
+                  `${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
+                )}
+              </span>
+            </div>
             
             {selectedEvent.ticketTypes?.map((ticketType) => {
               // Use real-time capacity data instead of individual ticket quantities
@@ -340,155 +356,78 @@ const TicketSelectionPage = () => {
               const remainingQty = Math.min(maxPerOrder - selectedQty, capacityLimit);
               
               return (
-                <div
-                  key={ticketType._id}
-                  className={`border rounded-lg p-4 transition-all ${
-                    isAvailable 
-                      ? 'border-gray-200 hover:border-blue-300 hover:shadow-md' 
-                      : 'border-gray-100 bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    {/* Ticket Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900">
-                          {ticketType.name}
-                        </h4>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-green-600">
-                            ${ticketType.price?.toFixed(2) || '0.00'}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <FaUsers className="mr-1" />
-                          <span>
-                            {capacityLoading ? (
-                              'Loading availability...'
-                            ) : eventCapacity?.isUnlimited ? (
-                              'Unlimited capacity'
-                            ) : eventCapacity?.status === 'sold-out' ? (
-                              'Sold out'
-                            ) : (
-                              `${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
-                            )}
-                          </span>
-                        </div>
-                        
-                        {/* Quantity Selector */}
-                        {isAvailable && (
-                          <div className="flex items-center space-x-3">
-                            <button
-                              onClick={() => handleQuantityChange(ticketType._id, -1)}
-                              disabled={selectedQty === 0 || loading.initializing}
-                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <FaMinus className="text-xs" />
-                            </button>
-                            
-                            <span className="w-8 text-center font-semibold">
-                              {selectedQty}
-                            </span>
-                            
-                            <button
-                              onClick={() => handleQuantityChange(ticketType._id, 1)}
-                              disabled={
-                                selectedQty >= remainingQty || 
-                                selectedQty >= (selectedEvent.maxAttendeesPerRegistration || 10) ||
-                                loading.initializing ||
-                                eventCapacity?.status === 'sold-out'
-                              }
-                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <FaPlus className="text-xs" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Date restrictions */}
-                      {(ticketType.startDate || ticketType.expiryDate) && (
-                        <div className="mt-2 text-xs text-gray-500">
-                          {ticketType.startDate && (
-                            <span>Available from {new Date(ticketType.startDate).toLocaleDateString()}</span>
-                          )}
-                          {ticketType.startDate && ticketType.expiryDate && <span> • </span>}
-                          {ticketType.expiryDate && (
-                            <span>Until {new Date(ticketType.expiryDate).toLocaleDateString()}</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
+  <div
+    key={ticketType._id}
+    className={`border rounded-lg p-4 transition-all ${
+      isAvailable 
+        ? 'border-gray-200 hover:border-blue-300 hover:shadow-md' 
+        : 'border-gray-100 bg-gray-50'
+    }`}
+  >
+    <div className="flex items-center justify-between">
+      {/* Ticket Info */}
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="font-semibold text-gray-900">
+            {ticketType.name}
+          </h4>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-green-600">
+              ${ticketType.price?.toFixed(2) || '0.00'}
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Quantity Selector - Moved to right side */}
+      {isAvailable && (
+        <div className="flex items-center space-x-3 ml-6">
+          <button
+            onClick={() => handleQuantityChange(ticketType._id, -1)}
+            disabled={selectedQty === 0 || loading.initializing}
+            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaMinus className="text-xs" />
+          </button>
+          
+          <span className="w-8 text-center font-semibold">
+            {selectedQty}
+          </span>
+          
+          <button
+            onClick={() => handleQuantityChange(ticketType._id, 1)}
+            disabled={
+              selectedQty >= remainingQty || 
+              selectedQty >= (selectedEvent.maxAttendeesPerRegistration || 10) ||
+              loading.initializing ||
+              eventCapacity?.status === 'sold-out'
+            }
+            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaPlus className="text-xs" />
+          </button>
+        </div>
+      )}
+    </div>
+    
+    {/* Date restrictions */}
+    {(ticketType.startDate || ticketType.expiryDate) && (
+      <div className="mt-2 text-xs text-gray-500">
+        {ticketType.startDate && (
+          <span>Available from {new Date(ticketType.startDate).toLocaleDateString()}</span>
+        )}
+        {ticketType.startDate && ticketType.expiryDate && <span> • </span>}
+        {ticketType.expiryDate && (
+          <span>Until {new Date(ticketType.expiryDate).toLocaleDateString()}</span>
+        )}
+      </div>
+    )}
+  </div>
+);
             })}
           </div>
 
-          {/* Refund Policy Display - Only show for paid events */}
-        {selectedEvent.isPaid && selectedEvent.refundPolicy && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-3 flex-1">
-                <h4 className="font-medium text-blue-800 mb-2 flex items-center">
-                  <span>Refund Policy</span>
-                  {selectedEvent.refundPolicy.processingFeePolicy === 'refunded' && (
-                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Customer-Friendly
-                    </span>
-                  )}
-                </h4>
-                
-                <div className="text-sm text-blue-700 space-y-2">
-                  {/* Processing Fee Policy */}
-                  <div className="flex items-start">
-                    {selectedEvent.refundPolicy.processingFeePolicy === 'refunded' ? (
-                      <>
-                        <svg className="w-4 h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>
-                          <strong>Full refunds including processing fees:</strong> If you need to cancel, you'll receive a complete refund including the $1 processing fee.
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4 text-amber-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                        </svg>
-                        <span>
-                          <strong>Processing fees are non-refundable:</strong> If you need to cancel, you'll receive a refund of the ticket price minus the $1 processing fee.
-                        </span>
-                      </>
-                    )}
-                  </div>
 
-                  {/* Additional Policy Text */}
-                  {selectedEvent.refundPolicy.policyText && (
-                    <div className="mt-3 p-3 bg-white bg-opacity-50 rounded border border-blue-200">
-                      <p className="text-sm text-blue-800 italic">
-                        "{selectedEvent.refundPolicy.policyText}"
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Policy Summary */}
-                  <div className="mt-3 text-xs text-blue-600 bg-white bg-opacity-30 rounded p-2">
-                    💡 <strong>Note:</strong> You'll need to acknowledge this refund policy during checkout before completing your purchase.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
           {/* Seating Info */}
           {hasSeatingLayout && totals.totalQuantity > 0 && (

@@ -196,28 +196,24 @@ const PaymentSummary = ({
           <span>Total</span>
           <span>${totals.total?.toFixed(2)}</span>
         </div>
+           {/* GST Inclusion Note */}
+        {event.gstIncluded && (
+          <div className="flex justify-start text-sm text-gray-500 italic pt-1">
+            <span>GST included</span>
+          </div>
+        )}
       </div>
-{/* Refund Policy Section - Only for paid events */}
-      {event.isPaid && event.refundPolicy && (
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-3">Refund Policy</h3>
-          <RefundPolicyDisplay 
-            refundPolicy={event.refundPolicy}
-            variant="card"
-            showNote={false}
-          />
-          
-          {/* Policy Status Indicator */}
-          {showBuyerInfo && buyerInfo?.refundPolicyAccepted && (
-            <div className="mt-3 flex items-center text-sm text-green-700 bg-green-50 rounded-lg p-2">
-              <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="font-medium">Policy acknowledged and accepted</span>
-            </div>
-          )}
-        </div>
-      )}
+{/* Refund Policy Note - Only for paid events */}
+        {event.isPaid && event.refundPolicy && (
+          <div className="flex justify-start text-sm text-gray-500 italic pt-1">
+            <span>
+              {event.refundPolicy.processingFeePolicy === 'refunded' 
+                ? 'Full refunds available' 
+                : 'Processing fees non-refundable'
+              }
+            </span>
+          </div>
+        )}
       
 
       {/* Additional Information */}

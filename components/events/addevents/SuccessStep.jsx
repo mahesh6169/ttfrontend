@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 
 
 const SuccessStep = ({ 
+  
   event = {}, 
   mode = 'add', // 'add' | 'edit'
   onAddAnother, 
@@ -14,6 +15,8 @@ const SuccessStep = ({
   onEditEvent,
   customActions = []
 }) => {
+
+  
   // Mode-specific configurations
   const modeConfig = {
     add: {
@@ -268,8 +271,8 @@ const SuccessStep = ({
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-500">GST Applied:</span>
-                  <span className="font-medium">{event.applyGST !== false ? 'Yes' : 'No'}</span>
+                  <span className="text-gray-500">GST Included:</span>
+                  <span className="font-medium">{event.gstIncluded ? 'Yes' : 'No'}</span>
                 </div>
               </>
             ) : (

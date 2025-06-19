@@ -25,6 +25,7 @@ import {
   clearFormErrors,
   setImages,
   clearSuccessMessage,
+  
 } from '@/store/slices/events/eventSlice';
 
 // Step Components
@@ -767,6 +768,9 @@ console.log("🔍 Debug organizerReservedSeats:", {
        if (formData.refundPolicy) {
     submitFormData.append('refundPolicy', JSON.stringify(formData.refundPolicy));
   }
+  if (formData.gstIncluded !== undefined) {
+        submitFormData.append('gstIncluded', formData.gstIncluded ? 'true' : 'false');
+      }
     }
 
     // Recurring event fields
@@ -998,6 +1002,8 @@ const handleAddAnother = useCallback(() => {
 
   // Render success step when form submission succeeds
   if (formStatus === 'succeeded') {
+
+
     return (
       <div className="p-8 max-w-4xl mx-auto">
         <RequireLogin message="You must be logged in to manage events.">

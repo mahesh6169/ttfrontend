@@ -15,6 +15,7 @@ import {
   updateRegistrationField,
   updateFieldOptions,
   removeRegistrationField,
+  updateGstIncluded,
 } from '@/store/slices/events/eventSlice';
 import SeatingLayoutSection from './SeatingLayoutSection';
 
@@ -174,28 +175,7 @@ onBlur={(e) => {
           </div>
         </div>
 
-        {/* Capacity Summary */}
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <div className="text-sm text-gray-600">
-            <p className="font-medium">Registration Summary:</p>
-            <div className="mt-1 grid grid-cols-1 md:grid-cols-2 gap-2">
-              <span>
-                Total Capacity:{' '}
-                <strong>
-                  {(formData.capacity || 0) === 0
-                    ? 'Unlimited'
-                    : formData.capacity}
-                </strong>
-              </span>
-              <span>
-                Max per booking:{' '}
-                <strong>
-                  {formData.maxAttendeesPerRegistration || 5} people
-                </strong>
-              </span>
-            </div>
-          </div>
-        </div>
+
       </div>
 
       <CustomRegistrationFields
@@ -608,8 +588,66 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
             Add Another Ticket Type
           </button>
         </div>
-
       </div>
+
+
+{/* GST Configuration */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center mb-4">
+          <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+            <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium text-gray-900">
+              GST Configuration
+            </h4>
+            <p className="text-sm text-gray-500">
+              Specify whether your ticket prices include GST for display purposes
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <input
+              type="checkbox"
+              id="gstIncluded"
+              checked={formData.gstIncluded || false}
+              onChange={(e) =>
+                dispatch(updateGstIncluded(e.target.checked))
+              }
+              className="mt-1 w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+            />
+            <div className="flex-1">
+              <label htmlFor="gstIncluded" className="text-sm font-medium text-gray-900 cursor-pointer">
+                Ticket prices include GST
+              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                Check this box if the ticket prices you've entered above already include GST. 
+                This will display prices as "$100 (incl GST)" instead of just "$100".
+              </p>
+              
+              {/* GST Display Preview */}
+              <div className="mt-3 p-3 bg-white border border-gray-200 rounded-md">
+                <p className="text-xs font-medium text-gray-700 mb-2">Price Display Preview:</p>
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-900">
+                    {formData.gstIncluded ? (
+                      <span className="font-medium">$100 <span className="text-gray-600">(incl GST)</span></span>
+                    ) : (
+                      <span className="font-medium">$100</span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
       {/* --- ADD BELOW --- */}
       <SeatingLayoutSection
         formData={formData}

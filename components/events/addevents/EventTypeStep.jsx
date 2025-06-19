@@ -196,7 +196,7 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold">Free Event</h3>
                 <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                  No Cost
+                  Registration Only
                 </span>
               </div>
               <p className="text-gray-600 mt-2">

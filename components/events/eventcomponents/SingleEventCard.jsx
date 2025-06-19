@@ -401,34 +401,38 @@ const SingleEventCard = ({ event, chatProps }) => {
 
         <EventCapacityDisplay eventId={event._id} isPaid={event.isPaid} />
         
-        {/* Ticket Types (for paid events) */}
-        {event.isPaid && event.ticketTypes?.length > 0 && (
-          <div className="bg-green-50 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-              <FaMoneyBillWave className="mr-2 text-green-600" />
-              Ticket Types
-            </h3>
-            <div className="space-y-3">
-              {event.ticketTypes.map((ticket, index) => (
-                <div key={index} className="flex justify-between items-center p-3 bg-white rounded border">
-                  <div>
-                    <p className="font-medium text-gray-900">{ticket.name}</p>
-                    <p className="text-sm text-gray-600">{ticket.quantity} available</p>
-                    {ticket.seatsRequired > 1 && (
-                      <p className="text-sm text-gray-600">{ticket.seatsRequired} seats per ticket</p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">${ticket.price}</p>
-                    {event.applyGST && (
-                      <p className="text-xs text-gray-500">incl. GST</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Available Tickets (for paid events) */}
+{event.isPaid && event.ticketTypes?.length > 0 && (
+  <div className="bg-green-50 p-4 rounded-lg mb-6">
+    <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+      <FaTicketAlt className="mr-2 text-green-600" />
+      Available Tickets
+    </h3>
+    
+    {/* Event Capacity Info */}
+    <EventCapacityDisplay 
+      eventId={event._id} 
+      isPaid={event.isPaid} 
+      showInTicketSection={true} 
+    />
+    
+    <div className="space-y-3">
+      {event.ticketTypes.map((ticket, index) => (
+        <div key={index} className="flex justify-between items-center p-3 bg-white rounded border">
+          <div>
+            <p className="font-medium text-gray-900">{ticket.name}</p>
           </div>
-        )}
+          <div className="text-right">
+            <p className="font-bold text-green-600">${ticket.price}</p>
+            {event.applyGST && (
+              <p className="text-xs text-gray-500">incl. GST</p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
         {/* Mobile Chat */}
         {chatProps && (
