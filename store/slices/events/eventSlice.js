@@ -10,7 +10,9 @@ export const addFreeEvent = createAsyncThunk(
   'events/addFreeEvent',
   async (formData, { rejectWithValue }) => {
     try {
+      console.log("🔍EventSlice/AddFreeEvent FormData being sent to backend:", Array.from(formData.entries()));
       const response = await axios.post(
+        
         `${API_BASE_URL}/events/add-free-event`,
         formData,
         {

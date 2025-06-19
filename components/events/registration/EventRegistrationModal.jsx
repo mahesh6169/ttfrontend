@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaTimes, FaPlus, FaTrash, FaUser, FaCalendar } from 'react-icons/fa';
-import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { 
   registerForFreeEvent, 
   clearRegistrationError, 
@@ -26,6 +26,7 @@ const EventRegistrationModal = ({ event, isOpen, onClose, onSuccess }) => {
   const [attendees, setAttendees] = useState([{ name: '', age: '' }]);
   const [formResponses, setFormResponses] = useState({});
   const [errors, setErrors] = useState({});
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // Handle modal close (MOVED UP - defined before useEffects)
   const handleClose = () => {
@@ -166,13 +167,25 @@ const EventRegistrationModal = ({ event, isOpen, onClose, onSuccess }) => {
   };
 
   // Format event date for display
-  const formatEventDate = (dateTime) => {
-    try {
-      return format(new Date(dateTime), 'EEEE, MMMM do, yyyy \'at\' h:mm a');
-    } catch {
-      return 'Invalid date';
-    }
-  };
+const formatEventDate = (dateTime, timeZone) => {
+  try {
+    const dateTimeZone = timeZone || 'Australia/Sydney';
+    const formattedDate = formatInTimeZone(
+      dateTime,
+      dateTimeZone,
+      'EEEE, MMMM do, yyyy \'at\' h:mm a'
+    );
+    
+    // Extract timezone abbreviation (e.g., "NSW" from "Australia/Sydney")
+    const timezoneAbbr = dateTimeZone.includes('/') 
+      ? dateTimeZone.split('/')[1].replace('_', ' ')
+      : dateTimeZone;
+    
+    return `${formattedDate} ${timezoneAbbr}`;
+  } catch {
+    return 'Invalid date';
+  }
+};
 
   const renderFormField = (field) => {
     const value = formResponses[field.fieldName] || '';
@@ -357,7 +370,7 @@ const EventRegistrationModal = ({ event, isOpen, onClose, onSuccess }) => {
               <span className="font-medium">Event Details</span>
             </div>
             <p className="text-sm text-gray-700">
-              {formatEventDate(event.dateTime)}
+              {formatEventDate(event.dateTime, event.timeZone)}
             </p>
             <p className="text-sm text-gray-600 mt-1">
               <strong>Venue:</strong> {event.venue}

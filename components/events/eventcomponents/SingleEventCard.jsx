@@ -333,57 +333,47 @@ const SingleEventCard = ({ event, chatProps }) => {
           </div>
         )}
 
-        {/* Coordinators */}
-        {event.coordinators?.length > 0 && (
-          <div className="bg-yellow-50 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-              <FaUserFriends className="mr-2 text-yellow-600" />
-              Event Coordinators
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {event.coordinators.map((coordinator, index) => (
-                <div key={index} className="bg-white p-3 rounded border">
-                  <div className="space-y-1">
-                    <p className="font-medium text-gray-900">{coordinator.name}</p>
-                    {coordinator.role && (
-                      <p className="text-sm text-gray-600">{coordinator.role}</p>
-                    )}
-                    {coordinator.phone && (
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <FaPhone className="mr-1" />
-                        {coordinator.phone}
-                      </p>
-                    )}
-                    {coordinator.email && (
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <FaEnvelope className="mr-1" />
-                        {coordinator.email}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* Registration Fields */}
-        {event.registrationFields?.length > 0 && (
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3">Registration Requirements</h3>
-            <div className="space-y-2">
-              {event.registrationFields.map((field, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <span className="text-gray-700">
-                    {field.fieldName}
-                    {field.isRequired && <span className="text-red-500 ml-1">*</span>}
-                  </span>
-                  <span className="text-sm text-gray-500 capitalize">{field.fieldType}</span>
-                </div>
-              ))}
-            </div>
+
+{/* Coordinators - Only show if there are coordinators with actual data */}
+{event.coordinators?.length > 0 && 
+ event.coordinators.some(coord => coord?.name || coord?.role || coord?.phone || coord?.email) && (
+  <div className="bg-yellow-50 p-4 rounded-lg mb-6">
+    <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+      <FaUserFriends className="mr-2 text-yellow-600" />
+      Event Coordinators
+    </h3>
+    <div className="grid md:grid-cols-2 gap-4">
+      {event.coordinators
+        .filter(coordinator => coordinator?.name || coordinator?.role || coordinator?.phone || coordinator?.email)
+        .map((coordinator, index) => (
+        <div key={index} className="bg-white p-3 rounded border">
+          <div className="space-y-1">
+            {coordinator.name && (
+              <p className="font-medium text-gray-900">{coordinator.name}</p>
+            )}
+            {coordinator.role && (
+              <p className="text-sm text-gray-600">{coordinator.role}</p>
+            )}
+            {coordinator.phone && (
+              <p className="text-sm text-gray-600 flex items-center">
+                <FaPhone className="mr-1" />
+                {coordinator.phone}
+              </p>
+            )}
+            {coordinator.email && (
+              <p className="text-sm text-gray-600 flex items-center">
+                <FaEnvelope className="mr-1" />
+                {coordinator.email}
+              </p>
+            )}
           </div>
-        )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
 
         {/* Description */}
         {event.description && (
@@ -506,9 +496,6 @@ const SingleEventCard = ({ event, chatProps }) => {
         onClose={() => setShowRegistrationForm(false)}
         onSuccess={(data) => {
           console.log('Registration successful:', data);
-          alert(`🎉 Registration successful! 
-          Registration Number: ${data.registration?.registrationNumber}
-          You will receive a confirmation email shortly.`);
         }}
       />
     </div>
