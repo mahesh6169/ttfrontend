@@ -43,6 +43,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
   const { user } = useSelector((state) => state.user);
   const userId = user?._id;
 
+
   // Handles automatic reservation release when the timer expires, with fallback to clear selection.
   const handleTimerExpire = useCallback(() => {
     if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
@@ -66,6 +67,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
   const [pendingReservation, setPendingReservation] = useState(false);
   const [showSeatingImage, setShowSeatingImage] = useState(false);
   const [pendingAutoRelease, setPendingAutoRelease] = useState(false);
+  const [localSelectionTimer, setLocalSelectionTimer] = useState(null);
 
   // ✅ NEW: Track scroll position to prevent jump on re-render
   const scrollContainerRef = useRef(null);
@@ -76,6 +78,8 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     (sum, qty) => sum + qty,
     0
   );
+
+  
 
   // ✅ ENHANCED: Better scroll position preservation using useLayoutEffect
   useLayoutEffect(() => {
@@ -93,6 +97,8 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
       });
     }
   });
+
+
 
   // ✅ ENHANCED: Debounced scroll position saving
   const handleScroll = useCallback((e) => {
@@ -117,6 +123,15 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
       }
     };
   }, []);
+
+  // Cleanup local timer on unmount
+useEffect(() => {
+  return () => {
+    if (localSelectionTimer) {
+      clearTimeout(localSelectionTimer);
+    }
+  };
+}, []);
 
   // Automatically reserves seats when user selects exactly the required number of seats.
   useEffect(() => {
@@ -169,6 +184,44 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     pendingAutoRelease, // ✅ NEW: Include in dependencies
     isLoading,
   ]);
+
+  // Local timer to clear partial selections after 2 minutes of inactivity
+useEffect(() => {
+  // Clear any existing timer
+  if (localSelectionTimer) {
+    clearTimeout(localSelectionTimer);
+    setLocalSelectionTimer(null);
+  }
+
+  // Only start timer for partial selections (not complete or empty)
+  const shouldStartLocalTimer =
+    selectedSeats.length > 0 &&
+    selectedSeats.length < requiredSeats &&
+    !currentReservation &&
+    !pendingReservation &&
+    !isLoading;
+
+  if (shouldStartLocalTimer) {
+    console.log(`⏰ Starting local timer for partial selection: ${selectedSeats.length}/${requiredSeats} seats`);
+    
+    const timerId = setTimeout(() => {
+      console.log('🧹 Local timer expired - clearing partial selection');
+      dispatch(clearSelection());
+      setLocalSelectionTimer(null);
+    }, 30 * 1000); // 30 seconds  ← CHANGE THIS LINE
+
+    setLocalSelectionTimer(timerId);
+  }
+
+  // Cleanup function
+  return () => {
+    if (localSelectionTimer) {
+       console.log('🔄 Clearing existing local timer');
+      clearTimeout(localSelectionTimer);
+       setLocalSelectionTimer(null);
+    }
+  };
+}, [selectedSeats.length, requiredSeats, currentReservation, pendingReservation, isLoading, dispatch]);
 
   // Handles seat selection/deselection with validation for availability, limits, and loading states.
   const handleSeatClick = (seatId, seatStatus) => {

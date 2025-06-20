@@ -539,9 +539,29 @@ const [isLoading, setIsLoading] = useState(true);
   };
 
 const handleBackToTickets = () => {
-    // Always go back to ticket selection page
+  // For events that require seat selection
+  if (event?.seatingLayout || seatInfo.requiresSeats) {
+    // Check if we have an active reservation (timer still valid)
+    const hasActiveReservation = currentReservation && 
+                                currentReservation.reservedUntil && 
+                                new Date(currentReservation.reservedUntil) > new Date();
+    
+    // Check if we have selected seats in Redux state
+    const hasSelectedSeats = (selectedSeats && selectedSeats.length > 0) ||
+                            (seatInfo.selectedSeats && seatInfo.selectedSeats.length > 0);
+    
+    if (hasActiveReservation || hasSelectedSeats) {
+      // Timer is valid or seats are selected - go back to seat selection
+      router.push(`/events/seats/${params.eventId}`);
+    } else {
+      // Timer expired and no seats selected - go back to ticket selection
+      router.push(`/events/tickets/${params.eventId}`);
+    }
+  } else {
+    // General admission events - always go back to ticket selection
     router.push(`/events/tickets/${params.eventId}`);
-  };
+  }
+};
 
   // Handle back to details step
   const handleBackToDetails = () => {
