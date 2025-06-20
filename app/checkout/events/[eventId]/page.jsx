@@ -538,20 +538,9 @@ const [isLoading, setIsLoading] = useState(true);
     });
   };
 
-// ✅ FIX: Smart back navigation based on event type
-  const handleBackToTickets = () => {
-    // Check if this event has seat selection
-    const hasSeats = seatInfo.requiresSeats || 
-                     event?.seatingLayout === 'assigned' ||
-                     (currentReservation && currentReservation.seatIds?.length > 0);
-
-    if (hasSeats) {
-      // For seated events, go back to seat selection
-      router.push(`/events/seats/${params.eventId}`);
-    } else {
-      // For non-seated events, go back to ticket selection
-      router.push(`/events/tickets/${params.eventId}`);
-    }
+const handleBackToTickets = () => {
+    // Always go back to ticket selection page
+    router.push(`/events/tickets/${params.eventId}`);
   };
 
   // Handle back to details step
@@ -829,9 +818,7 @@ const [isLoading, setIsLoading] = useState(true);
               <FaArrowLeft className="mr-2" />
               {currentStep === 'payment'
                 ? 'Back to Details'
-                : (seatInfo.requiresSeats || event?.seatingLayout === 'assigned' 
-                   ? 'Back to Seat Selection' 
-                   : 'Back to Ticket Selection')}
+                : 'Back to Tickets'}
             </button>
 
             <h1 className="text-3xl font-bold text-gray-900">

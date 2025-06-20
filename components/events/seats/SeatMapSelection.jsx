@@ -2,7 +2,13 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useLayoutEffect,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 
@@ -60,7 +66,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
   const [pendingReservation, setPendingReservation] = useState(false);
   const [showSeatingImage, setShowSeatingImage] = useState(false);
   const [pendingAutoRelease, setPendingAutoRelease] = useState(false);
-  
+
   // ✅ NEW: Track scroll position to prevent jump on re-render
   const scrollContainerRef = useRef(null);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -78,7 +84,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
       if (scrollRestoreTimeoutRef.current) {
         clearTimeout(scrollRestoreTimeoutRef.current);
       }
-      
+
       // Use requestAnimationFrame for smooth restoration
       requestAnimationFrame(() => {
         if (scrollContainerRef.current) {
@@ -91,12 +97,12 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
   // ✅ ENHANCED: Debounced scroll position saving
   const handleScroll = useCallback((e) => {
     const newScrollPosition = e.target.scrollLeft;
-    
+
     // Clear any pending scroll restore to avoid conflicts
     if (scrollRestoreTimeoutRef.current) {
       clearTimeout(scrollRestoreTimeoutRef.current);
     }
-    
+
     // Debounce scroll position updates
     scrollRestoreTimeoutRef.current = setTimeout(() => {
       setScrollPosition(newScrollPosition);
@@ -173,7 +179,8 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
       seatStatus === 'booked' ||
       seatStatus === 'disabled' ||
       seatStatus === 'reserved'
-    ) return;
+    )
+      return;
 
     // Check if seat is being held by another user
     if (seatStatus === 'selected-by-other') return;
@@ -200,7 +207,9 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     }
 
     // ✅ SINGLE CLEAR LOG
-    console.log(`🎯 SeatMapSelection: Seat clicked: ${seatId} | Status: ${seatStatus}`);
+    console.log(
+      `🎯 SeatMapSelection: Seat clicked: ${seatId} | Status: ${seatStatus}`
+    );
 
     // Proceed with selection or deselection
     if (isCurrentlySelected) {
@@ -332,14 +341,13 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
       };
 
       const result = await dispatch(reserveSeats(reservationData)).unwrap();
-      
+
       // ✅ RESTORE: Restore scroll position after successful reservation
       setTimeout(() => {
         if (scrollContainerRef.current && currentScrollPosition > 0) {
           scrollContainerRef.current.scrollLeft = currentScrollPosition;
         }
       }, 100);
-      
     } catch (error) {
       console.error('❌ Failed to reserve seats:', error);
 
@@ -396,7 +404,9 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
         // Continue with clearing selection even if release fails
       }
     } else {
-      console.log('ℹ️ No active reservation to release, just clearing selection');
+      console.log(
+        'ℹ️ No active reservation to release, just clearing selection'
+      );
     }
 
     dispatch(clearSelection());
@@ -470,7 +480,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
           {/* Selection count indicator - always visible on mobile */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
             <span className="text-sm font-medium text-blue-800">
-              {selectedSeats.length}/{requiredSeats} selected
+              Select {requiredSeats} seat{requiredSeats !== 1 ? 's' : ''} • {selectedSeats.length}/{requiredSeats} selected
             </span>
           </div>
         </div>
@@ -544,14 +554,14 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
             </div>
 
             {/* ✅ MOBILE ENHANCED: Horizontal scrollable seat container */}
-            <div 
+            <div
               ref={scrollContainerRef}
               className="overflow-x-auto overflow-y-hidden"
               onScroll={handleScroll}
               style={{
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#CBD5E0 #F7FAFC',
-                scrollBehavior: 'smooth'
+                scrollBehavior: 'smooth',
               }}
             >
               <style jsx>{`
@@ -559,18 +569,18 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
                   height: 8px;
                 }
                 .seat-container::-webkit-scrollbar-track {
-                  background: #F7FAFC;
+                  background: #f7fafc;
                   border-radius: 4px;
                 }
                 .seat-container::-webkit-scrollbar-thumb {
-                  background: #CBD5E0;
+                  background: #cbd5e0;
                   border-radius: 4px;
                 }
                 .seat-container::-webkit-scrollbar-thumb:hover {
-                  background: #A0AEC0;
+                  background: #a0aec0;
                 }
               `}</style>
-              
+
               <div className="seat-container min-w-max p-4 space-y-2">
                 {seatingLayout.map((row, rowIndex) => (
                   <div
@@ -609,7 +619,9 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
                               isReservedByUser={currentReservation?.seatIds?.includes(
                                 seatId
                               )}
-                              onClick={() => handleSeatClick(seatId, seatStatus)}
+                              onClick={() =>
+                                handleSeatClick(seatId, seatStatus)
+                              }
                               disabled={
                                 isLoading ||
                                 pendingReservation ||
@@ -634,12 +646,32 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
             {/* Scroll hint for mobile */}
             <div className="md:hidden bg-blue-50 border-t border-blue-200 px-4 py-2 text-center">
               <div className="flex items-center justify-center text-xs text-blue-600">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                <svg
+                  className="w-4 h-4 mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M7 16l-4-4m0 0l4-4m-4 4h18"
+                  />
                 </svg>
                 Swipe left/right to view all seats
-                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                <svg
+                  className="w-4 h-4 ml-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
                 </svg>
               </div>
             </div>
@@ -712,7 +744,9 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
                   {selectedSeats.length === 0
                     ? `Tap on available seats to select them (need ${requiredSeats})`
                     : selectedSeats.length < requiredSeats
-                    ? `Select ${requiredSeats - selectedSeats.length} more seat${
+                    ? `Select ${
+                        requiredSeats - selectedSeats.length
+                      } more seat${
                         requiredSeats - selectedSeats.length !== 1 ? 's' : ''
                       }`
                     : selectedSeats.length === requiredSeats
@@ -721,11 +755,12 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
                         selectedSeats.length - requiredSeats
                       }`}
                 </span>
-                {selectedSeats.length === requiredSeats && selectedSeats.length > 0 && (
-                  <div className="text-xs text-green-700 mt-1">
-                    Selected: {selectedSeats.join(', ')}
-                  </div>
-                )}
+                {selectedSeats.length === requiredSeats &&
+                  selectedSeats.length > 0 && (
+                    <div className="text-xs text-green-700 mt-1">
+                      Selected: {selectedSeats.join(', ')}
+                    </div>
+                  )}
               </div>
             </div>
 
@@ -773,7 +808,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
               expiryTime={currentReservation.reservedUntil}
               onExpire={handleTimerExpire}
               eventId={eventId}
-              pauseWhenNavigating={true}  // ✅ NEW: Pause timer during navigation
+              pauseWhenNavigating={true} // ✅ NEW: Pause timer during navigation
             />
           )}
         </div>

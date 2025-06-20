@@ -195,7 +195,6 @@ const isNavigatingToCheckoutRef = useRef(false);
     if (selectedSeats.length > 0) {
       dispatch(updateSeatInfo({
         selectedSeats: selectedSeats,
-        seatCount: selectedSeats.length
       }));
     }
   }, [selectedSeats, dispatch]);
@@ -415,6 +414,13 @@ const handleProceedToCheckout = () => {
 
   const ticketSelection = getTicketSelectionForDisplay();
 
+  // Debug: Check actual values
+  console.log('DEBUG canProceed:', {
+    selectedSeats: selectedSeats.length,
+    seatInfoSeatCount: seatInfo.seatCount,
+    canProceed: selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0
+  });
+
   // Check if all required seats are selected
   const canProceed = selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0;
 
@@ -473,10 +479,6 @@ const handleProceedToCheckout = () => {
               </button>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">{selectedEvent.title}</h1>
-                <p className="text-sm text-gray-500">
-                  Select {seatInfo.seatCount || 'your'} seat{(seatInfo.seatCount || 0) !== 1 ? 's' : ''}
-                  {seatInfo.seatCount > 0 && ` (${selectedSeats.length}/${seatInfo.seatCount} selected)`}
-                </p>
               </div>
             </div>
 
@@ -505,12 +507,8 @@ const handleProceedToCheckout = () => {
           {/* Row 2: Seat Selection - Full width seat map */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Select Your Seats</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Choose {seatInfo.seatCount || 'your'} seat{(seatInfo.seatCount || 0) !== 1 ? 's' : ''} • 
-                {seatInfo.seatCount > 0 && ` ${selectedSeats.length}/${seatInfo.seatCount} selected`}
-              </p>
-            </div>
+    <h2 className="text-xl font-semibold text-gray-900">Select Your Seats</h2>
+  </div>
             <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection} eventId={eventId}/>
             
             {/* Proceed to Checkout Button - Only show when all seats are selected */}

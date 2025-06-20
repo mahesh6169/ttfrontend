@@ -253,8 +253,8 @@ const TicketSelectionPage = () => {
   };
 
   // Handle back navigation
-  const handleBack = () => {
-    router.back();
+ const handleBack = () => {
+    router.push(`/events/views/${eventId}`);
   };
 
   // Format event date/time
@@ -548,7 +548,7 @@ const TicketSelectionPage = () => {
                   <p className="text-sm text-purple-700">
                     After clicking "Select Seats", you'll choose your specific
                     seats from the venue layout. Selected seats will be held for
-                    5 minutes while you complete your purchase.
+                    15 minutes while you complete your purchase.
                   </p>
                 </div>
               </div>

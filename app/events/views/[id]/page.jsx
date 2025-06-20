@@ -92,7 +92,7 @@ const EventDetail = () => {
       <div className=" mt-4 flex justify-between">
         {/* Back to Events */}
         <span
-          onClick={() => router.back()}
+          onClick={() => router.push('/events')}
           className="flex items-center gap-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium cursor-pointer"
         >
           <RiArrowGoBackFill className="text-xs sm:text-base " />

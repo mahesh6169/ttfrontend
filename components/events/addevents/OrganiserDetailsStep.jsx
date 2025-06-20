@@ -505,34 +505,7 @@ const getFieldClasses = (fieldName) => {
               </div>
             </div>
 
-            {/* Coordinator Summary */}
-            {(coordinator?.name || coordinator?.phone) && (
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <h4 className="text-sm font-medium text-gray-700 mb-1">
-                  Contact Summary
-                </h4>
-                <div className="text-sm text-gray-600 space-y-1">
-                  {coordinator?.name && (
-                    <div className="flex items-center">
-                      <span className="w-12 text-gray-500">Name:</span>
-                      <span className="font-medium">{coordinator.name}</span>
-                    </div>
-                  )}
-                  {coordinator?.phone && (
-                    <div className="flex items-center">
-                      <span className="w-12 text-gray-500">Phone:</span>
-                      <span>{coordinator.phone}</span>
-                    </div>
-                  )}
-                  {coordinator?.email && (
-                    <div className="flex items-center">
-                      <span className="w-12 text-gray-500">Email:</span>
-                      <span>{coordinator.email}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+
           </div>
         ))}
       </div>
