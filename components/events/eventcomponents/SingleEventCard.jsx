@@ -395,18 +395,98 @@ const SingleEventCard = ({ event, chatProps }) => {
       showInTicketSection={true} 
     />
     
-    <div className="space-y-3">
+<div className="space-y-3">
       {event.ticketTypes.map((ticket, index) => (
-        <div key={index} className="flex justify-between items-center p-3 bg-white rounded border">
-          <div>
-            <p className="font-medium text-gray-900">{ticket.name}</p>
+        <div key={index} className="p-3 bg-white rounded border">
+          <div className="flex justify-between items-start mb-2">
+            <div className="flex-1">
+              <p className="font-medium text-gray-900">{ticket.name}</p>
+            </div>
+            <div className="text-right">
+              <p className="font-bold text-green-600">${ticket.price}</p>
+              {event.applyGST && (
+                <p className="text-xs text-gray-500">incl. GST</p>
+              )}
+            </div>
           </div>
-          <div className="text-right">
-            <p className="font-bold text-green-600">${ticket.price}</p>
-            {event.applyGST && (
-              <p className="text-xs text-gray-500">incl. GST</p>
-            )}
-          </div>
+          
+{/* Dynamic Ticket Status */}
+          {(() => {
+            if (!event.timeZone) return null;
+            
+            const now = new Date();
+            const eventTimeZone = event.timeZone;
+            
+            // Check if ticket sales haven't started yet
+            if (ticket.startDate) {
+              const startDate = new Date(ticket.startDate);
+              if (now < startDate) {
+                return (
+                  <div className="text-xs text-amber-600 mt-2 font-medium">
+                    📅 Available from {formatInTimeZone(
+                      ticket.startDate, 
+                      eventTimeZone, 
+                      'MMM d, yyyy'
+                    )}
+                    {ticket.expiryDate && (
+                      <span> • Until {formatInTimeZone(
+                        ticket.expiryDate, 
+                        eventTimeZone, 
+                        'MMM d, yyyy'
+                      )}</span>
+                    )}
+                  </div>
+                );
+              }
+            }
+            
+            // Check if ticket sales have ended
+            if (ticket.expiryDate) {
+              const expiryDate = new Date(ticket.expiryDate);
+              if (now > expiryDate) {
+                return (
+                  <div className="text-xs text-red-600 mt-2 font-medium">
+                    ❌ Sales ended on {formatInTimeZone(
+                      ticket.expiryDate, 
+                      eventTimeZone, 
+                      'MMM d, yyyy'
+                    )}
+                  </div>
+                );
+              }
+              
+              // Check if expiry is within 5 days (urgency message)
+              const msPerDay = 24 * 60 * 60 * 1000;
+              const daysUntilExpiry = Math.ceil((expiryDate - now) / msPerDay);
+              
+              if (daysUntilExpiry <= 5 && daysUntilExpiry > 0) {
+                return (
+                  <div className="text-xs text-orange-600 mt-2 font-medium">
+                    ⚡ Hurry! Only {daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''} left
+                  </div>
+                );
+              }
+            }
+            
+            // Ticket is currently available - show "On sale now"
+            if (ticket.startDate || ticket.expiryDate) {
+              return (
+                <div className="text-xs text-green-600 mt-2 font-medium">
+                  ✅ On sale now
+                  {ticket.expiryDate && (
+                    <span className="text-gray-500"> • Until {formatInTimeZone(
+                      ticket.expiryDate, 
+                      eventTimeZone, 
+                      'MMM d, yyyy'
+                    )}</span>
+                  )}
+                </div>
+              );
+            }
+            
+            // No date restrictions
+            return null;
+          })()}
         </div>
       ))}
     </div>

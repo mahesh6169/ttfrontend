@@ -5,10 +5,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  FaTicketAlt, 
-  FaCalendarAlt, 
-  FaClock, 
+import {
+  FaTicketAlt,
+  FaCalendarAlt,
+  FaClock,
   FaMapMarkerAlt,
   FaUsers,
   FaChair,
@@ -16,7 +16,7 @@ import {
   FaMinus,
   FaShoppingCart,
   FaExclamationTriangle,
-  FaArrowLeft
+  FaArrowLeft,
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import {
@@ -32,7 +32,7 @@ import {
   selectCanProceedToNext,
   selectPurchaseError,
   selectPurchaseLoading,
-   setRefundPolicyInfo
+  setRefundPolicyInfo,
 } from '@/store/slices/events/ticketPurchaseSlice';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -42,10 +42,14 @@ const TicketSelectionPage = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
-  
+
   // Event data
-  const { selectedEvent, status: eventStatus, error: eventError } = useSelector((state) => state.events);
-  
+  const {
+    selectedEvent,
+    status: eventStatus,
+    error: eventError,
+  } = useSelector((state) => state.events);
+
   // Redux state
   const ticketPurchaseState = useSelector(selectTicketPurchase);
   const selectedTickets = useSelector(selectSelectedTickets);
@@ -53,7 +57,7 @@ const TicketSelectionPage = () => {
   const canProceedToNext = useSelector(selectCanProceedToNext);
   const purchaseError = useSelector(selectPurchaseError);
   const loading = useSelector(selectPurchaseLoading);
-  
+
   // Local state for UI
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -62,20 +66,23 @@ const TicketSelectionPage = () => {
     sold: 0,
     remaining: 0,
     isUnlimited: false,
-    status: 'available'
+    status: 'available',
   });
   const [capacityLoading, setCapacityLoading] = useState(false);
 
   // Check if event has seating layout
-  const hasSeatingLayout = selectedEvent?.seatingLayout && selectedEvent.seatingLayout.length > 0;
+  const hasSeatingLayout =
+    selectedEvent?.seatingLayout && selectedEvent.seatingLayout.length > 0;
 
   // Fetch real-time capacity data
   const fetchEventCapacity = async () => {
     if (!eventId) return;
-    
+
     setCapacityLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/capacity`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/capacity`
+      );
       const data = await response.json();
       if (data.success) {
         setEventCapacity(data.capacity);
@@ -100,29 +107,35 @@ const TicketSelectionPage = () => {
     if (selectedEvent?._id && eventId) {
       // Initialize purchase session
       dispatch(initializePurchaseSession({ eventId: selectedEvent._id }));
-      
+
       // Set seat requirement
       dispatch(setSeatRequirement(hasSeatingLayout));
-      
+
       // Set current step to ticket selection
       dispatch(setCurrentStep('ticket-selection'));
-      
+
       // Set refund policy info if it's a paid event
       if (selectedEvent.isPaid && selectedEvent.refundPolicy) {
-        dispatch(setRefundPolicyInfo({
-          policyType: selectedEvent.refundPolicy.processingFeePolicy || 'non-refundable',
-          policyText: selectedEvent.refundPolicy.policyText || '',
-          policyDisplayed: true
-        }));
+        dispatch(
+          setRefundPolicyInfo({
+            policyType:
+              selectedEvent.refundPolicy.processingFeePolicy ||
+              'non-refundable',
+            policyText: selectedEvent.refundPolicy.policyText || '',
+            policyDisplayed: true,
+          })
+        );
       }
-      
+
       // Pre-fill buyer info with user data if available
       if (user) {
-        dispatch(updateBuyerInfo({
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
-          email: user.email || ''
-        }));
+        dispatch(
+          updateBuyerInfo({
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            email: user.email || '',
+          })
+        );
       }
     }
   }, [selectedEvent?._id, eventId, hasSeatingLayout, user, dispatch]);
@@ -130,31 +143,38 @@ const TicketSelectionPage = () => {
   // Handle quantity change
   const handleQuantityChange = (ticketId, change) => {
     if (!selectedEvent?.ticketTypes) return;
-    
-    const ticketType = selectedEvent.ticketTypes.find(t => t._id === ticketId);
+
+    const ticketType = selectedEvent.ticketTypes.find(
+      (t) => t._id === ticketId
+    );
     if (!ticketType) return;
 
     // Get current quantity
-    const currentTicket = selectedTickets.find(t => t.ticketTypeId === ticketId);
+    const currentTicket = selectedTickets.find(
+      (t) => t.ticketTypeId === ticketId
+    );
     const currentQuantity = currentTicket?.quantity || 0;
     const newQuantity = Math.max(0, currentQuantity + change);
-    
+
     // Calculate max quantity based on capacity and max per order
     const maxPerOrder = selectedEvent.maxAttendeesPerRegistration || 10;
-    const capacityLimit = typeof eventCapacity?.remaining === 'number' 
-      ? eventCapacity.remaining 
-      : maxPerOrder;
+    const capacityLimit =
+      typeof eventCapacity?.remaining === 'number'
+        ? eventCapacity.remaining
+        : maxPerOrder;
     const maxQuantity = Math.min(maxPerOrder, capacityLimit);
-    
+
     // Update Redux state
-    dispatch(updateTicketSelection({
-      ticketTypeId: ticketId,
-      quantity: Math.min(newQuantity, maxQuantity),
-      price: ticketType.price || 0,
-      name: ticketType.name,
-      maxQuantity: maxQuantity
-    }));
-    
+    dispatch(
+      updateTicketSelection({
+        ticketTypeId: ticketId,
+        quantity: Math.min(newQuantity, maxQuantity),
+        price: ticketType.price || 0,
+        name: ticketType.name,
+        maxQuantity: maxQuantity,
+      })
+    );
+
     // Clear any previous errors
     setErrors({});
   };
@@ -169,8 +189,12 @@ const TicketSelectionPage = () => {
       return false;
     }
 
-    if (totals.totalQuantity > (selectedEvent.maxAttendeesPerRegistration || 10)) {
-      newErrors.selection = `Maximum ${selectedEvent.maxAttendeesPerRegistration || 10} tickets per order`;
+    if (
+      totals.totalQuantity > (selectedEvent.maxAttendeesPerRegistration || 10)
+    ) {
+      newErrors.selection = `Maximum ${
+        selectedEvent.maxAttendeesPerRegistration || 10
+      } tickets per order`;
       setErrors(newErrors);
       return false;
     }
@@ -194,7 +218,7 @@ const TicketSelectionPage = () => {
     try {
       // Mark step as completed
       dispatch(setCurrentStep(hasSeatingLayout ? 'seat-selection' : 'details'));
-      
+
       // Store ticket selection in sessionStorage as fallback during transition
       const ticketSelectionFallback = {
         eventId: selectedEvent._id,
@@ -204,10 +228,13 @@ const TicketSelectionPage = () => {
         }, {}),
         totals: totals,
         hasSeatingLayout,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
-      
-      sessionStorage.setItem('ticketSelection', JSON.stringify(ticketSelectionFallback));
+
+      sessionStorage.setItem(
+        'ticketSelection',
+        JSON.stringify(ticketSelectionFallback)
+      );
 
       // Navigate based on seating layout
       if (hasSeatingLayout) {
@@ -233,11 +260,15 @@ const TicketSelectionPage = () => {
   // Format event date/time
   const getFormattedDateTime = () => {
     if (!selectedEvent?.dateTime) return { date: '', time: '' };
-    
+
     const timeZone = selectedEvent.timeZone || 'Australia/Sydney';
-    const date = formatInTimeZone(selectedEvent.dateTime, timeZone, 'EEEE, MMMM do, yyyy');
+    const date = formatInTimeZone(
+      selectedEvent.dateTime,
+      timeZone,
+      'EEEE, MMMM do, yyyy'
+    );
     const time = formatInTimeZone(selectedEvent.dateTime, timeZone, 'h:mm a');
-    
+
     return { date, time };
   };
 
@@ -255,8 +286,12 @@ const TicketSelectionPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Event Not Found</h2>
-          <p className="text-gray-600 mb-6">{eventError || 'The event you are looking for does not exist.'}</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Event Not Found
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {eventError || 'The event you are looking for does not exist.'}
+          </p>
           <button
             onClick={() => router.push('/events')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -288,10 +323,12 @@ const TicketSelectionPage = () => {
                   <h1 className="text-2xl font-bold text-gray-900">
                     Select Tickets
                   </h1>
-                  <h2 className="text-lg text-gray-600">{selectedEvent.title}</h2>
+                  <h2 className="text-lg text-gray-600">
+                    {selectedEvent.title}
+                  </h2>
                 </div>
               </div>
-              
+
               {/* Event Info */}
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                 <div className="flex items-center">
@@ -330,104 +367,174 @@ const TicketSelectionPage = () => {
             <div className="flex items-center text-sm text-gray-600 mb-4">
               <FaUsers className="mr-2" />
               <span>
-                {capacityLoading ? (
-                  'Loading availability...'
-                ) : eventCapacity?.isUnlimited ? (
-                  'Unlimited capacity'
-                ) : eventCapacity?.status === 'sold-out' ? (
-                  'Event sold out'
-                ) : (
-                  `${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
-                )}
+                {capacityLoading
+                  ? 'Loading availability...'
+                  : eventCapacity?.isUnlimited
+                  ? 'Unlimited capacity'
+                  : eventCapacity?.status === 'sold-out'
+                  ? 'Event sold out'
+                  : `${eventCapacity?.remaining || 0} of ${
+                      eventCapacity?.total || 0
+                    } remaining`}
               </span>
             </div>
-            
+
             {selectedEvent.ticketTypes?.map((ticketType) => {
+              // Check if event has required timezone
+              if (!selectedEvent.timeZone) {
+                console.error('Event timezone is required but missing');
+                return null; // Skip rendering this ticket
+              }
+
               // Use real-time capacity data instead of individual ticket quantities
-              const isAvailable = eventCapacity?.status === 'available' || !eventCapacity?.status;
-              const selectedTicket = selectedTickets.find(t => t.ticketTypeId === ticketType._id);
+              const isCapacityAvailable =
+                eventCapacity?.status === 'available' || !eventCapacity?.status;
+
+              // Check if ticket is available based on start/expiry dates
+              const now = new Date();
+              const eventTimeZone = selectedEvent.timeZone;
+
+              let isDateAvailable = true;
+              let unavailableReason = '';
+
+              // Check start date (ticket not yet available)
+              if (ticketType.startDate) {
+                const startDate = new Date(ticketType.startDate);
+                if (now < startDate) {
+                  isDateAvailable = false;
+                 unavailableReason = `${ticketType.name} tickets available from ${formatInTimeZone(
+                    ticketType.startDate, 
+                    eventTimeZone, 
+                    'MMM d, yyyy'
+                  )}`;
+                }
+              }
+
+              // Check expiry date (ticket sales ended)
+              if (ticketType.expiryDate && isDateAvailable) {
+                const expiryDate = new Date(ticketType.expiryDate);
+                if (now > expiryDate) {
+                  isDateAvailable = false;
+                  unavailableReason = `${ticketType.name} ticket sales ended on ${formatInTimeZone(
+                    ticketType.expiryDate, 
+                    eventTimeZone, 
+                    'MMM d, yyyy'
+                  )}`;
+                }
+              }
+
+              // Overall availability combines capacity and date availability
+              const isAvailable = isCapacityAvailable && isDateAvailable;
+
+              const selectedTicket = selectedTickets.find(
+                (t) => t.ticketTypeId === ticketType._id
+              );
               const selectedQty = selectedTicket?.quantity || 0;
-              
+
               // Calculate remaining based on capacity and max per order
-              const maxPerOrder = selectedEvent.maxAttendeesPerRegistration || 10;
-              const capacityLimit = typeof eventCapacity?.remaining === 'number' 
-                ? eventCapacity.remaining 
-                : maxPerOrder;
-              const remainingQty = Math.min(maxPerOrder - selectedQty, capacityLimit);
-              
+              const maxPerOrder =
+                selectedEvent.maxAttendeesPerRegistration || 10;
+              const capacityLimit =
+                typeof eventCapacity?.remaining === 'number'
+                  ? eventCapacity.remaining
+                  : maxPerOrder;
+              const remainingQty = Math.min(
+                maxPerOrder - selectedQty,
+                capacityLimit
+              );
+
               return (
-  <div
-    key={ticketType._id}
-    className={`border rounded-lg p-4 transition-all ${
-      isAvailable 
-        ? 'border-gray-200 hover:border-blue-300 hover:shadow-md' 
-        : 'border-gray-100 bg-gray-50'
-    }`}
-  >
-    <div className="flex items-center justify-between">
-      {/* Ticket Info */}
-      <div className="flex-1">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="font-semibold text-gray-900">
-            {ticketType.name}
-          </h4>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-green-600">
-              ${ticketType.price?.toFixed(2) || '0.00'}
-            </p>
-          </div>
-        </div>
+                <div
+                  key={ticketType._id}
+                  className={`border rounded-lg p-4 transition-all ${
+                    isAvailable
+                      ? 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+                      : 'border-gray-100 bg-gray-50 opacity-75'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    {/* Ticket Info */}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-gray-900">
+                          {ticketType.name}
+                        </h4>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-green-600">
+                            ${ticketType.price?.toFixed(2) || '0.00'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quantity Selector - Moved to right side */}
+                    {isAvailable && (
+                      <div className="flex items-center space-x-3 ml-6">
+                        <button
+                          onClick={() =>
+                            handleQuantityChange(ticketType._id, -1)
+                          }
+                          disabled={selectedQty === 0 || loading.initializing}
+                          className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <FaMinus className="text-xs" />
+                        </button>
+
+                        <span className="w-8 text-center font-semibold">
+                          {selectedQty}
+                        </span>
+
+                        <button
+                          onClick={() =>
+                            handleQuantityChange(ticketType._id, 1)
+                          }
+                          disabled={
+                            selectedQty >= remainingQty ||
+                            selectedQty >=
+                              (selectedEvent.maxAttendeesPerRegistration ||
+                                10) ||
+                            loading.initializing ||
+                            eventCapacity?.status === 'sold-out'
+                          }
+                          className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <FaPlus className="text-xs" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                 {/* Availability status and date restrictions */}
+    {!isDateAvailable && (
+      <div className="mt-2 text-xs text-red-600 font-medium">
+        ⚠️ {unavailableReason}
       </div>
-      
-      {/* Quantity Selector - Moved to right side */}
-      {isAvailable && (
-        <div className="flex items-center space-x-3 ml-6">
-          <button
-            onClick={() => handleQuantityChange(ticketType._id, -1)}
-            disabled={selectedQty === 0 || loading.initializing}
-            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FaMinus className="text-xs" />
-          </button>
-          
-          <span className="w-8 text-center font-semibold">
-            {selectedQty}
-          </span>
-          
-          <button
-            onClick={() => handleQuantityChange(ticketType._id, 1)}
-            disabled={
-              selectedQty >= remainingQty || 
-              selectedQty >= (selectedEvent.maxAttendeesPerRegistration || 10) ||
-              loading.initializing ||
-              eventCapacity?.status === 'sold-out'
-            }
-            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FaPlus className="text-xs" />
-          </button>
-        </div>
-      )}
-    </div>
+    )}
     
-    {/* Date restrictions */}
-    {(ticketType.startDate || ticketType.expiryDate) && (
+    {/* Date restrictions (show for available tickets) */}
+    {isDateAvailable && (ticketType.startDate || ticketType.expiryDate) && (
       <div className="mt-2 text-xs text-gray-500">
         {ticketType.startDate && (
-          <span>Available from {new Date(ticketType.startDate).toLocaleDateString()}</span>
+          <span>Available from {formatInTimeZone(
+            ticketType.startDate, 
+            selectedEvent.timeZone, 
+            'MMM d, yyyy'
+          )}</span>
         )}
         {ticketType.startDate && ticketType.expiryDate && <span> • </span>}
         {ticketType.expiryDate && (
-          <span>Until {new Date(ticketType.expiryDate).toLocaleDateString()}</span>
+          <span>Until {formatInTimeZone(
+            ticketType.expiryDate, 
+            selectedEvent.timeZone, 
+            'MMM d, yyyy'
+          )}</span>
         )}
       </div>
     )}
-  </div>
-);
+                </div>
+              );
             })}
           </div>
-
-
 
           {/* Seating Info */}
           {hasSeatingLayout && totals.totalQuantity > 0 && (
@@ -439,8 +546,9 @@ const TicketSelectionPage = () => {
                     Seat Selection Required
                   </h4>
                   <p className="text-sm text-purple-700">
-                    After clicking "Select Seats", you'll choose your specific seats from the venue layout.
-                    Selected seats will be held for 5 minutes while you complete your purchase.
+                    After clicking "Select Seats", you'll choose your specific
+                    seats from the venue layout. Selected seats will be held for
+                    5 minutes while you complete your purchase.
                   </p>
                 </div>
               </div>
@@ -452,7 +560,9 @@ const TicketSelectionPage = () => {
             <div className="mb-6">
               <button
                 onClick={handleProceed}
-                disabled={!canProceedToNext || isLoading || loading.initializing}
+                disabled={
+                  !canProceedToNext || isLoading || loading.initializing
+                }
                 className={`w-full py-3 px-4 rounded-lg font-semibold flex items-center justify-center transition-all ${
                   canProceedToNext && !isLoading && !loading.initializing
                     ? hasSeatingLayout
@@ -484,9 +594,12 @@ const TicketSelectionPage = () => {
               </button>
 
               <div className="text-xs text-gray-500 text-center mt-2">
-                {totals.totalQuantity} ticket{totals.totalQuantity !== 1 ? 's' : ''} selected
+                {totals.totalQuantity} ticket
+                {totals.totalQuantity !== 1 ? 's' : ''} selected
                 {hasSeatingLayout && ' • Seats to be selected next'}
-                <span className="ml-2 font-medium">${totals.total.toFixed(2)}</span>
+                <span className="ml-2 font-medium">
+                  ${totals.total.toFixed(2)}
+                </span>
               </div>
             </div>
           )}
@@ -497,7 +610,9 @@ const TicketSelectionPage = () => {
               <div className="flex items-start">
                 <FaExclamationTriangle className="text-red-600 mr-3 mt-1" />
                 <div>
-                  <h4 className="font-medium text-red-800 mb-1">Purchase Error</h4>
+                  <h4 className="font-medium text-red-800 mb-1">
+                    Purchase Error
+                  </h4>
                   <p className="text-sm text-red-700">{purchaseError}</p>
                 </div>
               </div>
@@ -509,7 +624,9 @@ const TicketSelectionPage = () => {
               <div className="flex items-start">
                 <FaExclamationTriangle className="text-red-600 mr-3 mt-1" />
                 <div>
-                  <h4 className="font-medium text-red-800 mb-1">Selection Error</h4>
+                  <h4 className="font-medium text-red-800 mb-1">
+                    Selection Error
+                  </h4>
                   <p className="text-sm text-red-700">{errors.selection}</p>
                 </div>
               </div>

@@ -348,6 +348,43 @@ const processEventDataForEdit = (eventData) => {
   } else {
     formattedDateTime = eventData.dateTime || '';
   }
+
+  // 🔧 NEW: Convert ticket dates from UTC to local for form display
+const processTicketDatesForEdit = (ticketTypes, timeZone) => {
+  if (!ticketTypes || !Array.isArray(ticketTypes) || !timeZone) {
+    return ticketTypes;
+  }
+  
+  return ticketTypes.map(ticket => {
+    const processedTicket = { ...ticket };
+    
+    // Process startDate
+    if (ticket.startDate) {
+      try {
+        const zonedDate = utcToZonedTime(ticket.startDate, timeZone);
+        processedTicket.startDate = format(zonedDate, 'yyyy-MM-dd');
+        console.log('🔧 Ticket startDate UTC to local:', ticket.startDate, '→', processedTicket.startDate);
+      } catch (error) {
+        console.error('❌ Error converting ticket startDate:', error);
+        processedTicket.startDate = ticket.startDate;
+      }
+    }
+    
+    // Process expiryDate  
+    if (ticket.expiryDate) {
+      try {
+        const zonedDate = utcToZonedTime(ticket.expiryDate, timeZone);
+        processedTicket.expiryDate = format(zonedDate, 'yyyy-MM-dd');
+        console.log('🔧 Ticket expiryDate UTC to local:', ticket.expiryDate, '→', processedTicket.expiryDate);
+      } catch (error) {
+        console.error('❌ Error converting ticket expiryDate:', error);
+        processedTicket.expiryDate = ticket.expiryDate;
+      }
+    }
+    
+    return processedTicket;
+  });
+};
   
   return {
     title: eventData.title || '',
@@ -387,8 +424,8 @@ const processEventDataForEdit = (eventData) => {
     maxAttendeesPerRegistration: eventData.maxAttendeesPerRegistration || 5,
     registrationFields: eventData.registrationFields || [],
     ticketTypes: (eventData.ticketTypes && eventData.ticketTypes.length > 0) 
-      ? eventData.ticketTypes 
-      : [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
+  ? processTicketDatesForEdit(eventData.ticketTypes, eventData.timeZone)
+  : [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
     seatingLayout: eventData.seatingLayout || [],
     seatingLayoutImage: eventData.seatingLayoutImage || null,
     organizerReservedSeats: eventData.organizerReservedSeats || '',

@@ -27,7 +27,6 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
     <div className="space-y-6">
       {/* Header with recurring event info */}
       <div className="flex items-start justify-between">
-
         {isRecurringEvent && (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
             <svg
@@ -139,24 +138,24 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                   : formData.maxAttendeesPerRegistration
               }
               onChange={(e) => {
-  const val = e.target.value;
-  dispatch(
-    updateField({
-      field: 'maxAttendeesPerRegistration',
-      value: val, // Allow empty while typing
-    })
-  );
-}}
-onBlur={(e) => {
-  if (e.target.value === '' || Number(e.target.value) < 1) {
-    dispatch(
-      updateField({
-        field: 'maxAttendeesPerRegistration',
-        value: 10, // Default to 10
-      })
-    );
-  }
-}}
+                const val = e.target.value;
+                dispatch(
+                  updateField({
+                    field: 'maxAttendeesPerRegistration',
+                    value: val, // Allow empty while typing
+                  })
+                );
+              }}
+              onBlur={(e) => {
+                if (e.target.value === '' || Number(e.target.value) < 1) {
+                  dispatch(
+                    updateField({
+                      field: 'maxAttendeesPerRegistration',
+                      value: 10, // Default to 10
+                    })
+                  );
+                }
+              }}
               className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
                 errors?.maxAttendeesPerRegistration
                   ? 'border-red-500'
@@ -174,8 +173,6 @@ onBlur={(e) => {
             </p>
           </div>
         </div>
-
-
       </div>
 
       <CustomRegistrationFields
@@ -192,14 +189,10 @@ onBlur={(e) => {
 const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
 
-  
-
-
   return (
     <div className="space-y-6">
       {/* Header with recurring event info */}
       <div className="flex items-start justify-between">
-
         {isRecurringEvent && (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
             <svg
@@ -279,8 +272,6 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                   errors?.capacity ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
-
-              
             </div>
             {errors?.capacity && (
               <p className="mt-1 text-red-500 text-sm">{errors.capacity}</p>
@@ -296,41 +287,41 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               Maximum Attendees per Booking
             </label>
             <input
-  type="number"
-  inputMode="numeric"
-  value={
-    formData.maxAttendeesPerRegistration === undefined ||
-    formData.maxAttendeesPerRegistration === null ||
-    formData.maxAttendeesPerRegistration === ''
-      ? ''
-      : formData.maxAttendeesPerRegistration
-  }
-  onChange={(e) => {
-    const val = e.target.value;
-    dispatch(
-      updateField({
-        field: 'maxAttendeesPerRegistration',
-        value: val, // Allow empty while typing
-      })
-    );
-  }}
-  onBlur={(e) => {
-    if (e.target.value === '' || Number(e.target.value) < 1) {
-      dispatch(
-        updateField({
-          field: 'maxAttendeesPerRegistration',
-          value: 10, // Default to 10
-        })
-      );
-    }
-  }}
-  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-    errors?.maxAttendeesPerRegistration
-      ? 'border-red-500'
-      : 'border-gray-300'
-  }`}
-  placeholder="Enter minimum 1"
-/>
+              type="number"
+              inputMode="numeric"
+              value={
+                formData.maxAttendeesPerRegistration === undefined ||
+                formData.maxAttendeesPerRegistration === null ||
+                formData.maxAttendeesPerRegistration === ''
+                  ? ''
+                  : formData.maxAttendeesPerRegistration
+              }
+              onChange={(e) => {
+                const val = e.target.value;
+                dispatch(
+                  updateField({
+                    field: 'maxAttendeesPerRegistration',
+                    value: val, // Allow empty while typing
+                  })
+                );
+              }}
+              onBlur={(e) => {
+                if (e.target.value === '' || Number(e.target.value) < 1) {
+                  dispatch(
+                    updateField({
+                      field: 'maxAttendeesPerRegistration',
+                      value: 10, // Default to 10
+                    })
+                  );
+                }
+              }}
+              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                errors?.maxAttendeesPerRegistration
+                  ? 'border-red-500'
+                  : 'border-gray-300'
+              }`}
+              placeholder="Enter minimum 1"
+            />
 
             {errors?.maxAttendeesPerRegistration && (
               <p className="mt-1 text-red-500 text-sm">
@@ -349,9 +340,19 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-            </svg>
+              <svg
+                className="w-5 h-5 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+                />
+              </svg>
             </div>
             <div>
               <h4 className="text-lg font-medium text-gray-900">
@@ -362,10 +363,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               </p>
             </div>
           </div>
-
-
         </div>
-
 
         {/* Ticket Types List */}
 
@@ -437,7 +435,9 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                     }
                     placeholder="e.g., Early Bird, Standard, Group"
                     className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-                      errors?.[`ticketName_${index}`] ? 'border-red-500' : 'border-gray-300'
+                      errors?.[`ticketName_${index}`]
+                        ? 'border-red-500'
+                        : 'border-gray-300'
                     }`}
                     maxLength="100"
                     required
@@ -447,10 +447,9 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                       {errors[`ticketName_${index}`][0]}
                     </p>
                   )}
-                  
                 </div>
 
-{/* Ticket Price */}
+                {/* Ticket Price */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Price (AUD) <span className="text-red-500">*</span>
@@ -480,7 +479,9 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                         );
                       }}
                       className={`w-full pl-8 p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-                        errors?.[`ticketPrice_${index}`] ? 'border-red-500' : 'border-gray-300'
+                        errors?.[`ticketPrice_${index}`]
+                          ? 'border-red-500'
+                          : 'border-gray-300'
                       }`}
                       placeholder="Enter amount"
                       required
@@ -500,44 +501,52 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                   </p>
                 </div>
 
-
-
                 {/* Start Date */}
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Start Date
-    <span className="text-xs text-gray-400 ml-1">
-      (optional)
-    </span>
-  </label>
-  <input
-    type="date"
-    value={
-      ticket.startDate 
-        ? (typeof ticket.startDate === 'string' && ticket.startDate.includes('T'))
-          ? ticket.startDate.slice(0, 10)
-          : ticket.startDate
-        : ''
-    }
-    onChange={(e) =>
-      dispatch(
-        updateTicketType({
-          index,
-          field: 'startDate',
-          value: e.target.value || null,
-        })
-      )
-    }
-    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-  />
-  <p className="text-xs text-gray-500 mt-1">
-    When this ticket type becomes available (in{' '}
-    {formData.timeZone || 'event timezone'})
-  </p>
-</div>
-
-                {/* Expiry Date */}
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date
+                    <span className="text-xs text-gray-400 ml-1">
+                      (optional)
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    value={
+                      ticket.startDate
+                        ? typeof ticket.startDate === 'string' &&
+                          ticket.startDate.includes('T')
+                          ? ticket.startDate.slice(0, 10)
+                          : ticket.startDate
+                        : ''
+                    }
+                    onChange={(e) =>
+                      dispatch(
+                        updateTicketType({
+                          index,
+                          field: 'startDate',
+                          value: e.target.value || null,
+                        })
+                      )
+                    }
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                      errors?.[`ticketStartDate_${index}`]
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
+                  />
+                  {errors?.[`ticketStartDate_${index}`] && (
+                    <p className="mt-1 text-red-500 text-sm">
+                      {errors[`ticketStartDate_${index}`][0]}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    When this ticket type becomes available (in{' '}
+                    {formData.timeZone || 'event timezone'})
+                  </p>
+                </div>
+
+{/* Expiry Date */}
+<div>
   <label className="block text-sm font-medium text-gray-700 mb-1">
     Expiry Date
     <span className="text-xs text-gray-400 ml-1">
@@ -562,8 +571,15 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
         })
       )
     }
-    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+      errors?.[`ticketExpiryDate_${index}`] ? 'border-red-500' : 'border-gray-300'
+    }`}
   />
+  {errors?.[`ticketExpiryDate_${index}`] && (
+    <p className="mt-1 text-red-500 text-sm">
+      {errors[`ticketExpiryDate_${index}`][0]}
+    </p>
+  )}
   <p className="text-xs text-gray-500 mt-1">
     When this ticket expires (end of day in{' '}
     {formData.timeZone || 'event timezone'})
@@ -574,29 +590,46 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
           ))}
         </div>
 
-        
-
         <div className="mt-4 text-center">
           <button
             type="button"
             onClick={() => dispatch(addTicketType())}
             className="inline-flex items-center px-4 py-2 border border-dashed border-teal-300 rounded-lg text-teal-600 hover:text-teal-700 hover:border-teal-400 hover:bg-teal-50 transition-all duration-200 font-medium"
           >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <svg
+              className="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
             </svg>
             Add Another Ticket Type
           </button>
         </div>
       </div>
 
-
-{/* GST Configuration */}
+      {/* GST Configuration */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center mb-4">
           <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-            <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            <svg
+              className="w-5 h-5 text-yellow-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+              />
             </svg>
           </div>
           <div>
@@ -604,7 +637,8 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               GST Configuration
             </h4>
             <p className="text-sm text-gray-500">
-              Specify whether your ticket prices include GST for display purposes
+              Specify whether your ticket prices include GST for display
+              purposes
             </p>
           </div>
         </div>
@@ -615,27 +649,33 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               type="checkbox"
               id="gstIncluded"
               checked={formData.gstIncluded || false}
-              onChange={(e) =>
-                dispatch(updateGstIncluded(e.target.checked))
-              }
+              onChange={(e) => dispatch(updateGstIncluded(e.target.checked))}
               className="mt-1 w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
             />
             <div className="flex-1">
-              <label htmlFor="gstIncluded" className="text-sm font-medium text-gray-900 cursor-pointer">
+              <label
+                htmlFor="gstIncluded"
+                className="text-sm font-medium text-gray-900 cursor-pointer"
+              >
                 Ticket prices include GST
               </label>
               <p className="text-xs text-gray-500 mt-1">
-                Check this box if the ticket prices you've entered above already include GST. 
-                This will display prices as "$100 (incl GST)" instead of just "$100".
+                Check this box if the ticket prices you've entered above already
+                include GST. This will display prices as "$100 (incl GST)"
+                instead of just "$100".
               </p>
-              
+
               {/* GST Display Preview */}
               <div className="mt-3 p-3 bg-white border border-gray-200 rounded-md">
-                <p className="text-xs font-medium text-gray-700 mb-2">Price Display Preview:</p>
+                <p className="text-xs font-medium text-gray-700 mb-2">
+                  Price Display Preview:
+                </p>
                 <div className="flex items-center space-x-4">
                   <span className="text-sm text-gray-900">
                     {formData.gstIncluded ? (
-                      <span className="font-medium">$100 <span className="text-gray-600">(incl GST)</span></span>
+                      <span className="font-medium">
+                        $100 <span className="text-gray-600">(incl GST)</span>
+                      </span>
                     ) : (
                       <span className="font-medium">$100</span>
                     )}
@@ -647,7 +687,6 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
         </div>
       </div>
 
-
       {/* --- ADD BELOW --- */}
       <SeatingLayoutSection
         formData={formData}
@@ -657,8 +696,6 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
     </div>
   );
 };
-
-
 
 // Custom Registration Fields Component
 const CustomRegistrationFields = ({
@@ -976,7 +1013,7 @@ const TicketConfigStep = ({ formData = {}, errors = {} }) => {
       </div>
 
       {/* Conditional Content Based on Event Type */}
-       {formData.isPaid ? (
+      {formData.isPaid ? (
         <PaidEventConfig
           formData={formData}
           errors={errors}
@@ -989,8 +1026,6 @@ const TicketConfigStep = ({ formData = {}, errors = {} }) => {
           dispatch={dispatch}
         />
       )}
-
-
     </div>
   );
 };

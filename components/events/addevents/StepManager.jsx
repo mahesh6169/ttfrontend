@@ -397,15 +397,36 @@ if (formData.coordinators && formData.coordinators.length > 0) {
           
 
           // Date validation: startDate should be before expiryDate if both are set
-          if (ticket.startDate && ticket.expiryDate) {
-            const startDate = new Date(ticket.startDate);
-            const expiryDate = new Date(ticket.expiryDate);
-            if (startDate >= expiryDate) {
-              ticketErrors.push(
-                `Ticket type ${index + 1} start date must be before expiry date`
-              );
-            }
-          }
+          const today = new Date();
+today.setHours(0, 0, 0, 0); // Start of today
+
+if (ticket.startDate) {
+  const startDate = new Date(ticket.startDate);
+  if (startDate < today) {
+    ticketErrors.push(`Ticket type ${index + 1} start date cannot be in the past`);
+    errors[`ticketStartDate_${index}`] = ['Start date cannot be in the past'];
+  }
+}
+
+if (ticket.expiryDate) {
+  const expiryDate = new Date(ticket.expiryDate);
+  if (expiryDate < today) {
+    ticketErrors.push(`Ticket type ${index + 1} expiry date cannot be in the past`);
+    errors[`ticketExpiryDate_${index}`] = ['Expiry date cannot be in the past'];
+  }
+}
+
+
+
+if (ticket.startDate && ticket.expiryDate) {
+  const startDate = new Date(ticket.startDate);
+  const expiryDate = new Date(ticket.expiryDate);
+  if (startDate >= expiryDate) {
+    ticketErrors.push(
+      `Ticket type ${index + 1} start date must be before expiry date`
+    );
+  }
+}
         });
 
         if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
@@ -553,12 +574,13 @@ case 2: // Organiser Details
               'At least one ticket type is required for paid events',
             ];
           } else {
-            const ticketErrors = [];
+   const ticketErrors = [];
             formData.ticketTypes.forEach((ticket, index) => {
-              // Name is required (has * in form)
+              const ticketName = ticket.name?.trim() || `Ticket ${index + 1}`;
+              
+             // Name is required (has * in form)
               if (!ticket.name?.trim()) {
-                ticketErrors.push(`Ticket type ${index + 1} name is required`);
-                // Individual field error
+                // Individual field error only
                 errors[`ticketName_${index}`] = ['Ticket Name is required'];
               }
 
@@ -570,23 +592,42 @@ case 2: // Organiser Details
                 isNaN(Number(ticket.price)) ||
                 Number(ticket.price) <= 0
               ) {
-                ticketErrors.push(
-                  `Ticket type ${index + 1} price must be greater than 0`
-                );
-                // Individual field error
-                errors[`ticketPrice_${index}`] = ['Price must be greater than 0'];
+                // Individual field error only
+                errors[`ticketPrice_${index}`] = [`${ticketName}: Price must be greater than 0`];
               }
 
-             
-              // Date validation: startDate should be before expiryDate if both are set
+              // Date validation: dates must be today or future, startDate before expiryDate
+              const today = new Date();
+              today.setHours(0, 0, 0, 0); // Start of today
+
+              if (ticket.startDate) {
+                const startDate = new Date(ticket.startDate);
+                if (startDate < today) {
+                  // Individual field error only
+                  errors[`ticketStartDate_${index}`] = [`${ticketName} ticket: Start date cannot be in the past`];
+                }
+              }
+
+              if (ticket.expiryDate) {
+                const expiryDate = new Date(ticket.expiryDate);
+                const eventDate = new Date(formData.dateTime);
+                
+                if (expiryDate < today) {
+                  // Individual field error only
+                  errors[`ticketExpiryDate_${index}`] = [`${ticketName} ticket: Expiry date cannot be in the past`];
+                } else if (expiryDate > eventDate) {
+                  // Individual field error only
+                  errors[`ticketExpiryDate_${index}`] = [`${ticketName} ticket: Expiry date cannot be after event date`];
+                }
+              }
+
               if (ticket.startDate && ticket.expiryDate) {
                 const startDate = new Date(ticket.startDate);
                 const expiryDate = new Date(ticket.expiryDate);
                 if (startDate >= expiryDate) {
+                  // General error with specific ticket name for cross-field validation
                   ticketErrors.push(
-                    `Ticket type ${
-                      index + 1
-                    } start date must be before expiry date`
+                    `${ticketName} ticket: Start date must be before expiry date`
                   );
                 }
               }
@@ -778,8 +819,101 @@ if (formData.dateTime) {
       }
 
       if (formData.ticketTypes && formData.ticketTypes.length > 0) {
-        submitFormData.append('ticketTypes', JSON.stringify(formData.ticketTypes));
+  // 🔧 NEW: Process ticket dates with timezone conversion
+  const processedTicketTypes = formData.ticketTypes.map(ticket => {
+    const processedTicket = { ...ticket };
+    
+    // Process startDate - convert to UTC start of day
+    if (ticket.startDate && formData.timeZone) {
+      try {
+        // Check if this is edit mode and compare with original
+        let finalStartDate = ticket.startDate;
+        
+        if (isEditMode && originalEventData?.ticketTypes) {
+          const originalTicket = originalEventData.ticketTypes.find(t => t.name === ticket.name);
+          if (originalTicket?.startDate) {
+            // Convert original UTC to local for comparison
+            const originalLocal = utcToZonedTime(originalTicket.startDate, formData.timeZone);
+            const originalFormatted = format(originalLocal, 'yyyy-MM-dd');
+            
+            if (ticket.startDate === originalFormatted) {
+              // No change detected - preserve original UTC
+              finalStartDate = originalTicket.startDate;
+              console.log('✅ Ticket startDate unchanged, preserving UTC:', finalStartDate);
+            } else {
+              // User changed the date - convert to UTC start of day
+              const utcStartOfDay = zonedTimeToUtc(ticket.startDate + 'T00:00:00', formData.timeZone);
+              finalStartDate = utcStartOfDay.toISOString();
+              console.log('🔄 Ticket startDate changed, converting to UTC:', finalStartDate);
+            }
+          } else {
+            // New startDate in edit mode
+            const utcStartOfDay = zonedTimeToUtc(ticket.startDate + 'T00:00:00', formData.timeZone);
+            finalStartDate = utcStartOfDay.toISOString();
+            console.log('🆕 New ticket startDate in edit, converting to UTC:', finalStartDate);
+          }
+        } else {
+          // Add mode - convert to UTC start of day
+          const utcStartOfDay = zonedTimeToUtc(ticket.startDate + 'T00:00:00', formData.timeZone);
+          finalStartDate = utcStartOfDay.toISOString();
+          console.log('🆕 New ticket startDate, converting to UTC:', finalStartDate);
+        }
+        
+        processedTicket.startDate = finalStartDate;
+      } catch (error) {
+        console.error('❌ Ticket startDate conversion error:', error);
+        processedTicket.startDate = ticket.startDate;
       }
+    }
+    
+    // Process expiryDate - convert to UTC end of day
+    if (ticket.expiryDate && formData.timeZone) {
+      try {
+        // Check if this is edit mode and compare with original
+        let finalExpiryDate = ticket.expiryDate;
+        
+        if (isEditMode && originalEventData?.ticketTypes) {
+          const originalTicket = originalEventData.ticketTypes.find(t => t.name === ticket.name);
+          if (originalTicket?.expiryDate) {
+            // Convert original UTC to local for comparison
+            const originalLocal = utcToZonedTime(originalTicket.expiryDate, formData.timeZone);
+            const originalFormatted = format(originalLocal, 'yyyy-MM-dd');
+            
+            if (ticket.expiryDate === originalFormatted) {
+              // No change detected - preserve original UTC
+              finalExpiryDate = originalTicket.expiryDate;
+              console.log('✅ Ticket expiryDate unchanged, preserving UTC:', finalExpiryDate);
+            } else {
+              // User changed the date - convert to UTC end of day
+              const utcEndOfDay = zonedTimeToUtc(ticket.expiryDate + 'T23:59:59', formData.timeZone);
+              finalExpiryDate = utcEndOfDay.toISOString();
+              console.log('🔄 Ticket expiryDate changed, converting to UTC:', finalExpiryDate);
+            }
+          } else {
+            // New expiryDate in edit mode
+            const utcEndOfDay = zonedTimeToUtc(ticket.expiryDate + 'T23:59:59', formData.timeZone);
+            finalExpiryDate = utcEndOfDay.toISOString();
+            console.log('🆕 New ticket expiryDate in edit, converting to UTC:', finalExpiryDate);
+          }
+        } else {
+          // Add mode - convert to UTC end of day
+          const utcEndOfDay = zonedTimeToUtc(ticket.expiryDate + 'T23:59:59', formData.timeZone);
+          finalExpiryDate = utcEndOfDay.toISOString();
+          console.log('🆕 New ticket expiryDate, converting to UTC:', finalExpiryDate);
+        }
+        
+        processedTicket.expiryDate = finalExpiryDate;
+      } catch (error) {
+        console.error('❌ Ticket expiryDate conversion error:', error);
+        processedTicket.expiryDate = ticket.expiryDate;
+      }
+    }
+    
+    return processedTicket;
+  });
+  
+  submitFormData.append('ticketTypes', JSON.stringify(processedTicketTypes));
+}
 
       if (formData.seatingLayout && formData.seatingLayout.length > 0) {
         submitFormData.append('seatingLayout', JSON.stringify(formData.seatingLayout));
