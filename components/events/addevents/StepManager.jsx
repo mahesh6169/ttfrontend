@@ -6,7 +6,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
-import { zonedTimeToUtc } from 'date-fns-tz';
+import { zonedTimeToUtc, utcToZonedTime, format } from 'date-fns-tz';
 
 // Redux actions
 import {
@@ -25,6 +25,7 @@ import {
   clearFormErrors,
   setImages,
   clearSuccessMessage,
+  originalEventData,
   
 } from '@/store/slices/events/eventSlice';
 
@@ -66,6 +67,7 @@ const StepManager = ({
   } = useSelector((state) => state.events);
 
   const { user } = useSelector((state) => state.user);
+  const originalEventData = useSelector((state) => state.events?.originalEventData || null);
 
   // Local state for image files (can't store File objects in Redux)
   const [localImageFiles, setLocalImageFiles] = useState([]);
@@ -689,19 +691,52 @@ const isNextButtonDisabled = useCallback(() => {
       submitFormData.append('category', formData.category);
     }
 
-    if (formData.dateTime) {
-      // Convert to UTC if timezone is provided
-      let finalDateTime = formData.dateTime;
-      if (formData.timeZone) {
-        try {
+if (formData.dateTime) {
+  let finalDateTime = formData.dateTime;
+  
+  if (formData.timeZone) {
+    try {
+      // 🔧 FIX: In edit mode, check if datetime actually changed
+      if (isEditMode && originalEventData?.dateTime) {
+        console.log('🔍 Edit mode datetime handling:');
+        console.log('  Current form value:', formData.dateTime);
+        console.log('  Original UTC value:', originalEventData.dateTime);
+        
+        // Convert original UTC back to local format for comparison
+        const originalLocal = utcToZonedTime(originalEventData.dateTime, formData.timeZone);
+        const originalFormatted = format(originalLocal, 'yyyy-MM-dd\'T\'HH:mm');
+        
+        console.log('  Original as local:', originalFormatted);
+        
+        if (formData.dateTime === originalFormatted) {
+          // ✅ No change detected - preserve original UTC to avoid conversion errors
+          finalDateTime = originalEventData.dateTime;
+          console.log('✅ No change detected, preserving original UTC:', finalDateTime);
+        } else {
+          // 🔄 User changed the time - convert new time to UTC
           const utcDateTime = zonedTimeToUtc(formData.dateTime, formData.timeZone);
           finalDateTime = utcDateTime.toISOString();
-        } catch (error) {
-          finalDateTime = new Date(formData.dateTime).toISOString();
+          console.log('🔄 Change detected, converting to UTC:', finalDateTime);
         }
+      } else {
+        // 🆕 New event or no original data - convert to UTC normally
+        const utcDateTime = zonedTimeToUtc(formData.dateTime, formData.timeZone);
+        finalDateTime = utcDateTime.toISOString();
+        console.log('🆕 New event, converting to UTC:', finalDateTime);
       }
-      submitFormData.append('dateTime', finalDateTime);
+    } catch (error) {
+      console.error('❌ DateTime conversion error:', error);
+      // 🛡️ Fallback: use original if available, otherwise basic conversion
+      finalDateTime = (isEditMode && originalEventData?.dateTime) 
+        ? originalEventData.dateTime 
+        : new Date(formData.dateTime).toISOString();
+      console.log('🛡️ Using fallback datetime:', finalDateTime);
     }
+  }
+  
+  submitFormData.append('dateTime', finalDateTime);
+}
+
 
     if (formData.timeZone) {
       submitFormData.append('timeZone', formData.timeZone);
@@ -803,7 +838,7 @@ console.log("🔍 Debug organizerReservedSeats:", {
     }
 
     return submitFormData;
-  }, [formData, localImageFiles]);
+  }, [formData, localImageFiles, isEditMode, originalEventData]);
 
   // Handle form submission
   const handleSubmit = useCallback(async () => {

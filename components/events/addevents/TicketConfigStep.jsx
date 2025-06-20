@@ -503,72 +503,72 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
 
 
                 {/* Start Date */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Date
-                    <span className="text-xs text-gray-400 ml-1">
-                      (optional)
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={
-                      ticket.startDate ? ticket.startDate.slice(0, 10) : ''
-                    }
-                    onChange={(e) =>
-                      dispatch(
-                        updateTicketType({
-                          index,
-                          field: 'startDate',
-                          value: e.target.value
-                            ? new Date(
-                                e.target.value + 'T00:00:00'
-                              ).toISOString()
-                            : null,
-                        })
-                      )
-                    }
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    When this ticket type becomes available (in{' '}
-                    {formData.timeZone || 'event timezone'})
-                  </p>
-                </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Start Date
+    <span className="text-xs text-gray-400 ml-1">
+      (optional)
+    </span>
+  </label>
+  <input
+    type="date"
+    value={
+      ticket.startDate 
+        ? (typeof ticket.startDate === 'string' && ticket.startDate.includes('T'))
+          ? ticket.startDate.slice(0, 10)
+          : ticket.startDate
+        : ''
+    }
+    onChange={(e) =>
+      dispatch(
+        updateTicketType({
+          index,
+          field: 'startDate',
+          value: e.target.value || null,
+        })
+      )
+    }
+    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+  />
+  <p className="text-xs text-gray-500 mt-1">
+    When this ticket type becomes available (in{' '}
+    {formData.timeZone || 'event timezone'})
+  </p>
+</div>
 
                 {/* Expiry Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Expiry Date
-                    <span className="text-xs text-gray-400 ml-1">
-                      (optional)
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={
-                      ticket.expiryDate ? ticket.expiryDate.slice(0, 10) : ''
-                    }
-                    onChange={(e) =>
-                      dispatch(
-                        updateTicketType({
-                          index,
-                          field: 'expiryDate',
-                          value: e.target.value
-                            ? new Date(
-                                e.target.value + 'T23:59:59'
-                              ).toISOString()
-                            : null,
-                        })
-                      )
-                    }
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    When this ticket expires (end of day in{' '}
-                    {formData.timeZone || 'event timezone'})
-                  </p>
-                </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Expiry Date
+    <span className="text-xs text-gray-400 ml-1">
+      (optional)
+    </span>
+  </label>
+  <input
+    type="date"
+    value={
+      ticket.expiryDate 
+        ? (typeof ticket.expiryDate === 'string' && ticket.expiryDate.includes('T'))
+          ? ticket.expiryDate.slice(0, 10)
+          : ticket.expiryDate
+        : ''
+    }
+    onChange={(e) =>
+      dispatch(
+        updateTicketType({
+          index,
+          field: 'expiryDate',
+          value: e.target.value || null,
+        })
+      )
+    }
+    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+  />
+  <p className="text-xs text-gray-500 mt-1">
+    When this ticket expires (end of day in{' '}
+    {formData.timeZone || 'event timezone'})
+  </p>
+</div>
               </div>
             </div>
           ))}

@@ -163,18 +163,7 @@ const SingleEventCard = ({ event, chatProps }) => {
           <FaHeart className="text-lg" />
         </button>
 
-        {/* Event Status Badge */}
-        {event.status && (
-          <div className="absolute top-4 left-4">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-              event.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-              event.status === 'published' ? 'bg-green-100 text-green-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
-              {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-            </span>
-          </div>
-        )}
+
       </div>
 
       {/* Fullscreen Image Modal */}

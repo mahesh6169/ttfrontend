@@ -2,6 +2,7 @@
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { utcToZonedTime, format } from 'date-fns-tz';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -327,15 +328,31 @@ const processImagesForEdit = (images) => {
   }).filter(Boolean); // Remove any null values
 };
 
-// Helper function to safely process event data for edit mode
+// Then update the processEventDataForEdit function:
 const processEventDataForEdit = (eventData) => {
   if (!eventData) return createDefaultFormData();
-    console.log('🔍 EventSlice/processEventDataForEdit:', eventData);
+  console.log('🔍 EventSlice/processEventDataForEdit:', eventData);
+  
+  // 🔧 FIX: Convert UTC datetime to local format for form display
+  let formattedDateTime = '';
+  if (eventData.dateTime && eventData.timeZone) {
+    try {
+      // Convert UTC to local time for form display
+      const zonedDate = utcToZonedTime(eventData.dateTime, eventData.timeZone);
+      formattedDateTime = format(zonedDate, 'yyyy-MM-dd\'T\'HH:mm');
+      console.log('🔧 Converted UTC to local for form:', eventData.dateTime, '→', formattedDateTime);
+    } catch (error) {
+      console.error('❌ Error converting datetime for form:', error);
+      formattedDateTime = eventData.dateTime; // Fallback to original
+    }
+  } else {
+    formattedDateTime = eventData.dateTime || '';
+  }
   
   return {
     title: eventData.title || '',
     description: eventData.description || '',
-    dateTime: eventData.dateTime || '',
+    dateTime: formattedDateTime,  // ✅ Now stores local time for form!
     timeZone: eventData.timeZone || '',
     venue: eventData.venue || '',
     address: eventData.address || {
@@ -352,7 +369,7 @@ const processEventDataForEdit = (eventData) => {
     coordinators: (eventData.coordinators && eventData.coordinators.length > 0) 
       ? eventData.coordinators 
       : [{ name: '', role: '', phone: '', email: '' }],
-      organizer: eventData.organizer || {
+    organizer: eventData.organizer || {
       name: '',
       website: '',
       contact: '',
@@ -377,12 +394,13 @@ const processEventDataForEdit = (eventData) => {
     organizerReservedSeats: eventData.organizerReservedSeats || '',
     stripeAccountId: eventData.stripeAccountId || '',
     refundPolicy: eventData.refundPolicy || {
-  processingFeePolicy: 'non-refundable',
-  policyText: ''
-},
-gstIncluded: eventData.gstIncluded || false,
+      processingFeePolicy: 'non-refundable',
+      policyText: ''
+    },
+    gstIncluded: eventData.gstIncluded || false,
   };
 };
+
 
 const eventSlice = createSlice({
   name: 'events',
