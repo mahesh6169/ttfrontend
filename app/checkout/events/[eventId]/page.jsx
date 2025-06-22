@@ -563,6 +563,33 @@ const handleBackToTickets = () => {
   }
 };
 
+// Get dynamic back button text based on current state
+  const getBackButtonText = () => {
+    if (currentStep === 'payment') {
+      return 'Back to Details';
+    }
+    
+    // For events that require seat selection
+    if (event?.seatingLayout || seatInfo.requiresSeats) {
+      // Check if we have an active reservation (timer still valid)
+      const hasActiveReservation = currentReservation && 
+                                  currentReservation.reservedUntil && 
+                                  new Date(currentReservation.reservedUntil) > new Date();
+      
+      // Check if we have selected seats
+      const hasSelectedSeats = (selectedSeats && selectedSeats.length > 0) ||
+                              (seatInfo.selectedSeats && seatInfo.selectedSeats.length > 0);
+      
+      if (hasActiveReservation || hasSelectedSeats) {
+        return 'Back to Seat Selection';
+      } else {
+        return 'Back to Tickets';
+      }
+    } else {
+      return 'Back to Tickets';
+    }
+  };
+
   // Handle back to details step
   const handleBackToDetails = () => {
     dispatch(setCurrentStep('details'));
@@ -827,7 +854,7 @@ const handleBackToTickets = () => {
         <div className="max-w-6xl mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
-            <button
+           <button
               onClick={
                 currentStep === 'payment'
                   ? handleBackToDetails
@@ -836,9 +863,7 @@ const handleBackToTickets = () => {
               className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
             >
               <FaArrowLeft className="mr-2" />
-              {currentStep === 'payment'
-                ? 'Back to Details'
-                : 'Back to Tickets'}
+              {getBackButtonText()}
             </button>
 
             <h1 className="text-3xl font-bold text-gray-900">

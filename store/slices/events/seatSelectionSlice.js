@@ -111,7 +111,12 @@ const initialState = {
   
   // UI state
   isLoading: false,
-  error: null,
+
+  // Specific error states
+fetchError: null,
+reserveError: null,
+releaseError: null,
+extendError: null,
   
   // Event context
   currentEventId: null,
@@ -150,7 +155,10 @@ state.selectedSeats = [];
       state.maxSeatsPerSelection = maxSeatsPerSelection;
       state.selectedSeats = [];
       state.currentReservation = null;
-      state.error = null;
+  state.fetchError = null;
+  state.reserveError = null;
+  state.releaseError = null;
+  state.extendError = null;
     },
     
     // ✅ CORE: Session management
@@ -163,11 +171,27 @@ state.selectedSeats = [];
 return { ...initialState, sessionId: state.sessionId };
     },
     
-    // ✅ CORE: Error handling
-    clearError: (state) => {
-      state.error = null;
-    },
-    
+// ✅ CORE: Error handling
+clearError: (state) => {
+  state.fetchError = null;
+  state.reserveError = null;
+  state.releaseError = null;
+  state.extendError = null;
+},
+
+// ✅ NEW: Clear specific errors
+clearFetchError: (state) => {
+  state.fetchError = null;
+},
+clearReserveError: (state) => {
+  state.reserveError = null;
+},
+clearReleaseError: (state) => {
+  state.releaseError = null;
+},
+clearExtendError: (state) => {
+  state.extendError = null;
+},
 // ✅ ENHANCED: Updated to handle release events better
 handleRemoteSeatUpdate: (state, action) => {
   const { seatId, status, userId, reservedBy, reservedUntil, timestamp, operationType } = action.payload;
@@ -265,7 +289,7 @@ state.currentReservation = action.payload;
     builder
       .addCase(fetchSeatAvailability.pending, (state) => {
         state.isLoading = true;
-        state.error = null;
+        state.fetchError = null;
       })
       .addCase(fetchSeatAvailability.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -274,7 +298,7 @@ state.currentReservation = action.payload;
 })
       .addCase(fetchSeatAvailability.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.fetchError = action.payload;
         console.error('❌ Failed to load seat availability:', action.payload);
       });
     
@@ -282,11 +306,11 @@ state.currentReservation = action.payload;
     builder
       .addCase(reserveSeats.pending, (state) => {
         state.isLoading = true;
-        state.error = null;
+         state.reserveError = null;
       })
       .addCase(reserveSeats.fulfilled, (state, action) => {
 state.isLoading = false;
-        state.error = null;
+         state.reserveError = null;
         
         // ✅ FIXED: Map backend response correctly to currentReservation
         const { eventId, userId, sessionId, reservedUntil, seats, seatCount, success } = action.payload;
@@ -318,12 +342,12 @@ state.isLoading = false;
           }
 } else {
           console.error('❌ Invalid reservation response:', action.payload);
-          state.error = 'Invalid reservation response from server';
+          state.reserveError = 'Invalid reservation response from server';
         }
       })
       .addCase(reserveSeats.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.reserveError = action.payload;
         state.selectedSeats = [];
         console.error('❌ Seat reservation failed:', action.payload);
       });
@@ -333,7 +357,7 @@ builder
   .addCase(releaseReservation.pending, (state) => {
     state.isLoading = true;
     // ✅ NEW: Clear error state when starting release
-    state.error = null;
+    state.releaseError = null;
   })
   .addCase(releaseReservation.fulfilled, (state, action) => {
     state.isLoading = false;
@@ -378,7 +402,7 @@ builder
   })
   .addCase(releaseReservation.rejected, (state, action) => {
     state.isLoading = false;
-    state.error = action.payload;
+    state.releaseError = action.payload;
     console.error('❌ Failed to release reservation in Redux:', action.payload);
     
     // ✅ NEW: Don't automatically clear state on failure - let user retry
@@ -408,7 +432,7 @@ builder
       })
       .addCase(extendReservation.rejected, (state, action) => {
         console.error('❌ Failed to extend reservation:', action.payload);
-        state.error = action.payload;
+        state.extendError = action.payload;
       });
   }
 });
@@ -418,7 +442,10 @@ export const selectSeatingLayout = (state) => state.seatSelection.seatingLayout;
 export const selectSelectedSeats = (state) => state.seatSelection.selectedSeats;
 export const selectCurrentReservation = (state) => state.seatSelection.currentReservation;
 export const selectIsLoading = (state) => state.seatSelection.isLoading;
-export const selectError = (state) => state.seatSelection.error;
+export const selectFetchError = (state) => state.seatSelection.fetchError;
+export const selectReserveError = (state) => state.seatSelection.reserveError;
+export const selectReleaseError = (state) => state.seatSelection.releaseError;
+export const selectExtendError = (state) => state.seatSelection.extendError;
 export const selectCurrentEventId = (state) => state.seatSelection.currentEventId;
 export const selectSessionId = (state) => state.seatSelection.sessionId;
 export const selectMaxSeatsPerSelection = (state) => state.seatSelection.maxSeatsPerSelection;
@@ -447,6 +474,10 @@ export const {
   setSessionId,
   resetSeatSelection,
   clearError,
+  clearFetchError,
+  clearReserveError,
+  clearReleaseError,
+  clearExtendError,
   handleRemoteSeatUpdate,
   handleUserDisconnected,
   handleSeatCleanup,

@@ -22,6 +22,8 @@ import {
   deselectSeat,
   selectHasActiveReservation,
   selectReservationTimeLeft,
+   selectReserveError,
+  clearReserveError,
 } from '@/store/slices/events/seatSelectionSlice';
 import SeatButton from './SeatButton';
 import SeatReservationTimer from './SeatReservationTimer';
@@ -37,8 +39,9 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     maxSeatsPerSelection,
     sessionId,
     isLoading,
-    error,
   } = useSelector((state) => state.seatSelection);
+
+  const reserveError = useSelector(selectReserveError);
 
   const { user } = useSelector((state) => state.user);
   const userId = user?._id;
@@ -68,6 +71,8 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
   const [showSeatingImage, setShowSeatingImage] = useState(false);
   const [pendingAutoRelease, setPendingAutoRelease] = useState(false);
   const [localSelectionTimer, setLocalSelectionTimer] = useState(null);
+  
+  const [showReserveErrorModal, setShowReserveErrorModal] = useState(false);
 
   // ✅ NEW: Track scroll position to prevent jump on re-render
   const scrollContainerRef = useRef(null);
@@ -242,20 +247,14 @@ useEffect(() => {
 
     // Validate selection limit
     if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
-      alert(
-        selectedSeats.length === requiredSeats
-          ? `You have selected all ${requiredSeats} required seats. Deselect a seat first if you want to choose a different one.`
-          : `You can only select ${requiredSeats} seat${
-              requiredSeats !== 1 ? 's' : ''
-            } total. Please deselect some seats first.`
-      );
+       setShowReserveErrorModal(true);
       return;
     }
 
     // Validate seat exists in layout
     const seatDetails = findSeatInLayout(seatId);
     if (!seatDetails) {
-      alert('This seat is no longer available. Please refresh the page.');
+       setShowReserveErrorModal(true);
       return;
     }
 
@@ -288,6 +287,18 @@ useEffect(() => {
       }
     }
     return null;
+  };
+
+
+
+ 
+
+  // Handles reserve error modal OK button
+  const handleReserveErrorOk = () => {
+    setShowReserveErrorModal(false);
+    dispatch(clearReserveError());
+    dispatch(clearSelection());
+    router.push(`/events/seats/${eventId}`);
   };
 
   // Manages automatic reservation release with loading state and error handling.
@@ -339,6 +350,20 @@ useEffect(() => {
       return;
     }
 
+    // ✅ SAFETY NET: Check if seats are still available before API call
+  const conflictSeats = selectedSeats.filter(seatId => {
+    const seatDetails = findSeatInLayout(seatId);
+    return seatDetails?.seat.status === 'selected' && 
+           seatDetails?.seat.reservedBy?.toString() !== userId?.toString();
+  });
+  
+  if (conflictSeats.length > 0) {
+    console.log('🚨 Seats taken by others:', conflictSeats);
+    dispatch(clearSelection());
+    setShowReserveErrorModal(true);
+    return; // STOP - no API call
+  }
+
     // ✅ SAVE: Capture current scroll position before state changes
     const currentScrollPosition = scrollContainerRef.current?.scrollLeft || 0;
     if (currentScrollPosition > 0) {
@@ -347,12 +372,7 @@ useEffect(() => {
 
     // Validate seat count matches ticket count
     if (selectedSeats.length !== requiredSeats) {
-      const message = `Please select exactly ${requiredSeats} seat${
-        requiredSeats !== 1 ? 's' : ''
-      } for your ${requiredSeats} ticket${
-        requiredSeats !== 1 ? 's' : ''
-      }. Currently selected: ${selectedSeats.length}`;
-      alert(message);
+      setShowReserveErrorModal(true);
       return;
     }
 
@@ -376,10 +396,7 @@ useEffect(() => {
 
     if (invalidSeats.length > 0) {
       console.error('❌ Invalid seats found:', invalidSeats);
-      alert(
-        'Some selected seats are no longer available. Please refresh and try again.'
-      );
-      dispatch(clearSelection());
+      setShowReserveErrorModal(true);
       return;
     }
 
@@ -403,33 +420,6 @@ useEffect(() => {
       }, 100);
     } catch (error) {
       console.error('❌ Failed to reserve seats:', error);
-
-      // Enhanced error handling with specific messages
-      if (error.message) {
-        if (error.message.includes('not found')) {
-          alert(
-            'One or more selected seats are no longer available. The page will refresh.'
-          );
-          window.location.reload();
-        } else if (
-          error.message.includes('reserved') ||
-          error.message.includes('selected')
-        ) {
-          alert(
-            'Some seats have been reserved by another user. Please select different seats.'
-          );
-          dispatch(clearSelection());
-        } else if (error.message.includes('expired')) {
-          alert('Your session has expired. Please refresh and try again.');
-          window.location.reload();
-        } else {
-          alert(`Failed to reserve seats: ${error.message}`);
-          dispatch(clearSelection());
-        }
-      } else {
-        alert('Failed to reserve seats. Please try again.');
-        dispatch(clearSelection());
-      }
     } finally {
       setPendingReservation(false);
     }
@@ -492,38 +482,14 @@ useEffect(() => {
     return 'available';
   };
 
-  // Renders error state with user-friendly message and refresh option when seat loading fails.
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
-          <svg
-            className="w-8 h-8 text-red-600 mx-auto mb-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-            />
-          </svg>
-          <h3 className="text-lg font-medium text-red-900 mb-2">
-            Seat Selection Error
-          </h3>
-          <p className="text-red-700 text-sm mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Handle reserve errors
+  useEffect(() => {
+    console.log('🔍 Reserve error useEffect triggered:', { reserveError, showReserveErrorModal });
+    if (reserveError) {
+      console.log('🚨 Reserve error detected, showing modal:', reserveError);
+      setShowReserveErrorModal(true);
+    }
+  }, [reserveError]);
 
   return (
     <div className="space-y-4">
@@ -866,7 +832,49 @@ useEffect(() => {
           )}
         </div>
       )}
+
+      {/* Reserve Error Modal */}
+      {console.log('🔍 Modal render check:', { showReserveErrorModal, reserveError })}
+      {showReserveErrorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-6 h-6 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Booking Conflict has Occurred
+              </h3>
+              <p className="text-gray-600 text-sm mb-6">
+                 The seats you selected are no longer available. Another user may have selected them. Please choose different seats.
+              </p>
+              <button
+                onClick={handleReserveErrorOk}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      
     </div>
+    
   );
 };
 
