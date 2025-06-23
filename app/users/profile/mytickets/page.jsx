@@ -11,6 +11,10 @@ const EnhancedMyTicketsPage = () => {
   const [error, setError] = useState(null);
   const [selectedTicketGroup, setSelectedTicketGroup] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  // 🆕 NEW: Add invoice state
+  const [invoiceData, setInvoiceData] = useState(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceError, setInvoiceError] = useState(null);
 
   // Fetch all user tickets
   useEffect(() => {
@@ -194,7 +198,6 @@ const EnhancedMyTicketsPage = () => {
     return Object.values(typeGroups);
   };
 
-
   // Get status color
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -218,10 +221,47 @@ const EnhancedMyTicketsPage = () => {
     }
   };
 
-  // Handle view invoice
-  const handleViewInvoice = (ticketGroup) => {
+  // 🆕 NEW: Handle view invoice with API call
+  const handleViewInvoice = async (ticketGroup) => {
+    const representative = ticketGroup[0];
+    const invoiceNumber = representative.invoiceNumber;
+    
+    setInvoiceLoading(true);
+    setInvoiceError(null);
     setSelectedTicketGroup(ticketGroup);
     setShowInvoiceModal(true);
+    
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/invoices/${invoiceNumber}`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP Error ${response.status}`);
+      }
+
+      if (data.success) {
+        setInvoiceData(data.invoice);
+        console.log('✅ Invoice data loaded:', data.invoice.invoiceNumber);
+      } else {
+        throw new Error(data.message || 'Failed to load invoice');
+      }
+
+    } catch (err) {
+      console.error('❌ Error fetching invoice:', err);
+      setInvoiceError(err.message);
+    } finally {
+      setInvoiceLoading(false);
+    }
   };
 
   if (loading) {
@@ -463,9 +503,14 @@ const EnhancedMyTicketsPage = () => {
       {showInvoiceModal && selectedTicketGroup && (
         <InvoiceModal
           ticketGroup={selectedTicketGroup}
+          invoiceData={invoiceData}
+          invoiceLoading={invoiceLoading}
+          invoiceError={invoiceError}
           onClose={() => {
             setShowInvoiceModal(false);
             setSelectedTicketGroup(null);
+            setInvoiceData(null);
+            setInvoiceError(null);
           }}
         />
       )}
@@ -473,35 +518,8 @@ const EnhancedMyTicketsPage = () => {
   );
 };
 
-// Invoice Modal Component
-const InvoiceModal = ({ ticketGroup, onClose }) => {
-  const representative = ticketGroup[0];
-  const eventInfo = representative.eventSnapshot || representative.event;
-  const timeZone = eventInfo.timeZone;
-  const totalAmount = ticketGroup.reduce((sum, ticket) => sum + (ticket.priceDetails?.totalPrice || ticket.ticketType?.price || 0), 0);
-
-  // Format event date with timezone support for invoice
-  const formatEventDateTimeForInvoice = (dateTime, timeZone) => {
-    try {
-      const date = formatInTimeZone(dateTime, timeZone, 'dd/MM/yyyy');
-      const time = formatInTimeZone(dateTime, timeZone, 'h:mm a');
-      return { date, time };
-    } catch (error) {
-      console.error('Error formatting date for invoice:', error);
-      const fallbackDate = new Date(dateTime);
-      return {
-        date: fallbackDate.toLocaleDateString(),
-        time: fallbackDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-    }
-  };
-
-  const formatSeats = (ticket) => {
-    if (!ticket.seats || ticket.seats.length === 0) return 'General Admission';
-    return ticket.seats.map(seat => `${seat.row}-${seat.seatNumber}`).join(', ');
-  };
-
-  const eventDateTime = formatEventDateTimeForInvoice(eventInfo.dateTime, timeZone);
+// Invoice Modal Component - 🆕 UPDATED: Now uses API invoice data
+const InvoiceModal = ({ ticketGroup, invoiceData, invoiceLoading, invoiceError, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -519,163 +537,248 @@ const InvoiceModal = ({ ticketGroup, onClose }) => {
 
         {/* Invoice Content */}
         <div className="p-8">
-          {/* Invoice Header */}
-          <div className="border-b pb-6 mb-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">INVOICE</h2>
-                <p className="text-gray-600 mt-1">Invoice #{representative.invoiceNumber}</p>
-                <p className="text-sm text-gray-500">Ticket #{representative.ticketNumber}{ticketGroup.length > 1 ? ` (+${ticketGroup.length - 1} more)` : ''}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Issue Date</p>
-                <p className="font-medium">{new Date(representative.createdAt).toLocaleDateString()}</p>
-                <p className="text-sm text-gray-600 mt-2">Payment Date</p>
-                <p className="font-medium">{new Date(representative.paymentDate).toLocaleDateString()}</p>
-              </div>
+          {/* 🆕 NEW: Loading/Error States */}
+          {invoiceLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2">Loading invoice details...</span>
             </div>
-          </div>
+          )}
+          
+          {invoiceError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-700">Error loading invoice: {invoiceError}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          
+          {/* Show invoice content only if data is loaded */}
+          {invoiceData && !invoiceLoading && (
+            <>
+              {/* Invoice Header */}
+              <div className="border-b pb-6 mb-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">INVOICE</h2>
+                    <p className="text-gray-600 mt-1">Invoice #{invoiceData.invoiceNumber}</p>
+                    <p className="text-sm text-gray-500">Status: {invoiceData.status}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Issue Date</p>
+                    <p className="font-medium">{new Date(invoiceData.invoiceDate).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-600 mt-2">Payment Date</p>
+                    <p className="font-medium">{new Date(invoiceData.payment.paymentDate).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
 
-          {/* Organizer and Buyer Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Event Organizer</h4>
-              <div className="text-sm space-y-1">
-                <p className="font-medium">{eventInfo.organizer?.name || 'Event Organizer'}</p>
-                <p className="text-gray-600">{eventInfo.organizer?.email || 'N/A'}</p>
-                {eventInfo.organizer?.phone && (
-                  <p className="text-gray-600">{eventInfo.organizer.phone}</p>
-                )}
+              {/* Organizer and Buyer Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Event Organizer</h4>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">{invoiceData.event.organizer?.name || 'Event Organizer'}</p>
+                    <p className="text-gray-600">{invoiceData.event.organizer?.email || 'N/A'}</p>
+                    {invoiceData.event.organizer?.phone && (
+                      <p className="text-gray-600">{invoiceData.event.organizer.phone}</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Bill To</h4>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">{invoiceData.buyer.firstName} {invoiceData.buyer.lastName}</p>
+                    <p className="text-gray-600">{invoiceData.buyer.email}</p>
+                    {invoiceData.buyer.phone && (
+                      <p className="text-gray-600">{invoiceData.buyer.phone}</p>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Bill To</h4>
-              <div className="text-sm space-y-1">
-                <p className="font-medium">{representative.buyer?.firstName} {representative.buyer?.lastName}</p>
-                <p className="text-gray-600">{representative.buyer?.email}</p>
-                {representative.buyer?.phone && (
-                  <p className="text-gray-600">{representative.buyer.phone}</p>
-                )}
-              </div>
-            </div>
-          </div>
 
-          {/* Event Details */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-8">
-            <h4 className="font-semibold text-gray-900 mb-4">Event Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium text-gray-700">Event Title</p>
-                <p className="text-gray-900">{eventInfo.title}</p>
+              {/* Event Details */}
+              <div className="bg-gray-50 rounded-lg p-6 mb-8">
+                <h4 className="font-semibold text-gray-900 mb-4">Event Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-700">Event Title</p>
+                    <p className="text-gray-900">{invoiceData.event.title}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">Event Code</p>
+                    <p className="text-gray-900 font-mono">{invoiceData.event.eventCode}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">Date & Time</p>
+                    <p className="text-gray-900">
+                      {(() => {
+                        try {
+                          const date = formatInTimeZone(invoiceData.event.dateTime, invoiceData.event.timeZone, 'dd/MM/yyyy');
+                          const time = formatInTimeZone(invoiceData.event.dateTime, invoiceData.event.timeZone, 'h:mm a');
+                          return `${date} at ${time}`;
+                        } catch (error) {
+                          return new Date(invoiceData.event.dateTime).toLocaleString();
+                        }
+                      })()}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Timezone: {invoiceData.event.timeZone}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">Venue</p>
+                    <p className="text-gray-900">{invoiceData.event.venue}</p>
+                  </div>
+                  {invoiceData.event.address && (
+                    <div className="md:col-span-2">
+                      <p className="font-medium text-gray-700">Address</p>
+                      <p className="text-gray-900">{invoiceData.event.address}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-gray-700">Event Code</p>
-                <p className="text-gray-900 font-mono">{eventInfo.eventCode}</p>
+
+{/* Ticket Items Table */}
+              <div className="mb-8">
+                <h4 className="font-semibold text-gray-900 mb-4">Purchase Details</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full border border-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Ticket Type</th>
+                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">Quantity</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 border-b">Unit Price (AUD)</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 border-b">Total (AUD)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        // Group line items by ticket type
+                        const groupedItems = invoiceData.lineItems.reduce((acc, item) => {
+                          const typeName = item.ticketType.name;
+                          if (!acc[typeName]) {
+                            acc[typeName] = {
+                              name: typeName,
+                              price: item.ticketType.price,
+                              quantity: 0,
+                              total: 0
+                            };
+                          }
+                          acc[typeName].quantity += item.quantity;
+                          acc[typeName].total += (item.ticketType.price * item.quantity);
+                          return acc;
+                        }, {});
+
+                        return Object.values(groupedItems).map((group, index) => (
+                          <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-3 text-sm border-b">{group.name}</td>
+                            <td className="px-4 py-3 text-sm text-center border-b">{group.quantity}</td>
+                            <td className="px-4 py-3 text-sm text-right border-b">${group.price.toFixed(2)}</td>
+                            <td className="px-4 py-3 text-sm text-right border-b font-medium">${group.total.toFixed(2)}</td>
+                          </tr>
+                        ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-gray-700">Date & Time</p>
-                <p className="text-gray-900">
-                  {eventDateTime.date} at {eventDateTime.time}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Timezone: {timeZone}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">Venue</p>
-                <p className="text-gray-900">{eventInfo.venue}</p>
-              </div>
-              {eventInfo.address && (
-                <div className="md:col-span-2">
-                  <p className="font-medium text-gray-700">Address</p>
-                  <p className="text-gray-900">{eventInfo.address}</p>
+
+              {/* Refund History (if any) */}
+              {invoiceData.refunds && invoiceData.refunds.length > 0 && (
+                <div className="mb-8">
+                  <h4 className="font-semibold text-gray-900 mb-4">Refund History</h4>
+                  <div className="bg-orange-50 rounded-lg p-4">
+                    <div className="space-y-2">
+                      {invoiceData.refunds.map((refund, index) => (
+                        <div key={index} className="flex justify-between items-center text-sm">
+                          <div>
+                            <span className="font-medium">Ticket: {refund.ticketNumber}</span>
+                            <span className="ml-2 text-gray-600">• {new Date(refund.refundDate).toLocaleDateString()}</span>
+                          </div>
+                          <span className="text-red-600 font-medium">-${refund.refundAmount.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Ticket Items Table */}
-          <div className="mb-8">
-            <h4 className="font-semibold text-gray-900 mb-4">Ticket Details</h4>
-            <div className="overflow-x-auto">
-              <table className="w-full border border-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Ticket Number</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Type</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Seat</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Attendee</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 border-b">Price</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ticketGroup.map((ticket, index) => (
-                    <tr key={ticket._id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-4 py-3 text-sm font-mono border-b">{ticket.ticketNumber}</td>
-                      <td className="px-4 py-3 text-sm border-b">{ticket.ticketType.name}</td>
-                      <td className="px-4 py-3 text-sm border-b">{formatSeats(ticket)}</td>
-                      <td className="px-4 py-3 text-sm border-b">{ticket.attendees?.[0]?.name || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-right border-b">${(ticket.priceDetails?.totalPrice || ticket.ticketType?.price || 0).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+              {/* Total */}
+              <div className="flex justify-end">
+                <div className="w-64">
+                  <div className="flex justify-between py-2 border-t border-gray-200">
+                    <span className="font-medium">Subtotal:</span>
+                    <span>${invoiceData.amounts.total.toFixed(2)}</span>
+                  </div>
+                  
+                  {invoiceData.refunds && invoiceData.refunds.length > 0 && (
+                    <div className="flex justify-between py-2 text-red-600">
+                      <span className="font-medium">Total Refunded:</span>
+                      <span>-${invoiceData.amounts.totalRefunded.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between py-2 text-lg font-bold border-t border-gray-300">
+                    <span>Net Amount:</span>
+                    <span className="text-green-600">${invoiceData.amounts.netAmount.toFixed(2)}</span>
+                  </div>
+                  
+                  {/* 🆕 NEW: GST and Refund Policy Display */}
+                  <div className="text-xs text-gray-500 mt-2 space-y-1">
+                    {invoiceData.gstIncluded && (
+                      <p>* Prices include GST</p>
+                    )}
+                    {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
+                      <p>* Transaction processing fees are non-refundable</p>
+                    )}
+                    {invoiceData.refundPolicy?.processingFeePolicy === 'refunded' && (
+                      <p>* Transaction processing fees are refundable</p>
+                    )}
+                    {invoiceData.refundPolicy?.policyText && (
+                      <p>* {invoiceData.refundPolicy.policyText}</p>
+                    )}
+                    <p>Platform fees automatically deducted by payment processor</p>
+                  </div>
+                </div>
+              </div>
 
-          {/* Total */}
-          <div className="flex justify-end">
-            <div className="w-64">
-              <div className="flex justify-between py-2 border-t border-gray-200">
-                <span className="font-medium">Subtotal:</span>
-                <span>${totalAmount.toFixed(2)}</span>
+              {/* Payment Information */}
+              <div className="mt-8 pt-6 border-t">
+                <h4 className="font-semibold text-gray-900 mb-3">Payment Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-700">Payment Method</p>
+                    <p className="text-gray-900">Credit Card</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">Transaction ID</p>
+                    <p className="text-gray-900 font-mono text-xs">{invoiceData.payment.paymentIntentId}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">Currency</p>
+                    <p className="text-gray-900">{invoiceData.payment.currency}</p>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between py-2 text-lg font-bold border-t border-gray-300">
-                <span>Total Paid:</span>
-                <span className="text-green-600">${totalAmount.toFixed(2)}</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Platform fees automatically deducted by payment processor
-              </p>
-            </div>
-          </div>
 
-          {/* Payment Information */}
-          <div className="mt-8 pt-6 border-t">
-            <h4 className="font-semibold text-gray-900 mb-3">Payment Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="font-medium text-gray-700">Payment Method</p>
-                <p className="text-gray-900">Credit Card</p>
+              {/* Actions */}
+              <div className="flex gap-4 mt-8 pt-6 border-t">
+                <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                  📄 Download PDF
+                </button>
+                <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                  📧 Email Invoice
+                </button>
+                <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                  🎫 View Tickets
+                </button>
               </div>
-              <div>
-                <p className="font-medium text-gray-700">Transaction ID</p>
-                <p className="text-gray-900 font-mono text-xs">{representative.paymentIntentId}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">Status</p>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  representative.status === 'confirmed' ? 'text-green-600 bg-green-100' :
-                  representative.status === 'refunded' ? 'text-red-600 bg-red-100' :
-                  'text-gray-600 bg-gray-100'
-                }`}>
-                  {representative.status}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-4 mt-8 pt-6 border-t">
-            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              📄 Download PDF
-            </button>
-            <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-              📧 Email Invoice
-            </button>
-            <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-              🎫 View Tickets
-            </button>
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>
