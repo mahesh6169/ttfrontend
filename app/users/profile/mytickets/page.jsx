@@ -39,18 +39,18 @@ const EnhancedMyTicketsPage = () => {
         if (data.success) {
           setTickets(data.tickets);
           
-          // Extract unique events from tickets using eventSnapshot
+          // Extract unique events from tickets using eventSnapshot only
           const uniqueEvents = data.tickets.reduce((acc, ticket) => {
-            const eventKey = ticket.event?._id || ticket.eventSnapshot?.eventCode;
+            const eventKey = ticket.event || ticket.eventSnapshot?.eventCode; // event is now just eventId string
             if (eventKey && !acc.find(e => e.id === eventKey)) {
               acc.push({
                 id: eventKey,
-                title: ticket.eventSnapshot?.title || ticket.event?.title,
-                dateTime: ticket.eventSnapshot?.dateTime || ticket.event?.dateTime,
-                venue: ticket.eventSnapshot?.venue || ticket.event?.venue,
+                title: ticket.eventSnapshot?.title,
+                dateTime: ticket.eventSnapshot?.dateTime,
+                venue: ticket.eventSnapshot?.venue,
                 eventCode: ticket.eventSnapshot?.eventCode,
                 organizer: ticket.eventSnapshot?.organizer,
-                timeZone: ticket.eventSnapshot?.timeZone || ticket.event?.timeZone
+                timeZone: ticket.eventSnapshot?.timeZone
               });
             }
             return acc;
@@ -80,7 +80,7 @@ const EnhancedMyTicketsPage = () => {
   useEffect(() => {
     if (selectedEventId && tickets.length > 0) {
       const eventTickets = tickets.filter(ticket => {
-        const ticketEventId = ticket.event?._id || ticket.eventSnapshot?.eventCode;
+        const ticketEventId = ticket.event || ticket.eventSnapshot?.eventCode; 
         return ticketEventId === selectedEventId;
       });
       
