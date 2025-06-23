@@ -32,8 +32,6 @@ import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SeatMapSelection from '@/components/events/seats/SeatMapSelection';
 import SeatLegend from '@/components/events/seats/SeatLegend';
-import SeatDebugInfo from '@/components/events/seats/SeatDebugInfo';
-import SeatSelectionFallback from '@/components/events/seats/SeatSelectionFallback';
 import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
 import { FaShoppingCart } from 'react-icons/fa';
 
@@ -345,7 +343,7 @@ const handleVisibilityChange = () => {
 
   // Handles navigation back to previous page
   const handleBack = () => {
-    router.back();
+     router.push(`/events/views/${eventId}`);
   };
 
   // Handle proceed to checkout
@@ -436,27 +434,22 @@ const handleProceedToCheckout = () => {
     );
   }
 
-  // Error state - show fallback component
-  if (initializationError || seatError) {
+ // Simple error handling - redirect back to tickets page
+  if (initializationError || seatError || !ticketSelection || !selectedEvent) {
+    console.warn('Seat selection error, redirecting to tickets page:', { 
+      initializationError, 
+      seatError,
+      hasTicketSelection: !!ticketSelection,
+      hasSelectedEvent: !!selectedEvent 
+    });
+    router.push(`/events/tickets/${eventId}`);
     return (
-      <SeatSelectionFallback 
-        event={selectedEvent} 
-        ticketSelection={ticketSelection}
-        error={initializationError || seatError}
-        eventId={eventId}
-      />
-    );
-  }
-
-  // Check if seating layout is empty or invalid
-  if (selectedEvent && ticketSelection && (!seatingLayout || seatingLayout.length === 0)) {
-    return (
-      <SeatSelectionFallback 
-        event={selectedEvent} 
-        ticketSelection={ticketSelection}
-        error="No seating layout has been configured for this event."
-        eventId={eventId}
-      />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="large" />
+          <p className="mt-4 text-gray-600">Redirecting to ticket selection...</p>
+        </div>
+      </div>
     );
   }
 
@@ -541,20 +534,7 @@ const handleProceedToCheckout = () => {
         </div>
       )}
 
-      {/* Debug info (development only) */}
-      {process.env.NODE_ENV === 'development' && (
-        <SeatDebugInfo 
-          event={selectedEvent} 
-          ticketSelection={ticketSelection}
-          eventId={eventId}
-          reduxState={{
-            ticketPurchase: ticketPurchaseState,
-            selectedTickets,
-            seatInfo,
-            selectedSeats: selectedSeats.length
-          }}
-        />
-      )}
+
     </div>
   );
 };

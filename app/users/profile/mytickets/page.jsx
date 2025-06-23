@@ -1,6 +1,6 @@
-
 "use client";
 import React, { useState, useEffect } from 'react';
+import { formatInTimeZone } from 'date-fns-tz';
 
 const EnhancedMyTicketsPage = () => {
   const [tickets, setTickets] = useState([]);
@@ -49,7 +49,8 @@ const EnhancedMyTicketsPage = () => {
                 dateTime: ticket.eventSnapshot?.dateTime || ticket.event?.dateTime,
                 venue: ticket.eventSnapshot?.venue || ticket.event?.venue,
                 eventCode: ticket.eventSnapshot?.eventCode,
-                organizer: ticket.eventSnapshot?.organizer
+                organizer: ticket.eventSnapshot?.organizer,
+                timeZone: ticket.eventSnapshot?.timeZone || ticket.event?.timeZone
               });
             }
             return acc;
@@ -90,6 +91,24 @@ const EnhancedMyTicketsPage = () => {
       setSelectedEventTickets([]);
     }
   }, [selectedEventId, tickets]);
+
+  // Format event date with timezone support
+  const formatEventDateTime = (dateTime, timeZone) => {
+    try {
+      const date = formatInTimeZone(dateTime, timeZone, 'dd/MM/yyyy');
+      const time = formatInTimeZone(dateTime, timeZone, 'h:mm a');
+      return { date, time, combined: `${date} at ${time}` };
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      // Fallback to regular date formatting
+      const fallbackDate = new Date(dateTime);
+      return {
+        date: fallbackDate.toLocaleDateString(),
+        time: fallbackDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        combined: fallbackDate.toLocaleString()
+      };
+    }
+  };
 
   // Group tickets by invoice number (same purchase)
   const groupTicketsByInvoice = (tickets) => {
@@ -147,13 +166,34 @@ const EnhancedMyTicketsPage = () => {
     return formattedRows.join(', ');
   };
 
-  // Check if numbers are consecutive
+ // Check if numbers are consecutive
   const areConsecutive = (numbers) => {
     for (let i = 1; i < numbers.length; i++) {
       if (numbers[i] !== numbers[i-1] + 1) return false;
     }
     return true;
   };
+
+  // 🆕 NEW: Group tickets by type within a ticket group
+  const groupTicketsByType = (ticketGroup) => {
+    const typeGroups = {};
+    
+    ticketGroup.forEach(ticket => {
+      const typeName = ticket.ticketType.name;
+      if (!typeGroups[typeName]) {
+        typeGroups[typeName] = {
+          name: typeName,
+          count: 0,
+          tickets: []
+        };
+      }
+      typeGroups[typeName].count++;
+      typeGroups[typeName].tickets.push(ticket);
+    });
+    
+    return Object.values(typeGroups);
+  };
+
 
   // Get status color
   const getStatusColor = (status) => {
@@ -241,11 +281,14 @@ const EnhancedMyTicketsPage = () => {
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">-- Choose an event --</option>
-          {events.map((event) => (
-            <option key={event.id} value={event.id}>
-              {event.title} - {new Date(event.dateTime).toLocaleDateString()} at {event.venue}
-            </option>
-          ))}
+          {events.map((event) => {
+            const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+            return (
+              <option key={event.id} value={event.id}>
+                {event.title} - {eventDateTime.combined} at {event.venue}
+              </option>
+            );
+          })}
         </select>
       </div>
 
@@ -257,14 +300,20 @@ const EnhancedMyTicketsPage = () => {
             const selectedEvent = events.find(e => e.id === selectedEventId);
             const firstTicket = selectedEventTickets[0][0]; // First ticket of first group
             const eventInfo = firstTicket.eventSnapshot || selectedEvent;
+            const timeZone = eventInfo.timeZone;
+            const eventDateTime = formatEventDateTime(eventInfo.dateTime, timeZone);
             
             return (
               <div className="bg-gray-50 px-6 py-4 border-b">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{eventInfo.title}</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-1">{eventInfo.title}</h3>
+                <div className="text-sm text-gray-500 mb-3 font-mono">
+                  Event ID: {eventInfo.eventCode}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                   <div>
                     <span className="font-medium">📅 Date & Time:</span><br />
-                    {new Date(eventInfo.dateTime).toLocaleDateString()} at {new Date(eventInfo.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {eventDateTime.date} at {eventDateTime.time}
+                    <div className="text-xs text-gray-500 mt-1">Timezone: {timeZone}</div>
                   </div>
                   <div>
                     <span className="font-medium">📍 Venue:</span><br />
@@ -319,7 +368,17 @@ const EnhancedMyTicketsPage = () => {
                         
                         <div>
                           <span className="font-medium text-gray-700">Tickets:</span>
-                          <div className="text-gray-900">{ticketGroup.length} x {representative.ticketType.name}</div>
+                          <div className="text-gray-900">
+                            {(() => {
+                              const typeGroups = groupTicketsByType(ticketGroup);
+                              return typeGroups.map((group, index) => (
+                                <span key={group.name}>
+                                  {group.count} x {group.name}
+                                  {index < typeGroups.length - 1 ? ', ' : ''}
+                                </span>
+                              ));
+                            })()}
+                          </div>
                         </div>
                         
                         <div>
@@ -365,6 +424,7 @@ const EnhancedMyTicketsPage = () => {
                                   <div className="flex justify-between items-center">
                                     <div>
                                       <span className="font-medium">{ticket.ticketNumber}</span>
+                                      <span className="ml-2 text-blue-600">• {ticket.ticketType.name}</span>
                                       {ticket.seats?.[0] && (
                                         <span className="ml-2 text-gray-600">• Seat: {ticket.seats[0].row}-{ticket.seats[0].seatNumber}</span>
                                       )}
@@ -417,12 +477,31 @@ const EnhancedMyTicketsPage = () => {
 const InvoiceModal = ({ ticketGroup, onClose }) => {
   const representative = ticketGroup[0];
   const eventInfo = representative.eventSnapshot || representative.event;
+  const timeZone = eventInfo.timeZone;
   const totalAmount = ticketGroup.reduce((sum, ticket) => sum + (ticket.priceDetails?.totalPrice || ticket.ticketType?.price || 0), 0);
+
+  // Format event date with timezone support for invoice
+  const formatEventDateTimeForInvoice = (dateTime, timeZone) => {
+    try {
+      const date = formatInTimeZone(dateTime, timeZone, 'dd/MM/yyyy');
+      const time = formatInTimeZone(dateTime, timeZone, 'h:mm a');
+      return { date, time };
+    } catch (error) {
+      console.error('Error formatting date for invoice:', error);
+      const fallbackDate = new Date(dateTime);
+      return {
+        date: fallbackDate.toLocaleDateString(),
+        time: fallbackDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+    }
+  };
 
   const formatSeats = (ticket) => {
     if (!ticket.seats || ticket.seats.length === 0) return 'General Admission';
     return ticket.seats.map(seat => `${seat.row}-${seat.seatNumber}`).join(', ');
   };
+
+  const eventDateTime = formatEventDateTimeForInvoice(eventInfo.dateTime, timeZone);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -497,8 +576,9 @@ const InvoiceModal = ({ ticketGroup, onClose }) => {
               <div>
                 <p className="font-medium text-gray-700">Date & Time</p>
                 <p className="text-gray-900">
-                  {new Date(eventInfo.dateTime).toLocaleDateString()} at {new Date(eventInfo.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {eventDateTime.date} at {eventDateTime.time}
                 </p>
+                <p className="text-xs text-gray-500 mt-1">Timezone: {timeZone}</p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">Venue</p>
