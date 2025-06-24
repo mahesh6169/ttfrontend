@@ -518,8 +518,80 @@ const EnhancedMyTicketsPage = () => {
   );
 };
 
-// Invoice Modal Component - 🆕 UPDATED: Now uses API invoice data
+// Enhanced Invoice Modal Component with proper Purchase and Refund Details tables
 const InvoiceModal = ({ ticketGroup, invoiceData, invoiceLoading, invoiceError, onClose }) => {
+  // Helper function to format dates consistently
+  const formatDate = (dateString) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return new Date(dateString).toLocaleDateString();
+    }
+  };
+
+  // Helper function to group line items by ticket type for Purchase Details table
+  const groupLineItemsByType = (lineItems) => {
+    const grouped = lineItems.reduce((acc, item) => {
+      const typeName = item.ticketType.name;
+      if (!acc[typeName]) {
+        acc[typeName] = {
+          name: typeName,
+          price: item.ticketType.price,
+          quantity: 0,
+          amount: 0
+        };
+      }
+      acc[typeName].quantity += item.quantity;
+      acc[typeName].amount += (item.ticketType.price * item.quantity);
+      return acc;
+    }, {});
+
+    return Object.values(grouped);
+  };
+
+  // Helper function to group refunds by transaction for Refund Details table
+  const groupRefundsByTransaction = (refunds) => {
+    const grouped = refunds.reduce((acc, refund) => {
+      const refundId = refund.stripeRefundId;
+      if (!acc[refundId]) {
+        acc[refundId] = {
+          stripeRefundId: refundId,
+          refundDate: refund.refundDate,
+          refundType: refund.refundType,
+          reason: refund.reason,
+          tickets: [],
+          totalAmount: refund.refundAmount
+        };
+      }
+      
+      // Handle both individual and group refunds
+      if (refund.refundType === 'group' && refund.ticketNumbers) {
+        // Group refund: multiple tickets in one refund
+        refund.ticketNumbers.forEach(ticketNumber => {
+          acc[refundId].tickets.push({
+            ticketNumber: ticketNumber,
+            amount: refund.refundAmount / refund.ticketNumbers.length // Split amount evenly
+          });
+        });
+      } else if (refund.refundType === 'individual' && refund.ticketNumber) {
+        // Individual refund: single ticket
+        acc[refundId].tickets.push({
+          ticketNumber: refund.ticketNumber,
+          amount: refund.refundAmount
+        });
+      }
+      
+      return acc;
+    }, {});
+
+    return Object.values(grouped).sort((a, b) => 
+      new Date(b.refundDate) - new Date(a.refundDate)
+    );
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -537,7 +609,7 @@ const InvoiceModal = ({ ticketGroup, invoiceData, invoiceLoading, invoiceError, 
 
         {/* Invoice Content */}
         <div className="p-8">
-          {/* 🆕 NEW: Loading/Error States */}
+          {/* Loading/Error States */}
           {invoiceLoading && (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -566,13 +638,10 @@ const InvoiceModal = ({ ticketGroup, invoiceData, invoiceLoading, invoiceError, 
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">INVOICE</h2>
                     <p className="text-gray-600 mt-1">Invoice #{invoiceData.invoiceNumber}</p>
-                    <p className="text-sm text-gray-500">Status: {invoiceData.status}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600">Issue Date</p>
-                    <p className="font-medium">{new Date(invoiceData.invoiceDate).toLocaleDateString()}</p>
-                    <p className="text-sm text-gray-600 mt-2">Payment Date</p>
-                    <p className="font-medium">{new Date(invoiceData.payment.paymentDate).toLocaleDateString()}</p>
+                    <p className="font-medium">{formatDate(invoiceData.invoiceDate)}</p>
                   </div>
                 </div>
               </div>
@@ -642,128 +711,123 @@ const InvoiceModal = ({ ticketGroup, invoiceData, invoiceLoading, invoiceError, 
                 </div>
               </div>
 
-{/* Ticket Items Table */}
+              {/* ✅ ENHANCED: Purchase Details Table */}
               <div className="mb-8">
-                <h4 className="font-semibold text-gray-900 mb-4">Purchase Details</h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full border border-gray-200">
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Purchase Details | {formatDate(invoiceData.payment.paymentDate)}</h4>
+                
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Ticket Type</th>
-                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">Quantity</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 border-b">Unit Price (AUD)</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 border-b">Total (AUD)</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Ticket Type</th>
+                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Quantity</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Price</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Amount</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {(() => {
-                        // Group line items by ticket type
-                        const groupedItems = invoiceData.lineItems.reduce((acc, item) => {
-                          const typeName = item.ticketType.name;
-                          if (!acc[typeName]) {
-                            acc[typeName] = {
-                              name: typeName,
-                              price: item.ticketType.price,
-                              quantity: 0,
-                              total: 0
-                            };
-                          }
-                          acc[typeName].quantity += item.quantity;
-                          acc[typeName].total += (item.ticketType.price * item.quantity);
-                          return acc;
-                        }, {});
-
-                        return Object.values(groupedItems).map((group, index) => (
-                          <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-4 py-3 text-sm border-b">{group.name}</td>
-                            <td className="px-4 py-3 text-sm text-center border-b">{group.quantity}</td>
-                            <td className="px-4 py-3 text-sm text-right border-b">${group.price.toFixed(2)}</td>
-                            <td className="px-4 py-3 text-sm text-right border-b font-medium">${group.total.toFixed(2)}</td>
-                          </tr>
-                        ));
-                      })()}
+                    <tbody className="bg-white">
+                      {groupLineItemsByType(invoiceData.lineItems).map((group, index) => (
+                        <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-3 text-sm border-t border-gray-100">{group.name}</td>
+                          <td className="px-4 py-3 text-sm text-center border-t border-gray-100">{group.quantity}</td>
+                          <td className="px-4 py-3 text-sm text-right border-t border-gray-100">${group.price.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-sm text-right border-t border-gray-100 font-medium">${group.amount.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                      
+                      {/* Total Row */}
+                      <tr className="bg-gray-50 border-t border-gray-300">
+                        <td className="px-4 py-3 text-sm font-medium" colSpan="3"></td>
+                        <td className="px-4 py-3 text-sm text-right font-bold">Total Paid: ${invoiceData.amounts.total.toFixed(2)}</td>
+                      </tr>
                     </tbody>
                   </table>
-                </div>
-              </div>
-
-              {/* Refund History (if any) */}
-              {invoiceData.refunds && invoiceData.refunds.length > 0 && (
-                <div className="mb-8">
-                  <h4 className="font-semibold text-gray-900 mb-4">Refund History</h4>
-                  <div className="bg-orange-50 rounded-lg p-4">
-                    <div className="space-y-2">
-                      {invoiceData.refunds.map((refund, index) => (
-                        <div key={index} className="flex justify-between items-center text-sm">
-                          <div>
-                            <span className="font-medium">Ticket: {refund.ticketNumber}</span>
-                            <span className="ml-2 text-gray-600">• {new Date(refund.refundDate).toLocaleDateString()}</span>
-                          </div>
-                          <span className="text-red-600 font-medium">-${refund.refundAmount.toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Total */}
-              <div className="flex justify-end">
-                <div className="w-64">
-                  <div className="flex justify-between py-2 border-t border-gray-200">
-                    <span className="font-medium">Subtotal:</span>
-                    <span>${invoiceData.amounts.total.toFixed(2)}</span>
-                  </div>
                   
-                  {invoiceData.refunds && invoiceData.refunds.length > 0 && (
-                    <div className="flex justify-between py-2 text-red-600">
-                      <span className="font-medium">Total Refunded:</span>
-                      <span>-${invoiceData.amounts.totalRefunded.toFixed(2)}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between py-2 text-lg font-bold border-t border-gray-300">
-                    <span>Net Amount:</span>
-                    <span className="text-green-600">${invoiceData.amounts.netAmount.toFixed(2)}</span>
-                  </div>
-                  
-                  {/* 🆕 NEW: GST and Refund Policy Display */}
-                  <div className="text-xs text-gray-500 mt-2 space-y-1">
+                  {/* Policy Notes Below Table */}
+                  <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-600 space-y-1">
                     {invoiceData.gstIncluded && (
-                      <p>* Prices include GST</p>
+                      <p>* GST included</p>
                     )}
                     {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
-                      <p>* Transaction processing fees are non-refundable</p>
-                    )}
-                    {invoiceData.refundPolicy?.processingFeePolicy === 'refunded' && (
-                      <p>* Transaction processing fees are refundable</p>
+                      <p>* Processing fees are non-refundable</p>
                     )}
                     {invoiceData.refundPolicy?.policyText && (
                       <p>* {invoiceData.refundPolicy.policyText}</p>
                     )}
-                    <p>Platform fees automatically deducted by payment processor</p>
                   </div>
                 </div>
               </div>
 
-              {/* Payment Information */}
-              <div className="mt-8 pt-6 border-t">
-                <h4 className="font-semibold text-gray-900 mb-3">Payment Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="font-medium text-gray-700">Payment Method</p>
-                    <p className="text-gray-900">Credit Card</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-700">Transaction ID</p>
-                    <p className="text-gray-900 font-mono text-xs">{invoiceData.payment.paymentIntentId}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-700">Currency</p>
-                    <p className="text-gray-900">{invoiceData.payment.currency}</p>
-                  </div>
+              {/* ✅ ENHANCED: Refund Details Table (only if refunds exist) */}
+              {invoiceData.refunds && invoiceData.refunds.length > 0 && (
+                <div className="mb-8">
+                  {(() => {
+                    const refundGroups = groupRefundsByTransaction(invoiceData.refunds);
+                    return refundGroups.map((refundGroup, groupIndex) => (
+                      <div key={refundGroup.stripeRefundId} className="mb-6">
+                        <h4 className="text-lg font-bold text-gray-900 mb-4">Refund Details | {formatDate(refundGroup.refundDate)}</h4>
+                        
+                        <div className="border border-gray-200 rounded-lg overflow-hidden">
+                          <table className="w-full">
+                            <thead className="bg-red-50">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Ticket Type</th>
+                                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Quantity</th>
+                                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Price</th>
+                                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Refund Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white">
+                              {(() => {
+                                // Group refunded tickets by type for this refund transaction
+                                const refundTicketsByType = refundGroup.tickets.reduce((acc, ticket) => {
+                                  // Find the original line item to get ticket type info
+                                  const originalItem = invoiceData.lineItems.find(item => 
+                                    item.ticketNumber === ticket.ticketNumber
+                                  );
+                                  
+                                  if (originalItem) {
+                                    const typeName = originalItem.ticketType.name;
+                                    if (!acc[typeName]) {
+                                      acc[typeName] = {
+                                        name: typeName,
+                                        price: originalItem.ticketType.price,
+                                        quantity: 0,
+                                        refundAmount: 0
+                                      };
+                                    }
+                                    acc[typeName].quantity += 1;
+                                    acc[typeName].refundAmount += ticket.amount;
+                                  }
+                                  
+                                  return acc;
+                                }, {});
+
+                                return Object.values(refundTicketsByType).map((group, index) => (
+                                  <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-red-25'}>
+                                    <td className="px-4 py-3 text-sm border-t border-gray-100">{group.name}</td>
+                                    <td className="px-4 py-3 text-sm text-center border-t border-gray-100">{group.quantity}</td>
+                                    <td className="px-4 py-3 text-sm text-right border-t border-gray-100">${group.price.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-sm text-right border-t border-gray-100 font-medium text-red-600">${group.refundAmount.toFixed(2)}</td>
+                                  </tr>
+                                ));
+                              })()}
+                            </tbody>
+                          </table>
+                          
+                          {/* Refund Reason and Policy Notes */}
+                          <div className="px-4 py-3 bg-red-50 border-t border-gray-200 text-xs text-gray-600 space-y-1">
+                            <p>Refund Reason: {refundGroup.reason || 'Customer request'}</p>
+                            {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
+                              <p>* Processing fees are non-refundable</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ));
+                  })()}
                 </div>
-              </div>
+              )}
 
               {/* Actions */}
               <div className="flex gap-4 mt-8 pt-6 border-t">
@@ -784,5 +848,6 @@ const InvoiceModal = ({ ticketGroup, invoiceData, invoiceLoading, invoiceError, 
     </div>
   );
 };
+
 
 export default EnhancedMyTicketsPage;
