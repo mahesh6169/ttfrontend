@@ -169,13 +169,14 @@ export const processIndividualRefund = createAsyncThunk(
 // Process group refund by invoice (FULL TRANSACTION REFUND)
 export const processGroupRefund = createAsyncThunk(
   'refunds/processGroupRefund',
-  async ({ eventId, invoiceNumber, reason }, { rejectWithValue }) => {
+  async ({ eventId, invoiceNumber, reason, refundAmount }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/events/${eventId}/refunds/group`,
         {
           invoiceNumber,
           reason,
+          refundAmount,
         },
         {
           withCredentials: true,
@@ -245,6 +246,7 @@ const initialState = {
     type: 'individual', // 'individual' or 'group'
     reason: '',
     customAmounts: {}, // ticketNumber: amount pairs for custom amounts
+    groupCustomAmounts: {}, 
   },
   
   // Refund processing states
@@ -366,10 +368,20 @@ const refundSlice = createSlice({
         state.refundForm.customAmounts[ticketNumber] = amount;
       }
     },
+
+    setGroupCustomAmount: (state, action) => {
+  const { invoiceNumber, amount } = action.payload;
+  if (amount === null || amount === undefined || amount === '') {
+    delete state.refundForm.groupCustomAmounts[invoiceNumber];
+  } else {
+    state.refundForm.groupCustomAmounts[invoiceNumber] = amount;
+  }
+},
     
     clearRefundForm: (state) => {
       state.refundForm.reason = '';
       state.refundForm.customAmounts = {};
+       state.refundForm.groupCustomAmounts = {};
     },
     
     // UI state management
@@ -617,6 +629,7 @@ export const {
   setRefundType,
   setRefundReason,
   setCustomRefundAmount,
+   setGroupCustomAmount,
   clearRefundForm,
   setShowRefundModal,
   setActiveTab,

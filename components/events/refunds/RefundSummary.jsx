@@ -42,14 +42,16 @@ export default function RefundSummary({ activeTab, eventId }) {
   };
 
   const getTotalRefundAmount = () => {
-    if (activeTab === 'individual') {
-      return totalIndividualRefund;
-    } else {
-      return Object.entries(selectedTickets.grouped).reduce((total, [invoiceNumber, tickets]) => {
-        return total + tickets.reduce((sum, ticket) => sum + ticket.priceDetails.totalPrice, 0);
-      }, 0);
-    }
-  };
+  if (activeTab === 'individual') {
+    return totalIndividualRefund;
+  } else {
+    return Object.entries(selectedTickets.grouped).reduce((total, [invoiceNumber, tickets]) => {
+      const customAmount = refundForm.groupCustomAmounts[invoiceNumber]; // ADD THIS LINE
+      const originalAmount = tickets.reduce((sum, ticket) => sum + ticket.priceDetails.totalPrice, 0);
+      return total + (customAmount !== undefined ? customAmount : originalAmount); // MODIFY THIS LINE
+    }, 0);
+  }
+};
 
   const getSelectedItemsDetails = () => {
     if (activeTab === 'individual') {

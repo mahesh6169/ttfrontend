@@ -48,40 +48,46 @@ export default function RefundModal() {
   };
 
   const getTotalRefundAmount = () => {
-    if (ui.activeTab === 'individual') {
-      return totalIndividualRefund;
-    } else {
-      return Object.entries(selectedTickets.grouped).reduce((total, [invoiceNumber, tickets]) => {
-        return total + tickets.reduce((sum, ticket) => sum + ticket.priceDetails.totalPrice, 0);
-      }, 0);
-    }
-  };
+  if (ui.activeTab === 'individual') {
+    return totalIndividualRefund;
+  } else {
+    return Object.entries(selectedTickets.grouped).reduce((total, [invoiceNumber, tickets]) => {
+      const customAmount = refundForm.groupCustomAmounts[invoiceNumber]; // ADD THIS LINE
+      const originalAmount = tickets.reduce((sum, ticket) => sum + ticket.priceDetails.totalPrice, 0);
+      return total + (customAmount !== undefined ? customAmount : originalAmount); // MODIFY THIS LINE
+    }, 0);
+  }
+};
 
-  const getRefundSummary = () => {
-    if (ui.activeTab === 'individual') {
-      return {
-        type: 'Individual Tickets',
-        count: selectedTickets.individual.length,
-        items: selectedTickets.individual.map(ticket => ({
-          id: ticket.ticketNumber,
-          name: ticket.ticketNumber,
-          amount: refundForm.customAmounts[ticket.ticketNumber] || ticket.priceDetails.totalPrice,
-          originalAmount: ticket.priceDetails.totalPrice
-        }))
-      };
-    } else {
-      return {
-        type: 'Invoice Groups',
-        count: Object.keys(selectedTickets.grouped).length,
-        items: Object.entries(selectedTickets.grouped).map(([invoiceNumber, tickets]) => ({
+ const getRefundSummary = () => {
+  if (ui.activeTab === 'individual') {
+    return {
+      type: 'Individual Tickets',
+      count: selectedTickets.individual.length,
+      items: selectedTickets.individual.map(ticket => ({
+        id: ticket.ticketNumber,
+        name: ticket.ticketNumber,
+        amount: refundForm.customAmounts[ticket.ticketNumber] || ticket.priceDetails.totalPrice,
+        originalAmount: ticket.priceDetails.totalPrice
+      }))
+    };
+  } else {
+    return {
+      type: 'Invoice Groups',
+      count: Object.keys(selectedTickets.grouped).length,
+      items: Object.entries(selectedTickets.grouped).map(([invoiceNumber, tickets]) => {
+        const originalAmount = tickets.reduce((sum, ticket) => sum + ticket.priceDetails.totalPrice, 0);
+        const customAmount = refundForm.groupCustomAmounts[invoiceNumber]; // ADD THIS LINE
+        return {
           id: invoiceNumber,
           name: `${invoiceNumber} (${tickets.length} tickets)`,
-          amount: tickets.reduce((sum, ticket) => sum + ticket.priceDetails.totalPrice, 0),
-          originalAmount: tickets.reduce((sum, ticket) => sum + ticket.priceDetails.totalPrice, 0)
-        }))
-      };
-    }
-  };
+          amount: customAmount !== undefined ? customAmount : originalAmount, // MODIFY THIS LINE
+          originalAmount: originalAmount // KEEP ORIGINAL
+        };
+      })
+    };
+  }
+};
 
   const handleClose = () => {
     if (!isProcessing) {
@@ -114,15 +120,16 @@ export default function RefundModal() {
           })).unwrap();
         }
       } else {
-        for (const [invoiceNumber, tickets] of Object.entries(selectedTickets.grouped)) {
-          await dispatch(processGroupRefund({
-            eventId: selectedEvent._id,
-            invoiceNumber: invoiceNumber,
-            reason: localReason.trim()
-          })).unwrap();
-        }
-      }
-
+  for (const [invoiceNumber, tickets] of Object.entries(selectedTickets.grouped)) {
+    const customAmount = refundForm.groupCustomAmounts[invoiceNumber]; // ADD THIS LINE
+    await dispatch(processGroupRefund({
+      eventId: selectedEvent._id,
+      invoiceNumber: invoiceNumber,
+      reason: localReason.trim(),
+      refundAmount: customAmount // ADD THIS LINE
+    })).unwrap();
+  }
+}
       setTimeout(() => {
         dispatch(clearRefundForm());
         dispatch(clearSelectedTickets());

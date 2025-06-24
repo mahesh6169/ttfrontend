@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   checkInvoiceEligibility,
-  selectInvoiceEligibility
+  selectInvoiceEligibility,
+   setGroupCustomAmount,
+     selectRefundForm 
 } from '@/store/slices/events/refundSlice';
 import { 
   IoReceiptOutline,
@@ -27,6 +29,8 @@ export default function InvoiceGroupCard({
 }) {
   const dispatch = useDispatch();
   const invoiceEligibility = useSelector(selectInvoiceEligibility);
+  const refundForm = useSelector(selectRefundForm);
+  const [customAmount, setCustomAmount] = useState(''); 
   
   const [isExpanded, setIsExpanded] = useState(false);
   const [eligibilityChecked, setEligibilityChecked] = useState(false);
@@ -117,6 +121,19 @@ const getEligibilityStatus = () => {
     }
     onToggleSelect();
   };
+
+  const handleCustomAmountChange = (value) => {
+  setCustomAmount(value);
+  dispatch(setGroupCustomAmount({
+    invoiceNumber: invoiceNumber,
+    amount: value ? parseFloat(value) : null
+  }));
+};
+
+const getRefundAmount = () => {
+  const customRefundAmount = refundForm.groupCustomAmounts[invoiceNumber];
+  return customRefundAmount !== undefined ? customRefundAmount : totalAmount;
+};
 
 // Check if all tickets are refunded
 const allTicketsRefunded = tickets.every(t => t.refundStatus === 'refunded' || t.status === 'refunded');
@@ -293,6 +310,55 @@ return (
           </div>
         )}
       </div>
+
+      {/* Custom Refund Amount (when selected) */}
+{isSelected && isEligible && (
+  <div className="mt-4 pt-4 border-t border-blue-200">
+    <div className="bg-blue-50 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <label className="text-sm font-medium text-blue-900">
+          Group Refund Amount
+        </label>
+        <button
+          onClick={() => {
+            setCustomAmount('');
+            handleCustomAmountChange('');
+          }}
+          className="text-xs text-blue-600 hover:text-blue-800"
+        >
+          Reset to Full Amount
+        </button>
+      </div>
+      
+      <div className="flex items-center space-x-3">
+        <div className="flex-1">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <IoCash className="h-4 w-4 text-gray-400" />
+            </div>
+            <input
+              type="number"
+              min="0"
+              max={totalAmount}
+              step="0.01"
+              value={customAmount}
+              onChange={(e) => handleCustomAmountChange(e.target.value)}
+              placeholder={totalAmount.toString()}
+              className="block w-full pl-9 pr-3 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+        <div className="text-sm text-blue-700">
+          of {formatCurrency(totalAmount)}
+        </div>
+      </div>
+      
+      <p className="text-xs text-blue-600 mt-2">
+        Leave empty for full refund. Enter custom amount for partial group refund.
+      </p>
+    </div>
+  </div>
+)}
 
       {/* Expanded Ticket Details */}
       {isExpanded && (
