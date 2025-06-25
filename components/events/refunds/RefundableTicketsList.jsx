@@ -204,39 +204,7 @@ export default function RefundableTicketsList({
         </div>
       </div>
 
-      {/* Enhanced Summary Stats - Now using memoized statistics */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">{statistics.totalCount}</div>
-            <div className="text-sm text-gray-600">Total Tickets</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              ${statistics.totalValue.toFixed(2)}
-            </div>
-            <div className="text-sm text-gray-600">Total Value</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {activeTab === 'individual' ? selectedTickets.individual.length : Object.keys(selectedTickets.grouped).length}
-            </div>
-            <div className="text-sm text-gray-600">Selected {activeTab === 'individual' ? 'Tickets' : 'Groups'}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {statistics.uniqueInvoices}
-            </div>
-            <div className="text-sm text-gray-600">Unique Invoices</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {statistics.uniquePaymentIntents}
-            </div>
-            <div className="text-sm text-gray-600">Payment Intents</div>
-          </div>
-        </div>
-      </div>
+
 
       {/* Sort Controls */}
       <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4">

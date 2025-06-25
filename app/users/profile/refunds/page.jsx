@@ -12,9 +12,11 @@ import {
   selectEvents,
   selectSelectedEvent,
   selectTicketsState,
-  selectUI
-  // ❌ REMOVED: selectIsLoading - This was causing infinite renders
+  selectUI,
+  selectCurrentStatistics, 
+  selectSelectedTickets
 } from '@/store/slices/events/refundSlice';
+import { formatInTimeZone } from 'date-fns-tz';
 
 // Components (imports stay the same)
 import EventSelector from '@/components/events/refunds/EventSelector';
@@ -24,12 +26,15 @@ import RefundSummary from '@/components/events/refunds/RefundSummary';
 import RefundModal from '@/components/events/refunds/RefundModal';
 import LoadingSpinner from '@/components/events/refunds/LoadingSpinner';
 
+
 export default function RefundsPage() {
   const dispatch = useDispatch();
   const events = useSelector(selectEvents);
   const selectedEvent = useSelector(selectSelectedEvent);
   const ticketsState = useSelector(selectTicketsState);
   const ui = useSelector(selectUI);
+  const selectedTickets = useSelector(selectSelectedTickets);
+const statistics = useSelector(selectCurrentStatistics);
   
   // ✅ FIXED: Calculate loading state locally instead of using problematic selector
   const isLoading = events.loading || ticketsState.loading;
@@ -137,34 +142,98 @@ export default function RefundsPage() {
 
         {selectedEvent && (
           <>
-            {/* Event Info Card */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">{selectedEvent.title}</h2>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Date:</span> {new Date(selectedEvent.dateTime).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Venue:</span> {selectedEvent.venue}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Category:</span> {selectedEvent.category}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Paid Event
-                  </span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {selectedEvent.status}
-                  </span>
-                </div>
-              </div>
-            </div>
+{/* Event Info Card */}
+<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+  <div className="flex items-start justify-between mb-3">
+   <h2 className="text-xl font-semibold text-gray-900">{selectedEvent.title}</h2>
+    <span className="text-xl font-semibold text-gray-900">{selectedEvent.eventCode}</span>
+  </div>
+  
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+    <div>
+      <span className="font-medium text-gray-700">Category:</span>
+      <p className="text-gray-900">{selectedEvent.category}</p>
+    </div>
+    
+    <div>
+      <span className="font-medium text-gray-700">Date/Time:</span>
+      {(() => {
+        const dateTimeZone = selectedEvent.timeZone || 'Australia/Sydney';
+        
+        const formattedDate = formatInTimeZone(
+          selectedEvent.dateTime,
+          dateTimeZone,
+          'MMM d, yyyy'
+        );
 
+        const formattedTime = formatInTimeZone(
+          selectedEvent.dateTime,
+          dateTimeZone,
+          'h:mm a'
+        );
+
+        return (
+          <div>
+            <p className="text-gray-900">{formattedDate} at {formattedTime}</p>
+            <p className="text-xs text-gray-500">Timezone: {dateTimeZone}</p>
+          </div>
+        );
+      })()}
+    </div>
+    
+    <div>
+      <span className="font-medium text-gray-700">Venue:</span>
+      <p className="text-gray-900">{selectedEvent.venue}</p>
+    </div>
+    
+    <div>
+      <span className="font-medium text-gray-700">Address:</span>
+      <p className="text-gray-900">
+        {selectedEvent.address?.formattedAddress || 
+         selectedEvent.address || 
+         selectedEvent.location || 
+         'Address not provided'}
+      </p>
+    </div>
+  </div>
+</div>
+
+
+{/* Enhanced Summary Stats */}
+{selectedEvent && !isLoading && (
+  <div className="bg-gray-50 rounded-lg p-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="text-center">
+        <div className="text-2xl font-bold text-gray-900">{statistics.totalCount}</div>
+        <div className="text-sm text-gray-600">Total Tickets</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl font-bold text-green-600">
+          ${statistics.totalValue.toFixed(2)}
+        </div>
+        <div className="text-sm text-gray-600">Total Value</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl font-bold text-blue-600">
+          {ui.activeTab === 'individual' ? selectedTickets.individual.length : Object.keys(selectedTickets.grouped).length}
+        </div>
+        <div className="text-sm text-gray-600">Selected {ui.activeTab === 'individual' ? 'Tickets' : 'Groups'}</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl font-bold text-purple-600">
+          {statistics.uniqueInvoices}
+        </div>
+        <div className="text-sm text-gray-600">Unique Invoices</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl font-bold text-orange-600">
+          {statistics.uniquePaymentIntents}
+        </div>
+        <div className="text-sm text-gray-600">Payment Intents</div>
+      </div>
+    </div>
+  </div>
+)}
             {/* Main Content */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               {/* Left Column - Main Content */}

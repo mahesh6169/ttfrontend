@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { IoChevronDown, IoCalendarOutline, IoLocationOutline } from 'react-icons/io5';
+import { IoChevronDown } from 'react-icons/io5';
 
 export default function EventSelector({ events, selectedEvent, onEventSelect, loading, error }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,15 +35,7 @@ export default function EventSelector({ events, selectedEvent, onEventSelect, lo
     );
   }
 
-  const formatEventDate = (dateTime) => {
-    return new Date(dateTime).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -58,29 +50,22 @@ export default function EventSelector({ events, selectedEvent, onEventSelect, lo
           className="relative w-full bg-white border border-gray-300 rounded-md pl-3 pr-10 py-3 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors"
         >
           {selectedEvent ? (
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {selectedEvent.title}
-                </p>
-                <div className="flex items-center mt-1 space-x-4">
-                  <span className="flex items-center text-xs text-gray-500">
-                    <IoCalendarOutline className="h-3 w-3 mr-1" />
-                    {formatEventDate(selectedEvent.dateTime)}
-                  </span>
-                  <span className="flex items-center text-xs text-gray-500">
-                    <IoLocationOutline className="h-3 w-3 mr-1" />
-                    {selectedEvent.venue}
-                  </span>
-                </div>
-              </div>
-              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                Selected
-              </span>
-            </div>
-          ) : (
-            <span className="text-gray-500">Choose an event...</span>
-          )}
+  <div className="flex items-center justify-between">
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-medium text-gray-900 truncate">
+        {selectedEvent.title}
+      </p>
+      <p className="text-xs text-blue-600 mt-1">
+        Event Code: {selectedEvent.eventCode}
+      </p>
+    </div>
+    <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+      Selected
+    </span>
+  </div>
+) : (
+  <span className="text-gray-500">Choose an event...</span>
+)}
           
           <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
             <IoChevronDown 
@@ -108,44 +93,28 @@ export default function EventSelector({ events, selectedEvent, onEventSelect, lo
                     selectedEvent?._id === event._id ? 'bg-blue-50' : ''
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${
-                        selectedEvent?._id === event._id ? 'text-blue-900' : 'text-gray-900'
-                      }`}>
-                        {event.title}
-                      </p>
-                      <div className="flex flex-wrap items-center mt-1 gap-x-4 gap-y-1">
-                        <span className="flex items-center text-xs text-gray-500">
-                          <IoCalendarOutline className="h-3 w-3 mr-1 flex-shrink-0" />
-                          {formatEventDate(event.dateTime)}
-                        </span>
-                        <span className="flex items-center text-xs text-gray-500">
-                          <IoLocationOutline className="h-3 w-3 mr-1 flex-shrink-0" />
-                          <span className="truncate">{event.venue}</span>
-                        </span>
-                      </div>
-                      <div className="flex items-center mt-2 space-x-2">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                          {event.category}
-                        </span>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          event.status === 'published' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {event.status}
-                        </span>
-                      </div>
-                    </div>
-                    {selectedEvent?._id === event._id && (
-                      <div className="ml-2 flex-shrink-0">
-                        <svg className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
+<div className="flex items-center justify-between">
+  <div className="flex-1 min-w-0">
+    <p className={`text-sm font-medium truncate ${
+      selectedEvent?._id === event._id ? 'text-blue-900' : 'text-gray-900'
+    }`}>
+      {event.title}
+    </p>
+    <div className="flex items-center mt-1 space-x-3">
+      <span className="text-xs text-blue-600">
+        {event.eventCode}
+      </span>
+
+    </div>
+  </div>
+  {selectedEvent?._id === event._id && (
+    <div className="ml-2 flex-shrink-0">
+      <svg className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+      </svg>
+    </div>
+  )}
+</div>
                 </button>
               ))
             )}
@@ -154,16 +123,11 @@ export default function EventSelector({ events, selectedEvent, onEventSelect, lo
       </div>
 
       {/* Event count info */}
-      {events.length > 0 && (
-        <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-          <span>{events.length} paid event{events.length !== 1 ? 's' : ''} available</span>
-          {selectedEvent && (
-            <span className="text-blue-600">
-              Event Code: {selectedEvent.eventCode}
-            </span>
-          )}
-        </div>
-      )}
+     {events.length > 0 && (
+  <div className="mt-3 text-xs text-gray-500">
+    <span>{events.length} paid event{events.length !== 1 ? 's' : ''} available</span>
+  </div>
+)}
     </div>
   );
 }

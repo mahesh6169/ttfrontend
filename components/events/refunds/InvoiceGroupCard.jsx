@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import InvoiceModal from './InvoiceModal';
 import { 
   checkInvoiceEligibility,
   selectInvoiceEligibility,
@@ -34,6 +35,11 @@ export default function InvoiceGroupCard({
   
   const [isExpanded, setIsExpanded] = useState(false);
   const [eligibilityChecked, setEligibilityChecked] = useState(false);
+
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+const [invoiceData, setInvoiceData] = useState(null);
+const [invoiceLoading, setInvoiceLoading] = useState(false);
+const [invoiceError, setInvoiceError] = useState(null);
 
   const totalAmount = tickets.reduce((sum, ticket) => sum + ticket.priceDetails.totalPrice, 0);
   const buyerInfo = tickets[0]?.buyer; // All tickets in an invoice have the same buyer
@@ -135,11 +141,38 @@ const getRefundAmount = () => {
   return customRefundAmount !== undefined ? customRefundAmount : totalAmount;
 };
 
+const handleViewInvoice = async (identifier) => {
+  setInvoiceLoading(true);
+  setInvoiceError(null);
+  setShowInvoiceModal(true);
+  
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/invoices/lookup/${identifier}`,
+      {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message);
+    
+    setInvoiceData(data.invoice);
+  } catch (err) {
+    setInvoiceError(err.message);
+  } finally {
+    setInvoiceLoading(false);
+  }
+};
+
 // Check if all tickets are refunded
 const allTicketsRefunded = tickets.every(t => t.refundStatus === 'refunded' || t.status === 'refunded');
 const hasRefundedTickets = tickets.some(t => t.refundStatus === 'refunded' || t.status === 'refunded');
 
 return (
+  <>
   <div className={`bg-white border rounded-lg shadow-sm transition-all duration-200 ${
     allTicketsRefunded
       ? 'border-red-200 bg-red-50 opacity-75'
@@ -191,7 +224,7 @@ return (
 </span>
 {allTicketsRefunded && (
   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-    All Refunded
+    All Tickets Refunded
   </span>
 )}
 {hasRefundedTickets && !allTicketsRefunded && (
@@ -199,30 +232,34 @@ return (
     Mixed Status
   </span>
 )}
-                {/* Eligibility Badge */}
-                {isEligible ? (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    <IoShieldCheckmarkOutline className="h-3 w-3 mr-1" />
-                    Eligible
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    <IoWarningOutline className="h-3 w-3 mr-1" />
-                    Not Eligible
-                  </span>
+                {/* Eligibility Badge - Only show if there are tickets that can be refunded */}
+                {!allTicketsRefunded && (
+                  <>
+                    {isEligible ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <IoShieldCheckmarkOutline className="h-3 w-3 mr-1" />
+                        Group Refundable
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <IoWarningOutline className="h-3 w-3 mr-1" />
+                        Individual Only
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
 
-              {/* Eligibility Warning */}
-              {!isEligible && (
+              {/* Eligibility Warning - Only show if not eligible AND not all tickets refunded */}
+              {!isEligible && !allTicketsRefunded && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <div className="flex items-start">
                     <IoWarningOutline className="h-4 w-4 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-medium text-red-800">Cannot Process Group Refund</h4>
+                      <h4 className="text-sm font-medium text-red-800">Individual Refunds Required</h4>
                       <p className="text-sm text-red-700 mt-1">{eligibilityStatus.reason}</p>
                       <p className="text-xs text-red-600 mt-1">
-                        Use individual refunds for remaining tickets in this invoice.
+                        This invoice cannot be refunded as a group. Process tickets individually.
                       </p>
                     </div>
                   </div>
@@ -260,55 +297,35 @@ return (
             </div>
           </div>
 
-          {/* Right Section - Total & Actions */}
-          <div className="flex-shrink-0 text-right">
-            <div className="text-xl font-bold text-gray-900 mb-2">
-              {formatCurrency(totalAmount)}
-            </div>
-            <p className="text-sm text-gray-600 mb-3">
-              Total for {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
-            </p>
-            
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="inline-flex items-center text-sm text-purple-600 hover:text-purple-800 transition-colors"
-            >
-              {isExpanded ? (
-                <>
-                  <IoChevronUp className="h-4 w-4 mr-1" />
-                  Hide Details
-                </>
-              ) : (
-                <>
-                  <IoChevronDown className="h-4 w-4 mr-1" />
-                  View Details
-                </>
-              )}
-            </button>
-          </div>
+{/* Right Section - Invoice & Actions */}
+<div className="flex-shrink-0 text-right">
+  <button
+    onClick={() => handleViewInvoice(invoiceNumber)}
+    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium mb-2"
+  >
+    📄 View Invoice
+  </button>
+  
+  <button
+    onClick={() => setIsExpanded(!isExpanded)}
+    className="block w-full text-sm text-purple-600 hover:text-purple-800 transition-colors"
+  >
+    {isExpanded ? (
+      <>
+        <IoChevronUp className="h-4 w-4 mr-1 inline" />
+        Hide Details
+      </>
+    ) : (
+      <>
+        <IoChevronDown className="h-4 w-4 mr-1 inline" />
+        View Details
+      </>
+    )}
+  </button>
+</div>
         </div>
 
-        {/* Group Selection Notice */}
-        {isSelected && isEligible && (
-          <div className="mt-4 pt-4 border-t border-blue-200">
-            <div className="bg-blue-50 rounded-lg p-4">
-              <div className="flex items-center">
-                <IoCheckmarkCircle className="h-5 w-5 text-blue-600 mr-2" />
-                <div>
-                  <p className="text-sm font-medium text-blue-900">
-                    Invoice Group Selected for Full Transaction Refund
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    All {ticketCount} tickets will be refunded in one transaction for {formatCurrency(totalAmount)}
-                  </p>
-                  <p className="text-xs text-blue-600 mt-1">
-                    This will process one Stripe refund for the entire original payment.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
       </div>
 
       {/* Custom Refund Amount (when selected) */}
@@ -366,16 +383,7 @@ return (
           <div className="p-6">
             <h4 className="text-sm font-medium text-gray-900 mb-4">Individual Tickets in this Invoice</h4>
             
-            {/* Payment Intent Info */}
-            {invoiceEligibility.data && invoiceEligibility.data.invoiceNumber === invoiceNumber && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <h5 className="text-sm font-medium text-blue-900 mb-2">Payment Information</h5>
-                <div className="text-sm text-blue-800">
-                  <p>Payment Intent: <span className="font-mono text-xs">{invoiceEligibility.data.paymentIntentId?.slice(-12)}</span></p>
-                  <p>All tickets share the same payment transaction</p>
-                </div>
-              </div>
-            )}
+            
 
             <div className="space-y-3">
               {tickets.map((ticket) => (
@@ -386,7 +394,7 @@ return (
                         <IoTicket className="h-4 w-4 mr-1" />
                         <span className="text-sm font-mono font-medium">{ticket.ticketNumber}</span>
                       </div>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                         {ticket.status}
                       </span>
                     </div>
@@ -435,45 +443,24 @@ return (
               ))}
             </div>
 
-            {/* Group Summary */}
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <div className="bg-purple-50 rounded-lg p-4">
-                <h5 className="text-sm font-medium text-purple-900 mb-2">Invoice Summary</h5>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-900">{ticketCount}</div>
-                    <div className="text-purple-700">Tickets</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-900">{formatCurrency(totalAmount)}</div>
-                    <div className="text-purple-700">Total Value</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-900">
-                      {tickets.filter(t => t.attendees?.[0]?.checkedIn).length}
-                    </div>
-                    <div className="text-purple-700">Checked In</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-900">
-                      {new Set(tickets.map(t => t.ticketType.name)).size}
-                    </div>
-                    <div className="text-purple-700">Ticket Types</div>
-                  </div>
-                </div>
-                
-                {/* Refund Type Explanation */}
-                <div className="mt-3 pt-3 border-t border-purple-200">
-                  <p className="text-xs text-purple-700">
-                    <strong>Group Refund:</strong> Processes one full transaction refund against the original payment.
-                    {!isEligible && " Not available due to mixed refund status."}
-                  </p>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
       )}
     </div>
+       {/* Invoice Modal */}
+    {showInvoiceModal && (
+      <InvoiceModal
+        invoiceData={invoiceData}
+        invoiceLoading={invoiceLoading}
+        invoiceError={invoiceError}
+        onClose={() => {
+          setShowInvoiceModal(false);
+          setInvoiceData(null);
+          setInvoiceError(null);
+        }}
+      />
+    )}
+  </>
   );
 }
