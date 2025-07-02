@@ -14,7 +14,9 @@ import {
   selectRefundForm,
   selectSelectedEvent,
   selectProcessing,
-  selectTotalRefundAmount
+  selectTotalRefundAmount,
+  clearProcessingState,
+clearSuccessMessages,
 } from '@/store/slices/events/refundSlice';
 import { 
   IoClose,
@@ -91,6 +93,8 @@ export default function RefundModal() {
 
   const handleClose = () => {
     if (!isProcessing) {
+       dispatch(clearProcessingState());
+    dispatch(clearSuccessMessages());
       dispatch(setShowRefundModal(false));
       setLocalReason('');
     }

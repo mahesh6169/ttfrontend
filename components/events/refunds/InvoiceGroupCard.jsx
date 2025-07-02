@@ -7,7 +7,8 @@ import {
   checkInvoiceEligibility,
   selectInvoiceEligibility,
    setGroupCustomAmount,
-     selectRefundForm 
+     selectRefundForm,
+     clearGroupProcessingState, 
 } from '@/store/slices/events/refundSlice';
 import { 
   IoReceiptOutline,
@@ -125,6 +126,8 @@ const getEligibilityStatus = () => {
     if (!isEligible) {
       return; // Don't allow selection if not eligible
     }
+     // Clear any existing success/error states when selecting new invoice groups
+  dispatch(clearGroupProcessingState());
     onToggleSelect();
   };
 

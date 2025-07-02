@@ -421,6 +421,23 @@ const refundSlice = createSlice({
       state.processing.individual.success = null;
       state.processing.group.success = null;
     },
+
+    clearProcessingState: (state) => {
+  state.processing.individual.success = null;
+  state.processing.individual.error = null;
+  state.processing.group.success = null;
+  state.processing.group.error = null;
+},
+
+clearIndividualProcessingState: (state) => {
+  state.processing.individual.success = null;
+  state.processing.individual.error = null;
+},
+
+clearGroupProcessingState: (state) => {
+  state.processing.group.success = null;
+  state.processing.group.error = null;
+},
     
     // Clear invoice eligibility data
     clearInvoiceEligibility: (state) => {
@@ -638,6 +655,9 @@ export const {
   setPageLimit,
   clearErrors,
   clearSuccessMessages,
+  clearProcessingState,
+  clearIndividualProcessingState,
+  clearGroupProcessingState,
   clearInvoiceEligibility,
   updateRefundAnalytics,
   resetRefundState,

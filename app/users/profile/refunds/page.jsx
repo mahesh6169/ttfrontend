@@ -14,7 +14,8 @@ import {
   selectTicketsState,
   selectUI,
   selectCurrentStatistics, 
-  selectSelectedTickets
+  selectSelectedTickets,
+  clearProcessingState, 
 } from '@/store/slices/events/refundSlice';
 import { formatInTimeZone } from 'date-fns-tz';
 
@@ -92,15 +93,30 @@ const statistics = useSelector(selectCurrentStatistics);
     }
   }, [selectedEvent?._id, ui.activeTab, dispatch]);
 
-  const handleEventSelect = (event) => {
-    console.log('🎯 EVENT SELECTED:', event.title, event._id);
-    dispatch(setSelectedEvent(event));
-    setSearchTerm(''); // Clear search when switching events
-    
-    // Reset fetch tracking when event changes
-    lastFetchedEventId.current = null;
-    lastFetchedTab.current = null;
-  };
+const handleEventSelect = (event) => {
+  console.log('🎯 EVENT SELECTED:', event.title, event._id);
+  
+  // Clear processing states when switching events
+  dispatch(clearProcessingState()); // or clearSuccessMessages() if you used the temporary fix
+  
+  // FORCE RESET: Always reset fetch tracking to force fresh data
+  lastFetchedEventId.current = null;
+  lastFetchedTab.current = null;
+  
+  // Set the selected event
+  dispatch(setSelectedEvent(event));
+  setSearchTerm(''); // Clear search when switching events
+  
+  // FORCE FETCH: Immediately fetch tickets for the selected event
+  if (event && event._id) {
+    console.log('🚀 FORCE FETCHING TICKETS for event:', event._id);
+    dispatch(fetchRefundableTickets({ 
+      eventId: event._id,
+      page: 1,
+      limit: 20
+    }));
+  }
+};
 
   const handleSearch = (term) => {
     console.log('🔍 SEARCH TERM CHANGED:', term);
@@ -109,12 +125,14 @@ const statistics = useSelector(selectCurrentStatistics);
   };
 
   const handleTabChange = (tab) => {
-    console.log('🔄 TAB CHANGED TO:', tab);
-    dispatch(setActiveTab(tab));
-    
-    // Reset fetch tracking when tab changes to ensure fresh data
-    lastFetchedTab.current = null;
-  };
+  console.log('🔄 TAB CHANGED TO:', tab);
+  // Clear processing states when switching tabs
+  dispatch(clearProcessingState());
+  dispatch(setActiveTab(tab));
+  
+  // Reset fetch tracking when tab changes to ensure fresh data
+  lastFetchedTab.current = null;
+};
 
   return (
     <div className="min-h-screen bg-gray-50">

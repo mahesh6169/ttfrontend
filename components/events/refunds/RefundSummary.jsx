@@ -7,13 +7,11 @@ import {
   selectSelectedTickets,
   selectRefundForm,
   selectTotalRefundAmount,
-  selectAnalytics,
   selectInvoiceEligibility
 } from '@/store/slices/events/refundSlice';
 import { 
   IoTicket,
   IoReceiptOutline,
-  IoStatsChartOutline
 } from 'react-icons/io5';
 
 export default function RefundSummary({ activeTab, eventId }) {
@@ -21,7 +19,7 @@ export default function RefundSummary({ activeTab, eventId }) {
   const selectedTickets = useSelector(selectSelectedTickets);
   const refundForm = useSelector(selectRefundForm);
   const totalIndividualRefund = useSelector(selectTotalRefundAmount);
-  const analytics = useSelector(selectAnalytics);
+
   const invoiceEligibility = useSelector(selectInvoiceEligibility);
 
   const formatCurrency = (amount) => {
@@ -159,23 +157,17 @@ export default function RefundSummary({ activeTab, eventId }) {
   )}
 </div>
 
-      {/* Analytics Footer */}
-      <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg">
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <div className="flex items-center space-x-4">
-            <span>Refund Mode</span>
-            <span className="font-medium capitalize text-gray-900">
-              {activeTab} Refunds
-            </span>
-          </div>
-          {analytics.totalRefundsProcessed > 0 && (
-            <div className="flex items-center text-xs text-gray-500">
-              <IoStatsChartOutline className="h-3 w-3 mr-1" />
-              {analytics.totalRefundsProcessed} processed • {formatCurrency(analytics.totalAmountRefunded)} total
-            </div>
-          )}
-        </div>
-      </div>
+{/* Analytics Footer - REPLACE entire section with simpler version */}
+<div className="px-6 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+  <div className="flex items-center justify-between text-sm text-gray-600">
+    <div className="flex items-center space-x-4">
+      <span>Refund Mode</span>
+      <span className="font-medium capitalize text-gray-900">
+        {activeTab} Refunds
+      </span>
+    </div>
+  </div>
+</div>
     </div>
   );
 }

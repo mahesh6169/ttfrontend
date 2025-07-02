@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import InvoiceModal from './InvoiceModal';
 import { useDispatch, useSelector } from 'react-redux';
-import { setCustomRefundAmount, selectRefundForm } from '@/store/slices/events/refundSlice';
+import { setCustomRefundAmount, selectRefundForm, clearIndividualProcessingState } from '@/store/slices/events/refundSlice';
 import { 
   IoTicket, 
   IoPerson, 
@@ -104,7 +104,11 @@ return (
             {/* Selection Checkbox */}
             <div className="flex-shrink-0 pt-1">
               <button
-                onClick={isRefunded ? undefined : onToggleSelect}
+                  onClick={isRefunded ? undefined : () => {
+    // Clear any existing success/error states when selecting new tickets
+    dispatch(clearIndividualProcessingState());
+    onToggleSelect();
+  }}
                 disabled={isRefunded}
                 className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
                   isRefunded
