@@ -80,7 +80,7 @@ const handleCardChange = (event) => {
             ? 'border-blue-500 bg-blue-50' 
             : 'border-gray-300 bg-white'
         }`}>
-          {/* Card Icon */}
+          {/* Card Icon. */}
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
             <FaCreditCard className={`text-lg ${
               cardError 
