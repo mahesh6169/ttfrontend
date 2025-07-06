@@ -78,8 +78,11 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
     const currentPath = window.location.pathname + window.location.search;
     const stripeSetupUrl = `/users/profile/settings/stripeSetup?returnTo=${encodeURIComponent(currentPath)}`;
     
-    // Open in new tab/popup
-    const stripeWindow = window.open(stripeSetupUrl, '_blank', 'width=900,height=700,scrollbars=yes,resizable=yes');
+    // Open in popup
+    //const stripeWindow = window.open(stripeSetupUrl, '_blank', 'width=900,height=700,scrollbars=yes,resizable=yes');
+
+    //open in new tab
+    const stripeWindow = window.open(stripeSetupUrl, '_blank');
     
     if (!stripeWindow) {
       toast.error('Please allow popups for this site to complete Stripe setup');
