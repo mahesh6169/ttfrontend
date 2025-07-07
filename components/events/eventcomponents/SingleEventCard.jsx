@@ -261,9 +261,9 @@ const SingleEventCard = ({ event, chatProps }) => {
           
         {/* Event Organizer */}
         {event.organizer && (
-          <div className="bg-blue-50 p-4 rounded-lg mb-6">
+          <div className="bg-gray-50 p-4 rounded-lg mb-6">
             <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-              <FaUser className="mr-2 text-blue-600" />
+              <FaUser className="mr-2" />
               Event Organizer
             </h3>
             <div className="bg-white p-4 rounded border">
@@ -327,9 +327,9 @@ const SingleEventCard = ({ event, chatProps }) => {
 {/* Coordinators - Only show if there are coordinators with actual data */}
 {event.coordinators?.length > 0 && 
  event.coordinators.some(coord => coord?.name || coord?.role || coord?.phone || coord?.email) && (
-  <div className="bg-yellow-50 p-4 rounded-lg mb-6">
+  <div className="bg-gray-50 p-4 rounded-lg mb-6">
     <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-      <FaUserFriends className="mr-2 text-yellow-600" />
+      <FaUserFriends className="mr-2" />
       Event Coordinators
     </h3>
     <div className="grid md:grid-cols-2 gap-4">
@@ -525,30 +525,28 @@ const SingleEventCard = ({ event, chatProps }) => {
                 {registrationStatus === 'loading' ? 'Unregistering...' : 'Unregister from Event'}
               </button>
             ) : (
-              <button
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    alert('Please log in to register for this event.');
-                    return;
-                  }
-                  setShowRegistrationForm(true);
-                }}
-                className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                disabled={registrationStatus === 'loading'}
-              >
-                {registrationStatus === 'loading' ? 'Processing...' : 'Register for Event'}
-              </button>
+<button
+  onClick={() => {
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+    setShowRegistrationForm(true);
+  }}
+  className="flex-1 py-3 px-6 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+  disabled={registrationStatus === 'loading'}
+>
+  {registrationStatus === 'loading' 
+    ? 'Processing...' 
+    : !isAuthenticated 
+      ? 'Login to Register' 
+      : 'Register for Event'
+  }
+</button>
             )
           )}
 
-          {chatProps && (
-            <button
-              onClick={() => {/* Toggle chat */}}
-              className="sm:w-auto px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Contact Organizer
-            </button>
-          )}
+
         </div>
 
         {event.isPaid && (

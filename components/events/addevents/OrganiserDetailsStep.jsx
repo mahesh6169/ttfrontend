@@ -85,9 +85,9 @@ const getFieldClasses = (fieldName) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-1 sm:px-0">
       {/* Organizer Details Section */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+      <div className="bg-white border-0 sm:border sm:border-gray-200 rounded-lg p-1 sm:p-6 mb-6">
         <div className="flex items-center mb-4">
           <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
             <svg
@@ -189,7 +189,7 @@ const getFieldClasses = (fieldName) => {
           </div>
         </div>
 
-        {/* Social Media */}
+{/* Social Media */}
         <div className="mt-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Social Media Links
@@ -199,14 +199,14 @@ const getFieldClasses = (fieldName) => {
           formData.organizer.socialMedia.length > 0 ? (
             <div className="space-y-3">
               {formData.organizer.socialMedia.map((social, index) => (
-                <div key={index} className="flex gap-3 items-start">
+                <div key={index} className="flex flex-col sm:flex-row gap-3 items-start">
                   <input
                     type="text"
                     value={social.platform || ''}
                     onChange={(e) =>
                       handleUpdateSocialMedia(index, 'platform', e.target.value)
                     }
-                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20"
+                    className="w-full sm:flex-1 p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20"
                     placeholder="Platform name (e.g., Facebook, Instagram)"
                     maxLength="50"
                   />
@@ -216,14 +216,14 @@ const getFieldClasses = (fieldName) => {
                     onChange={(e) =>
                       handleUpdateSocialMedia(index, 'url', e.target.value)
                     }
-                    className="flex-[2] p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20"
+                    className="w-full sm:flex-[2] p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20"
                     placeholder="https://facebook.com/yourpage"
                     maxLength="200"
                   />
                   <button
                     type="button"
                     onClick={() => handleRemoveSocialMedia(index)}
-                    className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    className="w-full sm:w-auto flex items-center justify-center p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                     title="Remove social media link"
                   >
                     <svg
@@ -239,6 +239,7 @@ const getFieldClasses = (fieldName) => {
                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                       ></path>
                     </svg>
+                    <span className="ml-2 sm:hidden">Remove</span>
                   </button>
                 </div>
               ))}
@@ -252,7 +253,7 @@ const getFieldClasses = (fieldName) => {
           <button
             type="button"
             onClick={handleAddSocialMedia}
-            className="mt-3 inline-flex items-center px-4 py-2 border border-dashed border-blue-300 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 font-medium text-sm"
+            className="mt-3 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-dashed border-blue-300 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 font-medium text-sm"
           >
             <svg
               className="w-4 h-4 mr-2"
@@ -273,7 +274,7 @@ const getFieldClasses = (fieldName) => {
       </div>
 
 {/* Event Coordinators Section */}
-<div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+<div className="bg-white border-0 sm:border sm:border-gray-200 rounded-lg p-1 sm:p-6 mb-6">
   <h2 className="text-xl font-semibold mb-2">Event Coordinators</h2>
   <p className="text-gray-600 text-sm mb-4">
     Add coordinators who will be helping to manage this event.
@@ -328,7 +329,7 @@ const getFieldClasses = (fieldName) => {
         {(formData.coordinators || []).map((coordinator, index) => (
           <div
             key={index}
-            className="relative p-6 border-2 border-gray-200 rounded-lg bg-white hover:border-gray-300 transition-colors"
+            className="relative p-1 sm:p-6 border-0 sm:border-2 sm:border-gray-200 rounded-lg bg-white sm:hover:border-gray-300 transition-colors"
           >
             {/* Card Header */}
             <div className="flex justify-between items-start mb-4">

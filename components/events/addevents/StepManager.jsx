@@ -711,6 +711,56 @@ const isNextButtonDisabled = useCallback(() => {
   return isLoading;
 }, [currentStep, formData.isPaid, isLoading, user?.stripeAccountId, user?.stripeChargesEnabled, user?.stripeDetailsSubmitted, user?.stripePayoutsEnabled]);
 
+// Add this helper function before prepareSubmissionData
+const calculateRecurringUtcDateTimes = useCallback((recurrence, eventDateTime, timeZone) => {
+  if (!recurrence?.isRecurring || !recurrence.repeatSchedule?.length) {
+    return recurrence;
+  }
+
+  const processedSchedule = recurrence.repeatSchedule.map(schedule => {
+    try {
+      // Parse the main event date to get the week reference
+      const eventDate = new Date(eventDateTime);
+      
+      // Find the next occurrence of this day from the event date
+      const dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+      const targetDay = dayMap[schedule.day];
+      const eventDay = eventDate.getDay();
+      
+      // Calculate days to add to get to the target day
+      let daysToAdd = targetDay - eventDay;
+      if (daysToAdd < 0) daysToAdd += 7; // Next week if day already passed
+      
+      // Create a date for this recurring schedule
+      const scheduleDate = new Date(eventDate);
+      scheduleDate.setDate(scheduleDate.getDate() + daysToAdd);
+      
+      // Parse the time and set it
+      const [hours, minutes] = schedule.time.split(':').map(Number);
+      scheduleDate.setHours(hours, minutes, 0, 0);
+      
+      // Convert to UTC using the event's timezone
+      const utcDateTime = zonedTimeToUtc(scheduleDate, timeZone);
+      
+      console.log(`🔄 Calculated utcDateTime for ${schedule.day} ${schedule.time}:`, utcDateTime.toISOString());
+      
+      return {
+        ...schedule,
+        utcDateTime: utcDateTime.toISOString(),
+        timeZone: timeZone
+      };
+    } catch (error) {
+      console.error('❌ Error calculating utcDateTime for schedule:', schedule, error);
+      return schedule;
+    }
+  });
+
+  return {
+    ...recurrence,
+    repeatSchedule: processedSchedule
+  };
+}, []);
+
   // Prepare form data for submission
   const prepareSubmissionData = useCallback(() => {
     const submitFormData = new FormData();
@@ -943,9 +993,16 @@ console.log("🔍 Debug organizerReservedSeats:", {
     }
 
     // Recurring event fields
-    if (formData.recurrence && formData.recurrence.isRecurring) {
-      submitFormData.append('recurrence', JSON.stringify(formData.recurrence));
-    }
+if (formData.recurrence && formData.recurrence.isRecurring) {
+  // Calculate utcDateTime for each schedule before sending
+  const processedRecurrence = calculateRecurringUtcDateTimes(
+    formData.recurrence, 
+    formData.dateTime, 
+    formData.timeZone
+  );
+  
+  submitFormData.append('recurrence', JSON.stringify(processedRecurrence));
+}
 
     // Registration fields
     if (formData.registrationFields && formData.registrationFields.length > 0) {
@@ -1213,7 +1270,7 @@ const handleAddAnother = useCallback(() => {
         <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
 
         {/* Step Content */}
-        <div className="mt-8 bg-white p-6 rounded-lg shadow-md border border-gray-200">
+        <div className="mt-8 bg-white p-1 sm:p-6 rounded-lg shadow-md border border-gray-200">
           {currentStep === 1 && (
             <EventDetailsStep
               formData={formData}
@@ -1262,7 +1319,7 @@ const handleAddAnother = useCallback(() => {
 
           {/* Navigation Buttons */}
           {!isViewMode && (
-            <div className="mt-8 flex justify-between">
+            <div className="mt-8 flex justify-between px-4 sm:px-0">
               {currentStep > 1 ? (
                 <button
                   type="button"
@@ -1383,7 +1440,7 @@ const handleAddAnother = useCallback(() => {
 
           {/* View Mode Navigation */}
           {isViewMode && (
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex justify-center px-4 sm:px-0">
               <button
                 type="button"
                 onClick={() => router.push('/events')}

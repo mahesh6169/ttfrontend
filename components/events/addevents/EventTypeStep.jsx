@@ -13,6 +13,9 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
   // Local state for tracking setup status
   const [isCheckingStripe, setIsCheckingStripe] = useState(false);
   const [stripeSetupComplete, setStripeSetupComplete] = useState(false);
+    // Check if this is a recurring event
+  const isRecurringEvent = formData.recurrence?.isRecurring || false;
+  
 
   // Check Stripe setup status
   useEffect(() => {
@@ -49,15 +52,20 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
     };
   }, [formData.isPaid, stripeSetupComplete, isCheckingStripe, dispatch]);
 
+  // Auto-select free event when recurring is enabled
+useEffect(() => {
+  if (isRecurringEvent && formData.isPaid) {
+    dispatch(toggleIsPaid(false));
+  }
+}, [isRecurringEvent, formData.isPaid, dispatch]);
+
   const handlePaidToggle = (isPaid) => {
     dispatch(toggleIsPaid(isPaid));
   };
 
 
 
-  // Check if this is a recurring event
-  const isRecurringEvent = formData.recurrence?.isRecurring || false;
-  
+
   // Calculate recurring event details for display
   const getRecurringScheduleText = () => {
     if (!isRecurringEvent || !formData.recurrence?.repeatSchedule?.length) {
@@ -163,7 +171,7 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
                   )}
                 </p>
                 <p className="mt-1">
-                  The pricing and configuration you choose will apply to all instances of this recurring event.
+                  This recurring event series will use the same configuration for all instances.
                 </p>
               </div>
             </div>
@@ -244,24 +252,21 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
                   No transaction fees
                 </div>
               </div>
-              {isRecurringEvent && (
-                <div className="mt-3 p-2 bg-blue-50 rounded text-sm text-blue-700">
-                  <strong>Recurring Benefit:</strong> Attendees can register for individual occurrences or the entire series
-                </div>
-              )}
             </div>
           </div>
         </div>
         
         {/* Paid Event Option */}
         <div
-          className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-            formData.isPaid
-              ? 'border-teal-600 bg-teal-50 shadow-md'
-              : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-          }`}
-          onClick={() => handlePaidToggle(true)}
-        >
+  className={`p-6 border-2 rounded-lg transition-all duration-200 ${
+    formData.isPaid
+      ? 'border-teal-600 bg-teal-50 shadow-md'
+      : isRecurringEvent
+      ? 'border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed'
+      : 'border-gray-200 hover:border-gray-300 hover:shadow-sm cursor-pointer'
+  }`}
+  onClick={isRecurringEvent ? undefined : () => handlePaidToggle(true)}
+>
           <div className="flex items-start">
             <div className="flex-shrink-0 mt-0.5">
               <div
@@ -279,6 +284,11 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
             <div className="ml-4 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold">Paid Event</h3>
+                {isRecurringEvent && (
+    <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">
+      Not Available for Recurring Events
+    </span>
+  )}
                 {formData.isPaid && !stripeSetupComplete && (
                   <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full animate-pulse">
                     Setup Required
@@ -320,11 +330,6 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
                   Advanced attendee management
                 </div>
               </div>
-              {isRecurringEvent && (
-                <div className="mt-3 p-2 bg-blue-50 rounded text-sm text-blue-700">
-                  <strong>Recurring Benefit:</strong> Sell season passes or individual event tickets with flexible pricing
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -212,7 +212,7 @@ const EventDetailsStep = ({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
+    <div className="space-y-4 sm:space-y-6 px-0 sm:px-0">
       {/* Mobile-optimized header with better spacing */}
       <div className="border-b border-gray-200 pb-3 sm:pb-4">
         <h2 className="text-lg sm:text-xl font-semibold mb-2 flex flex-col sm:flex-row sm:items-center">
@@ -442,7 +442,7 @@ const EventDetailsStep = ({
                           value={schedule?.day || 'Mon'}
                           onChange={(e) => handleUpdateRepeatSchedule(index, 'day', e.target.value)}
                           disabled={disabled}
-                          className={`w-full px-3 py-2 border rounded-lg text-sm ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
+                          className={`w-full px-3 py-2 border rounded-lg text-sm appearance-none bg-white ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
                         >
                           <option value="Mon">Monday</option>
                           <option value="Tue">Tuesday</option>
@@ -526,7 +526,7 @@ const EventDetailsStep = ({
                       ? 'This recurring series ends on the specified date'
                       : 'This recurring series has no end date'
                     )
-                  : 'Leave empty for recurring events that don\'t have an end date'
+                  : 'If left empty, recurring events will be created for one year from the start date. Set an end date to limit the series duration.'
                 }
               </p>
             </div>

@@ -10,6 +10,19 @@ import { MdRepeat } from 'react-icons/md';
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   const { title, dateTime, venue, address, images, createdAt, timeZone } = event;
 
+  const getStateFromTimezone = (timezone) => {
+  const timezoneMap = {
+    'Australia/Sydney': 'NSW',
+    'Australia/Melbourne': 'VIC', 
+    'Australia/Brisbane': 'QLD',
+    'Australia/Perth': 'WA',
+    'Australia/Adelaide': 'SA',
+    'Australia/Hobart': 'TAS',
+    'Australia/Darwin': 'NT'
+  };
+  return timezoneMap[timezone] || timezone.split('/')[1];
+};
+
   // 🕒 Format event date in event timezone (or fallback to Sydney)
   const formattedDate = formatInTimeZone(
     dateTime,
@@ -80,22 +93,38 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
           )}
         </div>
 
-        {/* Date & Time */}
-        <div className="flex items-center text-sm text-gray-600 px-1 mb-1">
-          <BsCalendar2Event className="mr-1" />
-          <span className="text-xs font-medium text-gray-600">
-            {formattedDate}
-          </span>
-        </div>
-
-        {/* Location & Posted Info */}
-        <div className="flex items-center gap-1 px-2 truncate">
-          <MdLocationOn className="text-xs font-medium text-gray-600 flex-shrink-0" />
-          <span className="text-xs font-medium text-gray-600">
-            {address?.suburb || address?.state
-              ? [address?.suburb, address?.state].filter(Boolean).join(', ')
-              : venue}
-          </span>
+{/* Date & Time + Location */}
+        <div className="px-2 mb-1">
+{/* Date Row */}
+          <div className="flex items-center text-sm text-gray-600 mb-1">
+            <BsCalendar2Event className="mr-1 flex-shrink-0" />
+            <span className="text-xs font-medium text-gray-600">
+              {timeZone ? 
+                formatInTimeZone(dateTime, timeZone, 'EEE dd MMM yyyy') :
+                format(new Date(dateTime), 'EEE dd MMM yyyy')
+              }
+            </span>
+          </div>
+          
+{/* Time Row */}
+          <div className="flex items-center text-sm text-gray-600 mb-1">
+            <div className="w-4 h-4 mr-1 flex items-center justify-center">
+              <span className="text-xs">🕙</span>
+            </div>
+<span className="text-xs font-medium text-gray-600">
+  {formatInTimeZone(dateTime, timeZone, 'h:mm a')}, {getStateFromTimezone(timeZone)}
+</span>
+          </div>
+          
+          {/* Location Row */}
+          <div className="flex items-center gap-1">
+            <MdLocationOn className="text-xs font-medium text-gray-600 flex-shrink-0" />
+            <span className="text-xs font-medium text-gray-600 truncate">
+              {address?.suburb || address?.state
+                ? [address?.suburb, address?.state].filter(Boolean).join(', ')
+                : venue}
+            </span>
+          </div>
         </div>
         <div className="text-xs font-medium text-gray-600 text-right whitespace-nowrap px-2 mb-1">
           {postedText}
