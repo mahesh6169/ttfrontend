@@ -545,46 +545,49 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                   </p>
                 </div>
 
-{/* Expiry Date */}
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Expiry Date
-    <span className="text-xs text-gray-400 ml-1">
-      (optional)
-    </span>
-  </label>
-  <input
-    type="date"
-    value={
-      ticket.expiryDate 
-        ? (typeof ticket.expiryDate === 'string' && ticket.expiryDate.includes('T'))
-          ? ticket.expiryDate.slice(0, 10)
-          : ticket.expiryDate
-        : ''
-    }
-    onChange={(e) =>
-      dispatch(
-        updateTicketType({
-          index,
-          field: 'expiryDate',
-          value: e.target.value || null,
-        })
-      )
-    }
-    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-      errors?.[`ticketExpiryDate_${index}`] ? 'border-red-500' : 'border-gray-300'
-    }`}
-  />
-  {errors?.[`ticketExpiryDate_${index}`] && (
-    <p className="mt-1 text-red-500 text-sm">
-      {errors[`ticketExpiryDate_${index}`][0]}
-    </p>
-  )}
-  <p className="text-xs text-gray-500 mt-1">
-    When this ticket expires (end of day in{' '}
-    {formData.timeZone || 'event timezone'})
-  </p>
-</div>
+                {/* Expiry Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Expiry Date
+                    <span className="text-xs text-gray-400 ml-1">
+                      (optional)
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    value={
+                      ticket.expiryDate
+                        ? typeof ticket.expiryDate === 'string' &&
+                          ticket.expiryDate.includes('T')
+                          ? ticket.expiryDate.slice(0, 10)
+                          : ticket.expiryDate
+                        : ''
+                    }
+                    onChange={(e) =>
+                      dispatch(
+                        updateTicketType({
+                          index,
+                          field: 'expiryDate',
+                          value: e.target.value || null,
+                        })
+                      )
+                    }
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                      errors?.[`ticketExpiryDate_${index}`]
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
+                  />
+                  {errors?.[`ticketExpiryDate_${index}`] && (
+                    <p className="mt-1 text-red-500 text-sm">
+                      {errors[`ticketExpiryDate_${index}`][0]}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    When this ticket expires (end of day in{' '}
+                    {formData.timeZone || 'event timezone'})
+                  </p>
+                </div>
               </div>
             </div>
           ))}
@@ -733,7 +736,7 @@ const CustomRegistrationFields = ({
         </div>
         <div>
           <h4 className="text-lg font-medium text-gray-900">
-            Custom Registration Fields
+            Attendee Additional Information
           </h4>
           <p className="text-sm text-gray-500">
             Collect additional information from attendees during registration
@@ -754,46 +757,7 @@ const CustomRegistrationFields = ({
               key={index}
               className="border-2 border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-sm font-medium text-indigo-600">
-                      {index + 1}
-                    </span>
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-gray-900">
-                      {field?.fieldName || `Custom Field ${index + 1}`}
-                    </h5>
-                    <p className="text-sm text-gray-500 capitalize">
-                      {field?.fieldType || 'text'} field
-                      {field?.isRequired && (
-                        <span className="text-red-500"> (Required)</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => dispatch(removeRegistrationField(index))}
-                  className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
-                  title="Remove field"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
+              
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Field Name */}
@@ -867,30 +831,53 @@ const CustomRegistrationFields = ({
                   </div>
                 )}
 
-                {/* Required Field Toggle */}
+                {/* Required Field Toggle + Delete Button */}
                 <div className="lg:col-span-2">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={`required-${index}`}
-                      checked={field?.isRequired || false}
-                      onChange={(e) =>
-                        dispatch(
-                          updateRegistrationField({
-                            index,
-                            field: 'isRequired',
-                            value: e.target.checked,
-                          })
-                        )
-                      }
-                      className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                    />
-                    <label
-                      htmlFor={`required-${index}`}
-                      className="ml-2 text-sm text-gray-700"
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`required-${index}`}
+                        checked={field?.isRequired || false}
+                        onChange={(e) =>
+                          dispatch(
+                            updateRegistrationField({
+                              index,
+                              field: 'isRequired',
+                              value: e.target.checked,
+                            })
+                          )
+                        }
+                        className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                      />
+                      <label
+                        htmlFor={`required-${index}`}
+                        className="ml-2 text-sm text-gray-700"
+                      >
+                        Make this field required for registration
+                      </label>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => dispatch(removeRegistrationField(index))}
+                      className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
+                      title="Remove field"
                     >
-                      Make this field required for registration
-                    </label>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        ></path>
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>

@@ -23,7 +23,7 @@ const EventRegistrationModal = ({ event, isOpen, onClose, onSuccess }) => {
   } = useSelector((state) => state.freeEvents);
 
   // Form state
-  const [attendees, setAttendees] = useState([{ name: '', age: '' }]);
+  const [attendees, setAttendees] = useState([{ name: '' }]);
   const [formResponses, setFormResponses] = useState({});
   const [errors, setErrors] = useState({});
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -72,7 +72,7 @@ useEffect(() => {
 
   const handleAddAttendee = () => {
     if (attendees.length < event.maxAttendeesPerRegistration) {
-      setAttendees([...attendees, { name: '', age: '' }]);
+      setAttendees([...attendees, { name: '' }]);
     }
   };
 
@@ -122,10 +122,7 @@ useEffect(() => {
         newErrors[`attendee_${index}_name`] = 'Name is required';
       }
       
-      // Validate age if provided
-      if (attendee.age && (isNaN(attendee.age) || attendee.age < 0 || attendee.age > 120)) {
-        newErrors[`attendee_${index}_age`] = 'Please enter a valid age (0-120)';
-      }
+      
     });
 
     // Validate required form fields
@@ -464,28 +461,8 @@ const formatEventDate = (dateTime, timeZone) => {
                     {errors[`attendee_${index}_name`] && (
                       <p className="text-red-500 text-sm mt-1">{errors[`attendee_${index}_name`]}</p>
                     )}
-                  </div>
-                  
-                  {/* Age Field */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Age (Optional)
-                    </label>
-                    <input
-                      type="number"
-                      value={attendee.age}
-                      onChange={(e) => handleAttendeeChange(index, 'age', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                        errors[`attendee_${index}_age`] ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter age"
-                      min="0"
-                      max="120"
-                    />
-                    {errors[`attendee_${index}_age`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`attendee_${index}_age`]}</p>
-                    )}
-                  </div>
+                  </div>                  
+
                 </div>
               </div>
             ))}
