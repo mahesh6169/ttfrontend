@@ -1188,6 +1188,16 @@ const handleAddAnother = useCallback(() => {
     router.push('/users/profile/manageevents');
   }, [dispatch, router]);
 
+  const handleViewEvent = useCallback(() => {
+  if (editingEventId) {
+    // Navigate to the event view page
+    router.push(`/events/views/${editingEventId}`);
+  } else {
+    console.warn('No event ID available for navigation');
+    toast.error('Unable to navigate to event page');
+  }
+}, [editingEventId, router]);
+
   // Show loading spinner during initialization
   if (isInitializing) {
     return (
@@ -1238,6 +1248,7 @@ const handleAddAnother = useCallback(() => {
             mode={mode}
             onAddAnother={handleAddAnother}
             onManageEvents={handleManageEvents}
+             onViewEvent={handleViewEvent}
           />
         </RequireLogin>
       </div>
