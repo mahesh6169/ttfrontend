@@ -2,45 +2,47 @@
 import { configureStore } from '@reduxjs/toolkit';
 import advertReducer from './slices/adverts/advertSlice';
 import userReducer from './slices/users/userSlice';
-import userAdvertReducer from './slices/adverts/userAdvertsSlice'; // Import userAdvertReducer
-import messages from './slices/shared/messageSlice'; // Import messageSlice
+import userAdvertReducer from './slices/adverts/userAdvertsSlice';
+import messages from './slices/shared/messageSlice';
 import searchAdvertsReducer from './slices/adverts/searchAdvertsSlice';
-import searchEventsReducer from './slices/events/searchEventsSlice'; // Import searchEventsSlice
+import searchEventsReducer from './slices/events/searchEventsSlice';
 import freeEventReducer from './slices/events/freeEventSlice';
-import filterEventReducer from './slices/events/filterEventSlice'; // Import filterEventSlice
-import threadReducer from './slices/threads/threadSlice'; // Import threadSlice
-import searchThreadsReducer from './slices/threads/searchThreadsSlice'; // Import searchThreadsSlice
-import adminReducer from './slices/admin/users/adminSlice'; // Import adminSlice
-import eventReducer from './slices/events/eventSlice'; // Import eventSlice
-import seatSelectionReducer from './slices/events/seatSelectionSlice'; // Import seatSelectionSlice
-import ticketPurchaseReducer from './slices/events/ticketPurchaseSlice'; // Import ticketPurchaseSlice
-import filterThreadReducer from './slices/threads/filterThreadSlice'; // Import filterThreadSlice
-import adminManageAdvertReducer from './slices/admin/adverts/adminManageAdvertSlice'; // Import adminManageAdvertSlice
-import adminManageEventReducer from './slices/admin/events/adminManageEventSlice'; // Import adminManageEventSlice
-import supportReducer from './slices/supportSlice'; // Import supportSlice
-import refundReducer from './slices/events/refundSlice'; // Import refundSlice
+import filterEventReducer from './slices/events/filterEventSlice';
+import threadReducer from './slices/threads/threadSlice';
+import searchThreadsReducer from './slices/threads/searchThreadsSlice';
+import adminReducer from './slices/admin/users/adminSlice';
+import eventReducer from './slices/events/eventSlice';
+import seatSelectionReducer from './slices/events/seatSelectionSlice';
+import ticketPurchaseReducer from './slices/events/ticketPurchaseSlice';
+import filterThreadReducer from './slices/threads/filterThreadSlice';
+import adminManageAdvertReducer from './slices/admin/adverts/adminManageAdvertSlice';
+import adminManageEventReducer from './slices/admin/events/adminManageEventSlice';
+import supportReducer from './slices/supportSlice';
+import refundReducer from './slices/events/refundSlice';
+import eventCapacityReducer from './slices/events/eventCapacitySlice'; 
 
 const store = configureStore({
     reducer: {
         advert: advertReducer,
         user: userReducer,
-        userAdverts: userAdvertReducer, // Add userAdvertReducer..
-        messages: messages, // Add messages
-        searchAdverts: searchAdvertsReducer, // Add searchAdvertsReducer
-        threads: threadReducer, // Add threadReducer
-        admin: adminReducer, // Add adminReducer
-        events: eventReducer, // Add eventReducer
-        eventFilters: filterEventReducer, // Add filterEventReducer
-        searchEvents: searchEventsReducer, // Add searchEventsReducer
-        seatSelection: seatSelectionReducer, // Add seatSelectionReducer
-        ticketPurchase: ticketPurchaseReducer, // Add ticketPurchaseReducer
-        freeEvents: freeEventReducer, // Add freeEventReducer
-        filterThreads: filterThreadReducer, // Add filterThreadsReducer
-        searchThreads: searchThreadsReducer, // Add searchThreadsReducer
-        adminManageAdvert: adminManageAdvertReducer, // Add adminManageAdvertReducer
-        adminManageEvent: adminManageEventReducer, // Add adminManageEventReducer
-        support: supportReducer, // Add supportReducer
-        refunds: refundReducer, // Add refundReducer
+        userAdverts: userAdvertReducer,
+        messages: messages,
+        searchAdverts: searchAdvertsReducer,
+        threads: threadReducer,
+        admin: adminReducer,
+        events: eventReducer,
+        eventFilters: filterEventReducer,
+        searchEvents: searchEventsReducer,
+        seatSelection: seatSelectionReducer,
+        ticketPurchase: ticketPurchaseReducer,
+        freeEvents: freeEventReducer,
+        filterThreads: filterThreadReducer,
+        searchThreads: searchThreadsReducer,
+        adminManageAdvert: adminManageAdvertReducer,
+        adminManageEvent: adminManageEventReducer,
+        support: supportReducer,
+        refunds: refundReducer,
+        eventCapacity: eventCapacityReducer,
     },
 });
 

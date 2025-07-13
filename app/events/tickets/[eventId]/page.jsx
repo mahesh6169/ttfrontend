@@ -35,6 +35,12 @@ import {
   setRefundPolicyInfo,
 } from '@/store/slices/events/ticketPurchaseSlice';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
+import {
+  selectEventCapacityState,
+  selectShouldRefreshCapacity,
+  fetchEventCapacity,
+  selectCartAwareCapacity,
+} from '@/store/slices/events/eventCapacitySlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const TicketSelectionPage = () => {
@@ -58,49 +64,36 @@ const TicketSelectionPage = () => {
   const purchaseError = useSelector(selectPurchaseError);
   const loading = useSelector(selectPurchaseLoading);
 
+  // ✅ Get capacity from Redux instead of local state
+  const { capacity: eventCapacity, isLoading: capacityLoading } = useSelector(state => 
+  selectCartAwareCapacity(state, eventId, totals.totalQuantity)
+);
+  const shouldRefreshCapacity = useSelector(state => 
+    selectShouldRefreshCapacity(state, eventId)
+  );
+
   // Local state for UI
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [eventCapacity, setEventCapacity] = useState({
-    total: 0,
-    sold: 0,
-    remaining: 0,
-    isUnlimited: false,
-    status: 'available',
-  });
-  const [capacityLoading, setCapacityLoading] = useState(false);
 
   // Check if event has seating layout
   const hasSeatingLayout =
     selectedEvent?.seatingLayout && selectedEvent.seatingLayout.length > 0;
 
-  // Fetch real-time capacity data
-  const fetchEventCapacity = async () => {
-    if (!eventId) return;
-
-    setCapacityLoading(true);
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/capacity`
-      );
-      const data = await response.json();
-      if (data.success) {
-        setEventCapacity(data.capacity);
-      }
-    } catch (error) {
-      console.error('Error fetching capacity:', error);
-    } finally {
-      setCapacityLoading(false);
-    }
-  };
-
   // Fetch event data on component mount
   useEffect(() => {
     if (eventId) {
       dispatch(fetchEventById(eventId));
-      fetchEventCapacity();
     }
   }, [eventId, dispatch]);
+
+  // ✅ Fetch capacity data when needed
+  useEffect(() => {
+    if (eventId && shouldRefreshCapacity) {
+      console.log(`📊 TicketSelectionPage: Fetching capacity for ${eventId}`);
+      dispatch(fetchEventCapacity(eventId));
+    }
+  }, [eventId, shouldRefreshCapacity, dispatch]);
 
   // Initialize purchase session when event is loaded
   useEffect(() => {
@@ -367,16 +360,18 @@ const TicketSelectionPage = () => {
             <div className="flex items-center text-sm text-gray-600 mb-4">
               <FaUsers className="mr-2" />
               <span>
-                {capacityLoading
-                  ? 'Loading availability...'
-                  : eventCapacity?.isUnlimited
-                  ? 'Unlimited capacity'
-                  : eventCapacity?.status === 'sold-out'
-                  ? 'Event sold out'
-                  : `${eventCapacity?.remaining || 0} of ${
-                      eventCapacity?.total || 0
-                    } remaining`}
-              </span>
+  {capacityLoading ? (
+    'Loading availability...'
+  ) : eventCapacity?.isUnlimited ? (
+    'Unlimited capacity'
+  ) : eventCapacity?.status === 'sold-out' ? (
+    'Event sold out'
+  ) : eventCapacity?.adjustedForCart ? (
+    `${eventCapacity.cartQuantity} ticket${eventCapacity.cartQuantity > 1 ? 's' : ''} selected • ${eventCapacity.remaining} of ${eventCapacity.total} remaining`
+  ) : (
+    `${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
+  )}
+</span>
             </div>
 
             {selectedEvent.ticketTypes?.map((ticketType) => {

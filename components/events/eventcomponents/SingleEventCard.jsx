@@ -388,12 +388,7 @@ const SingleEventCard = ({ event, chatProps }) => {
       Available Tickets
     </h3>
     
-    {/* Event Capacity Info */}
-    <EventCapacityDisplay 
-      eventId={event._id} 
-      isPaid={event.isPaid} 
-      showInTicketSection={true} 
-    />
+
     
 <div className="space-y-3">
       {event.ticketTypes.map((ticket, index) => (
