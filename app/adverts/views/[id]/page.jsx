@@ -38,7 +38,7 @@ const AdvertDetail = () => {
 
   return (
     <div id="viewsmain" className="flex flex-col gap-2 px-2">
-      {/* Row 1: Back & Report */}
+      {/* Row 1: Back & Report s */}
       <div className=" mt-4 flex justify-between">
   {/* Back to Adverts */}
   <span
