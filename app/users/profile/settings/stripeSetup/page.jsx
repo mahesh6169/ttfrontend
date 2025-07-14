@@ -264,27 +264,7 @@ useEffect(() => {
     }
   };
 
-  const handleViewDashboard = async () => {
-    setLoading(true);
-    try {
-      const { data } = await axios.post(
-        `${API_BASE_URL}/stripe/dashboard-link`,
-        {},
-        { withCredentials: true }
-      );
-      
-      if (data.success && data.url) {
-        window.open(data.url, '_blank');
-      } else {
-        alert(data.error || 'Failed to generate dashboard link. Please try again.');
-      }
-    } catch (err) {
-      console.error('Dashboard link error:', err);
-      alert(err.response?.data?.error || 'Failed to generate dashboard link. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleDeleteAccount = async () => {
   // Confirmation dialog
@@ -352,13 +332,16 @@ useEffect(() => {
     return (
       <div className="space-y-3">
         <div className="text-green-600 font-medium text-center py-4 bg-green-50 rounded-lg border border-green-200">
-          🎉 Your Stripe account is fully set up and ready to receive payments!
-          {isPopupWindow && (
-            <div className="text-sm text-green-700 mt-2">
-              This window will close automatically in a few seconds...
-            </div>
-          )}
-        </div>
+  🎉 Your Stripe account is fully set up and ready to receive payments!
+  <div className="text-sm text-green-700 mt-2">
+    You can now log into dashboard.stripe.com with your Stripe credentials.
+  </div>
+  {isPopupWindow && (
+    <div className="text-sm text-green-700 mt-2">
+      This window will close automatically in a few seconds...
+    </div>
+  )}
+</div>
         
         {/* Return button - different behavior for popup vs regular page */}
         {(returnTo || isPopupWindow) && (
@@ -371,46 +354,40 @@ useEffect(() => {
         )}
         
         {/* Dashboard Access Buttons - only show if not popup */}
-        {!isPopupWindow && (
-          <div className="flex space-x-3">
-            <button
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
-              onClick={handleViewDashboard}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Generating Link...
-                </>
-              ) : (
-                <>
-                  📊 View Dashboard
-                </>
-              )}
-            </button>
-            
-            <button
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-600 rounded cursor-not-allowed"
-              disabled
-            >
-              ✅ Connected
-            </button>
-          </div>
-        )}
+{!isPopupWindow && (
+  <div className="flex space-x-3">
+     <a
+      href="https://dashboard.stripe.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-center flex items-center justify-center"
+    >
+      📊 Open Stripe Dashboard
+    </a>
+    
+    <button
+      className="flex-1 px-4 py-2 bg-gray-200 text-gray-600 rounded cursor-not-allowed"
+      disabled
+    >
+      ✅ Connected
+    </button>
+  </div>
+)}
         
         {/* Info section - only show if not popup */}
         {!isPopupWindow && (
-          <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
-            <p className="font-medium text-blue-800 mb-1">💡 Your Dashboard</p>
-            <ul className="text-blue-700 space-y-1">
-              <li>• View all your ticket sales and earnings</li>
-              <li>• Track payouts to your bank account</li>
-              <li>• Download tax documents and reports</li>
-              <li>• Update your payment settings</li>
-            </ul>
-          </div>
-        )}
+  <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
+    <p className="font-medium text-blue-800 mb-1">💡 Your Stripe Dashboard</p>
+    <ul className="text-blue-700 space-y-1">
+      <li>• View all your ticket sales and earnings</li>
+      <li>• Track payouts to your bank account</li>
+      <li>• Download tax documents and reports</li>
+      <li>• Update your payment settings</li>
+      <li>• Access Stripe support directly</li>
+      <li>• Log in anytime at dashboard.stripe.com</li>
+    </ul>
+  </div>
+)}
       </div>
     );
   }
