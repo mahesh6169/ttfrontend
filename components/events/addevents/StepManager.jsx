@@ -80,7 +80,16 @@ const StepManager = ({
   const isAddMode = mode === 'add';
   const isEditingMode = mode === 'edit';
   const isViewMode = mode === 'view';
-  
+  // Stripe status helper
+const getStripeStatus = useCallback(() => {
+  return {
+    status: user?.stripeAccountStatus || 'no_account',
+    isFullyActive: user?.stripeAccountStatus === 'fully_active',
+    needsAction: ['no_account', 'incomplete_setup', 'action_required', 'account_restricted'].includes(user?.stripeAccountStatus),
+    isProcessing: ['under_review', 'capabilities_pending'].includes(user?.stripeAccountStatus)
+  };
+}, [user?.stripeAccountStatus]);
+
   const isLoading = formStatus === 'loading' || isInitializing;
   const canEdit = !isViewMode;
 
@@ -185,6 +194,23 @@ useEffect(() => {
       }
     }
   }, [formStatus, successMessage, onComplete, formData]);
+
+  // Real-time Stripe status monitoring
+useEffect(() => {
+  // Only show success notification when status changes to fully_active
+  // and we're on the right step with paid event selected
+  if (currentStep === 3 && formData.isPaid) {
+    const { isFullyActive, status } = getStripeStatus();
+    
+    if (isFullyActive) {
+      // Show success toast when setup completes
+      toast.success('🎉 Payment account setup completed! You can now proceed with your paid event.', {
+        duration: 4000,
+        position: 'top-center',
+      });
+    }
+  }
+}, [user?.stripeAccountStatus, currentStep, formData.isPaid, getStripeStatus]);
 
   // Handle images change (strip files for Redux, keep locally)
   const handleImagesChange = useCallback(
@@ -680,37 +706,29 @@ case 2: // Organiser Details
     return errors;
   }, [currentStep, formData, isAddMode]);
 
-const validateCurrentStepWithStripe = useCallback(() => {
-  const errors = validateCurrentStep(); // Get existing validation errors
+  const validateCurrentStepWithStripe = useCallback(() => {
+  const errors = validateCurrentStep();
   
-  // Additional validation for step 3 (Event Type) - Stripe setup check
+  // Stripe validation for step 3 (Event Type)
   if (currentStep === 3 && formData.isPaid) {
-    const isStripeFullySetup = user?.stripeAccountId && 
-                              user?.stripeChargesEnabled && 
-                              user?.stripeDetailsSubmitted && 
-                              user?.stripePayoutsEnabled;
+    const { isFullyActive, status } = getStripeStatus();
     
-    if (!isStripeFullySetup) {
-      errors.stripeSetup = ['Payment account setup is required for paid events. Please complete the setup above.'];
+    if (!isFullyActive) {
+      errors.stripeSetup = [`Payment account setup is required for paid events. Current status: ${status}`];
     }
   }
   
   return errors;
-}, [currentStep, formData.isPaid, validateCurrentStep, user?.stripeAccountId, user?.stripeChargesEnabled, user?.stripeDetailsSubmitted, user?.stripePayoutsEnabled]);
+}, [currentStep, formData.isPaid, validateCurrentStep, getStripeStatus]);
 
-// Helper function to check if Next button should be disabled
 const isNextButtonDisabled = useCallback(() => {
-  // Check if we're on step 3 (Event Type) with paid event but no Stripe setup
   if (currentStep === 3 && formData.isPaid) {
-    const isStripeFullySetup = user?.stripeAccountId && 
-                              user?.stripeChargesEnabled && 
-                              user?.stripeDetailsSubmitted && 
-                              user?.stripePayoutsEnabled;
-    return !isStripeFullySetup;
+    const { isFullyActive } = getStripeStatus();
+    return !isFullyActive;
   }
   
   return isLoading;
-}, [currentStep, formData.isPaid, isLoading, user?.stripeAccountId, user?.stripeChargesEnabled, user?.stripeDetailsSubmitted, user?.stripePayoutsEnabled]);
+}, [currentStep, formData.isPaid, isLoading, getStripeStatus]);
 
 // Add this helper function before prepareSubmissionData
 const calculateRecurringUtcDateTimes = useCallback((recurrence, eventDateTime, timeZone) => {
@@ -1110,23 +1128,33 @@ const handleNext = useCallback(() => {
     dispatch(setFormErrors(currentErrors));
 
 
-     // Special handling for Stripe setup errors
-    if (currentErrors.stripeSetup) {
-      toast.error(
-        <div>
-          <p className="font-bold">Payment Setup Required</p>
-          <p className="text-sm mt-1">
-            Please complete your payment account setup before proceeding with paid events.
-          </p>
-        </div>,
-        {
-          duration: 6000,
-          position: 'top-center',
-        }
-      );
-      return;
+    // Special handling for Stripe setup errors
+if (currentErrors.stripeSetup) {
+  const { status } = getStripeStatus();
+  
+  const statusMessages = {
+    'no_account': 'Connect your payment account to create paid events.',
+    'incomplete_setup': 'Complete your payment account setup to continue.',
+    'action_required': 'Your payment account requires immediate attention.',
+    'account_restricted': 'Your payment account is restricted and needs urgent action.',
+    'under_review': 'Your account is being reviewed. Please wait before creating paid events.',
+    'capabilities_pending': 'Your account is being processed. Please wait for completion.'
+  };
+  
+  toast.error(
+    <div>
+      <p className="font-bold">Payment Setup Required</p>
+      <p className="text-sm mt-1">
+        {statusMessages[status] || 'Please complete your payment account setup.'}
+      </p>
+    </div>,
+    {
+      duration: 8000,
+      position: 'top-center',
     }
-
+  );
+  return;
+}
     // Show specific error messages instead of generic message
     const errorMessages = Object.values(currentErrors).flat();
     const errorCount = errorMessages.length;
@@ -1363,19 +1391,30 @@ const handleAddAnother = useCallback(() => {
         : 'bg-teal-600 hover:bg-teal-700 text-white'
     }`}
     title={
-  currentStep === 3 && formData.isPaid && !(user?.stripeAccountId && user?.stripeChargesEnabled && user?.stripeDetailsSubmitted && user?.stripePayoutsEnabled)
-    ? 'Complete payment setup to proceed'
+  currentStep === 3 && formData.isPaid && !getStripeStatus().isFullyActive
+    ? `Complete payment setup to proceed. Current status: ${getStripeStatus().status}`
     : ''
 }
   >
-    {isNextButtonDisabled() && currentStep === 3 && formData.isPaid ? (
-      <>
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
-        Payment Setup Required
-      </>
-    ) : isLoading ? (
+    {isNextButtonDisabled() && currentStep === 3 && formData.isPaid ?  (
+  <>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+    {(() => {
+      const { status } = getStripeStatus();
+      const buttonTexts = {
+        'no_account': 'Connect Payment Account Required',
+        'incomplete_setup': 'Complete Setup Required',
+        'action_required': 'Setup Action Required',
+        'account_restricted': 'Account Issues Need Fixing',
+        'under_review': 'Account Under Review',
+        'capabilities_pending': 'Account Processing'
+      };
+      return buttonTexts[status] || 'Payment Setup Required';
+    })()}
+  </>
+) : isLoading ? (
       <>
         <svg
           className="animate-spin h-4 w-4 text-white"
