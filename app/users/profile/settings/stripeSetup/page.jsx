@@ -6,31 +6,129 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-// Helper function to format Stripe requirement names into user-friendly text
-const formatRequirementName = (requirement) => {
-  const formatters = {
-    'individual.verification.document': 'Government-issued photo ID',
-    'individual.verification.additional_document': 'Additional identity document',
-    'individual.first_name': 'First name',
-    'individual.last_name': 'Last name',
-    'individual.dob.day': 'Date of birth (day)',
-    'individual.dob.month': 'Date of birth (month)', 
-    'individual.dob.year': 'Date of birth (year)',
-    'individual.address.line1': 'Street address',
-    'individual.address.city': 'City',
-    'individual.address.state': 'State',
-    'individual.address.postal_code': 'Postal code',
-    'individual.phone': 'Phone number',
-    'individual.email': 'Email address',
-    'business_profile.name': 'Business name',
-    'business_profile.url': 'Business website',
-    'business_profile.mcc': 'Business category',
-    'external_account': 'Bank account details',
-    'tos_acceptance.date': 'Terms of service acceptance',
-    'tos_acceptance.ip': 'Terms acceptance IP address'
+// Map backend status to user-friendly labels
+const getStatusLabel = (backendStatus) => {
+  const statusMap = {
+    'no_account': 'Not Connected',
+    'account_restricted': 'Action Required',
+    'action_required': 'Setup Incomplete',
+    'incomplete_setup': 'Setup Incomplete',
+    'under_review': 'Under Review',
+    'capabilities_pending': 'Processing',
+    'fully_active': 'Connected & Active',
+    'unknown': 'Status Unknown'
   };
   
-  return formatters[requirement] || requirement.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return statusMap[backendStatus] || 'Status Unknown';
+};
+
+// Get status badge styling
+const getStatusBadge = (backendStatus) => {
+  const label = getStatusLabel(backendStatus);
+  
+  switch (backendStatus) {
+    case 'fully_active':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          ✅ {label}
+        </span>
+      );
+    case 'account_restricted':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          ⚠️ {label}
+        </span>
+      );
+    case 'action_required':
+    case 'incomplete_setup':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+          🔧 {label}
+        </span>
+      );
+    case 'under_review':
+    case 'capabilities_pending':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+          ⏳ {label}
+        </span>
+      );
+    case 'no_account':
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+          {label}
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+          {label}
+        </span>
+      );
+  }
+};
+
+// Get status message
+const getStatusMessage = (backendStatus) => {
+  switch (backendStatus) {
+    case 'no_account':
+      return 'Connect your Stripe account to start receiving payments from ticket sales.';
+    case 'account_restricted':
+      return '🚨 Your account needs immediate attention to continue receiving payments.';
+    case 'action_required':
+    case 'incomplete_setup':
+      return 'Complete your account setup to start receiving payments.';
+    case 'under_review':
+      return 'Your account is being reviewed by Stripe. This usually takes a few minutes.';
+    case 'capabilities_pending':
+      return 'Your account is being processed. Stripe is enabling payment capabilities.';
+    case 'fully_active':
+      return '🎉 Your account is ready! Payments will be deposited to your bank account.';
+    default:
+      return 'Please check your account status and complete any required setup.';
+  }
+};
+
+// Get button text
+const getButtonText = (backendStatus, loading) => {
+  if (loading) {
+    return backendStatus === 'no_account' ? 'Creating Account...' : 'Redirecting to Stripe...';
+  }
+  
+  switch (backendStatus) {
+    case 'no_account':
+      return 'Connect with Stripe';
+    case 'account_restricted':
+      return 'Fix Issues Now';
+    case 'action_required':
+    case 'incomplete_setup':
+      return 'Complete Setup';
+    case 'under_review':
+    case 'capabilities_pending':
+      return 'Under Review - Please Wait';
+    case 'fully_active':
+      return 'View Stripe Dashboard';
+    default:
+      return 'Continue Setup';
+  }
+};
+
+// Get button styling
+const getButtonStyle = (backendStatus) => {
+  switch (backendStatus) {
+    case 'fully_active':
+      return 'w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+    case 'account_restricted':
+      return 'w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50';
+    case 'action_required':
+    case 'incomplete_setup':
+      return 'w-full px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50';
+    case 'under_review':
+    case 'capabilities_pending':
+      return 'w-full px-4 py-2 bg-gray-200 text-gray-600 rounded cursor-not-allowed';
+    default:
+      return 'w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50';
+  }
 };
 
 export default function StripeSetupPage() {
@@ -50,34 +148,34 @@ export default function StripeSetupPage() {
     setIsPopupWindow(false);
   }, []);
 
-// Check account status on component mount
-useEffect(() => {
-  checkAccountStatus();
-}, []);
+  // Check account status on component mount
+  useEffect(() => {
+    checkAccountStatus();
+  }, []);
 
-// Auto-refresh when account is under review
-useEffect(() => {
-  let intervalId;
-  
-  // Only auto-refresh if account is under review or has pending verification
-  if (accountStatus?.accountStatus === 'under_review' || 
-      accountStatus?.statusAnalysis?.hasPendingVerification) {
+  // Auto-refresh when account is under review
+  useEffect(() => {
+    let intervalId;
     
-    intervalId = setInterval(async () => {
-      console.log('🔄 Auto-refreshing account status (under review)...');
-      await checkAccountStatus();
-    }, 30000); // Check every 30 seconds
-    
-    console.log('⏱️ Started auto-refresh for under review account');
-  }
-
-  return () => {
-    if (intervalId) {
-      clearInterval(intervalId);
-      console.log('🛑 Stopped auto-refresh');
+    // Only auto-refresh if account is under review or capabilities pending
+    if (accountStatus?.computedStatus === 'under_review' || 
+        accountStatus?.computedStatus === 'capabilities_pending') {
+      
+      intervalId = setInterval(async () => {
+        console.log('🔄 Auto-refreshing account status...');
+        await checkAccountStatus();
+      }, 30000); // Check every 30 seconds
+      
+      console.log('⏱️ Started auto-refresh for under review account');
     }
-  };
-}, [accountStatus?.accountStatus, accountStatus?.statusAnalysis?.hasPendingVerification]);
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        console.log('🛑 Stopped auto-refresh');
+      }
+    };
+  }, [accountStatus?.computedStatus]);
 
   useEffect(() => {
     // Check for ?success=true in URL after Stripe onboarding
@@ -96,17 +194,16 @@ useEffect(() => {
   }, [searchParams, router, returnTo]);
 
   // Handle completion and show success message
-useEffect(() => {
-  if (accountStatus?.charges_enabled && accountStatus?.payouts_enabled) {
-    console.log('🎉 Stripe setup completed! Stopping auto-refresh.');
-    // The auto-refresh will stop automatically due to status change
-  }
-}, [accountStatus?.charges_enabled, accountStatus?.payouts_enabled]);
+  useEffect(() => {
+    if (accountStatus?.computedStatus === 'fully_active') {
+      console.log('🎉 Stripe setup completed! Stopping auto-refresh.');
+    }
+  }, [accountStatus?.computedStatus]);
 
-  // ✅ AUTO-CLOSE FUNCTIONALITY - This is the key addition
+  // ✅ AUTO-CLOSE FUNCTIONALITY
   useEffect(() => {
     // Auto-close window when setup is complete (for popup windows)
-    if (accountStatus?.charges_enabled && accountStatus?.payouts_enabled && isPopupWindow) {
+    if (accountStatus?.computedStatus === 'fully_active' && isPopupWindow) {
       // Show success message briefly, then auto-close
       const closeTimer = setTimeout(() => {
         try {
@@ -134,87 +231,22 @@ useEffect(() => {
       setAccountStatus(data);
     } catch (err) {
       console.error('Failed to check account status:', err);
-      setAccountStatus({ hasAccount: false });
+      setAccountStatus({ hasAccount: false, computedStatus: 'no_account' });
     } finally {
       setCheckingStatus(false);
     }
   };
 
- const getStatusBadge = () => {
-  if (!accountStatus?.hasAccount) {
-    return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-        No Account
-      </span>
-    );
-  }
-
-  // Use enhanced status analysis if available
-  const status = accountStatus.accountStatus || 'unknown';
-  
-  switch (status) {
-    case 'fully_enabled':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          ✅ Fully Enabled
-        </span>
-      );
-      
-    case 'under_review':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-          ⏳ Under Review
-        </span>
-      );
-      
-    case 'setup_required':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-          🔧 Setup Required
-        </span>
-      );
-      
-    case 'past_due':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          ⚠️ Action Required
-        </span>
-      );
-      
-    case 'initial_setup_required':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          🚀 Setup Required
-        </span>
-      );
-      
-    default:
-      // Fallback to old logic
-      if (accountStatus.charges_enabled && accountStatus.payouts_enabled) {
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            ✅ Fully Enabled
-          </span>
-        );
-      }
-      
-      if (accountStatus.details_submitted) {
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            ⏳ Under Review
-          </span>
-        );
-      }
-      
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          ⚠️ Setup Required
-        </span>
-      );
-  }
-};
-
-  const handleConnectStripe = async () => {
+  const handleAction = async () => {
+    const status = accountStatus?.computedStatus || 'no_account';
+    
+    // For fully active accounts, redirect to Stripe dashboard
+    if (status === 'fully_active') {
+      window.open('https://dashboard.stripe.com', '_blank');
+      return;
+    }
+    
+    // For all other statuses, start/continue onboarding
     setLoading(true);
     try {
       // Include return URL in Stripe onboard request
@@ -264,264 +296,6 @@ useEffect(() => {
     }
   };
 
-
-
-  const handleDeleteAccount = async () => {
-  // Confirmation dialog
-  const confirmed = window.confirm(
-    'Are you sure you want to delete your Stripe account?\n\n' +
-    'This action cannot be undone. You will need to create a new account to receive payments.\n\n' +
-    'Click OK to proceed with deletion.'
-  );
-  
-  if (!confirmed) return;
-
-  setLoading(true);
-  try {
-    const { data } = await axios.delete(
-      `${API_BASE_URL}/stripe/account`,
-      { withCredentials: true }
-    );
-    
-    if (data.success) {
-      alert('✅ Stripe account deleted successfully! You can create a new account anytime.');
-      
-      // Refresh status to show "No Account" state
-      await checkAccountStatus();
-      
-      // If in popup, you might want to close it
-      if (isPopupWindow) {
-        setTimeout(() => {
-          try {
-            window.close();
-          } catch (error) {
-            console.log('Could not close popup:', error);
-          }
-        }, 2000);
-      }
-    } else {
-      alert('❌ ' + (data.error || 'Failed to delete account. Please try again.'));
-    }
-  } catch (err) {
-    console.error('Delete account error:', err);
-    const errorMessage = err.response?.data?.error || 'Failed to delete account. Please try again.';
-    alert('❌ ' + errorMessage);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  const getActionButton = () => {
-  if (!accountStatus?.hasAccount) {
-    return (
-      <button
-        className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        onClick={handleConnectStripe}
-        disabled={loading}
-      >
-        {loading ? 'Creating Account...' : 'Connect with Stripe'}
-      </button>
-    );
-  }
-
-  const status = accountStatus.accountStatus || 'unknown';
-  const nextActions = accountStatus.nextActions || [];
-
-  // Fully operational account
-  if (status === 'fully_enabled') {
-    return (
-      <div className="space-y-3">
-        <div className="text-green-600 font-medium text-center py-4 bg-green-50 rounded-lg border border-green-200">
-  🎉 Your Stripe account is fully set up and ready to receive payments!
-  <div className="text-sm text-green-700 mt-2">
-    You can now log into dashboard.stripe.com with your Stripe credentials.
-  </div>
-  {isPopupWindow && (
-    <div className="text-sm text-green-700 mt-2">
-      This window will close automatically in a few seconds...
-    </div>
-  )}
-</div>
-        
-        {/* Return button - different behavior for popup vs regular page */}
-        {(returnTo || isPopupWindow) && (
-          <button
-            className="w-full px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 font-medium"
-            onClick={handleReturnToOriginalPage}
-          >
-            {isPopupWindow ? '✅ Close & Continue' : '✅ Continue Creating Event'}
-          </button>
-        )}
-        
-        {/* Dashboard Access Buttons - only show if not popup */}
-{!isPopupWindow && (
-  <div className="flex space-x-3">
-     <a
-      href="https://dashboard.stripe.com"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-center flex items-center justify-center"
-    >
-      📊 Open Stripe Dashboard
-    </a>
-    
-    <button
-      className="flex-1 px-4 py-2 bg-gray-200 text-gray-600 rounded cursor-not-allowed"
-      disabled
-    >
-      ✅ Connected
-    </button>
-  </div>
-)}
-        
-        {/* Info section - only show if not popup */}
-        {!isPopupWindow && (
-  <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
-    <p className="font-medium text-blue-800 mb-1">💡 Your Stripe Dashboard</p>
-    <ul className="text-blue-700 space-y-1">
-      <li>• View all your ticket sales and earnings</li>
-      <li>• Track payouts to your bank account</li>
-      <li>• Download tax documents and reports</li>
-      <li>• Update your payment settings</li>
-      <li>• Access Stripe support directly</li>
-      <li>• Log in anytime at dashboard.stripe.com</li>
-    </ul>
-  </div>
-)}
-      </div>
-    );
-  }
-
-  // Account needs action (setup_required, past_due)
-  if (status === 'setup_required' || status === 'past_due' || status === 'initial_setup_required') {
-    const primaryAction = nextActions[0];
-    const urgencyClass = status === 'past_due' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700';
-    
-    return (
-      <div className="space-y-3">
-        {/* Status message */}
-        <div className={`p-4 rounded-lg border ${
-          status === 'past_due' 
-            ? 'bg-red-50 border-red-200 text-red-800' 
-            : 'bg-orange-50 border-orange-200 text-orange-800'
-        }`}>
-          <div className="font-medium mb-2">
-            {status === 'past_due' && '🚨 Immediate Action Required'}
-            {status === 'setup_required' && '🔧 Setup Incomplete'}
-            {status === 'initial_setup_required' && '🚀 Complete Initial Setup'}
-          </div>
-          
-          {/* Show specific action guidance */}
-          {primaryAction && (
-            <div className="text-sm">
-              <strong>{primaryAction.title}:</strong> {primaryAction.description}
-            </div>
-          )}
-          
-          {/* Show all missing items if not popup */}
-          {!isPopupWindow && nextActions.length > 0 && (
-            <div className="mt-3">
-              <div className="text-sm font-medium mb-1">Missing:</div>
-              <ul className="text-xs space-y-1">
-                {nextActions.map((action, index) => (
-                  <li key={index} className="flex items-center">
-                    <span className="w-1.5 h-1.5 bg-current rounded-full mr-2"></span>
-                    {action.title}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* Action buttons */}
-        <div className="space-y-2">
-          <button
-            className={`w-full px-4 py-3 text-white rounded font-medium disabled:opacity-50 ${urgencyClass}`}
-            onClick={handleConnectStripe}
-            disabled={loading}
-          >
-            {loading ? 'Redirecting to Stripe...' : 'Complete Missing Requirements'}
-          </button>
-          
-          {/* Return button for popup/redirect scenarios */}
-          {(returnTo || isPopupWindow) && (
-            <button
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-              onClick={handleReturnToOriginalPage}
-            >
-              {isPopupWindow ? 'Close Window' : 'Return Later'}
-            </button>
-          )}
-          
-          {/* Delete option for problematic accounts */}
-          {!isPopupWindow && accountStatus.canDelete && (
-            <button
-              className="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 text-sm"
-              onClick={handleDeleteAccount}
-              disabled={loading}
-            >
-              {loading ? 'Deleting...' : 'Delete Account & Start Over'}
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Under review (genuinely waiting for Stripe)
-  if (status === 'under_review') {
-    return (
-      <div className="space-y-3">
-        <div className="text-yellow-600 font-medium p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-          <div className="flex items-center mb-2">
-            ⏳ <span className="ml-2">Under Review by Stripe</span>
-          </div>
-          <div className="text-sm">
-            Your account is being reviewed. This usually takes a few minutes, but can take up to 24 hours in some cases.
-          </div>
-          {accountStatus.statusAnalysis?.hasPendingVerification && (
-  <div className="text-xs mt-2 text-yellow-700">
-    <div>Pending verification items: {accountStatus.statusAnalysis.allRequirements.pending_verification.length}</div>
-    <div className="flex items-center mt-1">
-      <div className="animate-pulse w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
-      Auto-checking every 30 seconds...
-    </div>
-  </div>
-)}
-        </div>
-        
-        {(returnTo || isPopupWindow) && (
-          <button
-            className="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 mb-2"
-            onClick={handleReturnToOriginalPage}
-          >
-            {isPopupWindow ? 'Close Window' : 'Return to Event Creation'}
-          </button>
-        )}
-        
-        <button
-          className="w-full px-4 py-2 bg-gray-200 text-gray-600 rounded cursor-not-allowed"
-          disabled
-        >
-          Under Review - Please Wait
-        </button>
-      </div>
-    );
-  }
-
-  // Fallback for unknown status
-  return (
-    <button
-      className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-      onClick={handleConnectStripe}
-      disabled={loading}
-    >
-      {loading ? 'Checking Status...' : 'Continue Setup'}
-    </button>
-  );
-};
-
   if (checkingStatus) {
     return (
       <div className="max-w-lg mx-auto mt-12 p-6 bg-white rounded shadow">
@@ -534,6 +308,8 @@ useEffect(() => {
       </div>
     );
   }
+
+  const currentStatus = accountStatus?.computedStatus || 'no_account';
 
   return (
     <div className="max-w-lg mx-auto mt-12 p-6 bg-white rounded shadow">
@@ -556,14 +332,41 @@ useEffect(() => {
         </div>
       )}
       
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold">Stripe Payout Setup</h2>
-        {getStatusBadge()}
+      {/* Header with Status and Refresh */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <h2 className="text-2xl font-bold">Stripe Payout Setup</h2>
+          {getStatusBadge(currentStatus)}
+        </div>
+        <button
+          className="text-gray-400 hover:text-gray-600 transition-colors"
+          onClick={checkAccountStatus}
+          disabled={checkingStatus}
+          title="Refresh Status"
+        >
+          <svg 
+            className={`w-5 h-5 ${checkingStatus ? 'animate-spin' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+            />
+          </svg>
+        </button>
       </div>
-      
-      <p className="mb-6 text-gray-600">
-        Connect your Stripe account to receive ticket sales payouts as an organiser.
-      </p>
+
+      {/* Account ID - only show if account exists */}
+      {accountStatus?.hasAccount && accountStatus?.accountId && (
+        <div className="mb-4 text-sm text-gray-600">
+          <span className="font-medium">Account ID:</span> 
+          <span className="font-mono ml-2">{accountStatus.accountId}</span>
+        </div>
+      )}
 
       {/* Success Message */}
       {stripeSuccess && (
@@ -572,174 +375,69 @@ useEffect(() => {
         </div>
       )}
 
-{/* Enhanced Account Status Details - simplified for popup */}
-      {accountStatus?.hasAccount && !isPopupWindow && (
-        <div className="bg-gray-50 p-4 rounded mb-6">
-          <h3 className="font-medium mb-3 text-gray-800">Account Status</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Account ID:</span>
-              <span className="font-mono text-xs">{accountStatus.accountId}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Details Submitted:</span>
-              <span className={accountStatus.details_submitted ? 'text-green-600' : 'text-red-600'}>
-                {accountStatus.details_submitted ? '✅ Yes' : '❌ No'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Charges Enabled:</span>
-              <span className={accountStatus.charges_enabled ? 'text-green-600' : 'text-red-600'}>
-                {accountStatus.charges_enabled ? '✅ Yes' : '❌ No'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Payouts Enabled:</span>
-              <span className={accountStatus.payouts_enabled ? 'text-green-600' : 'text-red-600'}>
-                {accountStatus.payouts_enabled ? '✅ Yes' : '❌ No'}
-              </span>
-            </div>
-            
-            {/* Enhanced status information */}
-            {accountStatus.accountStatus && (
-              <div className="flex justify-between">
-                <span>Status:</span>
-                <span className="font-medium capitalize text-blue-600">
-                  {accountStatus.accountStatus.replace(/_/g, ' ')}
-                </span>
-              </div>
-            )}
-            
-            {/* Show verification status */}
-            {accountStatus.statusAnalysis && (
-              <>
-                {accountStatus.statusAnalysis.hasCurrentlyDue && (
-                  <div className="flex justify-between">
-                    <span>Missing Items:</span>
-                    <span className="text-orange-600 font-medium">
-                      {accountStatus.statusAnalysis.allRequirements.currently_due.length} required
-                    </span>
-                  </div>
-                )}
-                
-                {accountStatus.statusAnalysis.hasPendingVerification && (
-                  <div className="flex justify-between">
-                    <span>Under Review:</span>
-                    <span className="text-yellow-600 font-medium">
-                      {accountStatus.statusAnalysis.allRequirements.pending_verification.length} items
-                    </span>
-                  </div>
-                )}
-              </>
-            )}
+      {/* Auto-refresh indicator for under review */}
+      {(currentStatus === 'under_review' || currentStatus === 'capabilities_pending') && (
+        <div className="mb-4 text-xs text-yellow-700 bg-yellow-50 p-2 rounded border border-yellow-200">
+          <div className="flex items-center">
+            <div className="animate-pulse w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
+            Auto-checking status every 30 seconds...
           </div>
+        </div>
+      )}
+
+      {/* Status Message */}
+      <p className="mb-6 text-gray-600">
+        {getStatusMessage(currentStatus)}
+      </p>
+
+      {/* Success message for fully active + popup auto-close */}
+      {currentStatus === 'fully_active' && isPopupWindow && (
+        <div className="mb-4 text-sm text-green-700 bg-green-50 p-3 rounded border border-green-200">
+          This window will close automatically in a few seconds...
         </div>
       )}
 
       {/* Action Button */}
       <div className="mb-4">
-        {getActionButton()}
+        <button
+          className={getButtonStyle(currentStatus)}
+          onClick={handleAction}
+          disabled={loading || currentStatus === 'under_review' || currentStatus === 'capabilities_pending'}
+        >
+          {getButtonText(currentStatus, loading)}
+        </button>
       </div>
 
-      {/* Refresh Button - only show if not popup or setup incomplete */}
-      {(!isPopupWindow || !accountStatus?.charges_enabled || !accountStatus?.payouts_enabled) && (
+      {/* Return button for popup/redirect scenarios */}
+      {(returnTo || isPopupWindow) && currentStatus !== 'fully_active' && (
         <button
-          className="text-sm text-gray-500 hover:text-gray-700 underline"
-          onClick={checkAccountStatus}
-          disabled={checkingStatus}
+          className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 mb-4"
+          onClick={handleReturnToOriginalPage}
         >
-          {checkingStatus ? 'Checking...' : 'Refresh Status'}
+          {isPopupWindow ? 'Close Window' : 'Return Later'}
         </button>
       )}
 
-{/* Enhanced Requirements Section - only show if not popup */}
-      {!isPopupWindow && accountStatus?.statusAnalysis?.hasCurrentlyDue && (
-        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
-          <h4 className="font-medium text-yellow-800 mb-3 flex items-center">
-            <span className="mr-2">⚠️</span>
-            Required Actions ({accountStatus.statusAnalysis.allRequirements.currently_due.length})
-          </h4>
-          
-          {/* Categorized requirements */}
-          {accountStatus.statusAnalysis.categories.idVerification.length > 0 && (
-            <div className="mb-3">
-              <div className="text-sm font-medium text-red-700 mb-1">🆔 ID Verification Required</div>
-              <ul className="text-sm text-red-600 space-y-1 ml-4">
-                {accountStatus.statusAnalysis.categories.idVerification.map((req, index) => (
-                  <li key={index} className="flex items-center">
-                    <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
-                    {formatRequirementName(req)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {accountStatus.statusAnalysis.categories.businessInfo.length > 0 && (
-            <div className="mb-3">
-              <div className="text-sm font-medium text-orange-700 mb-1">🏢 Business Information</div>
-              <ul className="text-sm text-orange-600 space-y-1 ml-4">
-                {accountStatus.statusAnalysis.categories.businessInfo.map((req, index) => (
-                  <li key={index} className="flex items-center">
-                    <span className="w-2 h-2 bg-orange-400 rounded-full mr-2"></span>
-                    {formatRequirementName(req)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {accountStatus.statusAnalysis.categories.banking.length > 0 && (
-            <div className="mb-3">
-              <div className="text-sm font-medium text-blue-700 mb-1">🏦 Banking Information</div>
-              <ul className="text-sm text-blue-600 space-y-1 ml-4">
-                {accountStatus.statusAnalysis.categories.banking.map((req, index) => (
-                  <li key={index} className="flex items-center">
-                    <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
-                    {formatRequirementName(req)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {accountStatus.statusAnalysis.categories.other.length > 0 && (
-            <div className="mb-3">
-              <div className="text-sm font-medium text-gray-700 mb-1">📋 Other Requirements</div>
-              <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                {accountStatus.statusAnalysis.categories.other.map((req, index) => (
-                  <li key={index} className="flex items-center">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
-                    {formatRequirementName(req)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          <div className="mt-3 text-xs text-yellow-700 bg-yellow-100 p-2 rounded">
-            💡 Click "Complete Missing Requirements" above to fix these issues through Stripe's secure verification process.
-          </div>
-        </div>
+      {/* Continue button for fully active accounts */}
+      {currentStatus === 'fully_active' && (returnTo || isPopupWindow) && (
+        <button
+          className="w-full px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 font-medium mb-4"
+          onClick={handleReturnToOriginalPage}
+        >
+          {isPopupWindow ? '✅ Close & Continue' : '✅ Continue Creating Event'}
+        </button>
       )}
-      
-      {/* Pending verification section */}
-      {!isPopupWindow && accountStatus?.statusAnalysis?.hasPendingVerification && (
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
-          <h4 className="font-medium text-blue-800 mb-2 flex items-center">
-            <span className="mr-2">⏳</span>
-            Under Review ({accountStatus.statusAnalysis.allRequirements.pending_verification.length} items)
-          </h4>
-          <div className="text-sm text-blue-700">
-            These items are currently being reviewed by Stripe. No action needed from you.
-          </div>
-          <ul className="text-xs text-blue-600 space-y-1 mt-2 ml-4">
-            {accountStatus.statusAnalysis.allRequirements.pending_verification.map((req, index) => (
-              <li key={index} className="flex items-center">
-                <span className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></span>
-                {formatRequirementName(req)}
-              </li>
-            ))}
+
+      {/* Additional info for fully active accounts (non-popup only) */}
+      {currentStatus === 'fully_active' && !isPopupWindow && (
+        <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
+          <p className="font-medium text-blue-800 mb-1">💡 Your Stripe Dashboard</p>
+          <ul className="text-blue-700 space-y-1">
+            <li>• View all your ticket sales and earnings</li>
+            <li>• Track payouts to your bank account</li>
+            <li>• Download tax documents and reports</li>
+            <li>• Update your payment settings</li>
+            <li>• Log in anytime at dashboard.stripe.com</li>
           </ul>
         </div>
       )}

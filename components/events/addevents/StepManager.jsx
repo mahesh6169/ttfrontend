@@ -80,6 +80,7 @@ const StepManager = ({
   const isAddMode = mode === 'add';
   const isEditingMode = mode === 'edit';
   const isViewMode = mode === 'view';
+  
   const isLoading = formStatus === 'loading' || isInitializing;
   const canEdit = !isViewMode;
 
