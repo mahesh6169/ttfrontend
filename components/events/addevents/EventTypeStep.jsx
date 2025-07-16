@@ -1,20 +1,15 @@
 // components/events/addevents/EventTypeStep.jsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { toggleIsPaid, updateRefundPolicy } from '@/store/slices/events/eventSlice';
-import { validateToken } from '@/store/slices/users/userSlice';
+import { useRouter } from 'next/navigation';
+import { toggleIsPaid } from '@/store/slices/events/eventSlice';
 import { toast } from 'react-toastify';
 
 const EventTypeStep = ({ formData = {}, errors = {} }) => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const { user } = useSelector((state) => state.user);
-  
-  // Local state for tracking setup status
-  const [isCheckingStripe, setIsCheckingStripe] = useState(false);
-
-
- 
 
   // Check if this is a recurring event
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
@@ -23,33 +18,12 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
   const stripeAccountStatus = user?.stripeAccountStatus || 'no_account';
   const isStripeFullyActive = stripeAccountStatus === 'fully_active';
 
-   const checkStripeStatus = async () => {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/stripe/account-status`, {
-      credentials: 'include'
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.computedStatus === 'fully_active' && !isStripeFullyActive) {
-        // Status changed to active - refresh Redux
-        await dispatch(validateToken());
-        toast.success('🎉 Payment account is now connected!');
-      }
-    }
-  } catch (error) {
-    console.log('Error checking Stripe status:', error);
-  }
-};
-
   // Auto-select free event when recurring is enabled (paid not supported for recurring)
   useEffect(() => {
     if (isRecurringEvent && formData.isPaid) {
       dispatch(toggleIsPaid(false));
     }
   }, [isRecurringEvent, formData.isPaid, dispatch]);
-
-
 
   const handlePaidToggle = (isPaid) => {
     // Don't allow selecting paid if recurring event
@@ -81,41 +55,59 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
     }
   };
 
-  
-  // Handle opening Stripe setup
-const handleStripeSetup = () => {
-  if (stripeAccountStatus === 'fully_active') {
-    window.open('https://dashboard.stripe.com', '_blank');
-    return;
-  }
-
-  const currentPath = window.location.pathname + window.location.search;
-  const stripeSetupUrl = `/users/profile/settings/stripeSetup?returnTo=${encodeURIComponent(currentPath)}`;
-  
-  const stripeWindow = window.open(stripeSetupUrl, '_blank');
-  
-  if (!stripeWindow) {
-    toast.error('Please allow popups for this site to complete payment account setup');
-    return;
-  }
-  
-  // Simple polling - check every 5 seconds
-  const pollInterval = setInterval(async () => {
-    if (stripeWindow.closed) {
-      clearInterval(pollInterval);
-      console.log('Stripe window closed, checking status...');
-      await checkStripeStatus();
-      return;
+  // Get status-specific button text and description
+  const getStripeSetupInfo = () => {
+    switch (stripeAccountStatus) {
+      case 'no_account':
+        return {
+          buttonText: 'Setup Stripe Payment Account',
+          description: 'To create paid events, you need to set up your Stripe payment account.'
+        };
+      case 'incomplete_setup':
+        return {
+          buttonText: 'Complete Stripe Payment Account Setup',
+          description: 'Complete your Stripe payment account setup to enable paid events.'
+        };
+      case 'action_required':
+        return {
+          buttonText: 'Stripe Payment Account Setup - Action Required',
+          description: 'Your payment account requires additional information. Please complete the required actions.'
+        };
+      case 'account_restricted':
+        return {
+          buttonText: 'Stripe Payment Account Setup - Fix Account Issues',
+          description: 'Your payment account has restrictions that need to be resolved before you can accept payments.'
+        };
+      case 'under_review':
+        return {
+          buttonText: 'Stripe Payment Account Setup - Under Review',
+          description: 'Your account is currently being reviewed by Stripe. Check your progress and current status.'
+        };
+      case 'capabilities_pending':
+        return {
+          buttonText: 'Stripe Payment Account Setup - Under Review',
+          description: 'Your account setup is being processed by Stripe. Check progress for any updates.'
+        };
+      case 'fully_active':
+        return {
+          buttonText: 'Stripe Setup Completed',
+          description: 'Your Stripe setup is successfully completed.'
+        };
+      default:
+        return {
+          buttonText: 'Setup Stripe Payment Account',
+          description: 'To create paid events, you need to set up your Stripe payment account.'
+        };
     }
-    
-    await checkStripeStatus();
-  }, 5000);
-  
-  // Clean up after 10 minutes
-  setTimeout(() => clearInterval(pollInterval), 600000);
-  
-  toast.info('Complete the setup in the new tab - this page will automatically detect when you\'re done!');
-};
+  };
+
+  // Handle Stripe setup - always redirect to setup page
+  const handleStripeSetup = () => {
+    // Always redirect to setup page for any status
+    router.push('/users/profile/settings/stripeSetup');
+  };
+
+  const setupInfo = getStripeSetupInfo();
 
   return (
     <div className="space-y-6">
@@ -261,18 +253,18 @@ const handleStripeSetup = () => {
                   </span>
                 )}
                 
-                {/* Replace the complex badge logic with this simple version */}
-{!isRecurringEvent && !isStripeFullyActive && (
-  <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded-full">
-    Setup Required
-  </span>
-)}
+                {/* Status badges with consistent styling */}
+                {!isRecurringEvent && !isStripeFullyActive && (
+                  <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded-full">
+                    Payment Setup Required
+                  </span>
+                )}
 
-{!isRecurringEvent && isStripeFullyActive && (
-  <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-    ✓ Connected
-  </span>
-)}
+                {!isRecurringEvent && isStripeFullyActive && (
+                  <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                    ✓ Payment Setup Completed
+                  </span>
+                )}
               </div>
               
               <p className="text-gray-600 mt-2">
@@ -311,47 +303,25 @@ const handleStripeSetup = () => {
         </div>
       </div>
 
-{/* Replace the complex status section with this simplified version */}
-{!isStripeFullyActive && (
-  <div className="p-6 border-2 rounded-lg bg-orange-50 border-orange-200">
-    <div className="flex items-start">
-      <div className="flex-shrink-0">
-        <svg className="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-        </svg>
-      </div>
-      <div className="ml-3 flex-1">
-        <h3 className="text-lg font-medium mb-2 text-orange-800">
-          Payment Account Setup Required
-        </h3>
-        <p className="text-orange-700 mb-4">
-          Connect your payment account to start receiving payments from ticket sales.
-        </p>
-        <button
-          onClick={handleStripeSetup}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-        >
-          <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-          </svg>
-          Connect Payment Account
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-      
-      {/* Payment Setup Success */}
-      {isStripeFullyActive && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center">
-            <svg className="h-5 w-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+      {/* Minimal Setup Section - button and purpose only */}
+      {!isRecurringEvent && (
+        <div className="p-4 border border-gray-200 rounded-lg">
+          <button
+            onClick={handleStripeSetup}
+            className={`w-full px-4 py-2 rounded transition-colors flex items-center justify-center gap-2 ${
+              isStripeFullyActive
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-orange-600 text-white hover:bg-orange-700'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
             </svg>
-            <p className="text-green-800 font-medium">
-              ✓ Payment account is fully set up and ready! You can proceed to configure your ticket pricing.
-            </p>
-          </div>
+            {setupInfo.buttonText}
+          </button>
+          <p className="text-sm text-gray-600 mt-2 text-center">
+            {setupInfo.description}
+          </p>
         </div>
       )}
 

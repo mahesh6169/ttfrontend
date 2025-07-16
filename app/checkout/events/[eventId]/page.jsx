@@ -1111,43 +1111,39 @@ const handleBackToTickets = () => {
                         </p>
                       )}
 
-                       {/* Refund Policy Section - Only for paid events */}
-                      {event?.isPaid && event?.refundPolicy && (
-                        <div className="mt-6 border-t pt-6">
-                          <RefundPolicyDisplay 
-                            refundPolicy={event.refundPolicy}
-                            variant="checkout"
-                          />
+                      {/* Refund Policy Acceptance - Only for paid events */}
+{event?.isPaid && event?.refundPolicy && (
+  <>
+    <div className="flex items-start">
+      <input
+        type="checkbox"
+        name="refundPolicyAccepted"
+        checked={buyerInfo.refundPolicyAccepted || false}
+        onChange={(e) => handleRefundPolicyAcceptance(e.target.checked)}
+        className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+      />
+      <label className="ml-2 text-sm text-gray-600">
+        I acknowledge and accept the refund policy stated below. *
+      </label>
+    </div>
+    {errors.refundPolicyAccepted && (
+      <p className="text-sm text-red-600">
+        {errors.refundPolicyAccepted}
+      </p>
+    )}
+  </>
+)}
 
-                          {/* Mandatory Refund Policy Acceptance */}
-                          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <div className="flex items-start">
-                              <input
-                                type="checkbox"
-                                name="refundPolicyAccepted"
-                                checked={buyerInfo.refundPolicyAccepted || false}
-                                onChange={(e) => handleRefundPolicyAcceptance(e.target.checked)}
-                                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                              />
-                              <label className="ml-2 text-sm text-gray-700">
-                                <span className="font-medium text-gray-900">
-                                  I acknowledge and accept the refund policy stated above. *
-                                </span>
-                                <br />
-                                <span className="text-gray-600 text-xs mt-1 block">
-                                  This policy will apply to any refunds processed for this purchase.
-                                </span>
-                              </label>
-                            </div>
-                            {errors.refundPolicyAccepted && (
-                              <p className="mt-2 text-sm text-red-600 ml-6">
-                                {errors.refundPolicyAccepted}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
 
+{/* Refund Policy Display - Only for paid events */}
+{event?.isPaid && event?.refundPolicy && (
+  <div className="mt-6 border-t pt-6">
+    <RefundPolicyDisplay 
+      refundPolicy={event.refundPolicy}
+      variant="checkout"
+    />
+  </div>
+)}
                       {/* Proceed to Payment Button */}
                       <button
                         onClick={handleProceedToPayment}

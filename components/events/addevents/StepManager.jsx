@@ -80,15 +80,7 @@ const StepManager = ({
   const isAddMode = mode === 'add';
   const isEditingMode = mode === 'edit';
   const isViewMode = mode === 'view';
-  // Stripe status helper
-const getStripeStatus = useCallback(() => {
-  return {
-    status: user?.stripeAccountStatus || 'no_account',
-    isFullyActive: user?.stripeAccountStatus === 'fully_active',
-    needsAction: ['no_account', 'incomplete_setup', 'action_required', 'account_restricted'].includes(user?.stripeAccountStatus),
-    isProcessing: ['under_review', 'capabilities_pending'].includes(user?.stripeAccountStatus)
-  };
-}, [user?.stripeAccountStatus]);
+  
 
   const isLoading = formStatus === 'loading' || isInitializing;
   const canEdit = !isViewMode;
@@ -195,22 +187,7 @@ useEffect(() => {
     }
   }, [formStatus, successMessage, onComplete, formData]);
 
-  // Real-time Stripe status monitoring
-useEffect(() => {
-  // Only show success notification when status changes to fully_active
-  // and we're on the right step with paid event selected
-  if (currentStep === 3 && formData.isPaid) {
-    const { isFullyActive, status } = getStripeStatus();
-    
-    if (isFullyActive) {
-      // Show success toast when setup completes
-      toast.success('🎉 Payment account setup completed! You can now proceed with your paid event.', {
-        duration: 4000,
-        position: 'top-center',
-      });
-    }
-  }
-}, [user?.stripeAccountStatus, currentStep, formData.isPaid, getStripeStatus]);
+
 
   // Handle images change (strip files for Redux, keep locally)
   const handleImagesChange = useCallback(
@@ -523,212 +500,192 @@ if (ticket.startDate && ticket.expiryDate) {
     return errors;
   }, [formData, isAddMode]);
 
-  // Validate only fields in current step
-  const validateCurrentStep = useCallback(() => {
-    const errors = {};
+// switch statement with:
+const validateCurrentStep = useCallback(() => {
+  const errors = {};
 
-    switch (currentStep) {
-      case 1: // Event Details
-        if (!formData.title?.trim()) errors.title = ['Event title is required'];
-        if (!formData.description?.trim())
-          errors.description = ['Event description is required'];
-        if (!formData.dateTime) {
-          errors.dateTime = ['Event date and time are required'];
-        } else if (isAddMode) {
-          const eventDate = new Date(formData.dateTime);
-          const now = new Date();
-          if (eventDate <= now) {
-            errors.dateTime = ['Event date must be in the future'];
-          }
-        }
-        if (!formData.venue?.trim()) errors.venue = ['Venue is required'];
-        if (!formData.category?.trim()) errors.category = ['Event category is required'];
-        if (!formData.timeZone?.trim()) errors.timeZone = ['Event timezone is required'];
-        if (!formData.address?.formattedAddress)
-          errors.address = ['Event address is required'];
-        break;
+  switch (currentStep) {
+    case 1: // Event Type (moved from step 3)
+      // No specific validation needed for step 1, just selection
+      break;
 
-case 2: // Organiser Details
-  // Organizer validation
-  if (!formData.organizer?.name?.trim()) {
-    errors.organizer = ['Organizer name is required'];
-  }
-
-  if (!formData.organizer?.contact?.trim()) {
-    errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
-  }
-  
-  // Coordinators validation - UPDATED: Now optional
-  if (formData.coordinators && formData.coordinators.length > 0) {
-    const coordinatorErrors = [];
-    formData.coordinators.forEach((coord, index) => {
-      // Only validate if coordinator has ANY data entered
-      const hasAnyData = coord.name?.trim() || coord.phone?.trim() || coord.email?.trim() || coord.role?.trim();
-      
-      if (hasAnyData) {
-        // If they started filling it out, require name and phone
-        if (!coord.name?.trim() || !coord.phone?.trim()) {
-          coordinatorErrors.push(
-            `Coordinator ${index + 1}: If adding a coordinator, name and phone are required`
-          );
+    case 2: // Event Details (moved from step 1)
+      if (!formData.title?.trim()) errors.title = ['Event title is required'];
+      if (!formData.description?.trim())
+        errors.description = ['Event description is required'];
+      if (!formData.dateTime) {
+        errors.dateTime = ['Event date and time are required'];
+      } else if (isAddMode) {
+        const eventDate = new Date(formData.dateTime);
+        const now = new Date();
+        if (eventDate <= now) {
+          errors.dateTime = ['Event date must be in the future'];
         }
       }
-    });
-    if (coordinatorErrors.length > 0)
-      errors.coordinators = coordinatorErrors;
-  }
-  break;
+      if (!formData.venue?.trim()) errors.venue = ['Venue is required'];
+      if (!formData.category?.trim()) errors.category = ['Event category is required'];
+      if (!formData.timeZone?.trim()) errors.timeZone = ['Event timezone is required'];
+      if (!formData.address?.formattedAddress)
+        errors.address = ['Event address is required'];
+      break;
 
-      case 3: // Event Type
-        // No specific validation needed for step 3, just selection
-        break;
+    case 3: // Organiser Details (moved from step 2)
+      // Organizer validation
+      if (!formData.organizer?.name?.trim()) {
+        errors.organizer = ['Organizer name is required'];
+      }
 
-      case 4: // Ticket Config
-        if (formData.isPaid) {
-          if (
-            formData.capacity === '' ||
-            formData.capacity === undefined ||
-            formData.capacity === null ||
-            isNaN(Number(formData.capacity)) ||
-            Number(formData.capacity) < 0
-          ) {
-            errors.capacity = [
-              'Please enter 0 for unlimited or a positive number',
-            ];
-          }
-          if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
-            errors.ticketTypes = [
-              'At least one ticket type is required for paid events',
-            ];
-          } else {
-   const ticketErrors = [];
-            formData.ticketTypes.forEach((ticket, index) => {
-              const ticketName = ticket.name?.trim() || `Ticket ${index + 1}`;
-              
-             // Name is required (has * in form)
-              if (!ticket.name?.trim()) {
-                // Individual field error only
-                errors[`ticketName_${index}`] = ['Ticket Name is required'];
-              }
-
-              // Price is required and must be > 0 (has * in form)
-              if (
-                ticket.price === undefined ||
-                ticket.price === null ||
-                ticket.price === '' ||
-                isNaN(Number(ticket.price)) ||
-                Number(ticket.price) <= 0
-              ) {
-                // Individual field error only
-                errors[`ticketPrice_${index}`] = [`${ticketName}: Price must be greater than 0`];
-              }
-
-              // Date validation: dates must be today or future, startDate before expiryDate
-              const today = new Date();
-              today.setHours(0, 0, 0, 0); // Start of today
-
-              if (ticket.startDate) {
-                const startDate = new Date(ticket.startDate);
-                if (startDate < today) {
-                  // Individual field error only
-                  errors[`ticketStartDate_${index}`] = [`${ticketName} ticket: Start date cannot be in the past`];
-                }
-              }
-
-              if (ticket.expiryDate) {
-                const expiryDate = new Date(ticket.expiryDate);
-                const eventDate = new Date(formData.dateTime);
-                
-                if (expiryDate < today) {
-                  // Individual field error only
-                  errors[`ticketExpiryDate_${index}`] = [`${ticketName} ticket: Expiry date cannot be in the past`];
-                } else if (expiryDate > eventDate) {
-                  // Individual field error only
-                  errors[`ticketExpiryDate_${index}`] = [`${ticketName} ticket: Expiry date cannot be after event date`];
-                }
-              }
-
-              if (ticket.startDate && ticket.expiryDate) {
-                const startDate = new Date(ticket.startDate);
-                const expiryDate = new Date(ticket.expiryDate);
-                if (startDate >= expiryDate) {
-                  // General error with specific ticket name for cross-field validation
-                  ticketErrors.push(
-                    `${ticketName} ticket: Start date must be before expiry date`
-                  );
-                }
-              }
-            });
-            if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
+      if (!formData.organizer?.contact?.trim()) {
+        errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
+      }
       
-          }
-           // Organizer reserved seats validation
-          if (formData.organizerReservedSeats && formData.organizerReservedSeats.trim()) {
-            const reservedSeatsStr = formData.organizerReservedSeats.trim();
-            const seatPattern = /^[A-Z]+\d+(-[A-Z]+\d+)?$/; // Matches A1 or A7-A9
-            const parts = reservedSeatsStr.split(',').map(part => part.trim()).filter(Boolean);
-            
-            const invalidSeats = parts.filter(part => !seatPattern.test(part));
-            if (invalidSeats.length > 0) {
-              errors.organizerReservedSeats = [
-                `Invalid seat format. Use individual seats (A1,A3) or ranges (A7-A9,A12). Invalid: ${invalidSeats.join(', ')}`
-              ];
+      // Coordinators validation - UPDATED: Now optional
+      if (formData.coordinators && formData.coordinators.length > 0) {
+        const coordinatorErrors = [];
+        formData.coordinators.forEach((coord, index) => {
+          // Only validate if coordinator has ANY data entered
+          const hasAnyData = coord.name?.trim() || coord.phone?.trim() || coord.email?.trim() || coord.role?.trim();
+          
+          if (hasAnyData) {
+            // If they started filling it out, require name and phone
+            if (!coord.name?.trim() || !coord.phone?.trim()) {
+              coordinatorErrors.push(
+                `Coordinator ${index + 1}: If adding a coordinator, name and phone are required`
+              );
             }
           }
+        });
+        if (coordinatorErrors.length > 0)
+          errors.coordinators = coordinatorErrors;
+      }
+      break;
+
+    case 4: // Ticket Config (unchanged)
+      if (formData.isPaid) {
+        if (
+          formData.capacity === '' ||
+          formData.capacity === undefined ||
+          formData.capacity === null ||
+          isNaN(Number(formData.capacity)) ||
+          Number(formData.capacity) < 0
+        ) {
+          errors.capacity = [
+            'Please enter 0 for unlimited or a positive number',
+          ];
+        }
+        if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
+          errors.ticketTypes = [
+            'At least one ticket type is required for paid events',
+          ];
         } else {
-          // Free event validation
-          if (
-            !formData.maxAttendeesPerRegistration ||
-            formData.maxAttendeesPerRegistration === '' ||
-            Number(formData.maxAttendeesPerRegistration) < 1
-          ) {
-            errors.maxAttendeesPerRegistration = [
-              'Number should be 1 or above',
+          const ticketErrors = [];
+          formData.ticketTypes.forEach((ticket, index) => {
+            const ticketName = ticket.name?.trim() || `Ticket ${index + 1}`;
+            
+            // Name is required (has * in form)
+            if (!ticket.name?.trim()) {
+              // Individual field error only
+              errors[`ticketName_${index}`] = ['Ticket Name is required'];
+            }
+
+            // Price is required and must be > 0 (has * in form)
+            if (
+              ticket.price === undefined ||
+              ticket.price === null ||
+              ticket.price === '' ||
+              isNaN(Number(ticket.price)) ||
+              Number(ticket.price) <= 0
+            ) {
+              // Individual field error only
+              errors[`ticketPrice_${index}`] = [`${ticketName}: Price must be greater than 0`];
+            }
+
+            // Date validation: dates must be today or future, startDate before expiryDate
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Start of today
+
+            if (ticket.startDate) {
+              const startDate = new Date(ticket.startDate);
+              if (startDate < today) {
+                // Individual field error only
+                errors[`ticketStartDate_${index}`] = [`${ticketName} ticket: Start date cannot be in the past`];
+              }
+            }
+
+            if (ticket.expiryDate) {
+              const expiryDate = new Date(ticket.expiryDate);
+              const eventDate = new Date(formData.dateTime);
+              
+              if (expiryDate < today) {
+                // Individual field error only
+                errors[`ticketExpiryDate_${index}`] = [`${ticketName} ticket: Expiry date cannot be in the past`];
+              } else if (expiryDate > eventDate) {
+                // Individual field error only
+                errors[`ticketExpiryDate_${index}`] = [`${ticketName} ticket: Expiry date cannot be after event date`];
+              }
+            }
+
+            if (ticket.startDate && ticket.expiryDate) {
+              const startDate = new Date(ticket.startDate);
+              const expiryDate = new Date(ticket.expiryDate);
+              if (startDate >= expiryDate) {
+                // General error with specific ticket name for cross-field validation
+                ticketErrors.push(
+                  `${ticketName} ticket: Start date must be before expiry date`
+                );
+              }
+            }
+          });
+          if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
+        }
+        // Organizer reserved seats validation
+        if (formData.organizerReservedSeats && formData.organizerReservedSeats.trim()) {
+          const reservedSeatsStr = formData.organizerReservedSeats.trim();
+          const seatPattern = /^[A-Z]+\d+(-[A-Z]+\d+)?$/; // Matches A1 or A7-A9
+          const parts = reservedSeatsStr.split(',').map(part => part.trim()).filter(Boolean);
+          
+          const invalidSeats = parts.filter(part => !seatPattern.test(part));
+          if (invalidSeats.length > 0) {
+            errors.organizerReservedSeats = [
+              `Invalid seat format. Use individual seats (A1,A3) or ranges (A7-A9,A12). Invalid: ${invalidSeats.join(', ')}`
             ];
           }
         }
-        break;
-
-         case 5: // Refund Policy
-        // Only validate refund policy for paid events
-        if (formData.isPaid) {
-          if (!formData.refundPolicy?.processingFeePolicy) {
-            errors.refundPolicy = ['Please select a refund policy option'];
-          }
+      } else {
+        // Free event validation
+        if (
+          !formData.maxAttendeesPerRegistration ||
+          formData.maxAttendeesPerRegistration === '' ||
+          Number(formData.maxAttendeesPerRegistration) < 1
+        ) {
+          errors.maxAttendeesPerRegistration = [
+            'Number should be 1 or above',
+          ];
         }
-        // Free events skip refund policy validation
-        break;
+      }
+      break;
 
-      default:
-        break;
-    }
+    case 5: // Refund Policy (unchanged)
+      // Only validate refund policy for paid events
+      if (formData.isPaid) {
+        if (!formData.refundPolicy?.processingFeePolicy) {
+          errors.refundPolicy = ['Please select a refund policy option'];
+        }
+      }
+      // Free events skip refund policy validation
+      break;
 
-    return errors;
-  }, [currentStep, formData, isAddMode]);
-
-  const validateCurrentStepWithStripe = useCallback(() => {
-  const errors = validateCurrentStep();
-  
-  // Stripe validation for step 3 (Event Type)
-  if (currentStep === 3 && formData.isPaid) {
-    const { isFullyActive, status } = getStripeStatus();
-    
-    if (!isFullyActive) {
-      errors.stripeSetup = [`Payment account setup is required for paid events. Current status: ${status}`];
-    }
+    default:
+      break;
   }
-  
+
   return errors;
-}, [currentStep, formData.isPaid, validateCurrentStep, getStripeStatus]);
+}, [currentStep, formData, isAddMode]);
+
 
 const isNextButtonDisabled = useCallback(() => {
-  if (currentStep === 3 && formData.isPaid) {
-    const { isFullyActive } = getStripeStatus();
-    return !isFullyActive;
-  }
-  
   return isLoading;
-}, [currentStep, formData.isPaid, isLoading, getStripeStatus]);
+}, [isLoading]);
 
 // Add this helper function before prepareSubmissionData
 const calculateRecurringUtcDateTimes = useCallback((recurrence, eventDateTime, timeZone) => {
@@ -1122,39 +1079,13 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
 
 const handleNext = useCallback(() => {
   // Validate current step
-  const currentErrors = validateCurrentStepWithStripe();
+  const currentErrors = validateCurrentStep();
 
   if (Object.keys(currentErrors).length > 0) {
     dispatch(setFormErrors(currentErrors));
 
 
-    // Special handling for Stripe setup errors
-if (currentErrors.stripeSetup) {
-  const { status } = getStripeStatus();
-  
-  const statusMessages = {
-    'no_account': 'Connect your payment account to create paid events.',
-    'incomplete_setup': 'Complete your payment account setup to continue.',
-    'action_required': 'Your payment account requires immediate attention.',
-    'account_restricted': 'Your payment account is restricted and needs urgent action.',
-    'under_review': 'Your account is being reviewed. Please wait before creating paid events.',
-    'capabilities_pending': 'Your account is being processed. Please wait for completion.'
-  };
-  
-  toast.error(
-    <div>
-      <p className="font-bold">Payment Setup Required</p>
-      <p className="text-sm mt-1">
-        {statusMessages[status] || 'Please complete your payment account setup.'}
-      </p>
-    </div>,
-    {
-      duration: 8000,
-      position: 'top-center',
-    }
-  );
-  return;
-}
+
     // Show specific error messages instead of generic message
     const errorMessages = Object.values(currentErrors).flat();
     const errorCount = errorMessages.length;
@@ -1181,7 +1112,7 @@ if (currentErrors.stripeSetup) {
   dispatch(clearFormErrors());
   dispatch(nextStep());
   window.scrollTo(0, 0);
-}, [currentStep, validateCurrentStepWithStripe, dispatch]);
+}, [currentStep, validateCurrentStep, dispatch]);
 
   const handlePrev = useCallback(() => {
     dispatch(clearFormErrors());
@@ -1311,51 +1242,51 @@ const handleAddAnother = useCallback(() => {
 
         {/* Step Content */}
         <div className="mt-8 bg-white p-1 sm:p-6 rounded-lg shadow-md border border-gray-200">
-          {currentStep === 1 && (
-            <EventDetailsStep
-              formData={formData}
-              errors={formErrors}
-              onImagesChange={handleImagesChange}
-              mode={mode}
-              readOnly={isViewMode}
-            />
-          )}
+           {currentStep === 1 && (
+    <EventTypeStep
+      formData={formData}
+      errors={formErrors}
+      mode={mode}
+      readOnly={isViewMode}
+    />
+  )}
 
-          {currentStep === 2 && (
-            <OrganiserDetailsStep
-              formData={formData}
-              errors={formErrors}
-              mode={mode}
-              readOnly={isViewMode}
-            />
-          )}
+  {currentStep === 2 && (
+    <EventDetailsStep
+      formData={formData}
+      errors={formErrors}
+      onImagesChange={handleImagesChange}
+      mode={mode}
+      readOnly={isViewMode}
+    />
+  )}
 
-          {currentStep === 3 && (
-            <EventTypeStep
-              formData={formData}
-              errors={formErrors}
-              mode={mode}
-              readOnly={isViewMode}
-            />
-          )}
+  {currentStep === 3 && (
+    <OrganiserDetailsStep
+      formData={formData}
+      errors={formErrors}
+      mode={mode}
+      readOnly={isViewMode}
+    />
+  )}
 
-          {currentStep === 4 && (
-            <TicketConfigStep
-              formData={formData}
-              errors={formErrors}
-              mode={mode}
-              readOnly={isViewMode}
-            />
-          )}
+  {currentStep === 4 && (
+    <TicketConfigStep
+      formData={formData}
+      errors={formErrors}
+      mode={mode}
+      readOnly={isViewMode}
+    />
+  )}
 
-           {currentStep === 5 && (
-            <RefundPolicyStep
-              formData={formData}
-              errors={formErrors}
-              mode={mode}
-              readOnly={isViewMode}
-            />
-          )}
+  {currentStep === 5 && (
+    <RefundPolicyStep
+      formData={formData}
+      errors={formErrors}
+      mode={mode}
+      readOnly={isViewMode}
+    />
+  )}
 
           {/* Navigation Buttons */}
           {!isViewMode && (
@@ -1380,41 +1311,18 @@ const handleAddAnother = useCallback(() => {
                 </button>
               )}
 
-              {currentStep < totalSteps ? (
+{currentStep < totalSteps ? (
   <button
     type="button"
     onClick={handleNext}
-    disabled={isNextButtonDisabled()}
+    disabled={isLoading}
     className={`px-6 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-      isNextButtonDisabled()
+      isLoading
         ? 'bg-gray-400 cursor-not-allowed text-white'
         : 'bg-teal-600 hover:bg-teal-700 text-white'
     }`}
-    title={
-  currentStep === 3 && formData.isPaid && !getStripeStatus().isFullyActive
-    ? `Complete payment setup to proceed. Current status: ${getStripeStatus().status}`
-    : ''
-}
   >
-    {isNextButtonDisabled() && currentStep === 3 && formData.isPaid ?  (
-  <>
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-    </svg>
-    {(() => {
-      const { status } = getStripeStatus();
-      const buttonTexts = {
-        'no_account': 'Connect Payment Account Required',
-        'incomplete_setup': 'Complete Setup Required',
-        'action_required': 'Setup Action Required',
-        'account_restricted': 'Account Issues Need Fixing',
-        'under_review': 'Account Under Review',
-        'capabilities_pending': 'Account Processing'
-      };
-      return buttonTexts[status] || 'Payment Setup Required';
-    })()}
-  </>
-) : isLoading ? (
+    {isLoading ? (
       <>
         <svg
           className="animate-spin h-4 w-4 text-white"
