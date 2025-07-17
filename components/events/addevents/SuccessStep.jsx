@@ -304,11 +304,7 @@ console.log('🔍 SuccessStep Debug:', {
                     {(event.capacity || 0) > 0 ? `${event.capacity} people` : 'Unlimited'}
                   </span>
                 </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Max Per Registration:</span>
-                  <span className="font-medium">{event.maxAttendeesPerRegistration || 5} people</span>
-                </div>
+
               </>
             )}
             

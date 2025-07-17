@@ -11,7 +11,10 @@ const StepIndicator = ({
   readOnly = false 
 }) => {
   const dispatch = useDispatch();
-  const { formData, isEditMode, hasUnsavedChanges, originalEventData } = useSelector((state) => state.events);
+  const { formData, isEditMode, hasUnsavedChanges, originalEventData, totalSteps: dynamicTotalSteps } = useSelector((state) => state.events);
+  
+  // Use dynamic totalSteps from Redux state instead of prop
+  const actualTotalSteps = dynamicTotalSteps || totalSteps;
   
   // Mode-specific configurations
   const modeConfig = {
@@ -37,65 +40,73 @@ const StepIndicator = ({
 
   const config = modeConfig[mode] || modeConfig.add;
 
-  const steps = [
-  { 
-    number: 1, 
-    title: 'Event Type',
-    description: formData?.isPaid !== undefined 
-      ? (formData.isPaid ? 'Paid event' : 'Free event')
-      : 'Choose pricing model',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-      </svg>
-    )
-  },
-  { 
-    number: 2, 
-    title: 'Event Details',
-    description: mode === 'view' ? 'Basic information & schedule' : 'Basic information & schedule',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    )
-  },
-  { 
-    number: 3, 
-    title: 'Organizer Info',
-    description: 'Organizer & coordinators',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    )
-  },
-  { 
-    number: 4, 
-    title: 'Configuration',
-    description: formData?.isPaid ? 'Tickets & Seating' : 'Registration setup',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    )
-  },
-  { 
-    number: 5, 
-    title: 'Refund Policy',
-    description: formData?.isPaid ? 'Payment terms' : 'Not applicable',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    )
-  },
-];
+  const allSteps = [
+    { 
+      number: 1, 
+      title: 'Event Type',
+      description: formData?.isPaid !== undefined 
+        ? (formData.isPaid ? 'Paid event' : 'Free event')
+        : 'Choose pricing model',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        </svg>
+      )
+    },
+    { 
+      number: 2, 
+      title: 'Event Details',
+      description: mode === 'view' ? 'Basic information & schedule' : 'Basic information & schedule',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      )
+    },
+    { 
+      number: 3, 
+      title: 'Organizer Info',
+      description: 'Organizer & coordinators',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      )
+    },
+    { 
+      number: 4, 
+      title: 'Configuration',
+      description: formData?.isPaid ? 'Tickets & Seating' : 'Registration setup',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      )
+    },
+    { 
+      number: 5, 
+      title: 'Refund Policy',
+      description: formData?.isPaid ? 'Payment terms' : 'Not applicable',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
+    },
+  ];
+
+  // Filter steps based on event type
+  // For free events (isPaid === false), show only steps 1-4
+  // For paid events (isPaid === true) or null/undefined, show all 5 steps
+  const steps = formData?.isPaid === false 
+    ? allSteps.filter(step => step.number !== 5) // Remove refund policy step for free events
+    : allSteps;
+    
   
   const handleStepClick = (stepNumber) => {
     // Only allow clicking if not in view mode and on completed steps or current step
-    if (!readOnly && mode !== 'view' && stepNumber <= currentStep) {
+    if (!readOnly && mode !== 'view' && stepNumber <= currentStep && stepNumber <= actualTotalSteps) {
       dispatch(setStep(stepNumber));
     }
   };
@@ -126,7 +137,7 @@ const isStepComplete = (stepNumber) => {
       }
     case 5: // Refund Policy (unchanged)
       if (formData?.isPaid === undefined) return false;
-      if (!formData?.isPaid) return true;
+      if (!formData?.isPaid) return true; // Free events don't need refund policy
       return formData?.refundPolicy?.processingFeePolicy !== undefined;
     default:
       return false;
@@ -150,14 +161,15 @@ const isStepComplete = (stepNumber) => {
   // FIXED: Get completion percentage based on current step position, not completed steps
   const getCompletionPercentage = () => {
     // For step-based progress: each completed step contributes to progress
-    // Step 1 = 25%, Step 2 = 50%, Step 3 = 75%, Step 4 = 100%
-    return Math.round((currentStep / totalSteps) * 100);
+    // For free events: Step 1 = 25%, Step 2 = 50%, Step 3 = 75%, Step 4 = 100%
+    // For paid events: Step 1 = 20%, Step 2 = 40%, Step 3 = 60%, Step 4 = 80%, Step 5 = 100%
+    return Math.round((currentStep / actualTotalSteps) * 100);
   };
 
   // Alternative: If you want completion based on actual form completion
   const getFormCompletionPercentage = () => {
     const completedSteps = steps.filter((step, index) => isStepComplete(index + 1)).length;
-    return Math.round((completedSteps / totalSteps) * 100);
+    return Math.round((completedSteps / actualTotalSteps) * 100);
   };
 
   // Mode-specific colors and styles
@@ -246,7 +258,7 @@ const isStepComplete = (stepNumber) => {
         
         <div className="text-right">
           <div className="text-sm text-gray-500">
-            Step {currentStep} of {totalSteps}
+            Step {currentStep} of {actualTotalSteps}
           </div>
           {mode !== 'view' && (
             <div className="text-xs text-gray-400">
@@ -372,7 +384,7 @@ const isStepComplete = (stepNumber) => {
           </div>
           
           <div className="text-sm text-gray-500">
-            {currentStep}/{totalSteps}
+            {currentStep}/{actualTotalSteps}
           </div>
         </div>
         
@@ -380,7 +392,7 @@ const isStepComplete = (stepNumber) => {
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
             className={`h-2 rounded-full transition-all duration-300 ease-out ${getColorClasses('completed').split(' ').find(c => c.startsWith('bg-'))}`}
-            style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            style={{ width: `${(currentStep / actualTotalSteps) * 100}%` }}
           ></div>
         </div>
       </div>

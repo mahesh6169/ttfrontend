@@ -269,7 +269,7 @@ const createDefaultFormData = () => ({
   
 
   // Ticketing
-   isPaid: null,
+   isPaid: false, // Default to free event
   capacity: 0,
   maxAttendeesPerRegistration: 10,
   registrationFields: [],
@@ -451,7 +451,7 @@ const eventSlice = createSlice({
     
     // Form state
     currentStep: 1,
-    totalSteps: 5,
+    totalSteps: 4, // Dynamic: 4 for free events (default), 5 for paid events
     
     // Form data
     formData: createDefaultFormData(),
@@ -520,6 +520,9 @@ deleteError: null,
         
         // Populate form with processed event data
         state.formData = processEventDataForEdit(eventData);
+        
+        // Set totalSteps based on event type
+        state.totalSteps = eventData.isPaid ? 5 : 4;
         
         // Reset to first step for edit mode
         state.currentStep = 1;
@@ -677,6 +680,10 @@ deleteError: null,
     toggleIsPaid: (state, action) => {
       state.formData.isPaid = action.payload;
       state.hasUnsavedChanges = true;
+      // Update totalSteps based on event type
+      state.totalSteps = action.payload ? 5 : 4; // 5 for paid (includes refund policy), 4 for free
+      
+      
       // Initialize ticket types if switching to paid
       if (action.payload && state.formData.ticketTypes.length === 0) {
         state.formData.ticketTypes = [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }];
@@ -827,6 +834,7 @@ updateGstIncluded: (state, action) => {
       }
       
       state.currentStep = 1;
+      state.totalSteps = 4; // Reset to default (free event)
       state.isEditMode = false;
       state.editingEventId = null;
       state.originalEventData = null;

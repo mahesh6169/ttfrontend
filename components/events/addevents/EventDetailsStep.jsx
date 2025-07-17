@@ -388,8 +388,9 @@ const EventDetailsStep = ({
         </div>
       </div>
 
-      {/* Recurring Event Section - Mobile optimized collapsible */}
-      <div className="border rounded-xl p-4 bg-gray-50">
+      {/* Recurring Event Section - Mobile optimized collapsible - Only show for free events */}
+      {!formData.isPaid && (
+        <div className="border rounded-xl p-4 bg-gray-50">
         <div className="flex items-start space-x-3 mb-3">
           <input
             type="checkbox"
@@ -540,7 +541,8 @@ const EventDetailsStep = ({
             )}
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Venue - Enhanced for mobile */}
       <div className="space-y-2">

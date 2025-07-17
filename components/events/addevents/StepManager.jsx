@@ -672,7 +672,7 @@ const validateCurrentStep = useCallback(() => {
           errors.refundPolicy = ['Please select a refund policy option'];
         }
       }
-      // Free events skip refund policy validation
+      // Free events skip refund policy validation entirely
       break;
 
     default:
@@ -1279,7 +1279,7 @@ const handleAddAnother = useCallback(() => {
     />
   )}
 
-  {currentStep === 5 && (
+  {currentStep === 5 && formData.isPaid && (
     <RefundPolicyStep
       formData={formData}
       errors={formErrors}
