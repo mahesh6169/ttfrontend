@@ -37,7 +37,7 @@ const Sidebar = ({ onLinkClick }) => {
       children: [
         { label: 'Stripe', href: '/users/profile/settings/stripeSetup', icon: <FaMoneyCheckAlt /> },
         { label: 'Manage Sales', href: '/users/profile/refunds', icon: <FaMoneyCheckAlt /> },
-        { label: 'Checkin', href: '/users/profile/checkin', icon: <FaCalendarAlt /> },
+        { label: 'Check-In', href: '/users/profile/checkInFree', icon: <FaCalendarAlt /> },
       ]
     }
   ];

@@ -19,7 +19,8 @@ import adminManageAdvertReducer from './slices/admin/adverts/adminManageAdvertSl
 import adminManageEventReducer from './slices/admin/events/adminManageEventSlice';
 import supportReducer from './slices/supportSlice';
 import refundReducer from './slices/events/refundSlice';
-import eventCapacityReducer from './slices/events/eventCapacitySlice'; 
+import eventCapacityReducer from './slices/events/eventCapacitySlice';
+import checkInFreeReducer from './slices/events/checkInFreeSlice';
 
 const store = configureStore({
     reducer: {
@@ -43,6 +44,7 @@ const store = configureStore({
         support: supportReducer,
         refunds: refundReducer,
         eventCapacity: eventCapacityReducer,
+        checkInFree: checkInFreeReducer,
     },
 });
 
