@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -71,6 +71,9 @@ const StepManager = ({
 
   // Local state for image files (can't store File objects in Redux)
   const [localImageFiles, setLocalImageFiles] = useState([]);
+  
+  // Track if we're returning to step 2 to handle blob URL regeneration
+  const [isReturningToImageStep, setIsReturningToImageStep] = useState(false);
 
   // Loading states
   const [isInitializing, setIsInitializing] = useState(false);
@@ -90,11 +93,44 @@ const StepManager = ({
   }, []);
 
   // Clear success messages when component unmounts or mode changes
-useEffect(() => {
-  return () => {
-    dispatch(clearSuccessMessage());
-  };
-}, [dispatch]);
+  useEffect(() => {
+    return () => {
+      dispatch(clearSuccessMessage());
+    };
+  }, [dispatch]);
+
+  // Regenerate blob URLs when returning to step 2
+  useEffect(() => {
+    if (isReturningToImageStep && currentStep === 2 && formData.images && formData.images.length > 0 && localImageFiles.length > 0) {
+      console.log('🔄 Returning to step 2 - regenerating blob URLs');
+      
+      // Create file map for quick lookup
+      const fileMap = new Map();
+      localImageFiles.forEach(localFile => {
+        fileMap.set(localFile.id, localFile);
+      });
+      
+      // Regenerate blob URLs for all new images
+      const updatedImages = formData.images.map(img => {
+        if (img.isNew && fileMap.has(img.id)) {
+          const localFile = fileMap.get(img.id);
+          if (localFile.file instanceof File) {
+            // Always create fresh blob URL when returning to step
+            const newPreview = URL.createObjectURL(localFile.file);
+            console.log('✅ Regenerated blob URL for:', img.name || img.id);
+            return { ...img, preview: newPreview };
+          }
+        }
+        return img;
+      });
+      
+      // Update Redux with new blob URLs
+      dispatch(setImages(updatedImages));
+      
+      // Reset the flag
+      setIsReturningToImageStep(false);
+    }
+  }, [currentStep, isReturningToImageStep, formData.images, localImageFiles, dispatch]);
 
   useEffect(() => {
     if (isEditingMode) {
@@ -192,23 +228,12 @@ useEffect(() => {
   // Handle images change (strip files for Redux, keep locally)
   const handleImagesChange = useCallback(
     (images) => {
-      // --- A. Sync Redux images (only metadata, no File object) ---
-      const safeImages = images.map((img) => ({
-        preview: img.preview,
-        url: img.url,
-        id: img.id,
-        name: img.name,
-        size: img.size,
-        type: img.type,
-        isExisting: img.isExisting,
-        isNew: img.isNew,
-      }));
+      console.log('📸 handleImagesChange called with:', images.length, 'images');
       
-      dispatch(setImages(safeImages));
-
-      // --- B. Preserve existing File objects + add new ones ---
+      // --- A. Update local File objects first ---
       setLocalImageFiles(prevFiles => {
-        // Create a map of existing File objects by ID for quick lookup
+        console.log('📸 Updating local files. Previous count:', prevFiles.length);
+        
         const existingFileMap = new Map();
         prevFiles.forEach(localFile => {
           existingFileMap.set(localFile.id, localFile);
@@ -223,6 +248,7 @@ useEffect(() => {
             // Preserve existing File object
             const existingFile = existingFileMap.get(img.id);
             updatedFiles.push(existingFile);
+            console.log('📸 Preserved existing file for:', img.id);
           } else if (img.isNew && img.file && img.file instanceof File) {
             // Add new File object
             const localFile = {
@@ -233,14 +259,47 @@ useEffect(() => {
             };
             
             updatedFiles.push(localFile);
+            console.log('📸 Added new file for:', img.id);
           }
         });
         
+        console.log('📸 Final local files count:', updatedFiles.length);
         return updatedFiles;
       });
+
+      // --- B. Process images for Redux separately ---
+      const safeImages = images.map((img) => {
+        // Keep existing preview if it's valid
+        let preview = img.preview;
+        
+        // For new images with File objects, ensure we have a blob URL
+        if (img.isNew && img.file instanceof File) {
+          // Only create blob URL if we don't have a valid one
+          if (!preview || !preview.startsWith('blob:')) {
+            preview = URL.createObjectURL(img.file);
+            console.log('📸 Created blob URL for new image:', img.id);
+          }
+        }
+
+        // Return serializable data for Redux
+        return {
+          preview,
+          url: img.url,
+          id: img.id,
+          name: img.name,
+          size: img.size,
+          type: img.type,
+          isExisting: img.isExisting,
+          isNew: img.isNew,
+        };
+      });
+      
+      console.log('📸 Dispatching to Redux:', safeImages.length, 'safe images');
+      dispatch(setImages(safeImages));
     },
     [dispatch]
   );
+
 
   // Form validation function
   const validateForm = useCallback(() => {
@@ -1116,9 +1175,15 @@ const handleNext = useCallback(() => {
 
   const handlePrev = useCallback(() => {
     dispatch(clearFormErrors());
+    
+    // Set flag when returning to step 2 (image step)
+    if (currentStep === 3) {
+      setIsReturningToImageStep(true);
+    }
+    
     dispatch(prevStep());
     window.scrollTo(0, 0);
-  }, [dispatch]);
+  }, [dispatch, currentStep]);
 
   const handleCancel = useCallback(() => {
     if (allowCancel) {

@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 const ImageUploader = ({ 
   images = [], 
   onImagesChange, 
-  maxImages = 5, 
+  maxImages = 10, 
   className = "",
   disabled = false,
   mode = 'add'
@@ -116,11 +116,26 @@ const ImageUploader = ({
   }, [images, onImagesChange, disabled]);
 
   const getImageSrc = (image) => {
-    if (image.preview) return image.preview;
+    // For new images, prioritize preview (blob URL) if valid
+    if (image.preview && image.preview.startsWith('blob:')) {
+      return image.preview;
+    }
+    // Fallback to server URL for existing images
     if (image.url) return image.url;
+    // Handle string type images
     if (typeof image === 'string') return image;
+    // If we have a preview but it's not a blob URL, try to use it
+    if (image.preview) return image.preview;
     return null;
   };
+  
+  // Check if blob URL needs regeneration
+  const needsBlobRegeneration = useCallback((image) => {
+    return image.isNew && (!image.preview || !image.preview.startsWith('blob:'));
+  }, []);
+
+  // Remove the automatic blob regeneration on mount as it causes issues
+  // The parent component (StepManager) handles blob URL regeneration
 
   return (
     <div className={className}>
@@ -169,14 +184,49 @@ const ImageUploader = ({
             
             return (
               <div key={image.id || index} className="relative group">
-                <img
-                  src={src}
-                  alt={image.name || `Image ${index + 1}`}
-                  className="w-full h-24 object-cover border border-gray-200 rounded-lg"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
+                {src ? (
+                  <img
+                    src={src}
+                    alt={image.name || `Image ${index + 1}`}
+                    className="w-full h-24 object-cover border border-gray-200 rounded-lg"
+                    onError={(e) => {
+                      console.log('🖼️ Image load error for:', image.name || image.id, 'src:', e.target.src);
+                      
+                      // For new images with invalid blob URLs, request regeneration
+                      if (image.isNew && e.target.src.startsWith('blob:')) {
+                        console.log('🖼️ Blob URL invalid for new image:', image.id);
+                        // Hide the broken image
+                        e.target.style.display = 'none';
+                        const placeholder = e.target.parentNode.querySelector('.image-placeholder');
+                        if (placeholder) placeholder.style.display = 'flex';
+                        
+                        // Don't trigger regeneration here - let the parent handle it
+                        // This prevents infinite loops in Chrome
+                      } else if (image.preview && e.target.src === image.preview && image.url) {
+                        // Try fallback to server URL for existing images
+                        e.target.src = image.url;
+                      } else {
+                        // If all sources fail, show placeholder
+                        e.target.style.display = 'none';
+                        const placeholder = e.target.parentNode.querySelector('.image-placeholder');
+                        if (placeholder) placeholder.style.display = 'flex';
+                      }
+                    }}
+                  />
+                ) : null}
+                
+                {/* Placeholder for failed images */}
+                <div 
+                  className="image-placeholder w-full h-24 border border-gray-200 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 text-xs"
+                  style={{ display: src ? 'none' : 'flex' }}
+                >
+                  <div className="text-center">
+                    <svg className="w-6 h-6 mx-auto mb-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {image.name || 'Image'}
+                  </div>
+                </div>
                 
                 {/* Remove Button */}
                 {!disabled && (

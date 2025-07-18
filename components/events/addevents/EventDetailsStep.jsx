@@ -641,7 +641,7 @@ const EventDetailsStep = ({
         <ImageUploader
           images={formData.images || []}
           onImagesChange={disabled ? () => {} : onImagesChange}
-          maxImages={5}
+          maxImages={10}
           className="space-y-3"
           disabled={disabled}
           mode={mode}
