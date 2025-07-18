@@ -55,7 +55,7 @@ useEffect(() => {
     // Auto-close after 3 seconds
     setTimeout(() => {
       handleClose();
-    }, 3000);
+    }, 5000);
   }
 }, [registrationStatus, currentRegistration, successMessage, onSuccess]);
 
@@ -391,22 +391,7 @@ const formatEventDate = (dateTime, timeZone) => {
         {!showSuccessMessage ? (
         <form onSubmit={handleSubmit} className="p-6">
           
-          {/* Event Info */}
-          <div className="bg-blue-50 p-4 rounded-lg mb-6">
-            <div className="flex items-center gap-2 text-blue-700 mb-2">
-              <FaCalendar />
-              <span className="font-medium">Event Details</span>
-            </div>
-            <p className="text-sm text-gray-700">
-              {formatEventDate(event.dateTime, event.timeZone)}
-            </p>
-            <p className="text-sm text-gray-600 mt-1">
-              <strong>Venue:</strong> {event.venue}
-            </p>
-            <p className="text-sm text-gray-600">
-              <strong>Max attendees per registration:</strong> {event.maxAttendeesPerRegistration}
-            </p>
-          </div>
+          
 
           {/* Attendees Section */}
           <div className="mb-6">
@@ -443,7 +428,7 @@ const formatEventDate = (dateTime, timeZone) => {
                   )}
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-4">
                   {/* Name Field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">

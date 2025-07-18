@@ -215,23 +215,24 @@ console.log('🔍 SuccessStep Debug:', {
                 {event.dateTime ? format(new Date(event.dateTime), 'PPp') : 'Not set'}
               </span>
             </div>
+
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">Time Zone:</span>
+              <span className="font-medium">{event.timeZone || 'Australia/Sydney'}</span>
+            </div>
             
             <div className="flex justify-between items-center">
               <span className="text-gray-500">Location:</span>
               <span className="font-medium text-right max-w-48 truncate" title={event.venue}>
                 {event.venue || 'Not specified'}
               </span>
-            </div>
+            </div>            
             
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500">Time Zone:</span>
-              <span className="font-medium">{event.timeZone || 'Australia/Sydney'}</span>
-            </div>
             
-            {event.category && (
+            {event.address?.formattedAddress && (
               <div className="flex justify-between items-center">
-                <span className="text-gray-500">Category:</span>
-                <span className="font-medium">{event.category}</span>
+                <span className="text-gray-500">Address:</span>
+                <span className="font-medium">{event.address.formattedAddress.replace(/,?\s*Australia\s*$/, '')}</span>
               </div>
             )}
             
@@ -309,8 +310,13 @@ console.log('🔍 SuccessStep Debug:', {
             )}
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-500">Custom Fields:</span>
-              <span className="font-medium">{(event.registrationFields || []).length}</span>
+              <span className="text-gray-500">Attendee Information:</span>
+              <span className="font-medium">
+  {(event.registrationFields || [])
+      .map(f => f.fieldName)
+      .filter(Boolean)
+      .join(', ') || 'None'}
+</span>
             </div>
           </div>
         </div>

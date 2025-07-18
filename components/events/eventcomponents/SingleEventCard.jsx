@@ -378,7 +378,7 @@ const SingleEventCard = ({ event, chatProps }) => {
           </div>
         )}
 
-        <EventCapacityDisplay eventId={event._id} isPaid={event.isPaid} />
+        <EventCapacityDisplay eventId={event._id} isPaid={event.isPaid}  maxPerRegistration={event.maxAttendeesPerRegistration}/>
         
         {/* Available Tickets (for paid events) */}
 {event.isPaid && event.ticketTypes?.length > 0 && (

@@ -10,7 +10,7 @@ import {
    markCapacityStale,
 } from '@/store/slices/events/eventCapacitySlice';
 
-const EventCapacityDisplay = ({ eventId, isPaid = false, showInTicketSection = false }) => {
+const EventCapacityDisplay = ({ eventId, isPaid = false, showInTicketSection = false, maxPerRegistration }) => {
   const dispatch = useDispatch();
   
   // ✅ Get capacity state from Redux
@@ -119,15 +119,26 @@ useEffect(() => {
           </span>
         </div>
 
-        {/* Currently Registered/Sold */}
-        <div className="flex justify-between items-center">
-          <span className="text-gray-700">
-            {isPaid ? 'Tickets Sold:' : 'Currently Registered:'}
-          </span>
-          <span className="font-medium text-blue-600">
-            {registeredCount} {isPaid ? 'tickets' : (registeredCount === 1 ? 'person' : 'people')}
-          </span>
-        </div>
+        {/* Remaining Capacity */}
+<div className="flex justify-between items-center">
+  <span className="text-gray-700">Remaining:</span>
+  <span className="font-medium text-green-600">
+    {isUnlimited ? 'Unlimited' : Math.max(totalCapacity - registeredCount, 0)}
+  </span>
+</div>
+
+{/* Max Attendees Per Registration */}
+{typeof maxPerRegistration === 'number' && (
+  <div className="flex justify-between items-center mt-2">
+    <span className="text-gray-700">
+      Max per Registration <span className="text-red-500">*</span>
+    </span>
+    <span className="italic text-gray-600">
+      {maxPerRegistration}
+    </span>
+  </div>
+)}
+
 
         {/* Status: Only show when full */}
         {isFull && (
