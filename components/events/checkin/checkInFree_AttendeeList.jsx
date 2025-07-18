@@ -144,6 +144,8 @@ const CheckInFree_AttendeeList = () => {
         const isExpanded = expandedRegistrations.has(registration._id);
         const allCheckedIn = areAllCheckedIn(registration);
         const someCheckedIn = areSomeCheckedIn(registration);
+        const hasMultipleAttendees = registration.attendees.length > 1;
+        const showPartialCheckIn = someCheckedIn && !allCheckedIn && hasMultipleAttendees;
         
         return (
           <div 
@@ -153,7 +155,7 @@ const CheckInFree_AttendeeList = () => {
             {/* Registration Header */}
             <div 
               className={`p-4 cursor-pointer transition-colors ${
-                allCheckedIn ? 'bg-green-50' : someCheckedIn ? 'bg-yellow-50' : 'hover:bg-gray-50'
+                allCheckedIn ? 'bg-green-50' : showPartialCheckIn ? 'bg-yellow-50' : 'hover:bg-gray-50'
               }`}
               onClick={() => toggleRegistration(registration._id)}
             >
@@ -168,7 +170,7 @@ const CheckInFree_AttendeeList = () => {
                         All Checked In
                       </span>
                     )}
-                    {someCheckedIn && !allCheckedIn && (
+                    {showPartialCheckIn && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                         Partial Check-in
                       </span>

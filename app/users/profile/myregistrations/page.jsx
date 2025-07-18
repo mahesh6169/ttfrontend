@@ -305,7 +305,10 @@ const MyFreeEventRegistrationsPage = () => {
             
             {selectedEventRegistrations.map((registration, index) => {
               // Check if any attendee is NOT checked in
+              // Only show partial check-in if there are multiple attendees
               const hasUncheckedAttendee = registration.attendees?.some(att => !att.checkedIn) || false;
+              const hasMultipleAttendees = registration.attendees?.length > 1;
+              const showPartialCheckIn = hasUncheckedAttendee && hasMultipleAttendees;
               
               return (
                 <div key={registration._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
@@ -316,7 +319,7 @@ const MyFreeEventRegistrationsPage = () => {
                         <h5 className="font-semibold text-gray-900">
                           {registration.registrationNumber}
                         </h5>
-                        {hasUncheckedAttendee ? (
+                        {showPartialCheckIn ? (
                           <span className="px-2 py-1 text-xs font-medium rounded-full text-yellow-800 bg-yellow-100">
                             Partial Check-in
                           </span>
@@ -465,7 +468,10 @@ const MyFreeEventRegistrationsPage = () => {
                 const [datePart, timePart] = formattedDateTime.split(', ');
                 
                 // Check if any attendee is NOT checked in
+                // Only show partial check-in if there are multiple attendees
                 const hasUncheckedAttendee = reg.attendees?.some(att => !att.checkedIn) || false;
+                const hasMultipleAttendees = reg.attendees?.length > 1;
+                const showPartialCheckIn = hasUncheckedAttendee && hasMultipleAttendees;
 
                 return (
                   <tr key={reg._id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
@@ -496,7 +502,7 @@ const MyFreeEventRegistrationsPage = () => {
                       <span className="text-sm font-medium">{reg.attendees?.length || 0}</span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      {hasUncheckedAttendee ? (
+                      {showPartialCheckIn ? (
                         <span className="px-2 py-1 text-xs font-medium rounded-full text-yellow-800 bg-yellow-100">
                           Partial Check-in
                         </span>

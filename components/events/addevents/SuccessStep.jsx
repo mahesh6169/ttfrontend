@@ -348,7 +348,7 @@ console.log('🔍 SuccessStep Debug:', {
             <p className="text-purple-600 text-sm mt-2">
               {mode === 'edit' 
                 ? 'Changes have been applied to all future recurring instances'
-                : 'Attendees can register for individual instances or the entire series'
+                : 'Attendees can register for individual instances'
               }
             </p>
           </div>
