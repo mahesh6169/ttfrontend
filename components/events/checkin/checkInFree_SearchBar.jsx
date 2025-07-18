@@ -85,7 +85,7 @@ const CheckInFree_SearchBar = () => {
       
       {/* Search Help Text */}
       <p className="mt-1 text-xs text-gray-500">
-        Search by registration number (e.g., FT-12345) or attendee name
+        Search by registration number (e.g., EVT-C8V5G) or attendee name
       </p>
     </div>
   );

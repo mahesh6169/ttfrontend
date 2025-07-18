@@ -101,113 +101,6 @@ const CheckInFree_AttendeeList = () => {
     return registration.attendees.some(att => att.checkedIn);
   };
 
-  // Export to CSV
-  const handleExportCSV = () => {
-    if (!selectedEvent || filteredAttendees.length === 0) {
-      toast.error('No data to export');
-      return;
-    }
-
-    try {
-      // Create CSV headers
-      const headers = [
-        'Registration Number',
-        'User Name',
-        'User Email',
-        'Attendee Name',
-        'Check-in Status',
-        'Check-in Time',
-        'Registration Date'
-      ];
-
-      // Get unique form field names from all registrations
-      const formFieldNames = new Set();
-      filteredAttendees.forEach(registration => {
-        if (registration.formResponses) {
-          registration.formResponses.forEach(response => {
-            formFieldNames.add(response.fieldName);
-          });
-        }
-      });
-      
-      // Add form field names to headers
-      const formFieldArray = Array.from(formFieldNames);
-      headers.push(...formFieldArray);
-
-      // Create CSV rows
-      const rows = [];
-      
-      filteredAttendees.forEach(registration => {
-        const userName = registration.user?.name || registration.userId?.name || 'Unknown';
-        const userEmail = registration.user?.email || registration.userId?.email || '';
-        
-        // Create a map of form responses for easy lookup
-        const formResponseMap = {};
-        if (registration.formResponses) {
-          registration.formResponses.forEach(response => {
-            formResponseMap[response.fieldName] = response.response;
-          });
-        }
-        
-        // Create a row for each attendee
-        registration.attendees.forEach(attendee => {
-          const row = [
-            registration.registrationNumber,
-            userName,
-            userEmail,
-            attendee.name,
-            attendee.checkedIn ? 'Yes' : 'No',
-            attendee.checkedIn && attendee.checkInTime ? formatDate(attendee.checkInTime) : '',
-            formatDate(registration.createdAt)
-          ];
-          
-          // Add form response values in the same order as headers
-          formFieldArray.forEach(fieldName => {
-            row.push(formResponseMap[fieldName] || '');
-          });
-          
-          rows.push(row);
-        });
-      });
-
-      // Convert to CSV format
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => 
-          row.map(cell => {
-            // Escape values that contain commas, quotes, or newlines
-            const cellStr = String(cell);
-            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
-              return `"${cellStr.replace(/"/g, '""')}"`;
-            }
-            return cellStr;
-          }).join(',')
-        )
-      ].join('\n');
-
-      // Create blob and download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      
-      const fileName = `${selectedEvent.eventTitle.replace(/[^a-zA-Z0-9]/g, '_')}_checkin_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`;
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', fileName);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up
-      URL.revokeObjectURL(url);
-      
-      toast.success('CSV exported successfully!');
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export CSV');
-    }
-  };
 
   if (attendeesLoading) {
     return (
@@ -245,19 +138,6 @@ const CheckInFree_AttendeeList = () => {
 
   return (
     <div className="space-y-4">
-      {/* Export to CSV Button */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleExportCSV}
-          disabled={filteredAttendees.length === 0}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Export CSV
-        </button>
-      </div>
 
       {/* Registration List */}
       {filteredAttendees.map((registration) => {
@@ -296,10 +176,8 @@ const CheckInFree_AttendeeList = () => {
                   </div>
                   
                   <div className="text-sm text-gray-500 mt-1">
-                    <span>{registration.user?.name || registration.userId?.name || `User ID: ${registration.user || registration.userId || 'Unknown'}`}</span>
-                    {(registration.user?.email || registration.userId?.email) && (
-                      <span className="ml-2">• {registration.user?.email || registration.userId?.email}</span>
-                    )}
+                    <span>{registration.user?.name || registration.userId?.name || 'Former User'}</span>
+                    <span className="ml-2">• {registration.email}</span>
                     <span className="ml-2">• {registration.attendees.length} attendee{registration.attendees.length !== 1 ? 's' : ''}</span>
                   </div>
                   

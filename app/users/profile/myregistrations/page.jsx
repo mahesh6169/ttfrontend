@@ -14,6 +14,7 @@ const MyFreeEventRegistrationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showFormResponses, setShowFormResponses] = useState(new Set());
 
   // Fetch all user registrations on mount
   useEffect(() => {
@@ -278,7 +279,15 @@ const MyFreeEventRegistrationsPage = () => {
                   <div>
                     <span className="font-medium">📍 Venue:</span><br />
                     {eventInfo.venue}
-                    {eventInfo.address && <div className="text-xs mt-1">{eventInfo.address}</div>}
+                    {eventInfo.address && (
+                      <div className="text-xs mt-1">
+                        {typeof eventInfo.address === 'string' 
+                          ? eventInfo.address 
+                          : eventInfo.address.formattedAddress || 
+                            `${eventInfo.address.street || ''} ${eventInfo.address.suburb || ''} ${eventInfo.address.state || ''} ${eventInfo.address.postalCode || ''}`.trim()
+                        }
+                      </div>
+                    )}
                   </div>
                   <div>
                     <span className="font-medium">👤 Organizer:</span><br />
@@ -294,31 +303,36 @@ const MyFreeEventRegistrationsPage = () => {
           <div className="p-6 space-y-4">
             <h4 className="text-lg font-semibold text-gray-900">Your Registration Details</h4>
             
-            {selectedEventRegistrations.map((registration, index) => (
-              <div key={registration._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    {/* Registration Header */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <h5 className="font-semibold text-gray-900">
-                        Registration #{index + 1}
-                      </h5>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        registration.status === 'registered' 
-                          ? 'text-green-600 bg-green-100' 
-                          : 'text-gray-600 bg-gray-100'
-                      }`}>
-                        {registration.status}
-                      </span>
-                    </div>
+            {selectedEventRegistrations.map((registration, index) => {
+              // Check if any attendee is NOT checked in
+              const hasUncheckedAttendee = registration.attendees?.some(att => !att.checkedIn) || false;
+              
+              return (
+                <div key={registration._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      {/* Registration Header */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <h5 className="font-semibold text-gray-900">
+                          {registration.registrationNumber}
+                        </h5>
+                        {hasUncheckedAttendee ? (
+                          <span className="px-2 py-1 text-xs font-medium rounded-full text-yellow-800 bg-yellow-100">
+                            Partial Check-in
+                          </span>
+                        ) : (
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            registration.status === 'registered' 
+                              ? 'text-green-600 bg-green-100' 
+                              : 'text-gray-600 bg-gray-100'
+                          }`}>
+                            {registration.status}
+                          </span>
+                        )}
+                      </div>
 
                     {/* Registration Details Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Registration Number:</span>
-                        <div className="text-gray-900 font-mono text-xs">{registration.registrationNumber}</div>
-                      </div>
-                      
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                       <div>
                         <span className="font-medium text-gray-700">Attendees:</span>
                         <div className="text-gray-900">
@@ -336,6 +350,45 @@ const MyFreeEventRegistrationsPage = () => {
                         <div className="text-gray-900 text-xs">{registration.email}</div>
                       </div>
                     </div>
+
+                    {/* Form Responses (if any) - Moved before attendee list */}
+                    {registration.formResponses && registration.formResponses.length > 0 && (
+                      <div className="mt-3">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const newShowFormResponses = new Set(showFormResponses);
+                            if (newShowFormResponses.has(registration._id)) {
+                              newShowFormResponses.delete(registration._id);
+                            } else {
+                              newShowFormResponses.add(registration._id);
+                            }
+                            setShowFormResponses(newShowFormResponses);
+                          }}
+                          className="text-xs text-teal-600 hover:text-teal-700 flex items-center gap-1"
+                        >
+                          <svg 
+                            className={`w-3 h-3 transition-transform ${showFormResponses.has(registration._id) ? 'rotate-90' : ''}`} 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                          {showFormResponses.has(registration._id) ? 'Hide' : 'View'} Registration Details
+                        </button>
+                        {showFormResponses.has(registration._id) && (
+                          <div className="mt-2 p-2 bg-gray-100 rounded text-xs space-y-1">
+                            {registration.formResponses.map((response, idx) => (
+                              <div key={idx}>
+                                <span className="font-medium text-gray-700">{response.fieldName}:</span>
+                                <span className="ml-1 text-gray-600">{response.response}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Attendee List */}
                     <div className="mt-3 pt-3 border-t border-gray-100">
@@ -358,25 +411,6 @@ const MyFreeEventRegistrationsPage = () => {
                         ))}
                       </div>
                     </div>
-
-                    {/* Form Responses (if any) */}
-                    {registration.formResponses && registration.formResponses.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-100">
-                        <details className="group">
-                          <summary className="cursor-pointer text-sm text-blue-600 hover:text-blue-800 font-medium">
-                            View Form Responses ({registration.formResponses.length})
-                          </summary>
-                          <div className="mt-2 space-y-2">
-                            {registration.formResponses.map((response, idx) => (
-                              <div key={idx} className="bg-gray-50 rounded p-2 text-xs">
-                                <div className="font-medium text-gray-700">{response.fieldName}</div>
-                                <div className="text-gray-900">{JSON.stringify(response.response)}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </details>
-                      </div>
-                    )}
                   </div>
 
                   {/* Action Button */}
@@ -388,10 +422,11 @@ const MyFreeEventRegistrationsPage = () => {
                     >
                       {actionLoading ? 'Processing...' : '🗑️ Unregister'}
                     </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -428,6 +463,9 @@ const MyFreeEventRegistrationsPage = () => {
                 );
 
                 const [datePart, timePart] = formattedDateTime.split(', ');
+                
+                // Check if any attendee is NOT checked in
+                const hasUncheckedAttendee = reg.attendees?.some(att => !att.checkedIn) || false;
 
                 return (
                   <tr key={reg._id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
@@ -445,20 +483,32 @@ const MyFreeEventRegistrationsPage = () => {
                     <td className="py-3 px-4 text-sm">
                       <div className="font-medium">{eventData?.venue}</div>
                       {eventData?.address && (
-                        <div className="text-gray-600 text-xs">{eventData.address}</div>
+                        <div className="text-gray-600 text-xs">
+                          {typeof eventData.address === 'string' 
+                            ? eventData.address 
+                            : eventData.address.formattedAddress || 
+                              `${eventData.address.street || ''} ${eventData.address.suburb || ''} ${eventData.address.state || ''} ${eventData.address.postalCode || ''}`.trim()
+                          }
+                        </div>
                       )}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className="text-sm font-medium">{reg.attendees?.length || 0}</span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        reg.status === 'registered' 
-                          ? 'text-green-600 bg-green-100' 
-                          : 'text-gray-600 bg-gray-100'
-                      }`}>
-                        {reg.status}
-                      </span>
+                      {hasUncheckedAttendee ? (
+                        <span className="px-2 py-1 text-xs font-medium rounded-full text-yellow-800 bg-yellow-100">
+                          Partial Check-in
+                        </span>
+                      ) : (
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          reg.status === 'registered' 
+                            ? 'text-green-600 bg-green-100' 
+                            : 'text-gray-600 bg-gray-100'
+                        }`}>
+                          {reg.status}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button

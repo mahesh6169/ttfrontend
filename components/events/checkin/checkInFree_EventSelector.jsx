@@ -9,7 +9,7 @@ import {
   setSelectedEvent,
   fetchEventAttendees 
 } from '@/store/slices/events/checkInFreeSlice';
-import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 
 const CheckInFree_EventSelector = () => {
   const dispatch = useDispatch();
@@ -25,12 +25,21 @@ const CheckInFree_EventSelector = () => {
     dispatch(fetchManagedFreeEvents());
   }, [dispatch]);
 
-  // Format event date for display
-  const formatEventDate = (dateString) => {
+  // Format event date with timezone support
+  const formatEventDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
     try {
-      return format(new Date(dateString), 'MMM dd, yyyy h:mm a');
+      const date = formatInTimeZone(dateTime, timeZone, 'dd/MM/yyyy');
+      const time = formatInTimeZone(dateTime, timeZone, 'h:mm a');
+      return { date, time, combined: `${date} at ${time}` };
     } catch (error) {
-      return dateString;
+      console.error('Error formatting date:', error);
+      // Fallback to regular date formatting
+      const fallbackDate = new Date(dateTime);
+      return {
+        date: fallbackDate.toLocaleDateString(),
+        time: fallbackDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        combined: fallbackDate.toLocaleString()
+      };
     }
   };
 
@@ -79,52 +88,38 @@ const CheckInFree_EventSelector = () => {
   }
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
-        Select Event for Check-In
+    <>
+      <label htmlFor="eventSelect" className="block text-sm font-medium text-gray-700 mb-2">
+        Select Event to View Registration Details
       </label>
-      
       <select
+        id="eventSelect"
         value={selectedEvent?._id || ''}
         onChange={handleEventChange}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       >
-        <option value="">-- Select an Event --</option>
+        <option value="">-- Choose an event --</option>
         
         {relevantEvents.length === 0 ? (
           <option disabled>No upcoming events found</option>
         ) : (
-          relevantEvents.map((event) => (
-            <option key={event._id} value={event._id}>
-              {event.title} - {formatEventDate(event.dateTime)}
-              {event.venue && ` @ ${event.venue}`}
-            </option>
-          ))
+          relevantEvents.map((event) => {
+            const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+            return (
+              <option key={event._id} value={event._id}>
+                {event.title} - {eventDateTime.combined} at {event.venue}
+              </option>
+            );
+          })
         )}
       </select>
-
-      {selectedEvent && (
-        <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Venue:</span> {selectedEvent.venue}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Date:</span> {formatEventDate(selectedEvent.dateTime)}
-          </p>
-          {selectedEvent.capacity > 0 && (
-            <p className="text-sm text-gray-600">
-              <span className="font-medium">Capacity:</span> {selectedEvent.capacity} attendees
-            </p>
-          )}
-        </div>
-      )}
 
       {managedEvents.length > 0 && relevantEvents.length === 0 && (
         <p className="text-sm text-amber-600 mt-2">
           Note: Only showing events from today onwards. You have {managedEvents.length} total events.
         </p>
       )}
-    </div>
+    </>
   );
 };
 
