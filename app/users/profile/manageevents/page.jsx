@@ -118,39 +118,30 @@ const handleModalCancel = () => {
           className="w-full h-40 object-cover rounded mb-2"
         />
       )}
-<div className="flex flex-wrap gap-2 mt-4">
-<button
-  onClick={() => !isExpired && handleEdit(event)}
-  className={`px-4 py-1 rounded flex items-center gap-1 ${
-    isExpired || formStatus === 'loading'
-      ? 'bg-gray-400 text-white cursor-not-allowed'
-      : 'bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100'
-  }`}
-  disabled={isExpired || formStatus === 'loading'}
->
-  {formStatus === 'loading' && (
-    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-  )}
-  {formStatus === 'loading' ? 'Loading...' : 'Edit'}
-</button>
-<button
-  onClick={() => confirmDelete(event._id)}
-  disabled={deleteStatus === 'loading'}
-  className={`bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 ${
-    deleteStatus === 'loading' ? 'opacity-50 cursor-not-allowed' : ''
-  }`}
->
-  Delete
-</button>
-  <Link
-    href={`/users/profile/manageevents/${event._id}/attendees/${event.isPaid ? 'paid' : 'free'}`}
-    className={`bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-700 ${
-      isExpired ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+<div className="flex flex-wrap items-center mt-4">
+  <button
+    onClick={() => !isExpired && handleEdit(event)}
+    className={`px-4 py-1 rounded flex items-center gap-1 ${
+      isExpired || formStatus === 'loading'
+        ? 'bg-gray-400 text-white cursor-not-allowed'
+        : 'bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100'
     }`}
-    tabIndex={isExpired ? -1 : 0}
+    disabled={isExpired || formStatus === 'loading'}
   >
-    Manage Attendees
-  </Link>
+    {formStatus === 'loading' && (
+      <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+    )}
+    {formStatus === 'loading' ? 'Loading...' : 'Edit'}
+  </button>
+  <button
+    onClick={() => confirmDelete(event._id)}
+    disabled={deleteStatus === 'loading'}
+    className={`bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 ml-4 ${
+      deleteStatus === 'loading' ? 'opacity-50 cursor-not-allowed' : ''
+    }`}
+  >
+    Delete
+  </button>
 </div>
 
     </div>

@@ -101,25 +101,6 @@ export const fetchMyFreeRegistrations = createAsyncThunk(
   }
 );
 
-// Fetch all registrations (and attendees) for a free event
-export const fetchEventAttendees = createAsyncThunk(
-  'freeEvents/fetchEventAttendees',
-  async (eventId, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/events/${eventId}/free/manage-attendees`,
-        { withCredentials: true }
-      );
-      // response.data.attendees is an array of FreeTicket docs
-      return response.data.attendees;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Unable to fetch attendees'
-      );
-    }
-  }
-);
-
 // Check in an individual attendee
 export const checkinFreeEvent = createAsyncThunk(
   'freeEvents/checkinFreeEvent',
@@ -176,12 +157,7 @@ const freeEventSlice = createSlice({
     myFreeRegistrationsStatus: 'idle',   // 'idle' | 'loading' | 'succeeded' | 'failed'
     myFreeRegistrationsError: null,
 
-    // Manage Attendees
-    currentEventAttendees: [],
-    attendeesStatus: 'idle',
-    attendeesError: null,
-
-// manage check-in
+    // manage check-in
     checkInStatus: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
     checkInError: null,
 
@@ -213,16 +189,6 @@ const freeEventSlice = createSlice({
       state.successMessage = '';
     },
 
-    clearAttendeesError: (state) => {
-  state.attendeesError = null;
-},
-resetAttendeesState: (state) => {
-  state.currentEventAttendees = [];
-  state.attendeesStatus = 'idle';
-  state.attendeesError = null;
-  state.checkinStatus = 'idle';
-  state.checkinError = null;
-},
 
   },
   
@@ -306,22 +272,6 @@ resetAttendeesState: (state) => {
 })
 
 // ================================
-// FETCH EVENT ATTENDEES
-// ================================
-.addCase(fetchEventAttendees.pending, (state) => {
-  state.attendeesStatus = 'loading';
-  state.attendeesError = null;
-})
-.addCase(fetchEventAttendees.fulfilled, (state, action) => {
-  state.attendeesStatus = 'succeeded';
-  state.currentEventAttendees = action.payload;
-})
-.addCase(fetchEventAttendees.rejected, (state, action) => {
-  state.attendeesStatus = 'failed';
-  state.attendeesError = action.payload;
-})
-
-// ================================
 // CHECK-IN FREE EVENT ATTENDEE
 // ================================
 .addCase(checkinFreeEvent.pending, (state) => {
@@ -330,14 +280,7 @@ resetAttendeesState: (state) => {
 })
 .addCase(checkinFreeEvent.fulfilled, (state, action) => {
   state.checkinStatus = 'succeeded';
-  // Update only the checked-in attendee in currentEventAttendees (update-in-place)
-  const { ticketId, attendeeId, ticket } = action.payload;
-  // Find the registration (ticket) in the array
-  const regIndex = state.currentEventAttendees.findIndex(r => r._id === ticketId);
-  if (regIndex !== -1) {
-    // Replace with updated ticket (including updated attendees array)
-    state.currentEventAttendees[regIndex] = ticket;
-  }
+  // Check-in successful
 })
 .addCase(checkinFreeEvent.rejected, (state, action) => {
   state.checkinStatus = 'failed';
@@ -353,11 +296,7 @@ resetAttendeesState: (state) => {
 })
 .addCase(undoCheckinFreeEvent.fulfilled, (state, action) => {
   state.checkinStatus = 'succeeded';
-  const { ticketId, ticket } = action.payload;
-  const regIndex = state.currentEventAttendees.findIndex(r => r._id === ticketId);
-  if (regIndex !== -1) {
-    state.currentEventAttendees[regIndex] = ticket;
-  }
+  // Undo check-in successful
 })
 .addCase(undoCheckinFreeEvent.rejected, (state, action) => {
   state.checkinStatus = 'failed';
@@ -378,7 +317,6 @@ export const {
   clearCurrentRegistration,
   clearSuccessMessage,
   resetRegistrationState,
-  resetAttendeesState,
 } = freeEventSlice.actions;
 
 export default freeEventSlice.reducer;
