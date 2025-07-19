@@ -5,7 +5,7 @@ const DemoPage = () => {
   return (
     <div className="container my-2 mx-auto">
       <div className="relative m-2  sm:px-4 sm:py-6 min-h-[70px] sm:min-h-[180px] bg-gradient-to-br from-gray-300 to-white shadow-sm rounded-md">
-        {/* Post Advert Button - top-left corner (mobile) */}
+        {/* Post Advert Button - top-left corner . (mobile) */}
         <div className="absolute top-1 left-1 sm:static">
           <Link
             href="/adverts/add"
