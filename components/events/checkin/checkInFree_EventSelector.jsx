@@ -101,7 +101,7 @@ const CheckInFree_EventSelector = () => {
         <option value="">-- Choose an event --</option>
         
         {relevantEvents.length === 0 ? (
-          <option disabled>No upcoming events found</option>
+          <option disabled>No registrations found for any upcoming events.</option>
         ) : (
           relevantEvents.map((event) => {
             const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
