@@ -1200,11 +1200,11 @@ const handleBackToTickets = () => {
                                 errors.payment?.includes('🎫')) && (
                                 <div className="mt-3">
                                   <button
-                                    onClick={() => router.push(`/events/tickets/${params.eventId}`)}
+                                    onClick={() => router.push(`/events/views/${params.eventId}`)}
                                     className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
                                   >
                                     <FaArrowLeft className="mr-2" />
-                                    Return to ticket selection
+                                    Return to event details
                                   </button>
                                 </div>
                               )}
@@ -1241,15 +1241,12 @@ const handleBackToTickets = () => {
                             errors.payment?.includes('🎫')) && (
                             <div className="mt-3">
                               <button
-                                onClick={() => router.push(`/events/tickets/${params.eventId}`)}
+                                onClick={() => router.push(`/events/views/${params.eventId}`)}
                                 className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
                               >
                                 <FaArrowLeft className="mr-2" />
-                                Return to ticket selection
+                                Return to event details
                               </button>
-                              <p className="text-xs text-gray-600 mt-2">
-                                You will be automatically redirected in a few seconds...
-                              </p>
                             </div>
                           )}
                         </div>
