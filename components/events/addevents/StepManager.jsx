@@ -28,6 +28,7 @@ import {
   originalEventData,
   
 } from '@/store/slices/events/eventSlice';
+import { markCapacityStale } from '@/store/slices/events/eventCapacitySlice';
 
 // Step Components
 import StepIndicator from './StepIndicator';
@@ -903,6 +904,10 @@ if (formData.dateTime) {
         submitFormData.append('capacity', formData.capacity.toString());
       }
 
+      if (formData.maxAttendeesPerRegistration !== undefined && formData.maxAttendeesPerRegistration !== null) {
+        submitFormData.append('maxAttendeesPerRegistration', formData.maxAttendeesPerRegistration.toString());
+      }
+
       if (formData.ticketTypes && formData.ticketTypes.length > 0) {
   // 🔧 NEW: Process ticket dates with timezone conversion
   const processedTicketTypes = formData.ticketTypes.map(ticket => {
@@ -1104,6 +1109,8 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
               formData: submitFormData,
             })
           ).unwrap();
+          // Mark capacity as stale so it refreshes
+          dispatch(markCapacityStale(editingEventId));
         } else {
           await dispatch(
             updateFreeEvent({
@@ -1111,6 +1118,8 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
               formData: submitFormData,
             })
           ).unwrap();
+          // Mark capacity as stale so it refreshes
+          dispatch(markCapacityStale(editingEventId));
         }
       } else {
         // Create new event - choose the appropriate thunk based on event type

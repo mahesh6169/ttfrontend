@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEventById, clearSelectedEvent, clearError } from '@/store/slices/events/eventSlice';
 import { resetPurchaseSession } from '@/store/slices/events/ticketPurchaseSlice';
+import { markCapacityStale } from '@/store/slices/events/eventCapacitySlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SingleEventCard from '@/components/events/eventcomponents/SingleEventCard';
 import SendMessage from '@/components/chat/SendMessage';
@@ -37,7 +38,10 @@ const EventDetail = () => {
       dispatch(clearError());
 
       // ✅ ADD: Reset any completed purchase sessions
-    dispatch(resetPurchaseSession());
+      dispatch(resetPurchaseSession());
+      
+      // Mark capacity as stale to force refresh
+      dispatch(markCapacityStale(id));
     
       // Fetch the event
       dispatch(fetchEventById(id));

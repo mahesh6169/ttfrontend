@@ -429,14 +429,24 @@ const TicketSelectionPage = () => {
               // Calculate remaining based on capacity and max per order
               const maxPerOrder =
                 selectedEvent.maxAttendeesPerRegistration || 10;
+              
+              // Use the actual event capacity, not the cart-adjusted one
+              // The cart-adjusted capacity already accounts for what's in the cart
+              const actualEventRemaining = eventCapacity?.total - eventCapacity?.sold;
               const capacityLimit =
-                typeof eventCapacity?.remaining === 'number'
-                  ? eventCapacity.remaining
+                typeof actualEventRemaining === 'number'
+                  ? actualEventRemaining
                   : maxPerOrder;
+                  
+              // How many more can be added based on max per order
+              const maxAdditional = maxPerOrder - totals.totalQuantity;
+              
               const remainingQty = Math.min(
-                maxPerOrder - selectedQty,
-                capacityLimit
+                maxAdditional,
+                capacityLimit - totals.totalQuantity
               );
+              
+              console.log(`🎫 Ticket ${ticketType.name}: maxPerOrder=${maxPerOrder}, actualEventRemaining=${actualEventRemaining}, totalInCart=${totals.totalQuantity}, maxAdditional=${maxAdditional}, remainingQty=${remainingQty}`);
 
               return (
                 <div
@@ -484,10 +494,8 @@ const TicketSelectionPage = () => {
                             handleQuantityChange(ticketType._id, 1)
                           }
                           disabled={
-                            selectedQty >= remainingQty ||
-                            selectedQty >=
-                              (selectedEvent.maxAttendeesPerRegistration ||
-                                10) ||
+                            totals.totalQuantity >= maxPerOrder ||
+                            remainingQty <= 0 ||
                             loading.initializing ||
                             eventCapacity?.status === 'sold-out'
                           }

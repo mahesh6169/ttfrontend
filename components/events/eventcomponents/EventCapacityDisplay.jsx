@@ -27,15 +27,22 @@ const EventCapacityDisplay = ({ eventId, isPaid = false, showInTicketSection = f
 
   // ✅ Fetch capacity data when needed
   useEffect(() => {
-    if (!eventId) return;
+    console.log(`📊 EventCapacityDisplay: Component mounted/updated with eventId=${eventId}, isPaid=${isPaid}, showInTicketSection=${showInTicketSection}, shouldRefresh=${shouldRefresh}`);
     
-    // Skip fetch for paid events when not in ticket section (maintains original behavior)
-    if (isPaid && !showInTicketSection) return;
+    if (!eventId) {
+      console.log(`❌ EventCapacityDisplay: No eventId provided, skipping fetch`);
+      return;
+    }
+    
+    // Remove the skip logic - we should always fetch capacity when needed
+    // The display logic can handle how to show it differently for paid vs free events
     
     // Fetch if no data exists or data is stale
     if (shouldRefresh) {
-      console.log(`📊 EventCapacityDisplay: Fetching capacity for ${eventId}`);
+      console.log(`📊 EventCapacityDisplay: Fetching capacity for ${eventId} (shouldRefresh=${shouldRefresh})`);
       dispatch(fetchEventCapacity(eventId));
+    } else {
+      console.log(`✅ EventCapacityDisplay: Using cached capacity for ${eventId}`);
     }
   }, [eventId, isPaid, showInTicketSection, shouldRefresh, dispatch]);
 
