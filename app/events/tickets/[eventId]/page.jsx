@@ -39,7 +39,6 @@ import {
   selectEventCapacityState,
   selectShouldRefreshCapacity,
   fetchEventCapacity,
-  selectCartAwareCapacity,
 } from '@/store/slices/events/eventCapacitySlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -66,8 +65,8 @@ const TicketSelectionPage = () => {
 
   // ✅ Get capacity from Redux instead of local state
   const { capacity: eventCapacity, isLoading: capacityLoading } = useSelector(state => 
-  selectCartAwareCapacity(state, eventId, totals.totalQuantity)
-);
+    selectEventCapacityState(state, eventId)
+  );
   const shouldRefreshCapacity = useSelector(state => 
     selectShouldRefreshCapacity(state, eventId)
   );
@@ -90,7 +89,7 @@ const TicketSelectionPage = () => {
   // ✅ Fetch capacity data when needed
   useEffect(() => {
     if (eventId && shouldRefreshCapacity) {
-      console.log(`📊 TicketSelectionPage: Fetching capacity for ${eventId}`);
+      // Fetching capacity for event
       dispatch(fetchEventCapacity(eventId));
     }
   }, [eventId, shouldRefreshCapacity, dispatch]);
@@ -366,8 +365,8 @@ const TicketSelectionPage = () => {
     'Unlimited capacity'
   ) : eventCapacity?.status === 'sold-out' ? (
     'Event sold out'
-  ) : eventCapacity?.adjustedForCart ? (
-    `${eventCapacity.cartQuantity} ticket${eventCapacity.cartQuantity > 1 ? 's' : ''} selected • ${eventCapacity.remaining} of ${eventCapacity.total} remaining`
+  ) : totals.totalQuantity > 0 ? (
+    `${totals.totalQuantity} ticket${totals.totalQuantity > 1 ? 's' : ''} selected • ${(eventCapacity?.remaining || 0) - totals.totalQuantity} of ${eventCapacity?.total || 0} remaining`
   ) : (
     `${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
   )}
@@ -436,17 +435,15 @@ const TicketSelectionPage = () => {
               const capacityLimit =
                 typeof actualEventRemaining === 'number'
                   ? actualEventRemaining
-                  : maxPerOrder;
+                  : Number.MAX_SAFE_INTEGER;
                   
-              // How many more can be added based on max per order
-              const maxAdditional = maxPerOrder - totals.totalQuantity;
+              // How many more can be added based on max per order and capacity
+              const maxByOrderLimit = maxPerOrder - totals.totalQuantity;
+              const maxByCapacityLimit = capacityLimit - totals.totalQuantity;
               
-              const remainingQty = Math.min(
-                maxAdditional,
-                capacityLimit - totals.totalQuantity
-              );
+              const remainingQty = Math.max(0, Math.min(maxByOrderLimit, maxByCapacityLimit));
               
-              console.log(`🎫 Ticket ${ticketType.name}: maxPerOrder=${maxPerOrder}, actualEventRemaining=${actualEventRemaining}, totalInCart=${totals.totalQuantity}, maxAdditional=${maxAdditional}, remainingQty=${remainingQty}`);
+              // Debug logging removed for production
 
               return (
                 <div

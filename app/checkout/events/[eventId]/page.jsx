@@ -517,14 +517,31 @@ const [isLoading, setIsLoading] = useState(true);
         // Clear sessionStorage since we're using Redux now
         sessionStorage.removeItem('ticketSelection');
       } else {
+        // The error is in result.payload when using rejectWithValue
+        console.error('❌ Redux thunk rejected with:', result.payload);
         throw new Error(result.payload || 'Failed to confirm payment');
       }
     } catch (error) {
       console.error('❌ Error confirming payment:', error);
+      
+      // Check if this is a capacity conflict error
+      let errorMessage = error.message || 'Payment successful but failed to create tickets. Please contact support.';
+      let requiresRefresh = false;
+      
+      // The error message from rejectWithValue comes directly as error.message
+      // Check for capacity-related keywords in the error message
+      if (errorMessage.includes('sold out') || 
+          errorMessage.includes('capacity') || 
+          errorMessage.includes('remaining') ||
+          errorMessage.includes('🎫')) {
+        // This is likely a capacity conflict
+        requiresRefresh = true;
+        
+        // No auto-redirect - let user read the message and click the button
+      }
+      
       setErrors({
-        payment:
-          error.message ||
-          'Payment successful but failed to create tickets. Please contact support.',
+        payment: errorMessage
       });
     } finally {
       setIsProcessing(false);
@@ -1168,10 +1185,30 @@ const handleBackToTickets = () => {
                       {(errors.payment || purchaseError) && (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                           <div className="flex items-start">
-                            <FaExclamationTriangle className="text-red-600 mr-3 mt-1" />
-                            <p className="text-sm text-red-700">
-                              {errors.payment || purchaseError}
-                            </p>
+                            <FaExclamationTriangle className="text-red-600 mr-3 mt-1 flex-shrink-0" />
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-red-800 mb-1">
+                                {errors.payment?.includes('sold out') ? 'Event Sold Out' : 'Payment Error'}
+                              </h4>
+                              <p className="text-sm text-red-700">
+                                {errors.payment || purchaseError}
+                              </p>
+                              {/* Show refresh button for capacity conflicts */}
+                              {(errors.payment?.includes('ticket') || 
+                                errors.payment?.includes('sold out') ||
+                                errors.payment?.includes('capacity') ||
+                                errors.payment?.includes('🎫')) && (
+                                <div className="mt-3">
+                                  <button
+                                    onClick={() => router.push(`/events/tickets/${params.eventId}`)}
+                                    className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                                  >
+                                    <FaArrowLeft className="mr-2" />
+                                    Return to ticket selection
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1184,6 +1221,41 @@ const handleBackToTickets = () => {
                   <h2 className="text-xl font-semibold mb-6">
                     Payment Information
                   </h2>
+
+                  {/* Error Display for Payment Step */}
+                  {(errors.payment || purchaseError) && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                      <div className="flex items-start">
+                        <FaExclamationTriangle className="text-red-600 mr-3 mt-1 flex-shrink-0" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-red-800 mb-1">
+                            {errors.payment?.includes('sold out') ? 'Event Sold Out' : 'Purchase Failed'}
+                          </h4>
+                          <p className="text-sm text-red-700">
+                            {errors.payment || purchaseError}
+                          </p>
+                          {/* Show refresh button for capacity conflicts */}
+                          {(errors.payment?.includes('ticket') || 
+                            errors.payment?.includes('sold out') ||
+                            errors.payment?.includes('capacity') ||
+                            errors.payment?.includes('🎫')) && (
+                            <div className="mt-3">
+                              <button
+                                onClick={() => router.push(`/events/tickets/${params.eventId}`)}
+                                className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                              >
+                                <FaArrowLeft className="mr-2" />
+                                Return to ticket selection
+                              </button>
+                              <p className="text-xs text-gray-600 mt-2">
+                                You will be automatically redirected in a few seconds...
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {clientSecret ? (
                     <StripePaymentForm

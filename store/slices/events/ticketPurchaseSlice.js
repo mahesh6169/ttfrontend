@@ -88,9 +88,16 @@ export const confirmPayment = createAsyncThunk(
       }
     } catch (error) {
       console.error('❌ Payment confirmation error:', error.response?.data || error.message);
-      return rejectWithValue(
-        error.response?.data?.message || 'Payment confirmation failed'
-      );
+      console.error('❌ Full error object:', error);
+      
+      // Extract the most user-friendly error message
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          error.message || 
+                          'Payment confirmation failed';
+      
+      console.log('🔍 Extracted error message:', errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
