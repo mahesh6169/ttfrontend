@@ -277,7 +277,8 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               <p className="mt-1 text-red-500 text-sm">{errors.capacity}</p>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              Set the maximum number of people who can attend this event.
+              Set the maximum number of people who can attend this event.<br/>
+              Set to 0 for unlimited capacity.
             </p>
           </div>
 
@@ -384,9 +385,6 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                     <h5 className="font-medium text-gray-900">
                       {ticket?.name || `Ticket Type ${index + 1}`}
                     </h5>
-                    <p className="text-sm text-gray-500">
-                      ${ticket?.price || '0'} AUD
-                    </p>
                   </div>
                 </div>
 
@@ -639,10 +637,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
             <h4 className="text-lg font-medium text-gray-900">
               GST Configuration
             </h4>
-            <p className="text-sm text-gray-500">
-              Specify whether your ticket prices include GST for display
-              purposes
-            </p>
+
           </div>
         </div>
 
@@ -662,10 +657,8 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               >
                 Ticket prices include GST
               </label>
-              <p className="text-xs text-gray-500 mt-1">
-                Check this box if the ticket prices you've entered above already
-                include GST. This will display prices as "$100 (incl GST)"
-                instead of just "$100".
+              <p className="text-sm text-gray-900 mt-1">
+                Specify whether your ticket prices include GST for display purposes
               </p>
 
               {/* GST Display Preview */}

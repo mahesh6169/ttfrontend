@@ -27,11 +27,13 @@ import {
 } from 'react-icons/fa';
 import { MdLocationOn, MdEmail, MdPhone, MdPerson, MdEventSeat } from 'react-icons/md';
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
+import { getEventTicketStatus, getTicketSaleStatus } from '@/utils/events/ticketStatusHelper';
 import SendMessage from '@/components/chat/SendMessage';
 import EventRegistrationModal from '../registration/EventRegistrationModal';
 import EventCapacityDisplay from './EventCapacityDisplay';
 import { formatInTimeZone } from 'date-fns-tz';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
+import { selectEventCapacityState } from '@/store/slices/events/eventCapacitySlice';
 
 const SingleEventCard = ({ event, chatProps }) => {
   const dispatch = useDispatch();
@@ -45,6 +47,9 @@ const SingleEventCard = ({ event, chatProps }) => {
 
   const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
   const isRegistered = !!currentRegistration && currentRegistration.status === 'registered';
+  
+  // Get capacity data for the event
+  const { capacity } = useSelector(state => selectEventCapacityState(state, event?._id || ''));
 
   if (!event) {
     return (
@@ -409,78 +414,15 @@ const SingleEventCard = ({ event, chatProps }) => {
           {(() => {
             if (!event.timeZone) return null;
             
-            const now = new Date();
-            const eventTimeZone = event.timeZone;
+            const status = getTicketSaleStatus(ticket, event.timeZone, capacity);
             
-            // Check if ticket sales haven't started yet
-            if (ticket.startDate) {
-              const startDate = new Date(ticket.startDate);
-              if (now < startDate) {
-                return (
-                  <div className="text-xs text-amber-600 mt-2 font-medium">
-                    📅 Available from {formatInTimeZone(
-                      ticket.startDate, 
-                      eventTimeZone, 
-                      'MMM d, yyyy'
-                    )}
-                    {ticket.expiryDate && (
-                      <span> • Until {formatInTimeZone(
-                        ticket.expiryDate, 
-                        eventTimeZone, 
-                        'MMM d, yyyy'
-                      )}</span>
-                    )}
-                  </div>
-                );
-              }
-            }
+            if (!status) return null;
             
-            // Check if ticket sales have ended
-            if (ticket.expiryDate) {
-              const expiryDate = new Date(ticket.expiryDate);
-              if (now > expiryDate) {
-                return (
-                  <div className="text-xs text-red-600 mt-2 font-medium">
-                    ❌ Sales ended on {formatInTimeZone(
-                      ticket.expiryDate, 
-                      eventTimeZone, 
-                      'MMM d, yyyy'
-                    )}
-                  </div>
-                );
-              }
-              
-              // Check if expiry is within 5 days (urgency message)
-              const msPerDay = 24 * 60 * 60 * 1000;
-              const daysUntilExpiry = Math.ceil((expiryDate - now) / msPerDay);
-              
-              if (daysUntilExpiry <= 5 && daysUntilExpiry > 0) {
-                return (
-                  <div className="text-xs text-orange-600 mt-2 font-medium">
-                    ⚡ Hurry! Only {daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''} left
-                  </div>
-                );
-              }
-            }
-            
-            // Ticket is currently available - show "On sale now"
-            if (ticket.startDate || ticket.expiryDate) {
-              return (
-                <div className="text-xs text-green-600 mt-2 font-medium">
-                  ✅ On sale now
-                  {ticket.expiryDate && (
-                    <span className="text-gray-500"> • Until {formatInTimeZone(
-                      ticket.expiryDate, 
-                      eventTimeZone, 
-                      'MMM d, yyyy'
-                    )}</span>
-                  )}
-                </div>
-              );
-            }
-            
-            // No date restrictions
-            return null;
+            return (
+              <div className={`text-xs mt-2 font-medium ${status.className}`}>
+                {status.icon} {status.message}
+              </div>
+            );
           })()}
         </div>
       ))}

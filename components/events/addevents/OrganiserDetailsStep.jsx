@@ -275,7 +275,10 @@ const getFieldClasses = (fieldName) => {
 
 {/* Event Coordinators Section */}
 <div className="bg-white border-0 sm:border sm:border-gray-200 rounded-lg p-1 sm:p-6 mb-6">
-  <h2 className="text-xl font-semibold mb-2">Event Coordinators</h2>
+  <h2 className="text-xl font-semibold mb-2">
+    Event Coordinators
+    <span className="text-sm font-normal text-gray-500 ml-2">(optional)</span>
+  </h2>
   <p className="text-gray-600 text-sm mb-4">
     Add coordinators who will be helping to manage this event.
     Coordinators are optional but recommended for larger events.

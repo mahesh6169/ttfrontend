@@ -20,6 +20,7 @@ import {
   FaBell,
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
+import { getEventTicketStatus, getTicketSaleStatus } from '@/utils/events/ticketStatusHelper';
 import {
   initializePurchaseSession,
   updateTicketSelection,
@@ -336,7 +337,8 @@ const TicketSelectionPage = () => {
                 <span>{time}</span>
               </div>
               {selectedEvent.timeZone && (
-                <div className="text-gray-500">
+                <div className="flex items-center text-gray-500">
+                  <span className="mr-1">🌐</span>
                   <span>Timezone: {selectedEvent.timeZone}</span>
                 </div>
               )}
@@ -439,9 +441,11 @@ const TicketSelectionPage = () => {
               
               // Use the actual event capacity, not the cart-adjusted one
               // The cart-adjusted capacity already accounts for what's in the cart
-              const actualEventRemaining = eventCapacity?.total - eventCapacity?.sold;
+              const actualEventRemaining = eventCapacity?.isUnlimited 
+                ? Number.MAX_SAFE_INTEGER 
+                : (eventCapacity?.total || 0) - (eventCapacity?.sold || 0);
               const capacityLimit =
-                typeof actualEventRemaining === 'number'
+                typeof actualEventRemaining === 'number' && !isNaN(actualEventRemaining)
                   ? actualEventRemaining
                   : Number.MAX_SAFE_INTEGER;
                   
@@ -512,58 +516,18 @@ const TicketSelectionPage = () => {
                     )}
                   </div>
 
-                 {/* Availability status and date restrictions */}
-    {!isDateAvailable && (
-      <div className="mt-2 text-xs text-orange-600 font-medium flex items-center">
-        <FaBell className="mr-1" />
-        {unavailableReason}
-      </div>
-    )}
-    
-    {/* Date restrictions (show for available tickets) */}
-    {isDateAvailable && (ticketType.startDate || ticketType.expiryDate) && (
-      <div className="mt-2 text-xs text-gray-500">
-        {(() => {
-          const now = new Date();
-          const hasStarted = ticketType.startDate ? new Date(ticketType.startDate) <= now : true;
-          
-          if (hasStarted) {
-            // Ticket sales have started, only show expiry
-            if (ticketType.expiryDate) {
-              return (
-                <span>Available until {formatInTimeZone(
-                  ticketType.expiryDate, 
-                  selectedEvent.timeZone, 
-                  'MMM d, yyyy'
-                )}</span>
-              );
-            }
-            return null;
-          } else {
-            // Ticket sales haven't started yet
-            return (
-              <>
-                <span>Available from {formatInTimeZone(
-                  ticketType.startDate, 
-                  selectedEvent.timeZone, 
-                  'MMM d, yyyy'
-                )}</span>
-                {ticketType.expiryDate && (
-                  <>
-                    <span> • </span>
-                    <span>Until {formatInTimeZone(
-                      ticketType.expiryDate, 
-                      selectedEvent.timeZone, 
-                      'MMM d, yyyy'
-                    )}</span>
-                  </>
-                )}
-              </>
-            );
-          }
-        })()}
-      </div>
-    )}
+                 {/* Ticket Sale Status */}
+                 {(() => {
+                   const status = getTicketSaleStatus(ticketType, selectedEvent.timeZone, eventCapacity);
+                   
+                   if (!status) return null;
+                   
+                   return (
+                     <div className={`mt-2 text-xs font-medium ${status.className}`}>
+                       {status.icon} {status.message}
+                     </div>
+                   );
+                 })()}
                 </div>
               );
             })}
