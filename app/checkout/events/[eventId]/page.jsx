@@ -871,20 +871,23 @@ const handleBackToTickets = () => {
         <div className="max-w-6xl mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
-           <button
-              onClick={
-                currentStep === 'payment'
-                  ? handleBackToDetails
-                  : handleBackToTickets
-              }
-              className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
-            >
-              <FaArrowLeft className="mr-2" />
-              {getBackButtonText()}
-            </button>
+            {/* Back Button */}
+            <div className="mb-6">
+              <button
+                onClick={
+                  currentStep === 'payment'
+                    ? handleBackToDetails
+                    : handleBackToTickets
+                }
+                className="inline-flex items-center px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg transition-colors"
+              >
+                <FaArrowLeft className="mr-2" />
+                {currentStep === 'payment' ? 'Back to Buyer Information' : 'Back to Tickets'}
+              </button>
+            </div>
 
             <h1 className="text-3xl font-bold text-gray-900">
-              Complete Your Purchase
+              Checkout Page
             </h1>
             <p className="text-gray-600 mt-2">
               {currentStep === 'details'
@@ -1158,6 +1161,7 @@ const handleBackToTickets = () => {
     <RefundPolicyDisplay 
       refundPolicy={event.refundPolicy}
       variant="checkout"
+      showNote={false}
     />
   </div>
 )}
@@ -1218,10 +1222,6 @@ const handleBackToTickets = () => {
               ) : (
                 /* Payment Step */
                 <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold mb-6">
-                    Payment Information
-                  </h2>
-
                   {/* Error Display for Payment Step */}
                   {(errors.payment || purchaseError) && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">

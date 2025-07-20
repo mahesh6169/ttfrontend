@@ -92,15 +92,29 @@ const PaymentSummary = ({
             <div className="flex items-center">
               <FaClock className="mr-2 text-green-600 w-4" />
               <span>{time}</span>
+              {event.timeZone && (
+                <span className="ml-2 text-gray-500">({event.timeZone})</span>
+              )}
             </div>
             <div className="flex items-center">
               <FaMapMarkerAlt className="mr-2 text-red-600 w-4" />
               <span>{event.venue}</span>
             </div>
-            {event.category && (
+            {event.address && (
               <div className="flex items-center">
-                <FaTag className="mr-2 text-purple-600 w-4" />
-                <span>{event.category}</span>
+                <FaMapMarkerAlt className="mr-2 text-purple-600 w-4" />
+                <span>
+                  {(() => {
+                    // Custom format: street number, street, suburb, state
+                    const parts = [];
+                    if (event.address.streetNumber) parts.push(event.address.streetNumber);
+                    if (event.address.street) parts.push(event.address.street);
+                    if (event.address.suburb) parts.push(event.address.suburb);
+                    if (event.address.state) parts.push(event.address.state);
+                    
+                    return parts.join(', ') || event.address.formattedAddress || 'Address not available';
+                  })()}
+                </span>
               </div>
             )}
           </div>
@@ -216,39 +230,7 @@ const PaymentSummary = ({
         )}
       
 
-      {/* Additional Information */}
-      <div className="mt-6 pt-4 border-t border-gray-200">
-        <div className="bg-blue-50 rounded-lg p-3">
-          <div className="flex items-start">
-            <FaInfoCircle className="text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-            <div className="text-sm text-blue-800">
-              <p className="font-medium">What happens next?</p>
-              <ul className="mt-1 space-y-1 list-disc list-inside">
-                <li>You'll receive an email confirmation</li>
-                <li>Your tickets will be delivered via email</li>
-                <li>Present your tickets at the event entrance</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Terms Notice */}
-      <div className="mt-4 text-xs text-gray-500 text-center">
-        By completing this purchase, you agree to our{' '}
-        <a href="/support/terms" target="_blank" className="text-blue-600 hover:underline">
-          Terms of Service
-        </a>{' '}
-        and{' '}
-        <a href="/support/privacy" target="_blank" className="text-blue-600 hover:underline">
-          Privacy Policy
-        </a>
-        {event.isPaid && event.refundPolicy && (
-          <span>
-            {', '}and acknowledge the refund policy stated above
-          </span>
-        )}
-      </div>
     </div>
   );
 };
