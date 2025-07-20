@@ -47,7 +47,8 @@ import {
     setRefundPolicyInfo,
   acceptRefundPolicy,
   clearRefundPolicyAcceptance,
-  selectRefundPolicyInfo
+  selectRefundPolicyInfo,
+  selectFormResponses
 } from '@/store/slices/events/ticketPurchaseSlice';
 import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
 import {
@@ -79,6 +80,7 @@ const CheckoutPage = () => {
   const refundPolicyInfo = useSelector(selectRefundPolicyInfo);
   const currentReservation = useSelector(selectCurrentReservation);
   const seatSessionId = useSelector(selectSessionId);
+  const formResponses = useSelector(selectFormResponses);
 
   // Local state management (only for UI, not for flow control)
   const [event, setEvent] = useState(null);
@@ -506,8 +508,8 @@ const [isLoading, setIsLoading] = useState(true);
         paymentIntentId: paymentIntent.id,
         paymentMethodId: paymentIntent.payment_method?.id, // Optional
         tickets: ticketsObject, // Object format: { ticketTypeId: quantity }
-        buyerInfo: enhancedBuyerInfo
-        // ✅ REMOVED: All seat-related data - backend handles this automatically through event seatingLayout
+        buyerInfo: enhancedBuyerInfo,
+        formResponses: formResponses || {}
       }));
 
       if (confirmPayment.fulfilled.match(result)) {

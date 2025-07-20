@@ -35,6 +35,8 @@ import {
   selectPurchaseError,
   selectPurchaseLoading,
   setRefundPolicyInfo,
+  selectFormResponses,
+  updateFormResponse,
 } from '@/store/slices/events/ticketPurchaseSlice';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import {
@@ -43,6 +45,7 @@ import {
   fetchEventCapacity,
 } from '@/store/slices/events/eventCapacitySlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import AttendeeInfoSection from '@/components/events/tickets/AttendeeInfoSection';
 
 const TicketSelectionPage = () => {
   const { eventId } = useParams();
@@ -64,6 +67,7 @@ const TicketSelectionPage = () => {
   const canProceedToNext = useSelector(selectCanProceedToNext);
   const purchaseError = useSelector(selectPurchaseError);
   const loading = useSelector(selectPurchaseLoading);
+  const formResponses = useSelector(selectFormResponses);
 
   // ✅ Get capacity from Redux instead of local state
   const { capacity: eventCapacity, isLoading: capacityLoading } = useSelector(state => 
@@ -193,6 +197,20 @@ const TicketSelectionPage = () => {
       return false;
     }
 
+    // Validate required custom fields
+    if (selectedEvent?.registrationFields) {
+      selectedEvent.registrationFields.forEach(field => {
+        if (field.isRequired && !formResponses[field.fieldName]) {
+          newErrors[field.fieldName] = 'Additional Info Required';
+        }
+      });
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return false;
+    }
+
     setErrors({});
     return true;
   };
@@ -222,6 +240,7 @@ const TicketSelectionPage = () => {
         }, {}),
         totals: totals,
         hasSeatingLayout,
+        formResponses: formResponses,
         timestamp: Date.now(),
       };
 
@@ -532,6 +551,11 @@ const TicketSelectionPage = () => {
               );
             })}
           </div>
+
+          {/* Attendee Additional Information */}
+          {totals.totalQuantity > 0 && (
+            <AttendeeInfoSection event={selectedEvent} errors={errors} />
+          )}
 
           {/* Seating Info */}
           {hasSeatingLayout && totals.totalQuantity > 0 && (

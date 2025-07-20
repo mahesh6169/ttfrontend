@@ -615,6 +615,14 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
         </div>
       </div>
 
+      {/* Attendee Additional Information */}
+      <CustomRegistrationFields
+        formData={formData}
+        errors={errors}
+        dispatch={dispatch}
+        isRecurring={isRecurringEvent}
+      />
+
       {/* GST Configuration */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center mb-4">

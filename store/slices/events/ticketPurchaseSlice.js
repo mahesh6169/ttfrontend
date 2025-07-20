@@ -55,7 +55,7 @@ export const createPaymentIntent = createAsyncThunk(
 // ✅ FIXED: Simplified confirmPayment to match backend expectations
 export const confirmPayment = createAsyncThunk(
   'ticketPurchase/confirmPayment',
-  async ({ eventId, paymentIntentId, paymentMethodId, tickets, buyerInfo }, { rejectWithValue }) => {
+  async ({ eventId, paymentIntentId, paymentMethodId, tickets, buyerInfo, formResponses }, { rejectWithValue }) => {
     
     try {
       console.log('🔄 Redux confirmPayment sending to backend:', {
@@ -63,7 +63,8 @@ export const confirmPayment = createAsyncThunk(
         paymentIntentId,
         paymentMethodId,
         tickets,
-        buyerInfo
+        buyerInfo,
+        formResponses
       });
 
       const response = await axios.post(
@@ -72,8 +73,11 @@ export const confirmPayment = createAsyncThunk(
           paymentIntentId,
           paymentMethodId, // Optional - may be undefined
           tickets, // Object format: { ticketTypeId: quantity }
-          buyerInfo
-          // ✅ REMOVED: ticketData, selectedSeats, reservationId (backend doesn't use these)
+          buyerInfo,
+          formResponses: formResponses ? Object.entries(formResponses).map(([fieldName, response]) => ({
+            fieldName,
+            response
+          })) : []
         },
         {
           headers: { 'Content-Type': 'application/json' },
@@ -127,6 +131,9 @@ const initialState = {
       agreedToTerms: false,
       refundPolicyAccepted: false,
   },
+  
+  // Custom Registration Fields
+  formResponses: {}, // { fieldName: response }
   
   // Seat Information (coordination with seatSelectionSlice)
   seatInfo: {
@@ -271,6 +278,16 @@ clearRefundPolicyAcceptance: (state) => {
   state.buyerInfo.refundPolicyAccepted = false;
 },
 
+    // Custom Registration Fields
+    updateFormResponse: (state, action) => {
+      const { fieldName, value } = action.payload;
+      state.formResponses[fieldName] = value;
+    },
+    
+    clearFormResponses: (state) => {
+      state.formResponses = {};
+    },
+
     // Seat Coordination
     setSeatRequirement: (state, action) => {
       state.seatInfo.requiresSeats = action.payload;
@@ -373,6 +390,8 @@ export const {
   markRefundPolicyDisplayed,
   acceptRefundPolicy,
   clearRefundPolicyAcceptance,
+  updateFormResponse,
+  clearFormResponses,
 } = ticketPurchaseSlice.actions;
 
 // Selectors
@@ -387,5 +406,6 @@ export const selectCanProceedToNext = (state) => state.ticketPurchase.canProceed
 export const selectPurchaseLoading = (state) => state.ticketPurchase.loading;
 export const selectPurchaseError = (state) => state.ticketPurchase.error;
 export const selectRefundPolicyInfo = (state) => state.ticketPurchase.refundPolicyInfo;
+export const selectFormResponses = (state) => state.ticketPurchase.formResponses;
 
 export default ticketPurchaseSlice.reducer;
