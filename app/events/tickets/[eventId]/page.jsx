@@ -17,6 +17,7 @@ import {
   FaShoppingCart,
   FaExclamationTriangle,
   FaArrowLeft,
+  FaBell,
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import {
@@ -300,48 +301,55 @@ const TicketSelectionPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Back to Events Button */}
+        <div className="mb-6">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg transition-colors"
+          >
+            <FaArrowLeft className="mr-2" />
+            Back to Event Page
+          </button>
+        </div>
+
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center mb-4">
-                <button
-                  onClick={handleBack}
-                  className="mr-4 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <FaArrowLeft />
-                </button>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    Select Tickets
-                  </h1>
-                  <h2 className="text-lg text-gray-600">
-                    {selectedEvent.title}
-                  </h2>
-                </div>
-              </div>
+          {/* Centered Title */}
+          <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">
+            Select Tickets
+          </h1>
 
-              {/* Event Info */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                <div className="flex items-center">
-                  <FaCalendarAlt className="mr-2 text-blue-600" />
-                  <span>{date}</span>
-                </div>
-                <div className="flex items-center">
-                  <FaClock className="mr-2 text-green-600" />
-                  <span>{time}</span>
-                </div>
-                <div className="flex items-center">
-                  <FaMapMarkerAlt className="mr-2 text-red-600" />
-                  <span>{selectedEvent.venue}</span>
-                </div>
-                {hasSeatingLayout && (
-                  <div className="flex items-center">
-                    <FaChair className="mr-2 text-purple-600" />
-                    <span>Assigned Seating</span>
-                  </div>
-                )}
+          {/* Event Title and Info */}
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              {selectedEvent.title}
+            </h2>
+
+            {/* Event Info */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center">
+                <FaCalendarAlt className="mr-2 text-blue-600" />
+                <span>{date}</span>
               </div>
+              <div className="flex items-center">
+                <FaClock className="mr-2 text-green-600" />
+                <span>{time}</span>
+              </div>
+              {selectedEvent.timeZone && (
+                <div className="text-gray-500">
+                  <span>Timezone: {selectedEvent.timeZone}</span>
+                </div>
+              )}
+              <div className="flex items-center">
+                <FaMapMarkerAlt className="mr-2 text-red-600" />
+                <span>{selectedEvent.venue}</span>
+              </div>
+              {hasSeatingLayout && (
+                <div className="flex items-center">
+                  <FaChair className="mr-2 text-purple-600" />
+                  <span>Assigned Seating</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -506,29 +514,54 @@ const TicketSelectionPage = () => {
 
                  {/* Availability status and date restrictions */}
     {!isDateAvailable && (
-      <div className="mt-2 text-xs text-red-600 font-medium">
-        ⚠️ {unavailableReason}
+      <div className="mt-2 text-xs text-orange-600 font-medium flex items-center">
+        <FaBell className="mr-1" />
+        {unavailableReason}
       </div>
     )}
     
     {/* Date restrictions (show for available tickets) */}
     {isDateAvailable && (ticketType.startDate || ticketType.expiryDate) && (
       <div className="mt-2 text-xs text-gray-500">
-        {ticketType.startDate && (
-          <span>Available from {formatInTimeZone(
-            ticketType.startDate, 
-            selectedEvent.timeZone, 
-            'MMM d, yyyy'
-          )}</span>
-        )}
-        {ticketType.startDate && ticketType.expiryDate && <span> • </span>}
-        {ticketType.expiryDate && (
-          <span>Until {formatInTimeZone(
-            ticketType.expiryDate, 
-            selectedEvent.timeZone, 
-            'MMM d, yyyy'
-          )}</span>
-        )}
+        {(() => {
+          const now = new Date();
+          const hasStarted = ticketType.startDate ? new Date(ticketType.startDate) <= now : true;
+          
+          if (hasStarted) {
+            // Ticket sales have started, only show expiry
+            if (ticketType.expiryDate) {
+              return (
+                <span>Available until {formatInTimeZone(
+                  ticketType.expiryDate, 
+                  selectedEvent.timeZone, 
+                  'MMM d, yyyy'
+                )}</span>
+              );
+            }
+            return null;
+          } else {
+            // Ticket sales haven't started yet
+            return (
+              <>
+                <span>Available from {formatInTimeZone(
+                  ticketType.startDate, 
+                  selectedEvent.timeZone, 
+                  'MMM d, yyyy'
+                )}</span>
+                {ticketType.expiryDate && (
+                  <>
+                    <span> • </span>
+                    <span>Until {formatInTimeZone(
+                      ticketType.expiryDate, 
+                      selectedEvent.timeZone, 
+                      'MMM d, yyyy'
+                    )}</span>
+                  </>
+                )}
+              </>
+            );
+          }
+        })()}
       </div>
     )}
                 </div>
@@ -592,15 +625,6 @@ const TicketSelectionPage = () => {
                   </>
                 )}
               </button>
-
-              <div className="text-xs text-gray-500 text-center mt-2">
-                {totals.totalQuantity} ticket
-                {totals.totalQuantity !== 1 ? 's' : ''} selected
-                {hasSeatingLayout && ' • Seats to be selected next'}
-                <span className="ml-2 font-medium">
-                  ${totals.total.toFixed(2)}
-                </span>
-              </div>
             </div>
           )}
 
