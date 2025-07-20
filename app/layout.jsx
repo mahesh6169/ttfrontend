@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import TermsModal from '@/components/support/TermsModal';
 import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { Providers } from '@/store/providers';
 import '@/assets/styles/globals.css';
 import { SocketListener } from '@/components/chat/SocketListener';
@@ -21,7 +22,18 @@ const ParentLayout = ({ children }) => {
           <Header />
            {/* <TermsModal /> */} 
           {children}
-          <ToastContainer />
+          <ToastContainer 
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            limit={3}
+          />
         </Providers>
       </body>
     </html>

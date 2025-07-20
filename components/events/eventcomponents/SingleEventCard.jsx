@@ -546,7 +546,7 @@ const SingleEventCard = ({ event, chatProps }) => {
 
         {event.isPaid && (
           <p className="text-sm text-gray-500 mt-2 text-center">
-            Secure payment processing • {event.applyGST ? 'Prices include GST' : 'GST may apply'}
+            Secure payment processing.
           </p>
         )}
       </div>

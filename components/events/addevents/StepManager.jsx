@@ -216,13 +216,15 @@ const StepManager = ({
   useEffect(() => {
     if (formStatus === 'succeeded' && successMessage) {
       toast.success(successMessage);
+      // Clear the success message immediately after showing toast to prevent duplicates
+      dispatch(clearSuccessMessage());
 
       // Call onComplete callback if provided
       if (onComplete) {
         onComplete(formData);
       }
     }
-  }, [formStatus, successMessage, onComplete, formData]);
+  }, [formStatus, successMessage, onComplete, formData, dispatch]);
 
 
 
