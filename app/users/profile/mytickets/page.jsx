@@ -15,6 +15,8 @@ const EnhancedMyTicketsPage = () => {
   const [invoiceData, setInvoiceData] = useState(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [invoiceError, setInvoiceError] = useState(null);
+  // 🆕 NEW: Add tickets modal state
+  const [showTicketsModal, setShowTicketsModal] = useState(false);
 
   // Fetch all user tickets
   useEffect(() => {
@@ -482,13 +484,22 @@ const EnhancedMyTicketsPage = () => {
                       )}
                     </div>
 
-                    {/* Action Button */}
-                    <div className="ml-4">
+                    {/* Action Buttons */}
+                    <div className="ml-4 flex flex-col gap-2">
                       <button
                         onClick={() => handleViewInvoice(ticketGroup)}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                       >
                         📄 View Invoice
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedTicketGroup(ticketGroup);
+                          setShowTicketsModal(true);
+                        }}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                      >
+                        🎫 View Tickets
                       </button>
                     </div>
                   </div>
@@ -511,6 +522,17 @@ const EnhancedMyTicketsPage = () => {
             setSelectedTicketGroup(null);
             setInvoiceData(null);
             setInvoiceError(null);
+          }}
+        />
+      )}
+
+      {/* Tickets Modal */}
+      {showTicketsModal && selectedTicketGroup && (
+        <TicketsModal
+          ticketGroup={selectedTicketGroup}
+          onClose={() => {
+            setShowTicketsModal(false);
+            setSelectedTicketGroup(null);
           }}
         />
       )}
@@ -837,12 +859,90 @@ const InvoiceModal = ({ ticketGroup, invoiceData, invoiceLoading, invoiceError, 
                 <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                   📧 Email Invoice
                 </button>
-                <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                  🎫 View Tickets
-                </button>
               </div>
             </>
           )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Tickets Modal Component - Simple ticket style
+const TicketsModal = ({ ticketGroup, onClose }) => {
+  // Get event information from the first ticket
+  const firstTicket = ticketGroup[0];
+  const eventInfo = firstTicket.eventSnapshot;
+  
+  // Format event date with timezone support
+  const formatEventDateTime = () => {
+    try {
+      const date = formatInTimeZone(eventInfo.dateTime, eventInfo.timeZone, 'dd/MM/yyyy');
+      const time = formatInTimeZone(eventInfo.dateTime, eventInfo.timeZone, 'h:mm a');
+      return { date, time };
+    } catch (error) {
+      const fallbackDate = new Date(eventInfo.dateTime);
+      return {
+        date: fallbackDate.toLocaleDateString(),
+        time: fallbackDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+    }
+  };
+
+  const { date, time } = formatEventDateTime();
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-lg w-full">
+        {/* Close button */}
+        <div className="flex justify-end p-4">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-xl"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Ticket Content - Designed like a movie ticket */}
+        <div className="px-8 pb-8">
+          {/* Event Details - Centered */}
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">{eventInfo.title}</h2>
+            <p className="text-sm text-gray-600 font-mono">Event ID: {eventInfo.eventCode}</p>
+          </div>
+
+          {/* Date, Time and Location - Left aligned with spacing */}
+          <div className="mb-6 text-sm text-gray-700">
+            <div className="flex items-center mb-1">
+              <span className="mr-2">📅</span>
+              <span>{date} at {time}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="mr-2">📍</span>
+              <span>{eventInfo.venue}</span>
+            </div>
+          </div>
+
+          {/* Dotted Line Separator */}
+          <div className="border-b-2 border-dotted border-gray-400 mb-6"></div>
+
+          {/* Ticket List - Simple format */}
+          <div className="space-y-2">
+            {ticketGroup.map((ticket) => (
+              <div key={ticket._id} className="flex justify-between items-center py-1">
+                <span className="font-mono text-sm font-medium">{ticket.ticketNumber}</span>
+                <span className="text-sm text-gray-700">
+                  {ticket.ticketType.name}
+                  {ticket.seats?.[0] && (
+                    <span className="ml-2 text-gray-600">
+                      (Seat: {ticket.seats[0].row}-{ticket.seats[0].seatNumber})
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

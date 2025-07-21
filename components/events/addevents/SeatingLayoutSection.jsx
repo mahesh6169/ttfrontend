@@ -1,6 +1,6 @@
 // components/events/addevents/SeatingLayoutSection.jsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   updateField,
   addSeatingRow,
@@ -8,8 +8,11 @@ import {
   updateSeatCount,
   removeSeatingRow,
 } from '@/store/slices/events/eventSlice';
+import { FaInfoCircle } from 'react-icons/fa';
 
 const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
+  const [showInstructions, setShowInstructions] = useState(false);
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       <div className="flex items-center mb-4">
@@ -28,12 +31,20 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
             />
           </svg>
         </div>
-        <div>
+        <div className="flex-1">
           <h4 className="text-lg font-medium text-gray-900">Seating Layout</h4>
           <p className="text-sm text-gray-500">
             Optional seating arrangement for your venue
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setShowInstructions(true)}
+          className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors"
+          title="Row naming instructions"
+        >
+          <FaInfoCircle className="text-xl" />
+        </button>
       </div>
 
       {(formData.seatingLayout || []).length > 0 ? (
@@ -226,11 +237,10 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
                   )
                 }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                placeholder="e.g., A-2,A-4:A-6,B-1,C-3:C-5"
+                placeholder="A1,A4-A6,B1,C3-C5"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Specify seats to reserve for the organizer. Use format: A-2,A-4:A-6,B-1 
-                (individual seats or ranges with dashes and colons for sequences)
+                Reserve specific seats for organizer use. Format: A1 for single seat, A4-A6 for consecutive seats in same row. Separate multiple selections with commas.
               </p>
             </div>
           )}
@@ -296,6 +306,60 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
             </svg>
             Create Seating Layout
           </button>
+        </div>
+      )}
+
+      {/* Row Name Instructions Modal */}
+      {showInstructions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Row Name Instructions</h3>
+                <button
+                  onClick={() => setShowInstructions(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4 text-sm">
+                <div>
+                  <p className="font-medium text-gray-700 mb-1">Seating Row Name Default:</p>
+                  <p className="text-gray-600">A, B, C, D... and so on</p>
+                </div>
+
+                <div>
+                  <p className="font-medium text-gray-700 mb-1">Seating Row Name Character Limit:</p>
+                  <p className="text-gray-600">3 characters maximum</p>
+                </div>
+
+                <div>
+                  <p className="font-medium text-gray-700 mb-1">Seating Row Names Allowed:</p>
+                  <p className="text-gray-600">A, AA, 1A, VIP, BAL</p>
+                </div>
+
+                <div>
+                  <p className="font-medium text-gray-700 mb-1">Reserve Seats Examples:</p>
+                  <div className="bg-gray-50 p-3 rounded font-mono text-xs space-y-1">
+                    <p>[A1, A5-A6]</p>
+                    <p>[AA1, AA5-AA6]</p>
+                    <p>[1A1, 1A5-1A7]</p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowInstructions(false)}
+                className="mt-6 w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
