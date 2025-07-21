@@ -91,7 +91,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
                           
                           {/* Horizontal scrollable seats container */}
                           <div className="overflow-x-auto border border-gray-200 rounded-md bg-gray-50 p-2">
-                            <div className="flex gap-1 pb-1" style={{ minWidth: 'max-content' }}>
+                            <div className="flex gap-0.5 pb-1" style={{ minWidth: 'max-content' }}>
                               {(row?.seats || []).map((seat, seatIndex) => {
                                 // Add visual separator every 10 seats
                                 const showSeparator = seatIndex > 0 && (seatIndex) % 10 === 0;
@@ -102,7 +102,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
                                       <div className="w-px h-6 bg-gray-300 mx-2 flex-shrink-0"></div>
                                     )}
                                     <div
-                                      className="w-6 h-6 bg-teal-100 border border-teal-300 flex items-center justify-center rounded text-xs font-medium text-teal-700 flex-shrink-0 hover:bg-teal-200 transition-colors"
+                                      className="w-5 h-5 bg-teal-100 border border-teal-300 flex items-center justify-center rounded text-[10px] font-medium text-teal-700 flex-shrink-0 hover:bg-teal-200 transition-colors"
                                       title={`Row ${row.rowLabel || 'A'}, Seat ${
                                         seat?.seatNumber || seatIndex + 1
                                       }`}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 
-const SeatReservationTimer = ({ expiryTime, onExpire, eventId }) => {
+const SeatReservationTimer = ({ expiryTime, onExpire, eventId, pauseWhenNavigating = false, compact = false }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isExpired, setIsExpired] = useState(false);
   const [isWarning, setIsWarning] = useState(false);
@@ -181,6 +181,22 @@ const SeatReservationTimer = ({ expiryTime, onExpire, eventId }) => {
   const message = getTimerMessage();
   const progressPercentage = getProgressPercentage();
 
+  // Compact mode - just timer with hourglass icon
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1.5 text-sm text-gray-600">
+        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className="text-amber-700">Seat reservation expires in </span>
+        <span className={`font-medium ${isWarning ? 'text-amber-600' : 'text-gray-700'}`}>
+          {formatTime(timeLeft)}
+        </span>
+      </div>
+    );
+  }
+
+  // Full display mode
   return (
     <div className="space-y-3">
       {/* Main timer display */}

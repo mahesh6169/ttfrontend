@@ -70,24 +70,24 @@ const SeatButton = ({
 
   const status = getSeatStatus();
 
-  // ✅ MOBILE ENHANCED: Improved styling with better mobile UX
+  // ✅ MOBILE ENHANCED: Improved styling with better mobile UX and compact design
   const getSeatStyles = () => {
     const baseStyles =
-      'w-10 h-10 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-lg text-xs font-medium border-2 transition-all duration-200 flex items-center justify-center cursor-pointer select-none relative overflow-hidden touch-manipulation active:scale-95';
+      'w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded text-[10px] sm:text-xs font-medium border transition-all duration-200 flex items-center justify-center cursor-pointer select-none relative overflow-hidden touch-manipulation';
 
     switch (status) {
       case 'selected':
-        return `${baseStyles} bg-teal-600 text-white border-teal-700 shadow-lg scale-105 z-10 ring-2 ring-teal-300 ring-opacity-50`;
+        return `${baseStyles} bg-blue-600 text-white border-blue-700 shadow-md`;
       case 'available':
-        return `${baseStyles} bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:border-green-400 hover:scale-105 hover:shadow-md active:bg-green-300`;
+        return `${baseStyles} bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 hover:shadow-sm`;
       case 'selected-by-other':
-        return `${baseStyles} bg-amber-100 text-amber-800 border-amber-300 cursor-not-allowed animate-pulse`;
+        return `${baseStyles} bg-yellow-100 text-yellow-800 border-yellow-300 cursor-not-allowed`;
       case 'booked':
-        return `${baseStyles} bg-red-100 text-red-800 border-red-300 cursor-not-allowed opacity-75`;
+        return `${baseStyles} bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed`;
       case 'reserved':
-        return `${baseStyles} bg-purple-100 text-purple-800 border-purple-300 cursor-not-allowed opacity-75`;
+        return `${baseStyles} bg-purple-100 text-purple-700 border-purple-300 cursor-not-allowed`;
       case 'disabled':
-        return `${baseStyles} bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed opacity-50`;
+        return `${baseStyles} bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50`;
       default:
         return `${baseStyles} bg-gray-100 text-gray-600 border-gray-300`;
     }

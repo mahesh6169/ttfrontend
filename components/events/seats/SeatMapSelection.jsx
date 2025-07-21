@@ -492,39 +492,132 @@ useEffect(() => {
   }, [reserveError]);
 
   return (
-    <div className="space-y-4">
-      {/* ✅ MOBILE ENHANCED: Improved top controls - more mobile-friendly */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-        <div className="flex items-center space-x-3">
-          {/* Selection count indicator - always visible on mobile */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
-            <span className="text-sm font-medium text-blue-800">
-              Select {requiredSeats} seat{requiredSeats !== 1 ? 's' : ''} • {selectedSeats.length}/{requiredSeats} selected
-            </span>
+    <div className="space-y-3">
+      {/* Compact Status Bar - Responsive for mobile */}
+      <div className="bg-white rounded-lg border border-gray-200 p-3 sm:px-4 sm:py-2.5">
+        {/* Desktop Layout - Horizontal */}
+        <div className="hidden sm:flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* Title */}
+            <h3 className="text-sm font-semibold text-gray-900">Select Your Seats</h3>
+            
+            <div className="h-4 w-px bg-gray-300"></div>
+            
+            {/* Selection count - always visible as guidance */}
+            <div className="text-sm font-medium text-gray-700">
+              {selectedSeats.length}/{requiredSeats} selected
+            </div>
+            
+            {/* Show seat numbers and timer only when seats are selected */}
+            {selectedSeats.length > 0 && (
+              <>
+                {/* Seat numbers */}
+                <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  <span className="truncate max-w-[200px]">{selectedSeats.join(', ')}</span>
+                </div>
+                
+                {/* Timer - only show when reservation is active */}
+                {currentReservation?.reservedUntil && (
+                  <>
+                    <div className="h-4 w-px bg-gray-300"></div>
+                    <SeatReservationTimer
+                      expiryTime={currentReservation.reservedUntil}
+                      onExpire={handleTimerExpire}
+                      eventId={eventId}
+                      pauseWhenNavigating={true}
+                      compact={true}
+                    />
+                  </>
+                )}
+              </>
+            )}
+          </div>
+          
+          {/* Right side controls */}
+          <div className="flex items-center gap-2">
+            {/* Toggle layout button */}
+            {event.seatingLayoutImage?.url && (
+              <button
+                onClick={() => setShowSeatingImage(!showSeatingImage)}
+                className="px-2 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                {showSeatingImage ? 'Hide' : 'Show'} Layout
+              </button>
+            )}
+            
+            {/* Clear button - only when seats selected */}
+            {selectedSeats.length > 0 && (
+              <button
+                onClick={handleClearSelection}
+                disabled={isLoading || pendingReservation}
+                className="px-2 py-1 text-xs font-medium text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Toggle seating layout image */}
-          {event.seatingLayoutImage?.url && (
-            <button
-              onClick={() => setShowSeatingImage(!showSeatingImage)}
-              className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              {showSeatingImage ? 'Hide' : 'Show'} Layout
-            </button>
-          )}
-
-          {/* Clear selection */}
-          {selectedSeats.length > 0 && (
-            <button
-              onClick={handleClearSelection}
-              disabled={isLoading || pendingReservation}
-              className="px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
-            >
-              Clear
-            </button>
-          )}
+        {/* Mobile Layout - Stacked */}
+        <div className="sm:hidden">
+          {/* Title and controls row */}
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-900">Select Your Seats</h3>
+            <div className="flex items-center gap-2">
+              {/* Toggle layout button */}
+              {event.seatingLayoutImage?.url && (
+                <button
+                  onClick={() => setShowSeatingImage(!showSeatingImage)}
+                  className="text-xs text-gray-600 hover:text-gray-800"
+                >
+                  {showSeatingImage ? 'Hide' : 'Show'} Layout
+                </button>
+              )}
+              
+              {/* Clear button - only when seats selected */}
+              {selectedSeats.length > 0 && (
+                <button
+                  onClick={handleClearSelection}
+                  disabled={isLoading || pendingReservation}
+                  className="text-xs text-red-600 hover:text-red-700 disabled:opacity-50"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {/* Selection status */}
+          <div className="space-y-1.5">
+            {/* Selection count */}
+            <div className="text-sm font-medium text-gray-700">
+              {selectedSeats.length}/{requiredSeats} selected
+            </div>
+            
+            {/* Seat numbers - only when seats selected */}
+            {selectedSeats.length > 0 && (
+              <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span className="truncate">{selectedSeats.join(', ')}</span>
+              </div>
+            )}
+            
+            {/* Timer - only when reservation active */}
+            {currentReservation?.reservedUntil && (
+              <SeatReservationTimer
+                expiryTime={currentReservation.reservedUntil}
+                onExpire={handleTimerExpire}
+                eventId={eventId}
+                pauseWhenNavigating={true}
+                compact={true}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -543,7 +636,7 @@ useEffect(() => {
       )}
 
       {/* ✅ MOBILE ENHANCED: Improved seat map with horizontal scrolling */}
-      <div className="relative bg-white border border-gray-200 rounded-lg">
+      <div className="relative bg-white border border-gray-200 rounded-lg max-w-full mx-auto">
         {seatingLayout.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <svg
@@ -565,10 +658,10 @@ useEffect(() => {
           </div>
         ) : (
           <div>
-            {/* ✅ MOBILE ENHANCED: Better stage indicator */}
-            <div className="text-center py-3 border-b border-gray-200 bg-gray-50">
-              <div className="inline-block bg-gray-800 text-white px-4 sm:px-8 py-2 rounded-lg text-xs sm:text-sm font-medium">
-                🎭 STAGE
+            {/* ✅ MOBILE ENHANCED: Compact stage indicator */}
+            <div className="text-center py-2 border-b border-gray-200 bg-gradient-to-b from-gray-100 to-gray-50">
+              <div className="inline-block bg-gray-800 text-white px-6 py-1.5 rounded text-xs font-semibold tracking-wider">
+                STAGE
               </div>
             </div>
 
@@ -600,21 +693,30 @@ useEffect(() => {
                 }
               `}</style>
 
-              <div className="seat-container min-w-max p-4 space-y-2">
+              <div className="seat-container min-w-max p-3 space-y-1">
                 {seatingLayout.map((row, rowIndex) => (
                   <div
                     key={`row-${rowIndex}-${row.rowLabel}`}
-                    className="flex items-center gap-2 min-w-max"
+                    className="flex items-center gap-1 min-w-max"
                   >
-                    {/* Left row label */}
-                    <div className="w-8 text-center font-bold text-gray-700 text-sm flex-shrink-0 sticky left-0 bg-white z-10 border-r border-gray-200 pr-2">
+                    {/* Left row label - compact */}
+                    <div className="w-6 text-center font-semibold text-gray-600 text-xs flex-shrink-0 sticky left-0 bg-white z-10 pr-1">
                       {row.rowLabel}
                     </div>
 
-                    {/* Seats container */}
-                    <div className="flex gap-1 min-w-max px-2">
+                    {/* Seats container - tighter spacing with section grouping */}
+                    <div className="flex items-center gap-0.5 min-w-max px-1">
                       {(row.seats || [])
-                        .map((seat, seatIndex) => {
+                        .reduce((acc, seat, seatIndex) => {
+                          // Add section separator every 10 seats
+                          if (seatIndex > 0 && seatIndex % 10 === 0) {
+                            acc.push(
+                              <div key={`separator-${seatIndex}`} className="w-2 h-8 flex items-center justify-center">
+                                <div className="w-px h-6 bg-gray-300"></div>
+                              </div>
+                            );
+                          }
+
                           // Use backend seatId - fail if not present
                           const seatId = seat.seatId;
                           if (!seatId) {
@@ -624,12 +726,12 @@ useEffect(() => {
                               'in row:',
                               row.rowLabel
                             );
-                            return null; // Skip rendering this seat
+                            return acc; // Skip rendering this seat
                           }
 
                           const seatStatus = getSeatStatus(seat, seatId);
 
-                          return (
+                          acc.push(
                             <SeatButton
                               key={`${seatId}-${seatIndex}`}
                               seat={{ ...seat, seatId }}
@@ -649,12 +751,13 @@ useEffect(() => {
                               userId={userId}
                             />
                           );
-                        })
-                        .filter(Boolean)}
+
+                          return acc;
+                        }, [])}
                     </div>
 
-                    {/* Right row label */}
-                    <div className="w-8 text-center font-bold text-gray-700 text-sm flex-shrink-0 sticky right-0 bg-white z-10 border-l border-gray-200 pl-2">
+                    {/* Right row label - compact */}
+                    <div className="w-6 text-center font-semibold text-gray-600 text-xs flex-shrink-0 sticky right-0 bg-white z-10 pl-1">
                       {row.rowLabel}
                     </div>
                   </div>
@@ -662,36 +765,10 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Scroll hint for mobile */}
-            <div className="md:hidden bg-blue-50 border-t border-blue-200 px-4 py-2 text-center">
-              <div className="flex items-center justify-center text-xs text-blue-600">
-                <svg
-                  className="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M7 16l-4-4m0 0l4-4m-4 4h18"
-                  />
-                </svg>
-                Swipe left/right to view all seats
-                <svg
-                  className="w-4 h-4 ml-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
+            {/* Scroll hint for mobile - More subtle */}
+            <div className="md:hidden bg-gray-50 px-4 py-1.5 text-center">
+              <div className="text-[10px] text-gray-500">
+                ← Swipe to view all seats →
               </div>
             </div>
           </div>
@@ -714,124 +791,7 @@ useEffect(() => {
         )}
       </div>
 
-      {/* ✅ MOBILE ENHANCED: Improved selection progress */}
-      {requiredSeats > 0 && (
-        <div
-          className={`border rounded-lg p-3 ${
-            selectedSeats.length === requiredSeats
-              ? 'bg-green-50 border-green-200'
-              : selectedSeats.length > requiredSeats
-              ? 'bg-red-50 border-red-200'
-              : 'bg-blue-50 border-blue-200'
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-start sm:items-center">
-              <svg
-                className={`w-5 h-5 mr-2 mt-0.5 sm:mt-0 flex-shrink-0 ${
-                  selectedSeats.length === requiredSeats
-                    ? 'text-green-600'
-                    : selectedSeats.length > requiredSeats
-                    ? 'text-red-600'
-                    : 'text-blue-600'
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d={
-                    selectedSeats.length === requiredSeats
-                      ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-                      : 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-                  }
-                />
-              </svg>
-              <div className="flex-1">
-                <span
-                  className={`text-sm font-medium ${
-                    selectedSeats.length === requiredSeats
-                      ? 'text-green-800'
-                      : selectedSeats.length > requiredSeats
-                      ? 'text-red-800'
-                      : 'text-blue-800'
-                  }`}
-                >
-                  {selectedSeats.length === 0
-                    ? `Tap on available seats to select them (need ${requiredSeats})`
-                    : selectedSeats.length < requiredSeats
-                    ? `Select ${
-                        requiredSeats - selectedSeats.length
-                      } more seat${
-                        requiredSeats - selectedSeats.length !== 1 ? 's' : ''
-                      }`
-                    : selectedSeats.length === requiredSeats
-                    ? `Perfect! All ${requiredSeats} seats selected`
-                    : `Too many seats selected! Please deselect ${
-                        selectedSeats.length - requiredSeats
-                      }`}
-                </span>
-                {selectedSeats.length === requiredSeats &&
-                  selectedSeats.length > 0 && (
-                    <div className="text-xs text-green-700 mt-1">
-                      Selected: {selectedSeats.join(', ')}
-                    </div>
-                  )}
-              </div>
-            </div>
 
-            {/* Progress indicator */}
-            <div className="flex items-center space-x-2 self-end sm:self-auto">
-              <span
-                className={`text-sm font-bold ${
-                  selectedSeats.length === requiredSeats
-                    ? 'text-green-800'
-                    : selectedSeats.length > requiredSeats
-                    ? 'text-red-800'
-                    : 'text-blue-800'
-                }`}
-              >
-                {selectedSeats.length}/{requiredSeats}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Current reservation info */}
-      {currentReservation && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
-          <div className="flex items-center">
-            <svg
-              className="w-5 h-5 text-green-600 mr-2 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span className="text-sm font-medium text-green-800">
-              Seats reserved! Complete your purchase within the time limit.
-            </span>
-          </div>
-          {currentReservation?.reservedUntil && (
-            <SeatReservationTimer
-              expiryTime={currentReservation.reservedUntil}
-              onExpire={handleTimerExpire}
-              eventId={eventId}
-              pauseWhenNavigating={true} // ✅ NEW: Pause timer during navigation
-            />
-          )}
-        </div>
-      )}
 
       {/* Reserve Error Modal */}
       {console.log('🔍 Modal render check:', { showReserveErrorModal, reserveError })}

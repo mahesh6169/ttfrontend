@@ -341,9 +341,9 @@ const handleVisibilityChange = () => {
   };
 }, [performCleanup, eventId]);
 
-  // Handles navigation back to previous page
+  // Handles navigation back to ticket selection page
   const handleBack = () => {
-     router.push(`/events/views/${eventId}`);
+     router.push(`/events/tickets/${eventId}`);
   };
 
   // Handle proceed to checkout
@@ -455,53 +455,31 @@ const handleProceedToCheckout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Back button and event info */}
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleBack}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back
-              </button>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">{selectedEvent.title}</h1>
-              </div>
-            </div>
-
-            {/* Timer removed - now handled at component level */}
-            <div className="flex items-center space-x-2">
-              {currentReservation && (
-                <div className="text-sm text-green-600 font-medium">
-                  Seats Reserved
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Main content container - matching tickets page style */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Back to Tickets Button */}
+        <div className="mb-6">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg transition-colors"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Tickets Page
+          </button>
         </div>
-      </div>
 
-      {/* Main content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <SeatSocketListener eventId={eventId}/>
         <div className="space-y-6">
           
-          {/* Row 1: Seating Legend */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          {/* Row 1: Seating Legend - More compact */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
             <SeatLegend />
           </div>
           
           {/* Row 2: Seat Selection - Full width seat map */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="mb-4">
-    <h2 className="text-xl font-semibold text-gray-900">Select Your Seats</h2>
-  </div>
             <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection} eventId={eventId}/>
             
             {/* Proceed to Checkout Button - Only show when all seats are selected */}
@@ -521,18 +499,6 @@ const handleProceedToCheckout = () => {
         </div>
       </div>
 
-      {/* Mobile sticky footer - Only show when all seats are selected */}
-      {canProceed && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
-          <button
-            onClick={handleProceedToCheckout}
-            className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center"
-          >
-            <FaShoppingCart className="mr-2" />
-            Proceed to Checkout
-          </button>
-        </div>
-      )}
 
 
     </div>

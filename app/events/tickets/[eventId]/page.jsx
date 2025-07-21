@@ -557,24 +557,6 @@ const TicketSelectionPage = () => {
             <AttendeeInfoSection event={selectedEvent} errors={errors} />
           )}
 
-          {/* Seating Info */}
-          {hasSeatingLayout && totals.totalQuantity > 0 && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start">
-                <FaChair className="text-purple-600 mr-3 mt-1" />
-                <div>
-                  <h4 className="font-medium text-purple-800 mb-1">
-                    Seat Selection Required
-                  </h4>
-                  <p className="text-sm text-purple-700">
-                    After clicking "Select Seats", you'll choose your specific
-                    seats from the venue layout. Selected seats will be held for
-                    15 minutes while you complete your purchase.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Proceed Button - Placed right after seating info */}
           {totals.totalQuantity > 0 && (
@@ -586,9 +568,7 @@ const TicketSelectionPage = () => {
                 }
                 className={`w-full py-3 px-4 rounded-lg font-semibold flex items-center justify-center transition-all ${
                   canProceedToNext && !isLoading && !loading.initializing
-                    ? hasSeatingLayout
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                      : 'bg-green-600 hover:bg-green-700 text-white'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
