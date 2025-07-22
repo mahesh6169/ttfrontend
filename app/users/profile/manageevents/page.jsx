@@ -13,7 +13,8 @@ const ManageEventsPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { myEvents, loading, error, deleteStatus, deleteError, formStatus } = useSelector((state) => state.events);
+  const { myEvents, status, error, deleteStatus, deleteError, formStatus } = useSelector((state) => state.events);
+  const loading = status === 'loading';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
 
@@ -41,6 +42,13 @@ const handleDelete = async () => {
       toast.success('Event deleted successfully.');
       setIsModalOpen(false);
       setEventToDelete(null);
+      // Refetch events to ensure consistency
+      try {
+        await dispatch(fetchMyEvents()).unwrap();
+      } catch (refetchError) {
+        console.error('Failed to refetch events:', refetchError);
+        toast.warning('Event deleted but failed to refresh list. Please reload the page.');
+      }
     } else {
       toast.error(result.payload || 'Failed to delete event.');
     }
