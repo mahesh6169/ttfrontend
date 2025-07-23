@@ -77,7 +77,13 @@ export class FormEngine {
         const fieldConfig = this.structure?.fields[fieldId];
         if (!fieldConfig) return null;
         if (this.isFieldVisible(fieldId, fieldConfig)) {
-          return { id: fieldId, ...fieldConfig };
+          // Override required status based on context
+          const dynamicRequired = this.isFieldRequired(fieldId, fieldConfig);
+          return { 
+            id: fieldId, 
+            ...fieldConfig,
+            required: dynamicRequired
+          };
         }
         return null;
       })
@@ -100,6 +106,22 @@ export class FormEngine {
       }
     }
     return true;
+  }
+
+  // Check if a field should be required based on context
+  isFieldRequired(fieldId, fieldConfig) {
+    if (!fieldConfig) return false;
+    
+    // Fields that are optional for wanted ads
+    const optionalForWanted = ['brand', 'model', 'make', 'year', 'bedrooms', 'parking', 'jobTitle'];
+    
+    // If it's a wanted ad and field is in the optional list, it's not required
+    if (this.formData.adType === 'wanted' && optionalForWanted.includes(fieldId)) {
+      return false;
+    }
+    
+    // Otherwise, use the field's configured required status
+    return fieldConfig.required || false;
   }
 
   // Get available pricing options based on the selected type

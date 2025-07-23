@@ -73,6 +73,13 @@ const sortOptions = [
     dispatch(searchAdverts());
   }, [filters, pagination.page, dispatch]);
 
+  // Sync local searchText with Redux state when filters are cleared
+  useEffect(() => {
+    if (filters.searchText === '' && searchText !== '') {
+      setSearchText('');
+    }
+  }, [filters.searchText]);
+
   const handlePlaceChanged = () => {
     if (autocomplete) {
       const place = autocomplete.getPlace();
@@ -108,6 +115,7 @@ const sortOptions = [
 
   // Modal functions
   const handleClearAllTempFilters = () => {
+    // Clear all temporary filters
     setTempFilters({
       categories: [],
       location: null,
@@ -115,6 +123,11 @@ const sortOptions = [
       sortBy: 'newest',
     });
     setLocationInput('');
+    // Clear the search text
+    setSearchText('');
+    
+    // Apply the clear action immediately to Redux
+    dispatch(clearAllFilters());
   };
 
 //  function to handle sort changes
@@ -550,7 +563,7 @@ const getCurrentSortLabel = () => {
         )}
 
         {/* Advert Listing */}
-        <div className="px-3 sm:px-4">
+        <div className="px-3 sm:px-4 mt-4">
           <AdvertList adverts={adverts} advertStatus={status} />
         </div>
 

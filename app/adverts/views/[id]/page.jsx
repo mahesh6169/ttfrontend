@@ -38,30 +38,31 @@ const AdvertDetail = () => {
 
   return (
     <div id="viewsmain" className="flex flex-col gap-2 px-2">
-      {/* Row 1: Back & Report s */}
-      <div className=" mt-4 flex justify-between">
-  {/* Back to Adverts */}
-  <span
-    onClick={() => router.back()}
-    className="flex items-center gap-2 bg-yellow-400  text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium"
-  >
-    <RiArrowGoBackFill className="text-xs sm:text-base " />
-    <span>Back to Adverts</span>
-  </span>
+      {/* Navigation Bar */}
+      <div className="mt-4 flex justify-between items-center">
+        {/* Back to Adverts */}
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
+        >
+          <RiArrowGoBackFill className="text-xs sm:text-base" />
+          <span>Back to Adverts</span>
+        </button>
 
-  {/* Report this Advert */}
-  <Link
-    href={`/support/report?type=advert&id=${id}&title=${encodeURIComponent(advert.title)}`}
-    className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800"
-  >
-    <MdReport className="text-lg" />
-    <span>Report this advert</span>
-  </Link>
-</div>
+        {/* Report this Advert */}
+        <Link
+          href={`/support/report?type=advert&id=${id}&title=${encodeURIComponent(advert.title)}`}
+          className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
+        >
+          <MdReport className="text-lg" />
+          <span className="hidden sm:inline">Report this advert</span>
+          <span className="sm:hidden">Report</span>
+        </Link>
+      </div>
 
-      {/* Row 2: Advert + Chat */}
-      <div className="flex flex-col lg:flex-row gap-4 ">
-        {/* Advert Details */}
+      {/* Main Content Grid */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* Primary Content */}
         <div className="flex-[7] bg-white w-full">
           <SingleAdvertCard
             advert={advert}
@@ -70,19 +71,19 @@ const AdvertDetail = () => {
               resourceType: 'advert',
               participantId: advert.postedBy?._id,
               owner: advert.postedBy?.name,
-              preserveRedirectUrl: `/adverts2/views/${id}`,
+              preserveRedirectUrl: `/adverts/views/${id}`,
             }}
           />
         </div>
 
-        {/* Chat Container: desktop only */}
-        <div className="hidden lg:block flex-[3] shadow p-2 self-start">
+        {/* Secondary Content - Desktop Only */}
+        <div className="hidden lg:block flex-[3] bg-white border rounded shadow-md p-2 self-start">
           <SendMessage
             resourceId={id}
             resourceType="advert"
             participantId={advert.postedBy?._id}
             owner={advert.postedBy?.name}
-            preserveRedirectUrl={`/adverts2/views/${id}`}
+            preserveRedirectUrl={`/adverts/views/${id}`}
           />
         </div>
       </div>

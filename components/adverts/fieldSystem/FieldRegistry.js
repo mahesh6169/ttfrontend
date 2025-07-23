@@ -114,8 +114,8 @@ fields: {
       id: 'detailsSection',
       order: 30,
       title: 'Vehicle Details',
-      requiresSection: 'pricingSection',
-      fields: ['Fueltype','mileage', 'transmission']
+      requiresSection: 'basicDetailsSection',
+      fields: ['fuelType','mileage', 'transmission']
     }
   ],
   fields: {
@@ -141,21 +141,15 @@ fields: {
       min: 1900,
       max: new Date().getFullYear() + 1
     },
-    Fueltype: {
+    fuelType: {
       type: 'text',
       label: 'Fuel Type',
-      placeholder: 'e.g., Petrol, Diesel, Electric',
-      dependencies: {
-        priceType: ['sell']
-      }
+      placeholder: 'e.g., Petrol, Diesel, Electric'
     },
     mileage: {
       type: 'number',
       label: 'Mileage (km)',
-      min: 0,
-      dependencies: {
-        priceType: ['sell']
-      }
+      min: 0
     },
     transmission: {
       type: 'select',

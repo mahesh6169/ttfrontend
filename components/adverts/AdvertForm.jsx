@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import AddressInput from '../shared/AddressInput';
 import ImageUploader from '../shared/ImageUploader';
+import CategorySelector from '../shared/CategorySelector';
 import FieldSystem from './fieldSystem';
 
 const AdvertForm = ({ 
@@ -141,14 +142,28 @@ const AdvertForm = ({
       hasError ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
     }`;
 
+    // Dynamic placeholder for wanted ads
+    const getPlaceholder = () => {
+      if (formData.adType === 'wanted' && ['brand', 'make', 'model', 'jobTitle'].includes(field.id)) {
+        const placeholderMap = {
+          'brand': 'e.g., Any brand or specify preference',
+          'make': 'e.g., Any make or specify preference',
+          'model': 'e.g., Any model or specify preference',
+          'jobTitle': 'e.g., Any job or specify preference'
+        };
+        return placeholderMap[field.id] || field.placeholder;
+      }
+      return field.placeholder;
+    };
+
     switch (field.type) {
       case 'text':
-        return <input type="text" value={value} onChange={e => handleFieldChange(field.id, e.target.value)} placeholder={field.placeholder} className={baseClasses} required={field.required} />;
+        return <input type="text" value={value} onChange={e => handleFieldChange(field.id, e.target.value)} placeholder={getPlaceholder()} className={baseClasses} required={field.required} />;
       case 'number':
-        return <input type="number" value={value} onChange={e => handleFieldChange(field.id, parseFloat(e.target.value) || '')} min={field.min} max={field.max} className={baseClasses} required={field.required} />;
+        return <input type="number" value={value} onChange={e => handleFieldChange(field.id, parseFloat(e.target.value) || '')} min={field.min} max={field.max} placeholder={field.placeholder} className={baseClasses} required={field.required} />;
       case 'select':
         return (
-          <select value={value} onChange={e => handleFieldChange(field.id, e.target.value)} className={baseClasses} >
+          <select value={value} onChange={e => handleFieldChange(field.id, e.target.value)} className={baseClasses} required={field.required}>
             <option value="">Select {field.label}</option>
             {field.options.map(option => <option key={option} value={option}>{option}</option>)}
           </select>
@@ -247,7 +262,11 @@ const handleSubmit = (e) => {
   // Validate visible fields in each section
   formSections.forEach(section => {
     if (section.specialField === 'pricing') {
-      // Pricing validation
+      // Skip pricing validation entirely for wanted ads
+      if (formData.adType === 'wanted') {
+        return;
+      }
+      // Pricing validation for offered ads only
       if (formData.adType === 'offered' && Object.keys(section.pricingOptions || {}).length > 0) {
         if (formData.pricing.length === 0) {
           validationErrors.push('At least one pricing option is required');
@@ -293,7 +312,7 @@ const handleSubmit = (e) => {
     adType: formData.adType,
     address: formData.address,
     fields: formData.fields,
-    pricing: formData.pricing,
+    pricing: formData.adType === 'wanted' ? [] : formData.pricing,
     images: formData.images,
     existingImages: (formData.existingImages || []).filter(img => img && img.url),
   };
@@ -350,16 +369,13 @@ return (
     {/* Category */}
     <div>
       <label className="block font-bold mb-2 text-gray-700">Category <span className="text-red-500">*</span></label>
-      <select 
-        value={formData.category} 
-        onChange={(e) => handleChange('category', e.target.value)} 
-        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
-      >
-        <option value="">Select a category</option>
-        {availableCategories.map(category => (
-          <option key={category} value={category}>{category}</option>
-        ))}
-      </select>
+      <CategorySelector
+        value={formData.category}
+        onChange={(value) => handleChange('category', value)}
+        categories={availableCategories}
+        placeholder="Select a category"
+        required={true}
+      />
     </div>
 
     {/* Render all form sections */}

@@ -35,6 +35,11 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
 
   const priceLabel = getPriceLabel(advert.pricing);
 
+  // Determine border color based on ad type - using very subtle colors
+  const borderColorClass = advert.adType === 'wanted' 
+    ? 'border-l-4 border-amber-100' 
+    : 'border-l-4 border-teal-100';
+
   return (
     <div id="AdvertCard" className="relative border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200">
       {/* Wishlist Button - Top Right */}
@@ -60,29 +65,32 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
           )}
         </div>
 
-        {/* Title Box */}
-        <h2 className="text-xs sm:text-sm text-center font-medium my-1 px-2 truncate text-gray-800">
-          {advert.title}
-        </h2>
+        {/* Content wrapper with subtle left border */}
+        <div className={`${borderColorClass}`}>
+          {/* Title Box */}
+          <h2 className="text-xs sm:text-sm text-center font-medium my-1 px-2 truncate text-gray-800">
+            {advert.title}
+          </h2>
 
-        {/* Price Box */}
-        <div className="text-xs font-medium my-1 px-2 text-gray-800 h-4">
-          {advert.adType === 'wanted' ? 'Wanted $$$' : (priceLabel || '\u00A0')}
+          {/* Price Box */}
+          <div className="text-xs font-medium my-1 px-2 text-gray-800 h-4">
+            {advert.adType === 'wanted' ? 'Wanted $$$' : (priceLabel || '\u00A0')}
+          </div>
+
+          {/* Location block */}
+          <div className="flex items-center gap-1 px-2 truncate">
+            <MdLocationOn className="text-xs font-medium text-gray-600 flex-shrink-0" />
+            <span className="text-xs font-medium text-gray-600">
+              {/* Display suburb and state if available, otherwise show venue */}
+              {advert.address?.suburb || advert.address?.state
+                ? [advert.address?.suburb, advert.address?.state].filter(Boolean).join(', ')
+                : 'Address not available'}
+            </span>
+          </div>
+
+          {/* Posted date */}
+          <div className="text-xs font-medium text-gray-600 text-right whitespace-nowrap px-2 mb-1">{postedText}</div>
         </div>
-
-        {/* Location block */}
-        <div className="flex items-center gap-1 px-2 truncate">
-          <MdLocationOn className="text-xs font-medium text-gray-600 flex-shrink-0" />
-          <span className="text-xs font-medium text-gray-600">
-            {/* Display suburb and state if available, otherwise show venue */}
-            {advert.address?.suburb || advert.address?.state
-              ? [advert.address?.suburb, advert.address?.state].filter(Boolean).join(', ')
-              : 'Address not available'}
-          </span>
-        </div>
-
-        {/* Posted date */}
-        <div className="text-xs font-medium text-gray-600 text-right whitespace-nowrap px-2 mb-1">{postedText}</div>
       </Link>
     </div>
   );

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advert Category Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .issue { background-color: #ffebee; }
+        .ok { background-color: #e8f5e9; }
+        .warning { background-color: #fff3e0; }
+    </style>
+</head>
+<body>
+    <h1>Advert Category Combinations Test</h1>
+    <h2>Testing "Wanted" Ad Type Pricing Behavior</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Property/Type Field</th>
+                <th>Expected Behavior</th>
+                <th>Current Behavior</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="issue">
+                <td>Real Estate</td>
+                <td>Room</td>
+                <td>No pricing for wanted ads</td>
+                <td>Shows pricing section (ISSUE)</td>
+                <td>❌ BUG</td>
+            </tr>
+            <tr class="ok">
+                <td>Real Estate</td>
+                <td>House, Commercial, Land</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+            <tr class="ok">
+                <td>Books, Art & Collectables</td>
+                <td>N/A</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+            <tr class="ok">
+                <td>Baby & Children</td>
+                <td>N/A</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+            <tr class="ok">
+                <td>Music & Games</td>
+                <td>N/A</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+            <tr class="ok">
+                <td>Cars & Vehicles</td>
+                <td>All types</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+            <tr class="ok">
+                <td>Fashion & Accessories</td>
+                <td>N/A</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+            <tr class="ok">
+                <td>Health, Sport & Fitness</td>
+                <td>N/A</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+            <tr class="ok">
+                <td>Home & Garden</td>
+                <td>N/A</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+            <tr class="ok">
+                <td>Pets</td>
+                <td>N/A</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+            <tr class="ok">
+                <td>Electronics & Computers</td>
+                <td>All brands</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+            <tr class="warning">
+                <td>Jobs</td>
+                <td>All types</td>
+                <td>No pricing for wanted ads</td>
+                <td>Pricing is optional anyway</td>
+                <td>⚠️ CHECK</td>
+            </tr>
+            <tr class="ok">
+                <td>Overseas Goods</td>
+                <td>N/A</td>
+                <td>No pricing for wanted ads</td>
+                <td>Should hide pricing correctly</td>
+                <td>✅ OK</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h2>Key Findings</h2>
+    <ul>
+        <li><strong>ISSUE:</strong> The pricing section is being shown for "Real Estate > Room > Wanted" combination</li>
+        <li>The form correctly has logic to skip pricing for wanted ads (line 367-370 in AdvertForm.jsx)</li>
+        <li>However, the validation logic might still be expecting pricing data</li>
+        <li>The issue appears to be specific to the way the form is handling state updates when switching ad types</li>
+    </ul>
+    
+    <h2>Root Cause Analysis</h2>
+    <p>The problem is likely in the form state management:</p>
+    <ol>
+        <li>User selects "Real Estate" → "Room" → pricing section appears (correct for offered)</li>
+        <li>User switches to "Wanted" → pricing section should disappear but validation might still expect it</li>
+        <li>The form sections are being recalculated when adType changes (line 80), but there might be stale pricing data</li>
+    </ol>
+    
+    <h2>Recommended Fix</h2>
+    <p>When switching to "wanted" ad type, ensure:</p>
+    <ol>
+        <li>Clear any existing pricing data from formData</li>
+        <li>Reset selectedPriceType state</li>
+        <li>Ensure validation skips pricing for wanted ads</li>
+    </ol>
+</body>
+</html>

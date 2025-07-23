@@ -8,6 +8,14 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 const FALLBACK_IMAGE_URL =
   'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
 
+// Helper function to format field names
+const formatFieldName = (fieldName) => {
+  return fieldName
+    .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+    .trim();
+};
+
 const SingleAdvertCard = ({ advert, chatProps }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -64,6 +72,11 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
   };
 
   const priceLabels = getPriceLabel(advert.pricing);
+
+  // Determine border color based on ad type - using very subtle colors
+  const borderColorClass = advert.adType === 'wanted' 
+    ? 'border border-amber-100' 
+    : 'border border-teal-100';
 
   return (
     <div id="SingleAdvertCard" className="border rounded shadow-md mx-auto">
@@ -150,88 +163,119 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
         </div>
       )}
 
-      {/* Title */}
-      {advert.title && (
-        <div className="my-2 px-2"> 
-          <h2 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words">{advert.title}</h2>
-        </div>
-      )}
+      {/* Content wrapper with subtle border */}
+      <div className={`${borderColorClass} rounded-b`}>
+        {/* Title Section */}
+        {advert.title && (
+          <div className="my-2 px-2"> 
+            <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words">{advert.title}</h1>
+          </div>
+        )}
     
-      {/* Posted By and Posted Date - New Layout */}
-      <div className="flex justify-start gap-1 sm:gap-4 text-sm sm:text-base text-gray-800 text-left mb-2 px-2">
-        {advert.postedBy?.name && (
-          <span>
-            <strong>Posted By:</strong> {advert.postedBy.name}
-          </span>
-        )}
-        <span>
-          <strong>Posted:</strong> {postedText}
-        </span>
-      </div>
-
-      {/* Ad Type and Category - New Layout */}
-      <div className="flex justify-start gap-1 sm:gap-4 text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
-        {advert.adType && (
-          <span>
-            <strong>Ad Type:</strong> {advert.adType === 'wanted' ? 'Wanted' : 'Offered'}
-          </span>
-        )}
-        {advert.category && (
-          <span>
-            <strong>Category:</strong> {advert.category}
-          </span>
-        )}
-      </div>
-
-      {/* Address - New Layout */}
-      {advert.address && (
-        <div className="text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
-          <strong>{advert.address.street ? 'Address:' : 'Location:'}</strong>{' '}
-          {advert.address.street 
-            ? advert.address.formattedAddress 
-            : `${advert.address.suburb}${advert.address.state ? ', ' + advert.address.state : ''}`}
+      {/* Main Details Section */}
+      <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
+        <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-800">Details</h3>
         </div>
-      )}
-
-      {/* Price - New Layout */}
-      {priceLabels && priceLabels.map((price, index) => (
-        <div key={index} className="text-sm sm:text-base text-gray-800 mb-2 px-2 text-left">
-          <strong>{price.label}:</strong> {price.value}
-        </div>
-      ))}
-
-      {/* Chat Container - Keeping as is */}
-      {chatProps && (
-        <div className="block md:hidden px-2">
-          <SendMessage {...chatProps} />
-        </div>
-      )}
-
-      {/* Dynamic Fields */}
-      {advert.fields && Object.keys(advert.fields).length > 0 && (
-        <div className="border px-2 rounded shadow-md text-left my-4 mx-2">
-          <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Additional Details</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {Object.entries(advert.fields).map(([key, value]) => (
-              <div key={key} className="text-sm sm:text-base text-gray-800">
-                <strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {value}
+        <div className="p-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Posted By */}
+            {advert.postedBy?.name && (
+              <div className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">Posted By:</span>{' '}
+                <span className="text-gray-600">{advert.postedBy.name}</span>
+              </div>
+            )}
+            
+            {/* Posted Date */}
+            <div className="text-sm sm:text-base">
+              <span className="font-semibold text-gray-700">Posted:</span>{' '}
+              <span className="text-gray-600">{postedText}</span>
+            </div>
+            
+            {/* Ad Type */}
+            {advert.adType && (
+              <div className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">Ad Type:</span>{' '}
+                <span className="text-gray-600">{advert.adType === 'wanted' ? 'Wanted' : 'Offered'}</span>
+              </div>
+            )}
+            
+            {/* Category */}
+            {advert.category && (
+              <div className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">Category:</span>{' '}
+                <span className="text-gray-600">{advert.category}</span>
+              </div>
+            )}
+            
+            {/* Location - Full width if address exists */}
+            {advert.address && (
+              <div className="text-sm sm:text-base sm:col-span-2">
+                <span className="font-semibold text-gray-700">
+                  {advert.address.street ? 'Address:' : 'Location:'}
+                </span>{' '}
+                <span className="text-gray-600">
+                  {advert.address.street 
+                    ? advert.address.formattedAddress 
+                    : `${advert.address.suburb}${advert.address.state ? ', ' + advert.address.state : ''}`}
+                </span>
+              </div>
+            )}
+            
+            {/* Price Information */}
+            {priceLabels && priceLabels.map((price, index) => (
+              <div key={index} className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">{price.label}:</span>{' '}
+                <span className="text-gray-600">{price.value}</span>
               </div>
             ))}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Description */}
-      {advert.description && (
-        <div className="border px-2 rounded shadow-md text-left my-4 mx-2">
-          <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Description</h3>
-          <div className="text-sm sm:text-base text-gray-800 text-justify space-y-2">
-            {advert.description.split('\n').map((para, idx) => (
-              <p key={idx} className="whitespace-pre-wrap">{para}</p>
-            ))}
+      {/* Dynamic Fields Section */}
+      {advert.fields && Object.keys(advert.fields).length > 0 && (
+        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
+          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Additional Details</h3>
+          </div>
+          <div className="p-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Object.entries(advert.fields).map(([key, value]) => (
+                <div key={key} className="text-sm sm:text-base">
+                  <span className="font-semibold text-gray-700">{formatFieldName(key)}:</span>{' '}
+                  <span className="text-gray-600">{value}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
+
+      {/* Description Section */}
+      {advert.description && (
+        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
+          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Description</h3>
+          </div>
+          <div className="p-3">
+            <div className="text-sm sm:text-base text-gray-700 space-y-2">
+              {advert.description.split('\n').map((para, idx) => (
+                para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chat Container - Mobile Only (After Additional Details) */}
+      {chatProps && (
+        <div className="block lg:hidden px-2 my-4">
+          <SendMessage {...chatProps} />
+        </div>
+      )}
+      </div> {/* End of content wrapper */}
     </div>
   );
 };

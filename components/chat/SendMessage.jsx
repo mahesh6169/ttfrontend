@@ -110,8 +110,8 @@ const SendMessage = ({
         <button
           onClick={handleSendMessage}
           disabled={sending}
-          className={`w-full py-2 px-4 bg-yellow-400  text-teal-700 rounded font-medium ${
-            sending ? 'opacity-50 cursor-not-allowed' : 'hover:bg-teal-700 hover:text-lime-100'
+          className={`w-full bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors ${
+            sending ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
           {sending ? 'Sending...' : 'Send'}
