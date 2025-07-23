@@ -2,36 +2,39 @@
 
 // This file remains mostly the same
 export const CATEGORY_ACCESS = {
-  'Books, Art & Collectables': ['user', 'admin'],
-  'Baby & Children': ['user', 'admin'],
-  'Music & Games': ['user', 'admin'],
+  'Real Estate': ['user', 'admin'],
   'Cars & Vehicles': ['user', 'admin'],
-  'Fashion & Accessories': ['user', 'admin'],
-  'Health, Sport & Fitness': ['user', 'admin'],
+  'Home Repairs & Improvements': ['user', 'admin'],
+  'Food & Catering Services': ['user', 'admin'],
+  'Party Hires & Services': ['user', 'admin'],
+  'Cleaning & Maintenance Services': ['user', 'admin'],
   'Home & Garden': ['user', 'admin'],
   'Electronics & Computers': ['user', 'admin'],
-  'Miscellaneous': ['user', 'admin'],
-  'Pets': ['user', 'admin'],
-  'Real Estate': ['user', 'admin'],
-
-  'Arts, Dance & Cultural Tutors': ['user', 'admin'],
-  'Academic Tutors & Education': ['user', 'admin'],
-  'Food & Catering Services': ['user', 'admin'],
-  'Home Repairs & Improvements': ['user', 'admin'],
-  'Party Hires & Services': ['user', 'admin'],
   'Jobs': ['user', 'admin'],
-  'Business & Professional Services': ['user', 'admin'],
+  
+  'Senior Travel Support': ['user', 'admin'],
+  'Baby & Children': ['user', 'admin'],
+  'Health, Sport & Fitness': ['user', 'admin'],
+  'Music & Games': ['user', 'admin'],
+  'Fashion & Accessories': ['user', 'admin'],
+  'Books, Art & Collectables': ['user', 'admin'],
+  'Pets': ['user', 'admin'],
+
   'Retail Shops & Stores': ['user', 'admin'],
   'Transport & Ride Services': ['user', 'admin'],
   'Legal & Immigration Services': ['user', 'admin'],
   'Financial & Insurance Services': ['user', 'admin'],
-  'Travel & Tourism Services': ['user', 'admin'],
-  'Cleaning & Maintenance Services': ['user', 'admin'],
+  
+
+  'Academic Tutors & Education': ['user', 'admin'],
+  'Arts, Dance & Cultural Tutors': ['user', 'admin'],
+  'Business & Professional Services': ['user', 'admin'],
   'Construction & Renovation Services': ['user', 'admin'],
+  'Travel & Tourism Services': ['user', 'admin'],
   'Marketing & Advertising Services': ['user', 'admin'],
   'IT & Software Services': ['user', 'admin'],
-  'Travel Partner': ['user', 'admin'],
-
+  'Miscellaneous': ['user', 'admin'],
+  
   'Overseas Goods': ['admin']
 };
 

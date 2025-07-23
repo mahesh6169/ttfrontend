@@ -382,7 +382,7 @@ const ThreadsPage = () => {
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
             <button
               onClick={applyFilters}
-              className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition-colors"
+              className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-3 rounded shadow font-semibold transition-colors"
             >
               Show results
             </button>
@@ -393,26 +393,29 @@ const ThreadsPage = () => {
       {/* Main Content */}
       <div className="w-full">
         {/* Create New Topic Button */}
-        <div className="my-1 px-3 sm:my-2 sm:px-4">
+        <div className="my-2 px-4">
           <div className="flex justify-start">
             <Link
               href="/threads/new"
-              className="bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-2 py-1 text-xs rounded-tr-lg rounded-bl-lg shadow-lg font-semibold transition duration-200 sm:px-3 sm:py-1.5 sm:text-sm sm:rounded-tr-xl sm:rounded-bl-xl md:text-base"
+              className="bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 text-sm md:text-base rounded shadow font-semibold transition duration-200"
             >
-              Create New Topic
+              Create Topic
             </Link>
           </div>
         </div>
 
-        {/* Header */}
-        <div className="my-1 px-3 py-4 bg-gradient-to-br from-teal-950 to-teal-100 shadow-sm rounded-md flex justify-center sm:my-2 sm:px-4 sm:py-6">
-          <h1 className="text-lg font-extrabold text-yellow-400 tracking-tight flex items-center gap-1 text-center animate-[pulsezoom_1.5s_ease-in-out_infinite] sm:text-xl sm:gap-2 md:text-2xl lg:text-3xl">
-            <span>Ask</span>
-            <span className="text-yellow-400">•</span>
-            <span>Discuss</span>
-            <span className="text-yellow-400">•</span>
-            <span>Learn</span>
-          </h1>
+        {/* Hero Banner */}
+        <div className="my-4 px-4">
+          <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
+              <span className="text-amber-500">Ask</span>
+              <span className="text-teal-700 mx-2">•</span>
+              <span className="text-teal-700">Discuss</span>
+              <span className="text-teal-700 mx-2">•</span>
+              <span className="text-amber-500">Learn</span>
+            </h1>
+            <p className="text-gray-600 text-center text-sm mt-2">Share knowledge with your community</p>
+          </div>
         </div>
 
         {/* Search Bar with Sort/Filter buttons */}
@@ -427,19 +430,19 @@ const ThreadsPage = () => {
             />
             <button
               type="submit"
-              className="bg-teal-700 text-white px-4 py-2 rounded-lg hover:bg-teal-800 transition-colors text-sm font-medium"
+              className="bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 px-4 py-2 rounded shadow transition-colors text-sm font-medium"
             >
               Search
             </button>
           </form>
 
-          {/* Sort and Filter Buttons */}
-          <div className="flex gap-3 justify-center">
+          {/* Page Controls - Sort and Filter */}
+          <div className="flex gap-2 md:gap-3 justify-center">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
               <span className="font-medium">Filter</span>
@@ -452,10 +455,10 @@ const ThreadsPage = () => {
             
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
                 onClick={() => setShowSortMenu(!showSortMenu)}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                 </svg>
                 <span className="font-medium">Sort: {getCurrentSortLabel()}</span>

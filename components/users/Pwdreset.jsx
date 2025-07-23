@@ -49,7 +49,7 @@ const ResetPasswordContent = () => {
 
       // 🔁 Wait 3 seconds, then redirect
       setTimeout(() => {
-        router.push('/users/login');
+        router.push('/login');
       }, 3000);
     } catch (err) {
       toast.error(err || resetError || 'Failed to reset password.');

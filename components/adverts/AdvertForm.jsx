@@ -363,16 +363,22 @@ return (
     </div>
 
     {/* Render all form sections */}
-    {formSections.map((section, index) => (
-      <div key={section.id} className={index > 0 ? "border-t pt-4" : ""}>
-        {/* Section title if it has one */}
-        {section.title && (
-          <h3 className="font-bold text-lg mb-4 text-gray-700">{section.title}</h3>
-        )}
-        
-        {/* Special handling for pricing section */}
-        {section.specialField === 'pricing' && formData.adType === 'offered' && (
-          <>
+    {formSections.map((section, index) => {
+      // Skip pricing section entirely for wanted ads
+      if (section.specialField === 'pricing' && formData.adType === 'wanted') {
+        return null;
+      }
+      
+      return (
+        <div key={section.id} className={index > 0 ? "border-t pt-4" : ""}>
+          {/* Section title if it has one - but not for pricing sections that will be handled specially */}
+          {section.title && section.specialField !== 'pricing' && (
+            <h3 className="font-bold text-lg mb-4 text-gray-700">{section.title}</h3>
+          )}
+          
+          {/* Special handling for pricing section */}
+          {section.specialField === 'pricing' && formData.adType === 'offered' && (
+            <>
             <h3 className="font-bold text-lg mb-2 text-gray-700">
               Pricing Type
               <span className="text-red-500 ml-1">*</span>
@@ -411,7 +417,8 @@ return (
           </div>
         ))}
       </div>
-    ))}
+      );
+    })}
 
     {/* Description - always show this */}
     <div>
@@ -420,7 +427,9 @@ return (
         value={formData.description} 
         onChange={(e) => handleChange('description', e.target.value)} 
         className="w-full p-2 border border-gray-300 rounded h-32 focus:outline-none focus:ring-2 focus:ring-teal-300" 
-        placeholder="Provide detailed information about your item or service" 
+        placeholder={formData.adType === 'wanted' 
+          ? "Describe what you're looking for, including specific requirements or preferences" 
+          : "Provide detailed information about your item or service"} 
       />
     </div>
 
