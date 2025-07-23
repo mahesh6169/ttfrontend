@@ -1,6 +1,6 @@
 // components/advertsv2/fieldSystem/CategoryAccess.js
 
-// This file remains mostly the same
+// This file remains mostly the same.
 export const CATEGORY_ACCESS = {
   'Real Estate': ['user', 'admin'],
   'Cars & Vehicles': ['user', 'admin'],
