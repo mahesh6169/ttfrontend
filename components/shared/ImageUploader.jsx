@@ -149,14 +149,28 @@ const ImageUploader = ({
             (Max {maxImages} {mode === 'edit' && existingImages.length > 0 ? 'total' : ''} — JPEG & PNG format only)
           </span>
         </label>
+        {/* Show current count */}
+        <div className="text-sm text-gray-600 mb-2">
+          Current images: {existingImages.length + preview.length} / {maxImages}
+        </div>
         <input
           type="file"
           multiple
           accept="image/*"
           onChange={handleFileChange}
           ref={fileInputRef}
-          className="w-full p-2 border rounded"
+          disabled={existingImages.length + preview.length >= maxImages}
+          className={`w-full p-2 border rounded ${
+            existingImages.length + preview.length >= maxImages 
+              ? 'bg-gray-100 cursor-not-allowed opacity-50' 
+              : 'cursor-pointer'
+          }`}
         />
+        {existingImages.length + preview.length >= maxImages && (
+          <p className="text-sm text-amber-600 mt-1">
+            Maximum image limit reached. Remove existing images to add new ones.
+          </p>
+        )}
         
         {/* New Images Preview */}
         {preview.length > 0 && (
