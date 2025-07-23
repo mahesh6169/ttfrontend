@@ -50,7 +50,7 @@ const Login = () => {
         redirectPath = '/admin/profile';
       } else {
         redirectPath =
-          localStorage.getItem('redirectAfterLogin') || '/users/profile/manageads';
+          localStorage.getItem('redirectAfterLogin') || '/users/profile';
       }
 
       localStorage.removeItem('redirectAfterLogin');

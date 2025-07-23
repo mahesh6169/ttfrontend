@@ -13,6 +13,8 @@ import {
   FaUser,
   FaAd,
   FaEnvelope,
+  FaMoneyCheckAlt,
+  FaChevronRight,
 } from 'react-icons/fa';
 import { MdOutlineGroups2 } from "react-icons/md";
 import { RiAdvertisementFill } from "react-icons/ri";
@@ -29,14 +31,15 @@ import {
 
 const Header = () => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
   const dispatch = useDispatch();
   const router = useRouter();
   const pathname = usePathname();
 
   const { tokenValidated, user } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user._id;
-  const baseProfilePath = user?.role === 'admin' ? '/admin/profile' : '/users/profile/';
-  const profileLink = `${baseProfilePath}/manageads`;
+  const baseProfilePath = user?.role === 'admin' ? '/admin/profile' : '/users/profile';
+  const profileLink = baseProfilePath;
   
   // Get both unreadExists and inActiveChat from state
   const { unreadExists, inActiveChat } = useSelector((state) => state.messages);
@@ -84,72 +87,77 @@ const Header = () => {
             Telugufy
           </Link>
 
-          {/* Center Nav - Desktop Only */}
-          <div className="hidden md:flex gap-6 absolute left-1/2 transform -translate-x-1/2">
-            <NavLink
-              href="/adverts"
-              icon={<RiAdvertisementFill size={20} />}
-              text="Adverts"
-              pathname={pathname}
-            />
-            <NavLink
-              href="/events"
-              icon={<FaCalendarAlt size={20} />}
-              text="Events"
-              pathname={pathname}
-            />
-            <NavLink
-              href="/threads"
-              icon={<MdOutlineGroups2 size={30} />}
-              text="Forum"
-              pathname={pathname}
-            />
-          </div>
+          {/* Desktop Nav Container - Hidden on mobile */}
+          <div className="hidden md:flex items-center justify-between flex-1 ml-8">
+            {/* Center Nav */}
+            <div className="flex gap-6 mx-auto">
+              <NavLink
+                href="/adverts"
+                icon={<RiAdvertisementFill size={20} />}
+                text="Adverts"
+                pathname={pathname}
+              />
+              <NavLink
+                href="/events"
+                icon={<FaCalendarAlt size={20} />}
+                text="Events"
+                pathname={pathname}
+              />
+              <NavLink
+                href="/threads"
+                icon={<MdOutlineGroups2 size={30} />}
+                text="Forum"
+                pathname={pathname}
+              />
+            </div>
 
-          {/* Right Nav - Auth Links */}
-          <div className="hidden md:flex items-center gap-4 ml-auto">
-            {isAuthenticated ? (
-              <>
-                <NavLink
-                  href={profileLink}
-                  icon={<CgProfile size={20} />}
-                  text={user.name}
-                  pathname={pathname}
-                />
-                {/* Desktop Message Icon */}
-                <NavLink
-                  href="/users/profile/conversations"
-                  icon={
-                    <div className={`relative ${showNotification ? 'text-red-700 animate-pulse' : ''}`}>
-                      <BsChatDots size={22} />
-                    </div>
-                  }
-                  text="Messages"
-                  pathname={pathname}
-                />
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 hover:underline"
-                >
-                  <TbLogout size={20} />
-                  <span>Logout</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <NavLink
-                  href="/login"
-                  icon={<TbLogin size={20} />}
-                  text="Login"
-                  pathname={pathname}
-                />
-                <NavLink
-                  href="/register"
-                  text="Register"
-                  pathname={pathname}
-                />
-              </>
-            )}
+            {/* Right Nav - Auth Links */}
+            <div className="flex items-center gap-2 lg:gap-4">
+              {isAuthenticated ? (
+                <>
+                  <NavLink
+                    href={profileLink}
+                    icon={<CgProfile size={20} />}
+                    text={<span className="max-w-[150px] truncate">{user.name}</span>}
+                    pathname={pathname}
+                  />
+                  {/* Desktop Message Icon */}
+                  <NavLink
+                    href="/users/profile/conversations"
+                    icon={
+                      <div className={`relative ${showNotification ? 'text-red-700 animate-pulse' : ''}`}>
+                        <BsChatDots size={22} />
+                      </div>
+                    }
+                    text={<span className="hidden lg:inline">Messages</span>}
+                    pathname={pathname}
+                    showIconOnly="md"
+                  />
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 hover:underline"
+                    title="Logout"
+                  >
+                    <TbLogout size={20} />
+                    <span className="hidden lg:inline">Logout</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <NavLink
+                    href="/login"
+                    icon={<TbLogin size={20} />}
+                    text="Login"
+                    pathname={pathname}
+                  />
+                  <NavLink
+                    href="/register"
+                    text="Register"
+                    pathname={pathname}
+                  />
+                </>
+              )}
+            </div>
           </div>
 
           {/* Mobile Header Right Section */}
@@ -220,14 +228,58 @@ const Header = () => {
                 </div>
 
                 <nav className="p-4 space-y-2 text-lime-100">
+                  {/* User section */}
                   <NavLink
                     href={`${baseProfilePath}/settings`}
                     icon={<FaUser />}
-                    text="Settings"
+                    text="User Settings"
                     pathname={pathname}
                     mobile
                     onClick={toggleMobileMenu}
                   />
+                  <NavLink
+                    href={`${baseProfilePath}/favourites`}
+                    icon={<MdFavorite />}
+                    text="Favourites"
+                    pathname={pathname}
+                    mobile
+                    onClick={toggleMobileMenu}
+                  />
+                  <NavLink
+                    href={`${baseProfilePath}/conversations`}
+                    icon={
+                      <div className={showNotification ? 'text-red-700 animate-pulse' : ''}>
+                        <FaEnvelope />
+                      </div>
+                    }
+                    text="Messages"
+                    pathname={pathname}
+                    mobile
+                    onClick={toggleMobileMenu}
+                  />
+                  <NavLink
+                    href={`${baseProfilePath}/myregistrations`}
+                    icon={<FaCalendarAlt />}
+                    text="My Registrations"
+                    pathname={pathname}
+                    mobile
+                    onClick={toggleMobileMenu}
+                  />
+                  <NavLink
+                    href={`${baseProfilePath}/mytickets`}
+                    icon={<FaMoneyCheckAlt />}
+                    text="My Tickets"
+                    pathname={pathname}
+                    mobile
+                    onClick={toggleMobileMenu}
+                  />
+                  
+                  {/* Divider */}
+                  <div className="py-2">
+                    <div className="border-t border-lime-200/30"></div>
+                  </div>
+                  
+                  {/* Management section */}
                   <NavLink
                     href={`${baseProfilePath}/manageads`}
                     icon={<FaAd />}
@@ -252,27 +304,26 @@ const Header = () => {
                     mobile
                     onClick={toggleMobileMenu}
                   />
-                  <NavLink
-                    href={`${baseProfilePath}/favourites`}
-                    icon={<MdFavorite />}
-                    text="Favourites"
+                  
+                  {/* Divider */}
+                  <div className="py-2">
+                    <div className="border-t border-lime-200/30"></div>
+                  </div>
+                  
+                  {/* Event Organiser dropdown */}
+                  <MobileDropdown
+                    label="Event Organiser"
+                    icon={<FaCalendarAlt />}
                     pathname={pathname}
-                    mobile
-                    onClick={toggleMobileMenu}
+                    baseProfilePath={baseProfilePath}
+                    toggleMobileMenu={toggleMobileMenu}
                   />
-                  {/* Keep message item in sidemenu for consistency */}
-                  <NavLink
-                    href={`${baseProfilePath}/conversations`}
-                    icon={
-                      <div className={showNotification ? 'text-red-700 animate-pulse' : ''}>
-                        <FaEnvelope />
-                      </div>
-                    }
-                    text="Messages"
-                    pathname={pathname}
-                    mobile
-                    onClick={toggleMobileMenu}
-                  />
+                  
+                  {/* Divider */}
+                  <div className="py-2">
+                    <div className="border-t border-lime-200/30"></div>
+                  </div>
+                  
                   <button
                     onClick={() => {
                       handleLogout();
@@ -328,7 +379,7 @@ const Header = () => {
 
 export default Header;
 
-const NavLink = ({ href, icon, text, pathname, mobile = false, onClick }) => {
+const NavLink = ({ href, icon, text, pathname, mobile = false, onClick, showIconOnly }) => {
   // Check if the current path includes the href (for nested routes)
   // or if it's an exact match (for top-level routes)
   const isActive = pathname === href || 
@@ -341,16 +392,83 @@ const NavLink = ({ href, icon, text, pathname, mobile = false, onClick }) => {
     <Link
       href={href}
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2 rounded 
+      className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded 
         ${
           isActive
             ? 'bg-lime-100 text-teal-700'
             : 'hover:bg-lime-50 hover:text-teal-700'
         } 
         ${mobile ? 'text-sm' : ''}`}
+      title={typeof text === 'string' ? text : undefined}
     >
       {icon && <span>{icon}</span>}
-      <span>{text}</span>
+      {showIconOnly === 'md' ? (
+        <span className="hidden lg:block">{text}</span>
+      ) : (
+        <span>{text}</span>
+      )}
     </Link>
+  );
+};
+
+const MobileDropdown = ({ label, icon, pathname, baseProfilePath, toggleMobileMenu }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const dropdownItems = [
+    { label: 'Stripe', href: `${baseProfilePath}/settings/stripeSetup`, icon: <FaMoneyCheckAlt /> },
+    { label: 'Manage Sales', href: `${baseProfilePath}/refunds`, icon: <FaMoneyCheckAlt /> },
+    { label: 'Check-In', href: `${baseProfilePath}/checkInFree`, icon: <FaCalendarAlt /> },
+  ];
+  
+  // Check if any child route is active
+  const isChildActive = dropdownItems.some(item => pathname === item.href);
+  
+  // Auto-open dropdown if a child route is active
+  useEffect(() => {
+    if (isChildActive) {
+      setIsOpen(true);
+    }
+  }, [isChildActive]);
+  
+  return (
+    <div>
+      <div 
+        className={`flex items-center space-x-2 p-2 rounded hover:bg-lime-50 hover:text-teal-700 cursor-pointer transition-colors ${
+          isChildActive ? 'bg-lime-100 text-teal-700 font-bold' : ''
+        }`}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {icon}
+        <span className="flex-1">{label}</span>
+        <span className={`transition-transform duration-200 ${
+          isOpen ? 'rotate-90' : ''
+        }`}>
+          <FaChevronRight size={12} />
+        </span>
+      </div>
+      
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+        isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+      }`}>
+        <ul className="ml-4 mt-1 space-y-1 border-l-2 border-lime-200">
+          {dropdownItems.map(item => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                onClick={toggleMobileMenu}
+                className={`flex items-center gap-2 pl-4 pr-2 py-2 rounded transition-colors ${
+                  pathname === item.href 
+                    ? 'bg-lime-100 text-teal-700 font-bold' 
+                    : 'hover:bg-lime-50 hover:text-teal-700'
+                }`}
+              >
+                {item.icon}
+                <span className="text-sm">{item.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 };
