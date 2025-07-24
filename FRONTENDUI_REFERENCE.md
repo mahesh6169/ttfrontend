@@ -489,9 +489,34 @@ Default: border-gray-300 focus:ring-teal-300
 Error: border-red-500 focus:ring-red-300
 ```
 
-#### Select/Dropdown (REUSABLE)
-- Basic: Same as text input
-- Enhanced (CategorySelector): Searchable with filter
+#### Select/Dropdown (DEPRECATED - Use Enhanced Dropdowns)
+- Basic select: Avoid using native select on mobile
+- Use enhanced searchable dropdowns instead
+
+#### Enhanced Searchable Dropdowns (REUSABLE)
+**CategorySelector Component** - Used across all forms needing category selection
+- Location: `/components/shared/CategorySelector.jsx`
+- Features:
+  - Searchable input with filter icon
+  - Clear button (X) to remove selection
+  - Visual feedback on open state (border color, rotate chevron)
+  - Mobile-friendly with "Close" button at bottom
+  - Keyboard accessible
+  - Click outside to close
+- Styling:
+  - Open state: border-teal-500 ring-2 ring-teal-200
+  - Selected item: bg-teal-50 text-teal-700 font-medium
+  - Hover state: hover:bg-teal-50
+- Used in:
+  - Advert forms (add/edit)
+  - Event forms (add/edit)
+  - Thread forms (new/edit)
+
+**TimezoneSelector Component** - Specialized for timezone selection
+- Location: `/components/shared/TimezoneSelector.jsx`
+- Same features as CategorySelector but for timezone objects
+- Accepts array of timezone objects with `{label, value, key}`
+- Used in Event forms for timezone selection
 
 #### Toggle Buttons (REUSABLE)
 ```
@@ -555,6 +580,23 @@ lg: ≥1024px overrides
 - Padding: px-3 sm:px-4
 - Grid: grid-cols-1 sm:grid-cols-2
 - Flex: flex-col lg:flex-row
+
+## Implementation Guidelines
+### Mobile-First Dropdown Selection
+- ALWAYS use CategorySelector or similar enhanced dropdowns instead of native select
+- Native select elements have poor UX on mobile devices
+- Enhanced dropdowns provide:
+  - Better touch targets
+  - Search functionality
+  - Clear visual feedback
+  - Consistent cross-platform behavior
+
+### Consistency Requirements
+- All list pages (adverts, events, threads) MUST use the same:
+  - Filter modal behavior (slides from right on mobile)
+  - Page controls layout (centered Filter + Sort buttons)
+  - Active filters display with "Active filters:" label
+- All form dropdowns MUST use enhanced searchable components
 
 ## Component Patterns
 ### Info Block Pattern

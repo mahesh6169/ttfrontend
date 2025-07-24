@@ -16,6 +16,8 @@ import AddressInput from '@/components/events/addevents/AddressInput';
 import ImageUploader from '@/components/events/addevents/ImageUploader';
 import { CATEGORY_OPTIONS } from '@/components/events/addevents/EventCategories';
 import { zonedTimeToUtc, utcToZonedTime, format } from 'date-fns-tz';
+import CategorySelector from '@/components/shared/CategorySelector';
+import TimezoneSelector from '@/components/shared/TimezoneSelector';
 
 const AU_TIMEZONES = [
   { label: 'Sydney (NSW)', value: 'Australia/Sydney', key: 'nsw' },
@@ -277,30 +279,22 @@ const EventDetailsStep = ({
             Helps people find your event
           </p>
         )}
-        <div className="relative">
-          <select
-            name="category"
+        {disabled ? (
+          <input
+            type="text"
+            value={formData.category || 'No category selected'}
+            disabled={true}
+            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+          />
+        ) : (
+          <CategorySelector
             value={formData.category || ''}
-            onChange={handleChange}
-            disabled={disabled}
-            className={getSelectClasses('category')}
-          >
-            <option value="">
-              {disabled ? 'No category selected' : 'Select a category'}
-            </option>
-            {CATEGORY_OPTIONS.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-          {/* Custom dropdown arrow for better mobile UX */}
-          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
+            onChange={(value) => handleChange({ target: { name: 'category', value } })}
+            categories={CATEGORY_OPTIONS}
+            placeholder="Select a category"
+            required={true}
+          />
+        )}
         {errors?.category && (
           <p className="text-red-500 text-xs sm:text-sm">
             {Array.isArray(errors.category) ? errors.category[0] : errors.category}
@@ -323,29 +317,22 @@ const EventDetailsStep = ({
             Changing this will affect how times are displayed
           </p>
         )}
-        <div className="relative">
-<select
-            name="timeZone"
+        {disabled ? (
+          <input
+            type="text"
+            value={AU_TIMEZONES.find(tz => tz.value === formData.timeZone)?.label || 'No timezone selected'}
+            disabled={true}
+            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+          />
+        ) : (
+          <TimezoneSelector
             value={formData.timeZone || ''}
-            onChange={handleChange}
-            disabled={disabled}
-            className={getSelectClasses('timeZone')}
-          >
-            <option value="">
-              {disabled ? 'No timezone selected' : 'Select timezone'}
-            </option>
-            {AU_TIMEZONES.map((tz) => (
-              <option key={tz.key} value={tz.value}>
-                {tz.label}
-              </option>
-            ))}
-          </select>
-          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
+            onChange={(value) => handleChange({ target: { name: 'timeZone', value } })}
+            timezones={AU_TIMEZONES}
+            placeholder="Select timezone"
+            required={true}
+          />
+        )}
         {errors?.timeZone && (
           <p className="text-red-500 text-xs sm:text-sm">
             {Array.isArray(errors.timeZone) ? errors.timeZone[0] : errors.timeZone}

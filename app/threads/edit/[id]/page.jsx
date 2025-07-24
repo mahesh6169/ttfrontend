@@ -11,6 +11,7 @@ import { toast } from 'react-toastify';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import RequireLogin from '@/components/Auth/RequireLogin';
 import { useRef } from 'react';
+import CategorySelector from '@/components/shared/CategorySelector';
 
 const libraries = ['places'];
 
@@ -318,22 +319,13 @@ useEffect(() => {
         </div>
         
         <div>
-          <select
-            name="category"
+          <CategorySelector
             value={formData.category}
-            onChange={handleChange}
-            className={`w-full p-2 border rounded-lg ${
-              errors.category ? 'border-red-500' : ''
-            }`}
-            required
-          >
-            <option value="">Select Category</option>
-            {categoryOptions.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setFormData({ ...formData, category: value })}
+            categories={categoryOptions}
+            placeholder="Select Category"
+            required={true}
+          />
           {errors.category && (
             <p className="text-red-500 text-sm mt-1">{errors.category}</p>
           )}
