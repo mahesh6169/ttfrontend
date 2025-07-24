@@ -77,8 +77,8 @@ const CreateThreadPage = () => {
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
   
-    if (files.length + preview.length > 5) {
-      toast.error('You can upload up to 5 images only.');
+    if (files.length + preview.length > 10) {
+      toast.error('You can upload up to 10 images only.');
       return;
     }
   
@@ -320,15 +320,28 @@ if (createThread.fulfilled.match(resultAction)) {
 
           {/* Image Upload */}
           <div>
-            <label className="block font-semibold">Upload Images (Max 3)</label>
+            <label className="block font-semibold">Upload Images (Max 10)</label>
+            <div className="text-sm text-gray-600 mb-2">
+              Current: {preview.length}/10
+            </div>
             <input
              ref={fileInputRef}
               type="file"
               multiple
               accept="image/*"
               onChange={handleFileChange}
-              className="w-full p-2 border rounded"
+              disabled={preview.length >= 10}
+              className={`w-full p-2 border rounded ${
+                preview.length >= 10 
+                  ? 'bg-gray-100 cursor-not-allowed opacity-50' 
+                  : 'cursor-pointer'
+              }`}
             />
+            {preview.length >= 10 && (
+              <p className="text-sm text-amber-600 mt-1">
+                Maximum image limit reached. Remove existing images to add new ones.
+              </p>
+            )}
             <div className="mt-4 flex gap-4 flex-wrap">
               {preview.map((src, idx) => (
                 <div key={idx} className="relative">

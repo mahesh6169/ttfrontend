@@ -124,8 +124,8 @@ useEffect(() => {
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
   
-    if (files.length + preview.length > 5) {
-      toast.error('You can upload up to 5 images only.');
+    if (files.length + preview.length > 10) {
+      toast.error('You can upload up to 10 images only.');
       return;
     }
   
@@ -365,15 +365,28 @@ useEffect(() => {
         </div>
 
         <div>
-          <label className="block font-semibold mb-1">Images (max 5)</label>
+          <label className="block font-semibold mb-1">Images (max 10)</label>
+          <div className="text-sm text-gray-600 mb-2">
+            Current: {preview.length}/10
+          </div>
           <input
   ref={fileInputRef} // 👈 Add this ref here
   type="file"
   multiple
   accept="image/*"
   onChange={handleFileChange}
-  className="w-full p-2 border rounded"
+  disabled={preview.length >= 10}
+  className={`w-full p-2 border rounded ${
+    preview.length >= 10 
+      ? 'bg-gray-100 cursor-not-allowed opacity-50' 
+      : 'cursor-pointer'
+  }`}
 />
+          {preview.length >= 10 && (
+            <p className="text-sm text-amber-600 mt-1">
+              Maximum image limit reached. Remove existing images to add new ones.
+            </p>
+          )}
           <div className="flex gap-4 mt-4 flex-wrap">
             {preview.map((src, idx) => (
               <div key={idx} className="relative">
