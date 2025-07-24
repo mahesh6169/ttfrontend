@@ -57,9 +57,9 @@ useEffect(() => {
   // ✅ Loading state
   if (isLoading) {
     return (
-      <div className="bg-gray-50 p-3 rounded-lg mb-4 animate-pulse">
-        <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
-        <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+      <div className="animate-pulse grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+        <div className="h-4 bg-gray-300 rounded w-3/4"></div>
       </div>
     );
   }
@@ -67,10 +67,8 @@ useEffect(() => {
   // ✅ Error state
   if (error) {
     return (
-      <div className="bg-red-50 p-3 rounded-lg mb-4">
-        <p className="text-red-600 text-sm">
-          Unable to load capacity: {error}
-        </p>
+      <div className="text-sm text-red-600">
+        Unable to load capacity information
       </div>
     );
   }
@@ -111,52 +109,44 @@ useEffect(() => {
   const isFull = status === 'sold-out' || (totalCapacity > 0 && registeredCount >= totalCapacity);
 
   return (
-    <div className="bg-gray-50 p-3 rounded-lg mb-4">
-      <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-        <FaUsers className="mr-2 text-blue-600" />
-        Event Capacity
-      </h3>
-      
-      <div className="space-y-2">
-        {/* Total Capacity */}
-        <div className="flex justify-between items-center">
-          <span className="text-gray-700">Total Capacity:</span>
-          <span className="font-medium text-gray-900">
-            {isUnlimited ? 'Unlimited' : `${totalCapacity} people`}
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Total Capacity */}
+      <div className="text-sm sm:text-base">
+        <span className="font-semibold text-gray-700">Total Capacity:</span>{' '}
+        <span className="text-gray-600">
+          {isUnlimited ? 'Unlimited' : `${totalCapacity} people`}
+        </span>
+      </div>
+
+      {/* Remaining Capacity */}
+      <div className="text-sm sm:text-base">
+        <span className="font-semibold text-gray-700">Remaining:</span>{' '}
+        <span className="text-gray-600">
+          {isUnlimited ? 'Unlimited' : Math.max(totalCapacity - registeredCount, 0)}
+        </span>
+      </div>
+
+      {/* Max Attendees Per Registration */}
+      {typeof maxPerRegistration === 'number' && (
+        <div className="text-sm sm:text-base">
+          <span className="font-semibold text-gray-700">
+            Max per Registration:
+          </span>{' '}
+          <span className="text-gray-600">
+            {maxPerRegistration}
           </span>
         </div>
+      )}
 
-        {/* Remaining Capacity */}
-<div className="flex justify-between items-center">
-  <span className="text-gray-700">Remaining:</span>
-  <span className="font-medium text-green-600">
-    {isUnlimited ? 'Unlimited' : Math.max(totalCapacity - registeredCount, 0)}
-  </span>
-</div>
-
-{/* Max Attendees Per Registration */}
-{typeof maxPerRegistration === 'number' && (
-  <div className="flex justify-between items-center mt-2">
-    <span className="text-gray-700">
-      Max per Registration <span className="text-red-500">*</span>
-    </span>
-    <span className="italic text-gray-600">
-      {maxPerRegistration}
-    </span>
-  </div>
-)}
-
-
-        {/* Status: Only show when full */}
-        {isFull && (
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700">Status:</span>
-            <span className="font-medium text-red-600">
-              {isPaid ? 'Sold Out' : 'Fully Booked'}
-            </span>
-          </div>
-        )}
-      </div>
+      {/* Status: Only show when full */}
+      {isFull && (
+        <div className="text-sm sm:text-base">
+          <span className="font-semibold text-gray-700">Status:</span>{' '}
+          <span className="text-red-600 font-semibold">
+            {isPaid ? 'Sold Out' : 'Fully Booked'}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

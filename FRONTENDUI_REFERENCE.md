@@ -6,6 +6,29 @@
 - Clear visual hierarchy using color and size
 - Accessible contrast ratios for all text
 
+## Common Patterns Across Features
+### Shared Between Adverts & Events
+- Section container pattern with gray headers
+- Grid layouts for details (grid-cols-1 sm:grid-cols-2)
+- Image gallery with yellow navigation buttons
+- Wishlist button styling and positioning
+- Back button and report link in navigation bar
+- Sticky search bar with consistent styling
+- Filter/Sort controls in page controls bar
+- Active filters display below controls
+- Pagination component
+- Mobile chat placement (different positions)
+
+### Key Differences
+- Adverts: Border indicators for offered/wanted
+- Events: No border differentiation
+- Adverts: Dynamic fields in "Additional Details"
+- Events: Fixed fields in multiple sections
+- Adverts: Price display logic
+- Events: Capacity and ticket information
+- Adverts: Mobile chat after additional details
+- Events: Mobile chat at very bottom
+
 ## Color Palette
 ### Primary Colors
 - Teal-700: Primary brand color (headers, primary buttons)
@@ -119,7 +142,7 @@ text-xs sm:text-sm (mobile:extra-small, desktop:small)
 - Shadow: shadow
 - Font weight: font-semibold
 
-### Action Button (Post/Create)
+### Action Button (Post/Create/Register)
 - Background: bg-amber-400
 - Text: text-teal-800
 - Hover: hover:bg-amber-500 hover:text-teal-900
@@ -128,6 +151,14 @@ text-xs sm:text-sm (mobile:extra-small, desktop:small)
 - Border radius: rounded
 - Shadow: shadow
 - Font weight: font-semibold
+- Used for: Post Advert, Create Event, Register for Event, Purchase Tickets
+
+### Danger Button (Unregister/Cancel)
+- Background: bg-red-500
+- Text: text-white
+- Hover: hover:bg-red-600
+- Same padding, text size, and other properties as Action Button
+- Used for: Unregister from Event
 
 ## Page Controls (Filter/Sort/Search)
 ### Mobile (<768px)
@@ -237,6 +268,68 @@ Container: px-2
 - Navigation: Prev/Next buttons with text labels
 - Close button: bg-yellow-300 text-teal-700 rounded-full shadow
 
+### SingleEventCard (Detail View)
+#### Main Structure (EVENTS)
+- Same container: border rounded shadow-md mx-auto
+- No type-based border differentiation
+- All sections use consistent gray header pattern
+- Mobile chat at bottom (not after additional details)
+
+#### Section Organization (EVENTS)
+1. Image Gallery - Same as adverts with yellow buttons
+2. Title Section - Centered, same styling
+3. Event Details - Main info grid
+4. Event Organizer - Optional section
+5. Coordinators - Optional grid layout
+6. Description - Same pattern as adverts
+7. Capacity Display - Within section container
+8. Available Tickets - Paid events only
+9. Action Buttons - Registration/Purchase
+10. Mobile Chat - At very bottom
+
+#### Event Details Grid (EVENTS ONLY)
+- Section header: "Event Details"
+- Fields: Date, Time (with timezone), Venue, Address, Category, Organized By, Event Code, Type
+- Date/Time combined in one field with timezone in parentheses
+- Type shows "Paid Event" or "Free Event"
+
+#### Event Organizer Section (EVENTS ONLY)
+- Only shows if organizer data exists
+- Fields displayed as label: value pairs
+- Website and email as clickable links
+- Social media as inline pills: px-2 py-1 bg-gray-100 rounded text-xs
+
+#### Coordinators Grid (EVENTS ONLY)
+- Only shows if coordinators with data exist
+- Each coordinator in bordered card: border border-gray-200 rounded p-2
+- Compact display without field labels
+- Email as clickable link
+
+#### Capacity Display (EVENTS ONLY)
+- Within "Event Capacity" section
+- Grid layout matching detail sections
+- Dynamic content based on event type
+- Red text for sold out/fully booked status
+
+#### Ticket Section (PAID EVENTS ONLY)
+- Section header: "Available Tickets"
+- Each ticket: border border-gray-200 rounded p-3
+- Price right-aligned with GST notation
+- Dynamic status messages with appropriate colors
+- Uses getTicketSaleStatus helper
+
+### Event List Page Patterns
+#### Clear All Button Behavior
+- Clears all filters AND search text
+- Only shows when filters are active
+- Positioned left of filter button
+
+#### Event Registration/Action Buttons
+- Free events: "Register for Event" using Action Button style
+- Paid events: "Purchase Tickets" using Action Button style
+- Unregister: Uses Danger Button style
+- All use consistent amber/teal color scheme
+
 ## Interactive Elements
 ### Wishlist Button
 - Active: bg-red-500 hover:bg-red-600 text-white
@@ -315,6 +408,20 @@ Container: w-full
 #### Price Display (ADVERTS ONLY)
 - Offered: Shows actual price
 - Wanted: Shows "Wanted $$$"
+
+### Event-Specific Features
+#### Event Card Content (EVENTS ONLY)
+- Date display with timezone: formatInTimeZone
+- Time with state abbreviation from timezone
+- Venue and location display
+- Recurring event indicator: MdRepeat icon
+- No border differentiation for event types
+
+#### Event Filters (EVENTS ONLY)
+- Month dropdown: Select current + next 11 months
+- Location with radius slider: 1-200km range
+- Google Places autocomplete integration
+- Filter modal slides from left (same as adverts)
 
 ## Form Components
 ### Form Container

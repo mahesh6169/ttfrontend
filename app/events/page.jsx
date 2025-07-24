@@ -226,13 +226,9 @@ const EventsPage = () => {
         ></div>
       )}
 
-      {/* Filter Modal - Mobile and Desktop Overlay */}
-      <div className={`fixed z-50 bg-white sm:rounded-lg overflow-y-auto
-        w-full inset-y-0 right-0 sm:inset-0 sm:mx-auto sm:max-w-xl sm:top-20 sm:bottom-auto sm:shadow-lg
-        transition-all duration-300 ease-in-out
-        ${showFilters 
-          ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto' 
-          : 'translate-x-full sm:translate-x-0 sm:opacity-0 sm:scale-95 sm:pointer-events-none'}`}>
+      {/* Filter Modal */}
+      <div className={`fixed inset-y-0 left-0 w-80 bg-white z-50 shadow-lg transform transition-transform duration-300 ease-in-out
+        ${showFilters ? 'translate-x-0' : '-translate-x-full'}`}>
 
         <div className="h-full overflow-y-auto">
           {/* Modal Header */}
@@ -399,12 +395,18 @@ const EventsPage = () => {
           </div>
 
           {/* Apply Button */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
+          <div className="fixed bottom-0 left-0 w-80 p-4 bg-white border-t">
             <button
               onClick={applyFilters}
-              className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-3 rounded shadow font-semibold transition-colors"
+              className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-2 rounded shadow font-semibold transition-colors"
             >
-              Show results
+              Apply filters
+            </button>
+            <button
+              onClick={() => setShowFilters(false)}
+              className="w-full mt-2 py-2 text-center text-gray-600 hover:text-gray-800"
+            >
+              Close
             </button>
           </div>
         </div>
@@ -456,32 +458,46 @@ const EventsPage = () => {
             </button>
           </form>
 
-          {/* Page Controls - Sort and Filter */}
-          <div className="flex gap-2 md:gap-3 justify-center">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
-            >
-              <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-              </svg>
-              <span className="font-medium">Filter</span>
+          {/* Page Controls Bar */}
+          <div className="flex justify-between items-center px-3 py-2 border-b">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
+              >
+                <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                <span>Filter</span>
+                {getActiveFilterCount() > 0 && (
+                  <span className="bg-teal-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
+                    {getActiveFilterCount()}
+                  </span>
+                )}
+              </button>
+              
               {getActiveFilterCount() > 0 && (
-                <span className="bg-teal-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                  {getActiveFilterCount()}
-                </span>
+                <button
+                  onClick={() => {
+                    dispatch(clearAllFilters());
+                    setSearchText('');
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm text-gray-600"
+                >
+                  Clear all
+                </button>
               )}
-            </button>
+            </div>
             
             <div className="relative">
               <button 
-                className="flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
+                className="flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
                 onClick={() => setShowSortMenu(!showSortMenu)}
               >
                 <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                 </svg>
-                <span className="font-medium">Sort: {getCurrentSortLabel()}</span>
+                <span>Sort</span>
               </button>
               
               {/* Sort dropdown menu */}
@@ -512,14 +528,9 @@ const EventsPage = () => {
 
         {/* Active Filters Display */}
         {getActiveFilterCount() > 0 && (
-          <div className="bg-gray-50 border-y">
-            <div className="px-3 py-3 sm:px-4 flex items-center gap-3 max-w-full">
-              <span className="text-sm text-gray-600 font-medium whitespace-nowrap flex-shrink-0">
-                Active filters:
-              </span>
-              
-              <div className="flex-1 overflow-x-auto">
-                <div className="flex gap-2 pb-1">
+          <div className="bg-gray-50 border-b px-3 py-3">
+            <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-2 items-center">
                   {filters.categories.map((category) => (
                     <span
                       key={category}
@@ -573,14 +584,13 @@ const EventsPage = () => {
                       </button>
                     </span>
                   )}
-                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Event Listing */}
-        <div className="px-3 sm:px-4">
+        {/* Event Listing with spacing from filters */}
+        <div className="px-3 sm:px-4 mt-4">
           <EventsGrid events={events} eventStatus={status} />
         </div>
 

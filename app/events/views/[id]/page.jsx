@@ -92,24 +92,25 @@ const EventDetail = () => {
 
   return (
     <div className="flex flex-col gap-2 px-2">
-      {/* Row 1: Back & Report */}
-      <div className=" mt-4 flex justify-between">
+      {/* Navigation Bar */}
+      <div className="mt-4 flex justify-between items-center">
         {/* Back to Events */}
-        <span
-          onClick={() => router.push('/events')}
-          className="flex items-center gap-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium cursor-pointer"
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
         >
-          <RiArrowGoBackFill className="text-xs sm:text-base " />
+          <RiArrowGoBackFill className="text-xs sm:text-base" />
           <span>Back to Events</span>
-        </span>
+        </button>
 
         {/* Report this Event */}
         <Link
           href={`/support/report?type=event&id=${id}&title=${encodeURIComponent(selectedEvent.title)}`}
-          className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800"
+          className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
         >
           <MdReport className="text-lg" />
-          <span>Report this Event</span>
+          <span className="hidden sm:inline">Report this event</span>
+          <span className="sm:hidden">Report</span>
         </Link>
       </div>
 
@@ -132,8 +133,8 @@ const EventDetail = () => {
 
         
 
-        {/* Chat Container: desktop only */}
-        <div className="hidden lg:block flex-[3] shadow p-2 self-start">
+        {/* Secondary Content - Desktop Only */}
+        <div className="hidden lg:block flex-[3] bg-white border rounded shadow-md p-2 self-start">
           <SendMessage
             resourceId={id}
             resourceType="event"
@@ -141,14 +142,6 @@ const EventDetail = () => {
             owner={selectedEvent.postedBy?.name}
             preserveRedirectUrl={`/events/views/${id}`}
           />
-          <Link
-            href={`/support/report?type=event&id=${id}&title=${encodeURIComponent(
-              selectedEvent.title
-            )}`}
-            className="text-sm text-red-600 underline mt-2 inline-block"
-          >
-            Report this event
-          </Link>
         </div>
       </div>
       
