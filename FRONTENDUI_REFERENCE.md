@@ -20,14 +20,18 @@
 - Mobile chat placement (different positions)
 
 ### Key Differences
-- Adverts: Border indicators for offered/wanted
-- Events: No border differentiation
+- Adverts: Grid layout (2/3/4 columns), border indicators for offered/wanted
+- Events: Grid layout, no border differentiation
+- Threads: Single column, horizontal cards, Reddit-style
 - Adverts: Dynamic fields in "Additional Details"
-- Events: Fixed fields in multiple sections
+- Events: Fixed fields in multiple sections  
+- Threads: Discussion-focused with chat interface
 - Adverts: Price display logic
 - Events: Capacity and ticket information
+- Threads: Comment count and activity indicators
 - Adverts: Mobile chat after additional details
 - Events: Mobile chat at very bottom
+- Threads: Chat interface integrated in main content
 
 ## Color Palette
 ### Primary Colors
@@ -371,17 +375,21 @@ Container: w-full
 - Input: flex-1 px-3 py-2 border rounded-md
 - Search button: bg-teal-700 text-lime-100 px-4 py-2 rounded
 
-### Page Controls Bar
-- Container: flex justify-between items-center px-3 py-2
-- Left side: Filter button + Clear all
-- Right side: Sort dropdown
-- Mobile filter modal: fixed inset-0 z-50
+### Page Controls Bar (CONSISTENT ACROSS ALL PAGES)
+- Container: flex gap-2 md:gap-3 justify-center
+- Filter button: Shows active filter count badge
+- Sort button: Shows current sort option in button text
+- Button style: px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50
+- Icon size: w-3 h-3 md:w-4 md:h-4
+- Sort dropdown: Absolute positioned menu on click
 
-### Active Filters
-- Container: bg-gray-50 border-y px-3 py-3
-- Filter chips: bg-white border border-gray-300 px-3 py-1 rounded-full
-- Remove button: font-bold ml-1 hover:text-gray-900
-- Scrollable container: overflow-x-auto
+### Active Filters Display (CONSISTENT ACROSS ALL PAGES)
+- Container: bg-gray-50 border-y
+- Inner wrapper: px-3 py-3 sm:px-4 flex items-center gap-3 max-w-full
+- Label: "Active filters:" - text-sm text-gray-600 font-medium whitespace-nowrap flex-shrink-0
+- Filter container: flex-1 overflow-x-auto with flex gap-2 pb-1
+- Filter chips: bg-white border border-gray-300 px-3 py-1 rounded-full text-sm
+- Remove button: font-bold ml-1 hover:text-gray-900 (×)
 
 ### List Item Cards
 #### Card Container (REUSABLE)
@@ -422,6 +430,45 @@ Container: w-full
 - Location with radius slider: 1-200km range
 - Google Places autocomplete integration
 - Filter modal slides from left (same as adverts)
+
+### Thread-Specific Features
+#### Thread List Layout (THREADS ONLY)
+- Single column layout (Reddit-style, NOT grid)
+- Horizontal cards with image on right
+- Image sizing: w-20 h-20 sm:w-32 sm:h-24 md:w-40 md:h-28
+- Content on left, image on right (flex layout)
+- No columns - stack vertically with space-y-3
+
+#### Thread Card Content (THREADS ONLY)
+- Title with font-bold
+- Question/description with line-clamp-2
+- Metadata in single row with bullet separators (•)
+- Comment count badge:
+  - Active (>0): bg-teal-700 text-lime-100
+  - Inactive (0): bg-gray-300 text-gray-700
+- Posted by "Former Member" for deleted users
+
+#### Thread Sort Options (THREADS ONLY)
+- Newest first
+- Oldest first
+- Most comments
+- Recent activity
+- Distance
+
+#### Thread Detail Sections (THREADS ONLY)
+1. Topic Details - Basic info grid
+2. Topic Description - Main question/content
+3. Comments Marked as Useful - Yellow highlighted
+4. Discussion - Chat interface
+
+#### Discussion/Chat Interface (THREADS ONLY)
+- Message input at top of discussion section
+- Messages below in scrollable container (max-h-[500px])
+- Current user messages: bg-teal-700 text-lime-100 (right aligned)
+- Other users: bg-gray-100 text-gray-800 (left aligned)
+- Date separators: bg-gray-200 text-gray-700 rounded-full
+- Like/dislike buttons with hover states
+- Mute notifications option for logged-in users
 
 ## Form Components
 ### Form Container
@@ -465,12 +512,14 @@ Inactive: bg-white text-gray-700
 - Dynamic placeholders for wanted ads
 
 ## Modal Patterns
-### Filter Modal (REUSABLE)
+### Filter Modal (REUSABLE - Used in Adverts, Events, Threads)
 - Overlay: fixed inset-0 bg-black bg-opacity-50 z-40
-- Content: fixed inset-y-0 left-0 w-80 bg-white z-50
-- Header: sticky top-0 bg-white border-b
-- Footer: fixed bottom-0 bg-white border-t
-- Mobile close button: w-full py-2 text-center
+- Mobile: Slides from right (translate-x-full to translate-x-0)
+- Desktop: Center overlay with opacity/scale animation
+- Container classes: `fixed z-50 bg-white sm:rounded-lg overflow-y-auto w-full inset-y-0 right-0 sm:inset-0 sm:mx-auto sm:max-w-xl sm:top-20 sm:bottom-auto sm:shadow-lg`
+- Header: sticky top-0 bg-white border-b with Clear button
+- Footer: fixed bottom-0 left-0 right-0 bg-white border-t
+- Apply button text: "Show results" (not "Apply filters")
 
 ### Category Filter (REUSABLE)
 - Container: max-h-64 overflow-y-auto border rounded-md

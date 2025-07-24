@@ -492,14 +492,9 @@ const ThreadsPage = () => {
 
         {/* Active Filters Display */}
         {getActiveFilterCount() > 0 && (
-          <div className="bg-gray-50 border-y">
-            <div className="px-3 py-3 sm:px-4 flex items-center gap-3 max-w-full">
-              <span className="text-sm text-gray-600 font-medium whitespace-nowrap flex-shrink-0">
-                Active filters:
-              </span>
-              
-              <div className="flex-1 overflow-x-auto">
-                <div className="flex gap-2 pb-1">
+          <div className="bg-gray-50 border-b px-3 py-3">
+            <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-2 items-center">
                   {filters.categories.map((category) => (
                     <span
                       key={category}
@@ -541,67 +536,65 @@ const ThreadsPage = () => {
                       </button>
                     </span>
                   )}
-                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Thread Listing */}
+        {/* Thread Listing with spacing from filters */}
         {status === 'loading' ? (
           <div className="text-center p-4">Loading threads...</div>
         ) : threads.length > 0 ? (
-          <div className="space-y-4 px-4">
+          <div className="space-y-3 px-3 sm:px-4 mt-4">
             {threads.map((thread) => (
-              <div
+              <Link
                 key={thread._id}
-                className="border rounded-lg p-4 bg-gray-100 hover:bg-gray-200 cursor-pointer shadow-sm transition-colors duration-200"
-                onClick={() => router.push(`/threads/views/${thread._id}`)}
+                href={`/threads/views/${thread._id}`}
+                className="block border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
               >
-                <div className="flex justify-between items-start gap-4">
-                  {/* Left content */}
-                  <div className="flex-1 space-y-1">
-                    {/* Title + Question */}
-                    <div className="mb-2">
-                      <h2 className="text-sm sm:text-base font-bold text-gray-800">{thread.title}</h2>
-                      <p className="text-sm text-gray-600 italic line-clamp-2">{thread.question}</p>
-                    </div>
-
-                    {/* Row 1: owner + date */}
-                    <div className="flex flex-wrap gap-x-2 text-xs text-gray-600">
+                <div className="flex gap-3 p-3">
+                  {/* Left content - Text section */}
+                  <div className="flex-1 min-w-0">
+                    {/* Title */}
+                    <h2 className="text-sm sm:text-base font-bold text-gray-800 mb-1">{thread.title}</h2>
+                    
+                    {/* Question/Description */}
+                    <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-2">{thread.question}</p>
+                    
+                    {/* Metadata */}
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
                       <span>{thread.ownerName || 'Former Member'}</span>
-                      <span>|</span>
+                      <span>•</span>
                       <span>{getPostedText(thread.createdAt)}</span>
-                    </div>
-
-                    {/* Comment count */}
-                    <div className="mt-1">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      <span>•</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full ${
                         thread.commentCount > 0 
-                          ? 'bg-teal-900 text-gray-100' 
-                          : 'bg-gray-300 text-gray-900'
+                          ? 'bg-teal-700 text-lime-100' 
+                          : 'bg-gray-300 text-gray-700'
                       }`}>
-                        💬 {thread.commentCount > 0
-                          ? `${thread.commentCount} comment${thread.commentCount > 1 ? 's' : ''}`
-                          : 'No comments'}
+                        {thread.commentCount} {thread.commentCount === 1 ? 'comment' : 'comments'}
                       </span>
                     </div>
                   </div>
 
-                  {/* Right image */}
+                  {/* Right image - Optimized for horizontal space */}
                   {thread.images?.[0]?.url && (
-                    <img
-                      src={thread.images[0].url}
-                      alt="Thread"
-                      className="w-16 h-16 sm:w-40 sm:h-20 object-cover rounded shrink-0"
-                    />
+                    <div className="flex-shrink-0">
+                      <img
+                        src={thread.images[0].url}
+                        alt="Thread"
+                        className="w-20 h-20 sm:w-32 sm:h-24 md:w-40 md:h-28 object-cover rounded"
+                      />
+                    </div>
                   )}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
-          <div className="text-center p-4 text-gray-500">No threads available. Start a new discussion!</div>
+          <div className="text-center p-8">
+            <p className="text-xs sm:text-sm text-gray-800">No threads available. Start a new discussion!</p>
+          </div>
         )}
 
         {/* Pagination */}

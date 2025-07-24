@@ -189,219 +189,235 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   return (
     
-  <div className="border rounded shadow-md mx-auto my-4 px-2"> 
-  {/* Row 1: Back & Report */}
-        <div className=" mt-4 flex justify-between">
-    {/* Back to Adverts */}
-    <span
-      onClick={() => router.back()}
-      className="flex items-center gap-2 bg-yellow-400  text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium"
-    >
-      <RiArrowGoBackFill className="text-xs sm:text-base " />
-      <span>Back to Topics</span>
-    </span>
-  
-    {/* Report this Advert */}
-    <Link
-      href={`/support/report?type=Topic&id=${thread._id}&title=${encodeURIComponent(thread.title)}`}
-      className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800"
-    >
-      <MdReport className="text-lg" />
-      <span>Report this topic</span>
-    </Link>
-  </div> 
-
- {/* 🖼️ Image Preview Section */}
-{thread.images?.length > 0 && (
-  <div className="relative flex justify-center items-center w-full bg-white py-4 mb-4">
-  <div className="relative max-w-xs sm:max-w-md w-full rounded shadow overflow-hidden bg-gray-50">
-    <img
-      src={thread.images[currentImageIndex].url}
-      alt="Thread Image"
-      className="w-full h-60 object-contain cursor-pointer"
-      onClick={() => setIsFullscreen(true)}
-    />
-
-    {thread.images.length > 1 && (
-      <>
-        <button
-          onClick={handlePrevImage}
-          className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
-        >
-          <FaChevronLeft />
-        </button>
-        <button
-          onClick={handleNextImage}
-          className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
-        >
-          <FaChevronRight />
-        </button>
-      </>
-    )}
-  </div>
-</div>
-
-)}
-
-{/* 🖼️ Fullscreen Image Viewer */}
-{isFullscreen && (
-  <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
-    <img
-      src={thread.images[currentImageIndex].url}
-      alt="Thread Full"
-      className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
-    />
-
-    {/* ✖️ Close Button */}
-    <button
-      onClick={() => setIsFullscreen(false)}
-      className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
-    >
-      <FaTimes size={30} />
-    </button>
-
-    {/* ⬅️ Prev Button */}
-    <button
-      onClick={handlePrevImage}
-      className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
-    >
-      <FaChevronLeft />
-    </button>
-
-    {/* ➡️ Next Button */}
-    <button
-      onClick={handleNextImage}
-      className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
-    >
-      <FaChevronRight />
-    </button>
-  </div>
-)}
-
- {/* Title */}
- {thread.title && (
-      <div className="my-2 px-4 ">
-        <h2 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words ">{thread.title}</h2>
-      </div>
-    )}
-
-    {/* Category & Posted Info */}
-    <div className="text-sm text-gray-600 mb-2 px-4 text-left flex flex-wrap gap-4 ">
-      {thread.category && (
-        <span>
-          <strong>Category:</strong> {thread.category}
-        </span>
-      )}
-      {thread.owner?.name && (
-        <span>
-          <strong>Posted By:</strong> {thread.owner?.name}
-        </span>
-      )}
-      {thread.createdAt && (
-        <span>
-          <strong>Posted:</strong> {format(new Date(thread.createdAt), 'dd MMM yyyy')}
-        </span>
-      )}
-       {(thread.category || thread.suburb?.name) && (
-        <span>
-          <strong>Location:</strong> {thread.suburb?.name}
-        </span>
-      )}
+  <div className="flex flex-col gap-2 px-2">
+    {/* Navigation Bar */}
+    <div className="mt-4 flex justify-between items-center">
+      {/* Back to Topics */}
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
+      >
+        <RiArrowGoBackFill className="text-xs sm:text-base" />
+        <span>Back to Topics</span>
+      </button>
+    
+      {/* Report this Topic */}
+      <Link
+        href={`/support/report?type=topic&id=${thread._id}&title=${encodeURIComponent(thread.title)}`}
+        className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
+      >
+        <MdReport className="text-lg" />
+        <span className="hidden sm:inline">Report this topic</span>
+        <span className="sm:hidden">Report</span>
+      </Link>
     </div>
 
-{/* Mute Notifications */}
-{currentUser && (
-  <div className="flex justify-end mb-2">
-    <button
-      onClick={handleToggleMute}
-      className={`flex items-center gap-2 text-xs px-3 py-1 rounded-full border w-auto ${
-        isMuted
-          ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-          : 'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300'
-      } transition-colors duration-200`}
-    >
-      {isMuted ? (
-        <>
-          <MdNotificationsOff className="text-base" />
-          Unmute Email Notifications
-        </>
-      ) : (
-        <>
-          <MdNotificationsActive className="text-base" />
-          Mute Email Notifications
-        </>
+    <div className="border rounded shadow-md mx-auto"> 
+
+      {/* Image Section */}
+      {thread.images?.length > 0 && (
+        <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded">
+          <img
+            src={thread.images[currentImageIndex].url}
+            alt="Thread Image"
+            className="object-contain w-full h-full cursor-pointer"
+            onClick={() => setIsFullscreen(true)}
+          />
+
+          {thread.images.length > 1 && (
+            <>
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+              >
+                <FaChevronLeft />
+              </button>
+              <button
+                onClick={handleNextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+              >
+                <FaChevronRight />
+              </button>
+            </>
+          )}
+        </div>
       )}
-    </button>
-  </div>
-)}
 
+      {/* Fullscreen Modal */}
+      {isFullscreen && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+          <img
+            src={thread.images[currentImageIndex].url}
+            alt={thread.title || 'Thread Image'}
+            className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
+          />
 
-    {/* Question */}
-    {thread.question && (
-      <div className=" p-4 rounded my-6 bg-white shadow py-2">        
-        <h3 className="text-sm sm:text-base text-start font-semibold mb-2">Topic Descritpion</h3>
-        <div className="text-sm sm:text-base text-gray-800 text-justify space-y-2">
-  {thread.question.split('\n').map((para, idx) => (
-    <p key={idx} className="whitespace-pre-wrap">{para}</p>
-  ))}
-</div>
-      </div>
-    )}
+          <button
+            onClick={() => setIsFullscreen(false)}
+            className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+          >
+            <FaTimes size={30} />
+          </button>
 
-    {/* Useful Answers */}
-    {usefulAnswers.length > 0 ? (
-  <div className=" rounded my-6 bg-white  shadow py-2 px-2">
-    <h3 className="text-sm sm:text-base text-start font-semibold ">Comments marked as useful</h3>
-    <p className='text-xs mb-2 bg-yellow-50 w-fit'>⭐️⭐️ Please click  <strong>thumbs up 👍</strong> icon to mark comments as useful ⭐️⭐️</p>
-    {usefulAnswers.map((msg) => (
-      <div
-        key={msg._id}
-        className="mb-6 p-2 bg-yellow-50 rounded shadow-sm"
-      >
-        <p className="text-sm font-semibold text-gray-800">
-          {msg.sender?.name || 'Former Member'}
-        </p>
-        <p className="text-sm sm:text-base text-gray-700 text-justify italic">{msg.message}</p>
-        <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
-          <span>
-            {new Date(msg.createdAt).toLocaleTimeString([], {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })}
-          </span>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => handleLike(msg._id)}
-              className={`flex items-center space-x-1 ${
-                msg.likedBy?.includes(currentUser?._id)
-                  ? 'text-blue-500'
-                  : 'text-gray-500'
-              }`}
-            >
-              👍 {msg.likes || 0}
-            </button>
-            <button
-              onClick={() => handleUnlike(msg._id)}
-              className={`flex items-center space-x-1 ${
-                msg.dislikedBy?.includes(currentUser?._id)
-                  ? 'text-red-500'
-                  : 'text-gray-500'
-              }`}
-            >
-              👎 {msg.dislikes || 0}
-            </button>
+          <button
+            onClick={handlePrevImage}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+          >
+            Prev
+          </button>
+          <button
+            onClick={handleNextImage}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {/* Title Section */}
+      {thread.title && (
+        <div className="my-2 px-2">
+          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words">{thread.title}</h1>
+        </div>
+      )}
+
+      {/* Thread Details Section */}
+      <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
+        <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-800">Topic Details</h3>
+        </div>
+        <div className="p-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {thread.category && (
+              <div className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">Category:</span>{' '}
+                <span className="text-gray-600">{thread.category}</span>
+              </div>
+            )}
+            {thread.owner?.name && (
+              <div className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">Posted By:</span>{' '}
+                <span className="text-gray-600">{thread.owner?.name}</span>
+              </div>
+            )}
+            {thread.createdAt && (
+              <div className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">Posted:</span>{' '}
+                <span className="text-gray-600">{format(new Date(thread.createdAt), 'dd MMM yyyy')}</span>
+              </div>
+            )}
+            {thread.suburb?.name && (
+              <div className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">Location:</span>{' '}
+                <span className="text-gray-600">{thread.suburb?.name}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
-    ))}
-  </div>
-) : (
-  <div className=" rounded my-6  bg-white  shadow py-2 px-2 h-20">
-    <h3 className="text-sm sm:text-base text-start font-semibold">Comments marked as useful</h3>
-    <p className='text-xs mb-2 bg-yellow-50 w-fit'>⭐️⭐️ Please click  <strong>thumbs up 👍</strong> icon to mark comments as useful ⭐️⭐️</p>
-  </div>
-)}
+
+      {/* Mute Notifications */}
+      {currentUser && (
+        <div className="flex justify-end px-2 mb-2">
+          <button
+            onClick={handleToggleMute}
+            className={`flex items-center gap-2 text-xs px-3 py-1 rounded-full border ${
+              isMuted
+                ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                : 'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300'
+            } transition-colors duration-200`}
+          >
+            {isMuted ? (
+              <>
+                <MdNotificationsOff className="text-base" />
+                Unmute Notifications
+              </>
+            ) : (
+              <>
+                <MdNotificationsActive className="text-base" />
+                Mute Notifications
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+
+      {/* Topic Description Section */}
+      {thread.question && (
+        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
+          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Topic Description</h3>
+          </div>
+          <div className="p-3">
+            <div className="text-sm sm:text-base text-gray-700 space-y-2">
+              {thread.question.split('\n').map((para, idx) => (
+                para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Useful Answers Section */}
+      {usefulAnswers.length > 0 ? (
+        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
+          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Comments Marked as Useful</h3>
+            <p className="text-xs text-gray-600 mt-1">Click thumbs up 👍 to mark comments as useful</p>
+          </div>
+          <div className="p-3 space-y-3">
+    {usefulAnswers.map((msg) => (
+              <div
+                key={msg._id}
+                className="p-3 bg-yellow-50 rounded border border-yellow-200"
+              >
+                <p className="text-sm font-semibold text-gray-800 mb-1">
+                  {msg.sender?.name || 'Former Member'}
+                </p>
+                <p className="text-sm sm:text-base text-gray-700">{msg.message}</p>
+                <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+                  <span>
+                    {format(new Date(msg.createdAt), 'dd MMM yyyy, h:mm a')}
+                  </span>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => handleLike(msg._id)}
+                      className={`flex items-center space-x-1 ${
+                        msg.likedBy?.includes(currentUser?._id)
+                          ? 'text-blue-500'
+                          : 'text-gray-500'
+                      } hover:text-blue-600`}
+                    >
+                      👍 {msg.likes || 0}
+                    </button>
+                    <button
+                      onClick={() => handleUnlike(msg._id)}
+                      className={`flex items-center space-x-1 ${
+                        msg.dislikedBy?.includes(currentUser?._id)
+                          ? 'text-red-500'
+                          : 'text-gray-500'
+                      } hover:text-red-600`}
+                    >
+                      👎 {msg.dislikes || 0}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
+          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Comments Marked as Useful</h3>
+            <p className="text-xs text-gray-600 mt-1">Click thumbs up 👍 to mark comments as useful</p>
+          </div>
+          <div className="p-3">
+            <p className="text-sm text-gray-500 text-center">No comments marked as useful yet</p>
+          </div>
+        </div>
+      )}
 
 
 
@@ -522,20 +538,20 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             }`}
           >
             <div
-              className={`relative max-w-[95%] min-w-[100px] px-2 rounded-lg shadow-md break-words whitespace-pre-wrap
+              className={`relative max-w-[85%] min-w-[100px] px-3 py-2 rounded-lg shadow-sm break-words
                 ${
                   currentUser
                     ? isRightSide
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-700 text-white'
-                    : 'bg-gray-700 text-white'
+                      ? 'bg-teal-700 text-lime-100'
+                      : 'bg-gray-100 text-gray-800'
+                    : 'bg-gray-100 text-gray-800'
                 }`}
             >
-              <div className="flex justify-between items-center mb-1 text-sm sm:text-base text-yellow-400">
-                <p className="text-sm font-bold ">
+              <div className="flex justify-between items-center mb-1">
+                <p className="text-sm font-semibold">
                   {msg.sender?.name || 'Former Member'}
                 </p>
-                <span className="ml-2">
+                <span className="text-xs opacity-75 ml-2">
                   {msgDate.toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -544,21 +560,27 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 </span>
               </div>
 
-              <p className="ml-4 text-sm sm:text-base whitespace-pre-wrap">{msg.message}</p>
+              <p className="text-sm sm:text-base whitespace-pre-wrap">{msg.message}</p>
 
               <div className="flex items-center space-x-3 mt-2 text-xs">
                 <button
                   onClick={() => handleLike(msg._id)}
-                  className="flex items-center space-x-1 hover:text-yellow-400"
-                  disabled={false}
+                  className={`flex items-center space-x-1 ${
+                    currentUser && isRightSide
+                      ? 'hover:text-yellow-300'
+                      : 'hover:text-blue-600'
+                  }`}
                 >
                   👍 <span>{msg.likes || 0}</span>
                 </button>
 
                 <button
                   onClick={() => handleUnlike(msg._id)}
-                  className="flex items-center space-x-1 hover:text-red-400"
-                  disabled={false}
+                  className={`flex items-center space-x-1 ${
+                    currentUser && isRightSide
+                      ? 'hover:text-red-300'
+                      : 'hover:text-red-600'
+                  }`}
                 >
                   👎 <span>{msg.dislikes || 0}</span>
                 </button>
@@ -567,14 +589,14 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           </div>,
         ];
       }, [])
-    ) : (
-      <div className="h-40 flex items-center justify-center bg-gray-50 border border-gray-300 rounded text-gray-500 text-sm sm:text-base text-center shadow-sm px-4">
-  No messages yet. Start the conversation!
-</div>
-
-    )}
-  </div>
-</div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-sm">No messages yet. Start the conversation!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
     </div>
   );
