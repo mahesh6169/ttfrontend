@@ -281,7 +281,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="max-w-lg mx-auto p-6 mt-10 bg-white border rounded-lg shadow-lg">
+    <div className="max-w-2xl mx-auto p-4 sm:p-6 mt-10 bg-white border rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold mb-4">Edit Thread</h1>
       <RequireLogin message="You must be logged in to edit a thread." >
       <form onSubmit={handleSubmit} className="space-y-4">

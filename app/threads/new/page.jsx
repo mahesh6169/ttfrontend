@@ -233,7 +233,7 @@ if (createThread.fulfilled.match(resultAction)) {
   };
 
   return (
-    <div className="max-w-lg mx-auto mt-08 p-6 border rounded-lg shadow-lg bg-white mt-4">
+    <div className="max-w-2xl mx-auto mt-8 p-4 sm:p-6 border rounded-lg shadow-lg bg-white">
       <h1 className="text-2xl font-bold mb-4">Create a New Topic</h1>
       <RequireLogin message="You must be logged in to edit an event." >
       

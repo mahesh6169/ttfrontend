@@ -189,7 +189,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   return (
     
-  <div className="flex flex-col gap-2 px-2">
+  <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
     {/* Navigation Bar */}
     <div className="mt-4 flex justify-between items-center">
       {/* Back to Topics */}
@@ -212,7 +212,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       </Link>
     </div>
 
-    <div className="border rounded shadow-md mx-auto"> 
+    <div className="border rounded shadow-md mt-4 w-full"> 
 
       {/* Image Section */}
       {thread.images?.length > 0 && (

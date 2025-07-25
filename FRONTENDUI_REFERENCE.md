@@ -197,13 +197,19 @@ text-xs sm:text-sm (mobile:extra-small, desktop:small)
 ## Detail Page Layout (Adverts/Events/Threads)
 ### Page Structure
 ```
-Container: px-2
-├── Navigation Bar (sticky top)
-├── Main Content Grid
+Container: max-w-6xl mx-auto px-2 sm:px-4 lg:px-6
+├── Navigation Bar (mt-4 flex justify-between)
+├── Main Content (w-full)
 │   ├── Primary Content (flex-[7])
 │   └── Secondary Content (flex-[3]) - desktop only
 └── Mobile Secondary Content - below main
 ```
+
+### Container Width Guidelines
+- **Detail/View Pages**: Use `max-w-6xl` for optimal reading experience on large screens
+- **Form Pages (Create/Edit)**: Use `max-w-2xl` for better form usability
+- **Mobile First**: Always include responsive padding: `px-2 sm:px-4 lg:px-6`
+- **Full Width Content**: Use `w-full` for content that should expand with container
 
 ### Navigation Bar
 - Back button: bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900
@@ -453,7 +459,6 @@ Container: w-full
 - Oldest first
 - Most comments
 - Recent activity
-- Distance
 
 #### Thread Detail Sections (THREADS ONLY)
 1. Topic Details - Basic info grid

@@ -44,7 +44,6 @@ const ThreadsPage = () => {
     { value: 'oldest', label: 'Oldest first' },
     { value: 'most_comments', label: 'Most comments' },
     { value: 'recent_activity', label: 'Recent activity' },
-    { value: 'distance', label: 'Distance' },
   ];
 
   // Get formatted date for display
