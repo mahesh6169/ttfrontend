@@ -6,12 +6,14 @@ import {
   searchEvents, 
   fetchFilterOptions,
   toggleCategory,
+  toggleCommunity,
   setLocation,
   setMonth,
   updateFilter,
   clearAllFilters,
   updatePagination
 } from '@/store/slices/events/searchEventsSlice';
+import { COMMUNITIES } from '@/utils/constants/communities';
 import EventsGrid from '@/components/events/eventcomponents/EventsGrid';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
@@ -65,6 +67,7 @@ const EventsPage = () => {
   useEffect(() => {
     setTempFilters({
       categories: [...filters.categories],
+      communities: [...filters.communities],
       location: filters.location,
       month: filters.month,
       sortBy: filters.sortBy,
@@ -164,6 +167,20 @@ const EventsPage = () => {
       });
     }
     
+    // Apply communities filter
+    if (JSON.stringify(tempFilters.communities) !== JSON.stringify(filters.communities)) {
+      filters.communities.forEach(comm => {
+        if (!tempFilters.communities.includes(comm)) {
+          dispatch(toggleCommunity(comm));
+        }
+      });
+      tempFilters.communities.forEach(comm => {
+        if (!filters.communities.includes(comm)) {
+          dispatch(toggleCommunity(comm));
+        }
+      });
+    }
+    
     // Apply location filter
     if (tempFilters.location) {
       dispatch(setLocation(tempFilters.location));
@@ -195,6 +212,7 @@ const EventsPage = () => {
   const getActiveFilterCount = () => {
     let count = 0;
     if (filters.categories.length > 0) count++;
+    if (filters.communities.length > 0) count++;
     if (filters.location) count++;
     if (filters.searchText) count++;
     if (filters.month) count++;
@@ -396,6 +414,40 @@ const EventsPage = () => {
                 </p>
               )}
             </div>
+
+            {/* Communities */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-700 mb-3">Community/Language</h3>
+              <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
+                <div className="grid grid-cols-2 gap-1">
+                  {COMMUNITIES.map((community) => (
+                    <label
+                      key={community.value}
+                      className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={tempFilters.communities?.includes(community.value) || false}
+                        onChange={() => {
+                          const currentCommunities = tempFilters.communities || [];
+                          const newCommunities = currentCommunities.includes(community.value)
+                            ? currentCommunities.filter(c => c !== community.value)
+                            : [...currentCommunities, community.value];
+                          setTempFilters({ ...tempFilters, communities: newCommunities });
+                        }}
+                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{community.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {tempFilters.communities?.length > 0 && (
+                <p className="text-sm text-gray-600 mt-1">
+                  {tempFilters.communities.length} selected
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Apply Button */}
@@ -573,6 +625,24 @@ const EventsPage = () => {
                       </button>
                     </span>
                   )}
+                  
+                  {filters.communities.map((community) => {
+                    const communityLabel = COMMUNITIES.find(c => c.value === community)?.label || community;
+                    return (
+                      <span
+                        key={community}
+                        className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
+                      >
+                        {communityLabel}
+                        <button
+                          onClick={() => dispatch(toggleCommunity(community))}
+                          className="hover:text-gray-900 font-bold ml-1"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             </div>

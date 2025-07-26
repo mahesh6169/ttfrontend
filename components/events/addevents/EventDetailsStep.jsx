@@ -18,6 +18,7 @@ import { CATEGORY_OPTIONS } from '@/components/events/addevents/EventCategories'
 import { zonedTimeToUtc, utcToZonedTime, format } from 'date-fns-tz';
 import CategorySelector from '@/components/shared/CategorySelector';
 import TimezoneSelector from '@/components/shared/TimezoneSelector';
+import CommunitySelector from '@/components/shared/CommunitySelector';
 
 const AU_TIMEZONES = [
   { label: 'Sydney (NSW)', value: 'Australia/Sydney', key: 'nsw' },
@@ -306,6 +307,18 @@ const EventDetailsStep = ({
           </p>
         )}
       </div>
+
+      {/* Community/Language Selection */}
+      {!disabled && (
+        <div className="space-y-2">
+          <CommunitySelector
+            value={formData.communities || []}
+            onChange={(value) => handleChange({ target: { name: 'communities', value } })}
+            label="Community/Language (Optional)"
+            showHint={true}
+          />
+        </div>
+      )}
 
       {/* Time Zone - Mobile optimized */}
       <div className="space-y-2">

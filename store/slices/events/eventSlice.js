@@ -245,6 +245,7 @@ const createDefaultFormData = () => ({
     location: { type: 'Point', coordinates: [0, 0] }
   },
   category: '',
+  communities: [],
   images: [],
   
   // Coordinators
@@ -402,6 +403,7 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
       location: { type: 'Point', coordinates: [0, 0] }
     },
     category: eventData.category || '',
+    communities: eventData.communities || [],
     images: processImagesForEdit(eventData.images),
     coordinators: (eventData.coordinators && eventData.coordinators.length > 0) 
       ? eventData.coordinators 

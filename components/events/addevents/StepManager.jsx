@@ -820,6 +820,10 @@ const calculateRecurringUtcDateTimes = useCallback((recurrence, eventDateTime, t
       submitFormData.append('category', formData.category);
     }
 
+    if (formData.communities && formData.communities.length > 0) {
+      submitFormData.append('communities', JSON.stringify(formData.communities));
+    }
+
 if (formData.dateTime) {
   let finalDateTime = formData.dateTime;
   

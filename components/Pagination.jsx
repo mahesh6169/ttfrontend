@@ -30,8 +30,10 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         key={i}
         onClick={() => onPageChange(i)}
-        className={`text-xs lg:text-base px-2 md:px-3 py-1 rounded ${
-          i === currentPage ? 'bg-gray-300 text-gray-900 font-semibold' : 'bg-gray-100 text-gray-800'
+        className={`text-xs lg:text-base px-2 md:px-3 py-1 rounded shadow-sm transition-colors ${
+          i === currentPage 
+            ? 'bg-teal-700 text-lime-100 font-semibold' 
+            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
         }`}
       >
         {i}
@@ -59,9 +61,9 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(1)}
         disabled={currentPage === 1}
-        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded 
-             bg-gray-300 text-gray-900 font-semibold
-             disabled:text-gray-100 disabled:opacity-60"
+        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded shadow-sm transition-colors
+             bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 font-semibold
+             disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
 >
         First
       </button>
@@ -70,9 +72,9 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={handlePrevBlock}
         disabled={currentBlock === 0}
-        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded 
-             bg-gray-300 text-gray-900 font-semibold
-             disabled:text-gray-100 disabled:opacity-60"
+        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded shadow-sm transition-colors
+             bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 font-semibold
+             disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
 >
         Prev
       </button>
@@ -84,9 +86,9 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={handleNextBlock}
         disabled={(currentBlock + 1) * blockSize >= totalPages}
-        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded 
-             bg-gray-300 text-gray-900 font-semibold
-             disabled:text-gray-100 disabled:opacity-60"
+        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded shadow-sm transition-colors
+             bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 font-semibold
+             disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
 >
         Next
       </button>
@@ -95,9 +97,9 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(totalPages)}
         disabled={currentPage === totalPages}
-        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded 
-             bg-gray-300 text-gray-900 font-semibold
-             disabled:text-gray-100 disabled:opacity-60"
+        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded shadow-sm transition-colors
+             bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 font-semibold
+             disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
 >
         Last
       </button>
