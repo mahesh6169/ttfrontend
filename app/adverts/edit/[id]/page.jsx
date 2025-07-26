@@ -51,7 +51,7 @@ const EditAdvertPage = () => {
     formData.append('adType', data.adType || 'offered');
     
     // Handle nested objects only if not already added
-    const jsonKeys = ['fields', 'pricing', 'address'];
+    const jsonKeys = ['fields', 'pricing', 'address', 'communities'];
     Object.entries(data).forEach(([key, value]) => {
       // Skip the keys we've already handled directly
       if (key === 'title' || key === 'description' || key === 'category' || key === 'adType') {

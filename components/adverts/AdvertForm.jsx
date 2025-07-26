@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import AddressInput from '../shared/AddressInput';
 import ImageUploader from '../shared/ImageUploader';
 import CategorySelector from '../shared/CategorySelector';
+import CommunitySelector from '../shared/CommunitySelector';
 import FieldSystem from './fieldSystem';
 
 const AdvertForm = ({ 
@@ -21,6 +22,7 @@ const AdvertForm = ({
     adType: 'offered',
     fields: {},
     pricing: [],
+    communities: [],
     address: {
       formattedAddress: '',
       streetNumber: '',
@@ -46,6 +48,7 @@ const AdvertForm = ({
         ...initialData,
         fields: initialData.fields || {},
         pricing: initialData.pricing || [],
+        communities: initialData.communities || [],
         images: [],
         // REMOVE THIS LINE: existingImages: initialData.existingImages || []
       });
@@ -313,6 +316,7 @@ const handleSubmit = (e) => {
     address: formData.address,
     fields: formData.fields,
     pricing: formData.adType === 'wanted' ? [] : formData.pricing,
+    communities: formData.communities,
     images: formData.images,
     existingImages: (formData.existingImages || []).filter(img => img && img.url),
   };
@@ -377,6 +381,13 @@ return (
         required={true}
       />
     </div>
+
+    {/* Community/Language Selection */}
+    <CommunitySelector
+      value={formData.communities}
+      onChange={(value) => handleChange('communities', value)}
+      label="Community/Language"
+    />
 
     {/* Render all form sections */}
     {formSections.map((section, index) => {

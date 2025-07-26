@@ -6,11 +6,13 @@ import {
   searchAdverts, 
   fetchFilterOptions,
   toggleCategory,
+  toggleCommunity,
   setLocation,
   updateFilter,
   clearAllFilters,
   updatePagination
 } from '@/store/slices/adverts/searchAdvertsSlice';
+import { COMMUNITIES } from '@/utils/constants/communities';
 import AdvertList from '@/components/adverts/advertcomponents/AdvertList';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
@@ -49,6 +51,7 @@ const sortOptions = [
   useEffect(() => {
     setTempFilters({
       categories: [...filters.categories],
+      communities: [...filters.communities],
       location: filters.location,
       adType: filters.adType,
       sortBy: filters.sortBy,
@@ -157,6 +160,20 @@ const getCurrentSortLabel = () => {
       });
     }
     
+    // Apply communities filter
+    if (JSON.stringify(tempFilters.communities) !== JSON.stringify(filters.communities)) {
+      filters.communities.forEach(comm => {
+        if (!tempFilters.communities.includes(comm)) {
+          dispatch(toggleCommunity(comm));
+        }
+      });
+      tempFilters.communities.forEach(comm => {
+        if (!filters.communities.includes(comm)) {
+          dispatch(toggleCommunity(comm));
+        }
+      });
+    }
+    
     // Apply location filter
     if (tempFilters.location) {
       dispatch(setLocation(tempFilters.location));
@@ -184,6 +201,7 @@ const getCurrentSortLabel = () => {
   const getActiveFilterCount = () => {
     let count = 0;
     if (filters.categories.length > 0) count++;
+    if (filters.communities.length > 0) count++;
     if (filters.location) count++;
     if (filters.searchText) count++;
     if (filters.adType) count++;
@@ -205,18 +223,19 @@ const getCurrentSortLabel = () => {
       )}
 
       {/* Filter Modal - Mobile and Desktop Overlay */}
-      <div className={`fixed z-50 bg-white sm:rounded-lg overflow-y-auto
-        w-full inset-y-0 right-0 sm:inset-0 sm:mx-auto sm:max-w-xl sm:top-20 sm:bottom-auto sm:shadow-lg
+      <div className={`fixed z-50 bg-white rounded-lg shadow-xl overflow-hidden
+        w-full max-w-xl 
+        top-10 bottom-10 left-1/2 -translate-x-1/2
         transition-all duration-300 ease-in-out
         ${showFilters 
-          ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto' 
-          : 'translate-x-full sm:translate-x-0 sm:opacity-0 sm:scale-95 sm:pointer-events-none'}`}>
+          ? 'opacity-100 scale-100 pointer-events-auto' 
+          : 'opacity-0 scale-95 pointer-events-none'}`}>
 
         <div className="h-full overflow-y-auto">
           {/* Modal Header */}
-          <div className="sticky top-0 flex items-center justify-between p-4 bg-white border-b z-10">
-            <h2 className="text-xl font-semibold">Filters</h2>
-            <div className="flex items-center gap-4">
+          <div className="sticky top-0 flex items-center justify-between px-4 py-3 bg-white border-b z-10">
+            <h2 className="text-lg font-semibold">Filters</h2>
+            <div className="flex items-center gap-3">
               <button
                 onClick={handleClearAllTempFilters}
                 className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
@@ -225,7 +244,7 @@ const getCurrentSortLabel = () => {
               </button>
               <button
                 onClick={() => setShowFilters(false)}
-                className="text-2xl text-gray-600 hover:text-gray-800 transition-colors"
+                className="text-xl text-gray-600 hover:text-gray-800 transition-colors"
               >
                 ×
               </button>
@@ -233,9 +252,9 @@ const getCurrentSortLabel = () => {
           </div>
 
           {/* Filter Content */}
-          <div className="p-4 pb-20">
+          <div className="flex-1 overflow-y-auto p-3">
             {/* Location with Radius */}
-            <div className="mb-6">
+            <div className="mb-4">
               <h3 className="font-semibold text-gray-700 mb-3">Location</h3>
               <LoadScriptNext
                 googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
@@ -325,14 +344,14 @@ const getCurrentSortLabel = () => {
             </div>
 
             {/* Categories */}
-            <div className="mb-6">
+            <div className="mb-4">
               <h3 className="font-semibold text-gray-700 mb-3">Categories</h3>
-              <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
-                <div className="space-y-2 p-2">
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
+                <div className="space-y-1 p-2">
                   {filterOptions.categories.map((category) => (
                     <label
                       key={category}
-                      className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+                      className="flex items-center cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors"
                     >
                       <input
                         type="checkbox"
@@ -346,24 +365,58 @@ const getCurrentSortLabel = () => {
                         }}
                         className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
                       />
-                      <span className="ml-3 text-gray-700">{category}</span>
+                      <span className="ml-2 text-sm text-gray-700">{category}</span>
                     </label>
                   ))}
                 </div>
               </div>
               {tempFilters.categories?.length > 0 && (
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-xs text-gray-600 mt-1">
                   {tempFilters.categories.length} selected
                 </p>
               )}
             </div>
 
+            {/* Communities */}
+            <div className="mb-4">
+              <h3 className="font-semibold text-gray-700 mb-3">Community/Language</h3>
+              <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
+                <div className="grid grid-cols-2 gap-1">
+                  {COMMUNITIES.map((community) => (
+                    <label
+                      key={community.value}
+                      className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={tempFilters.communities?.includes(community.value) || false}
+                        onChange={() => {
+                          const currentCommunities = tempFilters.communities || [];
+                          const newCommunities = currentCommunities.includes(community.value)
+                            ? currentCommunities.filter(c => c !== community.value)
+                            : [...currentCommunities, community.value];
+                          setTempFilters({ ...tempFilters, communities: newCommunities });
+                        }}
+                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{community.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {tempFilters.communities?.length > 0 && (
+                <p className="text-xs text-gray-600 mt-1">
+                  {tempFilters.communities.length} selected
+                </p>
+              )}
+            </div>
+
             {/* Ad Type */}
-            <div className="mb-6">
+            <div className="mb-4">
               <h3 className="font-semibold text-gray-700 mb-3">Ad Type</h3>
-              <div className="space-y-2">
+              <div className="flex gap-2">
                 {['All', 'Offered', 'Wanted'].map((type) => (
-                  <label key={type} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors">
+                  <label key={type} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors flex-1">
                     <input
                       type="radio"
                       name="adType"
@@ -374,7 +427,7 @@ const getCurrentSortLabel = () => {
                       }}
                       className="w-4 h-4 text-teal-600 focus:ring-teal-500 focus:ring-2"
                     />
-                    <span className="ml-3 text-gray-700">{type}</span>
+                    <span className="ml-2 text-sm text-gray-700">{type}</span>
                   </label>
                 ))}
               </div>
@@ -382,7 +435,7 @@ const getCurrentSortLabel = () => {
           </div>
 
           {/* Apply Button */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
+          <div className="p-4 bg-white border-t flex-shrink-0">
             <button
               onClick={applyFilters}
               className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-3 rounded shadow font-semibold transition-colors"
@@ -411,11 +464,11 @@ const getCurrentSortLabel = () => {
         <div className="my-4 px-4">
           <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
-              <span className="text-amber-500">Sell</span>
+              <span className="text-amber-500">Find</span>
               <span className="text-teal-700 mx-2">•</span>
-              <span className="text-teal-700">Buy</span>
+              <span className="text-teal-700">Offer</span>
               <span className="text-teal-700 mx-2">•</span>
-              <span className="text-amber-500">Advertise</span>
+              <span className="text-amber-500">Reach</span>
             </h1>
             <p className="text-gray-600 text-center text-sm mt-2">Connect with your community</p>
           </div>
@@ -517,6 +570,24 @@ const getCurrentSortLabel = () => {
                       </button>
                     </span>
                   ))}
+
+                  {filters.communities.map((community) => {
+                    const communityLabel = COMMUNITIES.find(c => c.value === community)?.label || community;
+                    return (
+                      <span
+                        key={community}
+                        className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
+                      >
+                        {communityLabel}
+                        <button
+                          onClick={() => dispatch(toggleCommunity(community))}
+                          className="hover:text-gray-900 font-bold ml-1"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
                   
                   {filters.location && (
                     <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">

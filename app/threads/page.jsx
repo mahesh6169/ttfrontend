@@ -407,11 +407,11 @@ const ThreadsPage = () => {
         <div className="my-4 px-4">
           <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
-              <span className="text-amber-500">Ask</span>
+              <span className="text-amber-500">Share</span>
               <span className="text-teal-700 mx-2">•</span>
-              <span className="text-teal-700">Discuss</span>
+              <span className="text-teal-700">Seek</span>
               <span className="text-teal-700 mx-2">•</span>
-              <span className="text-amber-500">Learn</span>
+              <span className="text-amber-500">Support</span>
             </h1>
             <p className="text-gray-600 text-center text-sm mt-2">Share knowledge with your community</p>
           </div>
