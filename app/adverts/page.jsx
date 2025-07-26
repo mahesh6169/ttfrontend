@@ -380,7 +380,7 @@ const getCurrentSortLabel = () => {
             {/* Communities */}
             <div className="mb-4">
               <h3 className="font-semibold text-gray-700 mb-3">Community/Language</h3>
-              <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
+              <div className="max-h-[7.5rem] overflow-y-auto border border-gray-200 rounded-md p-2">
                 <div className="grid grid-cols-2 gap-1">
                   {COMMUNITIES.map((community) => (
                     <label

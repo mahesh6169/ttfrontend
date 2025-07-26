@@ -428,7 +428,7 @@ const EventsPage = () => {
         <div className="my-4 px-4">
           <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
-              <span className="text-amber-500">Discover</span>
+              <span className="text-amber-500">Organise</span>
               <span className="text-teal-700 mx-2">•</span>
               <span className="text-teal-700">Attend</span>
               <span className="text-teal-700 mx-2">•</span>

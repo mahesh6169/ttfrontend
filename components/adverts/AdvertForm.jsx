@@ -271,9 +271,11 @@ const handleSubmit = (e) => {
       }
       // Pricing validation for offered ads only
       if (formData.adType === 'offered' && Object.keys(section.pricingOptions || {}).length > 0) {
-        if (formData.pricing.length === 0) {
+        // Only require pricing if pricing options are available and it's marked as required
+        const pricingConfig = section.pricingConfig || {};
+        if (pricingConfig.required !== false && formData.pricing.length === 0) {
           validationErrors.push('At least one pricing option is required');
-        } else {
+        } else if (formData.pricing.length > 0) {
           formData.pricing.forEach(price => {
             
             if (section.pricingOptions[price.priceType]?.units && !price.unit) {
@@ -386,7 +388,8 @@ return (
     <CommunitySelector
       value={formData.communities}
       onChange={(value) => handleChange('communities', value)}
-      label="Community/Language"
+      label="Community/Language (Optional)"
+      showHint={true}
     />
 
     {/* Render all form sections */}
