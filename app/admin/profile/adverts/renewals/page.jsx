@@ -1,67 +1,167 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  getManageAdverts,
-  updateAdminAdvertFilter,
-  deleteAdvertById,
-  sendAdvertReminder,
-} from '@/store/slices/admin/adverts/adminManageAdvertSlice';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import axios from 'axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Pagination from '@/components/Pagination';
 
 const ManageAdvertsPage = () => {
-  const dispatch = useDispatch();
+  // State management - replaces Redux store
+  const [adverts, setAdverts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ 
+    totalPages: 1, 
+    totalItems: 0,
+    currentPage: 1,
+    itemsPerPage: 10
+  });
+  const [sendingReminders, setSendingReminders] = useState({});
+  const [deletingAdverts, setDeletingAdverts] = useState({});
+  
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  const { manageAdverts, status, error, page, limit, meta } = useSelector(
-    (state) => state.adminManageAdvert
-  );
-
-  // 🔁 Fetch on load and when page/limit changes
-  useEffect(() => {
-    dispatch(getManageAdverts());
-  }, [dispatch, page, limit]);
-
-  // 🔄 Handle pagination
-  const handlePageChange = (newPage) => {
-    dispatch(updateAdminAdvertFilter({ page: newPage }));
-  };
-
-  // ❌ Handle delete
-  const handleDelete = (advertId) => {
-    if (confirm('Are you sure you want to delete this advert?')) {
-      dispatch(deleteAdvertById(advertId));
-    }
-  };
-
-  const handleReminder = async (advertId, type) => {
+  // Fetch adverts - replaces getManageAdverts Redux action
+  const fetchAdverts = async (pageNum = 1) => {
+    setLoading(true);
     try {
-      const result = await dispatch(sendAdvertReminder({ advertId, type })).unwrap();
-      console.log("Reminder sent successfully:", result);
+      const { data } = await axios.get(
+        `${BASE_URL}/admin/adverts/manage?page=${pageNum}&limit=10`,
+        { withCredentials: true }
+      );
       
-      // Add a small delay before refreshing to ensure the backend has processed the update
-      setTimeout(() => {
-        dispatch(getManageAdverts()); // Refresh list
-      }, 500);
-      
+      if (data.success) {
+        setAdverts(data.adverts || []);
+        setMeta(data.meta || { 
+          totalPages: 1, 
+          totalItems: 0,
+          currentPage: pageNum,
+          itemsPerPage: 10
+        });
+        setPage(pageNum);
+      }
     } catch (error) {
-      console.error("Failed to send reminder:", error);
+      console.error('Error fetching adverts:', error);
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        // Could redirect to login if needed
+      } else {
+        toast.error('Failed to load adverts');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Initial load
+  useEffect(() => {
+    fetchAdverts(1);
+  }, []);
+
+  // Handle pagination - replaces updateAdminAdvertFilter Redux action
+  const handlePageChange = (newPage) => {
+    fetchAdverts(newPage);
+  };
+
+  // Send reminder - replaces sendAdvertReminder Redux action
+  const handleReminder = async (advertId, type) => {
+    const key = `${advertId}-${type}`;
+    setSendingReminders(prev => ({ ...prev, [key]: true }));
+    
+    try {
+      const { data } = await axios.post(
+        `${BASE_URL}/admin/adverts/remind/${advertId}?type=${type}`,
+        {},
+        { withCredentials: true }
+      );
+      
+      if (data.success) {
+        toast.success(`${type}-day reminder sent successfully`);
+        
+        // Refresh the list after a small delay to ensure backend has updated
+        setTimeout(() => {
+          fetchAdverts(page);
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Failed to send reminder:', error);
+      toast.error(error.response?.data?.message || 'Failed to send reminder');
+    } finally {
+      setSendingReminders(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+  // Delete advert - replaces deleteAdvertById Redux action
+  const handleDelete = async (advertId) => {
+    if (!confirm('Are you sure you want to delete this advert?')) {
+      return;
+    }
+
+    setDeletingAdverts(prev => ({ ...prev, [advertId]: true }));
+    
+    try {
+      const { data } = await axios.delete(
+        `${BASE_URL}/admin/adverts/byid/${advertId}`,
+        { withCredentials: true }
+      );
+      
+      if (data.success) {
+        toast.success('Advert deleted successfully');
+        
+        // If we deleted the last item on a page, go to previous page
+        if (adverts.length === 1 && page > 1) {
+          fetchAdverts(page - 1);
+        } else {
+          fetchAdverts(page);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting advert:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete advert');
+    } finally {
+      setDeletingAdverts(prev => ({ ...prev, [advertId]: false }));
+    }
+  };
+
+  // Helper function to get status text
+  const getStatusText = (renewalStatus) => {
+    switch (renewalStatus) {
+      case 'notify1': 
+        return 'Due (14d)';
+      case 'notify2': 
+        return 'Due (7d)';
+      case 'pendingNotification2': 
+        return 'Pending Notif (7d)';
+      case 'expired': 
+        return 'Expired';
+      default: 
+        return 'Valid';
+    }
+  };
+
+  // Helper function to get row styling
+  const getRowClassName = (renewalStatus) => {
+    return renewalStatus === 'notify1' ? 'bg-gray-100 text-gray-400' : '';
+  };
+
+  // Render
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">Manage Advert Renewals</h1>
 
-      {status === 'loading' && <LoadingSpinner />}
-      {error && <p className="text-red-500">Error: {error}</p>}
-      {status === 'success' && manageAdverts.length === 0 && (
+      {loading && <LoadingSpinner />}
+      
+      {!loading && adverts.length === 0 && (
         <p className="text-gray-500">No adverts found.</p>
       )}
 
-      {status === 'success' && manageAdverts.length > 0 && (
+      {!loading && adverts.length > 0 && (
         <>
+          <div className="mb-4 text-sm text-gray-600">
+            Showing {adverts.length} of {meta.totalItems} adverts
+          </div>
+          
           <div className="overflow-x-auto">
             <table className="min-w-full border text-sm">
               <thead className="bg-gray-100 text-gray-700">
@@ -75,66 +175,71 @@ const ManageAdvertsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {manageAdverts.map((ad) => {
-                  const { _id, title, email, daysLeft, renewalStatus } = ad;
-
-                  let statusText = 'Valid';
-                  if (renewalStatus === 'notify1') statusText = 'Due (14d)';
-                  else if (renewalStatus === 'notify2') statusText = 'Due (7d)';
-                  else if (renewalStatus === 'pendingNotification2')
-                    statusText = 'Pending Notif (7d)';
-                  else if (renewalStatus === 'expired') statusText = 'Expired';
-
-                  const isGreyedOut = renewalStatus === 'notify1';
+                {adverts.map((ad) => {
+                  const reminderKey14 = `${ad._id}-14`;
+                  const reminderKey7 = `${ad._id}-7`;
 
                   return (
                     <tr
-                      key={_id}
-                      className={isGreyedOut ? 'bg-gray-100 text-gray-400' : ''}
+                      key={ad._id}
+                      className={getRowClassName(ad.renewalStatus)}
                     >
-                      <td className="border p-2">{title}</td>
-                      <td className="border p-2">{email}</td>
-                      <td className="border p-2">{daysLeft} days</td>
-                      <td className="border p-2">{statusText}</td>
+                      <td className="border p-2">{ad.title}</td>
+                      <td className="border p-2">{ad.email}</td>
                       <td className="border p-2">
-                        {renewalStatus === 'notify1' && (
+                        <span className={ad.daysLeft < 0 ? 'text-red-600 font-bold' : ''}>
+                          {ad.daysLeft} days
+                        </span>
+                      </td>
+                      <td className="border p-2">{getStatusText(ad.renewalStatus)}</td>
+                      <td className="border p-2">
+                        {ad.renewalStatus === 'notify1' && (
                           <button
-                            className="px-2 py-1 text-xs rounded bg-yellow-500 text-white hover:bg-yellow-600"
-                            onClick={() => handleReminder(_id, '14')}
+                            className="px-2 py-1 text-xs rounded bg-yellow-500 text-white hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => handleReminder(ad._id, '14')}
+                            disabled={sendingReminders[reminderKey14]}
                           >
-                            Notify (14d)
+                            {sendingReminders[reminderKey14] ? 'Sending...' : 'Notify (14d)'}
                           </button>
                         )}
 
-                        {renewalStatus === 'notify2' && (
+                        {ad.renewalStatus === 'notify2' && (
                           <button
-                            className="px-2 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600"
-                            onClick={() => handleReminder(_id, '7')}
+                            className="px-2 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => handleReminder(ad._id, '7')}
+                            disabled={sendingReminders[reminderKey7]}
                           >
-                            Notify (7d)
+                            {sendingReminders[reminderKey7] ? 'Sending...' : 'Notify (7d)'}
                           </button>
                         )}
 
-                        {renewalStatus === 'pendingNotification2' && (
+                        {ad.renewalStatus === 'pendingNotification2' && (
                           <span className="inline-block px-2 py-1 text-xs rounded bg-gray-300 text-gray-700">
                             Waiting (7d)
                           </span>
                         )}
-                        {renewalStatus === 'expired' && (
+                        
+                        {ad.renewalStatus === 'expired' && (
                           <button
-                            className="ml-2 px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700"
-                            onClick={() => handleDelete(_id)}
+                            className="ml-2 px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => handleDelete(ad._id)}
+                            disabled={deletingAdverts[ad._id]}
                           >
-                            Delete
+                            {deletingAdverts[ad._id] ? 'Deleting...' : 'Delete'}
                           </button>
+                        )}
+                        
+                        {ad.renewalStatus === 'valid' && (
+                          <span className="text-xs text-gray-500">-</span>
                         )}
                       </td>
                       <td className="border p-2">
                         <button
-                          className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700"
-                          onClick={() => handleDelete(_id)}
+                          className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => handleDelete(ad._id)}
+                          disabled={deletingAdverts[ad._id]}
                         >
-                          Delete
+                          {deletingAdverts[ad._id] ? 'Deleting...' : 'Delete'}
                         </button>
                       </td>
                     </tr>
@@ -146,7 +251,7 @@ const ManageAdvertsPage = () => {
 
           <Pagination
             currentPage={page}
-            totalPages={meta?.totalPages || 1}
+            totalPages={meta.totalPages || 1}
             onPageChange={handlePageChange}
           />
         </>
