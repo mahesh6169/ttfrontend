@@ -3,7 +3,7 @@ const DemoPage = () => {
       <div className="p-6 space-y-4">
         <h1 className="text-xs">text-xs → Hello from DemoPage 👋</h1>
         <h1 className="text-sm">text-sm → Hello from DemoPage 👋</h1>
-        <h1 className="text-base">text-base → Helsddlo from DemoPage 👋 (Default)</h1>
+        <h1 className="text-base">textt-base → Helsddlo from DemoPage 👋 (Default)</h1>
         <h1 className="text-lg">text-lg → Hellooo from DemoPage 👋</h1>
         <h1 className="text-xl">text-xl → Hello frvom DemoPage 👋</h1>
         <h1 className="text-2xl">text-2xl → Hello from DemoPage 👋</h1>
