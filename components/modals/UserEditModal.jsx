@@ -1,16 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { updateUser } from '@/store/slices/admin/users/adminSlice';
 import { toast } from 'react-toastify';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
+import axios from 'axios';
 
 const libraries = ['places'];
 
-const UserEditModal = ({ isOpen, onClose, user }) => {
-  const dispatch = useDispatch();
-
+const UserEditModal = ({ isOpen, onClose, user, onUserUpdated }) => {
   const initialFormState = {
     name: '',
     email: '',
@@ -29,6 +26,9 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
 
   const [formData, setFormData] = useState(initialFormState);
   const [autocomplete, setAutocomplete] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   useEffect(() => {
     if (user) {
@@ -108,14 +108,26 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
     const payload = { ...formData };
     if (!formData.password) delete payload.password;
 
+    setSubmitting(true);
     try {
-      await dispatch(
-        updateUser({ userId: user._id, userData: payload })
-      ).unwrap();
-      toast.success('User updated successfully');
-      onClose();
+      const { data } = await axios.put(
+        `${BASE_URL}/admin/users/${user._id}`,
+        payload,
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        toast.success('User updated successfully');
+        onClose();
+        if (onUserUpdated) {
+          onUserUpdated(); // Refresh the list
+        }
+      }
     } catch (error) {
-      toast.error(error || 'Failed to update user');
+      console.error('Error updating user:', error);
+      toast.error(error.response?.data?.message || 'Failed to update user');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -220,14 +232,16 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
               type="button"
               className="bg-gray-500 text-white px-4 py-2 rounded"
               onClick={onClose}
+              disabled={submitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+              disabled={submitting}
             >
-              Update User
+              {submitting ? 'Updating...' : 'Update User'}
             </button>
           </div>
         </form>

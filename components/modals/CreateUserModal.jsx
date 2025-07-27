@@ -1,16 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { createUser } from '@/store/slices/admin/users/adminSlice';
 import { toast } from 'react-toastify';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
+import axios from 'axios';
 
 const libraries = ['places'];
 
-const CreateUserModal = ({ isOpen, onClose }) => {
-  const dispatch = useDispatch();
-
+const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
   const initialFormState = {
     name: '',
     email: '',
@@ -32,6 +29,9 @@ const CreateUserModal = ({ isOpen, onClose }) => {
 
   const [formData, setFormData] = useState(initialFormState);
   const [autocomplete, setAutocomplete] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   useEffect(() => {
     if (isOpen) setFormData(initialFormState);
@@ -104,13 +104,27 @@ const CreateUserModal = ({ isOpen, onClose }) => {
       return;
     }
 
+    setSubmitting(true);
     try {
-      await dispatch(createUser(formData)).unwrap();
-      toast.success('User created successfully');
-      setFormData(initialFormState);
-      onClose();
+      const { data } = await axios.post(
+        `${BASE_URL}/admin/users`,
+        formData,
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        toast.success('User created successfully');
+        setFormData(initialFormState);
+        onClose();
+        if (onUserCreated) {
+          onUserCreated(); // Refresh the list
+        }
+      }
     } catch (error) {
-      toast.error(error || 'Failed to create user');
+      console.error('Error creating user:', error);
+      toast.error(error.response?.data?.message || 'Failed to create user');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -211,14 +225,16 @@ const CreateUserModal = ({ isOpen, onClose }) => {
               type="button"
               className="bg-gray-500 text-white px-4 py-2 rounded"
               onClick={onClose}
+              disabled={submitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+              disabled={submitting}
             >
-              Create User
+              {submitting ? 'Creating...' : 'Create User'}
             </button>
           </div>
         </form>
