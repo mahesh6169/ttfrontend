@@ -44,15 +44,10 @@ const Login = () => {
     }
 
     if (user?._id) {
-      let redirectPath;
-
-      if (user.role === 'admin') {
-        redirectPath = '/admin/profile';
-      } else {
-        redirectPath =
-          localStorage.getItem('redirectAfterLogin') || '/users/profile';
-      }
-
+      // Always redirect to user profile regardless of role
+      // This allows admins to use the regular UI
+      const redirectPath = localStorage.getItem('redirectAfterLogin') || '/users/profile';
+      
       localStorage.removeItem('redirectAfterLogin');
       router.push(redirectPath);
     }

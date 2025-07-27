@@ -7,10 +7,23 @@ const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin`;
 // 📌 Async Thunks
 export const adminLogin = createAsyncThunk('admin/login', async (credentials, { rejectWithValue }) => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/login`, credentials);
+        const { data } = await axios.post(`${BASE_URL}/login`, credentials, {
+            withCredentials: true, // Ensure cookies are sent
+        });
         return data.user; // Only return user details
     } catch (error) {
         return rejectWithValue(error.response?.data?.message || 'Login failed');
+    }
+});
+
+export const validateAdmin = createAsyncThunk('admin/validateAdmin', async (_, { rejectWithValue }) => {
+    try {
+        const { data } = await axios.get(`${BASE_URL}/validate`, {
+            withCredentials: true, // Ensure cookies are sent
+        });
+        return data.user; // Return admin details
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Admin validation failed');
     }
 });
 
@@ -147,6 +160,19 @@ const adminSlice = createSlice({
             .addCase(adminLogin.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.payload;
+            })
+            
+            // 🔹 Validate Admin
+            .addCase(validateAdmin.pending, (state) => {
+                state.status = 'loading';
+            })
+            .addCase(validateAdmin.fulfilled, (state, action) => {
+                state.status = 'success';
+                state.adminInfo = action.payload;
+            })
+            .addCase(validateAdmin.rejected, (state, action) => {
+                state.status = 'failed';
+                state.adminInfo = null;
             })
 
             // 🔹 Fetch Users

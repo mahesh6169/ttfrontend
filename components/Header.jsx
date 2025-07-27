@@ -38,7 +38,8 @@ const Header = () => {
 
   const { tokenValidated, user } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user._id;
-  const baseProfilePath = user?.role === 'admin' ? '/admin/profile' : '/users/profile';
+  // Always use regular profile path to allow admins to use regular UI
+  const baseProfilePath = '/users/profile';
   const profileLink = baseProfilePath;
   
   // Get both unreadExists and inActiveChat from state

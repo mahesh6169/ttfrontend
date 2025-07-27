@@ -121,7 +121,7 @@ export default function ProfilePage() {
   const expiryTime = new Date(advert.expiresAt).getTime();
   const daysLeft = Math.floor((expiryTime - Date.now()) / (1000 * 60 * 60 * 24));
   const isExpired = daysLeft < 0;
-  const canRenew = daysLeft <= 7;
+  const canRenew = daysLeft <= 14 && daysLeft >= -7; // Allow renewal 14 days before to 7 days after expiry
 
   return (
     <div
@@ -167,11 +167,14 @@ export default function ProfilePage() {
           disabled={!canRenew}
           className={`flex-1 py-1 px-4 rounded transition ${
             canRenew
-              ? 'bg-green-600 text-white hover:bg-green-700'
+              ? daysLeft <= 7 
+                ? 'bg-orange-600 text-white hover:bg-orange-700' // Urgent color for last 7 days
+                : 'bg-green-600 text-white hover:bg-green-700'   // Normal color for 14-8 days
               : 'bg-gray-400 text-white cursor-not-allowed'
           }`}
+          title={!canRenew ? 'Renewal available within 14 days of expiry' : 'Renew for another 90 days'}
         >
-          Renew
+          {canRenew && daysLeft <= 0 ? 'Renew Now!' : 'Renew'}
         </button>
 
         <button
