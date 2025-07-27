@@ -9,6 +9,7 @@ import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 import RequireLogin from '@/components/Auth/RequireLogin';
 import CategorySelector from '@/components/shared/CategorySelector';
+import CommunitySelector from '@/components/shared/CommunitySelector';
 
 const libraries = ['places'];
 
@@ -50,6 +51,7 @@ const CreateThreadPage = () => {
     title: '',
     question: '',
     category: '',
+    communities: [],
     images: [],
     suburb: {
       name: '',
@@ -215,6 +217,11 @@ const CreateThreadPage = () => {
     formPayload.append('question', formData.question);
     formPayload.append('category', formData.category);
     
+    // Append communities
+    if (formData.communities && formData.communities.length > 0) {
+      formPayload.append('communities', JSON.stringify(formData.communities));
+    }
+    
     // Append suburb data
     formPayload.append('suburb', JSON.stringify(formData.suburb));
     
@@ -282,6 +289,15 @@ if (createThread.fulfilled.match(resultAction)) {
             {errors.category && (
               <p className="text-red-500 text-sm mt-1">{errors.category}</p>
             )}
+          </div>
+          
+          <div>
+            <CommunitySelector
+              value={formData.communities}
+              onChange={(value) => setFormData({ ...formData, communities: value })}
+              label="Community/Language (Optional)"
+              showHint={true}
+            />
           </div>
 
           {/* Location/Suburb Selector - Fixed to allow typing */}

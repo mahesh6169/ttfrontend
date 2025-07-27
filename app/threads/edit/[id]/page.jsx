@@ -12,6 +12,7 @@ import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import RequireLogin from '@/components/Auth/RequireLogin';
 import { useRef } from 'react';
 import CategorySelector from '@/components/shared/CategorySelector';
+import CommunitySelector from '@/components/shared/CommunitySelector';
 
 const libraries = ['places'];
 
@@ -53,6 +54,7 @@ const EditThreadPage = () => {
     title: '',
     question: '',
     category: '',
+    communities: [],
     images: [],
     suburb: {
       name: '',
@@ -84,6 +86,7 @@ const EditThreadPage = () => {
         title: thread.title || '',
         question: thread.question || '',
         category: thread.category || '',
+        communities: thread.communities || [],
         images: [],
         suburb: thread.suburb || {
           name: '',
@@ -260,6 +263,11 @@ useEffect(() => {
     formPayload.append('question', question);
     formPayload.append('category', category);
     
+    // Append communities
+    if (formData.communities && formData.communities.length > 0) {
+      formPayload.append('communities', JSON.stringify(formData.communities));
+    }
+    
     // Append suburb data
     formPayload.append('suburb', JSON.stringify(suburb));
     
@@ -329,6 +337,15 @@ useEffect(() => {
           {errors.category && (
             <p className="text-red-500 text-sm mt-1">{errors.category}</p>
           )}
+        </div>
+        
+        <div>
+          <CommunitySelector
+            value={formData.communities}
+            onChange={(value) => setFormData({ ...formData, communities: value })}
+            label="Community/Language (Optional)"
+            showHint={true}
+          />
         </div>
 
         {/* Location/Suburb Selector */}

@@ -63,6 +63,7 @@ const initialState = {
   // Filter state
   filters: {
     categories: [],
+    communities: [],
     location: null, // { coordinates: [lng, lat], radius: 10, name: 'Address' }
     searchText: '',
     sortBy: 'newest' // 'newest', 'oldest', 'most_comments', 'recent_activity', 'distance'
@@ -135,6 +136,19 @@ const searchThreadsSlice = createSlice({
       state.filters.location = action.payload;
       state.pagination.page = 1;
     },
+    
+    // Toggle community
+    toggleCommunity: (state, action) => {
+      const community = action.payload;
+      const index = state.filters.communities.indexOf(community);
+      
+      if (index > -1) {
+        state.filters.communities.splice(index, 1);
+      } else {
+        state.filters.communities.push(community);
+      }
+      state.pagination.page = 1;
+    },
   },
   
   extraReducers: (builder) => {
@@ -187,6 +201,7 @@ export const {
   updatePagination,
   toggleCategory,
   setLocation,
+  toggleCommunity,
 } = searchThreadsSlice.actions;
 
 // Selectors
