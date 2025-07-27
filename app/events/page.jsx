@@ -245,8 +245,9 @@ const EventsPage = () => {
       )}
 
       {/* Filter Modal - Mobile and Desktop Overlay */}
-      <div className={`fixed z-50 bg-white sm:rounded-lg overflow-y-auto
-        w-full inset-y-0 right-0 sm:inset-0 sm:mx-auto sm:max-w-xl sm:top-20 sm:bottom-auto sm:shadow-lg
+      <div className={`fixed z-50 bg-white rounded-lg shadow-xl overflow-hidden
+        w-full max-w-xl 
+        inset-y-0 right-0 sm:inset-y-auto sm:top-10 sm:bottom-10 sm:left-1/2 sm:right-auto sm:-translate-x-1/2
         transition-all duration-300 ease-in-out
         ${showFilters 
           ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto' 
@@ -273,7 +274,7 @@ const EventsPage = () => {
           </div>
 
           {/* Filter Content */}
-          <div className="p-4 pb-20">
+          <div className="flex-1 overflow-y-auto p-4 pb-20">
             {/* Month Selection */}
             <div className="mb-6">
               <h3 className="font-semibold text-gray-700 mb-3">Month</h3>
@@ -451,7 +452,7 @@ const EventsPage = () => {
           </div>
 
           {/* Apply Button */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t sm:sticky">
             <button
               onClick={applyFilters}
               className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-3 rounded shadow font-semibold transition-colors"

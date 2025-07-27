@@ -225,11 +225,11 @@ const getCurrentSortLabel = () => {
       {/* Filter Modal - Mobile and Desktop Overlay */}
       <div className={`fixed z-50 bg-white rounded-lg shadow-xl overflow-hidden
         w-full max-w-xl 
-        top-10 bottom-10 left-1/2 -translate-x-1/2
+        inset-y-0 right-0 sm:inset-y-auto sm:top-10 sm:bottom-10 sm:left-1/2 sm:right-auto sm:-translate-x-1/2
         transition-all duration-300 ease-in-out
         ${showFilters 
-          ? 'opacity-100 scale-100 pointer-events-auto' 
-          : 'opacity-0 scale-95 pointer-events-none'}`}>
+          ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto' 
+          : 'translate-x-full sm:translate-x-0 sm:opacity-0 sm:scale-95 sm:pointer-events-none'}`}>
 
         <div className="h-full overflow-y-auto">
           {/* Modal Header */}
@@ -435,7 +435,7 @@ const getCurrentSortLabel = () => {
           </div>
 
           {/* Apply Button */}
-          <div className="p-4 bg-white border-t flex-shrink-0">
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t sm:sticky">
             <button
               onClick={applyFilters}
               className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-3 rounded shadow font-semibold transition-colors"

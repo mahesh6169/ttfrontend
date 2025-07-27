@@ -6,9 +6,11 @@ import { FaHeart } from 'react-icons/fa';
 import { format, differenceInDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { MdRepeat } from 'react-icons/md';
+import { FaMoneyBillWave } from 'react-icons/fa';
+import { FaClipboardList } from 'react-icons/fa';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
-  const { title, dateTime, venue, address, images, createdAt, timeZone } = event;
+  const { title, dateTime, venue, address, images, createdAt, timeZone, isPaid } = event;
 
   const getStateFromTimezone = (timezone) => {
   const timezoneMap = {
@@ -81,16 +83,10 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         </div>
 
         {/* Title */}
-        <div className="flex items-center px-2">
+        <div className="px-2">
           <h2 className="text-xs sm:text-sm text-center font-medium my-1 px-2 truncate text-gray-800">
             {title}
           </h2>
-          {(event.recurrence?.isRecurring || event.isRecurringInstance) && (
-            <MdRepeat 
-              className="ml-1 text-gray-800 flex-shrink-0" 
-              title="Recurring Event"
-            />
-          )}
         </div>
 
 {/* Date & Time + Location */}
@@ -104,6 +100,13 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
                 format(new Date(dateTime), 'EEE dd MMM yyyy')
               }
             </span>
+            {(event.recurrence?.isRecurring || event.isRecurringInstance) && (
+              <MdRepeat 
+                className="ml-1 text-gray-600 flex-shrink-0" 
+                title="Recurring Event"
+                size={14}
+              />
+            )}
           </div>
           
 {/* Time Row */}
@@ -126,8 +129,28 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
             </span>
           </div>
         </div>
-        <div className="text-xs font-medium text-gray-600 text-right whitespace-nowrap px-2 mb-1">
-          {postedText}
+        <div className="flex items-center justify-between px-2 mb-1">
+          <div className="flex items-center gap-1">
+            {isPaid ? (
+              <FaMoneyBillWave 
+                className="text-gray-600" 
+                size={12}
+                title="Paid Event"
+              />
+            ) : (
+              <FaClipboardList 
+                className="text-gray-600" 
+                size={12}
+                title="Free Event - RSVP"
+              />
+            )}
+            <span className="text-[10px] text-gray-600 font-medium">
+              {isPaid ? 'Paid' : 'RSVP'}
+            </span>
+          </div>
+          <span className="text-xs font-medium text-gray-600 whitespace-nowrap">
+            {postedText}
+          </span>
         </div>
       </Link>
     </div>
