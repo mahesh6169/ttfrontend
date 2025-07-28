@@ -15,7 +15,6 @@ import eventReducer from './slices/events/eventSlice';
 import seatSelectionReducer from './slices/events/seatSelectionSlice';
 import ticketPurchaseReducer from './slices/events/ticketPurchaseSlice';
 import filterThreadReducer from './slices/threads/filterThreadSlice';
-import adminManageEventReducer from './slices/admin/events/adminManageEventSlice';
 import supportReducer from './slices/supportSlice';
 import refundReducer from './slices/events/refundSlice';
 import eventCapacityReducer from './slices/events/eventCapacitySlice';
@@ -38,7 +37,6 @@ const store = configureStore({
         freeEvents: freeEventReducer,
         filterThreads: filterThreadReducer,
         searchThreads: searchThreadsReducer,
-        adminManageEvent: adminManageEventReducer,
         support: supportReducer,
         refunds: refundReducer,
         eventCapacity: eventCapacityReducer,
