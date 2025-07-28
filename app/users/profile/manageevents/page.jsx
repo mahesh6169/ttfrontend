@@ -26,8 +26,8 @@ const ManageEventsPage = () => {
     router.push(`/events/edit/${event._id}`);
   };
 
-  const confirmDelete = (eventId) => {
-    setEventToDelete(eventId);
+  const confirmDelete = (event) => {
+    setEventToDelete(event);
     setIsModalOpen(true);
   };
 
@@ -36,7 +36,7 @@ const handleDelete = async () => {
   if (deleteStatus === 'loading') return;
   
   try {
-    const result = await dispatch(deleteMyEvent(eventToDelete));
+    const result = await dispatch(deleteMyEvent(eventToDelete._id));
 
     if (deleteMyEvent.fulfilled.match(result)) {
       toast.success('Event deleted successfully.');
@@ -142,7 +142,7 @@ const handleModalCancel = () => {
     {formStatus === 'loading' ? 'Loading...' : 'Edit'}
   </button>
   <button
-    onClick={() => confirmDelete(event._id)}
+    onClick={() => confirmDelete(event)}
     disabled={deleteStatus === 'loading'}
     className={`bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 ml-4 ${
       deleteStatus === 'loading' ? 'opacity-50 cursor-not-allowed' : ''
@@ -151,6 +151,12 @@ const handleModalCancel = () => {
     Delete
   </button>
 </div>
+{/* Add note for recurring events */}
+{event.recurrence?.isRecurring && (
+  <p className="text-xs text-orange-600 mt-2 italic">
+    ⚠️ This is a recurring event. Changes will apply to all occurrences.
+  </p>
+)}
 
     </div>
   );
@@ -163,7 +169,13 @@ const handleModalCancel = () => {
   onConfirm={handleDelete}
   onCancel={handleModalCancel}
   title="Delete Event"
-  message={deleteStatus === 'loading' ? "Deleting event..." : "Are you sure you want to delete this event?"}
+  message={
+    deleteStatus === 'loading' 
+      ? "Deleting event..." 
+      : eventToDelete?.recurrence?.isRecurring
+        ? "⚠️ This is a recurring event. Deleting will remove ALL occurrences and associated data. Are you sure you want to delete this entire event series?"
+        : "Are you sure you want to delete this event?"
+  }
   confirmText={deleteStatus === 'loading' ? "Deleting..." : "Delete"}
   isLoading={deleteStatus === 'loading'}
 />

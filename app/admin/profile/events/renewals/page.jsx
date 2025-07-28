@@ -5,6 +5,8 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Pagination from '@/components/Pagination';
+import { formatInTimeZone } from 'date-fns-tz';
+import { FaRedo } from 'react-icons/fa';
 
 const ManageEventsPage = () => {
   // State management - replaces Redux store
@@ -154,7 +156,7 @@ const ManageEventsPage = () => {
               </thead>
               <tbody>
                 {events.map((event) => {
-                  const { _id, title, email, dateTime, status, actions } = event;
+                  const { _id, title, email, dateTime, timeZone, status, actions, isRecurring } = event;
                   const reminderKey1 = `${_id}-1`;
                   const reminderKey2 = `${_id}-2`;
 
@@ -168,7 +170,20 @@ const ManageEventsPage = () => {
                       <td className="border p-2">{title}</td>
                       <td className="border p-2">{email}</td>
                       <td className="border p-2">
-                        {new Date(dateTime).toLocaleString('en-AU')}
+                        <div className="flex items-center gap-2">
+                          {formatInTimeZone(
+                            dateTime,
+                            timeZone || 'Australia/Sydney',
+                            'dd/MM/yyyy h:mm a zzz'
+                          )}
+                          {isRecurring && (
+                            <FaRedo 
+                              className="text-blue-500" 
+                              title="Recurring Event"
+                              size={12}
+                            />
+                          )}
+                        </div>
                       </td>
                       <td className="border p-2 capitalize">{status}</td>
 
