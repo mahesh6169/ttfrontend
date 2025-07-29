@@ -350,7 +350,13 @@ return (
         <button 
           type="button" 
           className={`flex-1 p-3 ${formData.adType === 'offered' ? 'bg-teal-600 text-white' : 'bg-white text-gray-700'}`} 
-          onClick={() => handleChange('adType', 'offered')}
+          onClick={() => {
+            handleChange('adType', 'offered');
+            // If switching from wanted to offered, reset pricing
+            if (formData.adType === 'wanted' && selectedPriceType === '') {
+              setSelectedPriceType('');
+            }
+          }}
         >
           Offered
         </button>
@@ -377,7 +383,16 @@ return (
       <label className="block font-bold mb-2 text-gray-700">Category <span className="text-red-500">*</span></label>
       <CategorySelector
         value={formData.category}
-        onChange={(value) => handleChange('category', value)}
+        onChange={(value) => {
+          handleChange('category', value);
+          // Reset dynamic fields and pricing when changing category
+          setFormData(prev => ({
+            ...prev,
+            fields: {},
+            pricing: []
+          }));
+          setSelectedPriceType('');
+        }}
         categories={availableCategories}
         placeholder="Select a category"
         required={true}

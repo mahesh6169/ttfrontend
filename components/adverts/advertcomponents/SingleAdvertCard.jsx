@@ -4,6 +4,7 @@ import { format, differenceInDays } from 'date-fns';
 import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
 import SendMessage from '@/components/chat/SendMessage';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 const FALLBACK_IMAGE_URL =
   'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
@@ -58,15 +59,15 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
       
       switch(price.priceType) {
         case 'sale':
-          return { label: 'For Sale', value: `$${price.amount}` };
+          return { label: 'For Sale', value: formatCurrency(price.amount) };
         case 'hire':
-          return { label: 'For Hire', value: `$${price.amount}${unit}` };
+          return { label: 'For Hire', value: `${formatCurrency(price.amount)}${unit}` };
         case 'rent':
-          return { label: 'For Rent', value: `$${price.amount}${unit}` };
+          return { label: 'For Rent', value: `${formatCurrency(price.amount)}${unit}` };
         case 'share':
-          return { label: 'For Share', value: `$${price.amount}${unit}` };
+          return { label: 'For Share', value: `${formatCurrency(price.amount)}${unit}` };
         default:
-          return { label: 'Price', value: `$${price.amount}${unit}` };
+          return { label: 'Price', value: `${formatCurrency(price.amount)}${unit}` };
       }
     });
   };

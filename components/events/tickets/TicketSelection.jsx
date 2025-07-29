@@ -35,6 +35,7 @@ import {
   selectPurchaseLoading,
   setRefundPolicyInfo
 } from '@/store/slices/events/ticketPurchaseSlice';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 const TicketSelection = ({ event, isOpen, onClose }) => {
   const router = useRouter();
@@ -307,7 +308,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
                         </h5>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-green-600">
-                            ${ticketType.price?.toFixed(2) || '0.00'}
+                            {formatCurrency(ticketType.price || 0)}
                           </p>
                         </div>
                       </div>
@@ -387,7 +388,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
                   return (
                     <div key={selectedTicket.ticketTypeId} className="flex justify-between text-sm">
                       <span>{selectedTicket.name} × {selectedTicket.quantity}</span>
-                      <span>${(selectedTicket.price * selectedTicket.quantity).toFixed(2)}</span>
+                      <span>{formatCurrency(selectedTicket.price * selectedTicket.quantity)}</span>
                     </div>
                   );
                 })}

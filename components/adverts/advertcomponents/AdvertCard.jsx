@@ -3,6 +3,7 @@ import { MdLocationOn } from 'react-icons/md';
 import { BsChatRightDots } from 'react-icons/bs';
 import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
   const postedByName = advert.user?.name || 'Guest';
@@ -24,13 +25,13 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
 
     // Map price types to display labels
     const priceTypeLabels = {
-      'sale': `$${activePricing.amount}`,
-      'hire': `For Hire - $${activePricing.amount} p/${activePricing.unit || 'day'}`,
-      'rent': `For Rent - $${activePricing.amount} p/${activePricing.unit || 'week'}`,
-      'share': `For Share - $${activePricing.amount} p/${activePricing.unit || 'week'}`
+      'sale': formatCurrency(activePricing.amount),
+      'hire': `For Hire - ${formatCurrency(activePricing.amount)} p/${activePricing.unit || 'day'}`,
+      'rent': `For Rent - ${formatCurrency(activePricing.amount)} p/${activePricing.unit || 'week'}`,
+      'share': `For Share - ${formatCurrency(activePricing.amount)} p/${activePricing.unit || 'week'}`
     };
 
-    return priceTypeLabels[activePricing.priceType] || `$${activePricing.amount}`;
+    return priceTypeLabels[activePricing.priceType] || formatCurrency(activePricing.amount);
   };
 
   const priceLabel = getPriceLabel(advert.pricing);
