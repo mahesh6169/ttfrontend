@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
-// redirect to /adverts.......
+// redirect to /listings.......
 
 export default function Home() {
-  redirect('/adverts');
+  redirect('/listings');
 }

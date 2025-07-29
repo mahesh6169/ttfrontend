@@ -23,7 +23,7 @@ const Sidebar = ({ onLinkClick }) => {
     { type: 'divider' },
     
     // Management section
-    { label: 'Manage Ads', href: '/users/profile/manageads', icon: <FaAd /> },
+    { label: 'Manage Listings', href: '/users/profile/manageads', icon: <FaAd /> },
     { label: 'Manage Events', href: '/users/profile/manageevents', icon: <FaCalendarAlt /> },
     { label: 'Manage Topics', href: '/users/profile/managethreads', icon: <BsChatText /> },
     

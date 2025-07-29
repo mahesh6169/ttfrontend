@@ -71,7 +71,7 @@ const AdvertDetail = () => {
               resourceType: 'advert',
               participantId: advert.postedBy?._id,
               owner: advert.postedBy?.name,
-              preserveRedirectUrl: `/adverts/views/${id}`,
+              preserveRedirectUrl: `/listings/views/${id}`,
             }}
           />
         </div>
@@ -83,7 +83,7 @@ const AdvertDetail = () => {
             resourceType="advert"
             participantId={advert.postedBy?._id}
             owner={advert.postedBy?.name}
-            preserveRedirectUrl={`/adverts/views/${id}`}
+            preserveRedirectUrl={`/listings/views/${id}`}
           />
         </div>
       </div>

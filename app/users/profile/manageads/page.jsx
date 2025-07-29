@@ -35,13 +35,13 @@ export default function ProfilePage() {
   useEffect(() => {
     if (adverts && adverts.length > 0) {
       adverts.forEach((advert) => {
-        router.prefetch(`/adverts/edit/${advert._id}`);
+        router.prefetch(`/listings/edit/${advert._id}`);
       });
     }
   }, [adverts, router]);
 
   const handleEdit = (advert) => {
-    router.push(`/adverts/edit/${advert._id}`);
+    router.push(`/listings/edit/${advert._id}`);
   };
 
   const confirmDelete = (id) => {
@@ -106,13 +106,13 @@ export default function ProfilePage() {
         Manage Ads
       </h1>
       <Link
-        href="/adverts/add"
+        href="/listings/add"
         onClick={() =>
           localStorage.setItem('cancelRedirectUrl', '/users/profile/manageads')
         }
         className="block my-2 p-2 bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 font-semibold lg:w-1/4 text-center rounded"
       >
-        + Post New Advertisement
+        + Post New Listing
       </Link>
 
       {adverts && adverts.length > 0 ? (

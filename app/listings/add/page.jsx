@@ -89,13 +89,13 @@ const AddAdvertPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-6">Create New Advert</h1>
+      <h1 className="text-2xl font-bold mb-6">Create New Listing</h1>
       <RequireLogin message="You must be logged in to add a new event.">
       
       {/* Update to check createStatus instead of status */}
       {createStatus === 'loading' && (
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
-          <p className="text-blue-700">Creating your advert...</p>
+          <p className="text-blue-700">Creating your Listing...</p>
         </div>
       )}
 

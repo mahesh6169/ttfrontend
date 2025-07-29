@@ -24,8 +24,8 @@ const ProfilePage = () => {
 
   const quickLinks = [
     {
-      title: 'My Adverts',
-      description: 'View and manage your posted adverts',
+      title: 'My Listings',
+      description: 'View and manage your posted Listings',
       icon: <FaAd className="w-8 h-8" />,
       href: '/users/profile/manageads',
       color: 'bg-blue-100 text-blue-600'
@@ -98,8 +98,8 @@ const ProfilePage = () => {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
           <div className="space-y-3">
-            <Link href="/adverts/create" className="block w-full text-center bg-teal-600 text-white py-2 px-4 rounded hover:bg-teal-700 transition">
-              Post New Advert
+            <Link href="/listings/add" className="block w-full text-center bg-teal-600 text-white py-2 px-4 rounded hover:bg-teal-700 transition">
+              Post New Listing
             </Link>
             <Link href="/events/create" className="block w-full text-center bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">
               Create New Event

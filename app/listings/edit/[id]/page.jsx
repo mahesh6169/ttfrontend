@@ -125,17 +125,17 @@ const EditAdvertPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-6">Edit Advert</h1>
+      <h1 className="text-2xl font-bold mb-6">Edit Listing</h1>
       <RequireLogin message="You must be logged in to add a new event.">
 
       {fetchStatus === 'loading' && (
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
-          <p className="text-blue-700">Loading advert...</p>
+          <p className="text-blue-700">Loading Listing...</p>
         </div>
       )}
 
       {updateStatus === 'loading' && (
-        <LoadingSpinner message="Updating advert..." />
+        <LoadingSpinner message="Updating Listing..." />
       )}
 
       {errors && errors.length > 0 && (
@@ -158,7 +158,7 @@ const EditAdvertPage = () => {
       {/* If advert fetch failed but status is success */}
       {fetchStatus === 'succeeded' && !displayData && (
         <div className="text-red-600 mb-4">
-          Advert not found or you're not authorized to edit it.
+          Listing not found or you're not authorized to edit it.
         </div>
       )}
 

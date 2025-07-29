@@ -501,7 +501,7 @@ return (
       >
         {isLoading ? 
           (initialData ? 'Updating...' : 'Creating...') : 
-          (initialData ? 'Update Advert' : 'Create Advert')}
+          (initialData ? 'Update Listing' : 'Create Listing')}
       </button>
       <button 
         type="button" 

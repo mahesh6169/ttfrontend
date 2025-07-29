@@ -53,7 +53,7 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
         <FaHeart className={`text-sm sm:text-base ${isInWishlist ? 'text-white' : 'text-gray-700'}`} />
       </button>
 
-      <Link href={`/adverts/views/${advert._id}`}>
+      <Link href={`/listings/views/${advert._id}`}>
         {/* Image Box (50% height, full width) */}
         <div className="relative w-full h-40 sm:h-48 md:h-56">
           {advert.images?.length > 0 ? (

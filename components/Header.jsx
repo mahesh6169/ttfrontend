@@ -23,6 +23,7 @@ import { CgProfile } from 'react-icons/cg';
 import { TbLogout, TbLogin } from 'react-icons/tb';
 import { MdFavorite } from 'react-icons/md';
 import { BsChatText, BsChatDots } from 'react-icons/bs';
+import { HiSpeakerphone } from 'react-icons/hi';
 import { toast } from 'react-toastify';
 import { 
   setInActiveChat, 
@@ -85,7 +86,7 @@ const Header = () => {
             href="/"
             className="flex items-center gap-2 text-3xl font-extrabold"
           >
-            Telugufy
+            Desify
           </Link>
 
           {/* Desktop Nav Container - Hidden on mobile */}
@@ -93,9 +94,9 @@ const Header = () => {
             {/* Center Nav */}
             <div className="flex gap-6 mx-auto">
               <NavLink
-                href="/adverts"
+                href="/listings"
                 icon={<RiAdvertisementFill size={20} />}
-                text="Adverts"
+                text="Listings"
                 pathname={pathname}
               />
               <NavLink
@@ -186,7 +187,7 @@ const Header = () => {
           <NavLink
             href="/"
             icon={<RiAdvertisementFill size={20} />}
-            text="Adverts"
+            text="Listings"
             pathname={pathname}
             mobile
           />

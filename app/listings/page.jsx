@@ -452,10 +452,10 @@ const getCurrentSortLabel = () => {
         <div className="my-2 px-4">
           <div className="flex justify-start">
             <Link
-              href="/adverts/add"
+              href="/listings/add"
               className="bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 text-sm md:text-base rounded shadow font-semibold transition duration-200"
             >
-              Post Advert
+              Post Listing
             </Link>
           </div>
         </div>
