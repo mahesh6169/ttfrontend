@@ -11,6 +11,7 @@ import {
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
+import DeleteAccountModal from '@/components/DeleteAccountModal';
 
 const libraries = ['places'];
 
@@ -20,6 +21,8 @@ export default function Settings() {
   const userId = useSelector((state) => state.user.user?._id);
   const [autocomplete, setAutocomplete] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -110,20 +113,22 @@ export default function Settings() {
   };
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to delete your account? This action cannot be undone.'
-      )
-    )
-      return;
-
+    setIsDeleting(true);
     try {
       console.log('🔸 Deleting account for userId:', userId);
       await dispatch(deleteUserAccount(userId)).unwrap();
+      
+      // Clear any local storage or session data
+      localStorage.clear();
+      sessionStorage.clear();
+      
       toast.success('Account deleted successfully');
-      router.push('/');
+      
+      // Force a hard refresh to home page to clear all state
+      window.location.href = '/';
     } catch (err) {
       toast.error(err || 'Failed to delete account');
+      setIsDeleting(false);
     }
   };
 
@@ -225,12 +230,20 @@ export default function Settings() {
       {/* Delete Account Button */}
       <div className="mt-6 text-center">
         <button
-          onClick={handleDelete}
+          onClick={() => setShowDeleteModal(true)}
           className="text-red-600 hover:underline text-sm"
         >
           Delete My Account
         </button>
       </div>
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
