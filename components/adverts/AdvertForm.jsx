@@ -187,11 +187,7 @@ const renderPricingInputs = (pricingOptions) => {
   
   return (
     <div className="mt-4">
-      <h3 className="font-bold text-lg mb-4 text-gray-700">Pricing<span className="text-red-500 ml-1">*</span></h3>
       <div className="mb-4">
-        <label className="block font-semibold mb-1 text-gray-700">
-          {config.label}
-        </label>
         <div className="flex gap-4">
           <input
             type="number"
@@ -204,6 +200,7 @@ const renderPricingInputs = (pricingOptions) => {
               );
               handlePricingChange(updated);
             }}
+            placeholder="Amount"
             className="p-2 border rounded w-40"
           />
           {config.units && (
@@ -425,7 +422,7 @@ return (
           {section.specialField === 'pricing' && formData.adType === 'offered' && (
             <>
             <h3 className="font-bold text-lg mb-2 text-gray-700">
-              Pricing Type
+              {section.title}
               <span className="text-red-500 ml-1">*</span>
             </h3>
             

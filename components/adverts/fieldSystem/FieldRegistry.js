@@ -14,7 +14,7 @@ export const FORM_STRUCTURE = {
       id: 'fieldsSection',
       order: 20,
       title: null,
-      fields: ['brand', 'model', 'condition']
+      fields: ['condition']
     }
   ],
   fields: {

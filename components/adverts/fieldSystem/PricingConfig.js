@@ -2,7 +2,6 @@
 
 export const PRICING_CONFIG = {
   'Books, Art & Collectables': {
-    label: 'Pricing Options',
     required: true,
     options: {
       sell: {
@@ -23,7 +22,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Baby & Children': {
-    label: 'Pricing Options',
     required: true,
     options: {
       sell: {
@@ -44,7 +42,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Music & Games': {
-  label: 'Pricing Options',
   required: true,
   options: {
     sell: { enabled: true, label: 'Sell Price', units: null },
@@ -53,7 +50,6 @@ export const PRICING_CONFIG = {
   }
 },
 'Cars & Vehicles': {
-  label: 'Pricing Options',
   required: true,
   options: {
     sell: {
@@ -73,7 +69,6 @@ export const PRICING_CONFIG = {
 },
 
   'Fashion & Accessories': {
-  label: 'Pricing Options',
   required: true,
   options: {
     sell: { enabled: true, label: 'Sell Price', units: null },
@@ -83,7 +78,6 @@ export const PRICING_CONFIG = {
 },
 
 'Health, Sport & Fitness': {
-  label: 'Pricing Options',
   required: true,
   options: {
     sell: { enabled: true, label: 'Sell Price', units: null },
@@ -93,7 +87,6 @@ export const PRICING_CONFIG = {
 },
 
 'Home & Garden': {
-  label: 'Pricing Options',
   required: true,
   options: {
     sell: { enabled: true, label: 'Sell Price', units: null },
@@ -103,7 +96,6 @@ export const PRICING_CONFIG = {
 },
 
 'Pets': {
-  label: 'Pricing Options',
   required: true,
   options: {
     sell: { enabled: true, label: 'Sell Price', units: null },
@@ -112,7 +104,6 @@ export const PRICING_CONFIG = {
   }
 },
 'Electronics & Computers': {
-  label: 'Pricing Options',
   required: true,
   options: {
     sell: {
@@ -136,7 +127,6 @@ export const PRICING_CONFIG = {
   }
 },
   'Real Estate': {
-    label: 'Pricing Options',
     required: true,
     options: {
       sell: {
@@ -161,7 +151,6 @@ export const PRICING_CONFIG = {
   },
 
   'Jobs': {
-    label: 'Compensation',
     required: false,
     options: {
       salary: {
@@ -180,7 +169,6 @@ export const PRICING_CONFIG = {
   },
 
   'Overseas Goods': {
-    label: 'Pricing Options',
     required: true,
     options: {
       sell: {
@@ -194,7 +182,6 @@ export const PRICING_CONFIG = {
 
   // Service categories - pricing is optional
   'Home Repairs & Improvements': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       quote: {
@@ -211,7 +198,6 @@ export const PRICING_CONFIG = {
   },
 
   'Food & Catering Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       perperson: {
@@ -228,7 +214,6 @@ export const PRICING_CONFIG = {
   },
 
   'Party Hires & Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       hire: {
@@ -246,7 +231,6 @@ export const PRICING_CONFIG = {
 
   // Additional service categories - all optional pricing
   'Cleaning & Maintenance Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
@@ -254,7 +238,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Senior Travel Support': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
@@ -262,14 +245,12 @@ export const PRICING_CONFIG = {
     }
   },
   'Retail Shops & Stores': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       sell: { enabled: true, label: 'Sell Price', units: null }
     }
   },
   'Transport & Ride Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       pertrip: { enabled: true, label: 'Per Trip', units: null },
@@ -277,7 +258,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Legal & Immigration Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       consultation: { enabled: true, label: 'Consultation', units: ['hour'] },
@@ -285,7 +265,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Financial & Insurance Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       consultation: { enabled: true, label: 'Consultation', units: ['hour'] },
@@ -293,7 +272,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Academic Tutors & Education': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
@@ -301,7 +279,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Arts, Dance & Cultural Tutors': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
@@ -309,7 +286,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Business & Professional Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
@@ -317,7 +293,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Construction & Renovation Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       quote: { enabled: true, label: 'Quote Price', units: null },
@@ -325,7 +300,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Travel & Tourism Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       pertrip: { enabled: true, label: 'Per Trip', units: null },
@@ -333,7 +307,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Marketing & Advertising Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
@@ -341,7 +314,6 @@ export const PRICING_CONFIG = {
     }
   },
   'IT & Software Services': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
@@ -349,7 +321,6 @@ export const PRICING_CONFIG = {
     }
   },
   'Miscellaneous': {
-    label: 'Pricing (Optional)',
     required: false,
     options: {
       sell: { enabled: true, label: 'Sell Price', units: null },
