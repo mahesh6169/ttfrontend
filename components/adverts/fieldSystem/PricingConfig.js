@@ -180,151 +180,24 @@ export const PRICING_CONFIG = {
     }
   },
 
-  // Service categories - pricing is optional
-  'Home Repairs & Improvements': {
-    required: false,
+  'Miscellaneous': {
+    required: true,
     options: {
-      quote: {
+      sell: {
         enabled: true,
-        label: 'Quote Price',
-        units: null
+        label: 'Sell Price',
+        units: null,
       },
-      hourly: {
+      rent: {
         enabled: true,
-        label: 'Hourly Rate',
-        units: ['hour']
-      }
-    }
-  },
-
-  'Food & Catering Services': {
-    required: false,
-    options: {
-      perperson: {
-        enabled: true,
-        label: 'Per Person',
-        units: null
+        label: 'Rent',
+        units: ['day', 'week', 'month'],
       },
-      perorder: {
-        enabled: true,
-        label: 'Per Order',
-        units: null
-      }
-    }
-  },
-
-  'Party Hires & Services': {
-    required: false,
-    options: {
       hire: {
         enabled: true,
         label: 'Hire',
-        units: ['hour', 'day', 'event']
-      },
-      package: {
-        enabled: true,
-        label: 'Package Price',
-        units: null
+        units: ['hour', 'day', 'week'],
       }
-    }
-  },
-
-  // Additional service categories - all optional pricing
-  'Cleaning & Maintenance Services': {
-    required: false,
-    options: {
-      hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
-      quote: { enabled: true, label: 'Quote Price', units: null }
-    }
-  },
-  'Senior Travel Support': {
-    required: false,
-    options: {
-      hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
-      pertrip: { enabled: true, label: 'Per Trip', units: null }
-    }
-  },
-  'Retail Shops & Stores': {
-    required: false,
-    options: {
-      sell: { enabled: true, label: 'Sell Price', units: null }
-    }
-  },
-  'Transport & Ride Services': {
-    required: false,
-    options: {
-      pertrip: { enabled: true, label: 'Per Trip', units: null },
-      hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] }
-    }
-  },
-  'Legal & Immigration Services': {
-    required: false,
-    options: {
-      consultation: { enabled: true, label: 'Consultation', units: ['hour'] },
-      fixedfee: { enabled: true, label: 'Fixed Fee', units: null }
-    }
-  },
-  'Financial & Insurance Services': {
-    required: false,
-    options: {
-      consultation: { enabled: true, label: 'Consultation', units: ['hour'] },
-      commission: { enabled: true, label: 'Commission', units: null }
-    }
-  },
-  'Academic Tutors & Education': {
-    required: false,
-    options: {
-      hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
-      perlesson: { enabled: true, label: 'Per Lesson', units: null }
-    }
-  },
-  'Arts, Dance & Cultural Tutors': {
-    required: false,
-    options: {
-      hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
-      perlesson: { enabled: true, label: 'Per Lesson', units: null }
-    }
-  },
-  'Business & Professional Services': {
-    required: false,
-    options: {
-      hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
-      project: { enabled: true, label: 'Project Rate', units: null }
-    }
-  },
-  'Construction & Renovation Services': {
-    required: false,
-    options: {
-      quote: { enabled: true, label: 'Quote Price', units: null },
-      hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] }
-    }
-  },
-  'Travel & Tourism Services': {
-    required: false,
-    options: {
-      pertrip: { enabled: true, label: 'Per Trip', units: null },
-      package: { enabled: true, label: 'Package Price', units: null }
-    }
-  },
-  'Marketing & Advertising Services': {
-    required: false,
-    options: {
-      hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
-      project: { enabled: true, label: 'Project Rate', units: null }
-    }
-  },
-  'IT & Software Services': {
-    required: false,
-    options: {
-      hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] },
-      project: { enabled: true, label: 'Project Rate', units: null }
-    }
-  },
-  'Miscellaneous': {
-    required: false,
-    options: {
-      sell: { enabled: true, label: 'Sell Price', units: null },
-      hourly: { enabled: true, label: 'Hourly Rate', units: ['hour'] }
     }
   }
 };

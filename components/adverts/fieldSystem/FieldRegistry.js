@@ -14,7 +14,10 @@ export const FORM_STRUCTURE = {
       id: 'conditionSection',
       order: 15,
       title: null,
-      specialField: 'condition'
+      specialField: 'condition',
+      dependencies: {
+        priceType: ['sell']
+      }
     },
     {
       id: 'fieldsSection',
@@ -308,6 +311,33 @@ fields: {
         required: true
       }
     }
+  },
+
+  'Miscellaneous': {
+    sections: [
+      {
+        id: 'pricingSection',
+        order: 10,
+        title: 'Pricing Options',
+        specialField: 'pricing'
+      },
+      {
+        id: 'conditionSection',
+        order: 15,
+        title: null,
+        specialField: 'condition',
+        dependencies: {
+          priceType: ['sell']
+        }
+      },
+      {
+        id: 'fieldsSection',
+        order: 20,
+        title: null,
+        fields: []
+      }
+    ],
+    fields: {}
   },
 
 'Overseas Goods': {
