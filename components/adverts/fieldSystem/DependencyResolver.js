@@ -3,6 +3,7 @@
 import { getFormStructure } from './FieldRegistry';
 import { getAvailablePricingOptions, PRICING_CONFIG } from './PricingConfig';
 import { canAccessCategory } from './CategoryAccess';
+import { isSectionHiddenForWanted, isFieldHiddenForWanted, isFieldOptionalForWanted } from './WantedFieldsConfig';
 
 export class FormEngine {
   constructor(category, userRole, formData = {}) {
@@ -32,6 +33,11 @@ export class FormEngine {
 
   // Check if a section should be visible
   isSectionVisible(section) {
+    // Check if section should be hidden for wanted ads
+    if (this.formData.adType === 'wanted' && isSectionHiddenForWanted(this.category, section.id)) {
+      return false;
+    }
+    
     if (section.requiresSection) {
       const requiredSection = this.getSectionById(section.requiresSection);
       if (!requiredSection || !this.isSectionComplete(requiredSection)) {
@@ -112,10 +118,20 @@ export class FormEngine {
   // Check if a field should be visible based on dependencies
   isFieldVisible(fieldId, fieldConfig) {
     if (!fieldConfig) return false;
+    
+    // Check if field should be hidden for wanted ads
+    if (this.formData.adType === 'wanted' && isFieldHiddenForWanted(this.category, fieldId)) {
+      return false;
+    }
+    
     const dependencies = fieldConfig.dependencies || {};
     for (const [depField, allowedValues] of Object.entries(dependencies)) {
       let currentValue;
       if (depField === 'priceType') {
+        // For wanted ads, ignore priceType dependencies since pricing is hidden
+        if (this.formData.adType === 'wanted') {
+          continue; // Skip this dependency check
+        }
         currentValue = this.formData.pricing?.[0]?.priceType;
       } else {
         currentValue = this.getFieldValue(depField);
@@ -131,11 +147,8 @@ export class FormEngine {
   isFieldRequired(fieldId, fieldConfig) {
     if (!fieldConfig) return false;
     
-    // Fields that are optional for wanted ads
-    const optionalForWanted = ['brand', 'model', 'make', 'year', 'bedrooms', 'parking', 'jobTitle'];
-    
     // If it's a wanted ad and field is in the optional list, it's not required
-    if (this.formData.adType === 'wanted' && optionalForWanted.includes(fieldId)) {
+    if (this.formData.adType === 'wanted' && isFieldOptionalForWanted(this.category, fieldId)) {
       return false;
     }
     

@@ -219,7 +219,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             ))}
             
             {/* Condition */}
-            {advert.condition && (
+            {advert.condition && advert.condition !== 'null' && (
               <div className="text-sm sm:text-base">
                 <span className="font-semibold text-gray-700">Condition:</span>{' '}
                 <span className="text-gray-600">{advert.condition}</span>

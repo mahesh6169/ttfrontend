@@ -150,24 +150,6 @@ export const PRICING_CONFIG = {
     }
   },
 
-  'Jobs': {
-    required: false,
-    options: {
-      salary: {
-        enabled: true,
-        label: 'Salary',
-        units: ['hour', 'month', 'year'],
-        validFor: ['Full-time', 'Part-time', 'Contract']
-      },
-      stipend: {
-        enabled: true,
-        label: 'Stipend',
-        units: ['week', 'month'],
-        validFor: ['Internship']
-      }
-    }
-  },
-
   'Overseas Goods': {
     required: true,
     options: {

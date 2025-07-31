@@ -1,0 +1,108 @@
+// components/adverts/fieldSystem/WantedFieldsConfig.js
+
+export const WANTED_FIELDS_CONFIG = {
+  'Real Estate': {
+    hiddenSections: ['pricingSection'],
+    hiddenFields: [],
+    optionalFields: ['bedrooms', 'parking']
+  },
+  
+  'Cars & Vehicles': {
+    hiddenSections: ['pricingSection'],
+    hiddenFields: ['mileage', 'year'],
+    optionalFields: ['make', 'model', 'fuelType', 'transmission']
+  },
+  
+  'Jobs': {
+    hiddenSections: [],
+    hiddenFields: [],
+    optionalFields: ['jobTitle']
+  },
+  
+  'Books, Art & Collectables': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: []
+  },
+  
+  'Miscellaneous': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: []
+  },
+  
+  'Baby & Children': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: ['brand', 'model']
+  },
+  
+  'Music & Games': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: ['brand', 'model']
+  },
+  
+  'Fashion & Accessories': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: ['brand', 'model']
+  },
+  
+  'Health, Sport & Fitness': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: ['brand', 'model']
+  },
+  
+  'Home & Garden': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: ['brand', 'model']
+  },
+  
+  'Pets': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: ['brand', 'model']
+  },
+  
+  'Electronics & Computers': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: ['brand', 'model']
+  },
+  
+  'Overseas Goods': {
+    hiddenSections: [],
+    hiddenFields: [],
+    optionalFields: ['deliveryTime']
+  }
+};
+
+// Get wanted configuration for a category
+export const getWantedConfig = (category) => {
+  return WANTED_FIELDS_CONFIG[category] || {
+    hiddenSections: [],
+    hiddenFields: [],
+    optionalFields: []
+  };
+};
+
+// Check if a section should be hidden for wanted ads
+export const isSectionHiddenForWanted = (category, sectionId) => {
+  const config = getWantedConfig(category);
+  return config.hiddenSections.includes(sectionId);
+};
+
+// Check if a field should be hidden for wanted ads
+export const isFieldHiddenForWanted = (category, fieldId) => {
+  const config = getWantedConfig(category);
+  return config.hiddenFields.includes(fieldId);
+};
+
+// Check if a field should be optional for wanted ads
+export const isFieldOptionalForWanted = (category, fieldId) => {
+  const config = getWantedConfig(category);
+  return config.optionalFields.includes(fieldId);
+};

@@ -31,6 +31,14 @@ import {
   getDependencyResolver
 } from './DependencyResolver';
 
+import {
+  WANTED_FIELDS_CONFIG,
+  getWantedConfig,
+  isSectionHiddenForWanted,
+  isFieldHiddenForWanted,
+  isFieldOptionalForWanted
+} from './WantedFieldsConfig';
+
 // Export everything individually
 export {
   CATEGORY_ACCESS,
@@ -50,7 +58,12 @@ export {
   FormEngine,
   getFormEngine,
   DependencyResolver,
-  getDependencyResolver
+  getDependencyResolver,
+  WANTED_FIELDS_CONFIG,
+  getWantedConfig,
+  isSectionHiddenForWanted,
+  isFieldHiddenForWanted,
+  isFieldOptionalForWanted
 };
 
 // Export a unified API for the field system

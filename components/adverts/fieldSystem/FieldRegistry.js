@@ -59,7 +59,6 @@ fields: {
     type: 'text',
     label: 'Brand',
     placeholder: 'e.g., Baby Love , Mothers Choice',
-    required: true
   },
   model: {
     type: 'text',
@@ -215,7 +214,6 @@ fields: {
     type: 'text',
     label: 'Brand',
     placeholder: 'e.g., Apple, Samsung',
-    required: true
   },
   model: {
     type: 'text',
@@ -245,7 +243,7 @@ fields: {
         id: 'detailsSection',
         order: 30,
         title: 'Property Details',
-        requiresSection: 'pricingSection',
+        requiresSection: 'typeSection',
         fields: ['bedrooms', 'parking']
       }
     ],
@@ -262,7 +260,7 @@ fields: {
         min: 0,
         max: 6,
         dependencies: {
-          propertyType: ['Room', 'House' ],
+          propertyType: ['House' ],
           priceType: ['sell', 'rent', 'share']
         }
       },
@@ -272,7 +270,7 @@ fields: {
         min: 0,
         max: 2,
         dependencies: {
-          propertyType: ['Room', 'House', 'Commercial'],
+          propertyType: ['House', 'Commercial'],
           priceType: ['sell', 'rent', 'share']
         }
       }
@@ -288,13 +286,6 @@ fields: {
         order: 10,
         title: null,
         fields: ['jobType', 'jobTitle']
-      },
-      {
-        id: 'pricingSection',
-        order: 20,
-        title: 'Compensation',
-        specialField: 'pricing',
-        requiresSection: 'typeSection'
       }
     ],
     fields: {
