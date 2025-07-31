@@ -7,14 +7,12 @@ import messages from './slices/shared/messageSlice';
 import searchAdvertsReducer from './slices/adverts/searchAdvertsSlice';
 import searchEventsReducer from './slices/events/searchEventsSlice';
 import freeEventReducer from './slices/events/freeEventSlice';
-import filterEventReducer from './slices/events/filterEventSlice';
 import threadReducer from './slices/threads/threadSlice';
 import searchThreadsReducer from './slices/threads/searchThreadsSlice';
 import adminReducer from './slices/admin/users/adminSlice';
 import eventReducer from './slices/events/eventSlice';
 import seatSelectionReducer from './slices/events/seatSelectionSlice';
 import ticketPurchaseReducer from './slices/events/ticketPurchaseSlice';
-import filterThreadReducer from './slices/threads/filterThreadSlice';
 import supportReducer from './slices/supportSlice';
 import refundReducer from './slices/events/refundSlice';
 import eventCapacityReducer from './slices/events/eventCapacitySlice';
@@ -30,12 +28,10 @@ const store = configureStore({
         threads: threadReducer,
         admin: adminReducer,
         events: eventReducer,
-        eventFilters: filterEventReducer,
         searchEvents: searchEventsReducer,
         seatSelection: seatSelectionReducer,
         ticketPurchase: ticketPurchaseReducer,
         freeEvents: freeEventReducer,
-        filterThreads: filterThreadReducer,
         searchThreads: searchThreadsReducer,
         support: supportReducer,
         refunds: refundReducer,

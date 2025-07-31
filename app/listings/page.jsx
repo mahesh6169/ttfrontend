@@ -372,19 +372,21 @@ const getCurrentSortLabel = () => {
                       [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0
                       [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:bg-teal-700"
                   />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>1 km</span>
-                    <span>200 km</span>
+                  <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+                    <div className="flex gap-8">
+                      <span>1 km</span>
+                      <span>200 km</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setTempFilters({ ...tempFilters, location: null });
+                        setLocationInput('');
+                      }}
+                      className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Clear location
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      setTempFilters({ ...tempFilters, location: null });
-                      setLocationInput('');
-                    }}
-                    className="mt-3 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-                  >
-                    Clear location
-                  </button>
                 </div>
               )}
             </div>
