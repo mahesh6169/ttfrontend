@@ -11,22 +11,19 @@ export const FORM_STRUCTURE = {
       specialField: 'pricing'
     },
     {
+      id: 'conditionSection',
+      order: 15,
+      title: null,
+      specialField: 'condition'
+    },
+    {
       id: 'fieldsSection',
       order: 20,
       title: null,
-      fields: ['condition']
+      fields: []
     }
   ],
   fields: {
-    condition: {
-      type: 'select',
-      label: 'Condition',
-      options: ['New', 'Used', 'Refurbished'],
-      required: true,
-      dependencies: {
-        priceType: ['sell']
-      }
-    }
   }
 },
 
@@ -39,10 +36,19 @@ export const FORM_STRUCTURE = {
     specialField: 'pricing'
   },
   {
+    id: 'conditionSection',
+    order: 15,
+    title: null,
+    specialField: 'condition',
+    dependencies: {
+      priceType: ['sell']
+    }
+  },
+  {
     id: 'fieldsSection',
     order: 20,
     title: null,
-    fields: ['brand', 'model', 'condition']
+    fields: ['brand', 'model']
   }
 ],
 fields: {
@@ -56,15 +62,6 @@ fields: {
     type: 'text',
     label: 'Model',
     placeholder: 'e.g., Maxi Cosi, Britax',
-  },
-  condition: {
-    type: 'select',
-    label: 'Condition',
-    options: ['New', 'Used', 'Refurbished'],
-    required: true,
-    dependencies: {
-      priceType: ['sell']
-    }
   }
 }
 },
@@ -72,18 +69,12 @@ fields: {
 'Music & Games': {
   sections: [
     { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
-    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model', 'condition'] }
+    { id: 'conditionSection', order: 15, title: null, specialField: 'condition' },
+    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
     brand: { type: 'text', label: 'Brand', placeholder: 'e.g., Yamaha, Fender, Sony' },
-    model: { type: 'text', label: 'Model', placeholder: 'e.g., Stratocaster, PlayStation 5' },
-    condition: {
-      type: 'select',
-      label: 'Condition',
-      options: ['New', 'Used', 'Refurbished'],
-      required: true,
-      dependencies: { priceType: ['sell'] }
-    }
+    model: { type: 'text', label: 'Model', placeholder: 'e.g., Stratocaster, PlayStation 5' }
   }
 },
 
@@ -91,31 +82,16 @@ fields: {
   typeField: 'vehicleType',
   sections: [
     {
-      id: 'typeSection',
-      order: 10,
-      title: null,
-      fields: ['vehicleType']
-    },
-    {
-      id: 'basicDetailsSection',
-      order: 15,
-      title: null,
-      requiresSection: 'typeSection',
-      fields: ['make', 'model', 'year']
-    },
-    {
       id: 'pricingSection',
-      order: 20,
+      order: 10,
       title: 'Pricing Options',
-      specialField: 'pricing',
-      requiresSection: 'basicDetailsSection'
+      specialField: 'pricing'
     },
     {
-      id: 'detailsSection',
-      order: 30,
+      id: 'vehicleDetailsSection',
+      order: 20,
       title: 'Vehicle Details',
-      requiresSection: 'basicDetailsSection',
-      fields: ['fuelType','mileage', 'transmission']
+      fields: ['vehicleType', 'make', 'model', 'year', 'fuelType', 'mileage', 'transmission']
     }
   ],
   fields: {
@@ -162,72 +138,48 @@ fields: {
 'Fashion & Accessories': {
   sections: [
     { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
-    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model', 'condition'] }
+    { id: 'conditionSection', order: 15, title: null, specialField: 'condition' },
+    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
     brand: { type: 'text', label: 'Brand', placeholder: 'e.g., Nike, Gucci, Zara' },
-    model: { type: 'text', label: 'Model', placeholder: 'e.g., Air Max, Marmont Bag' },
-    condition: {
-      type: 'select',
-      label: 'Condition',
-      options: ['New', 'Used', 'Refurbished'],
-      required: true,
-      dependencies: { priceType: ['sell'] }
-    }
+    model: { type: 'text', label: 'Model', placeholder: 'e.g., Air Max, Marmont Bag' }
   }
 },
 
 'Health, Sport & Fitness': {
   sections: [
     { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
-    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model', 'condition'] }
+    { id: 'conditionSection', order: 15, title: null, specialField: 'condition' },
+    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
     brand: { type: 'text', label: 'Brand', placeholder: 'e.g., Adidas, Fitbit, Schwinn' },
-    model: { type: 'text', label: 'Model', placeholder: 'e.g., Versa 2, IC4' },
-    condition: {
-      type: 'select',
-      label: 'Condition',
-      options: ['New', 'Used', 'Refurbished'],
-      required: true,
-      dependencies: { priceType: ['sell'] }
-    }
+    model: { type: 'text', label: 'Model', placeholder: 'e.g., Versa 2, IC4' }
   }
 },
 
 'Home & Garden': {
   sections: [
     { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
-    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model', 'condition'] }
+    { id: 'conditionSection', order: 15, title: null, specialField: 'condition' },
+    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
     brand: { type: 'text', label: 'Brand', placeholder: 'e.g., Weber, IKEA, Makita' },
-    model: { type: 'text', label: 'Model', placeholder: 'e.g., Genesis II, MALM, DHP482' },
-    condition: {
-      type: 'select',
-      label: 'Condition',
-      options: ['New', 'Used', 'Refurbished'],
-      required: true,
-      dependencies: { priceType: ['sell'] }
-    }
+    model: { type: 'text', label: 'Model', placeholder: 'e.g., Genesis II, MALM, DHP482' }
   }
 },
 
 'Pets': {
   sections: [
     { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
-    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model', 'condition'] }
+    { id: 'conditionSection', order: 15, title: null, specialField: 'condition' },
+    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
     brand: { type: 'text', label: 'Brand', placeholder: 'e.g., Pedigree, Royal Canin' },
-    model: { type: 'text', label: 'Model', placeholder: 'e.g., Puppy Food, Maxi Adult' },
-    condition: {
-      type: 'select',
-      label: 'Condition',
-      options: ['New', 'Used', 'Refurbished'],
-      required: true,
-      dependencies: { priceType: ['sell'] }
-    }
+    model: { type: 'text', label: 'Model', placeholder: 'e.g., Puppy Food, Maxi Adult' }
   }
 },
 
@@ -240,10 +192,19 @@ fields: {
     specialField: 'pricing'
   },
   {
+    id: 'conditionSection',
+    order: 15,
+    title: null,
+    specialField: 'condition',
+    dependencies: {
+      priceType: ['sell']
+    }
+  },
+  {
     id: 'fieldsSection',
     order: 20,
     title: null,
-    fields: ['brand', 'model', 'condition']
+    fields: ['brand', 'model']
   }
 ],
 fields: {
@@ -257,15 +218,6 @@ fields: {
     type: 'text',
     label: 'Model',
     placeholder: 'e.g., iPhone 12 Pro'
-  },
-  condition: {
-    type: 'select',
-    label: 'Condition',
-    options: ['New', 'Used', 'Refurbished'],
-    required: true,
-    dependencies: {
-      priceType: ['sell']
-    }
   }
 }
 },

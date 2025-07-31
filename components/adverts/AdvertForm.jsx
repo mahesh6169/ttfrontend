@@ -20,6 +20,7 @@ const AdvertForm = ({
     category: '',
     description: '',
     adType: 'offered',
+    condition: '',
     fields: {},
     pricing: [],
     communities: [],
@@ -46,6 +47,7 @@ const AdvertForm = ({
     if (initialData) {
       setFormData({
         ...initialData,
+        condition: initialData.condition || '',
         fields: initialData.fields || {},
         pricing: initialData.pricing || [],
         communities: initialData.communities || [],
@@ -312,6 +314,7 @@ const handleSubmit = (e) => {
     category: formData.category,
     description: formData.description,
     adType: formData.adType,
+    condition: formData.condition || null,
     address: formData.address,
     fields: formData.fields,
     pricing: formData.adType === 'wanted' ? [] : formData.pricing,
@@ -342,16 +345,18 @@ return (
 
     {/* Ad Type */}
     <div>
-      <label className="block font-bold mb-2 text-gray-700">Ad Type</label>
+      <label className="block font-bold mb-2 text-gray-700">
+        Ad Type
+        {initialData && <span className="text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
+      </label>
       <div className="flex border border-gray-300 rounded overflow-hidden">
         <button 
           type="button" 
-          className={`flex-1 p-3 ${formData.adType === 'offered' ? 'bg-teal-600 text-white' : 'bg-white text-gray-700'}`} 
+          disabled={!!initialData}
+          className={`flex-1 p-3 ${formData.adType === 'offered' ? 'bg-teal-600 text-white' : 'bg-white text-gray-700'} ${initialData ? 'opacity-50 cursor-not-allowed' : ''}`} 
           onClick={() => {
-            handleChange('adType', 'offered');
-            // If switching from wanted to offered, reset pricing
-            if (formData.adType === 'wanted' && selectedPriceType === '') {
-              setSelectedPriceType('');
+            if (!initialData) {
+              handleChange('adType', 'offered');
             }
           }}
         >
@@ -359,15 +364,12 @@ return (
         </button>
         <button 
           type="button" 
-          className={`flex-1 p-3 ${formData.adType === 'wanted' ? 'bg-teal-600 text-white' : 'bg-white text-gray-700'}`} 
+          disabled={!!initialData}
+          className={`flex-1 p-3 ${formData.adType === 'wanted' ? 'bg-teal-600 text-white' : 'bg-white text-gray-700'} ${initialData ? 'opacity-50 cursor-not-allowed' : ''}`} 
           onClick={() => {
-            // When switching to "wanted", clear pricing data
-            setFormData(prev => ({
-              ...prev,
-              adType: 'wanted',
-              pricing: []
-            }));
-            setSelectedPriceType('');
+            if (!initialData) {
+              handleChange('adType', 'wanted');
+            }
           }}
         >
           Wanted
@@ -377,22 +379,21 @@ return (
 
     {/* Category */}
     <div>
-      <label className="block font-bold mb-2 text-gray-700">Category <span className="text-red-500">*</span></label>
+      <label className="block font-bold mb-2 text-gray-700">
+        Category <span className="text-red-500">*</span>
+        {initialData && <span className="text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
+      </label>
       <CategorySelector
         value={formData.category}
         onChange={(value) => {
-          handleChange('category', value);
-          // Reset dynamic fields and pricing when changing category
-          setFormData(prev => ({
-            ...prev,
-            fields: {},
-            pricing: []
-          }));
-          setSelectedPriceType('');
+          if (!initialData) {
+            handleChange('category', value);
+          }
         }}
         categories={availableCategories}
         placeholder="Select a category"
         required={true}
+        disabled={!!initialData}
       />
     </div>
 
@@ -446,6 +447,27 @@ return (
             {/* Render the pricing inputs */}
             {renderPricingInputs(section.pricingOptions)}
           </>
+        )}
+        
+        {/* Special handling for condition section */}
+        {section.specialField === 'condition' && formData.adType === 'offered' && 
+         formData.pricing.some(p => p.priceType === 'sell') && (
+          <div className="mb-4">
+            <label className="block font-bold mb-2 text-gray-700">
+              Condition <span className="text-red-500 ml-1">*</span>
+            </label>
+            <select
+              value={formData.condition}
+              onChange={(e) => handleChange('condition', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
+              required={true}
+            >
+              <option value="">Select Condition</option>
+              <option value="New">New</option>
+              <option value="Used">Used</option>
+              <option value="Refurbished">Refurbished</option>
+            </select>
+          </div>
         )}
         
         {/* Regular fields for non-pricing sections */}

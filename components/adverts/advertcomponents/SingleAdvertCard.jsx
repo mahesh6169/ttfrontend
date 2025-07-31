@@ -210,9 +210,25 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
               </div>
             )}
             
-            {/* Location - Full width if address exists */}
+            {/* Price Information */}
+            {priceLabels && priceLabels.map((price, index) => (
+              <div key={index} className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">{price.label}:</span>{' '}
+                <span className="text-gray-600">{price.value}</span>
+              </div>
+            ))}
+            
+            {/* Condition */}
+            {advert.condition && (
+              <div className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">Condition:</span>{' '}
+                <span className="text-gray-600">{advert.condition}</span>
+              </div>
+            )}
+            
+            {/* Location - Full width at the bottom */}
             {advert.address && (
-              <div className="text-sm sm:text-base sm:col-span-2">
+              <div className="text-sm sm:text-base col-span-1 sm:col-span-2">
                 <span className="font-semibold text-gray-700">
                   {advert.address.street ? 'Address:' : 'Location:'}
                 </span>{' '}
@@ -223,14 +239,6 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
                 </span>
               </div>
             )}
-            
-            {/* Price Information */}
-            {priceLabels && priceLabels.map((price, index) => (
-              <div key={index} className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">{price.label}:</span>{' '}
-                <span className="text-gray-600">{price.value}</span>
-              </div>
-            ))}
           </div>
         </div>
       </div>

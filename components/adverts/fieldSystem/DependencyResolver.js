@@ -38,6 +38,25 @@ export class FormEngine {
         return false;
       }
     }
+    
+    // Check section dependencies (like field dependencies)
+    if (section.dependencies) {
+      for (const [depField, allowedValues] of Object.entries(section.dependencies)) {
+        let currentValue;
+        if (depField === 'priceType') {
+          // For priceType, check the pricing array
+          const hasPriceType = this.formData.pricing?.some(p => allowedValues.includes(p.priceType));
+          if (!hasPriceType) return false;
+        } else {
+          // For other fields, check the field value
+          currentValue = this.getFieldValue(depField);
+          if (!currentValue || !allowedValues.includes(currentValue)) {
+            return false;
+          }
+        }
+      }
+    }
+    
     return true;
   }
 
@@ -153,6 +172,9 @@ export class FormEngine {
             pricingConfig: this.getPricingConfig()
           });
         }
+      } else if (section.specialField === 'condition') {
+        // Special handling for condition section
+        visibleSections.push(section);
       } else {
         // Regular section with fields
         const visibleFields = this.getVisibleFieldsForSection(section);

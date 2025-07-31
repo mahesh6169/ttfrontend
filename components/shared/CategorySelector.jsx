@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaChevronDown, FaSearch, FaTimes } from 'react-icons/fa';
 
-const CategorySelector = ({ value, onChange, categories, placeholder = "Select a category", required = false }) => {
+const CategorySelector = ({ value, onChange, categories, placeholder = "Select a category", required = false, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef(null);
@@ -48,18 +48,19 @@ const CategorySelector = ({ value, onChange, categories, placeholder = "Select a
       {/* Selected Value Display */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
         className={`w-full p-3 border rounded-lg bg-white text-left flex items-center justify-between
           ${value ? 'text-gray-900' : 'text-gray-500'}
           ${isOpen ? 'border-teal-500 ring-2 ring-teal-200' : 'border-gray-300'}
-          hover:border-gray-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200'}
           transition-all duration-200`}
       >
         <span className="truncate pr-2">
           {value || placeholder}
         </span>
         <div className="flex items-center gap-2">
-          {value && !isOpen && (
+          {value && !isOpen && !disabled && (
             <FaTimes 
               className="w-4 h-4 text-gray-400 hover:text-gray-600"
               onClick={handleClear}
