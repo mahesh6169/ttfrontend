@@ -49,6 +49,7 @@ const initialState = {
     categories: [],
     communities: [],
     location: null, // { coordinates: [lng, lat], radius: 60, name: 'Address' }
+    state: '', // Australian state code (NSW, VIC, etc.)
     month: '', // Format: "YYYY-MM"
     searchText: '',
     sortBy: 'date' // 'date', 'distance'
@@ -92,7 +93,15 @@ const searchEventsSlice = createSlice({
     
     // Clear all filters
     clearAllFilters: (state) => {
-      state.filters = initialState.filters;
+      state.filters = {
+        categories: [],
+        communities: [],
+        location: null,
+        state: '',
+        month: '',
+        searchText: '',
+        sortBy: 'date'
+      };
       state.pagination.page = 1;
     },
     

@@ -20,6 +20,7 @@ import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 import { toast } from 'react-toastify';
+import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 
 const libraries = ['places'];
 
@@ -64,6 +65,7 @@ const ThreadsPage = () => {
       categories: [...filters.categories],
       communities: [...filters.communities],
       location: filters.location,
+      state: filters.state || '',
       sortBy: filters.sortBy,
     });
     // Set location input when filter modal opens
@@ -132,6 +134,7 @@ const ThreadsPage = () => {
       categories: [],
       communities: [],
       location: null,
+      state: '',
       sortBy: 'newest',
     });
     setLocationInput('');
@@ -185,6 +188,11 @@ const ThreadsPage = () => {
       dispatch(updateFilter({ filterType: 'location', value: null }));
     }
     
+    // Apply state filter
+    if (tempFilters.state !== filters.state) {
+      dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
+    }
+    
     // Apply sort
     dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
     
@@ -206,6 +214,7 @@ const ThreadsPage = () => {
     if (filters.categories.length > 0) count++;
     if (filters.communities.length > 0) count++;
     if (filters.location) count++;
+    if (filters.state) count++;
     if (filters.searchText) count++;
     return count;
   };
@@ -251,9 +260,44 @@ const ThreadsPage = () => {
 
           {/* Filter Content */}
           <div className="p-4 pb-20">
-            {/* Location with Radius */}
+            {/* State Filter */}
             <div className="mb-6">
+              <h3 className="font-semibold text-gray-700 mb-3">State</h3>
+              <div className="grid grid-cols-4 gap-2">
+                {AUSTRALIAN_STATES.map(state => (
+                  <button
+                    key={state.code}
+                    onClick={() => {
+                      if (tempFilters.state === state.code) {
+                        setTempFilters({ ...tempFilters, state: '' });
+                      } else {
+                        setTempFilters({ ...tempFilters, state: state.code, location: null });
+                        setLocationInput('');
+                      }
+                    }}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      tempFilters.state === state.code
+                        ? 'bg-teal-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    } ${tempFilters.location ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={!!tempFilters.location}
+                    title={state.name}
+                  >
+                    {state.code}
+                  </button>
+                ))}
+              </div>
+              {tempFilters.location && (
+                <p className="text-xs text-gray-500 mt-2">Clear location to use state filter</p>
+              )}
+            </div>
+
+            {/* Location with Radius */}
+            <div className={`mb-6 ${tempFilters.state ? 'opacity-50' : ''}`}>
               <h3 className="font-semibold text-gray-700 mb-3">Location</h3>
+              {tempFilters.state && (
+                <p className="text-xs text-gray-500 mb-2">Clear state selection to use location filter</p>
+              )}
               <LoadScriptNext
                 googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                 libraries={libraries}
@@ -262,7 +306,7 @@ const ThreadsPage = () => {
                 <Autocomplete
                   onLoad={(autocompleteInstance) => setAutocomplete(autocompleteInstance)}
                   onPlaceChanged={() => {
-                    if (autocomplete) {
+                    if (autocomplete && !tempFilters.state) {
                       const place = autocomplete.getPlace();
                       if (place.geometry) {
                         const coordinates = [
@@ -274,7 +318,7 @@ const ThreadsPage = () => {
                           radius: tempFilters.location?.radius || 10,
                           name: place.formatted_address || 'Selected Location'
                         };
-                        setTempFilters({ ...tempFilters, location });
+                        setTempFilters({ ...tempFilters, location, state: '' });
                         setLocationInput(place.formatted_address);
                       }
                     }
@@ -289,7 +333,8 @@ const ThreadsPage = () => {
                     placeholder="Enter location..."
                     value={locationInput}
                     onChange={(e) => setLocationInput(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    disabled={!!tempFilters.state}
                   />
                 </Autocomplete>
               </LoadScriptNext>
@@ -324,19 +369,21 @@ const ThreadsPage = () => {
                       [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0
                       [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:bg-teal-700"
                   />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>1 km</span>
-                    <span>200 km</span>
+                  <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+                    <div className="flex gap-8">
+                      <span>1 km</span>
+                      <span>200 km</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setTempFilters({ ...tempFilters, location: null });
+                        setLocationInput('');
+                      }}
+                      className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Clear location
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      setTempFilters({ ...tempFilters, location: null });
-                      setLocationInput('');
-                    }}
-                    className="mt-3 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-                  >
-                    Clear location
-                  </button>
                 </div>
               )}
             </div>
@@ -562,6 +609,18 @@ const ThreadsPage = () => {
                       </button>
                     </span>
                   ))}
+                  
+                  {filters.state && (
+                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
+                      State: {filters.state}
+                      <button
+                        onClick={() => dispatch(updateFilter({ filterType: 'state', value: '' }))}
+                        className="hover:text-gray-900 font-bold ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
                   
                   {filters.location && (
                     <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
