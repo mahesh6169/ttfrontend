@@ -8,7 +8,7 @@ const DemoPage = () => {
         <h1 className="text-xl">text-xl → Hello frvom DemoPage 👋</h1>
         <h1 className="text-2xl">text-2xl → Hello from DemoPage 👋</h1>
         <h1 className="text-3xl">text-3xl → Hello from DemoPage 👋</h1>
-        <h1 className="text-4xl">text-4xl → Hello from DemoPage 👋</h1>
+        <h1 className="text-4xl">text-4xl → Helloo from DemoPage 👋</h1>
         <h1 className="text-5xl">text-5xl → Hello from DemoPage 👋</h1>
         <h1 className="text-6xl">text-6xl → Hellooo from DemoPage 👋</h1>
         <h1 className="text-7xl">text-7xl → Helloo from DemoPage 👋</h1>
