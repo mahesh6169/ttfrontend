@@ -9,7 +9,7 @@ const desktopBanners = [
 ];
 
 const mobileBanners = [
-  "https://res.cloudinary.com/dtvrbdvkx/image/upload/v1753957812/mockad-m-1_cjp6fw.png",
+  "https://res.cloudinary.com/dtvrbdvkx/image/upload/v1753957996/mockad-m-1_anq9id.png",
   "https://res.cloudinary.com/dtvrbdvkx/image/upload/v1753958831/mockad-m-2_tvlu43.png",
 ];
 

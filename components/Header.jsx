@@ -262,7 +262,7 @@ const Header = () => {
                   <NavLink
                     href={`${baseProfilePath}/myregistrations`}
                     icon={<FaCalendarAlt />}
-                    text="My Registrations"
+                    text="My RSVPs"
                     pathname={pathname}
                     mobile
                     onClick={toggleMobileMenu}
@@ -419,7 +419,7 @@ const MobileDropdown = ({ label, icon, pathname, baseProfilePath, toggleMobileMe
   const dropdownItems = [
     { label: 'Stripe', href: `${baseProfilePath}/settings/stripeSetup`, icon: <FaMoneyCheckAlt /> },
     { label: 'Manage Sales', href: `${baseProfilePath}/refunds`, icon: <FaMoneyCheckAlt /> },
-    { label: 'Check-In', href: `${baseProfilePath}/checkInFree`, icon: <FaCalendarAlt /> },
+    { label: 'Check-In RSVPs', href: `${baseProfilePath}/checkInFree`, icon: <FaCalendarAlt /> },
   ];
   
   // Check if any child route is active

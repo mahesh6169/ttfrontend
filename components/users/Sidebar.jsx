@@ -16,7 +16,7 @@ const Sidebar = ({ onLinkClick }) => {
     { label: 'User Settings', href: '/users/profile/settings', icon: <FaUser /> },
     { label: 'Favourites', href: '/users/profile/favourites', icon: <MdFavorite /> },
     { label: 'Messages', href: '/users/profile/conversations', icon: <FaEnvelope /> },
-    { label: 'My Registrations', href: '/users/profile/myregistrations', icon: <FaCalendarAlt /> },
+    { label: 'My RSVPs', href: '/users/profile/myregistrations', icon: <FaCalendarAlt /> },
     { label: 'My Tickets', href: '/users/profile/mytickets', icon: <FaMoneyCheckAlt /> },
     
     // Divider
@@ -37,7 +37,7 @@ const Sidebar = ({ onLinkClick }) => {
       children: [
         { label: 'Stripe', href: '/users/profile/settings/stripeSetup', icon: <FaMoneyCheckAlt /> },
         { label: 'Manage Sales', href: '/users/profile/refunds', icon: <FaMoneyCheckAlt /> },
-        { label: 'Check-In', href: '/users/profile/checkInFree', icon: <FaCalendarAlt /> },
+        { label: 'Check-In RSVPs', href: '/users/profile/checkInFree', icon: <FaCalendarAlt /> },
       ]
     }
   ];
