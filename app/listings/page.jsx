@@ -17,7 +17,8 @@ import AdvertList from '@/components/adverts/advertcomponents/AdvertList';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
-import { toast } from 'react-toastify'; 
+import { toast } from 'react-toastify';
+import { AUSTRALIAN_STATES } from '@/constants/australianStates'; 
 
 const libraries = ['places'];
 
@@ -53,6 +54,7 @@ const sortOptions = [
       categories: [...filters.categories],
       communities: [...filters.communities],
       location: filters.location,
+      state: filters.state || '',
       adType: filters.adType,
       sortBy: filters.sortBy,
     });
@@ -121,7 +123,9 @@ const sortOptions = [
     // Clear all temporary filters
     setTempFilters({
       categories: [],
+      communities: [],
       location: null,
+      state: '',
       adType: null,
       sortBy: 'newest',
     });
@@ -181,6 +185,11 @@ const getCurrentSortLabel = () => {
       dispatch(updateFilter({ filterType: 'location', value: null }));
     }
     
+    // Apply state filter
+    if (tempFilters.state !== filters.state) {
+      dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
+    }
+    
     // Apply ad type and sort
     dispatch(updateFilter({ filterType: 'adType', value: tempFilters.adType }));
     dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
@@ -203,6 +212,7 @@ const getCurrentSortLabel = () => {
     if (filters.categories.length > 0) count++;
     if (filters.communities.length > 0) count++;
     if (filters.location) count++;
+    if (filters.state) count++;
     if (filters.searchText) count++;
     if (filters.adType) count++;
     return count;
@@ -253,9 +263,44 @@ const getCurrentSortLabel = () => {
 
           {/* Filter Content */}
           <div className="flex-1 overflow-y-auto p-3">
-            {/* Location with Radius */}
+            {/* State Filter */}
             <div className="mb-4">
+              <h3 className="font-semibold text-gray-700 mb-3">State</h3>
+              <div className="grid grid-cols-4 gap-2">
+                {AUSTRALIAN_STATES.map(state => (
+                  <button
+                    key={state.code}
+                    onClick={() => {
+                      if (tempFilters.state === state.code) {
+                        setTempFilters({ ...tempFilters, state: '' });
+                      } else {
+                        setTempFilters({ ...tempFilters, state: state.code, location: null });
+                        setLocationInput('');
+                      }
+                    }}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      tempFilters.state === state.code
+                        ? 'bg-teal-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    } ${tempFilters.location ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={!!tempFilters.location}
+                    title={state.name}
+                  >
+                    {state.code}
+                  </button>
+                ))}
+              </div>
+              {tempFilters.location && (
+                <p className="text-xs text-gray-500 mt-2">Clear location to use state filter</p>
+              )}
+            </div>
+
+            {/* Location with Radius */}
+            <div className={`mb-4 ${tempFilters.state ? 'opacity-50' : ''}`}>
               <h3 className="font-semibold text-gray-700 mb-3">Location</h3>
+              {tempFilters.state && (
+                <p className="text-xs text-gray-500 mb-2">Clear state selection to use location filter</p>
+              )}
               <LoadScriptNext
                 googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                 libraries={libraries}
@@ -264,7 +309,7 @@ const getCurrentSortLabel = () => {
                 <Autocomplete
                   onLoad={(autocompleteInstance) => setAutocomplete(autocompleteInstance)}
                   onPlaceChanged={() => {
-                    if (autocomplete) {
+                    if (autocomplete && !tempFilters.state) {
                       const place = autocomplete.getPlace();
                       if (place.geometry) {
                         const coordinates = [
@@ -276,7 +321,7 @@ const getCurrentSortLabel = () => {
                           radius: tempFilters.location?.radius || 10,
                           name: place.formatted_address || 'Selected Location'
                         };
-                        setTempFilters({ ...tempFilters, location });
+                        setTempFilters({ ...tempFilters, location, state: '' });
                         setLocationInput(place.formatted_address);
                       }
                     }
@@ -291,7 +336,8 @@ const getCurrentSortLabel = () => {
                     placeholder="Enter location..."
                     value={locationInput}
                     onChange={(e) => setLocationInput(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    className="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    disabled={!!tempFilters.state}
                   />
                 </Autocomplete>
               </LoadScriptNext>
@@ -588,6 +634,18 @@ const getCurrentSortLabel = () => {
                       </span>
                     );
                   })}
+                  
+                  {filters.state && (
+                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
+                      State: {filters.state}
+                      <button
+                        onClick={() => dispatch(updateFilter({ filterType: 'state', value: '' }))}
+                        className="hover:text-gray-900 font-bold ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
                   
                   {filters.location && (
                     <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">

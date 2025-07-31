@@ -1,8 +1,9 @@
 'use client';
 import React from 'react';
 import { useDispatch } from 'react-redux';
-import { updateFilter } from '@/store/slices/adverts/filterSlice';
+import { updateFilter } from '@/store/slices/adverts/searchAdvertsSlice';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
+import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 
 const categories = [
   'Antiques, Art & Collectables',
@@ -25,17 +26,37 @@ const categories = [
 const HeadlineFilter = ({ filters, onFiltersChange }) => {
   const dispatch = useDispatch();
   const [autocomplete, setAutocomplete] = React.useState(null);
+  const [selectedState, setSelectedState] = React.useState(filters.state || '');
+  const [locationInput, setLocationInput] = React.useState(filters.location || '');
 
   const handleCategoryChange = (e) => {
     const selectedCategory = e.target.value;
     onFiltersChange({ category: selectedCategory });
-    dispatch(updateFilter({ category: selectedCategory }));
+    dispatch(updateFilter({ filterType: 'category', value: selectedCategory }));
+  };
+
+  const handleStateChange = (state) => {
+    if (selectedState === state) {
+      // Deselect if clicking the same state
+      setSelectedState('');
+      onFiltersChange({ state: '', location: locationInput, coordinates: filters.coordinates });
+      dispatch(updateFilter({ filterType: 'state', value: '' }));
+    } else {
+      // Select new state and clear location
+      setSelectedState(state);
+      setLocationInput('');
+      onFiltersChange({ state, location: '', coordinates: null, proximity: null });
+      dispatch(updateFilter({ filterType: 'state', value: state }));
+      dispatch(updateFilter({ filterType: 'location', value: null }));
+    }
   };
 
   const handleProximityChange = (e) => {
     const proximity = e.target.value;
-    onFiltersChange({ proximity: parseInt(proximity, 10) });
-    dispatch(updateFilter({ proximity: parseInt(proximity, 10) }));
+    if (!selectedState) {
+      onFiltersChange({ proximity: parseInt(proximity, 10) });
+      dispatch(updateFilter({ filterType: 'proximity', value: parseInt(proximity, 10) }));
+    }
   };
 
   const handlePlaceChanged = () => {

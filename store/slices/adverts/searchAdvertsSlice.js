@@ -50,6 +50,7 @@ const initialState = {
     categories: [],
     communities: [],
     location: null, // { coordinates: [lng, lat], radius: 10, name: 'Address' }
+    state: '', // Australian state code (NSW, VIC, etc.)
     searchText: '',
     adType: null, // 'offered' or 'wanted'
     sortBy: 'newest'
@@ -93,7 +94,15 @@ const searchAdvertsSlice = createSlice({
     
     // Clear all filters
     clearAllFilters: (state) => {
-      state.filters = initialState.filters;
+      state.filters = {
+        categories: [],
+        communities: [],
+        location: null,
+        state: '',
+        searchText: '',
+        adType: null,
+        sortBy: 'newest'
+      };
       state.pagination.page = 1;
     },
     
