@@ -11,7 +11,7 @@ const DemoPage = () => {
         <h1 className="text-4xl">text-4xl → Hello from DemoPage 👋</h1>
         <h1 className="text-5xl">text-5xl → Hello from DemoPage 👋</h1>
         <h1 className="text-6xl">text-6xl → Hellooo from DemoPage 👋</h1>
-        <h1 className="text-7xl">text-7xl → Hello from DemoPage 👋</h1>
+        <h1 className="text-7xl">text-7xl → Helloo from DemoPage 👋</h1>
         <h1 className="text-8xl">text-8xl → Helloo from DemoPage 👋</h1>
         <h1 className="text-9xl">text-9xl → Hello from DemoPage 👋</h1>
       </div>
