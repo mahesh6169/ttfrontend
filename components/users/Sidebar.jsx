@@ -38,6 +38,7 @@ const Sidebar = ({ onLinkClick }) => {
         { label: 'Stripe', href: '/users/profile/settings/stripeSetup', icon: <FaMoneyCheckAlt /> },
         { label: 'Manage Sales', href: '/users/profile/refunds', icon: <FaMoneyCheckAlt /> },
         { label: 'Check-In RSVPs', href: '/users/profile/checkInFree', icon: <FaCalendarAlt /> },
+        { label: 'Check-In Paid', href: '/users/profile/checkInPaid', icon: <FaCalendarAlt /> },
       ]
     }
   ];

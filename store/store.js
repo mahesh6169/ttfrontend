@@ -17,6 +17,7 @@ import supportReducer from './slices/supportSlice';
 import refundReducer from './slices/events/refundSlice';
 import eventCapacityReducer from './slices/events/eventCapacitySlice';
 import checkInFreeReducer from './slices/events/checkInFreeSlice';
+import checkInPaidReducer from './slices/events/checkInPaidSlice';
 
 const store = configureStore({
     reducer: {
@@ -37,6 +38,7 @@ const store = configureStore({
         refunds: refundReducer,
         eventCapacity: eventCapacityReducer,
         checkInFree: checkInFreeReducer,
+        checkInPaid: checkInPaidReducer,
     },
 });
 

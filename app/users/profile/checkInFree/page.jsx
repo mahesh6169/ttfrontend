@@ -107,11 +107,6 @@ const CheckInFreePage = () => {
           </div>
         )}
 
-        {/* Search Bar - Sticky on mobile */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 sticky top-0 z-10 md:static">
-          <CheckInFree_SearchBar />
-        </div>
-
         {/* Statistics */}
         <div className="mb-6">
           <CheckInFree_CheckInStats />
@@ -122,6 +117,12 @@ const CheckInFreePage = () => {
           <div className="p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Attendees</h2>
           </div>
+          
+          {/* Search Bar - Moved just above attendees */}
+          <div className="p-4 border-b bg-gray-50">
+            <CheckInFree_SearchBar />
+          </div>
+          
           <div className="p-4">
             <CheckInFree_AttendeeList />
           </div>

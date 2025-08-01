@@ -420,6 +420,7 @@ const MobileDropdown = ({ label, icon, pathname, baseProfilePath, toggleMobileMe
     { label: 'Stripe', href: `${baseProfilePath}/settings/stripeSetup`, icon: <FaMoneyCheckAlt /> },
     { label: 'Manage Sales', href: `${baseProfilePath}/refunds`, icon: <FaMoneyCheckAlt /> },
     { label: 'Check-In RSVPs', href: `${baseProfilePath}/checkInFree`, icon: <FaCalendarAlt /> },
+    { label: 'Check-In Paid', href: `${baseProfilePath}/checkInPaid`, icon: <FaCalendarAlt /> },
   ];
   
   // Check if any child route is active
