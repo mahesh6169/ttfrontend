@@ -426,7 +426,7 @@ const MobileDropdown = ({ label, icon, pathname, baseProfilePath, toggleMobileMe
   // Check if any child route is active
   const isChildActive = dropdownItems.some(item => pathname === item.href);
   
-  // Auto-open dropdown if a child route is active
+  /// Auto-open dropdown if a child route is active
   useEffect(() => {
     if (isChildActive) {
       setIsOpen(true);
