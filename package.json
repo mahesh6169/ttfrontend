@@ -30,6 +30,7 @@
     "react-redux": "^9.2.0",
     "react-slick": "^0.30.3",
     "react-toastify": "^11.0.3",
+    "react-window": "^1.8.11",
     "slick-carousel": "^1.8.1",
     "socket.io-client": "^4.8.1"
   },

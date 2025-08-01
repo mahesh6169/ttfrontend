@@ -3,23 +3,34 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
-import { setSearchTerm } from '@/store/slices/events/checkInFreeSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { setSearchTerm, fetchEventAttendees, setCurrentPage } from '@/store/slices/events/checkInFreeSlice';
 import { debounce } from 'lodash';
 
 const CheckInFree_SearchBar = () => {
   const dispatch = useDispatch();
+  const { selectedEvent, pagination } = useSelector((state) => state.checkInFree);
   const [localSearchTerm, setLocalSearchTerm] = useState('');
 
-  // Debounced search to reduce Redux updates
+  // Debounced search to reduce API calls
   const debouncedSearch = useCallback(
     debounce((term) => {
       dispatch(setSearchTerm(term));
-    }, 300),
-    [dispatch]
+      // Trigger server-side search with pagination reset
+      if (selectedEvent) {
+        dispatch(setCurrentPage(1)); // Reset to first page on new search
+        dispatch(fetchEventAttendees({ 
+          eventId: selectedEvent._id, 
+          page: 1, 
+          limit: pagination.limit || 20,
+          search: term 
+        }));
+      }
+    }, 500),
+    [dispatch, selectedEvent, pagination.limit]
   );
 
-  // Update Redux when local search term changes
+  // Update search when local search term changes
   useEffect(() => {
     debouncedSearch(localSearchTerm);
   }, [localSearchTerm, debouncedSearch]);
@@ -28,6 +39,16 @@ const CheckInFree_SearchBar = () => {
   const handleClear = () => {
     setLocalSearchTerm('');
     dispatch(setSearchTerm(''));
+    // Refetch without search term
+    if (selectedEvent) {
+      dispatch(setCurrentPage(1));
+      dispatch(fetchEventAttendees({ 
+        eventId: selectedEvent._id, 
+        page: 1, 
+        limit: pagination.limit || 20,
+        search: '' 
+      }));
+    }
   };
 
   return (

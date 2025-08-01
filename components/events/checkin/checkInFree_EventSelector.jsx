@@ -49,7 +49,8 @@ const CheckInFree_EventSelector = () => {
     if (eventId) {
       const event = managedEvents.find(ev => ev._id === eventId);
       dispatch(setSelectedEvent(event));
-      dispatch(fetchEventAttendees(eventId));
+      // Fetch first page when selecting event
+      dispatch(fetchEventAttendees({ eventId, page: 1, limit: 20 }));
     } else {
       dispatch(setSelectedEvent(null));
     }

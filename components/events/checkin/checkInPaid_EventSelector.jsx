@@ -49,7 +49,8 @@ const CheckInPaid_EventSelector = () => {
     if (eventId) {
       const event = managedEvents.find(ev => ev._id === eventId);
       dispatch(setSelectedEvent(event));
-      dispatch(fetchPaidEventAttendees(eventId));
+      // Fetch first page when selecting event
+      dispatch(fetchPaidEventAttendees({ eventId, page: 1, limit: 20 }));
     } else {
       dispatch(setSelectedEvent(null));
     }

@@ -29,10 +29,19 @@ export const fetchManagedPaidEvents = createAsyncThunk(
 // Fetch attendees for a specific paid event
 export const fetchPaidEventAttendees = createAsyncThunk(
   'checkInPaid/fetchAttendees',
-  async (eventId, { rejectWithValue }) => {
+  async ({ eventId, page = 1, limit = 20, search = '' }, { rejectWithValue }) => {
     try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      });
+      
+      if (search) {
+        params.append('search', search);
+      }
+      
       const response = await axios.get(
-        `${API_BASE_URL}/events/${eventId}/paid/attendees`,
+        `${API_BASE_URL}/events/${eventId}/paid/attendees?${params}`,
         { withCredentials: true }
       );
       return response.data;
@@ -106,6 +115,14 @@ const initialState = {
   selectedEvent: null,
   attendees: [], // Array of ticket objects with nested attendees
   searchTerm: '',
+  pagination: {
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    limit: 20,
+    hasNextPage: false,
+    hasPrevPage: false,
+  },
   stats: {
     totalTickets: 0,
     totalAttendees: 0,
@@ -128,6 +145,7 @@ const checkInPaidSlice = createSlice({
       state.attendees = [];
       state.searchTerm = '';
       state.stats = initialState.stats;
+      state.pagination = initialState.pagination;
     },
     setSearchTerm: (state, action) => {
       state.searchTerm = action.payload;
@@ -137,7 +155,11 @@ const checkInPaidSlice = createSlice({
       state.attendees = [];
       state.searchTerm = '';
       state.stats = initialState.stats;
+      state.pagination = initialState.pagination;
       state.error = null;
+    },
+    setCurrentPage: (state, action) => {
+      state.pagination.currentPage = action.payload;
     },
     updateLocalCheckIn: (state, action) => {
       const { ticketId, attendeeId, checkedIn, checkInTime } = action.payload;
@@ -200,7 +222,14 @@ const checkInPaidSlice = createSlice({
       .addCase(fetchPaidEventAttendees.fulfilled, (state, action) => {
         state.attendeesLoading = false;
         state.attendees = action.payload.registrations || [];
-        state.stats = calculateStats(state.attendees);
+        state.pagination = action.payload.pagination || initialState.pagination;
+        // Stats should be calculated from total count, not just current page
+        state.stats = {
+          ...state.stats,
+          totalTickets: action.payload.pagination?.totalCount || 0,
+          // Calculate stats for current page attendees
+          ...calculateStats(state.attendees)
+        };
       })
       .addCase(fetchPaidEventAttendees.rejected, (state, action) => {
         state.attendeesLoading = false;
@@ -289,6 +318,7 @@ export const {
   clearCheckInData,
   updateLocalCheckIn,
   updateLocalBulkCheckIn,
+  setCurrentPage,
 } = checkInPaidSlice.actions;
 
 export default checkInPaidSlice.reducer;

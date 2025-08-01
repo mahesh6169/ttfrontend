@@ -2,51 +2,32 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import CheckInPaid_AttendeeCard from './checkInPaid_AttendeeCard';
+import Pagination from '@/components/Pagination';
+import { fetchPaidEventAttendees, setCurrentPage } from '@/store/slices/events/checkInPaidSlice';
 
 const CheckInPaid_AttendeeList = () => {
+  const dispatch = useDispatch();
   const { 
     attendees, 
     searchTerm, 
     selectedEvent, 
-    attendeesLoading 
+    attendeesLoading,
+    pagination 
   } = useSelector((state) => state.checkInPaid);
 
-  // Filter attendees based on search term
-  const filteredAttendees = useMemo(() => {
-    if (!searchTerm) return attendees;
-
-    const searchLower = searchTerm.toLowerCase();
-    
-    return attendees.filter(ticket => {
-      // Search in ticket number and invoice number
-      if (ticket.ticketNumber?.toLowerCase().includes(searchLower) ||
-          ticket.invoiceNumber?.toLowerCase().includes(searchLower)) {
-        return true;
-      }
-
-      // Search in buyer info
-      if (ticket.buyer?.firstName?.toLowerCase().includes(searchLower) ||
-          ticket.buyer?.lastName?.toLowerCase().includes(searchLower) ||
-          ticket.buyer?.email?.toLowerCase().includes(searchLower) ||
-          ticket.buyer?.phone?.includes(searchTerm)) {
-        return true;
-      }
-
-      // Search in user info
-      if (ticket.user?.name?.toLowerCase().includes(searchLower) ||
-          ticket.user?.email?.toLowerCase().includes(searchLower)) {
-        return true;
-      }
-
-      // Search in attendee names
-      return ticket.attendees?.some(attendee => 
-        attendee.name?.toLowerCase().includes(searchLower)
-      );
-    });
-  }, [attendees, searchTerm]);
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    dispatch(setCurrentPage(newPage));
+    dispatch(fetchPaidEventAttendees({ 
+      eventId: selectedEvent._id, 
+      page: newPage, 
+      limit: pagination.limit,
+      search: searchTerm 
+    }));
+  };
 
   if (!selectedEvent) {
     return (
@@ -68,7 +49,7 @@ const CheckInPaid_AttendeeList = () => {
     );
   }
 
-  if (filteredAttendees.length === 0) {
+  if (attendees.length === 0) {
     return (
       <div className="text-gray-500 text-center py-8">
         {searchTerm 
@@ -80,14 +61,33 @@ const CheckInPaid_AttendeeList = () => {
   }
 
   return (
-    <div className="space-y-4">
-      {filteredAttendees.map((ticket) => (
-        <CheckInPaid_AttendeeCard 
-          key={ticket._id} 
-          ticket={ticket}
-          eventId={selectedEvent._id}
-        />
-      ))}
+    <div>
+      {/* Stats summary */}
+      <div className="pb-2 text-sm text-gray-600">
+        Showing {attendees.length} of {pagination.totalCount} tickets
+        {searchTerm && ` matching "${searchTerm}"`}
+      </div>
+      
+      <div className="space-y-4">
+        {attendees.map((ticket) => (
+          <CheckInPaid_AttendeeCard 
+            key={ticket._id} 
+            ticket={ticket}
+            eventId={selectedEvent._id}
+          />
+        ))}
+      </div>
+      
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="mt-6">
+          <Pagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
     </div>
   );
 };

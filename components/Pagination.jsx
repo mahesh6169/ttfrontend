@@ -2,14 +2,20 @@ import React, { useEffect, useState } from 'react';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const [blockSize, setBlockSize] = useState(3);
+  const [showFirstLast, setShowFirstLast] = useState(true);
 
   useEffect(() => {
     const updateBlockSize = () => {
       const width = window.innerWidth;
       if (width >= 1024) {
         setBlockSize(7); // lg and up
+        setShowFirstLast(true);
+      } else if (width >= 640) {
+        setBlockSize(5); // sm to md
+        setShowFirstLast(true);
       } else {
-        setBlockSize(5); // default, sm, md
+        setBlockSize(3); // mobile
+        setShowFirstLast(false); // Hide First/Last on mobile to save space
       }
     };
 
@@ -30,7 +36,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         key={i}
         onClick={() => onPageChange(i)}
-        className={`text-xs lg:text-base px-2 md:px-3 py-1 rounded shadow-sm transition-colors ${
+        className={`text-xs sm:text-sm lg:text-base px-1.5 sm:px-2 md:px-3 py-1 rounded shadow-sm transition-colors ${
           i === currentPage 
             ? 'bg-teal-700 text-lime-100 font-semibold' 
             : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
@@ -56,27 +62,30 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   };
 
   return (
-    <div className="flex items-center justify-center gap-2 my-4 flex-wrap">
-      {/* First */}
-      <button
-        onClick={() => onPageChange(1)}
-        disabled={currentPage === 1}
-        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded shadow-sm transition-colors
-             bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 font-semibold
-             disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
->
-        First
-      </button>
+    <div className="flex items-center justify-center gap-1 sm:gap-2 my-4 flex-wrap">
+      {/* First - Hidden on mobile */}
+      {showFirstLast && (
+        <button
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+          className="text-xs sm:text-sm lg:text-base px-1.5 sm:px-2 md:px-3 py-1 rounded shadow-sm transition-colors
+               bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 font-semibold
+               disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+        >
+          First
+        </button>
+      )}
 
       {/* Prev Block */}
       <button
         onClick={handlePrevBlock}
         disabled={currentBlock === 0}
-        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded shadow-sm transition-colors
+        className="text-xs sm:text-sm lg:text-base px-1.5 sm:px-2 md:px-3 py-1 rounded shadow-sm transition-colors
              bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 font-semibold
              disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
->
-        Prev
+      >
+        <span className="hidden sm:inline">Prev</span>
+        <span className="sm:hidden">←</span>
       </button>
 
       {/* Page Numbers */}
@@ -86,23 +95,26 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={handleNextBlock}
         disabled={(currentBlock + 1) * blockSize >= totalPages}
-        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded shadow-sm transition-colors
+        className="text-xs sm:text-sm lg:text-base px-1.5 sm:px-2 md:px-3 py-1 rounded shadow-sm transition-colors
              bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 font-semibold
              disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
->
-        Next
+      >
+        <span className="hidden sm:inline">Next</span>
+        <span className="sm:hidden">→</span>
       </button>
 
-      {/* Last */}
-      <button
-        onClick={() => onPageChange(totalPages)}
-        disabled={currentPage === totalPages}
-        className="text-xs lg:text-base px-2 md:px-3 py-1 rounded shadow-sm transition-colors
-             bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 font-semibold
-             disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
->
-        Last
-      </button>
+      {/* Last - Hidden on mobile */}
+      {showFirstLast && (
+        <button
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+          className="text-xs sm:text-sm lg:text-base px-1.5 sm:px-2 md:px-3 py-1 rounded shadow-sm transition-colors
+               bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 font-semibold
+               disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+        >
+          Last
+        </button>
+      )}
     </div>
   );
 };

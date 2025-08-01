@@ -13,13 +13,17 @@ import CheckInFree_EventSelector from '@/components/events/checkin/checkInFree_E
 import CheckInFree_SearchBar from '@/components/events/checkin/checkInFree_SearchBar';
 import CheckInFree_CheckInStats from '@/components/events/checkin/checkInFree_CheckInStats';
 import CheckInFree_AttendeeList from '@/components/events/checkin/checkInFree_AttendeeList';
+import CheckInFree_VirtualizedAttendeeList from '@/components/events/checkin/checkInFree_VirtualizedAttendeeList';
 
 // Redux
 import { clearCheckInData } from '@/store/slices/events/checkInFreeSlice';
 
 const CheckInFreePage = () => {
   const dispatch = useDispatch();
-  const { selectedEvent, attendees } = useSelector((state) => state.checkInFree);
+  const { selectedEvent, attendees, pagination } = useSelector((state) => state.checkInFree);
+  
+  // Use virtualized list for large datasets
+  const useVirtualized = pagination.totalCount > 50;
 
   // Format event date with timezone support
   const formatEventDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
@@ -124,7 +128,11 @@ const CheckInFreePage = () => {
           </div>
           
           <div className="p-4">
-            <CheckInFree_AttendeeList />
+            {useVirtualized ? (
+              <CheckInFree_VirtualizedAttendeeList />
+            ) : (
+              <CheckInFree_AttendeeList />
+            )}
           </div>
         </div>
 

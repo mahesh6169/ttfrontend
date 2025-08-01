@@ -13,13 +13,17 @@ import CheckInPaid_EventSelector from '@/components/events/checkin/checkInPaid_E
 import CheckInPaid_SearchBar from '@/components/events/checkin/checkInPaid_SearchBar';
 import CheckInPaid_CheckInStats from '@/components/events/checkin/checkInPaid_CheckInStats';
 import CheckInPaid_AttendeeList from '@/components/events/checkin/checkInPaid_AttendeeList';
+import CheckInPaid_VirtualizedAttendeeList from '@/components/events/checkin/checkInPaid_VirtualizedAttendeeList';
 
 // Redux
 import { clearCheckInData } from '@/store/slices/events/checkInPaidSlice';
 
 const CheckInPaidPage = () => {
   const dispatch = useDispatch();
-  const { selectedEvent, attendees } = useSelector((state) => state.checkInPaid);
+  const { selectedEvent, attendees, pagination } = useSelector((state) => state.checkInPaid);
+  
+  // Use virtualized list for large datasets
+  const useVirtualized = pagination.totalCount > 50;
 
   // Format event date with timezone support
   const formatEventDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
@@ -126,7 +130,11 @@ const CheckInPaidPage = () => {
           </div>
           
           <div className="p-4">
-            <CheckInPaid_AttendeeList />
+            {useVirtualized ? (
+              <CheckInPaid_VirtualizedAttendeeList />
+            ) : (
+              <CheckInPaid_AttendeeList />
+            )}
           </div>
         </div>
 

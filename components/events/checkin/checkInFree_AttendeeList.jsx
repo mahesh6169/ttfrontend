@@ -5,9 +5,12 @@
 import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import CheckInFree_AttendeeCard from './checkInFree_AttendeeCard';
+import Pagination from '@/components/Pagination';
 import { 
   bulkCheckInRegistration,
-  updateLocalBulkCheckIn
+  updateLocalBulkCheckIn,
+  fetchEventAttendees,
+  setCurrentPage
 } from '@/store/slices/events/checkInFreeSlice';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
@@ -19,33 +22,15 @@ const CheckInFree_AttendeeList = () => {
     searchTerm, 
     selectedEvent,
     attendeesLoading,
-    actionLoading 
+    actionLoading,
+    pagination 
   } = useSelector((state) => state.checkInFree);
   
   const [expandedRegistrations, setExpandedRegistrations] = useState(new Set());
   const [showFormResponses, setShowFormResponses] = useState(new Set());
 
-  // Filter attendees based on search term
-  const filteredAttendees = useMemo(() => {
-    if (!searchTerm) return attendees;
-    
-    const term = searchTerm.toLowerCase();
-    
-    return attendees.filter(registration => 
-      // Search by registration number
-      registration.registrationNumber?.toLowerCase().includes(term) ||
-      // Search by any attendee name
-      registration.attendees.some(attendee => 
-        attendee.name?.toLowerCase().includes(term)
-      ) ||
-      // Search by user email (check both user and userId fields)
-      registration.user?.email?.toLowerCase().includes(term) ||
-      registration.userId?.email?.toLowerCase().includes(term) ||
-      // Search by user name (check both user and userId fields)
-      registration.user?.name?.toLowerCase().includes(term) ||
-      registration.userId?.name?.toLowerCase().includes(term)
-    );
-  }, [attendees, searchTerm]);
+  // No client-side filtering needed - server handles search
+  const displayedAttendees = attendees;
 
   // Toggle registration expansion
   const toggleRegistration = (registrationId) => {
@@ -123,7 +108,7 @@ const CheckInFree_AttendeeList = () => {
     );
   }
 
-  if (filteredAttendees.length === 0) {
+  if (displayedAttendees.length === 0) {
     return (
       <div className="text-center py-8">
         <p className="text-gray-500">
@@ -136,11 +121,22 @@ const CheckInFree_AttendeeList = () => {
     );
   }
 
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    dispatch(setCurrentPage(newPage));
+    dispatch(fetchEventAttendees({ 
+      eventId: selectedEvent._id, 
+      page: newPage, 
+      limit: pagination.limit,
+      search: searchTerm 
+    }));
+  };
+
   return (
     <div className="space-y-4">
 
       {/* Registration List */}
-      {filteredAttendees.map((registration) => {
+      {displayedAttendees.map((registration) => {
         const isExpanded = expandedRegistrations.has(registration._id);
         const allCheckedIn = areAllCheckedIn(registration);
         const someCheckedIn = areSomeCheckedIn(registration);
@@ -279,6 +275,17 @@ const CheckInFree_AttendeeList = () => {
           </div>
         );
       })}
+      
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="mt-6">
+          <Pagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
     </div>
   );
 };
