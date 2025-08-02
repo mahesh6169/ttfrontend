@@ -200,16 +200,6 @@ const EnhancedMyTicketsPage = () => {
     return Object.values(typeGroups);
   };
 
-  // Get status color
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'confirmed': return 'text-green-600 bg-green-100';
-      case 'checked-in': return 'text-blue-600 bg-blue-100';
-      case 'refunded': return 'text-red-600 bg-red-100';
-      case 'held': return 'text-yellow-600 bg-yellow-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
 
   // Get refund status
   const getRefundStatus = (ticketGroup) => {
@@ -389,11 +379,8 @@ const EnhancedMyTicketsPage = () => {
                       {/* Purchase Header */}
                       <div className="flex items-center gap-3 mb-3">
                         <h5 className="font-semibold text-gray-900">
-                          Purchase #{index + 1}
+                          Invoice: {representative.invoiceNumber}
                         </h5>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(representative.status)}`}>
-                          {representative.status}
-                        </span>
                         {refundStatus && (
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${refundStatus.type === 'full' ? 'text-red-600 bg-red-100' : 'text-orange-600 bg-orange-100'}`}>
                             {refundStatus.text}
@@ -402,12 +389,7 @@ const EnhancedMyTicketsPage = () => {
                       </div>
 
                       {/* Purchase Details Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                        <div>
-                          <span className="font-medium text-gray-700">Invoice Number:</span>
-                          <div className="text-gray-900 font-mono text-xs">{representative.invoiceNumber}</div>
-                        </div>
-                        
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                         <div>
                           <span className="font-medium text-gray-700">Tickets:</span>
                           <div className="text-gray-900">
@@ -433,55 +415,6 @@ const EnhancedMyTicketsPage = () => {
                           <div className="text-gray-900">{new Date(representative.createdAt).toLocaleDateString()}</div>
                         </div>
                       </div>
-
-                      {/* Buyer Information */}
-                      <div className="mt-3 pt-3 border-t border-gray-100">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div>
-                            <span className="font-medium text-gray-700">Buyer:</span>
-                            <div className="text-gray-900">{representative.buyer?.firstName} {representative.buyer?.lastName}</div>
-                            <div className="text-gray-600 text-xs">{representative.buyer?.email}</div>
-                          </div>
-                          
-                          <div>
-                            <span className="font-medium text-gray-700">Total Amount:</span>
-                            <div className="text-lg font-bold text-green-600">${totalAmount.toFixed(2)}</div>
-                            {ticketGroup.length > 1 && (
-                              <div className="text-xs text-gray-500">${(totalAmount / ticketGroup.length).toFixed(2)} per ticket</div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Individual Tickets Summary */}
-                      {ticketGroup.length > 1 && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          <details className="group">
-                            <summary className="cursor-pointer text-sm text-blue-600 hover:text-blue-800 font-medium">
-                              View Individual Tickets ({ticketGroup.length})
-                            </summary>
-                            <div className="mt-2 space-y-2">
-                              {ticketGroup.map((ticket) => (
-                                <div key={ticket._id} className="bg-gray-50 rounded p-2 text-xs">
-                                  <div className="flex justify-between items-center">
-                                    <div>
-                                      <span className="font-medium">{ticket.ticketNumber}</span>
-                                      <span className="ml-2 text-blue-600">• {ticket.ticketType.name}</span>
-                                      {ticket.seats?.[0] && (
-                                        <span className="ml-2 text-gray-600">• Seat: {ticket.seats[0].row}-{ticket.seats[0].seatNumber}</span>
-                                      )}
-                                    </div>
-                                    <span className="text-green-600 font-medium">${ticket.priceDetails?.totalPrice || ticket.ticketType?.price}</span>
-                                  </div>
-                                  {ticket.attendees?.[0] && (
-                                    <div className="text-gray-600 mt-1">Attendee: {ticket.attendees[0].name}</div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </details>
-                        </div>
-                      )}
                     </div>
 
                     {/* Action Buttons */}

@@ -304,12 +304,6 @@ const MyFreeEventRegistrationsPage = () => {
             <h4 className="text-lg font-semibold text-gray-900">Your Registration Details</h4>
             
             {selectedEventRegistrations.map((registration, index) => {
-              // Check if any attendee is NOT checked in
-              // Only show partial check-in if there are multiple attendees
-              const hasUncheckedAttendee = registration.attendees?.some(att => !att.checkedIn) || false;
-              const hasMultipleAttendees = registration.attendees?.length > 1;
-              const showPartialCheckIn = hasUncheckedAttendee && hasMultipleAttendees;
-              
               return (
                 <div key={registration._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex justify-between items-start">
@@ -319,19 +313,6 @@ const MyFreeEventRegistrationsPage = () => {
                         <h5 className="font-semibold text-gray-900">
                           {registration.registrationNumber}
                         </h5>
-                        {showPartialCheckIn ? (
-                          <span className="px-2 py-1 text-xs font-medium rounded-full text-yellow-800 bg-yellow-100">
-                            Partial Check-in
-                          </span>
-                        ) : (
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            registration.status === 'registered' 
-                              ? 'text-green-600 bg-green-100' 
-                              : 'text-gray-600 bg-gray-100'
-                          }`}>
-                            {registration.status}
-                          </span>
-                        )}
                       </div>
 
                     {/* Registration Details Grid */}
@@ -398,18 +379,9 @@ const MyFreeEventRegistrationsPage = () => {
                       <span className="font-medium text-gray-700">Attendee Details:</span>
                       <div className="mt-2 space-y-1">
                         {registration.attendees.map((attendee, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-gray-50 rounded p-2 text-sm">
-                            <div>
-                              <span className="font-medium">{attendee.name}</span>
-                              {attendee.age && <span className="ml-2 text-gray-600">• Age: {attendee.age}</span>}
-                            </div>
-                            <span className={`px-2 py-1 text-xs rounded ${
-                              attendee.checkedIn 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
-                              {attendee.checkedIn ? '✓ Checked In' : 'Not Checked In'}
-                            </span>
+                          <div key={idx} className="bg-gray-50 rounded p-2 text-sm">
+                            <span className="font-medium">{attendee.name}</span>
+                            {attendee.age && <span className="ml-2 text-gray-600">• Age: {attendee.age}</span>}
                           </div>
                         ))}
                       </div>
@@ -449,7 +421,6 @@ const MyFreeEventRegistrationsPage = () => {
                 <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Date & Time</th>
                 <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Venue</th>
                 <th className="py-3 px-4 text-center text-sm font-medium text-gray-700">Attendees</th>
-                <th className="py-3 px-4 text-center text-sm font-medium text-gray-700">Status</th>
                 <th className="py-3 px-4 text-center text-sm font-medium text-gray-700">Actions</th>
               </tr>
             </thead>
@@ -467,12 +438,6 @@ const MyFreeEventRegistrationsPage = () => {
 
                 const [datePart, timePart] = formattedDateTime.split(', ');
                 
-                // Check if any attendee is NOT checked in
-                // Only show partial check-in if there are multiple attendees
-                const hasUncheckedAttendee = reg.attendees?.some(att => !att.checkedIn) || false;
-                const hasMultipleAttendees = reg.attendees?.length > 1;
-                const showPartialCheckIn = hasUncheckedAttendee && hasMultipleAttendees;
-
                 return (
                   <tr key={reg._id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="py-3 px-4">
@@ -500,21 +465,6 @@ const MyFreeEventRegistrationsPage = () => {
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className="text-sm font-medium">{reg.attendees?.length || 0}</span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {showPartialCheckIn ? (
-                        <span className="px-2 py-1 text-xs font-medium rounded-full text-yellow-800 bg-yellow-100">
-                          Partial Check-in
-                        </span>
-                      ) : (
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          reg.status === 'registered' 
-                            ? 'text-green-600 bg-green-100' 
-                            : 'text-gray-600 bg-gray-100'
-                        }`}>
-                          {reg.status}
-                        </span>
-                      )}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button
