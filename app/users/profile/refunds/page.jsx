@@ -1,138 +1,160 @@
-// Fixed page.jsx - Removed problematic isLoading selector causing infinite renders
-
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   fetchOrganizerEvents,
   fetchRefundableTickets,
   setSelectedEvent,
-  setActiveTab,
+  processRefund,
+  toggleTicketSelection,
+  setCustomRefundAmount,
+  setRefundReason,
+  clearSelectedTickets,
+  clearRefundForm,
   selectEvents,
   selectSelectedEvent,
   selectTicketsState,
-  selectUI,
-  selectCurrentStatistics, 
   selectSelectedTickets,
-  clearProcessingState, 
+  selectRefundForm,
+  selectProcessing,
 } from '@/store/slices/events/refundSlice';
-import { formatInTimeZone } from 'date-fns-tz';
-
-// Components (imports stay the same)
-import EventSelector from '@/components/events/refunds/EventSelector';
-import TicketSearchBar from '@/components/events/refunds/TicketSearchBar';
-import RefundableTicketsList from '@/components/events/refunds/RefundableTicketsList';
-import RefundSummary from '@/components/events/refunds/RefundSummary';
-import RefundModal from '@/components/events/refunds/RefundModal';
-import LoadingSpinner from '@/components/events/refunds/LoadingSpinner';
-
+import { 
+  IoChevronDown,
+  IoTicket,
+  IoCash,
+  IoCheckmarkCircle,
+  IoWarningOutline,
+  IoInformationCircleOutline
+} from 'react-icons/io5';
 
 export default function RefundsPage() {
   const dispatch = useDispatch();
   const events = useSelector(selectEvents);
   const selectedEvent = useSelector(selectSelectedEvent);
   const ticketsState = useSelector(selectTicketsState);
-  const ui = useSelector(selectUI);
   const selectedTickets = useSelector(selectSelectedTickets);
-const statistics = useSelector(selectCurrentStatistics);
-  
-  // ✅ FIXED: Calculate loading state locally instead of using problematic selector
-  const isLoading = events.loading || ticketsState.loading;
+  const refundForm = useSelector(selectRefundForm);
+  const processing = useSelector(selectProcessing);
 
+  const [refundReason, setLocalRefundReason] = useState('');
+  const [expandedInvoices, setExpandedInvoices] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Add refs to prevent infinite loops
-  const lastFetchedEventId = useRef(null);
-  const lastFetchedTab = useRef(null);
-  const isInitialMount = useRef(true);
+  const itemsPerPage = 20;
 
+  // Fetch events on mount
   useEffect(() => {
-    // Fetch organizer's events on component mount
-    if (isInitialMount.current) {
-      console.log('🚀 INITIAL MOUNT: Fetching organizer events');
-      dispatch(fetchOrganizerEvents());
-      isInitialMount.current = false;
-    }
+    dispatch(fetchOrganizerEvents());
   }, [dispatch]);
 
+  // Fetch tickets when event is selected
   useEffect(() => {
-    console.log('🎯 Effect triggered', {
-      selectedEventId: selectedEvent?._id,
-      activeTab: ui.activeTab,
-      lastFetchedEventId: lastFetchedEventId.current,
-      lastFetchedTab: lastFetchedTab.current
-    });
-
-    // Only fetch tickets when event actually changes or tab changes
-    if (selectedEvent && selectedEvent._id) {
-      const eventId = selectedEvent._id;
-      const currentTab = ui.activeTab;
-      
-      // Check if we need to fetch (different event or different tab)
-      const shouldFetch = (
-        lastFetchedEventId.current !== eventId || 
-        lastFetchedTab.current !== currentTab
-      );
-      
-      if (shouldFetch) {
-        console.log('✅ FETCHING TICKETS:', { eventId, tab: currentTab });
-        
-        dispatch(fetchRefundableTickets({ 
-          eventId: eventId,
-          page: 1,
-          limit: 20
-        }));
-        
-        // Update refs to prevent re-fetching
-        lastFetchedEventId.current = eventId;
-        lastFetchedTab.current = currentTab;
-      } else {
-        console.log('⏭️ SKIPPING FETCH - Already fetched for this event/tab combo');
-      }
+    if (selectedEvent?._id) {
+      dispatch(fetchRefundableTickets({ 
+        eventId: selectedEvent._id,
+        page: 1,
+        limit: 100 // Get all tickets
+      }));
     }
-  }, [selectedEvent?._id, ui.activeTab, dispatch]);
+  }, [selectedEvent?._id, dispatch]);
 
-const handleEventSelect = (event) => {
-  console.log('🎯 EVENT SELECTED:', event.title, event._id);
-  
-  // Clear processing states when switching events
-  dispatch(clearProcessingState()); // or clearSuccessMessages() if you used the temporary fix
-  
-  // FORCE RESET: Always reset fetch tracking to force fresh data
-  lastFetchedEventId.current = null;
-  lastFetchedTab.current = null;
-  
-  // Set the selected event
-  dispatch(setSelectedEvent(event));
-  setSearchTerm(''); // Clear search when switching events
-  
-  // FORCE FETCH: Immediately fetch tickets for the selected event
-  if (event && event._id) {
-    console.log('🚀 FORCE FETCHING TICKETS for event:', event._id);
-    dispatch(fetchRefundableTickets({ 
-      eventId: event._id,
-      page: 1,
-      limit: 20
-    }));
-  }
-};
-
-  const handleSearch = (term) => {
-    console.log('🔍 SEARCH TERM CHANGED:', term);
-    setSearchTerm(term);
-    // Search functionality will be handled in TicketSearchBar component
+  const handleEventSelect = (event) => {
+    dispatch(clearSelectedTickets());
+    dispatch(clearRefundForm());
+    dispatch(setSelectedEvent(event));
+    setExpandedInvoices({});
   };
 
-  const handleTabChange = (tab) => {
-  console.log('🔄 TAB CHANGED TO:', tab);
-  // Clear processing states when switching tabs
-  dispatch(clearProcessingState());
-  dispatch(setActiveTab(tab));
-  
-  // Reset fetch tracking when tab changes to ensure fresh data
-  lastFetchedTab.current = null;
-};
+  const toggleInvoiceExpanded = (invoiceNumber) => {
+    setExpandedInvoices(prev => ({
+      ...prev,
+      [invoiceNumber]: !prev[invoiceNumber]
+    }));
+  };
+
+  const handleTicketSelect = (ticket) => {
+    dispatch(toggleTicketSelection(ticket));
+  };
+
+  const handleAmountChange = (ticketNumber, amount) => {
+    dispatch(setCustomRefundAmount({ ticketNumber, amount }));
+  };
+
+  const handleReasonChange = (value) => {
+    setLocalRefundReason(value);
+    dispatch(setRefundReason(value));
+  };
+
+  const calculateRefundTotal = () => {
+    return selectedTickets.reduce((total, ticket) => {
+      const customAmount = refundForm.customAmounts[ticket.ticketNumber];
+      if (customAmount !== undefined) {
+        return total + customAmount;
+      } else {
+        const maxRefundable = ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0);
+        return total + maxRefundable;
+      }
+    }, 0);
+  };
+
+  const handleProcessRefund = async () => {
+    if (!refundReason.trim() || selectedTickets.length === 0) {
+      return;
+    }
+
+    const ticketNumbers = selectedTickets.map(t => t.ticketNumber);
+    const totalAmount = calculateRefundTotal();
+
+    await dispatch(processRefund({
+      eventId: selectedEvent._id,
+      ticketNumbers,
+      refundAmount: totalAmount,
+      reason: refundReason.trim()
+    })).unwrap();
+
+    // Reset after success
+    dispatch(clearSelectedTickets());
+    dispatch(clearRefundForm());
+    setLocalRefundReason('');
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'AUD'
+    }).format(amount);
+  };
+
+  // Group tickets by invoice
+  const ticketsByInvoice = ticketsState.list.reduce((groups, ticket) => {
+    if (!groups[ticket.invoiceNumber]) {
+      groups[ticket.invoiceNumber] = [];
+    }
+    groups[ticket.invoiceNumber].push(ticket);
+    return groups;
+  }, {});
+
+  // Filter invoices based on search
+  const filteredInvoices = Object.entries(ticketsByInvoice).filter(([invoiceNumber, tickets]) => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      invoiceNumber.toLowerCase().includes(searchLower) ||
+      tickets.some(ticket => 
+        ticket.ticketNumber.toLowerCase().includes(searchLower) ||
+        ticket.buyer.email.toLowerCase().includes(searchLower) ||
+        `${ticket.buyer.firstName} ${ticket.buyer.lastName}`.toLowerCase().includes(searchLower)
+      )
+    );
+  });
+
+  // Paginate invoices
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const paginatedInvoices = filteredInvoices.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -140,233 +162,359 @@ const handleEventSelect = (event) => {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
-            <h1 className="text-3xl font-bold text-gray-900">Manage Sales</h1>
-            <p className="mt-2 text-gray-600">Sales, refunds, and invoices</p>
+            <h1 className="text-3xl font-bold text-gray-900">Refund Management</h1>
+            <p className="mt-2 text-gray-600">Process refunds for your paid events</p>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Event Selection */}
-        <div className="mb-8">
-          <EventSelector 
-            events={events.list}
-            selectedEvent={selectedEvent}
-            onEventSelect={handleEventSelect}
-            loading={events.loading}
-            error={events.error}
-          />
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select Event
+          </label>
+          <select
+            value={selectedEvent?._id || ''}
+            onChange={(e) => {
+              const event = events.list.find(ev => ev._id === e.target.value);
+              if (event) handleEventSelect(event);
+            }}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Choose an event...</option>
+            {events.list.map((event) => (
+              <option key={event._id} value={event._id}>
+                {event.title} - {event.eventCode}
+              </option>
+            ))}
+          </select>
         </div>
 
         {selectedEvent && (
           <>
-{/* Event Info Card */}
-<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-  <div className="flex items-start justify-between mb-3">
-   <h2 className="text-xl font-semibold text-gray-900">{selectedEvent.title}</h2>
-    <span className="text-xl font-semibold text-gray-900">{selectedEvent.eventCode}</span>
-  </div>
-  
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-    <div>
-      <span className="font-medium text-gray-700">Category:</span>
-      <p className="text-gray-900">{selectedEvent.category}</p>
-    </div>
-    
-    <div>
-      <span className="font-medium text-gray-700">Date/Time:</span>
-      {(() => {
-        const dateTimeZone = selectedEvent.timeZone || 'Australia/Sydney';
-        
-        const formattedDate = formatInTimeZone(
-          selectedEvent.dateTime,
-          dateTimeZone,
-          'MMM d, yyyy'
-        );
-
-        const formattedTime = formatInTimeZone(
-          selectedEvent.dateTime,
-          dateTimeZone,
-          'h:mm a'
-        );
-
-        return (
-          <div>
-            <p className="text-gray-900">{formattedDate} at {formattedTime}</p>
-            <p className="text-xs text-gray-500">Timezone: {dateTimeZone}</p>
-          </div>
-        );
-      })()}
-    </div>
-    
-    <div>
-      <span className="font-medium text-gray-700">Venue:</span>
-      <p className="text-gray-900">{selectedEvent.venue}</p>
-    </div>
-    
-    <div>
-      <span className="font-medium text-gray-700">Address:</span>
-      <p className="text-gray-900">
-        {selectedEvent.address?.formattedAddress || 
-         selectedEvent.address || 
-         selectedEvent.location || 
-         'Address not provided'}
-      </p>
-    </div>
-  </div>
-</div>
-
-
-{/* Enhanced Summary Stats */}
-{selectedEvent && !isLoading && (
-  <div className="bg-gray-50 rounded-lg p-4 mb-8">
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-      <div className="text-center">
-        <div className="text-2xl font-bold text-gray-900">{statistics.totalCount}</div>
-        <div className="text-sm text-gray-600">Total Tickets</div>
-      </div>
-      <div className="text-center">
-        <div className="text-2xl font-bold text-green-600">
-          ${statistics.totalValue.toFixed(2)}
-        </div>
-        <div className="text-sm text-gray-600">Total Value</div>
-      </div>
-      <div className="text-center">
-        <div className="text-2xl font-bold text-blue-600">
-          {ui.activeTab === 'individual' ? selectedTickets.individual.length : Object.keys(selectedTickets.grouped).length}
-        </div>
-        <div className="text-sm text-gray-600">Selected {ui.activeTab === 'individual' ? 'Tickets' : 'Groups'}</div>
-      </div>
-      <div className="text-center">
-        <div className="text-2xl font-bold text-purple-600">
-          {statistics.uniqueInvoices}
-        </div>
-        <div className="text-sm text-gray-600">Unique Invoices</div>
-      </div>
-      <div className="text-center">
-        <div className="text-2xl font-bold text-orange-600">
-          {statistics.uniquePaymentIntents}
-        </div>
-        <div className="text-sm text-gray-600">Payment Intents</div>
-      </div>
-    </div>
-  </div>
-)}
-            {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              {/* Left Column - Main Content */}
-              <div className="lg:col-span-3 space-y-6">
-                {/* Tab Navigation */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                  <div className="border-b border-gray-200">
-                    <nav className="-mb-px flex">
-                      <button
-                        onClick={() => handleTabChange('group')}
-                        className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
-                          ui.activeTab === 'group'
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                      >
-                        Group Refunds
-                      </button>
-                      <button
-                        onClick={() => handleTabChange('individual')}
-                        className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
-                          ui.activeTab === 'individual'
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                      >
-                        Individual Refunds
-                      </button>
-                    </nav>
-                  </div>
-
-                  {/* Tab Content */}
-                  <div className="p-6">
-                    {/* Search Bar */}
-                    <div className="mb-6">
-                      <TicketSearchBar 
-                        searchTerm={searchTerm}
-                        onSearch={handleSearch}
-                        activeTab={ui.activeTab}
-                        eventId={selectedEvent._id}
-                      />
-                    </div>
-
-                    {/* Loading State - ✅ Fixed: Use local loading calculation */}
-                    {isLoading && (
-                      <div className="flex justify-center items-center py-12">
-                        <LoadingSpinner />
-                        <span className="ml-3 text-gray-600">Loading refundable tickets...</span>
-                      </div>
-                    )}
-
-                    {/* Tickets List - ✅ Fixed: Use local loading calculation */}
-                    {!isLoading && (
-                      <RefundableTicketsList 
-                        activeTab={ui.activeTab}
-                        loading={ticketsState.loading}
-                        error={ticketsState.error}
-                      />
-                    )}
-                  </div>
+            {/* Search and Stats Bar */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 max-w-md">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Search by invoice, ticket number, or buyer..."
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="ml-4 text-sm text-gray-600">
+                  {filteredInvoices.length} invoices • {ticketsState.list.length} tickets
                 </div>
               </div>
+            </div>
 
-              {/* Right Column - Summary */}
+            {/* Instructions */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start">
+                <IoInformationCircleOutline className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-blue-900">How to process refunds</h3>
+                  <ul className="text-sm text-blue-700 mt-1 space-y-1">
+                    <li>• Click on invoice numbers to expand and see individual tickets</li>
+                    <li>• Select the tickets you want to refund</li>
+                    <li>• Enter custom amounts or leave blank for full refund</li>
+                    <li>• Add a refund reason and click "Process Refund"</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Left Column - Tickets List */}
+              <div className="lg:col-span-3 space-y-4">
+              {paginatedInvoices.map(([invoiceNumber, tickets]) => {
+                const isExpanded = expandedInvoices[invoiceNumber];
+                const invoiceTotal = tickets.reduce((sum, t) => sum + t.priceDetails.totalPrice, 0);
+                const invoiceRefunded = tickets.reduce((sum, t) => sum + (t.totalRefundedAmount || 0), 0);
+                const hasSelectedTickets = tickets.some(t => 
+                  selectedTickets.some(st => st.ticketNumber === t.ticketNumber)
+                );
+
+                return (
+                  <div key={invoiceNumber} className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    {/* Invoice Header */}
+                    <div 
+                      className={`p-4 cursor-pointer hover:bg-gray-50 ${hasSelectedTickets ? 'bg-blue-50' : ''}`}
+                      onClick={() => toggleInvoiceExpanded(invoiceNumber)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <IoChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          <span className="font-semibold text-gray-900">{invoiceNumber}</span>
+                          <span className="text-sm text-gray-500">({tickets.length} tickets)</span>
+                          {hasSelectedTickets && (
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                              Selected
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <span>Total: {formatCurrency(invoiceTotal)}</span>
+                          {invoiceRefunded > 0 && (
+                            <span className="ml-3 text-red-600">
+                              Refunded: {formatCurrency(invoiceRefunded)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Individual Tickets */}
+                    {isExpanded && (
+                      <div className="border-t border-gray-200 p-4 bg-gray-50 space-y-3">
+                        {tickets.map((ticket) => {
+                          const isSelected = selectedTickets.some(t => t.ticketNumber === ticket.ticketNumber);
+                          const maxRefundable = ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0);
+                          const customAmount = refundForm.customAmounts[ticket.ticketNumber];
+                          const isFullyRefunded = maxRefundable <= 0;
+
+                          return (
+                            <div 
+                              key={ticket.ticketNumber} 
+                              className={`bg-white p-4 rounded-lg border ${
+                                isFullyRefunded 
+                                  ? 'border-red-200 bg-red-50 opacity-75' 
+                                  : isSelected 
+                                  ? 'border-blue-500 bg-blue-50' 
+                                  : 'border-gray-200'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start space-x-3">
+                                  {/* Selection Checkbox */}
+                                  <button
+                                    onClick={() => !isFullyRefunded && handleTicketSelect(ticket)}
+                                    disabled={isFullyRefunded}
+                                    className={`w-5 h-5 rounded border-2 mt-0.5 flex items-center justify-center ${
+                                      isFullyRefunded
+                                        ? 'bg-red-100 border-red-300 cursor-not-allowed'
+                                        : isSelected
+                                        ? 'bg-blue-600 border-blue-600 text-white'
+                                        : 'border-gray-300 hover:border-gray-400'
+                                    }`}
+                                  >
+                                    {isFullyRefunded ? (
+                                      <span className="text-red-600 text-xs">✕</span>
+                                    ) : isSelected ? (
+                                      <IoCheckmarkCircle className="w-3 h-3" />
+                                    ) : null}
+                                  </button>
+
+                                  {/* Ticket Info */}
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2">
+                                      <IoTicket className="h-4 w-4 text-gray-400" />
+                                      <span className="font-mono text-sm font-medium">{ticket.ticketNumber}</span>
+                                      <span className="text-xs text-gray-500">{ticket.ticketType.name}</span>
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">
+                                      {ticket.buyer.firstName} {ticket.buyer.lastName} • {ticket.buyer.email}
+                                    </div>
+                                    {ticket.seats?.length > 0 && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        Seats: {ticket.seats.map(s => `${s.row}${s.seatNumber}`).join(', ')}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Price Info */}
+                                <div className="text-right">
+                                  <div className="text-sm font-medium">{formatCurrency(ticket.priceDetails.totalPrice)}</div>
+                                  {ticket.totalRefundedAmount > 0 && (
+                                    <div className="text-xs text-red-600">
+                                      Refunded: {formatCurrency(ticket.totalRefundedAmount)}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-green-600">
+                                    Available: {formatCurrency(maxRefundable)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Custom Amount Input (when selected) */}
+                              {isSelected && !isFullyRefunded && (
+                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Custom refund amount (leave empty for full refund)
+                                  </label>
+                                  <div className="flex items-center space-x-2">
+                                    <div className="relative flex-1">
+                                      <IoCash className="absolute left-2 top-2 h-4 w-4 text-gray-400" />
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max={maxRefundable}
+                                        step="0.01"
+                                        value={customAmount || ''}
+                                        onChange={(e) => handleAmountChange(ticket.ticketNumber, e.target.value)}
+                                        placeholder={maxRefundable.toFixed(2)}
+                                        className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                      Max: {formatCurrency(maxRefundable)}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-3">
+                  <div className="text-sm text-gray-600">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredInvoices.length)} of {filteredInvoices.length} invoices
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-gray-600">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+              </div>
+
+              {/* Right Column - Sticky Refund Summary */}
               <div className="lg:col-span-1">
-                <div className="sticky top-8">
-                  <RefundSummary 
-                    activeTab={ui.activeTab}
-                    eventId={selectedEvent._id}
-                  />
+                <div className="sticky top-4">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Refund Summary</h3>
+                    
+                    {selectedTickets.length === 0 ? (
+                      <div className="text-center py-8">
+                        <IoTicket className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-sm text-gray-500">
+                          No tickets selected
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Select tickets from the list to process refunds
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2 mb-4">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Selected tickets:</span>
+                            <span className="font-medium">{selectedTickets.length}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Total refund:</span>
+                            <span className="font-medium text-blue-600">{formatCurrency(calculateRefundTotal())}</span>
+                          </div>
+                        </div>
+
+                        {/* Selected tickets list */}
+                        <div className="mb-4 max-h-48 overflow-y-auto">
+                          <h4 className="text-xs font-medium text-gray-700 mb-2">Selected tickets:</h4>
+                          <div className="space-y-1">
+                            {selectedTickets.map(ticket => {
+                              const customAmount = refundForm.customAmounts[ticket.ticketNumber];
+                              const refundAmount = customAmount !== undefined ? customAmount : 
+                                (ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0));
+                              
+                              return (
+                                <div key={ticket.ticketNumber} className="text-xs text-gray-600 flex justify-between">
+                                  <span className="truncate">{ticket.ticketNumber}</span>
+                                  <span className="font-medium">{formatCurrency(refundAmount)}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Refund reason <span className="text-red-500">*</span>
+                          </label>
+                          <textarea
+                            value={refundReason}
+                            onChange={(e) => handleReasonChange(e.target.value)}
+                            placeholder="Please provide a reason..."
+                            rows={3}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+                          <div className="flex items-start">
+                            <IoWarningOutline className="h-4 w-4 text-yellow-600 mr-2 flex-shrink-0" />
+                            <div className="text-xs text-yellow-700">
+                              <p className="font-medium">Important:</p>
+                              <ul className="mt-1 space-y-0.5">
+                                <li>• Cannot be undone</li>
+                                <li>• Tickets will be cancelled</li>
+                                <li>• Seats will be released</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={handleProcessRefund}
+                          disabled={!refundReason.trim() || processing.loading}
+                          className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {processing.loading ? (
+                            'Processing...'
+                          ) : (
+                            `Process Refund (${formatCurrency(calculateRefundTotal())})`
+                          )}
+                        </button>
+
+                        {processing.error && (
+                          <div className="mt-3 text-sm text-red-600">
+                            Error: {processing.error}
+                          </div>
+                        )}
+
+                        {processing.success && (
+                          <div className="mt-3 text-sm text-green-600">
+                            Refund processed successfully!
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </>
         )}
-
-        {/* No Event Selected State */}
-        {!selectedEvent && !events.loading && (
-          <div className="text-center py-12">
-            <div className="mx-auto h-24 w-24 text-gray-400">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-full w-full">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">Select an Event</h3>
-            <p className="mt-2 text-gray-500">Choose an event from the dropdown above to view refundable tickets.</p>
-          </div>
-        )}
-
-        {/* No Events State */}
-        {!events.loading && events.list.length === 0 && (
-          <div className="text-center py-12">
-            <div className="mx-auto h-24 w-24 text-gray-400">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-full w-full">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">No Paid Events Found</h3>
-            <p className="mt-2 text-gray-500">You don't have any paid events that support refunds yet.</p>
-            <div className="mt-6">
-              <a 
-                href="/organizer/events/create" 
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Create Paid Event
-              </a>
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Refund Modal */}
-      {ui.showRefundModal && (
-        <RefundModal />
-      )}
     </div>
   );
 }

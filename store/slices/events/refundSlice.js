@@ -10,11 +10,19 @@ export const fetchOrganizerEvents = createAsyncThunk(
   'refunds/fetchOrganizerEvents',
   async (_, { rejectWithValue }) => {
     try {
+      console.log('🔄 Making API call to:', `${API_BASE_URL}/events/refunds/my-events`);
       const response = await axios.get(`${API_BASE_URL}/events/refunds/my-events`, {
         withCredentials: true,
       });
+      console.log('📡 Raw API response:', response);
+      console.log('📡 Response data:', response.data);
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Events in response:', response.data?.events);
+      console.log('📡 Events count:', response.data?.events?.length || 0);
       return response.data;
     } catch (error) {
+      console.error('❌ API Error:', error);
+      console.error('❌ Error response:', error.response);
       return rejectWithValue(
         error.response?.data?.message || 'Failed to fetch events'
       );
@@ -135,15 +143,15 @@ export const checkInvoiceEligibility = createAsyncThunk(
   }
 );
 
-// Process individual ticket refund (PARTIAL REFUND)
-export const processIndividualRefund = createAsyncThunk(
-  'refunds/processIndividualRefund',
-  async ({ eventId, ticketNumber, refundAmount, reason }, { rejectWithValue }) => {
+// Process unified refund
+export const processRefund = createAsyncThunk(
+  'refunds/processRefund',
+  async ({ eventId, ticketNumbers, refundAmount, reason }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/events/${eventId}/refunds/ticket`,
+        `${API_BASE_URL}/events/${eventId}/refunds/process`,
         {
-          ticketNumber,
+          ticketNumbers,
           refundAmount,
           reason,
         },
@@ -154,43 +162,13 @@ export const processIndividualRefund = createAsyncThunk(
       
       return {
         ...response.data,
-        ticketNumber,
+        ticketNumbers,
         refundAmount,
         reason,
       };
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to process individual refund'
-      );
-    }
-  }
-);
-
-// Process group refund by invoice (FULL TRANSACTION REFUND)
-export const processGroupRefund = createAsyncThunk(
-  'refunds/processGroupRefund',
-  async ({ eventId, invoiceNumber, reason, refundAmount }, { rejectWithValue }) => {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/events/${eventId}/refunds/group`,
-        {
-          invoiceNumber,
-          reason,
-          refundAmount,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-      
-      return {
-        ...response.data,
-        invoiceNumber,
-        reason,
-      };
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to process group refund'
+        error.response?.data?.message || 'Failed to process refund'
       );
     }
   }
@@ -236,38 +214,25 @@ const initialState = {
   },
   
   // Selected tickets for refund
-  selectedTickets: {
-    individual: [], // Array of ticket objects for individual refunds
-    grouped: {}, // Object with invoiceNumber as key, tickets array as value
-  },
+  selectedTickets: [], // Array of ticket objects
   
   // Refund form data
   refundForm: {
-    type: 'individual', // 'individual' or 'group'
     reason: '',
-    customAmounts: {}, // ticketNumber: amount pairs for custom amounts
-    groupCustomAmounts: {}, 
+    refundAmount: null, // total custom refund amount (null means full refund)
+    customAmounts: {}, // per-ticket custom amounts: { ticketNumber: amount }
   },
   
   // Refund processing states
   processing: {
-    individual: {
-      loading: false,
-      error: null,
-      success: null,
-    },
-    group: {
-      loading: false,
-      error: null,
-      success: null,
-    },
+    loading: false,
+    error: null,
+    success: null,
   },
   
   // UI states
   ui: {
     showRefundModal: false,
-    activeTab: 'individual', // 'individual' or 'group'
-    selectedInvoice: null,
   },
   
   // Refund analytics
@@ -292,8 +257,7 @@ const refundSlice = createSlice({
       state.tickets.loading = false; // FIX: Reset loading state
       state.tickets.error = null;    // FIX: Clear any errors
   
-      state.selectedTickets.individual = [];
-      state.selectedTickets.grouped = {};
+      state.selectedTickets = [];
       // Clear other related states
       state.invoiceEligibility.data = null;
       state.invoiceEligibility.loading = false;
@@ -324,64 +288,65 @@ const refundSlice = createSlice({
     // Ticket selection for refunds
     toggleTicketSelection: (state, action) => {
       const ticket = action.payload;
-      const index = state.selectedTickets.individual.findIndex(
+      const index = state.selectedTickets.findIndex(
         t => t.ticketNumber === ticket.ticketNumber
       );
       
       if (index > -1) {
-        state.selectedTickets.individual.splice(index, 1);
+        state.selectedTickets.splice(index, 1);
       } else {
-        state.selectedTickets.individual.push(ticket);
+        state.selectedTickets.push(ticket);
       }
     },
     
     clearSelectedTickets: (state) => {
-      state.selectedTickets.individual = [];
-      state.selectedTickets.grouped = {};
+      state.selectedTickets = [];
     },
     
-    // Group ticket selection by invoice
-    selectInvoiceGroup: (state, action) => {
-      const { invoiceNumber, tickets } = action.payload;
-      state.selectedTickets.grouped[invoiceNumber] = tickets;
+    // Add multiple tickets at once (for invoice selection)
+    selectMultipleTickets: (state, action) => {
+      const tickets = action.payload;
+      // Remove any existing tickets from the same invoice
+      const invoiceNumber = tickets[0]?.invoiceNumber;
+      if (invoiceNumber) {
+        state.selectedTickets = state.selectedTickets.filter(
+          t => t.invoiceNumber !== invoiceNumber
+        );
+      }
+      // Add new tickets
+      state.selectedTickets.push(...tickets);
     },
     
-    deselectInvoiceGroup: (state, action) => {
+    // Remove multiple tickets at once (for invoice deselection)
+    deselectMultipleTickets: (state, action) => {
       const invoiceNumber = action.payload;
-      delete state.selectedTickets.grouped[invoiceNumber];
+      state.selectedTickets = state.selectedTickets.filter(
+        t => t.invoiceNumber !== invoiceNumber
+      );
     },
     
     // Refund form management
-    setRefundType: (state, action) => {
-      state.refundForm.type = action.payload;
-    },
-    
     setRefundReason: (state, action) => {
       state.refundForm.reason = action.payload;
     },
     
+    setRefundAmount: (state, action) => {
+      state.refundForm.refundAmount = action.payload;
+    },
+    
     setCustomRefundAmount: (state, action) => {
       const { ticketNumber, amount } = action.payload;
-      if (amount === null || amount === undefined || amount === '') {
+      if (amount === null || amount === '') {
         delete state.refundForm.customAmounts[ticketNumber];
       } else {
-        state.refundForm.customAmounts[ticketNumber] = amount;
+        state.refundForm.customAmounts[ticketNumber] = parseFloat(amount);
       }
     },
-
-    setGroupCustomAmount: (state, action) => {
-  const { invoiceNumber, amount } = action.payload;
-  if (amount === null || amount === undefined || amount === '') {
-    delete state.refundForm.groupCustomAmounts[invoiceNumber];
-  } else {
-    state.refundForm.groupCustomAmounts[invoiceNumber] = amount;
-  }
-},
     
     clearRefundForm: (state) => {
       state.refundForm.reason = '';
+      state.refundForm.refundAmount = null;
       state.refundForm.customAmounts = {};
-       state.refundForm.groupCustomAmounts = {};
     },
     
     // UI state management
@@ -389,13 +354,6 @@ const refundSlice = createSlice({
       state.ui.showRefundModal = action.payload;
     },
     
-    setActiveTab: (state, action) => {
-      state.ui.activeTab = action.payload;
-    },
-    
-    setSelectedInvoice: (state, action) => {
-      state.ui.selectedInvoice = action.payload;
-    },
     
     // Pagination
     setCurrentPage: (state, action) => {
@@ -411,33 +369,19 @@ const refundSlice = createSlice({
       state.events.error = null;
       state.tickets.error = null;
       state.search.error = null;
-      state.processing.individual.error = null;
-      state.processing.group.error = null;
+      state.processing.error = null;
       state.invoiceEligibility.error = null;
     },
     
     // Clear success messages
     clearSuccessMessages: (state) => {
-      state.processing.individual.success = null;
-      state.processing.group.success = null;
+      state.processing.success = null;
     },
 
     clearProcessingState: (state) => {
-  state.processing.individual.success = null;
-  state.processing.individual.error = null;
-  state.processing.group.success = null;
-  state.processing.group.error = null;
-},
-
-clearIndividualProcessingState: (state) => {
-  state.processing.individual.success = null;
-  state.processing.individual.error = null;
-},
-
-clearGroupProcessingState: (state) => {
-  state.processing.group.success = null;
-  state.processing.group.error = null;
-},
+      state.processing.success = null;
+      state.processing.error = null;
+    },
     
     // Clear invoice eligibility data
     clearInvoiceEligibility: (state) => {
@@ -531,104 +475,72 @@ clearGroupProcessingState: (state) => {
         state.invoiceEligibility.data = null;
       });
     
-    // Process individual refund
+    // Process unified refund
     builder
-      .addCase(processIndividualRefund.pending, (state) => {
-        state.processing.individual.loading = true;
-        state.processing.individual.error = null;
-        state.processing.individual.success = null;
+      .addCase(processRefund.pending, (state) => {
+        state.processing.loading = true;
+        state.processing.error = null;
+        state.processing.success = null;
       })
-      .addCase(processIndividualRefund.fulfilled, (state, action) => {
-  state.processing.individual.loading = false;
-  state.processing.individual.success = action.payload;
-  state.processing.individual.error = null;
-  
-  // Update the refunded ticket status instead of removing it
-  const ticketNumber = action.payload.ticketNumber;
-  
-  // Update in main tickets list
-  const ticketIndex = state.tickets.list.findIndex(
-    ticket => ticket.ticketNumber === ticketNumber
-  );
-  if (ticketIndex > -1) {
-    state.tickets.list[ticketIndex].refundStatus = 'refunded';
-    state.tickets.list[ticketIndex].status = 'refunded';
-    state.tickets.list[ticketIndex].refundType = 'individual';
-    state.tickets.list[ticketIndex].stripeRefundId = action.payload.refund?.stripeRefundId;
-    state.tickets.list[ticketIndex].refundedAt = new Date().toISOString();
-  }
-  
-  // Update in search results
-  const searchIndex = state.search.results.findIndex(
-    ticket => ticket.ticketNumber === ticketNumber
-  );
-  if (searchIndex > -1) {
-    state.search.results[searchIndex].refundStatus = 'refunded';
-    state.search.results[searchIndex].status = 'refunded';
-    state.search.results[searchIndex].refundType = 'individual';
-    state.search.results[searchIndex].stripeRefundId = action.payload.refund?.stripeRefundId;
-    state.search.results[searchIndex].refundedAt = new Date().toISOString();
-  }
-  
-  // Update analytics
-  const refundAmount = action.payload.refund?.amount || 0;
-  state.analytics.totalRefundsProcessed += 1;
-  state.analytics.totalAmountRefunded += refundAmount;
-  state.analytics.lastRefundDate = new Date().toISOString();
-})
-      .addCase(processIndividualRefund.rejected, (state, action) => {
-        state.processing.individual.loading = false;
-        state.processing.individual.error = action.payload;
-        state.processing.individual.success = null;
-      });
-    
-    // Process group refund
-    builder
-      .addCase(processGroupRefund.pending, (state) => {
-        state.processing.group.loading = true;
-        state.processing.group.error = null;
-        state.processing.group.success = null;
-      })
-      .addCase(processGroupRefund.fulfilled, (state, action) => {
-        state.processing.group.loading = false;
-        state.processing.group.success = action.payload;
-        state.processing.group.error = null;
+      .addCase(processRefund.fulfilled, (state, action) => {
+        state.processing.loading = false;
+        state.processing.success = action.payload;
+        state.processing.error = null;
         
-        // ✅ UPDATED: Handle new group refund response structure
-        const invoiceNumber = action.payload.invoiceNumber;
         const refundedTicketNumbers = action.payload.refund?.ticketNumbers || [];
         
         if (refundedTicketNumbers.length > 0) {
-          // Remove all tickets from the invoice from lists
-          state.tickets.list = state.tickets.list.filter(
-            ticket => !refundedTicketNumbers.includes(ticket.ticketNumber)
-          );
-          state.search.results = state.search.results.filter(
-            ticket => !refundedTicketNumbers.includes(ticket.ticketNumber)
-          );
+          // Update ticket statuses and refund amounts
+          refundedTicketNumbers.forEach(ticketNumber => {
+            // Update in main tickets list
+            const ticketIndex = state.tickets.list.findIndex(
+              ticket => ticket.ticketNumber === ticketNumber
+            );
+            if (ticketIndex > -1) {
+              const ticket = state.tickets.list[ticketIndex];
+              ticket.totalRefundedAmount = (ticket.totalRefundedAmount || 0) + (action.payload.refund?.refundAmount || 0);
+              if (ticket.totalRefundedAmount >= ticket.priceDetails.totalPrice) {
+                ticket.refundStatus = 'refunded';
+                ticket.status = 'refunded';
+              } else {
+                ticket.refundStatus = 'partial';
+              }
+              ticket.stripeRefundId = action.payload.refund?.stripeRefundId;
+              ticket.refundedAt = new Date().toISOString();
+            }
+            
+            // Update in search results
+            const searchIndex = state.search.results.findIndex(
+              ticket => ticket.ticketNumber === ticketNumber
+            );
+            if (searchIndex > -1) {
+              const ticket = state.search.results[searchIndex];
+              ticket.totalRefundedAmount = (ticket.totalRefundedAmount || 0) + (action.payload.refund?.refundAmount || 0);
+              if (ticket.totalRefundedAmount >= ticket.priceDetails.totalPrice) {
+                ticket.refundStatus = 'refunded';
+                ticket.status = 'refunded';
+              } else {
+                ticket.refundStatus = 'partial';
+              }
+              ticket.stripeRefundId = action.payload.refund?.stripeRefundId;
+              ticket.refundedAt = new Date().toISOString();
+            }
+          });
           
-          // Remove from grouped selection
-          delete state.selectedTickets.grouped[invoiceNumber];
-          
-          // Update totals
-          state.tickets.total = Math.max(0, state.tickets.total - refundedTicketNumbers.length);
+          // Clear selected tickets
+          state.selectedTickets = [];
         }
         
-        // Update analytics with group refund data
-        const refundAmount = action.payload.refund?.totalAmount || 0;
+        // Update analytics
+        const refundAmount = action.payload.refund?.refundAmount || 0;
         state.analytics.totalRefundsProcessed += 1;
         state.analytics.totalAmountRefunded += refundAmount;
         state.analytics.lastRefundDate = new Date().toISOString();
-        
-        // Clear invoice eligibility data since the invoice is now refunded
-        if (state.invoiceEligibility.data?.invoiceNumber === invoiceNumber) {
-          state.invoiceEligibility.data = null;
-        }
       })
-      .addCase(processGroupRefund.rejected, (state, action) => {
-        state.processing.group.loading = false;
-        state.processing.group.error = action.payload;
-        state.processing.group.success = null;
+      .addCase(processRefund.rejected, (state, action) => {
+        state.processing.loading = false;
+        state.processing.error = action.payload;
+        state.processing.success = null;
       });
   },
 });
@@ -641,23 +553,18 @@ export const {
   clearSearchResults,
   toggleTicketSelection,
   clearSelectedTickets,
-  selectInvoiceGroup,
-  deselectInvoiceGroup,
-  setRefundType,
+  selectMultipleTickets,
+  deselectMultipleTickets,
   setRefundReason,
+  setRefundAmount,
   setCustomRefundAmount,
-   setGroupCustomAmount,
   clearRefundForm,
   setShowRefundModal,
-  setActiveTab,
-  setSelectedInvoice,
   setCurrentPage,
   setPageLimit,
   clearErrors,
   clearSuccessMessages,
   clearProcessingState,
-  clearIndividualProcessingState,
-  clearGroupProcessingState,
   clearInvoiceEligibility,
   updateRefundAnalytics,
   resetRefundState,
@@ -769,19 +676,21 @@ export const selectSearch = createSelector(
 // COMPLEX DERIVED SELECTORS
 // ===================================
 
-// Calculate total refund amount for selected individual tickets
+// Calculate total refund amount for selected tickets
 export const selectTotalRefundAmount = createSelector(
   [selectSelectedTickets, selectRefundForm],
   (selectedTickets, refundForm) => {
-    const { individual } = selectedTickets;
-    const { customAmounts } = refundForm;
-    
-    return individual.reduce((total, ticket) => {
-      const customAmount = customAmounts[ticket.ticketNumber];
-      const amount = customAmount !== undefined 
-        ? parseFloat(customAmount) || 0
-        : ticket.priceDetails?.totalPrice || 0;
-      return total + amount;
+    // Calculate based on custom amounts or max refundable
+    return selectedTickets.reduce((total, ticket) => {
+      const customAmount = refundForm.customAmounts[ticket.ticketNumber];
+      if (customAmount !== undefined) {
+        return total + customAmount;
+      } else {
+        const ticketPrice = ticket.priceDetails?.totalPrice || 0;
+        const alreadyRefunded = ticket.totalRefundedAmount || 0;
+        const maxRefundable = Math.max(0, ticketPrice - alreadyRefunded);
+        return total + maxRefundable;
+      }
     }, 0);
   }
 );
@@ -834,8 +743,7 @@ export const selectIsLoading = createSelector(
     return events.loading || 
            tickets.loading || 
            search.loading ||
-           processing.individual.loading ||
-           processing.group.loading ||
+           processing.loading ||
            invoiceEligibility.loading;
   }
 );
@@ -847,8 +755,7 @@ export const selectHasErrors = createSelector(
     return !!(events.error || 
              tickets.error || 
              search.error ||
-             processing.individual.error ||
-             processing.group.error ||
+             processing.error ||
              invoiceEligibility.error);
   }
 );
@@ -884,17 +791,16 @@ export const selectPaginationInfo = createSelector(
 export const selectSelectedTicketsSummary = createSelector(
   [selectSelectedTickets],
   (selectedTickets) => {
-    const individualCount = selectedTickets.individual.length;
-    const groupedCount = Object.keys(selectedTickets.grouped).length;
-    const totalGroupedTickets = Object.values(selectedTickets.grouped)
-      .reduce((sum, tickets) => sum + tickets.length, 0);
+    // Group tickets by invoice to get invoice count
+    const invoiceGroups = selectedTickets.reduce((groups, ticket) => {
+      groups[ticket.invoiceNumber] = true;
+      return groups;
+    }, {});
     
     return {
-      individualCount,
-      groupedCount,
-      totalGroupedTickets,
-      totalSelected: individualCount + totalGroupedTickets,
-      hasSelectedTickets: individualCount > 0 || groupedCount > 0,
+      ticketCount: selectedTickets.length,
+      invoiceCount: Object.keys(invoiceGroups).length,
+      hasSelectedTickets: selectedTickets.length > 0,
     };
   }
 );
@@ -904,34 +810,17 @@ export const selectRefundFormValidation = createSelector(
   [selectRefundForm, selectSelectedTickets],
   (refundForm, selectedTickets) => {
     const hasReason = refundForm.reason.trim().length > 0;
-    const hasSelectedTickets = selectedTickets.individual.length > 0 || 
-                              Object.keys(selectedTickets.grouped).length > 0;
+    const hasSelectedTickets = selectedTickets.length > 0;
     
     const errors = [];
     if (!hasReason) errors.push('Refund reason is required');
     if (!hasSelectedTickets) errors.push('At least one ticket must be selected');
     
-    // Validate custom amounts
-    const invalidCustomAmounts = [];
-    selectedTickets.individual.forEach(ticket => {
-      const customAmount = refundForm.customAmounts[ticket.ticketNumber];
-      if (customAmount !== undefined) {
-        const amount = parseFloat(customAmount);
-        const maxAmount = ticket.priceDetails?.totalPrice || 0;
-        if (isNaN(amount) || amount < 0) {
-          invalidCustomAmounts.push(`Invalid amount for ticket ${ticket.ticketNumber}`);
-        } else if (amount > maxAmount) {
-          invalidCustomAmounts.push(`Amount for ticket ${ticket.ticketNumber} exceeds maximum (${maxAmount})`);
-        }
-      }
-    });
-    
     return {
-      isValid: hasReason && hasSelectedTickets && invalidCustomAmounts.length === 0,
+      isValid: hasReason && hasSelectedTickets,
       hasReason,
       hasSelectedTickets,
-      errors: [...errors, ...invalidCustomAmounts],
-      customAmountErrors: invalidCustomAmounts,
+      errors,
     };
   }
 );
@@ -941,18 +830,11 @@ export const selectSuccessMessages = createSelector(
   [selectProcessing],
   (processing) => {
     const messages = [];
-    if (processing.individual.success) {
+    if (processing.success) {
       messages.push({
-        type: 'individual',
-        message: 'Individual refund processed successfully',
-        data: processing.individual.success
-      });
-    }
-    if (processing.group.success) {
-      messages.push({
-        type: 'group',
-        message: 'Group refund processed successfully',
-        data: processing.group.success
+        type: 'refund',
+        message: 'Refund processed successfully',
+        data: processing.success
       });
     }
     return messages;
@@ -968,8 +850,7 @@ export const selectAllErrors = createSelector(
     if (events.error) errors.push({ type: 'events', message: events.error });
     if (tickets.error) errors.push({ type: 'tickets', message: tickets.error });
     if (search.error) errors.push({ type: 'search', message: search.error });
-    if (processing.individual.error) errors.push({ type: 'individual_refund', message: processing.individual.error });
-    if (processing.group.error) errors.push({ type: 'group_refund', message: processing.group.error });
+    if (processing.error) errors.push({ type: 'refund', message: processing.error });
     if (invoiceEligibility.error) errors.push({ type: 'invoice_eligibility', message: invoiceEligibility.error });
     
     return errors;
@@ -981,13 +862,15 @@ export const selectInvoiceDetails = createSelector(
   [selectTicketsByInvoice, selectSelectedTickets],
   (ticketsByInvoice, selectedTickets) => (invoiceNumber) => {
     const tickets = ticketsByInvoice[invoiceNumber] || [];
-    const isSelected = !!selectedTickets.grouped[invoiceNumber];
+    const isSelected = selectedTickets.some(t => t.invoiceNumber === invoiceNumber);
     
     if (tickets.length === 0) {
       return null;
     }
     
     const totalAmount = tickets.reduce((sum, t) => sum + (t.priceDetails?.totalPrice || 0), 0);
+    const totalRefundedAmount = tickets.reduce((sum, t) => sum + (t.totalRefundedAmount || 0), 0);
+    const remainingBalance = totalAmount - totalRefundedAmount;
     const paymentIntents = [...new Set(tickets.map(t => t.paymentIntentId))];
     const buyers = [...new Set(tickets.map(t => `${t.buyer?.firstName} ${t.buyer?.lastName}`))];
     const refundStatuses = [...new Set(tickets.map(t => t.refundStatus))];
@@ -997,12 +880,14 @@ export const selectInvoiceDetails = createSelector(
       tickets,
       ticketCount: tickets.length,
       totalAmount,
+      totalRefundedAmount,
+      remainingBalance,
+      isFullyRefunded: remainingBalance <= 0,
       paymentIntents,
       hasMultiplePaymentIntents: paymentIntents.length > 1,
       buyers,
       refundStatuses,
-      hasRefundedTickets: refundStatuses.includes('refunded'),
-      canGroupRefund: paymentIntents.length === 1 && !refundStatuses.includes('refunded'),
+      hasRefundedTickets: refundStatuses.includes('refunded') || refundStatuses.includes('partial'),
       isSelected,
       createdAt: tickets[0]?.createdAt,
       eventId: tickets[0]?.event,
