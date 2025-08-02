@@ -13,6 +13,7 @@ import CheckInPaid_EventSelector from '@/components/events/checkin/checkInPaid_E
 import CheckInPaid_SearchBar from '@/components/events/checkin/checkInPaid_SearchBar';
 import CheckInPaid_CheckInStats from '@/components/events/checkin/checkInPaid_CheckInStats';
 import CheckInPaid_AttendeeList from '@/components/events/checkin/checkInPaid_AttendeeList';
+import CheckInPaid_GroupedAttendeeList from '@/components/events/checkin/checkInPaid_GroupedAttendeeList';
 import CheckInPaid_VirtualizedAttendeeList from '@/components/events/checkin/checkInPaid_VirtualizedAttendeeList';
 
 // Redux
@@ -121,7 +122,7 @@ const CheckInPaidPage = () => {
         {/* Attendee List */}
         <div className="bg-white rounded-lg shadow-sm">
           <div className="p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Ticket Holders</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Attendees</h2>
           </div>
           
           {/* Search Bar - Moved just above attendees */}
@@ -133,7 +134,7 @@ const CheckInPaidPage = () => {
             {useVirtualized ? (
               <CheckInPaid_VirtualizedAttendeeList />
             ) : (
-              <CheckInPaid_AttendeeList />
+              <CheckInPaid_GroupedAttendeeList />
             )}
           </div>
         </div>

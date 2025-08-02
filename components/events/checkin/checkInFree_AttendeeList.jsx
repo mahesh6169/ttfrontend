@@ -4,7 +4,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import CheckInFree_AttendeeCard from './checkInFree_AttendeeCard';
+import CheckInFree_SimpleAttendeeRow from './checkInFree_SimpleAttendeeRow';
 import Pagination from '@/components/Pagination';
 import { 
   bulkCheckInRegistration,
@@ -150,37 +150,17 @@ const CheckInFree_AttendeeList = () => {
           >
             {/* Registration Header */}
             <div 
-              className={`p-4 cursor-pointer transition-colors ${
-                allCheckedIn ? 'bg-green-50' : showPartialCheckIn ? 'bg-yellow-50' : 'hover:bg-gray-50'
-              }`}
+              className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => toggleRegistration(registration._id)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-gray-900">
-                      {registration.registrationNumber}
-                    </h3>
-                    {allCheckedIn && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        All Checked In
-                      </span>
-                    )}
-                    {showPartialCheckIn && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        Partial Check-in
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="text-sm text-gray-500 mt-1">
-                    <span>{registration.user?.name || registration.userId?.name || 'Former User'}</span>
-                    <span className="ml-2">• {registration.email}</span>
-                    <span className="ml-2">• {registration.attendees.length} attendee{registration.attendees.length !== 1 ? 's' : ''}</span>
-                  </div>
-                  
-                  <div className="text-xs text-gray-400 mt-1">
-                    Registered: {formatDate(registration.createdAt)}
+                  <div className="text-sm text-gray-700">
+                    <span className="font-medium">{registration.user?.name || registration.userId?.name || 'Former User'}</span>
+                    <span className="mx-2">•</span>
+                    <span>{registration.attendees.length} attendee{registration.attendees.length !== 1 ? 's' : ''}</span>
+                    <span className="mx-2">•</span>
+                    <span>Checked In: {registration.attendees.filter(a => a.checkedIn).length} / {registration.attendees.length}</span>
                   </div>
                   
                   {/* View Registration Details Link */}
@@ -259,15 +239,13 @@ const CheckInFree_AttendeeList = () => {
             
             {/* Attendees List */}
             {isExpanded && (
-              <div className="border-t border-gray-200 p-4 space-y-3 bg-gray-50">
+              <div className="border-t border-gray-200 p-4 space-y-1">
                 {registration.attendees.map((attendee) => (
-                  <CheckInFree_AttendeeCard
+                  <CheckInFree_SimpleAttendeeRow
                     key={attendee._id}
                     attendee={attendee}
                     ticketId={registration._id}
                     registrationNumber={registration.registrationNumber}
-                    formResponses={[]} // Don't show form responses in individual cards
-                    isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
                   />
                 ))}
               </div>
