@@ -146,13 +146,12 @@ export const checkInvoiceEligibility = createAsyncThunk(
 // Process unified refund
 export const processRefund = createAsyncThunk(
   'refunds/processRefund',
-  async ({ eventId, ticketNumbers, refundAmount, reason }, { rejectWithValue }) => {
+  async ({ eventId, tickets, reason }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/events/${eventId}/refunds/process`,
         {
-          ticketNumbers,
-          refundAmount,
+          tickets, // Array of { ticketNumber, amount }
           reason,
         },
         {
@@ -162,8 +161,7 @@ export const processRefund = createAsyncThunk(
       
       return {
         ...response.data,
-        ticketNumbers,
-        refundAmount,
+        tickets,
         reason,
       };
     } catch (error) {
@@ -339,7 +337,15 @@ const refundSlice = createSlice({
       if (amount === null || amount === '') {
         delete state.refundForm.customAmounts[ticketNumber];
       } else {
-        state.refundForm.customAmounts[ticketNumber] = parseFloat(amount);
+        // Find the ticket to get max refundable amount
+        const ticket = state.tickets.list.find(t => t.ticketNumber === ticketNumber);
+        if (ticket) {
+          const maxRefundable = ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0);
+          const validAmount = Math.min(Math.max(0, parseFloat(amount)), maxRefundable);
+          state.refundForm.customAmounts[ticketNumber] = validAmount;
+        } else {
+          state.refundForm.customAmounts[ticketNumber] = parseFloat(amount);
+        }
       }
     },
     
@@ -487,52 +493,15 @@ const refundSlice = createSlice({
         state.processing.success = action.payload;
         state.processing.error = null;
         
-        const refundedTicketNumbers = action.payload.refund?.ticketNumbers || [];
+        // Clear selected tickets and form
+        state.selectedTickets = [];
+        state.refundForm.customAmounts = {};
         
-        if (refundedTicketNumbers.length > 0) {
-          // Update ticket statuses and refund amounts
-          refundedTicketNumbers.forEach(ticketNumber => {
-            // Update in main tickets list
-            const ticketIndex = state.tickets.list.findIndex(
-              ticket => ticket.ticketNumber === ticketNumber
-            );
-            if (ticketIndex > -1) {
-              const ticket = state.tickets.list[ticketIndex];
-              ticket.totalRefundedAmount = (ticket.totalRefundedAmount || 0) + (action.payload.refund?.refundAmount || 0);
-              if (ticket.totalRefundedAmount >= ticket.priceDetails.totalPrice) {
-                ticket.refundStatus = 'refunded';
-                ticket.status = 'refunded';
-              } else {
-                ticket.refundStatus = 'partial';
-              }
-              ticket.stripeRefundId = action.payload.refund?.stripeRefundId;
-              ticket.refundedAt = new Date().toISOString();
-            }
-            
-            // Update in search results
-            const searchIndex = state.search.results.findIndex(
-              ticket => ticket.ticketNumber === ticketNumber
-            );
-            if (searchIndex > -1) {
-              const ticket = state.search.results[searchIndex];
-              ticket.totalRefundedAmount = (ticket.totalRefundedAmount || 0) + (action.payload.refund?.refundAmount || 0);
-              if (ticket.totalRefundedAmount >= ticket.priceDetails.totalPrice) {
-                ticket.refundStatus = 'refunded';
-                ticket.status = 'refunded';
-              } else {
-                ticket.refundStatus = 'partial';
-              }
-              ticket.stripeRefundId = action.payload.refund?.stripeRefundId;
-              ticket.refundedAt = new Date().toISOString();
-            }
-          });
-          
-          // Clear selected tickets
-          state.selectedTickets = [];
-        }
+        // Don't update ticket amounts here - let the component re-fetch
+        // This ensures we always show the correct data from the backend
         
         // Update analytics
-        const refundAmount = action.payload.refund?.refundAmount || 0;
+        const refundAmount = action.payload.totalAmount || 0;
         state.analytics.totalRefundsProcessed += 1;
         state.analytics.totalAmountRefunded += refundAmount;
         state.analytics.lastRefundDate = new Date().toISOString();

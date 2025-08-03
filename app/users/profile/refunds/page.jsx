@@ -41,6 +41,8 @@ export default function RefundsPage() {
   const [expandedInvoices, setExpandedInvoices] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [amountWarnings, setAmountWarnings] = useState({});
+  const [localAmounts, setLocalAmounts] = useState({});
   const itemsPerPage = 20;
 
   // Fetch events on mount
@@ -64,6 +66,8 @@ export default function RefundsPage() {
     dispatch(clearRefundForm());
     dispatch(setSelectedEvent(event));
     setExpandedInvoices({});
+    setLocalAmounts({});
+    setAmountWarnings({});
   };
 
   const toggleInvoiceExpanded = (invoiceNumber) => {
@@ -75,10 +79,66 @@ export default function RefundsPage() {
 
   const handleTicketSelect = (ticket) => {
     dispatch(toggleTicketSelection(ticket));
+    // Clear warning and local amount when deselecting
+    if (selectedTickets.some(t => t.ticketNumber === ticket.ticketNumber)) {
+      setAmountWarnings(prev => {
+        const newWarnings = { ...prev };
+        delete newWarnings[ticket.ticketNumber];
+        return newWarnings;
+      });
+      setLocalAmounts(prev => {
+        const newAmounts = { ...prev };
+        delete newAmounts[ticket.ticketNumber];
+        return newAmounts;
+      });
+    }
   };
 
-  const handleAmountChange = (ticketNumber, amount) => {
-    dispatch(setCustomRefundAmount({ ticketNumber, amount }));
+  const handleAmountChange = (ticketNumber, amount, maxAmount) => {
+    // Update local state for immediate display
+    setLocalAmounts(prev => ({
+      ...prev,
+      [ticketNumber]: amount
+    }));
+
+    // Clear warning if clearing the field
+    if (amount === '' || amount === null) {
+      dispatch(setCustomRefundAmount({ ticketNumber, amount: null }));
+      setAmountWarnings(prev => {
+        const newWarnings = { ...prev };
+        delete newWarnings[ticketNumber];
+        return newWarnings;
+      });
+      return;
+    }
+    
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount < 0) {
+      return; // Don't update if invalid
+    }
+    
+    // Check if amount exceeds max
+    if (numAmount > maxAmount) {
+      // Set warning
+      setAmountWarnings(prev => ({
+        ...prev,
+        [ticketNumber]: `Amount capped at maximum refundable: ${formatCurrency(maxAmount)}`
+      }));
+      // Cap at max refundable amount
+      dispatch(setCustomRefundAmount({ ticketNumber, amount: maxAmount }));
+      setLocalAmounts(prev => ({
+        ...prev,
+        [ticketNumber]: maxAmount.toFixed(2)
+      }));
+    } else {
+      // Clear warning if amount is valid
+      setAmountWarnings(prev => {
+        const newWarnings = { ...prev };
+        delete newWarnings[ticketNumber];
+        return newWarnings;
+      });
+      dispatch(setCustomRefundAmount({ ticketNumber, amount: numAmount }));
+    }
   };
 
   const handleReasonChange = (value) => {
@@ -92,6 +152,7 @@ export default function RefundsPage() {
       if (customAmount !== undefined) {
         return total + customAmount;
       } else {
+        // Use the actual ticket refund amount - needs to be fixed in backend
         const maxRefundable = ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0);
         return total + maxRefundable;
       }
@@ -103,13 +164,22 @@ export default function RefundsPage() {
       return;
     }
 
-    const ticketNumbers = selectedTickets.map(t => t.ticketNumber);
-    const totalAmount = calculateRefundTotal();
+    // Build tickets array with individual amounts
+    const tickets = selectedTickets.map(ticket => {
+      const customAmount = refundForm.customAmounts[ticket.ticketNumber];
+      const amount = customAmount !== undefined ? 
+        customAmount : 
+        (ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0));
+      
+      return {
+        ticketNumber: ticket.ticketNumber,
+        amount: amount
+      };
+    });
 
     await dispatch(processRefund({
       eventId: selectedEvent._id,
-      ticketNumbers,
-      refundAmount: totalAmount,
+      tickets,
       reason: refundReason.trim()
     })).unwrap();
 
@@ -117,6 +187,15 @@ export default function RefundsPage() {
     dispatch(clearSelectedTickets());
     dispatch(clearRefundForm());
     setLocalRefundReason('');
+    setLocalAmounts({});
+    setAmountWarnings({});
+    
+    // Re-fetch tickets to get updated refund amounts
+    dispatch(fetchRefundableTickets({ 
+      eventId: selectedEvent._id,
+      page: 1,
+      limit: 100
+    }));
   };
 
   const formatCurrency = (amount) => {
@@ -237,23 +316,46 @@ export default function RefundsPage() {
               {paginatedInvoices.map(([invoiceNumber, tickets]) => {
                 const isExpanded = expandedInvoices[invoiceNumber];
                 const invoiceTotal = tickets.reduce((sum, t) => sum + t.priceDetails.totalPrice, 0);
+                // totalRefundedAmount is stored per ticket
                 const invoiceRefunded = tickets.reduce((sum, t) => sum + (t.totalRefundedAmount || 0), 0);
                 const hasSelectedTickets = tickets.some(t => 
                   selectedTickets.some(st => st.ticketNumber === t.ticketNumber)
                 );
+                const allTicketsRefunded = tickets.every(t => {
+                  const maxRefundable = t.priceDetails.totalPrice - (t.totalRefundedAmount || 0);
+                  return maxRefundable <= 0;
+                });
 
                 return (
                   <div key={invoiceNumber} className="bg-white rounded-lg shadow-sm border border-gray-200">
                     {/* Invoice Header */}
                     <div 
-                      className={`p-4 cursor-pointer hover:bg-gray-50 ${hasSelectedTickets ? 'bg-blue-50' : ''}`}
-                      onClick={() => toggleInvoiceExpanded(invoiceNumber)}
+                      className={`p-4 cursor-pointer ${
+                        allTicketsRefunded 
+                          ? 'bg-gray-100 cursor-not-allowed' 
+                          : hasSelectedTickets 
+                          ? 'bg-blue-50 hover:bg-blue-100' 
+                          : 'hover:bg-gray-50'
+                      }`}
+                      onClick={() => !allTicketsRefunded && toggleInvoiceExpanded(invoiceNumber)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <IoChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                          <span className="font-semibold text-gray-900">{invoiceNumber}</span>
+                          <span className={`font-semibold ${allTicketsRefunded ? 'text-gray-500' : 'text-gray-900'}`}>
+                            {invoiceNumber}
+                          </span>
                           <span className="text-sm text-gray-500">({tickets.length} tickets)</span>
+                          {allTicketsRefunded && (
+                            <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                              Fully Refunded
+                            </span>
+                          )}
+                          {!allTicketsRefunded && invoiceRefunded > 0 && (
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                              Partially Refunded
+                            </span>
+                          )}
                           {hasSelectedTickets && (
                             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                               Selected
@@ -358,16 +460,39 @@ export default function RefundsPage() {
                                         min="0"
                                         max={maxRefundable}
                                         step="0.01"
-                                        value={customAmount || ''}
-                                        onChange={(e) => handleAmountChange(ticket.ticketNumber, e.target.value)}
+                                        value={localAmounts[ticket.ticketNumber] !== undefined ? localAmounts[ticket.ticketNumber] : (customAmount || '')}
+                                        onChange={(e) => handleAmountChange(ticket.ticketNumber, e.target.value, maxRefundable)}
+                                        onWheel={(e) => e.target.blur()}
+                                        onBlur={(e) => {
+                                          // Auto-format to 2 decimal places on blur
+                                          const value = e.target.value;
+                                          if (value && !isNaN(value)) {
+                                            const formatted = parseFloat(value).toFixed(2);
+                                            setLocalAmounts(prev => ({
+                                              ...prev,
+                                              [ticket.ticketNumber]: formatted
+                                            }));
+                                            dispatch(setCustomRefundAmount({ ticketNumber: ticket.ticketNumber, amount: parseFloat(formatted) }));
+                                          }
+                                        }}
                                         placeholder={maxRefundable.toFixed(2)}
-                                        className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className={`w-full pl-8 pr-3 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 ${
+                                          amountWarnings[ticket.ticketNumber] 
+                                            ? 'border-amber-400 focus:ring-amber-500' 
+                                            : 'border-gray-300 focus:ring-blue-500'
+                                        }`}
                                       />
                                     </div>
                                     <span className="text-xs text-gray-500">
                                       Max: {formatCurrency(maxRefundable)}
                                     </span>
                                   </div>
+                                  {amountWarnings[ticket.ticketNumber] && (
+                                    <div className="mt-1 text-xs text-amber-600 flex items-center">
+                                      <IoWarningOutline className="h-3 w-3 mr-1" />
+                                      {amountWarnings[ticket.ticketNumber]}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
