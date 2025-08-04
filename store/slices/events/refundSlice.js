@@ -291,7 +291,10 @@ const refundSlice = createSlice({
       );
       
       if (index > -1) {
+        // Remove ticket from selection
         state.selectedTickets.splice(index, 1);
+        // Clear custom refund amount for this ticket
+        delete state.refundForm.customAmounts[ticket.ticketNumber];
       } else {
         state.selectedTickets.push(ticket);
       }
