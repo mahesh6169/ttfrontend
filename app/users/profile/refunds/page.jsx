@@ -228,7 +228,8 @@ export default function RefundsPage() {
       tickets.some(ticket => 
         ticket.ticketNumber.toLowerCase().includes(searchLower) ||
         ticket.buyer.email.toLowerCase().includes(searchLower) ||
-        `${ticket.buyer.firstName} ${ticket.buyer.lastName}`.toLowerCase().includes(searchLower)
+        `${ticket.buyer.firstName} ${ticket.buyer.lastName}`.toLowerCase().includes(searchLower) ||
+        ticket.ticketType.name.toLowerCase().includes(searchLower)
       )
     );
   });
@@ -303,7 +304,7 @@ export default function RefundsPage() {
                       setSearchTerm(e.target.value);
                       setCurrentPage(1);
                     }}
-                    placeholder="Search by invoice, ticket number, or buyer..."
+                    placeholder="Search by invoice no., ticket no., buyer name / email, or ticket type..."
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -371,36 +372,43 @@ export default function RefundsPage() {
                       onClick={() => toggleInvoiceExpanded(invoiceNumber)}
 
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <IoChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                          <span className={`font-semibold ${allTicketsRefunded ? 'text-gray-500' : 'text-gray-900'}`}>
-                            {invoiceNumber}
-                          </span>
-                          <span className="text-sm text-gray-500">({tickets.length} tickets)</span>
-                          {allTicketsRefunded && (
-                            <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                              Fully Refunded
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <IoChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                            <span className={`font-semibold ${allTicketsRefunded ? 'text-gray-500' : 'text-gray-900'}`}>
+                              {invoiceNumber}
                             </span>
-                          )}
-                          {!allTicketsRefunded && invoiceRefunded > 0 && (
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                              Partially Refunded
-                            </span>
-                          )}
-                          {hasSelectedTickets && (
-                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                              Selected
-                            </span>
-                          )}
+                            <span className="text-sm text-gray-500">({tickets.length} tickets)</span>
+                            {allTicketsRefunded && (
+                              <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                                Fully Refunded
+                              </span>
+                            )}
+                            {!allTicketsRefunded && invoiceRefunded > 0 && (
+                              <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                                Partially Refunded
+                              </span>
+                            )}
+                            {hasSelectedTickets && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                Selected
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            <span>Total: {formatCurrency(invoiceTotal)}</span>
+                            {invoiceRefunded > 0 && (
+                              <span className="ml-3 text-red-600">
+                                Refunded: {formatCurrency(invoiceRefunded)}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600">
-                          <span>Total: {formatCurrency(invoiceTotal)}</span>
-                          {invoiceRefunded > 0 && (
-                            <span className="ml-3 text-red-600">
-                              Refunded: {formatCurrency(invoiceRefunded)}
-                            </span>
-                          )}
+                        <div className="flex items-center ml-7">
+                          <span className="text-sm text-gray-600">
+                            {tickets[0].buyer.firstName} {tickets[0].buyer.lastName} • {tickets[0].buyer.email} • {tickets[0].buyer.phone}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -452,9 +460,6 @@ export default function RefundsPage() {
                                       <IoTicket className="h-4 w-4 text-gray-400" />
                                       <span className="font-mono text-sm font-medium">{ticket.ticketNumber}</span>
                                       <span className="text-xs text-gray-500">{ticket.ticketType.name}</span>
-                                    </div>
-                                    <div className="text-sm text-gray-600 mt-1">
-                                      {ticket.buyer.firstName} {ticket.buyer.lastName} • {ticket.buyer.email}
                                     </div>
                                     {ticket.seats?.length > 0 && (
                                       <div className="text-xs text-gray-500 mt-1">

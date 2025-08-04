@@ -51,22 +51,30 @@ const MyInvoicesPage = () => {
         setTotalPages(data.pagination.totalPages);
         setHasMore(data.pagination.hasMore);
         
-        // Extract unique events from invoices
-        const uniqueEvents = data.invoices.reduce((acc, invoice) => {
+        // Extract unique events from invoices using the LATEST invoice per event
+        const eventMap = data.invoices.reduce((acc, invoice) => {
           const eventKey = invoice.event.eventCode;
-          if (eventKey && !acc.find(e => e.eventCode === eventKey)) {
-            acc.push({
-              id: eventKey,
-              eventCode: eventKey,
-              title: invoice.event.title,
-              dateTime: invoice.event.dateTime,
-              venue: invoice.event.venue,
-              timeZone: invoice.event.timeZone,
-              organizer: invoice.event.organizer
-            });
+          if (eventKey) {
+            // If we haven't seen this event yet, or this invoice is newer, update the event info
+            if (!acc[eventKey] || new Date(invoice.createdAt) > new Date(acc[eventKey].createdAt)) {
+              acc[eventKey] = {
+                id: eventKey,
+                eventCode: eventKey,
+                title: invoice.event.title,
+                dateTime: invoice.event.dateTime,
+                venue: invoice.event.venue,
+                address: invoice.event.address,
+                timeZone: invoice.event.timeZone,
+                organizer: invoice.event.organizer,
+                createdAt: invoice.createdAt // Keep track of invoice creation time
+              };
+            }
           }
           return acc;
-        }, []);
+        }, {});
+        
+        // Convert to array and remove createdAt field
+        const uniqueEvents = Object.values(eventMap).map(({ createdAt, ...event }) => event);
 
         // Sort events by date (most recent first)
         uniqueEvents.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
@@ -268,18 +276,20 @@ const MyInvoicesPage = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                   <div>
-                    <span className="font-medium">Date & Time:</span><br />
+                    <span className="font-medium">📅 Date & Time:</span><br />
                     {eventDateTime.date} at {eventDateTime.time}
                     <div className="text-xs text-gray-500 mt-1">Timezone: {selectedEvent.timeZone}</div>
                   </div>
                   <div>
-                    <span className="font-medium">Venue:</span><br />
+                    <span className="font-medium">📍 Venue:</span><br />
                     {selectedEvent.venue}
+                    {selectedEvent.address && <div className="text-xs mt-1">{selectedEvent.address}</div>}
                   </div>
                   <div>
-                    <span className="font-medium">Organizer:</span><br />
+                    <span className="font-medium">👤 Organizer:</span><br />
                     {selectedEvent.organizer?.name || 'N/A'}
                     {selectedEvent.organizer?.email && <div className="text-xs mt-1">{selectedEvent.organizer.email}</div>}
+                    {selectedEvent.organizer?.phone && <div className="text-xs mt-1">{selectedEvent.organizer.phone}</div>}
                   </div>
                 </div>
               </div>
