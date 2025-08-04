@@ -203,13 +203,16 @@ const EnhancedMyTicketsPage = () => {
 
   // Get refund status
   const getRefundStatus = (ticketGroup) => {
-    const refundedTickets = ticketGroup.filter(t => t.refundStatus === 'refunded');
-    if (refundedTickets.length === 0) return null;
+    const fullyRefundedTickets = ticketGroup.filter(t => t.refundStatus === 'full');
+    const partiallyRefundedTickets = ticketGroup.filter(t => t.refundStatus === 'partial');
     
-    if (refundedTickets.length === ticketGroup.length) {
+    if (fullyRefundedTickets.length === 0 && partiallyRefundedTickets.length === 0) return null;
+    
+    if (fullyRefundedTickets.length === ticketGroup.length) {
       return { type: 'full', text: 'Fully Refunded' };
-    } else {
-      return { type: 'partial', text: `${refundedTickets.length}/${ticketGroup.length} Refunded` };
+    } else if (partiallyRefundedTickets.length > 0 || fullyRefundedTickets.length > 0) {
+      const refundedCount = fullyRefundedTickets.length + partiallyRefundedTickets.length;
+      return { type: 'partial', text: `${refundedCount}/${ticketGroup.length} Refunded` };
     }
   };
 
@@ -516,24 +519,14 @@ const InvoiceModal = ({ ticketGroup, invoiceData, invoiceLoading, invoiceError, 
         acc[refundId] = {
           stripeRefundId: refundId,
           refundDate: refund.refundDate,
-          refundType: refund.refundType,
           reason: refund.reason,
           tickets: [],
           totalAmount: refund.refundAmount
         };
       }
       
-      // Handle both individual and group refunds
-      if (refund.refundType === 'group' && refund.ticketNumbers) {
-        // Group refund: multiple tickets in one refund
-        refund.ticketNumbers.forEach(ticketNumber => {
-          acc[refundId].tickets.push({
-            ticketNumber: ticketNumber,
-            amount: refund.refundAmount / refund.ticketNumbers.length // Split amount evenly
-          });
-        });
-      } else if (refund.refundType === 'individual' && refund.ticketNumber) {
-        // Individual refund: single ticket
+      // All refunds are now individual - one ticket per refund entry
+      if (refund.ticketNumber) {
         acc[refundId].tickets.push({
           ticketNumber: refund.ticketNumber,
           amount: refund.refundAmount

@@ -164,38 +164,43 @@ export default function RefundsPage() {
       return;
     }
 
-    // Build tickets array with individual amounts
-    const tickets = selectedTickets.map(ticket => {
-      const customAmount = refundForm.customAmounts[ticket.ticketNumber];
-      const amount = customAmount !== undefined ? 
-        customAmount : 
-        (ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0));
+    try {
+      // Build tickets array with individual amounts
+      const tickets = selectedTickets.map(ticket => {
+        const customAmount = refundForm.customAmounts[ticket.ticketNumber];
+        const amount = customAmount !== undefined ? 
+          customAmount : 
+          (ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0));
+        
+        return {
+          ticketNumber: ticket.ticketNumber,
+          amount: amount
+        };
+      });
+
+      await dispatch(processRefund({
+        eventId: selectedEvent._id,
+        tickets,
+        reason: refundReason.trim()
+      })).unwrap();
+
+      // Reset after success
+      dispatch(clearSelectedTickets());
+      dispatch(clearRefundForm());
+      setLocalRefundReason('');
+      setLocalAmounts({});
+      setAmountWarnings({});
       
-      return {
-        ticketNumber: ticket.ticketNumber,
-        amount: amount
-      };
-    });
-
-    await dispatch(processRefund({
-      eventId: selectedEvent._id,
-      tickets,
-      reason: refundReason.trim()
-    })).unwrap();
-
-    // Reset after success
-    dispatch(clearSelectedTickets());
-    dispatch(clearRefundForm());
-    setLocalRefundReason('');
-    setLocalAmounts({});
-    setAmountWarnings({});
-    
-    // Re-fetch tickets to get updated refund amounts
-    dispatch(fetchRefundableTickets({ 
-      eventId: selectedEvent._id,
-      page: 1,
-      limit: 100
-    }));
+      // Re-fetch tickets to get updated refund amounts
+      dispatch(fetchRefundableTickets({ 
+        eventId: selectedEvent._id,
+        page: 1,
+        limit: 100
+      }));
+    } catch (error) {
+      console.error('Refund processing error:', error);
+      // Error is already shown in the UI via processing.error
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -264,7 +269,7 @@ export default function RefundsPage() {
             <option value="">Choose an event...</option>
             {events.list.map((event) => (
               <option key={event._id} value={event._id}>
-                {event.title} - {event.eventCode}
+                {event.title} - {event.eventCode} {event.isDeleted && '(Deleted)'}
               </option>
             ))}
           </select>
@@ -272,6 +277,21 @@ export default function RefundsPage() {
 
         {selectedEvent && (
           <>
+            {/* Show warning if event is deleted */}
+            {selectedEvent.isDeleted && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <IoWarningOutline className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-medium text-amber-900">Event Deleted</h3>
+                    <p className="text-sm text-amber-700 mt-1">
+                      This event has been deleted from the system, but you can still manage refunds for existing tickets.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Search and Stats Bar */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
               <div className="flex items-center justify-between">
@@ -313,7 +333,18 @@ export default function RefundsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Left Column - Tickets List */}
               <div className="lg:col-span-3 space-y-4">
-              {paginatedInvoices.map(([invoiceNumber, tickets]) => {
+              {ticketsState.list.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                  <IoTicket className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Tickets Yet</h3>
+                  <p className="text-sm text-gray-500">
+                    No tickets have been purchased for this event yet.
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Tickets will appear here once customers make purchases.
+                  </p>
+                </div>
+              ) : paginatedInvoices.map(([invoiceNumber, tickets]) => {
                 const isExpanded = expandedInvoices[invoiceNumber];
                 const invoiceTotal = tickets.reduce((sum, t) => sum + t.priceDetails.totalPrice, 0);
                 // totalRefundedAmount is stored per ticket
@@ -337,7 +368,8 @@ export default function RefundsPage() {
                           ? 'bg-blue-50 hover:bg-blue-100' 
                           : 'hover:bg-gray-50'
                       }`}
-                      onClick={() => !allTicketsRefunded && toggleInvoiceExpanded(invoiceNumber)}
+                      onClick={() => toggleInvoiceExpanded(invoiceNumber)}
+
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">

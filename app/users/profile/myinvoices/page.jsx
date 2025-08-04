@@ -1,0 +1,1127 @@
+"use client";
+import React, { useState, useEffect } from 'react';
+import { formatInTimeZone } from 'date-fns-tz';
+import jsPDF from 'jspdf';
+
+const MyInvoicesPage = () => {
+  const [invoices, setInvoices] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [selectedEventId, setSelectedEventId] = useState('');
+  const [selectedEventInvoices, setSelectedEventInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceData, setInvoiceData] = useState(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceError, setInvoiceError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+
+  // Fetch all user invoices
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/invoices/my-invoices?page=${currentPage}&limit=20`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP Error ${response.status}`);
+      }
+
+      if (data.success) {
+        setInvoices(data.invoices);
+        setTotalPages(data.pagination.totalPages);
+        setHasMore(data.pagination.hasMore);
+        
+        // Extract unique events from invoices
+        const uniqueEvents = data.invoices.reduce((acc, invoice) => {
+          const eventKey = invoice.event.eventCode;
+          if (eventKey && !acc.find(e => e.eventCode === eventKey)) {
+            acc.push({
+              id: eventKey,
+              eventCode: eventKey,
+              title: invoice.event.title,
+              dateTime: invoice.event.dateTime,
+              venue: invoice.event.venue,
+              timeZone: invoice.event.timeZone,
+              organizer: invoice.event.organizer
+            });
+          }
+          return acc;
+        }, []);
+
+        // Sort events by date (most recent first)
+        uniqueEvents.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+        setEvents(uniqueEvents);
+        
+        console.log(`Found ${data.count} invoices across ${uniqueEvents.length} events`);
+      } else {
+        throw new Error(data.message || 'API returned success: false');
+      }
+
+    } catch (err) {
+      console.error('Error fetching invoices:', err);
+      setError(`${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Format event date with timezone support
+  const formatEventDateTime = (dateTime, timeZone) => {
+    try {
+      const date = formatInTimeZone(dateTime, timeZone, 'dd/MM/yyyy');
+      const time = formatInTimeZone(dateTime, timeZone, 'h:mm a');
+      return { date, time, combined: `${date} at ${time}` };
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      const fallbackDate = new Date(dateTime);
+      return {
+        date: fallbackDate.toLocaleDateString(),
+        time: fallbackDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        combined: fallbackDate.toLocaleString()
+      };
+    }
+  };
+
+  // Format date helper
+  const formatDate = (dateString) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return new Date(dateString).toLocaleDateString();
+    }
+  };
+
+  // Get invoice status badge
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      'paid': { color: 'bg-green-100 text-green-800', text: 'Paid' },
+      'partially_refunded': { color: 'bg-orange-100 text-orange-800', text: 'Partially Refunded' },
+      'fully_refunded': { color: 'bg-red-100 text-red-800', text: 'Fully Refunded' }
+    };
+
+    const config = statusConfig[status] || statusConfig['paid'];
+    return (
+      <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.color}`}>
+        {config.text}
+      </span>
+    );
+  };
+
+  // Handle view invoice with API call
+  const handleViewInvoice = async (invoice) => {
+    setInvoiceLoading(true);
+    setInvoiceError(null);
+    setSelectedInvoice(invoice);
+    setShowInvoiceModal(true);
+    
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/invoices/${invoice.invoiceNumber}`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP Error ${response.status}`);
+      }
+
+      if (data.success) {
+        setInvoiceData(data.invoice);
+        console.log('Invoice data loaded:', data.invoice.invoiceNumber);
+      } else {
+        throw new Error(data.message || 'Failed to load invoice');
+      }
+
+    } catch (err) {
+      console.error('Error fetching invoice:', err);
+      setInvoiceError(err.message);
+    } finally {
+      setInvoiceLoading(false);
+    }
+  };
+
+  // Filter invoices when event is selected
+  useEffect(() => {
+    if (selectedEventId && invoices.length > 0) {
+      const eventInvoices = invoices.filter(invoice => 
+        invoice.event.eventCode === selectedEventId
+      );
+      setSelectedEventInvoices(eventInvoices);
+    } else {
+      setSelectedEventInvoices([]);
+    }
+  }, [selectedEventId, invoices]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Loading your invoices...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-700">Error: {error}</p>
+        <button 
+          onClick={fetchInvoices} 
+          className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (invoices.length === 0) {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">No Invoices Yet</h2>
+        <p className="text-gray-600 mb-4">You haven't purchased any tickets yet.</p>
+        <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          Browse Events
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900">My Invoices</h2>
+        <span className="text-sm text-gray-500">
+          {invoices.length} invoice{invoices.length !== 1 ? 's' : ''} across {events.length} event{events.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {/* Event Selector */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <label htmlFor="eventSelect" className="block text-sm font-medium text-gray-700 mb-2">
+          Select Event to View Invoices
+        </label>
+        <select
+          id="eventSelect"
+          value={selectedEventId}
+          onChange={(e) => setSelectedEventId(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">-- Choose an event --</option>
+          {events.map((event) => {
+            const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+            return (
+              <option key={event.id} value={event.id}>
+                {event.title} - {eventDateTime.combined} at {event.venue}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
+      {/* Selected Event Invoices */}
+      {selectedEventId && selectedEventInvoices.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+          {/* Event Info Header */}
+          {(() => {
+            const selectedEvent = events.find(e => e.id === selectedEventId);
+            if (!selectedEvent) return null;
+            const eventDateTime = formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone);
+            
+            return (
+              <div className="bg-gray-50 px-6 py-4 border-b">
+                <h3 className="text-xl font-semibold text-gray-900 mb-1">{selectedEvent.title}</h3>
+                <div className="text-sm text-gray-500 mb-3 font-mono">
+                  Event ID: {selectedEvent.eventCode}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                  <div>
+                    <span className="font-medium">Date & Time:</span><br />
+                    {eventDateTime.date} at {eventDateTime.time}
+                    <div className="text-xs text-gray-500 mt-1">Timezone: {selectedEvent.timeZone}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium">Venue:</span><br />
+                    {selectedEvent.venue}
+                  </div>
+                  <div>
+                    <span className="font-medium">Organizer:</span><br />
+                    {selectedEvent.organizer?.name || 'N/A'}
+                    {selectedEvent.organizer?.email && <div className="text-xs mt-1">{selectedEvent.organizer.email}</div>}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Invoice List */}
+          <div className="p-6 space-y-4">
+            <h4 className="text-lg font-semibold text-gray-900">Your Invoices</h4>
+            
+            {selectedEventInvoices.map((invoice) => (
+                <div key={invoice.invoiceNumber} 
+                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      {/* Invoice Header */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <h5 className="font-semibold text-gray-900">
+                          Invoice: {invoice.invoiceNumber}
+                        </h5>
+                        {getStatusBadge(invoice.status)}
+                      </div>
+
+                      {/* Invoice Details Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Tickets:</span>
+                          <div className="text-gray-900">{invoice.ticketCount}</div>
+                        </div>
+                        
+                        <div>
+                          <span className="font-medium text-gray-700">Total Amount:</span>
+                          <div className="text-gray-900">${invoice.amounts.total.toFixed(2)}</div>
+                        </div>
+                        
+                        {invoice.hasRefunds && (
+                          <div>
+                            <span className="font-medium text-gray-700">Refunded:</span>
+                            <div className="text-red-600">${invoice.amounts.totalRefunded.toFixed(2)}</div>
+                          </div>
+                        )}
+                        
+                        <div>
+                          <span className="font-medium text-gray-700">Purchase Date:</span>
+                          <div className="text-gray-900">{formatDate(invoice.invoiceDate)}</div>
+                        </div>
+                      </div>
+
+                      {/* Refund info if applicable */}
+                      {invoice.hasRefunds && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          {invoice.refundCount} refund{invoice.refundCount !== 1 ? 's' : ''} processed
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="ml-4">
+                      <button
+                        onClick={() => handleViewInvoice(invoice)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      >
+                        View Invoice
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-6">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className={`px-4 py-2 rounded ${
+              currentPage === 1 
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+          >
+            Previous
+          </button>
+          
+          <span className="text-sm text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+          
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={!hasMore}
+            className={`px-4 py-2 rounded ${
+              !hasMore 
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {/* Invoice Modal */}
+      {showInvoiceModal && selectedInvoice && (
+        <InvoiceModal
+          invoice={selectedInvoice}
+          invoiceData={invoiceData}
+          invoiceLoading={invoiceLoading}
+          invoiceError={invoiceError}
+          onClose={() => {
+            setShowInvoiceModal(false);
+            setSelectedInvoice(null);
+            setInvoiceData(null);
+            setInvoiceError(null);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// Enhanced Invoice Modal Component with timestamps
+const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onClose }) => {
+  // Helper function to format dates consistently
+  const formatDate = (dateString) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return new Date(dateString).toLocaleDateString();
+    }
+  };
+
+  // PDF Download function
+  const downloadPDF = () => {
+    if (!invoiceData) return;
+
+    const doc = new jsPDF();
+    let yPosition = 20;
+    const leftMargin = 20;
+    const rightMargin = 20;
+    const pageWidth = doc.internal.pageSize.width;
+    const contentWidth = pageWidth - leftMargin - rightMargin;
+    
+    // INVOICE Header
+    doc.setFontSize(24);
+    doc.setFont(undefined, 'bold');
+    doc.text('INVOICE', leftMargin, yPosition);
+    
+    // Invoice Number and Date on the right
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('Issue Date', pageWidth - rightMargin - 40, yPosition - 5);
+    doc.setFont(undefined, 'bold');
+    doc.text(formatDate(invoiceData.invoiceDate), pageWidth - rightMargin - 40, yPosition);
+    
+    yPosition += 8;
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(100);
+    doc.text(`Invoice #${invoiceData.invoiceNumber}`, leftMargin, yPosition);
+    doc.setTextColor(0);
+    yPosition += 15;
+    
+    // Line separator
+    doc.setDrawColor(200);
+    doc.line(leftMargin, yPosition, pageWidth - rightMargin, yPosition);
+    yPosition += 15;
+    
+    // Two column layout - Organizer and Buyer
+    const colWidth = contentWidth / 2;
+    
+    // Event Organizer (left column)
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('Event Organizer', leftMargin, yPosition);
+    yPosition += 6;
+    
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.text(invoiceData.event.organizer?.name || 'Event Organizer', leftMargin, yPosition);
+    yPosition += 5;
+    doc.setTextColor(100);
+    doc.text(invoiceData.event.organizer?.email || 'N/A', leftMargin, yPosition);
+    if (invoiceData.event.organizer?.phone) {
+      yPosition += 5;
+      doc.text(invoiceData.event.organizer.phone, leftMargin, yPosition);
+    }
+    doc.setTextColor(0);
+    
+    // Bill To (right column) - go back up
+    let rightColY = yPosition - (invoiceData.event.organizer?.phone ? 16 : 11);
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('Bill To', leftMargin + colWidth, rightColY);
+    rightColY += 6;
+    
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.text(`${invoiceData.buyer.firstName} ${invoiceData.buyer.lastName}`, leftMargin + colWidth, rightColY);
+    rightColY += 5;
+    doc.setTextColor(100);
+    doc.text(invoiceData.buyer.email, leftMargin + colWidth, rightColY);
+    if (invoiceData.buyer.phone) {
+      rightColY += 5;
+      doc.text(invoiceData.buyer.phone, leftMargin + colWidth, rightColY);
+    }
+    doc.setTextColor(0);
+    
+    yPosition = Math.max(yPosition, rightColY) + 15;
+    
+    // Event Information Box
+    doc.setFillColor(245, 245, 245);
+    doc.rect(leftMargin, yPosition - 8, contentWidth, 50, 'F');
+    
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('Event Information', leftMargin + 5, yPosition);
+    yPosition += 8;
+    
+    // Event details in grid format
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
+    
+    // Row 1
+    doc.setTextColor(100);
+    doc.text('Event Title', leftMargin + 5, yPosition);
+    doc.text('Event Code', leftMargin + colWidth, yPosition);
+    doc.setTextColor(0);
+    yPosition += 4;
+    doc.setFontSize(10);
+    doc.text(invoiceData.event.title, leftMargin + 5, yPosition);
+    doc.text(invoiceData.event.eventCode, leftMargin + colWidth, yPosition);
+    yPosition += 8;
+    
+    // Row 2
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text('Date & Time', leftMargin + 5, yPosition);
+    doc.text('Venue', leftMargin + colWidth, yPosition);
+    doc.setTextColor(0);
+    yPosition += 4;
+    doc.setFontSize(10);
+    const eventDateTime = formatInTimeZone(invoiceData.event.dateTime, invoiceData.event.timeZone, 'dd/MM/yyyy \'at\' h:mm a');
+    doc.text(eventDateTime, leftMargin + 5, yPosition);
+    doc.text(invoiceData.event.venue, leftMargin + colWidth, yPosition);
+    yPosition += 4;
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`Timezone: ${invoiceData.event.timeZone}`, leftMargin + 5, yPosition);
+    doc.setTextColor(0);
+    
+    yPosition += 8;
+    
+    // Address if exists
+    if (invoiceData.event.address) {
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text('Address', leftMargin + 5, yPosition);
+      doc.setTextColor(0);
+      yPosition += 4;
+      doc.setFontSize(10);
+      doc.text(invoiceData.event.address, leftMargin + 5, yPosition);
+    }
+    
+    yPosition += 15;
+    
+    // Purchase Details with timestamp
+    doc.setFontSize(13);
+    doc.setFont(undefined, 'bold');
+    doc.text(`Purchase Details | ${formatDateTime(invoiceData.payment.paymentDate)}`, leftMargin, yPosition);
+    yPosition += 10;
+    
+    // Table-like structure with borders
+    const tableLeft = leftMargin;
+    const col1Width = 80;
+    const col2Width = 30;
+    const col3Width = 35;
+    const col4Width = 35;
+    const tableWidth = col1Width + col2Width + col3Width + col4Width;
+    
+    // Table header background
+    doc.setFillColor(240, 240, 240);
+    doc.rect(tableLeft, yPosition - 5, tableWidth, 8, 'F');
+    
+    // Table headers
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.text('Ticket Type', tableLeft + 2, yPosition);
+    doc.text('Quantity', tableLeft + col1Width + 2, yPosition);
+    doc.text('Price', tableLeft + col1Width + col2Width + 2, yPosition);
+    doc.text('Amount', tableLeft + col1Width + col2Width + col3Width + 2, yPosition);
+    yPosition += 5;
+    
+    // Group line items by type
+    doc.setFont(undefined, 'normal');
+    const groupedItems = invoiceData.lineItems.reduce((acc, item) => {
+      const key = item.ticketType.name;
+      if (!acc[key]) {
+        acc[key] = {
+          name: key,
+          quantity: 0,
+          price: item.ticketType.price,
+          amount: 0
+        };
+      }
+      acc[key].quantity += item.quantity || 1;
+      acc[key].amount += (item.ticketType.price * (item.quantity || 1));
+      return acc;
+    }, {});
+    
+    // Draw rows
+    Object.values(groupedItems).forEach((item, index) => {
+      if (index % 2 === 1) {
+        doc.setFillColor(250, 250, 250);
+        doc.rect(tableLeft, yPosition - 4, tableWidth, 6, 'F');
+      }
+      
+      doc.text(item.name, tableLeft + 2, yPosition);
+      doc.text(item.quantity.toString(), tableLeft + col1Width + 10, yPosition, { align: 'center' });
+      doc.text(`$${item.price.toFixed(2)}`, tableLeft + col1Width + col2Width + 15, yPosition, { align: 'right' });
+      doc.text(`$${item.amount.toFixed(2)}`, tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' });
+      yPosition += 6;
+    });
+    
+    // Total row
+    doc.setDrawColor(200);
+    doc.line(tableLeft, yPosition, tableLeft + tableWidth, yPosition);
+    yPosition += 5;
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(11);
+    doc.text(`Total Paid: $${invoiceData.amounts.total.toFixed(2)}`, tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' });
+    
+    // Policy notes
+    yPosition += 8;
+    if (invoiceData.gstIncluded || invoiceData.refundPolicy?.processingFeePolicy || invoiceData.refundPolicy?.policyText) {
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(100);
+      if (invoiceData.gstIncluded) {
+        doc.text('* GST included', tableLeft, yPosition);
+        yPosition += 4;
+      }
+      if (invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable') {
+        doc.text('* Processing fees are non-refundable', tableLeft, yPosition);
+        yPosition += 4;
+      }
+      if (invoiceData.refundPolicy?.policyText) {
+        doc.text(`* ${invoiceData.refundPolicy.policyText}`, tableLeft, yPosition);
+        yPosition += 4;
+      }
+      doc.setTextColor(0);
+    }
+    
+    // Refunds section if any
+    if (invoiceData.refunds && invoiceData.refunds.length > 0) {
+      yPosition += 15;
+      
+      // Group refunds by transaction (sorted oldest first)
+      const refundGroups = groupRefundsByTransaction(invoiceData.refunds);
+      
+      refundGroups.forEach((refundGroup, groupIndex) => {
+        // Check if we need a new page
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        // Refund header with timestamp
+        doc.setFontSize(13);
+        doc.setFont(undefined, 'bold');
+        doc.text(`Refund #${groupIndex + 1} | ${formatDateTime(refundGroup.refundDate)}`, leftMargin, yPosition);
+        yPosition += 10;
+        
+        // Refund table header with red background
+        doc.setFillColor(255, 240, 240);
+        doc.rect(tableLeft, yPosition - 5, tableWidth, 8, 'F');
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('Ticket Type', tableLeft + 2, yPosition);
+        doc.text('Quantity', tableLeft + col1Width + 2, yPosition);
+        doc.text('Price', tableLeft + col1Width + col2Width + 2, yPosition);
+        doc.text('Refund Amount', tableLeft + col1Width + col2Width + col3Width + 2, yPosition);
+        yPosition += 5;
+        
+        // Group refunded tickets by type
+        doc.setFont(undefined, 'normal');
+        const refundTicketsByType = refundGroup.tickets.reduce((acc, ticket) => {
+          const originalItem = invoiceData.lineItems.find(item => 
+            item.ticketNumber === ticket.ticketNumber
+          );
+          
+          if (originalItem) {
+            const typeName = originalItem.ticketType.name;
+            if (!acc[typeName]) {
+              acc[typeName] = {
+                name: typeName,
+                price: originalItem.ticketType.price,
+                quantity: 0,
+                refundAmount: 0
+              };
+            }
+            acc[typeName].quantity += 1;
+            acc[typeName].refundAmount += ticket.amount;
+          }
+          
+          return acc;
+        }, {});
+        
+        // Draw refund rows
+        Object.values(refundTicketsByType).forEach((item, index) => {
+          if (index % 2 === 1) {
+            doc.setFillColor(255, 250, 250);
+            doc.rect(tableLeft, yPosition - 4, tableWidth, 6, 'F');
+          }
+          
+          doc.text(item.name, tableLeft + 2, yPosition);
+          doc.text(item.quantity.toString(), tableLeft + col1Width + 10, yPosition, { align: 'center' });
+          doc.text(`$${item.price.toFixed(2)}`, tableLeft + col1Width + col2Width + 15, yPosition, { align: 'right' });
+          doc.setTextColor(220, 38, 38); // Red color for refund amounts
+          doc.text(`$${item.refundAmount.toFixed(2)}`, tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' });
+          doc.setTextColor(0);
+          yPosition += 6;
+        });
+        
+        // Refund reason and notes
+        yPosition += 3;
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.text(`Refund Reason: ${refundGroup.reason || 'Customer request'}`, tableLeft, yPosition);
+        if (invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable') {
+          yPosition += 4;
+          doc.text('* Processing fees are non-refundable', tableLeft, yPosition);
+        }
+        doc.setTextColor(0);
+        yPosition += 8;
+      });
+      
+      // Summary totals
+      doc.setDrawColor(200);
+      doc.line(leftMargin, yPosition, pageWidth - rightMargin, yPosition);
+      yPosition += 8;
+      
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text('Summary', leftMargin, yPosition);
+      yPosition += 6;
+      
+      doc.setFont(undefined, 'normal');
+      doc.text(`Total Amount:`, leftMargin, yPosition);
+      doc.text(`$${invoiceData.amounts.total.toFixed(2)}`, pageWidth - rightMargin - 30, yPosition, { align: 'right' });
+      yPosition += 5;
+      
+      doc.setTextColor(220, 38, 38);
+      doc.text(`Total Refunded:`, leftMargin, yPosition);
+      doc.text(`-$${invoiceData.amounts.totalRefunded.toFixed(2)}`, pageWidth - rightMargin - 30, yPosition, { align: 'right' });
+      yPosition += 5;
+      
+      doc.setTextColor(0);
+      doc.setDrawColor(150);
+      doc.line(pageWidth - rightMargin - 50, yPosition - 1, pageWidth - rightMargin, yPosition - 1);
+      yPosition += 3;
+      
+      doc.setFont(undefined, 'bold');
+      doc.text(`Net Amount:`, leftMargin, yPosition);
+      doc.text(`$${invoiceData.amounts.netAmount.toFixed(2)}`, pageWidth - rightMargin - 30, yPosition, { align: 'right' });
+    }
+    
+    // Invoice Status
+    yPosition += 15;
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    const statusText = invoiceData.status.replace(/_/g, ' ').toUpperCase();
+    
+    // Status with colored background
+    let statusColor;
+    if (invoiceData.status === 'paid') {
+      statusColor = [34, 197, 94]; // Green
+    } else if (invoiceData.status === 'partially_refunded') {
+      statusColor = [251, 146, 60]; // Orange
+    } else {
+      statusColor = [239, 68, 68]; // Red
+    }
+    
+    doc.setFillColor(...statusColor);
+    doc.setTextColor(255, 255, 255);
+    const statusWidth = doc.getTextWidth(statusText) + 10;
+    doc.roundedRect(leftMargin, yPosition - 4, statusWidth, 8, 2, 2, 'F');
+    doc.text(statusText, leftMargin + 5, yPosition);
+    doc.setTextColor(0);
+    
+    // Footer
+    yPosition = doc.internal.pageSize.height - 30;
+    doc.setDrawColor(200);
+    doc.line(leftMargin, yPosition, pageWidth - rightMargin, yPosition);
+    yPosition += 5;
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text('This is a computer generated invoice', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 4;
+    doc.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, yPosition, { align: 'center' });
+    
+    // Save the PDF
+    const fileName = `Invoice_${invoiceData.invoiceNumber}_${new Date().getFullYear()}.pdf`;
+    doc.save(fileName);
+  };
+
+  // Helper function to format date with time
+  const formatDateTime = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return new Date(dateString).toLocaleString();
+    }
+  };
+
+  // Helper function to group line items by ticket type for Purchase Details table
+  const groupLineItemsByType = (lineItems) => {
+    const grouped = lineItems.reduce((acc, item) => {
+      const typeName = item.ticketType.name;
+      if (!acc[typeName]) {
+        acc[typeName] = {
+          name: typeName,
+          price: item.ticketType.price,
+          quantity: 0,
+          amount: 0
+        };
+      }
+      acc[typeName].quantity += item.quantity;
+      acc[typeName].amount += (item.ticketType.price * item.quantity);
+      return acc;
+    }, {});
+
+    return Object.values(grouped);
+  };
+
+  // Helper function to group refunds by transaction for Refund Details table - sorted oldest first
+  const groupRefundsByTransaction = (refunds) => {
+    const grouped = refunds.reduce((acc, refund) => {
+      const refundId = refund.stripeRefundId;
+      if (!acc[refundId]) {
+        acc[refundId] = {
+          stripeRefundId: refundId,
+          refundDate: refund.refundDate,
+          reason: refund.reason,
+          tickets: [],
+          totalAmount: refund.refundAmount
+        };
+      }
+      
+      // All refunds are now individual - one ticket per refund entry
+      if (refund.ticketNumber) {
+        acc[refundId].tickets.push({
+          ticketNumber: refund.ticketNumber,
+          amount: refund.refundAmount
+        });
+      }
+      
+      return acc;
+    }, {});
+
+    // Sort refunds by date - oldest first
+    return Object.values(grouped).sort((a, b) => 
+      new Date(a.refundDate) - new Date(b.refundDate)
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b">
+          <h3 className="text-xl font-semibold">Invoice Details</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-xl"
+          >
+            X
+          </button>
+        </div>
+
+        {/* Invoice Content */}
+        <div className="p-8">
+          {/* Loading/Error States */}
+          {invoiceLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2">Loading invoice details...</span>
+            </div>
+          )}
+          
+          {invoiceError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-700">Error loading invoice: {invoiceError}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          
+          {/* Show invoice content only if data is loaded */}
+          {invoiceData && !invoiceLoading && (
+            <>
+              {/* Invoice Header */}
+              <div className="border-b pb-6 mb-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">INVOICE</h2>
+                    <p className="text-gray-600 mt-1">Invoice #{invoiceData.invoiceNumber}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Issue Date</p>
+                    <p className="font-medium">{formatDate(invoiceData.invoiceDate)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Organizer and Buyer Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Event Organizer</h4>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">{invoiceData.event.organizer?.name || 'Event Organizer'}</p>
+                    <p className="text-gray-600">{invoiceData.event.organizer?.email || 'N/A'}</p>
+                    {invoiceData.event.organizer?.phone && (
+                      <p className="text-gray-600">{invoiceData.event.organizer.phone}</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Bill To</h4>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">{invoiceData.buyer.firstName} {invoiceData.buyer.lastName}</p>
+                    <p className="text-gray-600">{invoiceData.buyer.email}</p>
+                    {invoiceData.buyer.phone && (
+                      <p className="text-gray-600">{invoiceData.buyer.phone}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Event Details */}
+              <div className="bg-gray-50 rounded-lg p-6 mb-8">
+                <h4 className="font-semibold text-gray-900 mb-4">Event Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-700">Event Title</p>
+                    <p className="text-gray-900">{invoiceData.event.title}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">Event Code</p>
+                    <p className="text-gray-900 font-mono">{invoiceData.event.eventCode}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">Date & Time</p>
+                    <p className="text-gray-900">
+                      {(() => {
+                        try {
+                          const date = formatInTimeZone(invoiceData.event.dateTime, invoiceData.event.timeZone, 'dd/MM/yyyy');
+                          const time = formatInTimeZone(invoiceData.event.dateTime, invoiceData.event.timeZone, 'h:mm a');
+                          return `${date} at ${time}`;
+                        } catch (error) {
+                          return new Date(invoiceData.event.dateTime).toLocaleString();
+                        }
+                      })()}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Timezone: {invoiceData.event.timeZone}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">Venue</p>
+                    <p className="text-gray-900">{invoiceData.event.venue}</p>
+                  </div>
+                  {invoiceData.event.address && (
+                    <div className="md:col-span-2">
+                      <p className="font-medium text-gray-700">Address</p>
+                      <p className="text-gray-900">{invoiceData.event.address}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Purchase Details Table with timestamp */}
+              <div className="mb-8">
+                <h4 className="text-lg font-bold text-gray-900 mb-4">
+                  Purchase Details | {formatDateTime(invoiceData.payment.paymentDate)}
+                </h4>
+                
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Ticket Type</th>
+                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Quantity</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Price</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white">
+                      {groupLineItemsByType(invoiceData.lineItems).map((group, index) => (
+                        <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-3 text-sm border-t border-gray-100">{group.name}</td>
+                          <td className="px-4 py-3 text-sm text-center border-t border-gray-100">{group.quantity}</td>
+                          <td className="px-4 py-3 text-sm text-right border-t border-gray-100">${group.price.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-sm text-right border-t border-gray-100 font-medium">${group.amount.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                      
+                      {/* Total Row */}
+                      <tr className="bg-gray-50 border-t border-gray-300">
+                        <td className="px-4 py-3 text-sm font-medium" colSpan="3"></td>
+                        <td className="px-4 py-3 text-sm text-right font-bold">Total Paid: ${invoiceData.amounts.total.toFixed(2)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  
+                  {/* Policy Notes Below Table */}
+                  <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-600 space-y-1">
+                    {invoiceData.gstIncluded && (
+                      <p>* GST included</p>
+                    )}
+                    {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
+                      <p>* Processing fees are non-refundable</p>
+                    )}
+                    {invoiceData.refundPolicy?.policyText && (
+                      <p>* {invoiceData.refundPolicy.policyText}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Refund Details Table with timestamps (only if refunds exist) - sorted oldest first */}
+              {invoiceData.refunds && invoiceData.refunds.length > 0 && (
+                <div className="mb-8">
+                  {(() => {
+                    const refundGroups = groupRefundsByTransaction(invoiceData.refunds);
+                    return refundGroups.map((refundGroup, groupIndex) => (
+                      <div key={refundGroup.stripeRefundId} className="mb-6">
+                        <h4 className="text-lg font-bold text-gray-900 mb-4">
+                          Refund #{groupIndex + 1} | {formatDateTime(refundGroup.refundDate)}
+                        </h4>
+                        
+                        <div className="border border-gray-200 rounded-lg overflow-hidden">
+                          <table className="w-full">
+                            <thead className="bg-red-50">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Ticket Type</th>
+                                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Quantity</th>
+                                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Price</th>
+                                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Refund Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white">
+                              {(() => {
+                                // Group refunded tickets by type for this refund transaction
+                                const refundTicketsByType = refundGroup.tickets.reduce((acc, ticket) => {
+                                  // Find the original line item to get ticket type info
+                                  const originalItem = invoiceData.lineItems.find(item => 
+                                    item.ticketNumber === ticket.ticketNumber
+                                  );
+                                  
+                                  if (originalItem) {
+                                    const typeName = originalItem.ticketType.name;
+                                    if (!acc[typeName]) {
+                                      acc[typeName] = {
+                                        name: typeName,
+                                        price: originalItem.ticketType.price,
+                                        quantity: 0,
+                                        refundAmount: 0
+                                      };
+                                    }
+                                    acc[typeName].quantity += 1;
+                                    acc[typeName].refundAmount += ticket.amount;
+                                  }
+                                  
+                                  return acc;
+                                }, {});
+
+                                return Object.values(refundTicketsByType).map((group, index) => (
+                                  <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-red-25'}>
+                                    <td className="px-4 py-3 text-sm border-t border-gray-100">{group.name}</td>
+                                    <td className="px-4 py-3 text-sm text-center border-t border-gray-100">{group.quantity}</td>
+                                    <td className="px-4 py-3 text-sm text-right border-t border-gray-100">${group.price.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-sm text-right border-t border-gray-100 font-medium text-red-600">${group.refundAmount.toFixed(2)}</td>
+                                  </tr>
+                                ));
+                              })()}
+                            </tbody>
+                          </table>
+                          
+                          {/* Refund Reason and Policy Notes */}
+                          <div className="px-4 py-3 bg-red-50 border-t border-gray-200 text-xs text-gray-600 space-y-1">
+                            <p>Refund Reason: {refundGroup.reason || 'Customer request'}</p>
+                            {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
+                              <p>* Processing fees are non-refundable</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-4 mt-8 pt-6 border-t">
+                <button 
+                  onClick={downloadPDF}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Download PDF
+                </button>
+                <button 
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  disabled
+                >
+                  Email Invoice (Coming Soon)
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MyInvoicesPage;

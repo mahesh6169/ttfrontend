@@ -190,8 +190,8 @@ const checkInPaidSlice = createSlice({
           attendee.checkInTime = checkedIn ? checkInTime : null;
         });
         
-        // Update ticket status
-        ticket.status = checkedIn ? 'checkedin' : 'purchased';
+        // Update ticket check-in status
+        ticket.checkInStatus = checkedIn ? 'checked-in' : 'confirmed';
         
         // Update stats
         state.stats = calculateStats(state.attendees);
