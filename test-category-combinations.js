@@ -35,7 +35,7 @@ categories.forEach(category => {
 });
 
 console.log('\n\nKey Points:');
-console.log('1. Pricingg section should be hidden for ALL "wanted" ads');
+console.log('1. Pricinggg section should be hidden for ALL "wanted" ads');
 console.log('2. Pricing validation should be skipped for ALL "wanted" ads');
 console.log('3. Pricing data should be empty ([]) when submitting "wanted" ads');
 console.log('4. When switching from "offered" to "wanted", pricing data should be cleared');
