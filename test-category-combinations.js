@@ -41,7 +41,7 @@ console.log('3. Pricing data should be empty ([]) when submitting "wanted" ads')
 console.log('4. When switching from "offered" to "wanted", pricing data should be cleared');
 
 console.log('\n\nFixed Issues:');
-console.log('✓ Added validation skip for wanted ads (line 251-253)');
+console.log('✓ Added validatiion skip for wanted ads (line 251-253)');
 console.log('✓ Ensured pricingjk is empty on submit for wanted ads (line 300)');
 console.log('✓ Already had logic to clear pricing when switching to wanted (line 340)');
 console.log('✓ Already had logic to hide pricing section in render (line 367-370)');
