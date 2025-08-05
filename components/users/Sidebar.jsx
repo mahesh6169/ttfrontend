@@ -37,11 +37,16 @@ const Sidebar = ({ onLinkClick }) => {
       icon: <FaCalendarAlt />,
       children: [
         { label: 'Stripe', href: '/users/profile/settings/stripeSetup', icon: <FaMoneyCheckAlt /> },
-        { label: 'Manage Sales', href: '/users/profile/refunds', icon: <FaMoneyCheckAlt /> },
-        { label: 'Check-In RSVPs', href: '/users/profile/checkInFree', icon: <FaCalendarAlt /> },
-        { label: 'Check-In Paid', href: '/users/profile/checkInPaid', icon: <FaCalendarAlt /> },
+        { label: 'Manage Refunds', href: '/users/profile/refunds', icon: <FaMoneyCheckAlt /> },
+        
       ]
-    }
+    },
+
+    // Divider
+    { type: 'divider' },
+
+    { label: 'Check-In RSVPs', href: '/users/profile/checkInFree', icon: <FaCalendarAlt /> },
+    { label: 'Check-In Paid', href: '/users/profile/checkInPaid', icon: <FaCalendarAlt /> },
   ];
 
   useEffect(() => {

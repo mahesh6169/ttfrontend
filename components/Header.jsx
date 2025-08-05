@@ -275,6 +275,14 @@ const Header = () => {
                     mobile
                     onClick={toggleMobileMenu}
                   />
+                  <NavLink
+                    href={`${baseProfilePath}/myinvoices`}
+                    icon={<FaMoneyCheckAlt />}
+                    text="My Invoices"
+                    pathname={pathname}
+                    mobile
+                    onClick={toggleMobileMenu}
+                  />
                   
                   {/* Divider */}
                   <div className="py-2">
