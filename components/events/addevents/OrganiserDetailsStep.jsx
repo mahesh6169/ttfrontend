@@ -14,6 +14,9 @@ import {
 
 const OrganiserDetailsStep = ({ formData = {}, errors = {} }) => {
   const dispatch = useDispatch();
+  
+  // Check if this is a paid event
+  const isPaidEvent = formData.isPaid || false;
 
   // Add this error styling function
 const getFieldClasses = (fieldName) => {
@@ -187,6 +190,26 @@ const getFieldClasses = (fieldName) => {
               maxLength="100"
             />
           </div>
+
+          {/* ABN - Only for paid events */}
+          {isPaidEvent && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                ABN (Australian Business Number)
+              </label>
+              <input
+                type="text"
+                value={formData.organizer?.abn || ''}
+                onChange={(e) => handleOrganizerChange('abn', e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
+                placeholder="XX XXX XXX XXX"
+                maxLength="14"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                For invoice purposes. Format: 11 digits (e.g., 12 345 678 901)
+              </p>
+            </div>
+          )}
         </div>
 
 {/* Social Media */}

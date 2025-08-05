@@ -257,6 +257,7 @@ const createDefaultFormData = () => ({
     website: '',
     contact: '',
     email: '',
+    abn: '', // Australian Business Number for invoicing (paid events)
     socialMedia: []
   },
   
@@ -413,6 +414,7 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
       website: '',
       contact: '',
       email: '',
+      abn: '', // Australian Business Number for invoicing
       socialMedia: []
     },
     recurrence: {

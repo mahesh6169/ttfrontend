@@ -286,8 +286,9 @@ const MyInvoicesPage = () => {
                     {selectedEvent.address && <div className="text-xs mt-1">{selectedEvent.address}</div>}
                   </div>
                   <div>
-                    <span className="font-medium">👤 Organizer:</span><br />
+                    <span className="font-medium">👤 Event Organizer:</span><br />
                     {selectedEvent.organizer?.name || 'N/A'}
+                    {selectedEvent.organizer?.abn && <div className="text-xs mt-1">ABN: {selectedEvent.organizer.abn}</div>}
                     {selectedEvent.organizer?.email && <div className="text-xs mt-1">{selectedEvent.organizer.email}</div>}
                     {selectedEvent.organizer?.phone && <div className="text-xs mt-1">{selectedEvent.organizer.phone}</div>}
                   </div>
@@ -468,10 +469,10 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     // Two column layout - Organizer and Buyer
     const colWidth = contentWidth / 2;
     
-    // Event Organizer (left column)
+    // From (left column)
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text('Event Organizer', leftMargin, yPosition);
+    doc.text('From', leftMargin, yPosition);
     yPosition += 6;
     
     doc.setFont(undefined, 'normal');
@@ -479,6 +480,10 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     doc.text(invoiceData.event.organizer?.name || 'Event Organizer', leftMargin, yPosition);
     yPosition += 5;
     doc.setTextColor(100);
+    if (invoiceData.event.organizer?.abn) {
+      doc.text(`ABN: ${invoiceData.event.organizer.abn}`, leftMargin, yPosition);
+      yPosition += 5;
+    }
     doc.text(invoiceData.event.organizer?.email || 'N/A', leftMargin, yPosition);
     if (invoiceData.event.organizer?.phone) {
       yPosition += 5;
@@ -927,9 +932,12 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
               {/* Organizer and Buyer Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Event Organizer</h4>
+                  <h4 className="font-semibold text-gray-900 mb-3">From</h4>
                   <div className="text-sm space-y-1">
                     <p className="font-medium">{invoiceData.event.organizer?.name || 'Event Organizer'}</p>
+                    {invoiceData.event.organizer?.abn && (
+                      <p className="text-gray-600">ABN: {invoiceData.event.organizer.abn}</p>
+                    )}
                     <p className="text-gray-600">{invoiceData.event.organizer?.email || 'N/A'}</p>
                     {invoiceData.event.organizer?.phone && (
                       <p className="text-gray-600">{invoiceData.event.organizer.phone}</p>
