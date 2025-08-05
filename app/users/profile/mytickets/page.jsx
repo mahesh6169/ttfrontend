@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { formatInTimeZone } from 'date-fns-tz';
+import jsPDF from 'jspdf';
 
 const EnhancedMyTicketsPage = () => {
   const [tickets, setTickets] = useState([]);
@@ -323,8 +324,9 @@ const EnhancedMyTicketsPage = () => {
                     {eventInfo.address && <div className="text-xs mt-1">{eventInfo.address}</div>}
                   </div>
                   <div>
-                    <span className="font-medium">👤 Organizer:</span><br />
+                    <span className="font-medium">👤 From:</span><br />
                     {eventInfo.organizer?.name || 'N/A'}
+                    {eventInfo.organizer?.abn && <div className="text-xs mt-1">ABN: {eventInfo.organizer.abn}</div>}
                     {eventInfo.organizer?.email && <div className="text-xs mt-1">{eventInfo.organizer.email}</div>}
                     {eventInfo.organizer?.phone && <div className="text-xs mt-1">{eventInfo.organizer.phone}</div>}
                   </div>
@@ -446,6 +448,99 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
 
   const { date, time } = formatEventDateTime();
 
+  // PDF Download function for tickets
+  const downloadTicketsPDF = () => {
+    const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.height;
+    const pageWidth = doc.internal.pageSize.width;
+    const leftMargin = 20;
+    const rightMargin = 20;
+    let currentY = 20;
+    
+    // Event Title
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.text(eventInfo.title, pageWidth / 2, currentY, { align: 'center' });
+    currentY += 10;
+    
+    // Event ID
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Event ID: ${eventInfo.eventCode}`, pageWidth / 2, currentY, { align: 'center' });
+    currentY += 10;
+    
+    // Separator line
+    doc.setDrawColor(150);
+    doc.line(leftMargin, currentY, pageWidth - rightMargin, currentY);
+    currentY += 15;
+    
+    // Event details header
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Date: ${date} at ${time}`, leftMargin, currentY);
+    currentY += 6;
+    doc.text(`Venue: ${eventInfo.venue}`, leftMargin, currentY);
+    if (eventInfo.address) {
+      currentY += 6;
+      doc.text(`Address: ${eventInfo.address}`, leftMargin, currentY);
+    }
+    currentY += 6;
+    doc.text(`From: ${eventInfo.organizer?.name || 'Event Organizer'}`, leftMargin, currentY);
+    if (eventInfo.organizer?.abn) {
+      currentY += 6;
+      doc.text(`ABN: ${eventInfo.organizer.abn}`, leftMargin, currentY);
+    }
+    currentY += 15;
+    
+    // Tickets header
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('TICKETS', leftMargin, currentY);
+    currentY += 10;
+    
+    // Process each ticket - simple format
+    doc.setFontSize(11);
+    ticketGroup.forEach((ticket, index) => {
+      // Check if we need a new page
+      if (currentY > pageHeight - 30) {
+        doc.addPage();
+        currentY = 20;
+      }
+      
+      // Ticket line
+      doc.setFont(undefined, 'normal');
+      let ticketLine = ticket.ticketNumber;
+      
+      // Add spacing to align ticket type
+      const ticketNumWidth = doc.getTextWidth(ticket.ticketNumber);
+      const desiredPosition = 80; // Position for ticket type
+      const spacesNeeded = Math.max(1, Math.floor((desiredPosition - leftMargin - ticketNumWidth) / doc.getTextWidth(' ')));
+      ticketLine += ' '.repeat(spacesNeeded);
+      
+      // Add ticket type
+      ticketLine += ticket.ticketType.name;
+      
+      // Add seat if exists
+      if (ticket.seats && ticket.seats.length > 0) {
+        ticketLine += ` (Seat: ${ticket.seats[0].row}-${ticket.seats[0].seatNumber})`;
+      }
+      
+      doc.text(ticketLine, leftMargin, currentY);
+      currentY += 8;
+    });
+    
+    // Footer
+    currentY = pageHeight - 20;
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, currentY, { align: 'center' });
+    doc.setTextColor(0);
+    
+    // Save the PDF
+    const fileName = `Tickets_${eventInfo.eventCode}_${new Date().getTime()}.pdf`;
+    doc.save(fileName);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-lg w-full">
@@ -497,6 +592,16 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
                 </span>
               </div>
             ))}
+          </div>
+
+          {/* Download Button */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <button
+              onClick={downloadTicketsPDF}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              📥 Download Tickets as PDF
+            </button>
           </div>
         </div>
       </div>
