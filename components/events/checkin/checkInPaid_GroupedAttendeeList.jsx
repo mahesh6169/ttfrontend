@@ -198,14 +198,17 @@ const CheckInPaid_GroupedAttendeeList = () => {
                     
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                       <div>
-                        <span className="font-medium">Buyer:</span> {representative.buyer?.firstName} {representative.buyer?.lastName}
-                      </div>
-                      <div>
                         <span className="font-medium">Tickets:</span> {tickets.length} ({totalAttendees} attendees)
                       </div>
                       <div>
                         <span className="font-medium">Checked In:</span> {checkedInAttendees} / {totalAttendees}
                       </div>
+                    </div>
+                    
+                    <div className="flex items-center mt-2">
+                      <span className="text-sm text-gray-600">
+                        {representative.buyer?.firstName} {representative.buyer?.lastName} • {representative.buyer?.email} • {representative.buyer?.phone}
+                      </span>
                     </div>
                   </div>
                   
