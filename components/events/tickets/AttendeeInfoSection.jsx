@@ -28,11 +28,11 @@ const AttendeeInfoSection = ({ event, errors = {} }) => {
     switch (field.fieldType) {
       case 'text':
         return (
-          <input
-            type="text"
+          <textarea
             value={value}
             onChange={(e) => handleFieldChange(field.fieldName, e.target.value)}
-            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            rows={3}
+            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical ${
               error ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder={`Enter ${field.fieldName.toLowerCase()}`}

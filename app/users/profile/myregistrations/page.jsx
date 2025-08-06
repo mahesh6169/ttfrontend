@@ -9,12 +9,14 @@ const MyFreeEventRegistrationsPage = () => {
   // Local state (like paid tickets page)
   const [registrations, setRegistrations] = useState([]);
   const [events, setEvents] = useState([]);
+  const [filteredEvents, setFilteredEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedEventRegistrations, setSelectedEventRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showFormResponses, setShowFormResponses] = useState(new Set());
+  const [dateFilter, setDateFilter] = useState('3months'); // Default to 3 months
 
   // Fetch all user registrations on mount
   useEffect(() => {
@@ -92,6 +94,41 @@ const MyFreeEventRegistrationsPage = () => {
       setSelectedEventRegistrations([]);
     }
   }, [selectedEventId, registrations]);
+
+  // Apply date filtering to events
+  useEffect(() => {
+    if (events.length === 0) {
+      setFilteredEvents([]);
+      return;
+    }
+
+    const now = new Date();
+    let filtered = [...events];
+
+    switch (dateFilter) {
+      case '3months':
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        filtered = events.filter(event => new Date(event.dateTime) >= threeMonthsAgo);
+        break;
+      case '6months':
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        filtered = events.filter(event => new Date(event.dateTime) >= sixMonthsAgo);
+        break;
+      case '1year':
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        filtered = events.filter(event => new Date(event.dateTime) >= oneYearAgo);
+        break;
+      case 'all':
+      default:
+        // Show all events
+        break;
+    }
+
+    setFilteredEvents(filtered);
+  }, [events, dateFilter]);
 
   // Handler for register - simplified version
   const handleRegister = async (eventId) => {
@@ -230,27 +267,62 @@ const MyFreeEventRegistrationsPage = () => {
         </span>
       </div>
 
-      {/* Event Selector */}
+      {/* Event Selector with Date Filter */}
       <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
-        <label htmlFor="eventSelect" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-          Select Event to View Registration Details
-        </label>
-        <select
-          id="eventSelect"
-          value={selectedEventId}
-          onChange={(e) => setSelectedEventId(e.target.value)}
-          className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="">-- Choose an event --</option>
-          {events.map((event) => {
-            const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
-            return (
-              <option key={event.id} value={event.id}>
-                {event.title} - {eventDateTime.combined}
-              </option>
-            );
-          })}
-        </select>
+        <div className="space-y-4">
+          {/* Date Filter */}
+          <div>
+            <label htmlFor="dateFilter" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+              Filter by Date Range
+            </label>
+            <select
+              id="dateFilter"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="3months">Last 3 months</option>
+              <option value="6months">Last 6 months</option>
+              <option value="1year">Last year</option>
+              <option value="all">Show all</option>
+            </select>
+          </div>
+
+          {/* Event Selector */}
+          <div>
+            <label htmlFor="eventSelect" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+              Select Event to View Registration Details
+            </label>
+            <select
+              id="eventSelect"
+              value={selectedEventId}
+              onChange={(e) => setSelectedEventId(e.target.value)}
+              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">-- Choose an event --</option>
+              {filteredEvents.map((event) => {
+                const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+                return (
+                  <option key={event.id} value={event.id}>
+                    {event.title} - {eventDateTime.combined}
+                  </option>
+                );
+              })}
+            </select>
+            {filteredEvents.length === 0 && events.length > 0 && (
+              <p className="text-xs sm:text-sm text-gray-500 mt-2">
+                No events found in the selected date range. Try selecting a different range.
+              </p>
+            )}
+          </div>
+
+          {/* Data Retention Warning */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <p className="text-xs sm:text-sm text-amber-800">
+              <strong>Note:</strong> Please save your RSVPs. Events older than 2 years will be deleted by admin.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Selected Event Details & Registrations */}
@@ -410,9 +482,9 @@ const MyFreeEventRegistrationsPage = () => {
                           <div className="space-y-2 text-xs sm:text-sm">
                             {registration.formResponses && registration.formResponses.length > 0 ? (
                               registration.formResponses.map((response, idx) => (
-                                <div key={idx}>
-                                  <span className="font-medium text-gray-700">{response.fieldName}:</span>
-                                  <div className="text-gray-900 pl-2">{response.response}</div>
+                                <div key={idx} className="mb-2">
+                                  <div className="font-medium text-gray-700">{response.fieldName}:</div>
+                                  <div className="text-gray-900 pl-4 mt-1 whitespace-pre-line break-words">{response.response}</div>
                                 </div>
                               ))
                             ) : (

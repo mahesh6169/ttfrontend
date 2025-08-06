@@ -198,6 +198,25 @@ const formatEventDate = (dateTime, timeZone) => {
 
     switch (field.fieldType) {
       case 'text':
+        return (
+          <div key={field.fieldName} className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {field.fieldName}
+              {field.isRequired && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            <textarea
+              value={value}
+              onChange={(e) => handleFormResponseChange(field.fieldName, e.target.value)}
+              rows={3}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors resize-vertical ${
+                error ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder={`Enter ${field.fieldName.toLowerCase()}`}
+            />
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          </div>
+        );
+        
       case 'email':
       case 'phone':
         return (

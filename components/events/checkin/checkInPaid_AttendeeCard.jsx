@@ -217,7 +217,7 @@ const CheckInPaid_AttendeeCard = ({ ticket, eventId }) => {
             {ticket.formResponses.map((response, index) => (
               <div key={index} className="text-sm">
                 <span className="text-gray-500">{response.fieldName}:</span>{' '}
-                <span>{response.response}</span>
+                <span className="whitespace-pre-line">{response.response}</span>
               </div>
             ))}
           </div>

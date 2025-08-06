@@ -194,7 +194,7 @@ const CheckInFree_AttendeeCard = ({
                 {formResponses.map((response, index) => (
                   <div key={index} className="text-sm">
                     <span className="font-medium text-gray-700">{response.fieldName}:</span>
-                    <span className="ml-2 text-gray-600">{response.response}</span>
+                    <span className="ml-2 text-gray-600 whitespace-pre-line">{response.response}</span>
                   </div>
                 ))}
               </div>

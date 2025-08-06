@@ -547,14 +547,6 @@ if (ticket.startDate && ticket.expiryDate) {
         if (!field.fieldName?.trim()) {
           fieldErrors.push(`Registration field ${index + 1} name is required`);
         }
-        if (
-          field.fieldType === 'select' &&
-          (!field.fieldOptions || field.fieldOptions.length === 0)
-        ) {
-          fieldErrors.push(
-            `Registration field ${index + 1} dropdown options are required`
-          );
-        }
       });
       if (fieldErrors.length > 0) errors.registrationFields = fieldErrors;
     }

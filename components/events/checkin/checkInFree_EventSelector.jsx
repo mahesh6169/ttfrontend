@@ -19,6 +19,8 @@ const CheckInFree_EventSelector = () => {
     loading, 
     error 
   } = useSelector((state) => state.checkInFree);
+  
+  const [dateFilter, setDateFilter] = React.useState('3months'); // Default to 3 months
 
   // Load managed events on mount
   useEffect(() => {
@@ -56,20 +58,39 @@ const CheckInFree_EventSelector = () => {
     }
   };
 
-  // Filter to show only upcoming or today's events
-  const getRelevantEvents = () => {
-    const now = new Date();
-    const today = new Date(now);
-    today.setHours(0, 0, 0, 0);
+  // Apply date filtering
+  const getFilteredEvents = () => {
+    if (!managedEvents || managedEvents.length === 0) return [];
     
-    return managedEvents.filter(event => {
-      const eventDate = new Date(event.dateTime);
-      // Show events from today onwards
-      return eventDate >= today;
-    }).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+    let filtered = [...managedEvents];
+    
+    switch (dateFilter) {
+      case '3months':
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        filtered = managedEvents.filter(event => new Date(event.dateTime) >= threeMonthsAgo);
+        break;
+      case '6months':
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        filtered = managedEvents.filter(event => new Date(event.dateTime) >= sixMonthsAgo);
+        break;
+      case '1year':
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        filtered = managedEvents.filter(event => new Date(event.dateTime) >= oneYearAgo);
+        break;
+      case 'all':
+      default:
+        // Show all events
+        break;
+    }
+    
+    // Sort by date (most recent first)
+    return filtered.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
   };
 
-  const relevantEvents = getRelevantEvents();
+  const filteredEvents = getFilteredEvents();
 
   if (loading) {
     return (
@@ -89,38 +110,66 @@ const CheckInFree_EventSelector = () => {
   }
 
   return (
-    <>
-      <label htmlFor="eventSelect" className="block text-sm font-medium text-gray-700 mb-2">
-        Select Event to View Registration Details
-      </label>
-      <select
-        id="eventSelect"
-        value={selectedEvent?._id || ''}
-        onChange={handleEventChange}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      >
-        <option value="">-- Choose an event --</option>
-        
-        {relevantEvents.length === 0 ? (
-          <option disabled>No registrations found for any upcoming events.</option>
-        ) : (
-          relevantEvents.map((event) => {
-            const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
-            return (
-              <option key={event._id} value={event._id}>
-                {event.title} - {eventDateTime.combined} at {event.venue}
-              </option>
-            );
-          })
-        )}
-      </select>
+    <div className="space-y-4">
+      {/* Date Filter */}
+      <div>
+        <label htmlFor="dateFilter" className="block text-sm font-medium text-gray-700 mb-2">
+          Filter by Date Range
+        </label>
+        <select
+          id="dateFilter"
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="3months">Last 3 months</option>
+          <option value="6months">Last 6 months</option>
+          <option value="1year">Last year</option>
+          <option value="all">Show all</option>
+        </select>
+      </div>
 
-      {managedEvents.length > 0 && relevantEvents.length === 0 && (
-        <p className="text-sm text-amber-600 mt-2">
-          Note: Only showing events from today onwards. You have {managedEvents.length} total events.
+      {/* Event Selector */}
+      <div>
+        <label htmlFor="eventSelect" className="block text-sm font-medium text-gray-700 mb-2">
+          Select Event to Manage Check-ins
+        </label>
+        <select
+          id="eventSelect"
+          value={selectedEvent?._id || ''}
+          onChange={handleEventChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">-- Choose an event --</option>
+          
+          {filteredEvents.length === 0 ? (
+            <option disabled>No events found in the selected date range.</option>
+          ) : (
+            filteredEvents.map((event) => {
+              const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+              return (
+                <option key={event._id} value={event._id}>
+                  {event.title} - {eventDateTime.combined} at {event.venue}
+                </option>
+              );
+            })
+          )}
+        </select>
+
+        {filteredEvents.length === 0 && managedEvents.length > 0 && (
+          <p className="text-sm text-gray-500 mt-2">
+            No events found in the selected date range. Try selecting a different range.
+          </p>
+        )}
+      </div>
+
+      {/* Data Retention Warning */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p className="text-sm text-amber-800">
+          <strong>Note:</strong> Please save your check-in records. Events older than 2 years will be deleted by admin.
         </p>
-      )}
-    </>
+      </div>
+    </div>
   );
 };
 

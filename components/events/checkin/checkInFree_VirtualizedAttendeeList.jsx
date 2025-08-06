@@ -236,7 +236,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                     {registration.formResponses.map((response, index) => (
                       <div key={index}>
                         <span className="font-medium text-gray-700">{response.fieldName}:</span>
-                        <span className="ml-1 text-gray-600">{response.response}</span>
+                        <span className="ml-1 text-gray-600 whitespace-pre-line">{response.response}</span>
                       </div>
                     ))}
                   </div>

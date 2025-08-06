@@ -708,14 +708,6 @@ const CustomRegistrationFields = ({
   dispatch,
   isRecurring = false,
 }) => {
-  // Handle field options (for select/dropdown fields)
-  const handleFieldOptionChange = (index, optionsStr) => {
-    const options = optionsStr
-      .split(',')
-      .map((opt) => opt.trim())
-      .filter(Boolean);
-    dispatch(updateFieldOptions({ index, options }));
-  };
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -740,10 +732,10 @@ const CustomRegistrationFields = ({
             Attendee Additional Information
           </h4>
           <p className="text-sm text-gray-500">
-            Collect additional information from attendees during registration
+            Ask simple questions to collect additional information from attendees
             {isRecurring && (
               <span className="block text-blue-600 font-medium mt-1">
-                These fields will be used for all instances of your recurring
+                These questions will be asked for all instances of your recurring
                 event
               </span>
             )}
@@ -760,11 +752,11 @@ const CustomRegistrationFields = ({
             >
               
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {/* Field Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Field Name <span className="text-red-500">*</span>
+                    Question for Attendees <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -779,61 +771,16 @@ const CustomRegistrationFields = ({
                       )
                     }
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    placeholder="e.g., Dietary Requirements"
+                    placeholder="e.g., Dietary Requirements, Age Group, Special Needs"
                     maxLength="100"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ask a simple question that attendees can answer in text form
+                  </p>
                 </div>
-
-                {/* Field Type */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Field Type
-                  </label>
-                  <select
-                    value={field?.fieldType || 'text'}
-                    onChange={(e) =>
-                      dispatch(
-                        updateRegistrationField({
-                          index,
-                          field: 'fieldType',
-                          value: e.target.value,
-                        })
-                      )
-                    }
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  >
-                    <option value="text">Text Input</option>
-                    <option value="number">Number Input</option>
-                    <option value="select">Dropdown Select</option>
-                    <option value="date">Date Picker</option>
-                    <option value="checkbox">Checkbox</option>
-                  </select>
-                </div>
-
-                {/* Field Options (only for select/dropdown type) */}
-                {(field?.fieldType || 'text') === 'select' && (
-                  <div className="lg:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Dropdown Options <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={(field?.fieldOptions || []).join(', ')}
-                      onChange={(e) =>
-                        handleFieldOptionChange(index, e.target.value)
-                      }
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                      placeholder="Option 1, Option 2, Option 3"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Separate options with commas (e.g., "Vegetarian, Vegan,
-                      Gluten-free, No restrictions")
-                    </p>
-                  </div>
-                )}
 
                 {/* Required Field Toggle + Delete Button */}
-                <div className="lg:col-span-2">
+                <div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <input
@@ -904,8 +851,8 @@ const CustomRegistrationFields = ({
             No custom registration fields yet
           </p>
           <p className="text-sm text-gray-400 mb-4">
-            Create custom fields to collect specific information from your
-            attendees
+            Add questions like dietary requirements, age group, or any other
+            information you need from attendees
           </p>
         </div>
       )}
@@ -941,7 +888,7 @@ const CustomRegistrationFields = ({
               d="M12 6v6m0 0v6m0-6h6m-6 0H6"
             ></path>
           </svg>
-          Add Custom Registration Field
+          Add Question for Attendees
         </button>
       </div>
     </div>
