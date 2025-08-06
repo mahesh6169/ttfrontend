@@ -374,7 +374,7 @@ const MyFreeEventRegistrationsPage = () => {
                       </div>
 
                     {/* Registration Details Grid */}
-                    <div className="space-y-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-3 sm:space-y-0 text-xs sm:text-sm">
+                    <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0 text-xs sm:text-sm">
                       <div>
                         <span className="font-medium text-gray-700">Attendees:</span>
                         <span className="ml-1 text-gray-900">
@@ -385,11 +385,6 @@ const MyFreeEventRegistrationsPage = () => {
                       <div>
                         <span className="font-medium text-gray-700">Registered:</span>
                         <span className="ml-1 text-gray-900">{new Date(registration.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      
-                      <div className="col-span-2 sm:col-span-1">
-                        <span className="font-medium text-gray-700">Email:</span>
-                        <span className="ml-1 text-gray-900 break-all">{registration.email}</span>
                       </div>
                     </div>
 
