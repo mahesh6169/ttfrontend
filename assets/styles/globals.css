@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Ensure consistent layout with scrollbar gutter on mobile */
+@media (max-width: 640px) {
+  html {
+    scrollbar-gutter: stable;
+  }
+  
+  /* For browsers that don't support scrollbar-gutter */
+  @supports not (scrollbar-gutter: stable) {
+    body {
+      padding-right: calc(100vw - 100%);
+    }
+  }
+}

@@ -133,10 +133,10 @@ const CheckInFree_AttendeeList = () => {
   };
 
   return (
-    <div className="space-y-4">
-
-      {/* Registration List */}
-      {displayedAttendees.map((registration) => {
+    <>
+      {/* Registration List Container */}
+      <div className="space-y-3 sm:space-y-4 px-2 sm:px-0 py-2 sm:py-0">
+        {displayedAttendees.map((registration) => {
         const isExpanded = expandedRegistrations.has(registration._id);
         const allCheckedIn = areAllCheckedIn(registration);
         const someCheckedIn = areSomeCheckedIn(registration);
@@ -151,10 +151,68 @@ const CheckInFree_AttendeeList = () => {
           >
             {/* Registration Header - New Layout */}
             <div 
-              className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+              className="border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => toggleRegistration(registration._id)}
             >
-              <div className="flex items-start justify-between gap-4">
+              {/* Mobile Layout - Button First */}
+              <div className="block sm:hidden p-4 space-y-3">
+                {/* Row 1: Check In/Out Button (full width) */}
+                <div className="w-full">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleBulkCheckIn(registration._id, !allCheckedIn);
+                    }}
+                    disabled={actionLoading}
+                    className={`
+                      w-full px-4 py-2 rounded-md text-sm font-medium transition-colors
+                      ${allCheckedIn 
+                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                        : 'bg-teal-600 text-white hover:bg-teal-700'
+                      }
+                      ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                    `}
+                  >
+                    {allCheckedIn ? 'Check Out All' : 'Check In All'}
+                  </button>
+                </div>
+
+                {/* Row 2: Registration Number */}
+                <div className="font-bold text-gray-900 text-base">
+                  {registration.registrationNumber}
+                </div>
+
+                {/* Row 3: Name and Email */}
+                <div>
+                  <div className="font-medium text-gray-800 text-sm">
+                    {registration.user?.name || registration.userId?.name || 'Former User'}
+                  </div>
+                  {registration.email && (
+                    <div className="text-gray-600 text-xs break-all mt-1">
+                      {registration.email}
+                    </div>
+                  )}
+                </div>
+
+                {/* Row 4: Attendee Count and Status */}
+                <div className="flex items-center gap-2 text-xs">
+                  <span>{registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}</span>
+                  <span className="text-gray-400">•</span>
+                  <span className={`font-medium ${allCheckedIn ? 'text-green-600' : showPartialCheckIn ? 'text-yellow-600' : 'text-gray-700'}`}>
+                    Checked In: {checkedInCount}/{registration.attendees.length}
+                  </span>
+                </div>
+
+                {/* Row 5: View Attendees Link */}
+                <div>
+                  <span className="text-teal-600 hover:text-teal-700 underline text-xs font-medium">
+                    {isExpanded ? 'Hide attendees' : 'View attendees'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Desktop Layout - Keep existing */}
+              <div className="hidden sm:flex items-start justify-between gap-4 p-4">
                 <div className="flex-1">
                   {/* Registration Number */}
                   <div className="font-semibold text-gray-900 text-sm sm:text-base mb-1">
@@ -273,10 +331,11 @@ const CheckInFree_AttendeeList = () => {
           </div>
         );
       })}
+      </div>
       
-      {/* Pagination */}
+      {/* Pagination - Outside of registration list container */}
       {pagination.totalPages > 1 && (
-        <div className="mt-6">
+        <div className="mt-4 sm:mt-6 px-2 sm:px-0">
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
@@ -284,7 +343,7 @@ const CheckInFree_AttendeeList = () => {
           />
         </div>
       )}
-    </div>
+    </>
   );
 };
 

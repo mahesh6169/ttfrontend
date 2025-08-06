@@ -70,9 +70,6 @@ const CheckInFree_SimpleAttendeeRow = ({
         <span className="text-sm text-gray-700">
           {attendee.name}
         </span>
-        <span className="text-xs text-gray-500 font-mono">
-          {registrationNumber}-{attendee.attendeeNumber ? attendee.attendeeNumber.toString().padStart(3, '0') : '001'}
-        </span>
       </div>
       
       <button

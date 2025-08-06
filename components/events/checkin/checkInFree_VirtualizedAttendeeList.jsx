@@ -32,16 +32,21 @@ const CheckInFree_VirtualizedAttendeeList = () => {
   const [windowHeight, setWindowHeight] = useState(600);
   const listRef = useRef();
 
-  // Calculate window height for virtualization
+  // Calculate window height for virtualization and detect mobile/desktop changes
   useEffect(() => {
-    const calculateHeight = () => {
+    const handleResize = () => {
       const height = window.innerHeight - 400; // Account for header and other elements
       setWindowHeight(Math.max(400, Math.min(height, 800)));
+      
+      // Reset item sizes when switching between mobile/desktop
+      if (listRef.current) {
+        listRef.current.resetAfterIndex(0);
+      }
     };
 
-    calculateHeight();
-    window.addEventListener('resize', calculateHeight);
-    return () => window.removeEventListener('resize', calculateHeight);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Reset item sizes when attendees or expansion states change
@@ -140,7 +145,11 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     const registration = attendees[index];
     if (!registration) return 120;
     
-    const baseHeight = 100; // Base height for header
+    // Check if mobile view (screen width < 640px)
+    const isMobile = window.innerWidth < 640;
+    
+    // Base height differs for mobile (vertical stacking) vs desktop (horizontal layout)
+    const baseHeight = isMobile ? 200 : 100; // Mobile needs more height for stacked layout
     const isExpanded = expandedRegistrations.has(registration._id);
     const showingFormResponses = showFormResponses.has(registration._id);
     const hasFormResponses = registration.formResponses?.length > 0;
@@ -155,7 +164,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     
     // Add form responses section height if present
     if (hasFormResponses) {
-      totalHeight += 50; // Height for the "View Attendee Information" button
+      totalHeight += 60; // Height for the "View Attendee Information" button (more padding needed)
       if (showingFormResponses) {
         totalHeight += registration.formResponses.length * 40 + 20; // Height per form response + padding
       }
@@ -180,8 +189,69 @@ const CheckInFree_VirtualizedAttendeeList = () => {
       <div style={style}>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mx-4">
           {/* Registration Header - New Layout */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-start justify-between gap-4">
+          <div 
+            className="border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+            onClick={() => toggleRegistration(registration._id)}
+          >
+            {/* Mobile Layout - Button First */}
+            <div className="block sm:hidden p-4 space-y-3">
+              {/* Row 1: Check In/Out Button (full width) */}
+              <div className="w-full">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleBulkCheckIn(registration._id, !allCheckedIn);
+                  }}
+                  disabled={actionLoading}
+                  className={`
+                    w-full px-4 py-2 rounded-md text-sm font-medium transition-colors
+                    ${allCheckedIn 
+                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                      : 'bg-teal-600 text-white hover:bg-teal-700'
+                    }
+                    ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  {allCheckedIn ? 'Check Out All' : 'Check In All'}
+                </button>
+              </div>
+
+              {/* Row 2: Registration Number */}
+              <div className="font-bold text-gray-900 text-base">
+                {registration.registrationNumber}
+              </div>
+
+              {/* Row 3: Name and Email */}
+              <div>
+                <div className="font-medium text-gray-800 text-sm">
+                  {registration.user?.name || registration.userId?.name || 'Former User'}
+                </div>
+                {registration.email && (
+                  <div className="text-gray-600 text-xs break-all mt-1">
+                    {registration.email}
+                  </div>
+                )}
+              </div>
+
+              {/* Row 4: Attendee Count and Status */}
+              <div className="flex items-center gap-2 text-xs">
+                <span>{registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}</span>
+                <span className="text-gray-400">•</span>
+                <span className={`font-medium ${allCheckedIn ? 'text-green-600' : showPartialCheckIn ? 'text-yellow-600' : 'text-gray-700'}`}>
+                  Checked In: {registration.attendees.filter(a => a.checkedIn).length}/{registration.attendees.length}
+                </span>
+              </div>
+
+              {/* Row 5: View Attendees Link */}
+              <div>
+                <span className="text-teal-600 hover:text-teal-700 underline text-xs font-medium">
+                  {isExpanded ? 'Hide attendees' : 'View attendees'}
+                </span>
+              </div>
+            </div>
+            
+            {/* Desktop Layout - Keep existing */}
+            <div className="hidden sm:flex items-start justify-between gap-4 p-4">
               <div className="flex-1">
                 {/* Registration Number */}
                 <div className="font-semibold text-gray-900 text-sm sm:text-base mb-1">
@@ -206,10 +276,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                 </div>
                 
                 {/* Attendee Count and Check-in Status */}
-                <div 
-                  className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer"
-                  onClick={() => toggleRegistration(registration._id)}
-                >
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
                   <span className="font-medium">
                     {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
                   </span>
@@ -261,7 +328,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
             </div>
           )}
           
-          {/* Attendee Information (Form Responses) */}
+          {/* Attendee Information (Form Responses) - Show for both mobile and desktop */}
           {registration.formResponses && registration.formResponses.length > 0 && (
             <div className="p-4 bg-white border-t border-gray-200">
               <button

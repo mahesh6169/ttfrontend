@@ -187,7 +187,7 @@ const CheckInFreePage = () => {
               <CheckInFree_SearchBar />
             </div>
             
-            <div className="p-3 sm:p-4">
+            <div className="p-0 sm:p-4">
               {attendees.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-gray-500">
