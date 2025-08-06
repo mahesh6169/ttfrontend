@@ -142,112 +142,132 @@ const CheckInFree_AttendeeList = () => {
         const someCheckedIn = areSomeCheckedIn(registration);
         const hasMultipleAttendees = registration.attendees.length > 1;
         const showPartialCheckIn = someCheckedIn && !allCheckedIn && hasMultipleAttendees;
+        const checkedInCount = registration.attendees.filter(a => a.checkedIn).length;
         
         return (
           <div 
             key={registration._id} 
             className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
           >
-            {/* Registration Header */}
+            {/* Registration Header - New Layout */}
             <div 
-              className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+              className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => toggleRegistration(registration._id)}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="text-sm text-gray-700">
-                    <span className="font-medium">{registration.user?.name || registration.userId?.name || 'Former User'}</span>
-                    <span className="mx-2">•</span>
-                    <span>{registration.attendees.length} attendee{registration.attendees.length !== 1 ? 's' : ''}</span>
-                    <span className="mx-2">•</span>
-                    <span>Checked In: {registration.attendees.filter(a => a.checkedIn).length} / {registration.attendees.length}</span>
+                  {/* Registration Number */}
+                  <div className="font-semibold text-gray-900 text-sm sm:text-base mb-1">
+                    {registration.registrationNumber}
                   </div>
                   
-                  {/* View Registration Details Link */}
-                  {registration.formResponses && registration.formResponses.length > 0 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Toggle showing form responses for this registration
-                        const newShowFormResponses = new Set(showFormResponses);
-                        if (newShowFormResponses.has(registration._id)) {
-                          newShowFormResponses.delete(registration._id);
-                        } else {
-                          newShowFormResponses.add(registration._id);
-                        }
-                        setShowFormResponses(newShowFormResponses);
-                      }}
-                      className="text-xs text-teal-600 hover:text-teal-700 mt-1 flex items-center gap-1"
-                    >
-                      <svg 
-                        className={`w-3 h-3 transition-transform ${showFormResponses.has(registration._id) ? 'rotate-90' : ''}`} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      {showFormResponses.has(registration._id) ? 'Hide' : 'View'} Registration Details
-                    </button>
-                  )}
+                  {/* User Details */}
+                  <div className="text-xs sm:text-sm text-gray-600 mb-2">
+                    <span className="font-medium text-gray-700">{registration.user?.name || registration.userId?.name || 'Former User'}</span>
+                    {registration.user?.phone && (
+                      <>
+                        <span className="mx-1">•</span>
+                        <span>{registration.user.phone}</span>
+                      </>
+                    )}
+                    {registration.email && (
+                      <>
+                        <span className="mx-1">•</span>
+                        <span className="break-all">{registration.email}</span>
+                      </>
+                    )}
+                  </div>
                   
-                  {/* Form Responses Display */}
-                  {showFormResponses.has(registration._id) && registration.formResponses && registration.formResponses.length > 0 && (
-                    <div className="mt-2 p-2 bg-gray-100 rounded text-xs space-y-1">
-                      {registration.formResponses.map((response, index) => (
-                        <div key={index}>
-                          <span className="font-medium text-gray-700">{response.fieldName}:</span>
-                          <span className="ml-1 text-gray-600 whitespace-pre-line">{response.response}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {/* Attendee Count and Check-in Status */}
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <span className="font-medium">
+                      {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
+                    </span>
+                    <span className="text-gray-500">•</span>
+                    <span className={`font-medium ${allCheckedIn ? 'text-green-600' : showPartialCheckIn ? 'text-yellow-600' : 'text-gray-600'}`}>
+                      Checked In: {checkedInCount}/{registration.attendees.length}
+                    </span>
+                    <span className="text-blue-600 hover:text-blue-800 underline ml-2">
+                      {isExpanded ? 'Hide attendees' : 'View attendees'}
+                    </span>
+                  </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  {/* Bulk Check-in/out Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleBulkCheckIn(registration._id, !allCheckedIn);
-                    }}
-                    disabled={actionLoading}
-                    className={`
-                      px-3 py-1 rounded text-sm font-medium transition-colors
-                      ${allCheckedIn 
-                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                        : 'bg-teal-100 text-teal-700 hover:bg-teal-200'
-                      }
-                      ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
-                    `}
-                  >
-                    {allCheckedIn ? 'Check Out All' : 'Check In All'}
-                  </button>
-                  
-                  {/* Expand/Collapse Icon */}
+                {/* Check In All Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleBulkCheckIn(registration._id, !allCheckedIn);
+                  }}
+                  disabled={actionLoading}
+                  className={`
+                    px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
+                    ${allCheckedIn 
+                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
+                      : 'bg-teal-600 text-white hover:bg-teal-700'
+                    }
+                    ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  {allCheckedIn ? 'Check Out All' : 'Check In All'}
+                </button>
+              </div>
+            </div>
+            
+            {/* Attendees List - Only show when expanded */}
+            {isExpanded && (
+              <div className="bg-gray-50">
+                {registration.attendees.map((attendee, idx) => (
+                  <div key={attendee._id} className="border-b border-gray-200 last:border-b-0">
+                    <CheckInFree_SimpleAttendeeRow
+                      attendee={attendee}
+                      ticketId={registration._id}
+                      registrationNumber={registration.registrationNumber}
+                      isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Attendee Information (Form Responses) */}
+            {registration.formResponses && registration.formResponses.length > 0 && (
+              <div className="p-4 bg-white border-t border-gray-200">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const newShowFormResponses = new Set(showFormResponses);
+                    if (newShowFormResponses.has(registration._id)) {
+                      newShowFormResponses.delete(registration._id);
+                    } else {
+                      newShowFormResponses.add(registration._id);
+                    }
+                    setShowFormResponses(newShowFormResponses);
+                  }}
+                  className="text-xs sm:text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1 mb-2"
+                >
                   <svg 
-                    className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                    className={`w-3 h-3 transition-transform ${showFormResponses.has(registration._id) ? 'rotate-90' : ''}`} 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                </div>
-              </div>
-            </div>
-            
-            {/* Attendees List */}
-            {isExpanded && (
-              <div className="border-t border-gray-200 p-4 space-y-1">
-                {registration.attendees.map((attendee) => (
-                  <CheckInFree_SimpleAttendeeRow
-                    key={attendee._id}
-                    attendee={attendee}
-                    ticketId={registration._id}
-                    registrationNumber={registration.registrationNumber}
-                  />
-                ))}
+                  {showFormResponses.has(registration._id) ? 'Hide' : 'View'} Attendee Information
+                </button>
+                
+                {/* Form Responses Display */}
+                {showFormResponses.has(registration._id) && (
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    {registration.formResponses.map((response, index) => (
+                      <div key={index}>
+                        <div className="font-medium text-gray-700">{response.fieldName}:</div>
+                        <div className="text-gray-600 pl-4 whitespace-pre-line">{response.response}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

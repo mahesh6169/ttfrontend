@@ -140,23 +140,28 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     const registration = attendees[index];
     if (!registration) return 120;
     
-    const baseHeight = 120;
+    const baseHeight = 100; // Base height for header
     const isExpanded = expandedRegistrations.has(registration._id);
     const showingFormResponses = showFormResponses.has(registration._id);
+    const hasFormResponses = registration.formResponses?.length > 0;
     
-    if (!isExpanded) {
-      return showingFormResponses && registration.formResponses?.length > 0 
-        ? baseHeight + (registration.formResponses.length * 24) + 20
-        : baseHeight;
+    // Calculate height based on state
+    let totalHeight = baseHeight;
+    
+    // Add attendee list height if expanded
+    if (isExpanded) {
+      totalHeight += registration.attendees.length * 80; // Height per attendee row
     }
     
-    // Expanded height includes attendees
-    const attendeeHeight = registration.attendees.length * 70;
-    const formHeight = showingFormResponses && registration.formResponses?.length > 0 
-      ? (registration.formResponses.length * 24) + 20 
-      : 0;
+    // Add form responses section height if present
+    if (hasFormResponses) {
+      totalHeight += 50; // Height for the "View Attendee Information" button
+      if (showingFormResponses) {
+        totalHeight += registration.formResponses.length * 40 + 20; // Height per form response + padding
+      }
+    }
     
-    return baseHeight + attendeeHeight + formHeight + 20;
+    return totalHeight;
   }, [attendees, expandedRegistrations, showFormResponses]);
 
   // Row renderer for react-window
@@ -174,121 +179,120 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     return (
       <div style={style}>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mx-4">
-          {/* Registration Header */}
-          <div 
-            className={`p-4 cursor-pointer transition-colors ${
-              allCheckedIn ? 'bg-green-50' : showPartialCheckIn ? 'bg-yellow-50' : 'hover:bg-gray-50'
-            }`}
-            onClick={() => toggleRegistration(registration._id)}
-          >
-            <div className="flex items-center justify-between">
+          {/* Registration Header - New Layout */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-gray-900">
-                    {registration.registrationNumber}
-                  </h3>
-                  {allCheckedIn && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      All Checked In
-                    </span>
+                {/* Registration Number */}
+                <div className="font-semibold text-gray-900 text-sm sm:text-base mb-1">
+                  {registration.registrationNumber}
+                </div>
+                
+                {/* User Details */}
+                <div className="text-xs sm:text-sm text-gray-600 mb-2">
+                  <span className="font-medium text-gray-700">{registration.user?.name || registration.userId?.name || 'Former User'}</span>
+                  {registration.user?.phone && (
+                    <>
+                      <span className="mx-1">•</span>
+                      <span>{registration.user.phone}</span>
+                    </>
                   )}
-                  {showPartialCheckIn && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                      Partial Check-in
-                    </span>
+                  {registration.email && (
+                    <>
+                      <span className="mx-1">•</span>
+                      <span className="break-all">{registration.email}</span>
+                    </>
                   )}
                 </div>
                 
-                <div className="text-sm text-gray-500 mt-1">
-                  <span>{registration.user?.name || registration.userId?.name || 'Former User'}</span>
-                  <span className="ml-2">• {registration.email}</span>
-                  <span className="ml-2">• {registration.attendees.length} attendee{registration.attendees.length !== 1 ? 's' : ''}</span>
+                {/* Attendee Count and Check-in Status */}
+                <div 
+                  className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer"
+                  onClick={() => toggleRegistration(registration._id)}
+                >
+                  <span className="font-medium">
+                    {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
+                  </span>
+                  <span className="text-gray-500">•</span>
+                  <span className={`font-medium ${allCheckedIn ? 'text-green-600' : showPartialCheckIn ? 'text-yellow-600' : 'text-gray-600'}`}>
+                    Checked In: {registration.attendees.filter(a => a.checkedIn).length}/{registration.attendees.length}
+                  </span>
+                  <span className="text-blue-600 hover:text-blue-800 underline ml-2">
+                    {isExpanded ? 'Hide attendees' : 'View attendees'}
+                  </span>
                 </div>
-                
-                <div className="text-xs text-gray-400 mt-1">
-                  Registered: {formatDate(registration.createdAt)}
-                </div>
-                
-                {/* View Registration Details Link */}
-                {registration.formResponses && registration.formResponses.length > 0 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFormResponses(registration._id);
-                    }}
-                    className="text-xs text-teal-600 hover:text-teal-700 mt-1 flex items-center gap-1"
-                  >
-                    <svg 
-                      className={`w-3 h-3 transition-transform ${showingFormResponses ? 'rotate-90' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    {showingFormResponses ? 'Hide' : 'View'} Registration Details
-                  </button>
-                )}
-                
-                {/* Form Responses Display */}
-                {showingFormResponses && registration.formResponses && registration.formResponses.length > 0 && (
-                  <div className="mt-2 p-2 bg-gray-100 rounded text-xs space-y-1">
-                    {registration.formResponses.map((response, index) => (
-                      <div key={index}>
-                        <span className="font-medium text-gray-700">{response.fieldName}:</span>
-                        <span className="ml-1 text-gray-600 whitespace-pre-line">{response.response}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
               
-              <div className="flex items-center gap-2">
-                {/* Bulk Check-in/out Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleBulkCheckIn(registration._id, !allCheckedIn);
-                  }}
-                  disabled={actionLoading}
-                  className={`
-                    px-3 py-1 rounded text-sm font-medium transition-colors
-                    ${allCheckedIn 
-                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                      : 'bg-teal-100 text-teal-700 hover:bg-teal-200'
-                    }
-                    ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
-                  `}
-                >
-                  {allCheckedIn ? 'Check Out All' : 'Check In All'}
-                </button>
-                
-                {/* Expand/Collapse Icon */}
+              {/* Check In All Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBulkCheckIn(registration._id, !allCheckedIn);
+                }}
+                disabled={actionLoading}
+                className={`
+                  px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
+                  ${allCheckedIn 
+                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
+                    : 'bg-teal-600 text-white hover:bg-teal-700'
+                  }
+                  ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+              >
+                {allCheckedIn ? 'Check Out All' : 'Check In All'}
+              </button>
+            </div>
+          </div>
+          
+          {/* Attendees List - Only show when expanded */}
+          {isExpanded && (
+            <div className="bg-gray-50">
+              {registration.attendees.map((attendee, idx) => (
+                <div key={attendee._id} className="border-b border-gray-200 last:border-b-0">
+                  <CheckInFree_AttendeeCard
+                    attendee={attendee}
+                    ticketId={registration._id}
+                    registrationNumber={registration.registrationNumber}
+                    formResponses={[]}
+                    isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Attendee Information (Form Responses) */}
+          {registration.formResponses && registration.formResponses.length > 0 && (
+            <div className="p-4 bg-white border-t border-gray-200">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFormResponses(registration._id);
+                }}
+                className="text-xs sm:text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1 mb-2"
+              >
                 <svg 
-                  className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                  className={`w-3 h-3 transition-transform ${showingFormResponses ? 'rotate-90' : ''}`} 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-              </div>
-            </div>
-          </div>
-          
-          {/* Attendees List */}
-          {isExpanded && (
-            <div className="border-t border-gray-200 p-4 space-y-3 bg-gray-50">
-              {registration.attendees.map((attendee) => (
-                <CheckInFree_AttendeeCard
-                  key={attendee._id}
-                  attendee={attendee}
-                  ticketId={registration._id}
-                  registrationNumber={registration.registrationNumber}
-                  formResponses={[]}
-                  isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
-                />
-              ))}
+                {showingFormResponses ? 'Hide' : 'View'} Attendee Information
+              </button>
+              
+              {/* Form Responses Display */}
+              {showingFormResponses && (
+                <div className="space-y-2 text-xs sm:text-sm">
+                  {registration.formResponses.map((response, index) => (
+                    <div key={index}>
+                      <div className="font-medium text-gray-700">{response.fieldName}:</div>
+                      <div className="text-gray-600 pl-4 whitespace-pre-line">{response.response}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
