@@ -229,23 +229,23 @@ const MyInvoicesPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">My Invoices</h2>
-        <span className="text-sm text-gray-500">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Invoices</h2>
+        <span className="text-xs sm:text-sm text-gray-500">
           {invoices.length} invoice{invoices.length !== 1 ? 's' : ''} across {events.length} event{events.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Event Selector */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <label htmlFor="eventSelect" className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+        <label htmlFor="eventSelect" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
           Select Event to View Invoices
         </label>
         <select
           id="eventSelect"
           value={selectedEventId}
           onChange={(e) => setSelectedEventId(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">-- Choose an event --</option>
           {events.map((event) => {
@@ -269,28 +269,97 @@ const MyInvoicesPage = () => {
             const eventDateTime = formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone);
             
             return (
-              <div className="bg-gray-50 px-6 py-4 border-b">
-                <h3 className="text-xl font-semibold text-gray-900 mb-1">{selectedEvent.title}</h3>
-                <div className="text-sm text-gray-500 mb-3 font-mono">
-                  Event ID: {selectedEvent.eventCode}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                  <div>
-                    <span className="font-medium">📅 Date & Time:</span><br />
-                    {eventDateTime.date} at {eventDateTime.time}
-                    <div className="text-xs text-gray-500 mt-1">Timezone: {selectedEvent.timeZone}</div>
-                  </div>
-                  <div>
-                    <span className="font-medium">📍 Venue:</span><br />
-                    {selectedEvent.venue}
-                    {selectedEvent.address && <div className="text-xs mt-1">{selectedEvent.address}</div>}
-                  </div>
-                  <div>
-                    <span className="font-medium">👤 Event Organizer:</span><br />
-                    {selectedEvent.organizer?.name || 'N/A'}
-                    {selectedEvent.organizer?.abn && <div className="text-xs mt-1">ABN: {selectedEvent.organizer.abn}</div>}
-                    {selectedEvent.organizer?.email && <div className="text-xs mt-1">{selectedEvent.organizer.email}</div>}
-                    {selectedEvent.organizer?.phone && <div className="text-xs mt-1">{selectedEvent.organizer.phone}</div>}
+              <div className="bg-gray-50 border-b">
+                <div className="px-4 py-4 sm:px-6 sm:py-5">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Event Details Container - 2 columns on desktop */}
+                    <div className="md:col-span-2 bg-white rounded-lg p-4">
+                      {/* Event Title and ID in one line */}
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+                        {selectedEvent.title} ({selectedEvent.eventCode})
+                      </h3>
+
+                      {/* Event Details */}
+                      <div className="space-y-3">
+                        {/* Date & Time */}
+                        <div className="flex items-center gap-3">
+                          <div className="text-gray-500">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <span className="text-sm sm:text-base text-gray-700">
+                            {eventDateTime.date} {eventDateTime.time} {selectedEvent.timeZone}
+                          </span>
+                        </div>
+
+                        {/* Venue */}
+                        <div className="flex items-center gap-3">
+                          <div className="text-gray-500">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                          </div>
+                          <span className="text-sm sm:text-base text-gray-700">
+                            {selectedEvent.venue}
+                          </span>
+                        </div>
+
+                        {/* Address */}
+                        {selectedEvent.address && (
+                          <div className="flex items-start gap-3">
+                            <div className="text-gray-500 mt-0.5">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            </div>
+                            <span className="text-sm sm:text-base text-gray-700">
+                              {selectedEvent.address}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Organized By Container - 1 column on desktop */}
+                    <div className="md:col-span-1 bg-white rounded-lg p-4">
+                      <div className="space-y-2">
+                        <div>
+                          <span className="text-sm text-gray-600">From:</span>
+                          <p className="text-sm sm:text-base font-semibold text-gray-900">
+                            {selectedEvent.organizer?.name || 'Event Organizer'}
+                          </p>
+                        </div>
+                        
+                        {selectedEvent.organizer?.abn && (
+                          <div>
+                            <span className="text-sm text-gray-600">ABN:</span>
+                            <p className="text-sm text-gray-900">
+                              {selectedEvent.organizer.abn}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {selectedEvent.organizer?.contact && (
+                          <div>
+                            <span className="text-sm text-gray-600">Contact:</span>
+                            <p className="text-sm text-gray-900">
+                              {selectedEvent.organizer.contact}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {selectedEvent.organizer?.email && (
+                          <div>
+                            <span className="text-sm text-gray-600">Email-id:</span>
+                            <p className="text-sm text-gray-900 break-all">
+                              {selectedEvent.organizer.email}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -298,24 +367,24 @@ const MyInvoicesPage = () => {
           })()}
 
           {/* Invoice List */}
-          <div className="p-6 space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900">Your Invoices</h4>
+          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+            <h4 className="text-base sm:text-lg font-semibold text-gray-900">Your Invoices</h4>
             
             {selectedEventInvoices.map((invoice) => (
                 <div key={invoice.invoiceNumber} 
-                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex justify-between items-start">
+                  className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                     <div className="flex-1">
                       {/* Invoice Header */}
-                      <div className="flex items-center gap-3 mb-3">
-                        <h5 className="font-semibold text-gray-900">
+                      <div className="flex items-center gap-3 mb-2 sm:mb-3">
+                        <h5 className="text-sm sm:text-base font-semibold text-gray-900">
                           Invoice: {invoice.invoiceNumber}
                         </h5>
                         {getStatusBadge(invoice.status)}
                       </div>
 
                       {/* Invoice Details Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                      <div className="space-y-2 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-3 sm:space-y-0 text-xs sm:text-sm">
                         <div>
                           <span className="font-medium text-gray-700">Tickets:</span>
                           <div className="text-gray-900">{invoice.ticketCount}</div>
@@ -341,17 +410,17 @@ const MyInvoicesPage = () => {
 
                       {/* Refund info if applicable */}
                       {invoice.hasRefunds && (
-                        <div className="mt-2 text-sm text-gray-600">
+                        <div className="mt-2 text-xs sm:text-sm text-gray-600">
                           {invoice.refundCount} refund{invoice.refundCount !== 1 ? 's' : ''} processed
                         </div>
                       )}
                     </div>
 
                     {/* Action Button */}
-                    <div className="ml-4">
+                    <div className="sm:ml-4">
                       <button
                         onClick={() => handleViewInvoice(invoice)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        className="w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium"
                       >
                         View Invoice
                       </button>
