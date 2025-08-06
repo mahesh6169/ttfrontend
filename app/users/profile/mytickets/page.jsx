@@ -6,12 +6,14 @@ import jsPDF from 'jspdf';
 const EnhancedMyTicketsPage = () => {
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
+  const [filteredEvents, setFilteredEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedEventTickets, setSelectedEventTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTicketGroup, setSelectedTicketGroup] = useState(null);
   const [showTicketsModal, setShowTicketsModal] = useState(false);
+  const [dateFilter, setDateFilter] = useState('3months'); // Default to 3 months
 
   // Fetch all user tickets
   useEffect(() => {
@@ -83,6 +85,41 @@ const EnhancedMyTicketsPage = () => {
 
     fetchAllMyTickets();
   }, []);
+
+  // Apply date filtering to events
+  useEffect(() => {
+    if (events.length === 0) {
+      setFilteredEvents([]);
+      return;
+    }
+
+    const now = new Date();
+    let filtered = [...events];
+
+    switch (dateFilter) {
+      case '3months':
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        filtered = events.filter(event => new Date(event.dateTime) >= threeMonthsAgo);
+        break;
+      case '6months':
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        filtered = events.filter(event => new Date(event.dateTime) >= sixMonthsAgo);
+        break;
+      case '1year':
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        filtered = events.filter(event => new Date(event.dateTime) >= oneYearAgo);
+        break;
+      case 'all':
+      default:
+        // Show all events
+        break;
+    }
+
+    setFilteredEvents(filtered);
+  }, [events, dateFilter]);
 
   // Filter tickets when event is selected
   useEffect(() => {
@@ -264,27 +301,62 @@ const EnhancedMyTicketsPage = () => {
         </span>
       </div>
 
-      {/* Event Selector */}
+      {/* Event Selector with Date Filter */}
       <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
-        <label htmlFor="eventSelect" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-          Select Event to View Tickets
-        </label>
-        <select
-          id="eventSelect"
-          value={selectedEventId}
-          onChange={(e) => setSelectedEventId(e.target.value)}
-          className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="">-- Choose an event --</option>
-          {events.map((event) => {
-            const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
-            return (
-              <option key={event.id} value={event.id}>
-                {event.title} - {eventDateTime.combined}
-              </option>
-            );
-          })}
-        </select>
+        <div className="space-y-4">
+          {/* Date Filter */}
+          <div>
+            <label htmlFor="dateFilter" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+              Filter by Date Range
+            </label>
+            <select
+              id="dateFilter"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="3months">Last 3 months</option>
+              <option value="6months">Last 6 months</option>
+              <option value="1year">Last year</option>
+              <option value="all">Show all</option>
+            </select>
+          </div>
+
+          {/* Event Selector */}
+          <div>
+            <label htmlFor="eventSelect" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+              Select Event to View Tickets
+            </label>
+            <select
+              id="eventSelect"
+              value={selectedEventId}
+              onChange={(e) => setSelectedEventId(e.target.value)}
+              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">-- Choose an event --</option>
+              {filteredEvents.map((event) => {
+                const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+                return (
+                  <option key={event.id} value={event.id}>
+                    {event.title} - {eventDateTime.combined}
+                  </option>
+                );
+              })}
+            </select>
+            {filteredEvents.length === 0 && events.length > 0 && (
+              <p className="text-xs sm:text-sm text-gray-500 mt-2">
+                No events found in the selected date range. Try selecting a different range.
+              </p>
+            )}
+          </div>
+
+          {/* Data Retention Warning */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <p className="text-xs sm:text-sm text-amber-800">
+              <strong>Note:</strong> Please save your tickets. Events older than 2 years will be deleted by admin.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Selected Event Tickets */}
