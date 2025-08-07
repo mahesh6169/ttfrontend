@@ -27,6 +27,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
   } = useSelector((state) => state.checkInPaid);
 
   const [expandedInvoices, setExpandedInvoices] = useState(new Set());
+  const [showFormResponses, setShowFormResponses] = useState(new Set());
 
   // Group tickets by invoice number
   const groupedByInvoice = React.useMemo(() => {
@@ -61,6 +62,14 @@ const CheckInPaid_GroupedAttendeeList = () => {
       newExpanded.add(invoiceNumber);
     }
     setExpandedInvoices(newExpanded);
+    // Hide form responses when collapsing invoice
+    if (!newExpanded.has(invoiceNumber)) {
+      setShowFormResponses(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(invoiceNumber);
+        return newSet;
+      });
+    }
   };
 
   // Handle bulk check-in for all tickets in an invoice
@@ -145,14 +154,19 @@ const CheckInPaid_GroupedAttendeeList = () => {
   }
 
   return (
-    <div>
+    <>
       {/* Stats summary */}
-      <div className="pb-2 text-sm text-gray-600">
-        Showing {attendees.length} of {pagination.totalCount} tickets
+      <div className="px-4 pb-2 text-sm text-gray-600">
+        {(() => {
+          const start = (pagination.currentPage - 1) * pagination.limit + 1;
+          const end = Math.min(start + attendees.length - 1, pagination.totalCount);
+          return `Showing ${start}-${end} of ${pagination.totalCount} tickets`;
+        })()}
         {searchTerm && ` matching "${searchTerm}"`}
       </div>
       
-      <div className="space-y-4">
+      {/* Invoice List Container */}
+      <div className="space-y-3 sm:space-y-4 px-2 sm:px-0">
         {Object.entries(groupedByInvoice).map(([invoiceNumber, tickets]) => {
           const isExpanded = expandedInvoices.has(invoiceNumber);
           const allCheckedIn = areAllCheckedIn(tickets);
@@ -175,14 +189,85 @@ const CheckInPaid_GroupedAttendeeList = () => {
             >
               {/* Invoice Header */}
               <div 
-                className="p-4 cursor-pointer hover:bg-gray-50"
+                className="p-3 sm:p-4 cursor-pointer hover:bg-gray-50"
                 onClick={() => toggleInvoice(invoiceNumber)}
               >
-                <div className="flex justify-between items-center">
+                {/* Mobile Layout */}
+                <div className="sm:hidden">
+                  {/* Row 1: Invoice and Status */}
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900">
+                      {invoiceNumber}
+                    </h3>
+                    {showPartialCheckIn && (
+                      <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                        Partial
+                      </span>
+                    )}
+                    {allCheckedIn && (
+                      <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                        All In
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Row 2: Buyer Name */}
+                  <div className="text-sm text-gray-900 mb-1">
+                    {representative.buyer?.firstName} {representative.buyer?.lastName}
+                  </div>
+                  
+                  {/* Row 3: Email */}
+                  <div className="text-sm text-gray-600 mb-1">
+                    {representative.buyer?.email}
+                  </div>
+                  
+                  {/* Row 4: Phone */}
+                  <div className="text-sm text-gray-600 mb-2">
+                    {representative.buyer?.phone}
+                  </div>
+                  
+                  {/* Row 5: Stats */}
+                  <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                    <span>Tickets: {tickets.length} </span>
+                    <span className="font-medium">Checked In: {checkedInAttendees}/{totalAttendees}</span>
+                  </div>
+                  
+                  {/* Row 6: Action Button */}
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBulkCheckInInvoice(tickets, !allCheckedIn);
+                      }}
+                      disabled={actionLoading}
+                      className={`
+                        px-4 py-2 rounded font-medium text-sm transition-colors flex-1 mr-2
+                        ${allCheckedIn 
+                          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                          : 'bg-teal-600 text-white hover:bg-teal-700'
+                        }
+                        ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                      `}
+                    >
+                      {actionLoading ? 'Processing...' : (allCheckedIn ? 'Check Out All' : 'Check In All')}
+                    </button>
+                    <svg 
+                      className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Desktop Layout */}
+                <div className="hidden sm:flex justify-between items-center">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-semibold text-gray-900">
-                        Invoice: {invoiceNumber}
+                        {invoiceNumber}
                       </h3>
                       {showPartialCheckIn && (
                         <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
@@ -198,7 +283,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
                     
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                       <div>
-                        <span className="font-medium">Tickets:</span> {tickets.length} ({totalAttendees} attendees)
+                        <span className="font-medium">Tickets:</span> {tickets.length} 
                       </div>
                       <div>
                         <span className="font-medium">Checked In:</span> {checkedInAttendees} / {totalAttendees}
@@ -213,7 +298,6 @@ const CheckInPaid_GroupedAttendeeList = () => {
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    {/* Bulk Check-in/out Button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -232,7 +316,6 @@ const CheckInPaid_GroupedAttendeeList = () => {
                       {allCheckedIn ? 'Check Out All' : 'Check In All'}
                     </button>
                     
-                    {/* Expand/Collapse Icon */}
                     <svg 
                       className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
                       fill="none" 
@@ -245,10 +328,53 @@ const CheckInPaid_GroupedAttendeeList = () => {
                 </div>
               </div>
               
-              {/* Tickets List */}
+              {/* View Attendee Information - At Invoice Level */}
+              {isExpanded && representative.formResponses && representative.formResponses.length > 0 && (
+                <div className="border-t border-gray-200">
+                  <div className="p-3 sm:p-4 bg-gray-50">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const newShow = new Set(showFormResponses);
+                        if (newShow.has(invoiceNumber)) {
+                          newShow.delete(invoiceNumber);
+                        } else {
+                          newShow.add(invoiceNumber);
+                        }
+                        setShowFormResponses(newShow);
+                      }}
+                      className="w-full text-left text-teal-600 hover:text-teal-700 text-sm font-medium flex items-center justify-between"
+                    >
+                      {showFormResponses.has(invoiceNumber) ? 'Hide' : 'View'} Attendee Information
+                      <svg 
+                        className={`w-4 h-4 transition-transform ${showFormResponses.has(invoiceNumber) ? 'rotate-180' : ''}`}
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {/* Form Responses Display */}
+                    {showFormResponses.has(invoiceNumber) && (
+                      <div className="mt-3 space-y-2 text-xs sm:text-sm">
+                        {representative.formResponses.map((response, index) => (
+                          <div key={index}>
+                            <div className="font-medium text-gray-700">{response.fieldName}:</div>
+                            <div className="text-gray-600 pl-4 whitespace-pre-line break-words">{response.response}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Tickets List - Simple rows */}
               {isExpanded && (
                 <div className="border-t border-gray-200 bg-gray-50">
-                  <div className="p-3 space-y-1">
+                  <div className="p-2 sm:p-3 space-y-1">
                     {tickets.map((ticket) => (
                       <CheckInPaid_SimpleTicketRow 
                         key={ticket._id} 
@@ -266,7 +392,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
       
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="mt-6">
+        <div className="mt-4">
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
@@ -274,7 +400,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
           />
         </div>
       )}
-    </div>
+    </>
   );
 };
 

@@ -2,12 +2,18 @@
 
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { VariableSizeList as List } from 'react-window';
-import CheckInPaid_AttendeeCard from './checkInPaid_AttendeeCard';
+import CheckInPaid_SimpleTicketRow from './checkInPaid_SimpleTicketRow';
 import Pagination from '@/components/Pagination';
-import { fetchPaidEventAttendees, setCurrentPage } from '@/store/slices/events/checkInPaidSlice';
+import { 
+  fetchPaidEventAttendees, 
+  setCurrentPage,
+  bulkCheckInPaidTicket,
+  updateLocalBulkCheckIn 
+} from '@/store/slices/events/checkInPaidSlice';
+import { toast } from 'react-toastify';
 
 const CheckInPaid_VirtualizedAttendeeList = () => {
   const dispatch = useDispatch();
@@ -20,7 +26,36 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
   } = useSelector((state) => state.checkInPaid);
   
   const [windowHeight, setWindowHeight] = useState(600);
+  const [expandedInvoices, setExpandedInvoices] = useState(new Set());
+  const [showFormResponses, setShowFormResponses] = useState(new Set());
   const listRef = useRef();
+
+  // Group tickets by invoice number
+  const groupedByInvoice = useMemo(() => {
+    const groups = {};
+    attendees.forEach(ticket => {
+      const invoiceNumber = ticket.invoiceNumber;
+      if (!groups[invoiceNumber]) {
+        groups[invoiceNumber] = [];
+      }
+      groups[invoiceNumber].push(ticket);
+    });
+    return groups;
+  }, [attendees]);
+
+  // Convert grouped object to array for virtualization
+  const invoiceGroups = useMemo(() => {
+    return Object.entries(groupedByInvoice).map(([invoiceNumber, tickets]) => ({
+      invoiceNumber,
+      tickets,
+      representative: tickets[0], // Use first ticket for buyer info
+      totalAmount: tickets.reduce((sum, t) => sum + (t.priceDetails?.totalPrice || 0), 0),
+      totalAttendees: tickets.reduce((sum, t) => sum + t.attendees.length, 0),
+      checkedInAttendees: tickets.reduce((sum, t) => 
+        sum + t.attendees.filter(a => a.checkedIn).length, 0
+      )
+    }));
+  }, [groupedByInvoice]);
 
   // Calculate window height for virtualization
   useEffect(() => {
@@ -34,12 +69,12 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
     return () => window.removeEventListener('resize', calculateHeight);
   }, []);
 
-  // Reset item sizes when attendees change
+  // Reset item sizes when attendees or expanded state changes
   useEffect(() => {
     if (listRef.current) {
       listRef.current.resetAfterIndex(0);
     }
-  }, [attendees]);
+  }, [attendees, expandedInvoices]);
 
   // Handle page change
   const handlePageChange = (newPage) => {
@@ -56,30 +91,313 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
     }
   };
 
-  // Calculate item height - paid tickets are typically larger due to more info
+  // Toggle invoice expansion
+  const toggleInvoice = useCallback((invoiceNumber) => {
+    setExpandedInvoices(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(invoiceNumber)) {
+        newExpanded.delete(invoiceNumber);
+      } else {
+        newExpanded.add(invoiceNumber);
+      }
+      return newExpanded;
+    });
+    
+    // Find the index and reset item size
+    const index = invoiceGroups.findIndex(group => group.invoiceNumber === invoiceNumber);
+    if (index !== -1 && listRef.current) {
+      listRef.current.resetAfterIndex(index);
+    }
+  }, [invoiceGroups]);
+
+  // Calculate item height for invoice groups
   const getItemSize = useCallback((index) => {
-    const ticket = attendees[index];
-    if (!ticket) return 300; // Base height for paid tickets
+    const invoiceGroup = invoiceGroups[index];
+    if (!invoiceGroup) return 120;
     
-    // Base calculation: header + buyer info + attendees
-    const baseHeight = 200;
-    const attendeeHeight = ticket.attendees.length * 60;
-    const formResponseHeight = ticket.formResponses?.length > 0 ? 100 : 0;
+    const isMobile = window.innerWidth < 640;
+    const isExpanded = expandedInvoices.has(invoiceGroup.invoiceNumber);
     
-    return baseHeight + attendeeHeight + formResponseHeight;
-  }, [attendees]);
+    // Base height for invoice header
+    let height = isMobile ? 180 : 100;
+    
+    // Add height for expanded content
+    if (isExpanded) {
+      // Add height for form responses section if present
+      if (invoiceGroup.representative.formResponses?.length > 0) {
+        height += 60; // View button height
+        if (showFormResponses.has(invoiceGroup.invoiceNumber)) {
+          height += invoiceGroup.representative.formResponses.length * 40 + 20;
+        }
+      }
+      
+      // Add padding for expanded container
+      height += 16;
+      
+      // Add height for simple ticket rows
+      height += invoiceGroup.tickets.length * 60; // Simple ticket row height
+    }
+    
+    // Add bottom margin
+    height += 16;
+    
+    return height;
+  }, [invoiceGroups, expandedInvoices]);
+
+  // Handle bulk check-in for all tickets in an invoice
+  const handleBulkCheckInInvoice = useCallback(async (tickets, checkIn) => {
+    if (actionLoading || !selectedEvent) return;
+
+    try {
+      // Process each ticket in the invoice
+      for (const ticket of tickets) {
+        await dispatch(bulkCheckInPaidTicket({
+          eventId: selectedEvent._id,
+          ticketId: ticket._id,
+          checkIn
+        })).unwrap();
+        
+        // Update local state
+        dispatch(updateLocalBulkCheckIn({
+          ticketId: ticket._id,
+          checkedIn: checkIn,
+          checkInTime: checkIn ? new Date().toISOString() : null
+        }));
+      }
+      
+      toast.success(`All tickets in invoice ${checkIn ? 'checked in' : 'checked out'}`);
+    } catch (error) {
+      toast.error(error || 'Bulk operation failed');
+    }
+  }, [selectedEvent, actionLoading, dispatch]);
+
+  // Check if all attendees in an invoice group are checked in
+  const areAllCheckedIn = (tickets) => {
+    return tickets.every(ticket => 
+      ticket.attendees.every(att => att.checkedIn)
+    );
+  };
+
+  // Check if some attendees in an invoice group are checked in
+  const areSomeCheckedIn = (tickets) => {
+    return tickets.some(ticket => 
+      ticket.attendees.some(att => att.checkedIn)
+    );
+  };
 
   // Row renderer for react-window
   const Row = ({ index, style }) => {
-    const ticket = attendees[index];
-    if (!ticket) return null;
+    const invoiceGroup = invoiceGroups[index];
+    if (!invoiceGroup) return null;
+
+    const { invoiceNumber, tickets, representative, totalAttendees, checkedInAttendees } = invoiceGroup;
+    const isExpanded = expandedInvoices.has(invoiceNumber);
+    const allCheckedIn = areAllCheckedIn(tickets);
+    const someCheckedIn = areSomeCheckedIn(tickets);
+    const showPartialCheckIn = someCheckedIn && !allCheckedIn;
 
     return (
-      <div style={style} className="px-4">
-        <CheckInPaid_AttendeeCard 
-          ticket={ticket}
-          eventId={selectedEvent._id}
-        />
+      <div style={style} className="px-2 sm:px-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          {/* Invoice Header */}
+          <div 
+            className="p-3 sm:p-4 cursor-pointer hover:bg-gray-50"
+            onClick={() => toggleInvoice(invoiceNumber)}
+          >
+            {/* Mobile Layout */}
+            <div className="sm:hidden">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-gray-900">
+                  {invoiceNumber}
+                </h3>
+                {showPartialCheckIn && (
+                  <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                    Partial
+                  </span>
+                )}
+                {allCheckedIn && (
+                  <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                    All In
+                  </span>
+                )}
+              </div>
+              
+              <div className="text-sm text-gray-900 mb-1">
+                {representative.buyer?.firstName} {representative.buyer?.lastName}
+              </div>
+              
+              <div className="text-sm text-gray-600 mb-1">
+                {representative.buyer?.email}
+              </div>
+              
+              <div className="text-sm text-gray-600 mb-2">
+                {representative.buyer?.phone}
+              </div>
+              
+              <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                <span>Tickets: {tickets.length}</span>
+                <span className="font-medium">Checked In: {checkedInAttendees}/{totalAttendees}</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleBulkCheckInInvoice(tickets, !allCheckedIn);
+                  }}
+                  disabled={actionLoading}
+                  className={`
+                    px-4 py-2 rounded font-medium text-sm transition-colors flex-1 mr-2
+                    ${allCheckedIn 
+                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                      : 'bg-teal-600 text-white hover:bg-teal-700'
+                    }
+                    ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  {actionLoading ? 'Processing...' : (allCheckedIn ? 'Check Out All' : 'Check In All')}
+                </button>
+                <svg 
+                  className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Desktop Layout */}
+            <div className="hidden sm:flex justify-between items-center">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="font-semibold text-gray-900">
+                    {invoiceNumber}
+                  </h3>
+                  {showPartialCheckIn && (
+                    <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                      Partial Check-in
+                    </span>
+                  )}
+                  {allCheckedIn && (
+                    <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                      All Checked In
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                  <div>
+                    <span className="font-medium">Tickets:</span> {tickets.length}
+                  </div>
+                  <div>
+                    <span className="font-medium">Checked In:</span> {checkedInAttendees} / {totalAttendees}
+                  </div>
+                </div>
+                
+                <div className="flex items-center mt-2">
+                  <span className="text-sm text-gray-600">
+                    {representative.buyer?.firstName} {representative.buyer?.lastName} • {representative.buyer?.email} • {representative.buyer?.phone}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleBulkCheckInInvoice(tickets, !allCheckedIn);
+                  }}
+                  disabled={actionLoading}
+                  className={`
+                    px-3 py-1 rounded text-sm font-medium transition-colors
+                    ${allCheckedIn 
+                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                      : 'bg-teal-100 text-teal-700 hover:bg-teal-200'
+                    }
+                    ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  {allCheckedIn ? 'Check Out All' : 'Check In All'}
+                </button>
+                
+                <svg 
+                  className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          {/* View Attendee Information - At Invoice Level */}
+          {isExpanded && representative.formResponses && representative.formResponses.length > 0 && (
+            <div className="border-t border-gray-200">
+              <div className="p-3 sm:p-4 bg-gray-50">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const newShow = new Set(showFormResponses);
+                    if (newShow.has(invoiceNumber)) {
+                      newShow.delete(invoiceNumber);
+                    } else {
+                      newShow.add(invoiceNumber);
+                    }
+                    setShowFormResponses(newShow);
+                    
+                    // Reset virtualized list height
+                    const idx = invoiceGroups.findIndex(g => g.invoiceNumber === invoiceNumber);
+                    if (idx !== -1 && listRef.current) {
+                      listRef.current.resetAfterIndex(idx);
+                    }
+                  }}
+                  className="w-full text-left text-teal-600 hover:text-teal-700 text-sm font-medium flex items-center justify-between"
+                >
+                  {showFormResponses.has(invoiceNumber) ? 'Hide' : 'View'} Attendee Information
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${showFormResponses.has(invoiceNumber) ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {/* Form Responses Display */}
+                {showFormResponses.has(invoiceNumber) && (
+                  <div className="mt-3 space-y-2 text-xs sm:text-sm">
+                    {representative.formResponses.map((response, index) => (
+                      <div key={index}>
+                        <div className="font-medium text-gray-700">{response.fieldName}:</div>
+                        <div className="text-gray-600 pl-4 whitespace-pre-line break-words">{response.response}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Tickets List - Simple rows */}
+          {isExpanded && (
+            <div className="border-t border-gray-200 bg-gray-50">
+              <div className="p-2 sm:p-3 space-y-1">
+                {tickets.map((ticket) => (
+                  <CheckInPaid_SimpleTicketRow 
+                    key={ticket._id} 
+                    ticket={ticket}
+                    eventId={selectedEvent._id}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -118,8 +436,12 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
   return (
     <div>
       {/* Stats summary */}
-      <div className="pb-2 text-sm text-gray-600">
-        Showing {attendees.length} of {pagination.totalCount} tickets
+      <div className="px-4 pb-2 text-sm text-gray-600">
+        {(() => {
+          const start = (pagination.currentPage - 1) * pagination.limit + 1;
+          const end = Math.min(start + attendees.length - 1, pagination.totalCount);
+          return `Showing ${start}-${end} of ${pagination.totalCount} tickets in ${invoiceGroups.length} invoices`;
+        })()}
         {searchTerm && ` matching "${searchTerm}"`}
       </div>
 
@@ -127,17 +449,17 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
       <List
         ref={listRef}
         height={windowHeight}
-        itemCount={attendees.length}
+        itemCount={invoiceGroups.length}
         itemSize={getItemSize}
         width="100%"
-        overscanCount={2}
+        overscanCount={1}
       >
         {Row}
       </List>
       
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="mt-6">
+        <div className="mt-4">
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}

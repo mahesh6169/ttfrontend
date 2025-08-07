@@ -12,7 +12,6 @@ import { formatInTimeZone } from 'date-fns-tz';
 import CheckInPaid_EventSelector from '@/components/events/checkin/checkInPaid_EventSelector';
 import CheckInPaid_SearchBar from '@/components/events/checkin/checkInPaid_SearchBar';
 import CheckInPaid_CheckInStats from '@/components/events/checkin/checkInPaid_CheckInStats';
-import CheckInPaid_AttendeeList from '@/components/events/checkin/checkInPaid_AttendeeList';
 import CheckInPaid_GroupedAttendeeList from '@/components/events/checkin/checkInPaid_GroupedAttendeeList';
 import CheckInPaid_VirtualizedAttendeeList from '@/components/events/checkin/checkInPaid_VirtualizedAttendeeList';
 
