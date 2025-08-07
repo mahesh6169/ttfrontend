@@ -307,7 +307,7 @@ const CheckInFree_AttendeeList = () => {
             
             {/* Tab Content */}
             {isExpanded && (
-              <div className="border-t border-gray-200">
+              <div className="border-t border-gray-200 mb-4">
                 {/* Attendees Tab */}
                 {(activeTab[registration._id] || 'attendees') === 'attendees' && (
                   <div className="bg-gray-50">

@@ -353,7 +353,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
           
           {/* Tab Content */}
           {isExpanded && (
-            <div className="border-t border-gray-200">
+            <div className="border-t border-gray-200 mb-4">
               {/* Attendees Tab */}
               {currentTab === 'attendees' && (
                 <div className="bg-gray-50">

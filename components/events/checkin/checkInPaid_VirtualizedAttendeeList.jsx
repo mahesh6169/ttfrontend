@@ -370,7 +370,7 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
           
           {/* Tab Content */}
           {isExpanded && (
-            <div className="border-t border-gray-200">
+            <div className="border-t border-gray-200 mb-4">
               {/* Tickets Tab */}
               {(activeTab[invoiceNumber] || 'tickets') === 'tickets' && (
                 <div className="bg-gray-50">
