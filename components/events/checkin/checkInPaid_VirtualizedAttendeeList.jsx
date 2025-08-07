@@ -22,12 +22,13 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
     searchTerm, 
     selectedEvent, 
     attendeesLoading,
+    actionLoading,
     pagination 
   } = useSelector((state) => state.checkInPaid);
   
   const [windowHeight, setWindowHeight] = useState(600);
   const [expandedInvoices, setExpandedInvoices] = useState(new Set());
-  const [showFormResponses, setShowFormResponses] = useState(new Set());
+  const [activeTab, setActiveTab] = useState({}); // { invoiceNumber: 'tickets' | 'attendeeInfo' }
   const listRef = useRef();
 
   // Group tickets by invoice number
@@ -110,6 +111,38 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
     }
   }, [invoiceGroups]);
 
+  // Handle tab click
+  const handleTabClick = useCallback((invoiceNumber, tab) => {
+    const isCurrentlyExpanded = expandedInvoices.has(invoiceNumber);
+    const currentTab = activeTab[invoiceNumber] || 'tickets';
+    
+    if (!isCurrentlyExpanded) {
+      // If not expanded, expand and set the tab
+      setExpandedInvoices(prev => {
+        const newExpanded = new Set(prev);
+        newExpanded.add(invoiceNumber);
+        return newExpanded;
+      });
+      setActiveTab(prev => ({ ...prev, [invoiceNumber]: tab }));
+    } else if (currentTab === tab) {
+      // If clicking the same tab, collapse
+      setExpandedInvoices(prev => {
+        const newExpanded = new Set(prev);
+        newExpanded.delete(invoiceNumber);
+        return newExpanded;
+      });
+    } else {
+      // If clicking different tab, just switch tabs
+      setActiveTab(prev => ({ ...prev, [invoiceNumber]: tab }));
+    }
+    
+    // Find the index and reset item size
+    const index = invoiceGroups.findIndex(group => group.invoiceNumber === invoiceNumber);
+    if (index !== -1 && listRef.current) {
+      listRef.current.resetAfterIndex(index);
+    }
+  }, [invoiceGroups, expandedInvoices, activeTab]);
+
   // Calculate item height for invoice groups
   const getItemSize = useCallback((index) => {
     const invoiceGroup = invoiceGroups[index];
@@ -121,28 +154,32 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
     // Base height for invoice header
     let height = isMobile ? 180 : 100;
     
+    // Add height for tab buttons section (always visible)
+    height += 60; // Tab buttons section height
+    
     // Add height for expanded content
     if (isExpanded) {
-      // Add height for form responses section if present
-      if (invoiceGroup.representative.formResponses?.length > 0) {
-        height += 60; // View button height
-        if (showFormResponses.has(invoiceGroup.invoiceNumber)) {
-          height += invoiceGroup.representative.formResponses.length * 40 + 20;
-        }
+      const currentTab = activeTab[invoiceGroup.invoiceNumber] || 'tickets';
+      
+      if (currentTab === 'tickets') {
+        // Add padding for expanded container + mb-4
+        height += 32; // 16px padding + 16px mb-4
+        // Add height for simple ticket rows
+        height += invoiceGroup.tickets.length * 60; // Simple ticket row height
+        // Add pb-4 for tickets tab
+        height += 16;
+      } else if (currentTab === 'attendeeInfo' && invoiceGroup.representative.formResponses?.length > 0) {
+        // Add height for form responses + mb-4
+        height += 32; // 16px padding + 16px mb-4
+        height += invoiceGroup.representative.formResponses.length * 60 + 20;
       }
-      
-      // Add padding for expanded container
-      height += 16;
-      
-      // Add height for simple ticket rows
-      height += invoiceGroup.tickets.length * 60; // Simple ticket row height
     }
     
-    // Add bottom margin
+    // Add bottom margin for gap between cards
     height += 16;
     
     return height;
-  }, [invoiceGroups, expandedInvoices]);
+  }, [invoiceGroups, expandedInvoices, activeTab]);
 
   // Handle bulk check-in for all tickets in an invoice
   const handleBulkCheckInInvoice = useCallback(async (tickets, checkIn) => {
