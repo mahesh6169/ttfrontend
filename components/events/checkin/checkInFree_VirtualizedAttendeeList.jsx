@@ -164,19 +164,21 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     
     // Add attendee list height if expanded
     if (isExpanded) {
-      totalHeight += registration.attendees.length * 80; // Height per attendee row
+      // Add padding for the gray background container
+      totalHeight += 16; // top/bottom padding of attendees container
+      totalHeight += registration.attendees.length * 90; // Height per attendee row (increased for better spacing)
     }
     
     // Add form responses section height if present
     if (hasFormResponses) {
-      totalHeight += 50; // Height for the "View Attendee Information" button
+      totalHeight += 60; // Height for the "View Attendee Information" button with padding
       if (showingFormResponses) {
         totalHeight += registration.formResponses.length * 40 + 20; // Height per form response + padding
       }
     }
     
     // Add margin bottom space for gap between cards
-    totalHeight += 16; // 16px gap between cards
+    totalHeight += 20; // Increased gap between cards for better separation
     
     return totalHeight;
   }, [attendees, expandedRegistrations, showFormResponses]);
@@ -415,7 +417,11 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     <div>
       {/* Stats summary */}
       <div className="px-4 pb-2 text-sm text-gray-600">
-        Showing {attendees.length} of {pagination.totalCount} registrations
+        {(() => {
+          const start = (pagination.currentPage - 1) * pagination.limit + 1;
+          const end = Math.min(start + attendees.length - 1, pagination.totalCount);
+          return `Showing ${start}-${end} of ${pagination.totalCount} registrations`;
+        })()}
         {searchTerm && ` matching "${searchTerm}"`}
       </div>
 

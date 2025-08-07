@@ -71,9 +71,7 @@ const CheckInFreePage = () => {
             {/* Event Info Header */}
             <div className="bg-gray-50 border-b">
               <div className="px-4 py-4 sm:px-6 sm:py-5">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Event Details Container - 2 columns on desktop */}
-                  <div className="md:col-span-2 bg-white rounded-lg p-4">
+                <div className="bg-white rounded-lg p-4">
                     {/* Event Title and ID */}
                     <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
                       {selectedEvent.title}
@@ -131,37 +129,6 @@ const CheckInFreePage = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Organizer Info Container - 1 column on desktop */}
-                  <div className="md:col-span-1 bg-white rounded-lg p-4">
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-xs sm:text-sm text-gray-600">Organizer:</span>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {selectedEvent.organizer?.name || 'Event Organizer'}
-                        </p>
-                      </div>
-                      
-                      {selectedEvent.organizer?.phone && (
-                        <div>
-                          <span className="text-xs sm:text-sm text-gray-600">Contact:</span>
-                          <p className="text-sm text-gray-900">
-                            {selectedEvent.organizer.phone}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {selectedEvent.organizer?.email && (
-                        <div>
-                          <span className="text-xs sm:text-sm text-gray-600">Email:</span>
-                          <p className="text-sm text-gray-900 break-all">
-                            {selectedEvent.organizer.email}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
