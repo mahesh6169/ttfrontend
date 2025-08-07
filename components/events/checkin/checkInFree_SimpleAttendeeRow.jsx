@@ -65,10 +65,14 @@ const CheckInFree_SimpleAttendeeRow = ({
   };
 
   return (
-    <div className="flex items-center justify-between py-2 px-3 hover:bg-gray-100 rounded">
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-gray-700">
+    <div className="flex items-center justify-between py-1.5 px-2 sm:px-3 hover:bg-gray-100">
+      {/* Mobile: Stacked layout, Desktop: Horizontal layout */}
+      <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+        <span className="text-sm font-medium text-gray-900 sm:min-w-[150px]">
           {attendee.name}
+        </span>
+        <span className="text-xs sm:text-sm text-gray-500 font-mono">
+          {registrationNumber}
         </span>
       </div>
       
@@ -76,7 +80,7 @@ const CheckInFree_SimpleAttendeeRow = ({
         onClick={handleCheckInToggle}
         disabled={actionLoading}
         className={`
-          px-4 py-1 rounded text-sm font-medium transition-colors
+          ml-2 px-3 py-1 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
           ${attendee.checkedIn 
             ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
             : 'bg-teal-600 text-white hover:bg-teal-700'

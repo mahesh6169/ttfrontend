@@ -350,7 +350,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
                 <div className="border-t border-gray-200 mb-4">
                   {/* Tickets Tab */}
                   {(activeTab[invoiceNumber] || 'tickets') === 'tickets' && (
-                    <div className="bg-gray-50">
+                    <div className="bg-gray-50 pb-4">
                       <div className="p-2 sm:p-3 space-y-1">
                         {tickets.map((ticket) => (
                           <CheckInPaid_SimpleTicketRow 

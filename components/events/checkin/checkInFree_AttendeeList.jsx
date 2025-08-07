@@ -310,17 +310,18 @@ const CheckInFree_AttendeeList = () => {
               <div className="border-t border-gray-200 mb-4">
                 {/* Attendees Tab */}
                 {(activeTab[registration._id] || 'attendees') === 'attendees' && (
-                  <div className="bg-gray-50">
-                    {registration.attendees.map((attendee, idx) => (
-                      <div key={attendee._id} className="border-b border-gray-200 last:border-b-0">
+                  <div className="bg-gray-50 py-2 px-1 sm:px-2">
+                    <div className="space-y-0.5">
+                      {registration.attendees.map((attendee, idx) => (
                         <CheckInFree_SimpleAttendeeRow
+                          key={attendee._id}
                           attendee={attendee}
                           ticketId={registration._id}
                           registrationNumber={registration.registrationNumber}
                           isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
                         />
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
                 

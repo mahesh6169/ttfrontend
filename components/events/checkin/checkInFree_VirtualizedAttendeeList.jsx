@@ -5,7 +5,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { VariableSizeList as List } from 'react-window';
-import CheckInFree_AttendeeCard from './checkInFree_AttendeeCard';
+import CheckInFree_SimpleAttendeeRow from './checkInFree_SimpleAttendeeRow';
 import Pagination from '@/components/Pagination';
 import { 
   bulkCheckInRegistration,
@@ -176,7 +176,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
       if (currentTab === 'attendees') {
         // Add padding for the gray background container
         totalHeight += 16; // top/bottom padding of attendees container
-        totalHeight += registration.attendees.length * 90; // Height per attendee row
+        totalHeight += registration.attendees.length * 45; // Height per simple attendee row (reduced from 90)
       } else if (currentTab === 'attendeeInfo' && hasFormResponses) {
         // Add height for form responses
         totalHeight += 16; // Padding
@@ -356,18 +356,18 @@ const CheckInFree_VirtualizedAttendeeList = () => {
             <div className="border-t border-gray-200 mb-4">
               {/* Attendees Tab */}
               {currentTab === 'attendees' && (
-                <div className="bg-gray-50">
-                  {registration.attendees.map((attendee, idx) => (
-                    <div key={attendee._id} className="border-b border-gray-200 last:border-b-0">
-                      <CheckInFree_AttendeeCard
+                <div className="bg-gray-50 py-2 px-1 sm:px-2">
+                  <div className="space-y-0.5">
+                    {registration.attendees.map((attendee, idx) => (
+                      <CheckInFree_SimpleAttendeeRow
+                        key={attendee._id}
                         attendee={attendee}
                         ticketId={registration._id}
                         registrationNumber={registration.registrationNumber}
-                        formResponses={[]}
                         isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
                       />
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
               
