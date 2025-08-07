@@ -15,6 +15,7 @@ import {
   FaEnvelope,
   FaMoneyCheckAlt,
   FaChevronRight,
+  FaFileInvoice,
 } from 'react-icons/fa';
 import { MdOutlineGroups2 } from "react-icons/md";
 import { RiAdvertisementFill } from "react-icons/ri";
@@ -185,7 +186,7 @@ const Header = () => {
 
         <div className="flex md:hidden items-center justify-around  pt-2 text-lime-200">
           <NavLink
-            href="/"
+            href="/listings"
             icon={<RiAdvertisementFill size={20} />}
             text="Listings"
             pathname={pathname}
@@ -210,10 +211,10 @@ const Header = () => {
 
       {isMobileMenuOpen && (
         <>
-          <div className="fixed top-0 left-0 h-full w-50 z-50 shadow-lg transform transition-transform duration-300 ease-in-out translate-x-0 bg-teal-700">
+          <div className="fixed top-0 left-0 h-full w-50 z-50 shadow-lg transform transition-transform duration-300 ease-in-out translate-x-0 bg-teal-700 flex flex-col">
             {isAuthenticated ? (
               <>
-                <div className="flex items-center justify-between p-4 border-b shadow-sm text-lime-100">
+                <div className="flex items-center justify-between p-4 border-b shadow-sm text-lime-100 flex-shrink-0">
                   <NavLink
                     href={profileLink}
                     icon={<CgProfile size={18} />}
@@ -229,7 +230,7 @@ const Header = () => {
                   </button>
                 </div>
 
-                <nav className="p-4 space-y-2 text-lime-100">
+                <nav className="p-4 pb-8 space-y-2 text-lime-100 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-lime-200/30 scrollbar-track-transparent">
                   {/* User section */}
                   <NavLink
                     href={`${baseProfilePath}/settings`}
@@ -277,7 +278,7 @@ const Header = () => {
                   />
                   <NavLink
                     href={`${baseProfilePath}/myinvoices`}
-                    icon={<FaMoneyCheckAlt />}
+                    icon={<FaFileInvoice />}
                     text="My Invoices"
                     pathname={pathname}
                     mobile
@@ -293,7 +294,7 @@ const Header = () => {
                   <NavLink
                     href={`${baseProfilePath}/manageads`}
                     icon={<FaAd />}
-                    text="Manage Ads"
+                    text="Manage Listings"
                     pathname={pathname}
                     mobile
                     onClick={toggleMobileMenu}
@@ -333,6 +334,29 @@ const Header = () => {
                   <div className="py-2">
                     <div className="border-t border-lime-200/30"></div>
                   </div>
+
+                  {/* Check-In section */}
+                  <NavLink
+                    href={`${baseProfilePath}/checkInFree`}
+                    icon={<FaCalendarAlt />}
+                    text="Check-In RSVPs"
+                    pathname={pathname}
+                    mobile
+                    onClick={toggleMobileMenu}
+                  />
+                  <NavLink
+                    href={`${baseProfilePath}/checkInPaid`}
+                    icon={<FaCalendarAlt />}
+                    text="Check-In Paid"
+                    pathname={pathname}
+                    mobile
+                    onClick={toggleMobileMenu}
+                  />
+                  
+                  {/* Divider */}
+                  <div className="py-2">
+                    <div className="border-t border-lime-200/30"></div>
+                  </div>
                   
                   <button
                     onClick={() => {
@@ -347,7 +371,7 @@ const Header = () => {
               </>
             ) : (
               <>
-                <div className="flex items-center justify-between p-4 border-b shadow-sm text-lime-100">
+                <div className="flex items-center justify-between p-4 border-b shadow-sm text-lime-100 flex-shrink-0">
                   <h2 className="text-lg font-semibold">Welcome</h2>
                   <button
                     onClick={toggleMobileMenu}
@@ -357,7 +381,7 @@ const Header = () => {
                   </button>
                 </div>
 
-                <nav className="p-4 space-y-2 text-lime-100">
+                <nav className="p-4 space-y-2 text-lime-100 overflow-y-auto flex-1">
                   <NavLink
                     href="/login"
                     text="Login"
@@ -426,9 +450,7 @@ const MobileDropdown = ({ label, icon, pathname, baseProfilePath, toggleMobileMe
   
   const dropdownItems = [
     { label: 'Stripe', href: `${baseProfilePath}/settings/stripeSetup`, icon: <FaMoneyCheckAlt /> },
-    { label: 'Manage Sales', href: `${baseProfilePath}/refunds`, icon: <FaMoneyCheckAlt /> },
-    { label: 'Check-In RSVPs', href: `${baseProfilePath}/checkInFree`, icon: <FaCalendarAlt /> },
-    { label: 'Check-In Paid', href: `${baseProfilePath}/checkInPaid`, icon: <FaCalendarAlt /> },
+    { label: 'Manage Refunds', href: `${baseProfilePath}/refunds`, icon: <FaMoneyCheckAlt /> },
   ];
   
   // Check if any child route is active
