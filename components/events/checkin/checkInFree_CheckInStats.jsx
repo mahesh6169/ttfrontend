@@ -17,13 +17,18 @@ const CheckInFree_CheckInStats = () => {
 
   if (attendeesLoading) {
     return (
-      <div className="grid grid-cols-3 gap-2 sm:gap-4">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white p-2 sm:p-4 rounded-lg shadow animate-pulse">
-            <div className="h-3 sm:h-4 bg-gray-200 rounded w-12 sm:w-20 mb-1 sm:mb-2"></div>
-            <div className="h-5 sm:h-8 bg-gray-200 rounded w-10 sm:w-16"></div>
-          </div>
-        ))}
+      <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 animate-pulse">
+        <div className="flex items-center justify-around sm:justify-start sm:space-x-8">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center space-x-2">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-200 rounded-full"></div>
+              <div className="space-x-1">
+                <span className="inline-block h-4 w-8 bg-gray-200 rounded"></span>
+                <span className="inline-block h-4 w-16 bg-gray-200 rounded"></span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -71,30 +76,41 @@ const CheckInFree_CheckInStats = () => {
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-2 sm:gap-4">
-      {statItems.map((stat, index) => (
-        <div 
-          key={index} 
-          className={`${stat.bgColor} p-2 sm:p-4 rounded-lg border border-gray-100`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center justify-center sm:justify-start mb-1 sm:mb-2">
-              <span className={`${stat.color}`}>
-                {stat.icon}
-              </span>
-            </div>
-            <div className="text-center sm:text-right">
-              <span className={`text-base sm:text-2xl font-bold ${stat.color} block`}>
-                {stat.value}
-              </span>
-              <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                <span className="block sm:hidden">{stat.label}</span>
-                <span className="hidden sm:block">{stat.labelDesktop}</span>
-              </p>
-            </div>
-          </div>
+    <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
+      <div className="flex items-center justify-around sm:justify-start sm:space-x-8">
+        {/* Registrations */}
+        <div className="flex items-center space-x-2">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <span className="text-sm sm:text-base">
+            <span className="font-bold text-blue-600">{totalRegistrations}</span>
+            <span className="text-gray-600 ml-1">Registrations</span>
+          </span>
         </div>
-      ))}
+        
+        {/* Attendees */}
+        <div className="flex items-center space-x-2">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span className="text-sm sm:text-base">
+            <span className="font-bold text-purple-600">{totalAttendees}</span>
+            <span className="text-gray-600 ml-1">Attendees</span>
+          </span>
+        </div>
+        
+        {/* Checked In */}
+        <div className="flex items-center space-x-2">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-sm sm:text-base">
+            <span className="font-bold text-green-600">{checkedInAttendees}</span>
+            <span className="text-gray-600 ml-1">Checked In</span>
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
