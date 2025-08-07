@@ -27,20 +27,31 @@ const CheckInFree_AttendeeList = () => {
   } = useSelector((state) => state.checkInFree);
   
   const [expandedRegistrations, setExpandedRegistrations] = useState(new Set());
-  const [showFormResponses, setShowFormResponses] = useState(new Set());
+  const [activeTab, setActiveTab] = useState({}); // { registrationId: 'attendees' | 'attendeeInfo' }
 
   // No client-side filtering needed - server handles search
   const displayedAttendees = attendees;
 
-  // Toggle registration expansion
-  const toggleRegistration = (registrationId) => {
-    const newExpanded = new Set(expandedRegistrations);
-    if (newExpanded.has(registrationId)) {
-      newExpanded.delete(registrationId);
-    } else {
+  // Handle tab click
+  const handleTabClick = (registrationId, tab) => {
+    const isCurrentlyExpanded = expandedRegistrations.has(registrationId);
+    const currentTab = activeTab[registrationId] || 'attendees';
+    
+    if (!isCurrentlyExpanded) {
+      // If not expanded, expand and set the tab
+      const newExpanded = new Set(expandedRegistrations);
       newExpanded.add(registrationId);
+      setExpandedRegistrations(newExpanded);
+      setActiveTab({ ...activeTab, [registrationId]: tab });
+    } else if (currentTab === tab) {
+      // If clicking the same tab, collapse
+      const newExpanded = new Set(expandedRegistrations);
+      newExpanded.delete(registrationId);
+      setExpandedRegistrations(newExpanded);
+    } else {
+      // If clicking different tab, just switch tabs
+      setActiveTab({ ...activeTab, [registrationId]: tab });
     }
-    setExpandedRegistrations(newExpanded);
   };
 
   // Handle bulk check-in/out for a registration
@@ -150,10 +161,7 @@ const CheckInFree_AttendeeList = () => {
             className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
           >
             {/* Registration Header - New Layout */}
-            <div 
-              className="border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleRegistration(registration._id)}
-            >
+            <div className="border-b border-gray-200">
               {/* Mobile Layout - Button First */}
               <div className="block sm:hidden p-4 space-y-3">
                 {/* Row 1: Check In/Out Button (full width) */}
@@ -203,12 +211,6 @@ const CheckInFree_AttendeeList = () => {
                   </span>
                 </div>
 
-                {/* Row 5: View Attendees Link */}
-                <div>
-                  <span className="text-teal-600 hover:text-teal-700 underline text-xs font-medium">
-                    {isExpanded ? 'Hide attendees' : 'View attendees'}
-                  </span>
-                </div>
               </div>
               
               {/* Desktop Layout - Keep existing */}
@@ -245,9 +247,6 @@ const CheckInFree_AttendeeList = () => {
                     <span className={`font-medium ${allCheckedIn ? 'text-green-600' : showPartialCheckIn ? 'text-yellow-600' : 'text-gray-600'}`}>
                       Checked In: {checkedInCount}/{registration.attendees.length}
                     </span>
-                    <span className="text-blue-600 hover:text-blue-800 underline ml-2">
-                      {isExpanded ? 'Hide attendees' : 'View attendees'}
-                    </span>
                   </div>
                 </div>
                 
@@ -272,58 +271,72 @@ const CheckInFree_AttendeeList = () => {
               </div>
             </div>
             
-            {/* Attendees List - Only show when expanded */}
-            {isExpanded && (
-              <div className="bg-gray-50">
-                {registration.attendees.map((attendee, idx) => (
-                  <div key={attendee._id} className="border-b border-gray-200 last:border-b-0">
-                    <CheckInFree_SimpleAttendeeRow
-                      attendee={attendee}
-                      ticketId={registration._id}
-                      registrationNumber={registration.registrationNumber}
-                      isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {/* Attendee Information (Form Responses) */}
-            {registration.formResponses && registration.formResponses.length > 0 && (
-              <div className="px-4 pb-2 pt-3 bg-white border-t border-gray-200">
+            {/* Tab Buttons */}
+            <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
+              <div className="flex gap-1 sm:gap-2">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const newShowFormResponses = new Set(showFormResponses);
-                    if (newShowFormResponses.has(registration._id)) {
-                      newShowFormResponses.delete(registration._id);
-                    } else {
-                      newShowFormResponses.add(registration._id);
+                  onClick={() => handleTabClick(registration._id, 'attendees')}
+                  className={`
+                    px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                    ${isExpanded && (activeTab[registration._id] || 'attendees') === 'attendees'
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                     }
-                    setShowFormResponses(newShowFormResponses);
-                  }}
-                  className="text-xs sm:text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1 mb-2"
+                  `}
                 >
-                  <svg 
-                    className={`w-3 h-3 transition-transform ${showFormResponses.has(registration._id) ? 'rotate-90' : ''}`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                  {showFormResponses.has(registration._id) ? 'Hide' : 'View'} Attendee Information
+                  <span className="sm:hidden">Attendees</span>
+                  <span className="hidden sm:inline">View Attendees</span>
                 </button>
-                
-                {/* Form Responses Display */}
-                {showFormResponses.has(registration._id) && (
-                  <div className="space-y-2 text-xs sm:text-sm">
-                    {registration.formResponses.map((response, index) => (
-                      <div key={index}>
-                        <div className="font-medium text-gray-700">{response.fieldName}:</div>
-                        <div className="text-gray-600 pl-4 whitespace-pre-line">{response.response}</div>
+                {registration.formResponses && registration.formResponses.length > 0 && (
+                  <button
+                    onClick={() => handleTabClick(registration._id, 'attendeeInfo')}
+                    className={`
+                      px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                      ${isExpanded && activeTab[registration._id] === 'attendeeInfo'
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <span className="sm:hidden">Attendee Info</span>
+                    <span className="hidden sm:inline">View Attendee Information</span>
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Tab Content */}
+            {isExpanded && (
+              <div className="border-t border-gray-200">
+                {/* Attendees Tab */}
+                {(activeTab[registration._id] || 'attendees') === 'attendees' && (
+                  <div className="bg-gray-50">
+                    {registration.attendees.map((attendee, idx) => (
+                      <div key={attendee._id} className="border-b border-gray-200 last:border-b-0">
+                        <CheckInFree_SimpleAttendeeRow
+                          attendee={attendee}
+                          ticketId={registration._id}
+                          registrationNumber={registration.registrationNumber}
+                          isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
+                        />
                       </div>
                     ))}
+                  </div>
+                )}
+                
+                {/* Attendee Information Tab */}
+                {activeTab[registration._id] === 'attendeeInfo' && registration.formResponses && (
+                  <div className="p-3 sm:p-4 bg-white">
+                    <div className="space-y-3">
+                      {registration.formResponses.map((response, index) => (
+                        <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
+                          <div className="font-medium text-gray-700 text-sm mb-1">{response.fieldName}:</div>
+                          <div className="text-gray-600 text-sm whitespace-pre-line break-words pl-4">
+                            {response.response}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

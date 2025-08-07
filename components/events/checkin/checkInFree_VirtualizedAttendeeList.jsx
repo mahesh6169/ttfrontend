@@ -28,7 +28,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
   } = useSelector((state) => state.checkInFree);
   
   const [expandedRegistrations, setExpandedRegistrations] = useState(new Set());
-  const [showFormResponses, setShowFormResponses] = useState(new Set());
+  const [activeTab, setActiveTab] = useState({}); // { registrationId: 'attendees' | 'attendeeInfo' }
   const [windowHeight, setWindowHeight] = useState(600);
   const listRef = useRef();
 
@@ -59,7 +59,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     if (listRef.current) {
       listRef.current.resetAfterIndex(0);
     }
-  }, [attendees, expandedRegistrations, showFormResponses]);
+  }, [attendees, expandedRegistrations, activeTab]);
 
   // Handle page change
   const handlePageChange = (newPage) => {
@@ -76,31 +76,37 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     }
   };
 
-  // Toggle registration expansion
-  const toggleRegistration = useCallback((registrationId) => {
-    setExpandedRegistrations(prev => {
-      const newExpanded = new Set(prev);
-      if (newExpanded.has(registrationId)) {
-        newExpanded.delete(registrationId);
-      } else {
+  // Handle tab click
+  const handleTabClick = useCallback((registrationId, tab) => {
+    const isCurrentlyExpanded = expandedRegistrations.has(registrationId);
+    const currentTab = activeTab[registrationId] || 'attendees';
+    
+    if (!isCurrentlyExpanded) {
+      // If not expanded, expand and set the tab
+      setExpandedRegistrations(prev => {
+        const newExpanded = new Set(prev);
         newExpanded.add(registrationId);
-      }
-      return newExpanded;
-    });
-  }, []);
-
-  // Toggle form responses
-  const toggleFormResponses = useCallback((registrationId) => {
-    setShowFormResponses(prev => {
-      const newShow = new Set(prev);
-      if (newShow.has(registrationId)) {
-        newShow.delete(registrationId);
-      } else {
-        newShow.add(registrationId);
-      }
-      return newShow;
-    });
-  }, []);
+        return newExpanded;
+      });
+      setActiveTab(prev => ({ ...prev, [registrationId]: tab }));
+    } else if (currentTab === tab) {
+      // If clicking the same tab, collapse
+      setExpandedRegistrations(prev => {
+        const newExpanded = new Set(prev);
+        newExpanded.delete(registrationId);
+        return newExpanded;
+      });
+    } else {
+      // If clicking different tab, just switch tabs
+      setActiveTab(prev => ({ ...prev, [registrationId]: tab }));
+    }
+    
+    // Find the index and reset item size
+    const index = attendees.findIndex(r => r._id === registrationId);
+    if (index !== -1 && listRef.current) {
+      listRef.current.resetAfterIndex(index);
+    }
+  }, [attendees, expandedRegistrations, activeTab]);
 
   // Handle bulk check-in/out for a registration
   const handleBulkCheckIn = useCallback(async (ticketId, checkIn) => {
@@ -156,32 +162,33 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     // Base height differs for mobile (vertical stacking) vs desktop (horizontal layout)
     const baseHeight = isMobile ? 200 : 100; // Mobile needs more height for stacked layout
     const isExpanded = expandedRegistrations.has(registration._id);
-    const showingFormResponses = showFormResponses.has(registration._id);
+    const currentTab = activeTab[registration._id] || 'attendees';
     const hasFormResponses = registration.formResponses?.length > 0;
     
     // Calculate height based on state
     let totalHeight = baseHeight;
     
-    // Add attendee list height if expanded
-    if (isExpanded) {
-      // Add padding for the gray background container
-      totalHeight += 16; // top/bottom padding of attendees container
-      totalHeight += registration.attendees.length * 90; // Height per attendee row (increased for better spacing)
-    }
+    // Add height for tab buttons
+    totalHeight += 60; // Tab buttons section height
     
-    // Add form responses section height if present
-    if (hasFormResponses) {
-      totalHeight += 60; // Height for the "View Attendee Information" button with padding
-      if (showingFormResponses) {
-        totalHeight += registration.formResponses.length * 40 + 20; // Height per form response + padding
+    // Add expanded content height
+    if (isExpanded) {
+      if (currentTab === 'attendees') {
+        // Add padding for the gray background container
+        totalHeight += 16; // top/bottom padding of attendees container
+        totalHeight += registration.attendees.length * 90; // Height per attendee row
+      } else if (currentTab === 'attendeeInfo' && hasFormResponses) {
+        // Add height for form responses
+        totalHeight += 16; // Padding
+        totalHeight += registration.formResponses.length * 60 + 20; // Form responses
       }
     }
     
     // Add margin bottom space for gap between cards
-    totalHeight += 20; // Increased gap between cards for better separation
+    totalHeight += 20; // Gap between cards
     
     return totalHeight;
-  }, [attendees, expandedRegistrations, showFormResponses]);
+  }, [attendees, expandedRegistrations, activeTab]);
 
   // Row renderer for react-window
   const Row = ({ index, style }) => {
@@ -193,17 +200,14 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     const someCheckedIn = areSomeCheckedIn(registration);
     const hasMultipleAttendees = registration.attendees.length > 1;
     const showPartialCheckIn = someCheckedIn && !allCheckedIn && hasMultipleAttendees;
-    const showingFormResponses = showFormResponses.has(registration._id);
+    const currentTab = activeTab[registration._id] || 'attendees';
 
     return (
       <div style={style}>
         <div className="px-2 sm:px-4 pb-4">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Registration Header - New Layout */}
-          <div 
-            className="border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
-            onClick={() => toggleRegistration(registration._id)}
-          >
+          <div className="border-b border-gray-200">
             {/* Mobile Layout - Button First */}
             <div className="block sm:hidden p-4 space-y-3">
               {/* Row 1: Check In/Out Button (full width) */}
@@ -253,12 +257,6 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                 </span>
               </div>
 
-              {/* Row 5: View Attendees Link */}
-              <div>
-                <span className="text-teal-600 hover:text-teal-700 underline text-xs font-medium">
-                  {isExpanded ? 'Hide attendees' : 'View attendees'}
-                </span>
-              </div>
             </div>
             
             {/* Desktop Layout - Keep existing */}
@@ -295,9 +293,6 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                   <span className={`font-medium ${allCheckedIn ? 'text-green-600' : showPartialCheckIn ? 'text-yellow-600' : 'text-gray-600'}`}>
                     Checked In: {registration.attendees.filter(a => a.checkedIn).length}/{registration.attendees.length}
                   </span>
-                  <span className="text-blue-600 hover:text-blue-800 underline ml-2">
-                    {isExpanded ? 'Hide attendees' : 'View attendees'}
-                  </span>
                 </div>
               </div>
               
@@ -322,53 +317,73 @@ const CheckInFree_VirtualizedAttendeeList = () => {
             </div>
           </div>
           
-          {/* Attendees List - Only show when expanded */}
-          {isExpanded && (
-            <div className="bg-gray-50">
-              {registration.attendees.map((attendee, idx) => (
-                <div key={attendee._id} className="border-b border-gray-200 last:border-b-0">
-                  <CheckInFree_AttendeeCard
-                    attendee={attendee}
-                    ticketId={registration._id}
-                    registrationNumber={registration.registrationNumber}
-                    formResponses={[]}
-                    isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {/* Attendee Information (Form Responses) - Show for both mobile and desktop */}
-          {registration.formResponses && registration.formResponses.length > 0 && (
-            <div className="px-4 pb-2 pt-2 bg-gray-50">
+          {/* Tab Buttons */}
+          <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
+            <div className="flex gap-1 sm:gap-2">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFormResponses(registration._id);
-                }}
-                className="text-xs sm:text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1 mb-2"
+                onClick={() => handleTabClick(registration._id, 'attendees')}
+                className={`
+                  px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                  ${isExpanded && currentTab === 'attendees'
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }
+                `}
               >
-                <svg 
-                  className={`w-3 h-3 transition-transform ${showingFormResponses ? 'rotate-90' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                {showingFormResponses ? 'Hide' : 'View'} Attendee Information
+                <span className="sm:hidden">Attendees</span>
+                <span className="hidden sm:inline">View Attendees</span>
               </button>
-              
-              {/* Form Responses Display */}
-              {showingFormResponses && (
-                <div className="space-y-2 text-xs sm:text-sm">
-                  {registration.formResponses.map((response, index) => (
-                    <div key={index}>
-                      <div className="font-medium text-gray-700">{response.fieldName}:</div>
-                      <div className="text-gray-600 pl-4 whitespace-pre-line">{response.response}</div>
+              {registration.formResponses && registration.formResponses.length > 0 && (
+                <button
+                  onClick={() => handleTabClick(registration._id, 'attendeeInfo')}
+                  className={`
+                    px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                    ${isExpanded && currentTab === 'attendeeInfo'
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <span className="sm:hidden">Attendee Info</span>
+                  <span className="hidden sm:inline">View Attendee Information</span>
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {/* Tab Content */}
+          {isExpanded && (
+            <div className="border-t border-gray-200">
+              {/* Attendees Tab */}
+              {currentTab === 'attendees' && (
+                <div className="bg-gray-50">
+                  {registration.attendees.map((attendee, idx) => (
+                    <div key={attendee._id} className="border-b border-gray-200 last:border-b-0">
+                      <CheckInFree_AttendeeCard
+                        attendee={attendee}
+                        ticketId={registration._id}
+                        registrationNumber={registration.registrationNumber}
+                        formResponses={[]}
+                        isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
+                      />
                     </div>
                   ))}
+                </div>
+              )}
+              
+              {/* Attendee Information Tab */}
+              {currentTab === 'attendeeInfo' && registration.formResponses && (
+                <div className="p-3 sm:p-4 bg-white">
+                  <div className="space-y-3">
+                    {registration.formResponses.map((response, index) => (
+                      <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
+                        <div className="font-medium text-gray-700 text-sm mb-1">{response.fieldName}:</div>
+                        <div className="text-gray-600 text-sm whitespace-pre-line break-words pl-4">
+                          {response.response}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
