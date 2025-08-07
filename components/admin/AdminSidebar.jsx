@@ -3,7 +3,7 @@
 import React, { memo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { FaUsers, FaAd, FaCog, FaClipboardList } from 'react-icons/fa';
+import { FaUsers, FaAd, FaCog, FaClipboardList, FaDollarSign } from 'react-icons/fa';
 import { MdEvent, MdCategory } from 'react-icons/md';
 import { RiAdvertisementFill } from 'react-icons/ri';
 import { BsChatText } from 'react-icons/bs'; 
@@ -16,6 +16,7 @@ const AdminSidebar = ({ onLinkClick }) => {
     { label: 'Users', href: '/admin/profile/users', icon: <FaUsers /> },
     { label: 'Renewal Adverts', href: '/admin/profile/adverts/renewals', icon: <FaAd /> },
     { label: 'Renewal Events', href: '/admin/profile/events/renewals', icon: <MdEvent /> },
+    { label: 'Platform Fees', href: '/admin/profile/events/platformFee', icon: <FaDollarSign /> },
     { label: 'Thread Moderation', href: '/admin/profile/threads/moderation', icon: <BsChatText /> },  
     { label: 'Settings', href: '/users/admin/settings', icon: <FaCog /> },
   ];
