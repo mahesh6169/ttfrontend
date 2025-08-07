@@ -12,18 +12,11 @@ const CheckInPaid_CheckInStats = () => {
     return null;
   }
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-AU', {
-      style: 'currency',
-      currency: 'AUD',
-    }).format(amount / 100); // Convert cents to dollars
-  };
-
   if (attendeesLoading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-2 sm:p-4 animate-pulse">
         <div className="flex items-center justify-around sm:justify-start sm:space-x-8">
-          {[...Array(3)].map((_, i) => (
+          {[...Array(2)].map((_, i) => (
             <div key={i} className="flex items-center space-x-2">
               <div className="w-4 h-4 sm:w-6 sm:h-6 bg-gray-200 rounded-full"></div>
               <div className="space-x-1">
@@ -49,18 +42,6 @@ const CheckInPaid_CheckInStats = () => {
             <span className="font-bold text-blue-600">{stats.totalTickets}</span>
             <span className="hidden sm:inline text-gray-600 ml-1">Total Tickets</span>
             <span className="sm:hidden text-gray-600 block text-xs">Tickets</span>
-          </div>
-        </div>
-        
-        {/* Total Revenue */}
-        <div className="flex items-center space-x-1 sm:space-x-2">
-          <svg className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div className="text-xs sm:text-base">
-            <span className="font-bold text-purple-600">{formatCurrency(stats.totalRevenue || 0)}</span>
-            <span className="hidden sm:inline text-gray-600 ml-1">Revenue</span>
-            <span className="sm:hidden text-gray-600 block text-xs">Revenue</span>
           </div>
         </div>
         

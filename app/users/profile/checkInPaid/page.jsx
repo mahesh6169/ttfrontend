@@ -76,10 +76,7 @@ const CheckInPaidPage = () => {
                 {selectedEvent.eventCode || selectedEvent._id}
               </span>
               
-              {/* Paid Event Badge */}
-              <span className="text-xs bg-teal-100 text-teal-700 font-semibold px-2 py-1 rounded">
-                Paid Event
-              </span>
+             
               
               {/* Date & Time */}
               <div className="flex items-center gap-1 text-gray-600">

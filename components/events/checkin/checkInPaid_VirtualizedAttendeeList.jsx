@@ -151,8 +151,8 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
     const isMobile = window.innerWidth < 640;
     const isExpanded = expandedInvoices.has(invoiceGroup.invoiceNumber);
     
-    // Base height for invoice header
-    let height = isMobile ? 180 : 100;
+    // Base height for invoice header (mobile needs more for stacked layout)
+    let height = isMobile ? 220 : 100; // Increased mobile height to match checkInFree pattern
     
     // Add height for tab buttons section (always visible)
     height += 60; // Tab buttons section height
@@ -168,15 +168,27 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
         height += invoiceGroup.tickets.length * 60; // Simple ticket row height
         // Add pb-4 for tickets tab
         height += 16;
+        
+        // Extra height for mobile to prevent overlap
+        if (isMobile) {
+          height += 20;
+        }
       } else if (currentTab === 'attendeeInfo' && invoiceGroup.representative.formResponses?.length > 0) {
         // Add height for form responses + mb-4
         height += 32; // 16px padding + 16px mb-4
         height += invoiceGroup.representative.formResponses.length * 60 + 20;
+        // Add extra spacing for attendeeInfo tab
+        height += 20; // Additional gap for better spacing
+        
+        // Extra height for mobile to prevent overlap
+        if (isMobile) {
+          height += 20;
+        }
       }
     }
     
     // Add bottom margin for gap between cards
-    height += 16;
+    height += 20;
     
     return height;
   }, [invoiceGroups, expandedInvoices, activeTab]);
