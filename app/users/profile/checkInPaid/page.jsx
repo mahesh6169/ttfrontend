@@ -52,95 +52,95 @@ const CheckInPaidPage = () => {
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">Paid Event Check-In</h2>
-          <span className="text-sm text-gray-500">
-            Manage attendee check-ins for your paid events
-          </span>
+      <div className="space-y-2 sm:space-y-3">
+        {/* Page Header - Compact */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Paid Event Check-In</h2>
         </div>
 
-        {/* Event Selector */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
+        {/* Event Selector - Reduced padding */}
+        <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
           <CheckInPaid_EventSelector />
         </div>
 
-        {/* Selected Event Details */}
+        {/* Selected Event Details - Compact */}
         {selectedEvent && (
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-            {/* Event Info Header */}
-            <div className="bg-gray-50 px-6 py-4 border-b">
-              <h3 className="text-xl font-semibold text-gray-900 mb-1">{selectedEvent.title}</h3>
-              <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                <span className="font-mono">Event ID: {selectedEvent.eventCode || selectedEvent._id}</span>
-                {selectedEvent.capacity > 0 && (
-                  <>
-                    <span>"</span>
-                    <span>Capacity: {selectedEvent.capacity} attendees</span>
-                  </>
-                )}
-                <span>"</span>
-                <span className="text-teal-700 font-semibold">Paid Event</span>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              {/* Event Title */}
+              <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                {selectedEvent.title}
+              </h3>
+              
+              {/* Event Code */}
+              <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
+                {selectedEvent.eventCode || selectedEvent._id}
+              </span>
+              
+              {/* Paid Event Badge */}
+              <span className="text-xs bg-teal-100 text-teal-700 font-semibold px-2 py-1 rounded">
+                Paid Event
+              </span>
+              
+              {/* Date & Time */}
+              <div className="flex items-center gap-1 text-gray-600">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>{formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone).combined}</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                <div>
-                  <span className="font-medium">Date & Time:</span><br />
-                  {(() => {
-                    const eventDateTime = formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone);
-                    return (
-                      <>
-                        {eventDateTime.date} at {eventDateTime.time}
-                        <div className="text-xs text-gray-500 mt-1">Timezone: {selectedEvent.timeZone || 'Australia/Sydney'}</div>
-                      </>
-                    );
-                  })()}
-                </div>
-                <div>
-                  <span className="font-medium">Venue:</span><br />
-                  {selectedEvent.venue}
-                  {selectedEvent.address && (
-                    <div className="text-xs mt-1">
-                      {typeof selectedEvent.address === 'string' 
-                        ? selectedEvent.address 
-                        : selectedEvent.address.formattedAddress || 
-                          `${selectedEvent.address.street || ''} ${selectedEvent.address.suburb || ''} ${selectedEvent.address.state || ''} ${selectedEvent.address.postalCode || ''}`.trim()
-                      }
-                    </div>
-                  )}
-                </div>
+              
+              {/* Venue */}
+              <div className="flex items-center gap-1 text-gray-600">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>{selectedEvent.venue}</span>
               </div>
+              
+              {/* Capacity if available */}
+              {selectedEvent.capacity > 0 && (
+                <div className="text-gray-600">
+                  <span>Capacity: {selectedEvent.capacity}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Statistics */}
-        <div className="mb-6">
+        {/* Statistics - Compact spacing */}
+        {selectedEvent && (
           <CheckInPaid_CheckInStats />
-        </div>
+        )}
 
-        {/* Attendee List */}
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Attendees</h2>
+        {/* Attendee List - Only show when event is selected */}
+        {selectedEvent && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            {/* Search Bar - No header needed */}
+            <div className="p-3 border-b bg-gray-50">
+              <CheckInPaid_SearchBar />
+            </div>
+            
+            <div className="p-0 sm:p-2">
+              {attendees.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">
+                    No tickets found for this event
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {useVirtualized ? (
+                    <CheckInPaid_VirtualizedAttendeeList />
+                  ) : (
+                    <CheckInPaid_GroupedAttendeeList />
+                  )}
+                </>
+              )}
+            </div>
           </div>
-          
-          {/* Search Bar - Moved just above attendees */}
-          <div className="p-4 border-b bg-gray-50">
-            <CheckInPaid_SearchBar />
-          </div>
-          
-          <div className="p-4">
-            {useVirtualized ? (
-              <CheckInPaid_VirtualizedAttendeeList />
-            ) : (
-              <CheckInPaid_GroupedAttendeeList />
-            )}
-          </div>
-        </div>
-
-        {/* Mobile-friendly spacing at bottom */}
-        <div className="h-20 md:hidden"></div>
+        )}
       </div>
 
       {/* Toast Container */}
