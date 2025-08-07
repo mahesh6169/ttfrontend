@@ -164,11 +164,14 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     
     // Add form responses section height if present
     if (hasFormResponses) {
-      totalHeight += 60; // Height for the "View Attendee Information" button (more padding needed)
+      totalHeight += 50; // Height for the "View Attendee Information" button
       if (showingFormResponses) {
         totalHeight += registration.formResponses.length * 40 + 20; // Height per form response + padding
       }
     }
+    
+    // Add margin bottom space for gap between cards
+    totalHeight += 16; // 16px gap between cards
     
     return totalHeight;
   }, [attendees, expandedRegistrations, showFormResponses]);
@@ -187,7 +190,8 @@ const CheckInFree_VirtualizedAttendeeList = () => {
 
     return (
       <div style={style}>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mx-4">
+        <div className="px-2 sm:px-4 pb-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Registration Header - New Layout */}
           <div 
             className="border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -330,7 +334,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
           
           {/* Attendee Information (Form Responses) - Show for both mobile and desktop */}
           {registration.formResponses && registration.formResponses.length > 0 && (
-            <div className="p-4 bg-white border-t border-gray-200">
+            <div className="px-4 pb-2 pt-2 bg-gray-50">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -362,6 +366,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
               )}
             </div>
           )}
+          </div>
         </div>
       </div>
     );

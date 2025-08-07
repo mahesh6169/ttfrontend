@@ -135,7 +135,7 @@ const CheckInFree_AttendeeList = () => {
   return (
     <>
       {/* Registration List Container */}
-      <div className="space-y-3 sm:space-y-4 px-2 sm:px-0 py-2 sm:py-0">
+      <div className="space-y-3 sm:space-y-4 px-2 sm:px-0">
         {displayedAttendees.map((registration) => {
         const isExpanded = expandedRegistrations.has(registration._id);
         const allCheckedIn = areAllCheckedIn(registration);
@@ -290,7 +290,7 @@ const CheckInFree_AttendeeList = () => {
             
             {/* Attendee Information (Form Responses) */}
             {registration.formResponses && registration.formResponses.length > 0 && (
-              <div className="p-4 bg-white border-t border-gray-200">
+              <div className="px-4 pb-2 pt-3 bg-white border-t border-gray-200">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
