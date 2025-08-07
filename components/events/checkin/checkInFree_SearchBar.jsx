@@ -104,10 +104,6 @@ const CheckInFree_SearchBar = () => {
         )}
       </div>
       
-      {/* Search Help Text */}
-      <p className="mt-1 text-xs text-gray-500">
-        Search by registration number (e.g., REG-ZSYVQ-125) or attendee name or email
-      </p>
     </div>
   );
 };

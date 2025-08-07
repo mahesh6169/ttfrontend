@@ -51,110 +51,65 @@ const CheckInFreePage = () => {
 
   return (
     <>
-      <div className="space-y-4 sm:space-y-6">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Free Event Check-In</h2>
-          <span className="text-xs sm:text-sm text-gray-500">
-            Manage attendee check-ins for your free events
-          </span>
+      <div className="space-y-2 sm:space-y-3">
+        {/* Page Header - Compact */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Free Event Check-In</h2>
         </div>
 
-        {/* Event Selector */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+        {/* Event Selector - Reduced padding */}
+        <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
           <CheckInFree_EventSelector />
         </div>
 
-        {/* Selected Event Details */}
+        {/* Selected Event Details - Compact */}
         {selectedEvent && (
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-            {/* Event Info Header */}
-            <div className="bg-gray-50 border-b">
-              <div className="px-4 py-4 sm:px-6 sm:py-5">
-                <div className="bg-white rounded-lg p-4">
-                    {/* Event Title and ID */}
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
-                      {selectedEvent.title}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 mb-3">
-                      <span className="font-mono">Event ID: {selectedEvent.eventCode || selectedEvent._id}</span>
-                      {selectedEvent.capacity > 0 && (
-                        <>
-                          <span className="hidden sm:inline">•</span>
-                          <span>Capacity: {selectedEvent.capacity}</span>
-                        </>
-                      )}
-                    </div>
-                    
-                    {/* Event Details */}
-                    <div className="space-y-3">
-                      {/* Date & Time */}
-                      <div className="flex items-start gap-3">
-                        <div className="text-gray-500 mt-0.5">
-                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                        <div className="text-sm">
-                          {(() => {
-                            const eventDateTime = formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone);
-                            return (
-                              <>
-                                <span className="text-gray-700">{eventDateTime.date} at {eventDateTime.time}</span>
-                                <div className="text-xs text-gray-500">Timezone: {selectedEvent.timeZone || 'Australia/Sydney'}</div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </div>
-
-                      {/* Venue */}
-                      <div className="flex items-start gap-3">
-                        <div className="text-gray-500 mt-0.5">
-                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                          </svg>
-                        </div>
-                        <div className="text-sm">
-                          <span className="text-gray-700">{selectedEvent.venue}</span>
-                          {selectedEvent.address && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {typeof selectedEvent.address === 'string' 
-                                ? selectedEvent.address 
-                                : selectedEvent.address.formattedAddress || 
-                                  `${selectedEvent.address.street || ''} ${selectedEvent.address.suburb || ''} ${selectedEvent.address.state || ''} ${selectedEvent.address.postalCode || ''}`.trim()
-                              }
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                </div>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              {/* Event Title */}
+              <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                {selectedEvent.title}
+              </h3>
+              
+              {/* Event Code */}
+              <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
+                {selectedEvent.eventCode || selectedEvent._id}
+              </span>
+              
+              {/* Date & Time */}
+              <div className="flex items-center gap-1 text-gray-600">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>{formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone).combined}</span>
+              </div>
+              
+              {/* Venue */}
+              <div className="flex items-center gap-1 text-gray-600">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>{selectedEvent.venue}</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Statistics - Only show when event is selected */}
+        {/* Statistics - Compact spacing */}
         {selectedEvent && (
-          <div className="mb-4 sm:mb-6">
-            <CheckInFree_CheckInStats />
-          </div>
+          <CheckInFree_CheckInStats />
         )}
 
         {/* Attendee List - Only show when event is selected */}
         {selectedEvent && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-3 sm:p-4 border-b border-gray-200">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Attendees</h2>
-            </div>
-            
-            {/* Search Bar */}
-            <div className="p-3 sm:p-4 border-b bg-gray-50">
+            {/* Search Bar - No header needed */}
+            <div className="p-3 border-b bg-gray-50">
               <CheckInFree_SearchBar />
             </div>
             
-            <div className="p-0 sm:p-4">
+            <div className="p-0 sm:p-2">
               {attendees.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-gray-500">

@@ -35,9 +35,9 @@ const CheckInFree_VirtualizedAttendeeList = () => {
   // Calculate window height for virtualization and detect mobile/desktop changes
   useEffect(() => {
     const handleResize = () => {
-      // Better calculation for available height
-      // Header (~60px) + Event selector (~100px) + Event details (~200px) + Stats (~100px) + Search (~80px) + padding (~60px)
-      const otherElementsHeight = window.innerWidth < 640 ? 500 : 600; // Less on mobile
+      // Optimized calculation for maximum available height
+      // Reduced heights: Header (50px) + Event selector (70px) + Event details (80px) + Stats (70px) + Search (70px) + padding (40px)
+      const otherElementsHeight = window.innerWidth < 640 ? 380 : 400; // Much less space used
       const availableHeight = window.innerHeight - otherElementsHeight;
       
       // Allow list to use more space, with reasonable minimum
@@ -439,7 +439,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
       
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="mt-6 px-4">
+        <div className="mt-2 px-4">
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}

@@ -110,63 +110,67 @@ const CheckInFree_EventSelector = () => {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Date Filter */}
-      <div>
-        <label htmlFor="dateFilter" className="block text-sm font-medium text-gray-700 mb-2">
-          Filter by Date Range
-        </label>
-        <select
-          id="dateFilter"
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="3months">Last 3 months</option>
-          <option value="6months">Last 6 months</option>
-          <option value="1year">Last year</option>
-          <option value="all">Show all</option>
-        </select>
-      </div>
+    <div className="space-y-3">
+      {/* Combined Date Filter and Event Selector on Mobile */}
+      <div className="flex flex-col sm:flex-row sm:gap-4">
+        {/* Date Filter - Compact on mobile */}
+        <div className="sm:w-1/3">
+          <label htmlFor="dateFilter" className="block text-xs font-medium text-gray-600 mb-1">
+            Date Range
+          </label>
+          <select
+            id="dateFilter"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white"
+          >
+            <option value="3months">Last 3 months</option>
+            <option value="6months">Last 6 months</option>
+            <option value="1year">Last year</option>
+            <option value="all">Show all</option>
+          </select>
+        </div>
 
-      {/* Event Selector */}
-      <div>
-        <label htmlFor="eventSelect" className="block text-sm font-medium text-gray-700 mb-2">
-          Select Event to Manage Check-ins
-        </label>
-        <select
-          id="eventSelect"
-          value={selectedEvent?._id || ''}
-          onChange={handleEventChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="">-- Choose an event --</option>
-          
-          {filteredEvents.length === 0 ? (
-            <option disabled>No events found in the selected date range.</option>
-          ) : (
-            filteredEvents.map((event) => {
-              const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
-              return (
-                <option key={event._id} value={event._id}>
-                  {event.title} - {eventDateTime.combined} at {event.venue}
-                </option>
-              );
-            })
+        {/* Event Selector - Optimized for mobile */}
+        <div className="flex-1 mt-3 sm:mt-0">
+          <label htmlFor="eventSelect" className="block text-xs font-medium text-gray-600 mb-1">
+            Select Event
+          </label>
+          <select
+            id="eventSelect"
+            value={selectedEvent?._id || ''}
+            onChange={handleEventChange}
+            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white truncate"
+          >
+            <option value="">Choose an event</option>
+            
+            {filteredEvents.length === 0 ? (
+              <option disabled>No events found</option>
+            ) : (
+              filteredEvents.map((event) => {
+                const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+                // Always use concise format that works on all screens
+                return (
+                  <option key={event._id} value={event._id}>
+                    {event.title} • {eventDateTime.date}
+                  </option>
+                );
+              })
+            )}
+          </select>
+
+          {filteredEvents.length === 0 && managedEvents.length > 0 && (
+            <p className="text-xs text-gray-500 mt-1">
+              No events in selected range. Try a different date filter.
+            </p>
           )}
-        </select>
-
-        {filteredEvents.length === 0 && managedEvents.length > 0 && (
-          <p className="text-sm text-gray-500 mt-2">
-            No events found in the selected date range. Try selecting a different range.
-          </p>
-        )}
+        </div>
       </div>
 
-      {/* Data Retention Warning */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-        <p className="text-sm text-amber-800">
-          <strong>Note:</strong> Please save your check-in records. Events older than 2 years will be deleted by admin.
+      {/* Data Retention Warning - More compact */}
+      <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
+        <p className="text-xs text-amber-800">
+          <strong>Note:</strong> Events older than 2 years will be deleted.
         </p>
       </div>
     </div>

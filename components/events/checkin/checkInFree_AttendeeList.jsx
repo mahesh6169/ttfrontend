@@ -335,7 +335,7 @@ const CheckInFree_AttendeeList = () => {
       
       {/* Pagination - Outside of registration list container */}
       {pagination.totalPages > 1 && (
-        <div className="mt-4 sm:mt-6 px-2 sm:px-0">
+        <div className="mt-2 px-2 sm:px-0">
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
