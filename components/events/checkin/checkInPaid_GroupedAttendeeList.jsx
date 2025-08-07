@@ -27,7 +27,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
   } = useSelector((state) => state.checkInPaid);
 
   const [expandedInvoices, setExpandedInvoices] = useState(new Set());
-  const [showFormResponses, setShowFormResponses] = useState(new Set());
+  const [activeTab, setActiveTab] = useState({}); // { invoiceNumber: 'tickets' | 'attendeeInfo' }
 
   // Group tickets by invoice number
   const groupedByInvoice = React.useMemo(() => {
@@ -53,22 +53,25 @@ const CheckInPaid_GroupedAttendeeList = () => {
     }));
   };
 
-  // Toggle invoice expansion
-  const toggleInvoice = (invoiceNumber) => {
-    const newExpanded = new Set(expandedInvoices);
-    if (newExpanded.has(invoiceNumber)) {
-      newExpanded.delete(invoiceNumber);
-    } else {
+  // Handle tab click
+  const handleTabClick = (invoiceNumber, tab) => {
+    const isCurrentlyExpanded = expandedInvoices.has(invoiceNumber);
+    const currentTab = activeTab[invoiceNumber] || 'tickets';
+    
+    if (!isCurrentlyExpanded) {
+      // If not expanded, expand and set the tab
+      const newExpanded = new Set(expandedInvoices);
       newExpanded.add(invoiceNumber);
-    }
-    setExpandedInvoices(newExpanded);
-    // Hide form responses when collapsing invoice
-    if (!newExpanded.has(invoiceNumber)) {
-      setShowFormResponses(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(invoiceNumber);
-        return newSet;
-      });
+      setExpandedInvoices(newExpanded);
+      setActiveTab({ ...activeTab, [invoiceNumber]: tab });
+    } else if (currentTab === tab) {
+      // If clicking the same tab, collapse
+      const newExpanded = new Set(expandedInvoices);
+      newExpanded.delete(invoiceNumber);
+      setExpandedInvoices(newExpanded);
+    } else {
+      // If clicking different tab, just switch tabs
+      setActiveTab({ ...activeTab, [invoiceNumber]: tab });
     }
   };
 
@@ -188,10 +191,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
               className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
             >
               {/* Invoice Header */}
-              <div 
-                className="p-3 sm:p-4 cursor-pointer hover:bg-gray-50"
-                onClick={() => toggleInvoice(invoiceNumber)}
-              >
+              <div className="p-3 sm:p-4">
                 {/* Mobile Layout */}
                 <div className="sm:hidden">
                   {/* Row 1: Invoice and Status */}
@@ -251,14 +251,6 @@ const CheckInPaid_GroupedAttendeeList = () => {
                     >
                       {actionLoading ? 'Processing...' : (allCheckedIn ? 'Check Out All' : 'Check In All')}
                     </button>
-                    <svg 
-                      className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
                   </div>
                 </div>
 
@@ -315,74 +307,77 @@ const CheckInPaid_GroupedAttendeeList = () => {
                     >
                       {allCheckedIn ? 'Check Out All' : 'Check In All'}
                     </button>
-                    
-                    <svg 
-                      className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
                   </div>
                 </div>
               </div>
               
-              {/* View Attendee Information - At Invoice Level */}
-              {isExpanded && representative.formResponses && representative.formResponses.length > 0 && (
-                <div className="border-t border-gray-200">
-                  <div className="p-3 sm:p-4 bg-gray-50">
+              {/* Tab Buttons */}
+              <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
+                <div className="flex gap-1 sm:gap-2">
+                  <button
+                    onClick={() => handleTabClick(invoiceNumber, 'tickets')}
+                    className={`
+                      px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                      ${isExpanded && activeTab[invoiceNumber] === 'tickets'
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <span className="sm:hidden">Tickets</span>
+                    <span className="hidden sm:inline">View Tickets</span>
+                  </button>
+                  {representative.formResponses && representative.formResponses.length > 0 && (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const newShow = new Set(showFormResponses);
-                        if (newShow.has(invoiceNumber)) {
-                          newShow.delete(invoiceNumber);
-                        } else {
-                          newShow.add(invoiceNumber);
+                      onClick={() => handleTabClick(invoiceNumber, 'attendeeInfo')}
+                      className={`
+                        px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                        ${isExpanded && activeTab[invoiceNumber] === 'attendeeInfo'
+                          ? 'bg-teal-600 text-white'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                         }
-                        setShowFormResponses(newShow);
-                      }}
-                      className="w-full text-left text-teal-600 hover:text-teal-700 text-sm font-medium flex items-center justify-between"
+                      `}
                     >
-                      {showFormResponses.has(invoiceNumber) ? 'Hide' : 'View'} Attendee Information
-                      <svg 
-                        className={`w-4 h-4 transition-transform ${showFormResponses.has(invoiceNumber) ? 'rotate-180' : ''}`}
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <span className="sm:hidden">Attendee Info</span>
+                      <span className="hidden sm:inline">View Attendee Information</span>
                     </button>
-                    
-                    {/* Form Responses Display */}
-                    {showFormResponses.has(invoiceNumber) && (
-                      <div className="mt-3 space-y-2 text-xs sm:text-sm">
+                  )}
+                </div>
+              </div>
+              
+              {/* Tab Content */}
+              {isExpanded && (
+                <div className="border-t border-gray-200">
+                  {/* Tickets Tab */}
+                  {(activeTab[invoiceNumber] || 'tickets') === 'tickets' && (
+                    <div className="bg-gray-50">
+                      <div className="p-2 sm:p-3 space-y-1">
+                        {tickets.map((ticket) => (
+                          <CheckInPaid_SimpleTicketRow 
+                            key={ticket._id} 
+                            ticket={ticket}
+                            eventId={selectedEvent._id}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Attendee Information Tab */}
+                  {activeTab[invoiceNumber] === 'attendeeInfo' && representative.formResponses && (
+                    <div className="p-3 sm:p-4 bg-white">
+                      <div className="space-y-3">
                         {representative.formResponses.map((response, index) => (
-                          <div key={index}>
-                            <div className="font-medium text-gray-700">{response.fieldName}:</div>
-                            <div className="text-gray-600 pl-4 whitespace-pre-line break-words">{response.response}</div>
+                          <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
+                            <div className="font-medium text-gray-700 text-sm mb-1">{response.fieldName}:</div>
+                            <div className="text-gray-600 text-sm whitespace-pre-line break-words pl-4">
+                              {response.response}
+                            </div>
                           </div>
                         ))}
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              {/* Tickets List - Simple rows */}
-              {isExpanded && (
-                <div className="border-t border-gray-200 bg-gray-50">
-                  <div className="p-2 sm:p-3 space-y-1">
-                    {tickets.map((ticket) => (
-                      <CheckInPaid_SimpleTicketRow 
-                        key={ticket._id} 
-                        ticket={ticket}
-                        eventId={selectedEvent._id}
-                      />
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
