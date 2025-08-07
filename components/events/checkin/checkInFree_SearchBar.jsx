@@ -76,7 +76,7 @@ const CheckInFree_SearchBar = () => {
           type="text"
           value={localSearchTerm}
           onChange={(e) => setLocalSearchTerm(e.target.value)}
-          placeholder="Search registration # or name..."
+          placeholder="Reg No., Attendee Name, Email"
           className="block w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
         />
         
@@ -106,7 +106,7 @@ const CheckInFree_SearchBar = () => {
       
       {/* Search Help Text */}
       <p className="mt-1 text-xs text-gray-500">
-        Search by registration number (e.g., EVT-C8V5G) or attendee name
+        Search by registration number (e.g., REG-ZSYVQ-125) or attendee name or email
       </p>
     </div>
   );

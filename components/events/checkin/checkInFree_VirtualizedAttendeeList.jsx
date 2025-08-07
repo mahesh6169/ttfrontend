@@ -35,8 +35,13 @@ const CheckInFree_VirtualizedAttendeeList = () => {
   // Calculate window height for virtualization and detect mobile/desktop changes
   useEffect(() => {
     const handleResize = () => {
-      const height = window.innerHeight - 400; // Account for header and other elements
-      setWindowHeight(Math.max(400, Math.min(height, 800)));
+      // Better calculation for available height
+      // Header (~60px) + Event selector (~100px) + Event details (~200px) + Stats (~100px) + Search (~80px) + padding (~60px)
+      const otherElementsHeight = window.innerWidth < 640 ? 500 : 600; // Less on mobile
+      const availableHeight = window.innerHeight - otherElementsHeight;
+      
+      // Allow list to use more space, with reasonable minimum
+      setWindowHeight(Math.max(300, availableHeight));
       
       // Reset item sizes when switching between mobile/desktop
       if (listRef.current) {

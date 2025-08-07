@@ -17,11 +17,11 @@ const CheckInFree_CheckInStats = () => {
 
   if (attendeesLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white p-3 sm:p-4 rounded-lg shadow animate-pulse">
-            <div className="h-3 sm:h-4 bg-gray-200 rounded w-16 sm:w-20 mb-2"></div>
-            <div className="h-6 sm:h-8 bg-gray-200 rounded w-12 sm:w-16"></div>
+          <div key={i} className="bg-white p-2 sm:p-4 rounded-lg shadow animate-pulse">
+            <div className="h-3 sm:h-4 bg-gray-200 rounded w-12 sm:w-20 mb-1 sm:mb-2"></div>
+            <div className="h-5 sm:h-8 bg-gray-200 rounded w-10 sm:w-16"></div>
           </div>
         ))}
       </div>
@@ -30,7 +30,8 @@ const CheckInFree_CheckInStats = () => {
 
   const statItems = [
     {
-      label: 'Total Registrations',
+      label: 'Registrations',
+      labelDesktop: 'Total Registrations',
       value: totalRegistrations,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
@@ -42,7 +43,8 @@ const CheckInFree_CheckInStats = () => {
       )
     },
     {
-      label: 'Total Attendees',
+      label: 'Attendees',
+      labelDesktop: 'Total Attendees',
       value: totalAttendees,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
@@ -55,6 +57,7 @@ const CheckInFree_CheckInStats = () => {
     },
     {
       label: 'Checked In',
+      labelDesktop: 'Checked In',
       value: checkedInAttendees,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
@@ -68,21 +71,28 @@ const CheckInFree_CheckInStats = () => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+    <div className="grid grid-cols-3 gap-2 sm:gap-4">
       {statItems.map((stat, index) => (
         <div 
           key={index} 
-          className={`${stat.bgColor} p-3 sm:p-4 rounded-lg border border-gray-100`}
+          className={`${stat.bgColor} p-2 sm:p-4 rounded-lg border border-gray-100`}
         >
-          <div className="flex items-center justify-between mb-1 sm:mb-2">
-            <span className={`${stat.color}`}>
-              {stat.icon}
-            </span>
-            <span className={`text-lg sm:text-2xl font-bold ${stat.color}`}>
-              {stat.value}
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center justify-center sm:justify-start mb-1 sm:mb-2">
+              <span className={`${stat.color}`}>
+                {stat.icon}
+              </span>
+            </div>
+            <div className="text-center sm:text-right">
+              <span className={`text-base sm:text-2xl font-bold ${stat.color} block`}>
+                {stat.value}
+              </span>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                <span className="block sm:hidden">{stat.label}</span>
+                <span className="hidden sm:block">{stat.labelDesktop}</span>
+              </p>
+            </div>
           </div>
-          <p className="text-xs sm:text-sm text-gray-600">{stat.label}</p>
         </div>
       ))}
     </div>

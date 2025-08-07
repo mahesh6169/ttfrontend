@@ -207,8 +207,6 @@ const CheckInFreePage = () => {
           </div>
         )}
 
-        {/* Mobile-friendly spacing at bottom */}
-        <div className="h-20 md:hidden"></div>
       </div>
 
       {/* Toast Container */}
