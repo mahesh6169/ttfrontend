@@ -91,6 +91,9 @@ const Register = () => {
     const place = autocomplete.getPlace();
     const addressComponents = place.address_components || [];
 
+    console.log('🔍 Selected place:', place.formatted_address); // ADD THIS
+    console.log('🔍 Address components:', addressComponents);    // ADD THIS
+
     let suburb = '';
     let state = '';
     let postalCode = '';
@@ -98,17 +101,36 @@ const Register = () => {
 
     addressComponents.forEach((component) => {
       const types = component.types;
-      if (types.includes('locality')) suburb = component.long_name;
-      if (types.includes('administrative_area_level_1'))
-        state = component.short_name;
-      if (types.includes('postal_code')) postalCode = component.long_name;
+      // 🇦🇺 Try multiple suburb types for Australian locations
+    if (!suburb) {
+      if (types.includes('locality')) {
+        suburb = component.long_name;
+      } else if (types.includes('sublocality_level_1')) {
+        suburb = component.long_name;
+      } else if (types.includes('administrative_area_level_2')) {
+        suburb = component.long_name;
+      } else if (types.includes('postal_town')) {
+        suburb = component.long_name;
+      }
+    }
+    
+    if (types.includes('administrative_area_level_1'))
+      state = component.short_name;
+    if (types.includes('postal_code')) postalCode = component.long_name;
     });
+
+    // Fallback: Extract from formatted address if no suburb found
+  if (!suburb && place.formatted_address) {
+    suburb = place.formatted_address.split(',')[0].trim();
+  }
 
     if (place.geometry && place.geometry.location) {
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
       coordinates = [lng, lat];
     }
+
+    console.log('✅ Final result:', { suburb, state, postalCode, coordinates });
 
     setFormData((prev) => ({
       ...prev,
@@ -365,7 +387,7 @@ const Register = () => {
                 onPlaceChanged={handlePlaceChanged}
                 options={{
                   componentRestrictions: { country: 'AU' }, // Restrict to Australia
-                  types: ['(regions)'],
+                  types: ['geocode'],
                 }}
               >
                 <input

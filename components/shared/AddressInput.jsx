@@ -43,10 +43,21 @@ const AddressInput = ({
       const types = comp.types;
       if (types.includes('street_number')) parsed.streetNumber = comp.long_name;
       if (types.includes('route')) parsed.street = comp.long_name;
+      
+      // Try multiple suburb types for Australian locations
       if (types.includes('locality')) parsed.suburb = comp.long_name;
+      if (!parsed.suburb && types.includes('sublocality_level_1')) parsed.suburb = comp.long_name;
+      if (!parsed.suburb && types.includes('administrative_area_level_2')) parsed.suburb = comp.long_name;
+      if (!parsed.suburb && types.includes('postal_town')) parsed.suburb = comp.long_name;
+      
       if (types.includes('administrative_area_level_1')) parsed.state = comp.short_name;
       if (types.includes('postal_code')) parsed.postalCode = comp.long_name;
     });
+
+    // Fallback: Extract from formatted address if no suburb found
+    if (!parsed.suburb && place.formatted_address) {
+      parsed.suburb = place.formatted_address.split(',')[0].trim();
+    }
 
     setFormData((prev) => ({
       ...prev,

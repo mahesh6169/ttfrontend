@@ -146,11 +146,29 @@ const CreateThreadPage = () => {
 
     addressComponents.forEach((component) => {
       const types = component.types;
-      if (types.includes('locality')) suburb = component.long_name;
+      
+      // Try multiple suburb types for Australian locations
+      if (!suburb) {
+        if (types.includes('locality')) {
+          suburb = component.long_name;
+        } else if (types.includes('sublocality_level_1')) {
+          suburb = component.long_name;
+        } else if (types.includes('administrative_area_level_2')) {
+          suburb = component.long_name;
+        } else if (types.includes('postal_town')) {
+          suburb = component.long_name;
+        }
+      }
+      
       if (types.includes('administrative_area_level_1'))
         state = component.short_name;
       if (types.includes('postal_code')) postalCode = component.long_name;
     });
+
+    // Fallback: Extract from formatted address if no suburb found
+    if (!suburb && place.formatted_address) {
+      suburb = place.formatted_address.split(',')[0].trim();
+    }
 
     if (place.geometry && place.geometry.location) {
       const lat = place.geometry.location.lat();
@@ -196,8 +214,9 @@ const CreateThreadPage = () => {
     if (!formData.category.trim()) newErrors.category = 'Category is required';
 
     const { name, state, postalCode, location } = formData.suburb;
-    if (!name || !state || !postalCode || location.coordinates.length !== 2) {
-      newErrors.suburb = 'Please select a valid suburb using the autocomplete field';
+    // Postal code is now optional
+    if (!name || !state || location.coordinates.length !== 2) {
+      newErrors.suburb = 'Please select a valid location using the autocomplete field';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -314,7 +333,7 @@ if (createThread.fulfilled.match(resultAction)) {
                 onPlaceChanged={handlePlaceChanged}
                 options={{
                   componentRestrictions: { country: 'AU' },
-                  types: ['(regions)'],
+                  types: ['geocode'],
                 }}
               >
                 <input

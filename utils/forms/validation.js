@@ -97,11 +97,11 @@ export const ALLOWED_EMAIL_DOMAINS = [
       if (
         !s?.name ||
         !s?.state ||
-        !s?.postalCode ||
+        // !s?.postalCode ||  // Postal code is now optional
         !Array.isArray(s?.location?.coordinates) ||
         s.location.coordinates.length !== 2
       ) {
-        errors.suburb = 'Please select a valid suburb from the suggestions';
+        errors.suburb = 'Please select a valid location from the suggestions';
       }
     }
   
