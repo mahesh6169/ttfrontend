@@ -200,7 +200,12 @@ const Register = () => {
       
           await new Promise((resolve) => setTimeout(resolve, 800)); // ⏳ Delay before redirecting
       
-          const redirect = localStorage.getItem('redirectAfterLogin') || '/users/profile/manageads';
+          // For direct registration, default to profile page
+          // For registration from protected page, preserve the redirect
+          const storedRedirect = localStorage.getItem('redirectAfterLogin');
+          const redirect = (preserveRedirect && storedRedirect) ? storedRedirect : '/users/profile';
+          
+          // Ensure the redirect is saved for email verify page
           localStorage.setItem('redirectAfterLogin', redirect);
           router.push('/users/emailverify');
         }

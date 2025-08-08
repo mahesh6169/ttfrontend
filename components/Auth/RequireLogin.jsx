@@ -14,10 +14,11 @@ const RequireLogin = ({
   const { user, tokenValidated } = useSelector((state) => state.user);
   const isLoggedIn = tokenValidated && !!user?._id;
 
+  // If logged in, show the protected content
   if (isLoggedIn) return children;
 
-  // Set redirect for after login/register
-  if (typeof window !== "undefined") {
+  // Only set redirect for non-logged in users
+  if (typeof window !== "undefined" && !isLoggedIn) {
     localStorage.setItem("redirectAfterLogin", redirectPath);
   }
 

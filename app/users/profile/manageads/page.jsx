@@ -41,6 +41,8 @@ export default function ProfilePage() {
   }, [adverts, router]);
 
   const handleEdit = (advert) => {
+    // Save where we came from for Cancel button
+    localStorage.setItem('cancelRedirectUrl', '/users/profile/manageads');
     router.push(`/listings/edit/${advert._id}`);
   };
 

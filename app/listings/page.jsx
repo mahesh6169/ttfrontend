@@ -18,7 +18,8 @@ import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
-import { AUSTRALIAN_STATES } from '@/constants/australianStates'; 
+import { AUSTRALIAN_STATES } from '@/constants/australianStates';
+import PostListingButton from '@/components/buttons/PostListingButton'; 
 
 const libraries = ['places'];
 
@@ -513,12 +514,7 @@ const getCurrentSortLabel = () => {
         {/* Post Advert Button */}
         <div className="my-2 px-4">
           <div className="flex justify-start">
-            <Link
-              href="/listings/add"
-              className="bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 text-sm md:text-base rounded shadow font-semibold transition duration-200"
-            >
-              Post Listing
-            </Link>
+            <PostListingButton />
           </div>
         </div>
 

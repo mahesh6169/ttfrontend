@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import AddressInput from '../shared/AddressInput';
 import ImageUploader from '../shared/ImageUploader';
 import CategorySelector from '../shared/CategorySelector';
@@ -15,6 +16,8 @@ const AdvertForm = ({
   errors = [],
   userRole = 'user'
 }) => {
+  const router = useRouter();
+  
   const [formData, setFormData] = useState(() => ({
     title: '',
     category: '',
@@ -684,7 +687,22 @@ return (
       </button>
       <button 
         type="button" 
-        onClick={() => window.history.back()} 
+        onClick={() => {
+          // Check for stored cancel redirect first
+          const storedRedirect = localStorage.getItem('cancelRedirectUrl');
+          
+          if (storedRedirect) {
+            // Use stored redirect and clean up
+            localStorage.removeItem('cancelRedirectUrl');
+            router.push(storedRedirect);
+          } else if (initialData) {
+            // Editing mode - go back to manage ads
+            router.push('/users/profile/manageads');
+          } else {
+            // Default: go to listings page
+            router.push('/listings');
+          }
+        }} 
         className="px-6 py-3 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
       >
         Cancel
