@@ -40,7 +40,7 @@ import RefundPolicyStep from './RefundPolicyStep';
 import SuccessStep from './SuccessStep';
 
 // Auth Components
-import RequireLogin from '@/components/Auth/RequireLogin';
+import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const StepManager = ({
@@ -1234,12 +1234,12 @@ const handleAddAnother = useCallback(() => {
   if (isInitializing) {
     return (
       <div className="p-8 max-w-4xl mx-auto">
-        <RequireLogin message="You must be logged in to manage events.">
+        <RequireVerifiedAccount>
           <div className="flex flex-col items-center justify-center min-h-64">
             <LoadingSpinner size="large" />
             <p className="mt-4 text-gray-600">Loading event data...</p>
           </div>
-        </RequireLogin>
+        </RequireVerifiedAccount>
       </div>
     );
   }
@@ -1248,7 +1248,7 @@ const handleAddAnother = useCallback(() => {
   if (initializationError) {
     return (
       <div className="p-8 max-w-4xl mx-auto">
-        <RequireLogin message="You must be logged in to manage events.">
+        <RequireVerifiedAccount>
           <div className="text-center">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6">
               <h2 className="text-lg font-semibold text-red-800 mb-2">
@@ -1263,7 +1263,7 @@ const handleAddAnother = useCallback(() => {
               </button>
             </div>
           </div>
-        </RequireLogin>
+        </RequireVerifiedAccount>
       </div>
     );
   }
@@ -1274,7 +1274,7 @@ const handleAddAnother = useCallback(() => {
 
     return (
       <div className="p-8 max-w-4xl mx-auto">
-        <RequireLogin message="You must be logged in to manage events.">
+        <RequireVerifiedAccount>
           <SuccessStep
             event={formData}
             mode={mode}
@@ -1282,14 +1282,14 @@ const handleAddAnother = useCallback(() => {
             onManageEvents={handleManageEvents}
              onViewEvent={handleViewEvent}
           />
-        </RequireLogin>
+        </RequireVerifiedAccount>
       </div>
     );
   }
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
-      <RequireLogin message="You must be logged in to manage events.">
+      <RequireVerifiedAccount message="You must be logged in to manage events.">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-teal-700">
             {customTitle ||
@@ -1482,7 +1482,7 @@ const handleAddAnother = useCallback(() => {
             </div>
           )}
         </div>
-      </RequireLogin>
+      </RequireVerifiedAccount>
     </div>
   );
 };

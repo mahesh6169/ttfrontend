@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import StepManager from '@/components/events/addevents/StepManager';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 
 const EditEventPage = ({ params: paramsPromise }) => {
   const params = use(paramsPromise); // Unwrap the Promise
@@ -83,18 +84,21 @@ const EditEventPage = ({ params: paramsPromise }) => {
   // Show loading while checking permissions
   if (isCheckingPermissions) {
     return (
+      <RequireVerifiedAccount>
       <div className="p-8 max-w-4xl mx-auto">
         <div className="flex flex-col items-center justify-center min-h-64">
           <LoadingSpinner size="large" />
           <p className="mt-4 text-gray-600">Verifying permissions...</p>
         </div>
       </div>
+      </RequireVerifiedAccount>
     );
   }
 
   // Show error if event doesn't exist or user doesn't have permission
   if (eventExists === false) {
     return (
+      <RequireVerifiedAccount>
       <div className="p-8 max-w-4xl mx-auto">
         <div className="text-center">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -129,12 +133,14 @@ const EditEventPage = ({ params: paramsPromise }) => {
           </div>
         </div>
       </div>
+      </RequireVerifiedAccount>
     );
   }
 
   // Validate event ID
   if (!params.id) {
     return (
+      <RequireVerifiedAccount>
       <div className="p-8 max-w-4xl mx-auto">
         <div className="text-center">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
@@ -149,6 +155,7 @@ const EditEventPage = ({ params: paramsPromise }) => {
           </div>
         </div>
       </div>
+      </RequireVerifiedAccount>
     );
   }
 

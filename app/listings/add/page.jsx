@@ -6,7 +6,7 @@ import { addAdvert, clearAdvert } from '@/store/slices/adverts/advertSlice';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AdvertForm from '@/components/adverts/AdvertForm';
-import RequireLogin from '@/components/Auth/RequireLogin';
+import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 
 const AddAdvertPage = () => {
   const dispatch = useDispatch();
@@ -90,7 +90,7 @@ const AddAdvertPage = () => {
   return (
     <div className="max-w-4xl mx-auto py-10">
       <h1 className="text-2xl font-bold mb-6">Create New Listing</h1>
-      <RequireLogin message="You must be logged in to add a new event.">
+      <RequireVerifiedAccount>
       
       {/* Update to check createStatus instead of status */}
       {createStatus === 'loading' && (
@@ -113,7 +113,7 @@ const AddAdvertPage = () => {
         errors={errors}
         userRole={user?.role || 'user'}
       />
-       </RequireLogin>
+       </RequireVerifiedAccount>
     </div>
     
   );

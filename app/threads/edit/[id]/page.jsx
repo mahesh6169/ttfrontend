@@ -9,7 +9,7 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
-import RequireLogin from '@/components/Auth/RequireLogin';
+import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import { useRef } from 'react';
 import CategorySelector from '@/components/shared/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
@@ -291,7 +291,7 @@ useEffect(() => {
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-6 mt-10 bg-white border rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold mb-4">Edit Thread</h1>
-      <RequireLogin message="You must be logged in to edit a thread." >
+      <RequireVerifiedAccount>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <input
@@ -440,7 +440,7 @@ useEffect(() => {
           </button>
         </div>
       </form>
-      </RequireLogin>
+      </RequireVerifiedAccount>
     </div>
   );
 };

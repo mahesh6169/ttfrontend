@@ -26,3 +26,60 @@ input[type="number"] {
     }
   }
 }
+
+/* Toast notification styles for mobile */
+@media (max-width: 640px) {
+  /* Container adjustments */
+  .Toastify__toast-container {
+    width: 90vw !important;
+    max-width: 320px !important;
+    font-size: 13px !important;
+    right: 5vw !important;
+    left: auto !important;
+  }
+  
+  /* Individual toast adjustments */
+  .Toastify__toast {
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+    min-height: 48px !important;
+  }
+  
+  /* Toast body text */
+  .Toastify__toast-body {
+    font-size: 13px !important;
+    padding: 0 !important;
+  }
+  
+  /* Close button */
+  .Toastify__close-button {
+    font-size: 14px !important;
+    opacity: 0.7 !important;
+  }
+  
+  /* Progress bar height */
+  .Toastify__progress-bar {
+    height: 3px !important;
+  }
+}
+
+/* Custom toast colors to match website palette */
+/* Success toast - Lime background with teal text */
+.Toastify__toast--success {
+  background-color: rgba(236, 252, 203, 0.95) !important; /* lime-100 with transparency */
+  color: #047857 !important; /* teal-700 */
+}
+
+.Toastify__toast--success .Toastify__progress-bar {
+  background-color: #047857 !important; /* teal-700 */
+}
+
+/* Error toast - Lime background with red text */
+.Toastify__toast--error {
+  background-color: rgba(236, 252, 203, 0.95) !important; /* lime-100 with transparency */
+  color: #dc2626 !important; /* red-600 */
+}
+
+.Toastify__toast--error .Toastify__progress-bar {
+  background-color: #dc2626 !important; /* red-600 */
+}

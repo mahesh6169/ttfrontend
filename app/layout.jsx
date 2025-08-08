@@ -33,6 +33,13 @@ const ParentLayout = ({ children }) => {
             draggable
             pauseOnHover
             limit={3}
+            style={{
+              fontSize: '14px',
+            }}
+            toastStyle={{
+              fontSize: '14px',
+            }}
+            className="toast-container-mobile"
           />
         </Providers>
       </body>

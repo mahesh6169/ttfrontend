@@ -8,7 +8,7 @@ import { getAdvertById, updateAdvert, clearAdvert, clearErrorsAndStatus } from '
 import LoadingSpinner from '@/components/LoadingSpinner';
 import AdvertForm from '@/components/adverts/AdvertForm';
 import { toast } from 'react-toastify';
-import RequireLogin from '@/components/Auth/RequireLogin';
+import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 
 const EditAdvertPage = () => {
   const dispatch = useDispatch();
@@ -126,7 +126,7 @@ const EditAdvertPage = () => {
   return (
     <div className="max-w-4xl mx-auto py-10">
       <h1 className="text-2xl font-bold mb-6">Edit Listing</h1>
-      <RequireLogin message="You must be logged in to add a new event.">
+      <RequireVerifiedAccount>
 
       {fetchStatus === 'loading' && (
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
@@ -166,7 +166,7 @@ const EditAdvertPage = () => {
           key={hasSubmitted ? 'updating' : 'initial'} // Force re-render when submitting
         />
       )}
-       </RequireLogin>
+       </RequireVerifiedAccount>
     </div>
   );
 };

@@ -5,8 +5,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { sendResetOtp, resetPassword } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
-import ReCAPTCHA from 'react-google-recaptcha';
-import { isStrongPassword } from '@/utils/forms/validation';
 
 const ResetPasswordContent = () => {
   const dispatch = useDispatch();
@@ -15,62 +13,98 @@ const ResetPasswordContent = () => {
     (state) => state.user
   );
 
+  // Form states
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState(null);
+  
+  // UI states
+  const [currentStep, setCurrentStep] = useState(1); // 1: email, 2: otp, 3: password, 4: success
   const [resendDisabled, setResendDisabled] = useState(false);
   const [timer, setTimer] = useState(30);
-  const [otpSent, setOtpSent] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSendOtp = async () => {
+    setIsSubmitting(true);
+    setErrors({});
+    
     try {
       await dispatch(sendResetOtp(email)).unwrap();
-      toast.success('OTP sent to your email');
-      setOtpSent(true);
+      setCurrentStep(2);
       setResendDisabled(true);
       setTimer(30);
     } catch (err) {
-      toast.error(err || 'Failed to send OTP');
+      setErrors({ email: err || 'Failed to send OTP' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    
-    // Check password length
-    if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
+  const handleVerifyOtp = () => {
+    if (!otp.trim()) {
+      setErrors({ otp: 'Please enter the verification code' });
       return;
     }
-    
-    // Check password complexity
-    if (!isStrongPassword(newPassword)) {
-      toast.error('Password must include uppercase, lowercase, and numbers');
-      return;
-    }
-    
-    // Check passwords match
+    setCurrentStep(3);
+    setErrors({});
+  };
+
+  const handleResetPassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords don't match");
+      setErrors({ confirmPassword: "Passwords don't match" });
       return;
     }
+
+    if (newPassword.length < 8) {
+      setErrors({ newPassword: 'Password must be at least 8 characters' });
+      return;
+    }
+
+    // Password complexity validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      setErrors({ 
+        newPassword: 'Password must contain uppercase, lowercase, and numbers' 
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrors({});
 
     try {
       await dispatch(
         resetPassword({ email, otp, newPassword, confirmPassword })
       ).unwrap();
-      toast.success('Password reset successful. Redirecting to login...');
-
-      // 🔁 Wait 3 seconds, then redirect
+      setCurrentStep(4);
+      
       setTimeout(() => {
         router.push('/login');
       }, 3000);
     } catch (err) {
-      toast.error(err || resetError || 'Failed to reset password.');
+      setErrors({ submit: err || resetError || 'Failed to reset password.' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const handleResendOtp = async () => {
+    setResendDisabled(true);
+    setTimer(30);
+    setErrors({});
+    
+    try {
+      await dispatch(sendResetOtp(email)).unwrap();
+      toast.success('New verification code sent');
+    } catch (err) {
+      setErrors({ otp: 'Failed to resend verification code' });
+    }
+  };
+
+  // Timer countdown effect
   useEffect(() => {
     if (resendDisabled) {
       const countdown = setInterval(() => {
@@ -88,92 +122,300 @@ const ResetPasswordContent = () => {
     }
   }, [resendDisabled]);
 
-  return (
-    <div className="flex my-4 w-full justify-center">
-      <div className="p-6 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Reset Password</h1>
+  // Step 4: Success State
+  if (currentStep === 4) {
+    return (
+      <div className="flex w-full justify-center pt-8">
+        <div className="p-8 rounded-lg shadow-md w-full max-w-md text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-green-600 mb-2">
+            Password Reset Complete!
+          </h1>
+          <p className="text-gray-600 mb-4">
+            Your password has been successfully updated. Redirecting to login...
+          </p>
+          <div className="animate-pulse text-sm text-gray-500">
+            Redirecting in 3 seconds...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        <form onSubmit={handleResetPassword} className="space-y-4">
-          {/* Row 1 - Email + Send OTP */}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="email"
-              className="flex-1 p-2 border border-gray-300 rounded"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+  return (
+    <div className="flex w-full justify-center pt-8 px-4">
+      <div className="p-6 rounded-lg shadow-md w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold mb-2">Reset Password</h1>
+          <p className="text-gray-600 text-sm">
+            {currentStep === 1 && "Enter your email to receive a verification code"}
+            {currentStep === 2 && "Enter the code sent to your email"}
+            {currentStep === 3 && "Create your new password"}
+          </p>
+        </div>
+
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center mb-8">
+          {[1, 2, 3].map((step) => (
+            <React.Fragment key={step}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                step <= currentStep 
+                  ? 'bg-teal-600 text-white' 
+                  : 'bg-gray-200 text-gray-500'
+              }`}>
+                {step < currentStep ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : step}
+              </div>
+              {step < 3 && (
+                <div className={`w-12 h-1 mx-2 ${
+                  step < currentStep ? 'bg-teal-600' : 'bg-gray-200'
+                }`} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Step 1: Email */}
+        {currentStep === 1 && (
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block font-medium mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                className={`w-full p-3 border rounded-lg ${
+                  errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="Enter your registered email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors({});
+                }}
+                disabled={isSubmitting}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {errors.email}
+                </p>
+              )}
+            </div>
+
             <button
               type="button"
-              className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition"
               onClick={handleSendOtp}
-              disabled={status === 'loading' || !email}
+              disabled={isSubmitting || !email.trim()}
+              className={`w-full py-3 rounded-lg font-medium transition-all ${
+                isSubmitting || !email.trim()
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-teal-600 hover:bg-teal-700 text-white'
+              }`}
             >
-              {status === 'loading' ? 'Sending...' : 'Send OTP'}
+              {isSubmitting ? (
+                <span className="flex items-center justify-center">
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                  Sending Code...
+                </span>
+              ) : (
+                'Send Verification Code'
+              )}
             </button>
           </div>
+        )}
 
-          {/* Only show OTP and password inputs after OTP is sent */}
-          {otpSent && (
-            <>
+        {/* Step 2: OTP Verification */}
+        {currentStep === 2 && (
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="otp" className="block font-medium mb-2">
+                Verification Code
+              </label>
               <input
+                id="otp"
                 type="text"
-                className="w-full p-2 border border-gray-300 rounded"
-                placeholder="Enter OTP"
+                className={`w-full p-3 border rounded-lg text-center text-lg tracking-wider ${
+                  errors.otp ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="Enter 7-digit code"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                required
+                onChange={(e) => {
+                  setOtp(e.target.value);
+                  if (errors.otp) setErrors({});
+                }}
+                maxLength={7}
               />
+              {errors.otp && (
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {errors.otp}
+                </p>
+              )}
+            </div>
 
-              <input
-                type="password"
-                className="w-full p-2 border border-gray-300 rounded"
-                placeholder="New Password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-
-              <input
-                type="password"
-                className="w-full p-2 border border-gray-300 rounded"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-              <div className="flex justify-center">
-  <ReCAPTCHA
-    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-    onChange={(token) => setCaptchaToken(token)}
-    onExpired={() => setCaptchaToken(null)}
-  />
-</div>
-
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
-                type="submit"
-                className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
-                disabled={resetStatus === 'loading'}
+                type="button"
+                onClick={() => setCurrentStep(1)}
+                className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
               >
-                {resetStatus === 'loading' ? 'Resetting...' : 'Reset Password'}
+                Back
               </button>
-
               <button
-              type="button"
-                onClick={handleSendOtp}
-                disabled={resendDisabled}
-                className={`w-full mt-4 text-sm font-medium py-2 rounded transition ${
-                  resendDisabled
+                type="button"
+                onClick={handleVerifyOtp}
+                disabled={!otp.trim()}
+                className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                  !otp.trim()
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    : 'bg-teal-600 hover:bg-teal-700 text-white'
                 }`}
               >
-                {resendDisabled ? `Resend OTP in ${timer}s` : 'Resend OTP'}
+                Verify Code
               </button>
-            </>
-          )}
-        </form>
+            </div>
+
+            <div className="text-center pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-600 mb-3">Didn't receive the code?</p>
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={resendDisabled}
+                className={`text-sm font-medium py-2 px-4 rounded-lg transition ${
+                  resendDisabled
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {resendDisabled ? `Resend in ${timer}s` : 'Send New Code'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: New Password */}
+        {currentStep === 3 && (
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="newPassword" className="block font-medium mb-2">
+                New Password
+              </label>
+              <input
+                id="newPassword"
+                type="password"
+                className={`w-full p-3 border rounded-lg ${
+                  errors.newPassword ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  if (errors.newPassword) setErrors({});
+                }}
+              />
+              {errors.newPassword && (
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {errors.newPassword}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block font-medium mb-2">
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                className={`w-full p-3 border rounded-lg ${
+                  errors.confirmPassword ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (errors.confirmPassword) setErrors({});
+                }}
+              />
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {errors.confirmPassword}
+                </p>
+              )}
+            </div>
+
+            {/* Error message for submission */}
+            {errors.submit && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm flex items-center">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {errors.submit}
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(2)}
+                className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={isSubmitting || !newPassword || !confirmPassword}
+                className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                  isSubmitting || !newPassword || !confirmPassword
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center">
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    Updating...
+                  </span>
+                ) : (
+                  'Update Password'
+                )}
+              </button>
+            </div>
+
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-600">
+                🔐 <strong>Password Requirements:</strong><br/>
+                • Minimum 8 characters<br/>
+                • At least 1 uppercase letter<br/>
+                • At least 1 lowercase letter<br/>
+                • At least 1 number
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

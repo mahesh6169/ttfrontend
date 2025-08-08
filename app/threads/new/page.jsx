@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
-import RequireLogin from '@/components/Auth/RequireLogin';
+import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/shared/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 
@@ -242,7 +242,7 @@ if (createThread.fulfilled.match(resultAction)) {
   return (
     <div className="max-w-2xl mx-auto mt-8 p-4 sm:p-6 border rounded-lg shadow-lg bg-white">
       <h1 className="text-2xl font-bold mb-4">Create a New Topic</h1>
-      <RequireLogin message="You must be logged in to edit an event." >
+      <RequireVerifiedAccount>
       
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -398,7 +398,7 @@ if (createThread.fulfilled.match(resultAction)) {
             </button>
           </div>
         </form>
-</RequireLogin>
+</RequireVerifiedAccount>
     </div>
   );
 };

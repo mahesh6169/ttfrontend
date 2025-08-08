@@ -46,6 +46,7 @@ const Register = () => {
   const [formLoadTime, setFormLoadTime] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaTokenTime, setCaptchaTokenTime] = useState(null);
+  const [showPasswordHint, setShowPasswordHint] = useState(false);
 
   const honeypotRef = useRef(null);
   
@@ -301,6 +302,8 @@ const Register = () => {
               type="password"
               value={formData.password}
               onChange={handleChange}
+              onFocus={() => setShowPasswordHint(true)}
+              onBlur={() => setShowPasswordHint(false)}
               className={`w-full p-2 border rounded ${
                 errors.password ? 'border-red-500' : 'border-gray-300'
               }`}
@@ -309,6 +312,17 @@ const Register = () => {
             />
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+            )}
+            {showPasswordHint && !errors.password && (
+              <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded text-sm">
+                <p className="text-gray-700 font-medium mb-1">Password Requirements:</p>
+                <ul className="text-gray-600 text-xs space-y-1">
+                  <li>• Minimum 8 characters</li>
+                  <li>• At least 1 uppercase letter (A-Z)</li>
+                  <li>• At least 1 lowercase letter (a-z)</li>
+                  <li>• At least 1 number (0-9)</li>
+                </ul>
+              </div>
             )}
           </div>
           
@@ -323,6 +337,8 @@ const Register = () => {
               type="password"
               value={formData.confirmPassword}
               onChange={handleChange}
+              onFocus={() => setShowPasswordHint(true)}
+              onBlur={() => setShowPasswordHint(false)}
               className={`w-full p-2 border rounded ${
                 errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
               }`}
