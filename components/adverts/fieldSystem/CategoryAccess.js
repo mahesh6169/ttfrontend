@@ -5,7 +5,7 @@ export const CATEGORY_ACCESS = {
   'Real Estate': ['user', 'admin'],
   'Cars & Vehicles': ['user', 'admin'],
   'Home Repairs & Improvements': ['user', 'admin'],
-  'Food & Catering Services': ['user', 'admin'],
+  'Restaurants & Catering Services': ['user', 'admin'],
   'Party Hires & Services': ['user', 'admin'],
   'Cleaning & Maintenance Services': ['user', 'admin'],
   'Home & Garden': ['user', 'admin'],
@@ -20,7 +20,7 @@ export const CATEGORY_ACCESS = {
   'Books, Art & Collectables': ['user', 'admin'],
   'Pets': ['user', 'admin'],
 
-  'Retail Shops & Stores': ['user', 'admin'],
+  'Retail Shops & Business': ['user', 'admin'],
   'Transport & Ride Services': ['user', 'admin'],
   'Legal & Immigration Services': ['user', 'admin'],
   'Financial & Insurance Services': ['user', 'admin'],

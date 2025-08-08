@@ -181,7 +181,7 @@ export const PRICING_CONFIG = {
         units: ['hour', 'day', 'week'],
       }
     }
-  }
+  },
 };
 
 // Get all pricing options for a category

@@ -99,18 +99,8 @@ const AddAdvertPage = () => {
         </div>
       )}
 
-      {errors && errors.length > 0 && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded">
-          <p className="font-bold text-red-700 mb-2">Validation Errors:</p>
-          <ul className="list-disc list-inside">
-            {errors.map((error, index) => (
-              <li key={index} className="text-red-600">{error}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {message && success === false && (
+      {/* Show only API error messages, not validation errors */}
+      {message && success === false && (!errors || errors.length === 0) && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded">
           <p className="text-red-700">{message}</p>
         </div>

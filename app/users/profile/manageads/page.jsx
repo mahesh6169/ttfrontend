@@ -126,7 +126,8 @@ export default function ProfilePage() {
   return (
     <div
       key={advert._id}
-      className=" p-4 border border-gray-300 rounded shadow hover:shadow-lg transition"
+      className="p-4 border border-gray-300 rounded shadow hover:shadow-lg transition"
+
     >
       <div className="flex items-center justify-between gap-2 mb-2">
         <h3 className="text-xs font-bold truncate max-w-[60%]">{advert.title}</h3>
@@ -174,7 +175,7 @@ export default function ProfilePage() {
           }`}
           title={!canRenew ? 'Renewal available within 14 days of expiry' : 'Renew for another 90 days'}
         >
-          {canRenew && daysLeft <= 0 ? 'Renew Now!' : 'Renew'}
+          {canRenew && daysLeft <= 0 ? 'Renew !!' : 'Renew'}
         </button>
 
         <button

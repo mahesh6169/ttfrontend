@@ -268,7 +268,7 @@ fields: {
         type: 'number',
         label: 'Parking',
         min: 0,
-        max: 2,
+        max: 4,
         dependencies: {
           propertyType: ['House', 'Commercial'],
           priceType: ['sell', 'rent', 'share']
@@ -373,7 +373,9 @@ fields: {
         }
       }
     }
-  }
+  },
+
+
 };
 
 // Keep the original functions for backward compatibility

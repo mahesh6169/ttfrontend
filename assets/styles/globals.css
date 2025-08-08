@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Disable scroll wheel on all number inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* Ensure consistent layout with scrollbar gutter on mobile */
 @media (max-width: 640px) {
   html {

@@ -310,7 +310,20 @@ const PlatformFeeManagement = () => {
                       type="number"
                       id="newFee"
                       value={newFee}
-                      onChange={(e) => setNewFee(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Check for decimal places
+                        if (value && value.includes('.')) {
+                          const decimals = value.split('.')[1];
+                          if (decimals && decimals.length > 2) {
+                            // Truncate to 2 decimal places
+                            setNewFee(parseFloat(value).toFixed(2));
+                            return;
+                          }
+                        }
+                        setNewFee(value);
+                      }}
+                      onWheel={(e) => e.target.blur()}
                       min="0"
                       max="20"
                       step="0.01"

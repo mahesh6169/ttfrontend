@@ -39,6 +39,7 @@ const AdvertForm = ({
   const [formSections, setFormSections] = useState([]);
   const [preview, setPreview] = useState([]);
   const [localErrors, setLocalErrors] = useState([]);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [selectedPriceType, setSelectedPriceType] = useState('');
   const [existingImages, setExistingImages] = useState(initialData?.existingImages || []);
 
@@ -96,7 +97,7 @@ const AdvertForm = ({
           
           const defaultPricing = [{
             priceType: firstType,
-            amount: 0,
+            amount: '',
             unit: firstOption.units?.[0] || ''
           }];
           
@@ -124,12 +125,22 @@ const AdvertForm = ({
     setFormData(prev => ({ ...prev, pricing }));
   };
 
+  // Validate decimal places for price fields
+  const validatePriceDecimals = (value) => {
+    if (!value || value === '') return true;
+    const strValue = value.toString();
+    const decimalIndex = strValue.indexOf('.');
+    if (decimalIndex === -1) return true;
+    const decimals = strValue.length - decimalIndex - 1;
+    return decimals <= 2;
+  };
+
   const handlePricingTypeSelect = (type, config) => {
     setSelectedPriceType(type);
     
     const newEntry = {
       priceType: type,
-      amount: formData.pricing.find(p => p.priceType === type)?.amount || 0,
+      amount: formData.pricing.find(p => p.priceType === type)?.amount || '',
       unit: formData.pricing.find(p => p.priceType === type)?.unit || config.units?.[0] || ''
     };
     
@@ -163,18 +174,67 @@ const AdvertForm = ({
 
     switch (field.type) {
       case 'text':
-        return <input type="text" value={value} onChange={e => handleFieldChange(field.id, e.target.value)} placeholder={getPlaceholder()} className={baseClasses} required={field.required} />;
+        return (
+          <div>
+            <input type="text" value={value} onChange={e => handleFieldChange(field.id, e.target.value)} placeholder={getPlaceholder()} className={baseClasses} required={field.required} />
+            {fieldErrors[field.id] && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors[field.id]}</p>
+            )}
+          </div>
+        );
       case 'number':
-        return <input type="number" value={value} onChange={e => handleFieldChange(field.id, parseFloat(e.target.value) || '')} min={field.min} max={field.max} placeholder={field.placeholder} className={baseClasses} required={field.required} />;
+        return (
+          <div>
+            <input 
+              type="number" 
+              value={value} 
+              onChange={e => {
+                const newValue = e.target.value;
+                const numValue = newValue ? parseFloat(newValue) : '';
+                
+                // Real-time validation for parking field
+                if (field.id === 'parking' && numValue > 4) {
+                  setFieldErrors(prev => ({ ...prev, [field.id]: 'Maximum 4 parking spaces allowed' }));
+                } else {
+                  // Clear field error when user fixes the value
+                  setFieldErrors(prev => ({ ...prev, [field.id]: null }));
+                }
+                
+                handleFieldChange(field.id, numValue);
+              }} 
+              onWheel={(e) => e.target.blur()} 
+              min={field.min} 
+              max={field.id === 'parking' ? undefined : field.max} 
+              placeholder={field.placeholder || (field.id === 'parking' ? 'Max 4' : field.placeholder)} 
+              className={baseClasses} 
+              required={field.required} 
+            />
+            {fieldErrors[field.id] && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors[field.id]}</p>
+            )}
+          </div>
+        );
       case 'select':
         return (
-          <select value={value} onChange={e => handleFieldChange(field.id, e.target.value)} className={baseClasses} required={field.required}>
-            <option value="">Select {field.label}</option>
-            {field.options.map(option => <option key={option} value={option}>{option}</option>)}
-          </select>
+          <div>
+            <select value={value} onChange={e => handleFieldChange(field.id, e.target.value)} className={baseClasses} required={field.required}>
+              <option value="">Select {field.label}</option>
+              {field.options.map(option => <option key={option} value={option}>{option}</option>)}
+            </select>
+            {fieldErrors[field.id] && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors[field.id]}</p>
+            )}
+          </div>
         );
       case 'textarea':
-        return <textarea value={value} onChange={e => handleFieldChange(field.id, e.target.value)} placeholder={field.placeholder} className={`${baseClasses} h-24`} required={field.required} />;
+        return (
+          <div>
+            <textarea value={value} onChange={e => handleFieldChange(field.id, e.target.value)} placeholder={field.placeholder} className={`${baseClasses} h-24`} required={field.required} />
+            {fieldErrors[field.id] && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors[field.id]}</p>
+            )}
+          </div>
+        );
       default:
         return null;
     }
@@ -185,26 +245,46 @@ const renderPricingInputs = (pricingOptions) => {
   if (!selectedPriceType || !pricingOptions[selectedPriceType]) return null;
   
   const config = pricingOptions[selectedPriceType];
-  const current = formData.pricing.find(p => p.priceType === selectedPriceType) || { amount: 0, unit: '' };
+  const current = formData.pricing.find(p => p.priceType === selectedPriceType) || { amount: '', unit: '' };
   
   return (
     <div className="mt-4">
       <div className="mb-4">
         <div className="flex gap-4">
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={current.amount}
-            onChange={(e) => {
-              const updated = formData.pricing.map(p =>
-                p.priceType === selectedPriceType ? { ...p, amount: parseFloat(e.target.value) || 0 } : p
-              );
-              handlePricingChange(updated);
-            }}
-            placeholder="Amount"
-            className="p-2 border rounded w-40"
-          />
+          <div>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={current.amount}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                
+                // Clear pricing error when user starts typing
+                setFieldErrors(prev => ({ ...prev, [`pricing_${selectedPriceType}`]: null }));
+                
+                // Allow typing but don't update if more than 2 decimals
+                if (newValue && !validatePriceDecimals(newValue)) {
+                  setFieldErrors(prev => ({ 
+                    ...prev, 
+                    [`pricing_${selectedPriceType}`]: 'Maximum 2 decimal places allowed' 
+                  }));
+                  return;
+                }
+                
+                const updated = formData.pricing.map(p =>
+                  p.priceType === selectedPriceType ? { ...p, amount: newValue ? parseFloat(newValue) : '' } : p
+                );
+                handlePricingChange(updated);
+              }}
+              onWheel={(e) => e.target.blur()}
+              placeholder={selectedPriceType === 'sell' ? '0.00' : selectedPriceType === 'rent' ? '0.00' : '0.00'}
+              className="p-2 border rounded w-40"
+            />
+            {fieldErrors[`pricing_${selectedPriceType}`] && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors[`pricing_${selectedPriceType}`]}</p>
+            )}
+          </div>
           {config.units && (
             <select
               value={current.unit || ''}
@@ -231,24 +311,26 @@ const renderPricingInputs = (pricingOptions) => {
 const handleSubmit = (e) => {
   e.preventDefault();
   setLocalErrors([]);
+  setFieldErrors({});
   
   const validationErrors = [];
+  const newFieldErrors = {};
   
   // Cleaner title validation
   const titleTrimmed = (formData.title || '').trim();
   if (titleTrimmed === '') {
-    validationErrors.push('Title is required');
+    newFieldErrors.title = 'Title is required';
   }
   
   // Category validation
   if (!formData.category) {
-    validationErrors.push('Category is required');
+    newFieldErrors.category = 'Category is required';
   }
   
   // Cleaner description validation
   const descriptionTrimmed = (formData.description || '').trim();
   if (descriptionTrimmed === '') {
-    validationErrors.push('Description is required');
+    newFieldErrors.description = 'Description is required';
   }
   
   // Address validation
@@ -258,7 +340,7 @@ const handleSubmit = (e) => {
     !formData.address.formattedAddress || 
     formData.address.location.coordinates[0] === 0 || 
     formData.address.location.coordinates[1] === 0)) {
-    validationErrors.push('Valid address with location is required');
+    newFieldErrors.address = 'Valid address with location is required';
   }
   
   // Validate visible fields in each section
@@ -269,16 +351,25 @@ const handleSubmit = (e) => {
         return;
       }
       // Pricing validation for offered ads only
-      if (formData.adType === 'offered' && Object.keys(section.pricingOptions || {}).length > 0) {
+      if (formData.adType === 'offered' && section.pricingOptions && Object.keys(section.pricingOptions).length > 0) {
         // Only require pricing if pricing options are available and it's marked as required
         const pricingConfig = section.pricingConfig || {};
         if (pricingConfig.required !== false && formData.pricing.length === 0) {
           validationErrors.push('At least one pricing option is required');
         } else if (formData.pricing.length > 0) {
           formData.pricing.forEach(price => {
+            // Check if price amount is empty
+            if (price.amount === '' || price.amount === null || price.amount === undefined) {
+              newFieldErrors[`pricing_${price.priceType}`] = 'Price is required';
+            }
+            // Validate decimal places for pricing
+            else if (price.amount && !validatePriceDecimals(price.amount)) {
+              newFieldErrors[`pricing_${price.priceType}`] = 'Maximum 2 decimal places allowed';
+            }
             
             if (section.pricingOptions[price.priceType]?.units && !price.unit) {
-              validationErrors.push(`Please select a unit for ${section.pricingOptions[price.priceType].label}`);
+              // Don't add to validationErrors, put in field errors instead
+              newFieldErrors[`pricing_${price.priceType}_unit`] = `Please select a unit`;
             }
           });
         }
@@ -287,15 +378,28 @@ const handleSubmit = (e) => {
       // Field validation
       section.fields.forEach(field => {
         if (field.required && !formData.fields[field.id]) {
-          validationErrors.push(`${field.label} is required`);
+          // Put required field errors under the field instead of general errors
+          newFieldErrors[field.id] = `${field.label} is required`;
         }
-        if (field.type === 'number' && formData.fields[field.id] !== undefined) {
+        if (field.type === 'number' && formData.fields[field.id] !== undefined && formData.fields[field.id] !== '') {
           const val = formData.fields[field.id];
+          
+          // Check min/max values
           if (field.min !== undefined && val < field.min) {
-            validationErrors.push(`${field.label} must be at least ${field.min}`);
+            newFieldErrors[field.id] = `Must be at least ${field.min}`;
           }
           if (field.max !== undefined && val > field.max) {
-            validationErrors.push(`${field.label} must be at most ${field.max}`);
+            newFieldErrors[field.id] = `Must be at most ${field.max}`;
+          }
+          
+          // Special validation for parking field
+          if (field.id === 'parking' && val > 4) {
+            newFieldErrors[field.id] = 'Maximum 4 parking spaces allowed';
+          }
+          
+          // Ensure whole numbers for bedrooms and parking
+          if ((field.id === 'bedrooms' || field.id === 'parking') && !Number.isInteger(val)) {
+            newFieldErrors[field.id] = 'Must be a whole number';
           }
         }
       });
@@ -303,8 +407,9 @@ const handleSubmit = (e) => {
   });
   
   // Return early if validation fails
-  if (validationErrors.length > 0) {
+  if (validationErrors.length > 0 || Object.keys(newFieldErrors).length > 0) {
     setLocalErrors(validationErrors);
+    setFieldErrors(newFieldErrors);
     return;
   }
   
@@ -326,7 +431,6 @@ const handleSubmit = (e) => {
   onSubmit(submitData);
 };
 
-const allErrors = [...localErrors, ...errors];
 const availableCategories = FieldSystem.getCategoriesForRole(userRole);
 
 return (
@@ -337,10 +441,21 @@ return (
       <input 
         type="text" 
         value={formData.title} 
-        onChange={(e) => handleChange('title', e.target.value)} 
-        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-300" 
+        onChange={(e) => {
+          handleChange('title', e.target.value);
+          // Clear error when user types
+          if (fieldErrors.title) {
+            setFieldErrors(prev => ({ ...prev, title: null }));
+          }
+        }} 
+        className={`w-full p-2 border rounded focus:outline-none focus:ring-2 ${
+          fieldErrors.title ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
+        }`} 
         placeholder="Enter a descriptive title" 
       />
+      {fieldErrors.title && (
+        <p className="text-red-500 text-sm mt-1">{fieldErrors.title}</p>
+      )}
     </div>
 
     {/* Ad Type */}
@@ -388,6 +503,10 @@ return (
         onChange={(value) => {
           if (!initialData) {
             handleChange('category', value);
+            // Clear error when user selects
+            if (fieldErrors.category) {
+              setFieldErrors(prev => ({ ...prev, category: null }));
+            }
           }
         }}
         categories={availableCategories}
@@ -395,6 +514,9 @@ return (
         required={true}
         disabled={!!initialData}
       />
+      {fieldErrors.category && (
+        <p className="text-red-500 text-sm mt-1">{fieldErrors.category}</p>
+      )}
     </div>
 
     {/* Community/Language Selection */}
@@ -420,7 +542,7 @@ return (
           )}
           
           {/* Special handling for pricing section */}
-          {section.specialField === 'pricing' && formData.adType === 'offered' && (
+          {section.specialField === 'pricing' && formData.adType === 'offered' && section.pricingOptions && Object.keys(section.pricingOptions).length > 0 && (
             <>
             <h3 className="font-bold text-lg mb-2 text-gray-700">
               {section.title}
@@ -428,7 +550,7 @@ return (
             </h3>
             
             <div className="flex flex-wrap gap-4 mb-4">
-              {Object.entries(section.pricingOptions || {}).map(([type, config]) => (
+              {Object.entries(section.pricingOptions).map(([type, config]) => (
                 <button
                   key={type}
                   type="button"
@@ -446,6 +568,10 @@ return (
             
             {/* Render the pricing inputs */}
             {renderPricingInputs(section.pricingOptions)}
+            {/* Show unit selection error if exists */}
+            {selectedPriceType && fieldErrors[`pricing_${selectedPriceType}_unit`] && (
+              <p className="text-red-500 text-sm mt-2">{fieldErrors[`pricing_${selectedPriceType}_unit`]}</p>
+            )}
           </>
         )}
         
@@ -489,16 +615,32 @@ return (
       <label className="block font-bold mb-2 text-gray-700">Description <span className="text-red-500">*</span></label>
       <textarea 
         value={formData.description} 
-        onChange={(e) => handleChange('description', e.target.value)} 
-        className="w-full p-2 border border-gray-300 rounded h-32 focus:outline-none focus:ring-2 focus:ring-teal-300" 
+        onChange={(e) => {
+          handleChange('description', e.target.value);
+          // Clear error when user types
+          if (fieldErrors.description) {
+            setFieldErrors(prev => ({ ...prev, description: null }));
+          }
+        }} 
+        className={`w-full p-2 border rounded h-32 focus:outline-none focus:ring-2 ${
+          fieldErrors.description ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
+        }`} 
         placeholder={formData.adType === 'wanted' 
           ? "Describe what you're looking for, including specific requirements or preferences" 
           : "Provide detailed information about your item or service"} 
       />
+      {fieldErrors.description && (
+        <p className="text-red-500 text-sm mt-1">{fieldErrors.description}</p>
+      )}
     </div>
 
     {/* Address */}
-    <AddressInput formData={formData} setFormData={setFormData} disabled={isLoading} />
+    <div>
+      <AddressInput formData={formData} setFormData={setFormData} disabled={isLoading} />
+      {fieldErrors.address && (
+        <p className="text-red-500 text-sm mt-1">{fieldErrors.address}</p>
+      )}
+    </div>
 
     {/* Images */}
     <ImageUploader
@@ -512,13 +654,16 @@ return (
       setExistingImages={setExistingImages}
     />
 
-    {/* Errors */}
-    {allErrors.length > 0 && (
+    {/* Errors - Only show general errors that aren't field-specific */}
+    {(localErrors.length > 0 || errors.length > 0) && (
       <div className="bg-red-50 border border-red-200 rounded p-4">
         <p className="font-bold text-red-700 mb-2">Please fix the following errors:</p>
         <ul className="list-disc list-inside space-y-1">
-          {allErrors.map((error, index) => (
-            <li key={`${error}-${index}`} className="text-red-600 text-sm">{error}</li>
+          {localErrors.map((error, index) => (
+            <li key={`local-${error}-${index}`} className="text-red-600 text-sm">{error}</li>
+          ))}
+          {errors.map((error, index) => (
+            <li key={`backend-${error}-${index}`} className="text-red-600 text-sm">{error}</li>
           ))}
         </ul>
       </div>
