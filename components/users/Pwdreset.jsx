@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { sendResetOtp, resetPassword } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { isStrongPassword } from '@/utils/forms/validation';
 
 const ResetPasswordContent = () => {
   const dispatch = useDispatch();
@@ -36,6 +37,20 @@ const ResetPasswordContent = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    
+    // Check password length
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    
+    // Check password complexity
+    if (!isStrongPassword(newPassword)) {
+      toast.error('Password must include uppercase, lowercase, and numbers');
+      return;
+    }
+    
+    // Check passwords match
     if (newPassword !== confirmPassword) {
       toast.error("Passwords don't match");
       return;
