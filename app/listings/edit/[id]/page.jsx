@@ -160,9 +160,10 @@ const EditAdvertPage = () => {
             existingImages: displayData.images || []
           }}
           onSubmit={handleSubmit}
-          isLoading={fetchStatus === 'loading' || updateStatus === 'loading'}
+          isLoading={fetchStatus === 'loading' || updateStatus === 'loading' || (success && updateStatus === 'succeeded')}
           errors={errors}
           userRole={user?.role || 'user'}
+          isSuccess={success && updateStatus === 'succeeded'}
           key={hasSubmitted ? 'updating' : 'initial'} // Force re-render when submitting
         />
       )}

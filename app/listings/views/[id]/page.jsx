@@ -24,7 +24,7 @@ const AdvertDetail = () => {
     dispatch(getAdvertById(id));
   }, [dispatch, id]);
 
-  if (status === 'loading') {
+  if (status === 'idle' || status === 'loading') {
     return <div className="text-center mt-8">Loading advert details...</div>;
   }
 
@@ -40,13 +40,13 @@ const AdvertDetail = () => {
     <div id="viewsmain" className="flex flex-col gap-2 px-2">
       {/* Navigation Bar */}
       <div className="mt-4 flex justify-between items-center">
-        {/* Back to Adverts */}
+        {/* Back to Listings */}
         <button
           onClick={() => router.back()}
           className="flex items-center gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
         >
           <RiArrowGoBackFill className="text-xs sm:text-base" />
-          <span>Back to Adverts</span>
+          <span>Back to Listings</span>
         </button>
 
         {/* Report this Advert */}

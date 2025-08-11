@@ -138,7 +138,7 @@ export const PRICING_CONFIG = {
       rent: {
         enabled: true,
         label: 'Rent',
-        units: ['day', 'week', 'month', 'year'],
+        units: ['day', 'week', 'month'],
         validFor: ['Room', 'House', 'Commercial'] // Only valid for these property types
       },
       share: {

@@ -9,7 +9,7 @@ const AddressInput = ({
   formData,
   setFormData,
   errors = [],
-  placeholder = 'Enter your address or suburb',
+  placeholder = 'Enter address or suburb',
   disabled = false
 }) => {
   const [formattedAddress, setFormattedAddress] = useState(

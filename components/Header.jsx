@@ -38,8 +38,10 @@ const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { tokenValidated, user } = useSelector((state) => state.user);
-  const isAuthenticated = tokenValidated && !!user._id;
+  const { tokenValidated, user, status } = useSelector((state) => state.user);
+  const isAuthenticated = tokenValidated && !!user?._id;
+  // Show loading during initial state or when actively validating
+  const isInitialLoad = status === 'idle' && !tokenValidated && !user;
   // Always use regular profile path to allow admins to use regular UI
   const baseProfilePath = '/users/profile';
   const profileLink = baseProfilePath;
@@ -116,7 +118,15 @@ const Header = () => {
 
             {/* Right Nav - Auth Links */}
             <div className="flex items-center gap-2 lg:gap-4">
-              {isAuthenticated ? (
+              {(isInitialLoad || (status === 'loading' && !tokenValidated)) ? (
+                // Show loading placeholder during initial load or token validation
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-lime-200/30 rounded animate-pulse">
+                    <CgProfile size={20} className="text-lime-200/50" />
+                    <div className="w-16 h-4 bg-lime-200/30 rounded"></div>
+                  </div>
+                </div>
+              ) : isAuthenticated ? (
                 <>
                   <NavLink
                     href={profileLink}
@@ -166,7 +176,7 @@ const Header = () => {
           {/* Mobile Header Right Section */}
           <div className="md:hidden flex items-center gap-3">
             {/* Mobile Message Icon */}
-            {isAuthenticated && (
+            {!isInitialLoad && status !== 'loading' && isAuthenticated && (
               <Link
                 href="/users/profile/conversations"
                 className="text-lime-100 hover:text-lime-200"

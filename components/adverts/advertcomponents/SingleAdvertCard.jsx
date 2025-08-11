@@ -5,6 +5,7 @@ import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
 import SendMessage from '@/components/chat/SendMessage';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
 
 const FALLBACK_IMAGE_URL =
   'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
@@ -211,12 +212,19 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             )}
             
             {/* Price Information */}
-            {priceLabels && priceLabels.map((price, index) => (
-              <div key={index} className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">{price.label}:</span>{' '}
-                <span className="text-gray-600">{price.value}</span>
+            {!PRICING_CONFIG[advert.category] ? (
+              <div className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">Price:</span>{' '}
+                <span className="text-gray-600">Request quote</span>
               </div>
-            ))}
+            ) : (
+              priceLabels && priceLabels.map((price, index) => (
+                <div key={index} className="text-sm sm:text-base">
+                  <span className="font-semibold text-gray-700">{price.label}:</span>{' '}
+                  <span className="text-gray-600">{price.value}</span>
+                </div>
+              ))
+            )}
             
             {/* Condition */}
             {advert.condition && advert.condition !== 'null' && (

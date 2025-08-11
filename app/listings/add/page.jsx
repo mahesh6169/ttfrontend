@@ -109,9 +109,10 @@ const AddAdvertPage = () => {
       {/* Update isLoading prop to use createStatus */}
       <AdvertForm 
         onSubmit={handleSubmit} 
-        isLoading={createStatus === 'loading'} 
+        isLoading={createStatus === 'loading' || (success && createStatus === 'succeeded')} 
         errors={errors}
         userRole={user?.role || 'user'}
+        isSuccess={success && createStatus === 'succeeded'}
       />
        </RequireVerifiedAccount>
     </div>

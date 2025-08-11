@@ -176,6 +176,14 @@ const CreateThreadPage = () => {
       coordinates = [lng, lat];
     }
 
+    // Debug logging
+    console.log('📍 Thread Location Data:', {
+      suburb,
+      state,
+      postalCode: postalCode || '',
+      coordinates
+    });
+
     // Update formData with selected location
     setFormData((prev) => ({
       ...prev,
@@ -191,7 +199,10 @@ const CreateThreadPage = () => {
     }));
 
     // Update the input value to show the selected location
-    setLocationInput(`${suburb}, ${state} ${postalCode}`);
+    const locationDisplay = postalCode 
+      ? `${suburb}, ${state} ${postalCode}`
+      : `${suburb}, ${state}`;
+    setLocationInput(locationDisplay);
 
     if (errors.suburb) {
       setErrors((prev) => ({ ...prev, suburb: '' }));
@@ -201,7 +212,10 @@ const CreateThreadPage = () => {
   // Update useEffect to set location input when suburb data changes
   useEffect(() => {
     if (formData.suburb.name) {
-      setLocationInput(`${formData.suburb.name}, ${formData.suburb.state} ${formData.suburb.postalCode}`);
+      const display = formData.suburb.postalCode 
+        ? `${formData.suburb.name}, ${formData.suburb.state} ${formData.suburb.postalCode}`
+        : `${formData.suburb.name}, ${formData.suburb.state}`;
+      setLocationInput(display);
     }
   }, [formData.suburb]);
 
@@ -214,8 +228,26 @@ const CreateThreadPage = () => {
     if (!formData.category.trim()) newErrors.category = 'Category is required';
 
     const { name, state, postalCode, location } = formData.suburb;
+    
+    // Debug logging
+    console.log('🚀 Thread Submit - Suburb Data:', {
+      name,
+      state,
+      postalCode: postalCode || '(empty)',
+      coordinates: location?.coordinates,
+      fullSuburb: formData.suburb
+    });
+    
     // Postal code is now optional
-    if (!name || !state || location.coordinates.length !== 2) {
+    if (!name || !state || !location?.coordinates || location.coordinates.length !== 2 || 
+        (location.coordinates[0] === 0 && location.coordinates[1] === 0)) {
+      console.log('❌ Suburb validation failed:', {
+        hasName: !!name,
+        hasState: !!state,
+        hasCoordinates: !!location?.coordinates,
+        coordinatesLength: location?.coordinates?.length,
+        coordinates: location?.coordinates
+      });
       newErrors.suburb = 'Please select a valid location using the autocomplete field';
     }
 

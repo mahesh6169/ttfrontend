@@ -4,6 +4,7 @@ import { BsChatRightDots } from 'react-icons/bs';
 import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
 
 const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
   const postedByName = advert.user?.name || 'Guest';
@@ -75,7 +76,8 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
 
           {/* Price Box */}
           <div className="text-xs font-medium my-1 px-2 text-gray-800 h-4">
-            {advert.adType === 'wanted' ? 'Wanted $$$' : (priceLabel || '\u00A0')}
+            {advert.adType === 'wanted' ? 'Wanted $$$' : 
+             (!PRICING_CONFIG[advert.category] ? 'Request quote' : (priceLabel || '\u00A0'))}
           </div>
 
           {/* Location block */}

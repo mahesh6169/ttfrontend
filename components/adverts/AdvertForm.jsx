@@ -14,7 +14,8 @@ const AdvertForm = ({
   onSubmit, 
   isLoading = false,
   errors = [],
-  userRole = 'user'
+  userRole = 'user',
+  isSuccess = false
 }) => {
   const router = useRouter();
   
@@ -118,10 +119,30 @@ const AdvertForm = ({
   };
 
   const handleFieldChange = (fieldId, value) => {
-    setFormData(prev => ({
-      ...prev,
-      fields: { ...prev.fields, [fieldId]: value }
-    }));
+    setFormData(prev => {
+      const newFields = { ...prev.fields, [fieldId]: value };
+      
+      // Check if this is a type field that other fields depend on
+      const structure = FieldSystem.getFormStructure(prev.category);
+      if (structure && structure.typeField === fieldId) {
+        // Clear fields that depend on the type field
+        Object.entries(structure.fields || {}).forEach(([depFieldId, fieldConfig]) => {
+          if (fieldConfig.dependencies && fieldConfig.dependencies[fieldId]) {
+            // Check if the new value is in the allowed values for this field
+            const allowedValues = fieldConfig.dependencies[fieldId];
+            if (!allowedValues.includes(value)) {
+              // Clear the field if the new type value doesn't support it
+              delete newFields[depFieldId];
+            }
+          }
+        });
+      }
+      
+      return {
+        ...prev,
+        fields: newFields
+      };
+    });
   };
 
   const handlePricingChange = (pricing) => {
@@ -147,9 +168,18 @@ const AdvertForm = ({
       unit: formData.pricing.find(p => p.priceType === type)?.unit || config.units?.[0] || ''
     };
     
+    // Clear condition if switching away from 'sell'
+    const updates = {
+      pricing: [newEntry]
+    };
+    
+    if (type !== 'sell' && formData.condition) {
+      updates.condition = '';
+    }
+    
     setFormData(prev => ({
       ...prev,
-      pricing: [newEntry]
+      ...updates
     }));
   };
 
@@ -218,9 +248,20 @@ const AdvertForm = ({
           </div>
         );
       case 'select':
+        // Check if this is vehicleType field in Cars & Vehicles category during edit
+        const isVehicleTypeLocked = initialData && 
+                                    formData.category === 'Cars & Vehicles' && 
+                                    field.id === 'vehicleType';
+        
         return (
           <div>
-            <select value={value} onChange={e => handleFieldChange(field.id, e.target.value)} className={baseClasses} required={field.required}>
+            <select 
+              value={value} 
+              onChange={e => handleFieldChange(field.id, e.target.value)} 
+              className={`${baseClasses} ${isVehicleTypeLocked ? 'bg-gray-100 cursor-not-allowed' : ''}`} 
+              required={field.required}
+              disabled={isVehicleTypeLocked}
+            >
               <option value="">Select {field.label}</option>
               {field.options.map(option => <option key={option} value={option}>{option}</option>)}
             </select>
@@ -416,15 +457,39 @@ const handleSubmit = (e) => {
     return;
   }
   
+  // Clean up fields before submission - remove fields that don't belong to current configuration
+  const cleanedFields = {};
+  const structure = FieldSystem.getFormStructure(formData.category);
+  
+  if (structure && structure.fields) {
+    // Only include fields that are currently visible
+    formSections.forEach(section => {
+      if (section.fields) {
+        section.fields.forEach(field => {
+          if (formData.fields[field.id] !== undefined) {
+            cleanedFields[field.id] = formData.fields[field.id];
+          }
+        });
+      }
+    });
+  }
+  
+  // Check if condition section is visible
+  const isConditionVisible = formSections.some(section => 
+    section.specialField === 'condition' && 
+    formData.adType === 'offered' &&
+    formData.pricing.some(p => p.priceType === 'sell')
+  );
+  
   // Submit data
   const submitData = {
     title: formData.title,
     category: formData.category,
     description: formData.description,
     adType: formData.adType,
-    condition: formData.condition || null,
+    condition: isConditionVisible ? (formData.condition || null) : null,  // Only include condition if visible
     address: formData.address,
-    fields: formData.fields,
+    fields: cleanedFields,  // Use cleaned fields instead of all fields
     pricing: formData.adType === 'wanted' ? [] : formData.pricing,
     communities: formData.communities,
     images: formData.images,
@@ -600,15 +665,23 @@ return (
         )}
         
         {/* Regular fields for non-pricing sections */}
-        {section.fields && section.fields.map(field => (
-          <div key={field.id} className="mb-4">
-            <label className="block font-bold mb-2 text-gray-700">
-              {field.label}
-              {field.required && <span className="text-red-500 ml-1">*</span>}
-            </label>
-            {renderField(field)}
-          </div>
-        ))}
+        {section.fields && section.fields.map(field => {
+          // Check if this is vehicleType field in Cars & Vehicles category during edit
+          const isVehicleTypeLocked = initialData && 
+                                      formData.category === 'Cars & Vehicles' && 
+                                      field.id === 'vehicleType';
+          
+          return (
+            <div key={field.id} className="mb-4">
+              <label className="block font-bold mb-2 text-gray-700">
+                {field.label}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+                {isVehicleTypeLocked && <span className="text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
+              </label>
+              {renderField(field)}
+            </div>
+          );
+        })}
       </div>
       );
     })}
@@ -681,9 +754,11 @@ return (
           isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-700 text-white'
         }`}
       >
-        {isLoading ? 
-          (initialData ? 'Updating...' : 'Creating...') : 
-          (initialData ? 'Update Listing' : 'Create Listing')}
+        {isSuccess ? 
+          (initialData ? 'Updated! Redirecting...' : 'Created! Redirecting...') : 
+          isLoading ? 
+            (initialData ? 'Updating...' : 'Creating...') : 
+            (initialData ? 'Update Listing' : 'Create Listing')}
       </button>
       <button 
         type="button" 

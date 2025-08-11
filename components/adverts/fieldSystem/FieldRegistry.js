@@ -71,7 +71,15 @@ fields: {
 'Music & Games': {
   sections: [
     { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
-    { id: 'conditionSection', order: 15, title: null, specialField: 'condition' },
+    { 
+      id: 'conditionSection', 
+      order: 15, 
+      title: null, 
+      specialField: 'condition',
+      dependencies: {
+        priceType: ['sell']
+      }
+    },
     { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
@@ -88,6 +96,15 @@ fields: {
       order: 10,
       title: 'Pricing Options',
       specialField: 'pricing'
+    },
+    {
+      id: 'conditionSection',
+      order: 15,
+      title: null,
+      specialField: 'condition',
+      dependencies: {
+        priceType: ['sell']
+      }
     },
     {
       id: 'vehicleDetailsSection',
@@ -140,7 +157,15 @@ fields: {
 'Fashion & Accessories': {
   sections: [
     { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
-    { id: 'conditionSection', order: 15, title: null, specialField: 'condition' },
+    { 
+      id: 'conditionSection', 
+      order: 15, 
+      title: null, 
+      specialField: 'condition',
+      dependencies: {
+        priceType: ['sell']
+      }
+    },
     { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
@@ -152,7 +177,15 @@ fields: {
 'Health, Sport & Fitness': {
   sections: [
     { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
-    { id: 'conditionSection', order: 15, title: null, specialField: 'condition' },
+    { 
+      id: 'conditionSection', 
+      order: 15, 
+      title: null, 
+      specialField: 'condition',
+      dependencies: {
+        priceType: ['sell']
+      }
+    },
     { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
@@ -164,7 +197,15 @@ fields: {
 'Home & Garden': {
   sections: [
     { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
-    { id: 'conditionSection', order: 15, title: null, specialField: 'condition' },
+    { 
+      id: 'conditionSection', 
+      order: 15, 
+      title: null, 
+      specialField: 'condition',
+      dependencies: {
+        priceType: ['sell']
+      }
+    },
     { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
@@ -176,7 +217,15 @@ fields: {
 'Pets': {
   sections: [
     { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
-    { id: 'conditionSection', order: 15, title: null, specialField: 'condition' },
+    { 
+      id: 'conditionSection', 
+      order: 15, 
+      title: null, 
+      specialField: 'condition',
+      dependencies: {
+        priceType: ['sell']
+      }
+    },
     { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
