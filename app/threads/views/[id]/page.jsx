@@ -54,6 +54,7 @@ const ThreadChatPage = () => {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const lastMessageCountRef = useRef(0);
+  const messageInputRef = useRef(null);
 
   const isMuted = useSelector((state) =>
     state.user.mutedThreads?.includes(threadId)
@@ -236,6 +237,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleReply = (message) => {
     dispatch(setReplyingTo(message));
+    // Auto-focus the input field
+    setTimeout(() => {
+      if (messageInputRef.current) {
+        messageInputRef.current.focus();
+      }
+    }, 50);
   };
 
   const handleCancelReply = () => {
@@ -543,16 +550,16 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   {/* Jump to Bottom Button */}
   {showJumpToBottom && (
     <div className="relative">
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+      <div className="absolute top-4 right-4 z-10">
         <button
           onClick={() => {
             scrollToBottom(true);
             setIsAtBottom(true);
             setShowJumpToBottom(false);
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-teal-700 rounded-full shadow-lg hover:bg-yellow-500 transition-all transform hover:scale-105"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 text-teal-700 rounded-full shadow-lg hover:bg-yellow-500 transition-all transform hover:scale-105 text-sm"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
           </svg>
           Jump to latest
@@ -569,12 +576,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   >
     {messages.length > 0 ? (
       messages.reduce((acc, msg, index) => {
-        const nextMsg = messages[index + 1];
+        const prevMsg = messages[index - 1];
         const msgDate = new Date(msg.createdAt);
-        const nextMsgDate = nextMsg ? new Date(nextMsg.createdAt) : null;
+        const prevMsgDate = prevMsg ? new Date(prevMsg.createdAt) : null;
 
         const showDateSeparator =
-          !nextMsg || !isSameDay(msgDate, nextMsgDate);
+          !prevMsg || !isSameDay(msgDate, prevMsgDate);
 
         let isRightSide = false;
         if (currentUser) {
@@ -719,6 +726,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       
       <div className="flex items-end gap-2">
         <textarea
+          ref={messageInputRef}
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={(e) => {
