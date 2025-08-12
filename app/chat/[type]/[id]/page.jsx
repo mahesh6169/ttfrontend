@@ -30,6 +30,7 @@ const ChatPage = () => {
   const currentUserId = user?._id;
   const { activeConversation, status, error } = useSelector((state) => state.messages);
   const [newMessage, setNewMessage] = useState('');
+  const [socketConnected, setSocketConnected] = useState(socket.connected);
   const messagesEndRef = useRef(null);
 
   const { resource, participants } = activeConversation || {};
@@ -128,16 +129,51 @@ useEffect(() => {
   }, [dispatch]);
 
 
-  // Reconnect socket
+  // Monitor socket connection status
   useEffect(() => {
+    const handleConnect = () => {
+      console.log('✅ [ChatPage] Socket connected!');
+      setSocketConnected(true);
+    };
+    
+    const handleDisconnect = () => {
+      console.log('❌ [ChatPage] Socket disconnected!');
+      setSocketConnected(false);
+    };
+    
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    
+    // Set initial state
+    setSocketConnected(socket.connected);
+    
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+    };
+  }, []);
+
+  // Reconnect socket and ensure connection
+  useEffect(() => {
+    // Check initial connection status
+    console.log(`📱 [ChatPage] Initial socket status - Connected: ${socket.connected}, ID: ${socket.id || 'none'}`);
+    
     const reconnect = () => {
       if (document.visibilityState === 'visible' && !socket.connected) {
+        console.log('🔄 [ChatPage] Page visible, reconnecting socket...');
         socket.connect();
       }
     };
+    
+    // Force connection if not connected
+    if (!socket.connected && tokenValidated) {
+      console.log('⚡ [ChatPage] Socket not connected, forcing connection...');
+      socket.connect();
+    }
+    
     document.addEventListener('visibilitychange', reconnect);
     return () => document.removeEventListener('visibilitychange', reconnect);
-  }, []);
+  }, [tokenValidated]);
 
   // Check for unread messages
   useEffect(() => {
@@ -159,6 +195,7 @@ useEffect(() => {
 
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
+    
     const utcNow = zonedTimeToUtc(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone);
     dispatch(sendMessage({
       resourceType,
@@ -179,7 +216,7 @@ useEffect(() => {
   return (
     <div className="mt-4 px-2 sm:px-4 ">
        <div className="max-w-2xl w-full mx-auto">
-      <div className="mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <span
           onClick={() => router.back()}
           className="inline-flex items-center gap-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium cursor-pointer"
@@ -187,6 +224,16 @@ useEffect(() => {
           <RiArrowGoBackFill className="text-xs sm:text-base" />
           <span>Back</span>
         </span>
+        
+        {/* Socket connection indicator */}
+        <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs ${
+          socketConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        }`}>
+          <div className={`w-2 h-2 rounded-full ${
+            socketConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+          }`} />
+          <span>{socketConnected ? 'Online' : 'Connecting...'}</span>
+        </div>
       </div>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
