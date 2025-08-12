@@ -10,7 +10,11 @@ import {
   sendThreadMessage,
   addNewThreadMessage,
   likeMessage,
-  unlikeMessage
+  unlikeMessage,
+  setReplyingTo,
+  clearReplyingTo,
+  setScrollToMessage,
+  clearScrollToMessage
 } from '@/store/slices/threads/threadSlice';
 import {
   muteThreadNotification,
@@ -40,6 +44,8 @@ const ThreadChatPage = () => {
     useSelector((state) => state.threads.messages[threadId]) || [];
   const currentUser = useSelector((state) => state.user.user);
   const threadStatus = useSelector((state) => state.threads.status);
+  const replyingTo = useSelector((state) => state.threads.replyingTo);
+  const scrollToMessage = useSelector((state) => state.threads.scrollToMessage);
 
 
   const [newMessage, setNewMessage] = useState('');
@@ -145,9 +151,11 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           threadId,
           message: newMessage,
           createdAt: utcNow.toISOString(),
+          replyTo: replyingTo?._id || null,
         })
       );
       setNewMessage('');
+      dispatch(clearReplyingTo());
       
       // Ensure we're at bottom after sending
       setIsAtBottom(true);
@@ -161,6 +169,27 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleUnlike = (messageId) => {
     dispatch(unlikeMessage(messageId));
+  };
+
+  const handleReply = (message) => {
+    dispatch(setReplyingTo(message));
+  };
+
+  const handleCancelReply = () => {
+    dispatch(clearReplyingTo());
+  };
+
+  const handleJumpToMessage = (messageId) => {
+    const messageElement = document.getElementById(`message-${messageId}`);
+    if (messageElement && messagesContainerRef.current) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Flash the message to indicate it's the target
+      messageElement.classList.add('bg-yellow-200');
+      setTimeout(() => {
+        messageElement.classList.remove('bg-yellow-200');
+      }, 1500);
+    }
   };
 
   const handleToggleMute = () => {
@@ -506,9 +535,10 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           ),
           <div
             key={msg._id}
+            id={`message-${msg._id}`}
             className={`mb-2 flex ${
               isRightSide ? 'justify-end' : 'justify-start'
-            }`}
+            } transition-colors duration-300`}
           >
             <div
               className={`relative max-w-[85%] min-w-[100px] px-3 py-2 rounded-lg shadow-sm break-words
@@ -532,6 +562,25 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                   })}
                 </span>
               </div>
+
+              {/* Reply preview if message is a reply */}
+              {msg.replyTo && (
+                <div 
+                  onClick={() => handleJumpToMessage(msg.replyTo._id)}
+                  className={`mb-2 p-2 rounded cursor-pointer transition-all ${
+                    currentUser && isRightSide
+                      ? 'bg-teal-800 hover:bg-teal-900 border-l-4 border-yellow-400'
+                      : 'bg-gray-200 hover:bg-gray-300 border-l-4 border-teal-600'
+                  }`}
+                >
+                  <p className="text-xs font-semibold opacity-80">
+                    ↩ {msg.replyTo.sender?.name || 'Former Member'}
+                  </p>
+                  <p className="text-xs opacity-70 truncate">
+                    {msg.replyTo.message.substring(0, 50)}...
+                  </p>
+                </div>
+              )}
 
               <p className="text-sm sm:text-base whitespace-pre-wrap">{msg.message}</p>
 
@@ -557,6 +606,19 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 >
                   👎 <span>{msg.dislikes || 0}</span>
                 </button>
+
+                {currentUser && (
+                  <button
+                    onClick={() => handleReply(msg)}
+                    className={`flex items-center space-x-1 ${
+                      currentUser && isRightSide
+                        ? 'hover:text-lime-300'
+                        : 'hover:text-teal-600'
+                    }`}
+                  >
+                    ↩ Reply
+                  </button>
+                )}
               </div>
             </div>
           </div>,
@@ -572,6 +634,26 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   {/* ✅ Message Input Box at the Bottom */}
   {currentUser ? (
     <div className="border-t bg-white p-3">
+      {/* Reply indicator */}
+      {replyingTo && (
+        <div className="mb-2 p-2 bg-gray-100 rounded-lg flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-gray-700">
+              Replying to {replyingTo.sender?.name || 'Former Member'}
+            </p>
+            <p className="text-xs text-gray-600 truncate">
+              {replyingTo.message.substring(0, 80)}...
+            </p>
+          </div>
+          <button
+            onClick={handleCancelReply}
+            className="ml-2 text-gray-500 hover:text-gray-700"
+          >
+            <FaTimes />
+          </button>
+        </div>
+      )}
+      
       <div className="flex items-end gap-2">
         <textarea
           value={newMessage}
@@ -582,7 +664,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               handleSendMessage();
             }
           }}
-          placeholder="Join the conversation..."
+          placeholder={replyingTo ? "Type your reply..." : "Join the conversation..."}
           rows={1}
           className="flex-1 border rounded-lg outline-none resize-none p-2 text-sm sm:text-base"
           style={{

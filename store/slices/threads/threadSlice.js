@@ -107,11 +107,11 @@ export const fetchThreadMessages = createAsyncThunk(
 /* -------------------------------- Send a Message in a Thread (Requires Auth) -------------------------------- */
 export const sendThreadMessage = createAsyncThunk(
     'threads/sendMessage',
-    async ({ threadId, message, createdAt  }, { rejectWithValue }) => {
+    async ({ threadId, message, createdAt, replyTo }, { rejectWithValue }) => {
         try {
             const response = await axios.post(
                 `${BASE_URL}/send`,
-                { threadId, message, createdAt },
+                { threadId, message, createdAt, replyTo },
                 { withCredentials: true } // ✅ Include authentication
             );
             return { threadId, message: response.data };
@@ -226,6 +226,8 @@ const threadSlice = createSlice({
         status: 'idle',
         error: null,
         selectedThread: null,
+        replyingTo: null, // Message being replied to
+        scrollToMessage: null, // Message ID to scroll to
     },
     reducers: {
         addNewThreadMessage: (state, action) => {
@@ -242,6 +244,18 @@ const threadSlice = createSlice({
         },
         updateThreadFilter: (state, action) => {
             Object.assign(state, action.payload); // ✅ Update category, page, or limit
+        },
+        setReplyingTo: (state, action) => {
+            state.replyingTo = action.payload;
+        },
+        clearReplyingTo: (state) => {
+            state.replyingTo = null;
+        },
+        setScrollToMessage: (state, action) => {
+            state.scrollToMessage = action.payload;
+        },
+        clearScrollToMessage: (state) => {
+            state.scrollToMessage = null;
         },
     },
     extraReducers: (builder) => {
@@ -422,5 +436,12 @@ const threadSlice = createSlice({
 });
 
 /* -------------------------------- Exports -------------------------------- */
-export const { addNewThreadMessage, updateThreadFilter } = threadSlice.actions;
+export const { 
+    addNewThreadMessage, 
+    updateThreadFilter,
+    setReplyingTo,
+    clearReplyingTo,
+    setScrollToMessage,
+    clearScrollToMessage
+} = threadSlice.actions;
 export default threadSlice.reducer;
