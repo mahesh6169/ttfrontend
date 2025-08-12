@@ -136,12 +136,29 @@ const ReportForm = () => {
           onExpired={() => setCaptchaToken(null)}
         />
 
-        <button
-          type="submit"
-          className="bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded"
-        >
-          Submit Report
-        </button>
+        <div className="flex gap-3 mt-4">
+          <button
+            type="submit"
+            className="bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded"
+          >
+            Submit Report
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const returnUrl = localStorage.getItem('reportReturnUrl');
+              if (returnUrl) {
+                localStorage.removeItem('reportReturnUrl');
+                router.push(returnUrl);
+              } else {
+                router.back();
+              }
+            }}
+            className="bg-gray-600 text-white hover:bg-gray-700 px-4 py-2 rounded"
+          >
+            Cancel
+          </button>
+        </div>
       </form>
     </div>
   );

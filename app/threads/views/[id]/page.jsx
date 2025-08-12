@@ -342,6 +342,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       {/* Report this Topic */}
       <Link
         href={`/support/report?type=topic&id=${thread._id}&title=${encodeURIComponent(thread.title)}`}
+        onClick={() => {
+          localStorage.setItem('reportReturnUrl', `/threads/views/${threadId}`);
+        }}
         className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
       >
         <MdReport className="text-lg" />

@@ -452,7 +452,11 @@ useEffect(() => {
           </button>
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => {
+              const backTo = localStorage.getItem('cancelRedirectUrl');
+              localStorage.removeItem('cancelRedirectUrl');
+              router.push(backTo || '/users/profile/managethreads');
+            }}
             className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500"
           >
             Cancel

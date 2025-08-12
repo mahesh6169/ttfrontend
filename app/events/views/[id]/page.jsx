@@ -106,6 +106,9 @@ const EventDetail = () => {
         {/* Report this Event */}
         <Link
           href={`/support/report?type=event&id=${id}&title=${encodeURIComponent(selectedEvent.title)}`}
+          onClick={() => {
+            localStorage.setItem('reportReturnUrl', `/events/views/${id}`);
+          }}
           className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
         >
           <MdReport className="text-lg" />

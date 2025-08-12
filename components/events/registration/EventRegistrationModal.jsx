@@ -59,9 +59,16 @@ useEffect(() => {
   }
 }, [registrationStatus, currentRegistration, successMessage, onSuccess]);
 
-  // Clear errors when modal opens
+  // Clear errors and reset state when modal opens
   useEffect(() => {
     if (isOpen) {
+      // Reset local state
+      setShowSuccessMessage(false);
+      setAttendees([{ name: '' }]);
+      setFormResponses({});
+      setErrors({});
+      
+      // Clear Redux state
       dispatch(clearRegistrationError());
       dispatch(clearSuccessMessage());
     }
@@ -423,7 +430,7 @@ const formatEventDate = (dateTime, timeZone) => {
                 <button
                   type="button"
                   onClick={handleAddAttendee}
-                  className="flex items-center gap-2 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  className="flex items-center gap-2 px-3 py-1 text-sm bg-amber-400 text-teal-800 rounded hover:bg-amber-500 hover:text-teal-900 transition-colors"
                 >
                   <FaPlus size={12} />
                   Add Attendee
@@ -457,7 +464,7 @@ const formatEventDate = (dateTime, timeZone) => {
                       type="text"
                       value={attendee.name}
                       onChange={(e) => handleAttendeeChange(index, 'name', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors ${
                         errors[`attendee_${index}_name`] ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Enter full name"
@@ -501,7 +508,7 @@ const formatEventDate = (dateTime, timeZone) => {
             <button
               type="submit"
               disabled={registrationStatus === 'loading'}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-2 bg-amber-400 text-teal-800 rounded-md hover:bg-amber-500 hover:text-teal-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {registrationStatus === 'loading' ? 'Registering...' : 'Register for Event'}
             </button>

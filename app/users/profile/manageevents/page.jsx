@@ -23,6 +23,8 @@ const ManageEventsPage = () => {
   }, [dispatch]);
 
   const handleEdit = (event) => {
+    // Save where we came from for Cancel button
+    localStorage.setItem('cancelRedirectUrl', '/users/profile/manageevents');
     router.push(`/events/edit/${event._id}`);
   };
 

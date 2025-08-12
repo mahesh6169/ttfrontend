@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { toast } from 'react-toastify';
 import { format, parse, addMonths } from 'date-fns';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
+import PostEventButton from '@/components/buttons/PostEventButton';
 
 const libraries = ['places'];
 
@@ -513,18 +514,6 @@ const EventsPage = () => {
 
       {/* Main Content */}
       <div className="w-full">
-        {/* Post Event Button */}
-        <div className="my-2 px-4">
-          <div className="flex justify-start">
-            <Link
-              href="/events/add"
-              className="bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 text-sm md:text-base rounded shadow font-semibold transition duration-200"
-            >
-              Create Event
-            </Link>
-          </div>
-        </div>
-
         {/* Hero Banner */}
         <div className="my-4 px-4">
           <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
@@ -536,6 +525,13 @@ const EventsPage = () => {
               <span className="text-amber-500">Connect</span>
             </h1>
             <p className="text-gray-600 text-center text-sm mt-2">Find events in your community</p>
+          </div>
+        </div>
+
+        {/* Post Event Button */}
+        <div className="my-2 px-4">
+          <div className="flex justify-start">
+            <PostEventButton />
           </div>
         </div>
 

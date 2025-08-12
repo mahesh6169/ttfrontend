@@ -42,6 +42,8 @@ const ManageThreads = () => {
   };
 
   const handleEditClick = (threadId) => {
+    // Save where we came from for Cancel button
+    localStorage.setItem('cancelRedirectUrl', '/users/profile/managethreads');
     router.push(`/threads/edit/${threadId}`);
   };
 

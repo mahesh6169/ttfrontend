@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 import { toast } from 'react-toastify';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
+import PostTopicButton from '@/components/buttons/PostTopicButton';
 
 const libraries = ['places'];
 
@@ -492,18 +493,6 @@ const ThreadsPage = () => {
 
       {/* Main Content */}
       <div className="w-full">
-        {/* Create New Topic Button */}
-        <div className="my-2 px-4">
-          <div className="flex justify-start">
-            <Link
-              href="/threads/new"
-              className="bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 text-sm md:text-base rounded shadow font-semibold transition duration-200"
-            >
-              Create Topic
-            </Link>
-          </div>
-        </div>
-
         {/* Hero Banner */}
         <div className="my-4 px-4">
           <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
@@ -515,6 +504,13 @@ const ThreadsPage = () => {
               <span className="text-amber-500">Share</span>
             </h1>
             <p className="text-gray-600 text-center text-sm mt-2">Share knowledge with your community</p>
+          </div>
+        </div>
+
+        {/* Create New Topic Button */}
+        <div className="my-2 px-4">
+          <div className="flex justify-start">
+            <PostTopicButton />
           </div>
         </div>
 

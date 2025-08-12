@@ -1197,7 +1197,18 @@ const handleNext = useCallback(() => {
       if (isAddMode) {
         dispatch(resetForm());
       }
-      router.push('/events');
+      
+      // Check for stored redirect URL
+      const storedRedirect = localStorage.getItem('cancelRedirectUrl');
+      
+      if (storedRedirect) {
+        // Use stored redirect and clean up
+        localStorage.removeItem('cancelRedirectUrl');
+        router.push(storedRedirect);
+      } else {
+        // Default to events page
+        router.push('/events');
+      }
     }
   }, [allowCancel, isAddMode, dispatch, router]);
 
