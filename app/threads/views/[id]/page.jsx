@@ -53,6 +53,7 @@ const ThreadChatPage = () => {
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const lastMessageCountRef = useRef(0);
 
   const isMuted = useSelector((state) =>
     state.user.mutedThreads?.includes(threadId)
@@ -123,13 +124,59 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Scroll to bottom on new messages (only if user is already at bottom)
   useEffect(() => {
+    if (messages.length === 0) return;
+    
+    // Check if new message was added
+    const messageCountChanged = messages.length !== lastMessageCountRef.current;
+    lastMessageCountRef.current = messages.length;
+    
+    if (!messageCountChanged) return;
+    
     // Always scroll for own messages
     const lastMessage = messages[messages.length - 1];
     const isMyMessage = lastMessage && lastMessage.sender?._id === currentUser?._id;
 
     if (isAtBottom || isMyMessage) {
-      // Use immediate scroll for own messages, smooth for others
-      setTimeout(() => scrollToBottom(!isMyMessage), 50);
+      // Force scroll function
+      const scrollToBottomMultiple = () => {
+        if (messagesContainerRef.current) {
+          const container = messagesContainerRef.current;
+          container.scrollTop = container.scrollHeight;
+          
+          // Double-check and force if needed (Firefox fix)
+          if (container.scrollTop !== container.scrollHeight - container.clientHeight) {
+            container.scrollTo({
+              top: container.scrollHeight,
+              behavior: 'instant'
+            });
+          }
+        }
+      };
+      
+      // Immediate attempt
+      scrollToBottomMultiple();
+      
+      // Use MutationObserver for Firefox to detect when DOM actually updates
+      if (messagesContainerRef.current && typeof MutationObserver !== 'undefined') {
+        const observer = new MutationObserver(() => {
+          scrollToBottomMultiple();
+          observer.disconnect();
+        });
+        
+        observer.observe(messagesContainerRef.current, {
+          childList: true,
+          subtree: true
+        });
+        
+        // Cleanup observer after a timeout
+        setTimeout(() => observer.disconnect(), 500);
+      }
+      
+      // Multiple fallback attempts
+      requestAnimationFrame(scrollToBottomMultiple);
+      setTimeout(scrollToBottomMultiple, 50);
+      setTimeout(scrollToBottomMultiple, 100);
+      setTimeout(scrollToBottomMultiple, 200);
     }
   }, [messages, currentUser?._id, isAtBottom]);
 
@@ -157,9 +204,25 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       setNewMessage('');
       dispatch(clearReplyingTo());
       
-      // Ensure we're at bottom after sending
+      // Force scroll to bottom after sending
       setIsAtBottom(true);
       setShowJumpToBottom(false);
+      
+      // Multiple scroll attempts for cross-browser compatibility
+      const forceScrollToBottom = () => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+      };
+      
+      // Immediate scroll
+      forceScrollToBottom();
+      
+      // Multiple delayed scrolls for Firefox
+      requestAnimationFrame(forceScrollToBottom);
+      setTimeout(forceScrollToBottom, 50);
+      setTimeout(forceScrollToBottom, 150);
+      setTimeout(forceScrollToBottom, 300);
     }
   };
 
