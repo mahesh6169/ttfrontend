@@ -150,6 +150,20 @@ export const unlikeMessage = createAsyncThunk(
     }
 );
 
+/* -------------------------------- Delete Message in a Thread (Requires Auth) -------------------------------- */
+export const deleteThreadMessage = createAsyncThunk(
+    "threads/deleteMessage",
+    async ({ threadId, messageId }, { rejectWithValue }) => {
+        try {
+            const response = await axios.delete(`${BASE_URL}/message/${messageId}`, { withCredentials: true });
+            return { threadId, messageId, deletedAt: new Date().toISOString() };
+        } catch (error) {
+            console.error("🔴 Error deleting message:", error.response?.data || error.message);
+            return rejectWithValue(error.response?.data?.message || "Failed to delete message");
+        }
+    }
+);
+
 /* -------------------------------- Delete a Thread (Requires Auth) -------------------------------- */
 export const deleteThread = createAsyncThunk(
     "threads/deleteThread",
@@ -257,6 +271,15 @@ const threadSlice = createSlice({
         clearScrollToMessage: (state) => {
             state.scrollToMessage = null;
         },
+        markMessageAsDeleted: (state, action) => {
+            const { threadId, messageId } = action.payload;
+            if (state.messages[threadId]) {
+                const message = state.messages[threadId].find(msg => msg._id === messageId);
+                if (message) {
+                    message.deletedAt = new Date().toISOString();
+                }
+            }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -342,6 +365,16 @@ const threadSlice = createSlice({
                 });
             })
 
+            /* --------- Delete Message --------- */
+            .addCase(deleteThreadMessage.fulfilled, (state, action) => {
+                const { threadId, messageId, deletedAt } = action.payload;
+                if (state.messages[threadId]) {
+                    const message = state.messages[threadId].find(msg => msg._id === messageId);
+                    if (message) {
+                        message.deletedAt = deletedAt;
+                    }
+                }
+            })
 
             /* --------- Delete Thread --------- */
             .addCase(deleteThread.pending, (state) => {
@@ -442,6 +475,7 @@ export const {
     setReplyingTo,
     clearReplyingTo,
     setScrollToMessage,
-    clearScrollToMessage
+    clearScrollToMessage,
+    markMessageAsDeleted
 } = threadSlice.actions;
 export default threadSlice.reducer;

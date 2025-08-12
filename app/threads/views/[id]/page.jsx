@@ -14,7 +14,9 @@ import {
   setReplyingTo,
   clearReplyingTo,
   setScrollToMessage,
-  clearScrollToMessage
+  clearScrollToMessage,
+  deleteThreadMessage,
+  markMessageAsDeleted
 } from '@/store/slices/threads/threadSlice';
 import {
   muteThreadNotification,
@@ -94,8 +96,15 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       dispatch(addNewThreadMessage({ threadId, message }));
     });
 
+    threadSocket.on('messageDeleted', ({ messageId, threadId: msgThreadId }) => {
+      if (msgThreadId === threadId) {
+        dispatch(markMessageAsDeleted({ threadId, messageId }));
+      }
+    });
+
     return () => {
       threadSocket.off('newThreadMessage');
+      threadSocket.off('messageDeleted');
     };
   }, [dispatch, threadId]);
 
@@ -259,6 +268,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       setTimeout(() => {
         messageElement.classList.remove('bg-yellow-200');
       }, 1500);
+    }
+  };
+
+  const handleDeleteMessage = (messageId) => {
+    if (window.confirm('Are you sure you want to delete this message?')) {
+      dispatch(deleteThreadMessage({ threadId, messageId }));
     }
   };
 
@@ -647,12 +662,16 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                     ↩ {msg.replyTo.sender?.name || 'Former Member'}
                   </p>
                   <p className="text-xs opacity-70 truncate">
-                    {msg.replyTo.message.substring(0, 50)}...
+                    {msg.replyTo.deletedAt ? '[This message was deleted]' : `${msg.replyTo.message.substring(0, 50)}...`}
                   </p>
                 </div>
               )}
 
-              <p className="text-sm sm:text-base whitespace-pre-wrap">{msg.message}</p>
+              {msg.deletedAt ? (
+                <p className="text-sm sm:text-base italic opacity-60">[This message was deleted]</p>
+              ) : (
+                <p className="text-sm sm:text-base whitespace-pre-wrap">{msg.message}</p>
+              )}
 
               <div className="flex items-center space-x-3 mt-2 text-xs">
                 <button
@@ -677,7 +696,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                   👎 <span>{msg.dislikes || 0}</span>
                 </button>
 
-                {currentUser && (
+                {currentUser && !msg.deletedAt && (
                   <button
                     onClick={() => handleReply(msg)}
                     className={`flex items-center space-x-1 ${
@@ -687,6 +706,19 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                     }`}
                   >
                     ↩ Reply
+                  </button>
+                )}
+
+                {currentUser && msg.sender?._id === currentUser._id && !msg.deletedAt && (
+                  <button
+                    onClick={() => handleDeleteMessage(msg._id)}
+                    className={`flex items-center space-x-1 ${
+                      isRightSide
+                        ? 'hover:text-red-300'
+                        : 'hover:text-red-600'
+                    }`}
+                  >
+                    🗑️ Delete
                   </button>
                 )}
               </div>
