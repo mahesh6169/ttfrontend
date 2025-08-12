@@ -31,7 +31,10 @@ const ChatPage = () => {
   const { activeConversation, status, error } = useSelector((state) => state.messages);
   const [newMessage, setNewMessage] = useState('');
   const [socketConnected, setSocketConnected] = useState(socket.connected);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const { resource, participants } = activeConversation || {};
   const { owner, participant } = participants || {};
@@ -72,10 +75,49 @@ useEffect(() => {
     }
   }, [dispatch, tokenValidated, currentUserId, resourceId, otherUserId, resourceType]);
 
-  // Scroll to latest message
+  // Smooth scroll to bottom function
+  const scrollToBottom = (smooth = true) => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
+
+  // Check if user is at bottom of scroll
+  const checkIfAtBottom = () => {
+    if (!messagesContainerRef.current) return true;
+    
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const threshold = 50; // pixels from bottom
+    const atBottom = scrollHeight - scrollTop - clientHeight < threshold;
+    
+    setIsAtBottom(atBottom);
+    setShowJumpToBottom(!atBottom && scrollHeight > clientHeight);
+  };
+
+  // Handle scroll events
+  const handleScroll = () => {
+    checkIfAtBottom();
+  };
+
+  // Scroll to bottom on new messages (only if user is already at bottom)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeConversation?.messages]);
+    // Always scroll for own messages
+    const lastMessage = activeConversation?.messages?.[activeConversation.messages.length - 1];
+    const isMyMessage = lastMessage && (
+      (lastMessage.senderRole === 'owner' && lastMessage.owner === currentUserId) ||
+      (lastMessage.senderRole === 'participant' && lastMessage.participant === currentUserId)
+    );
+
+    if (isAtBottom || isMyMessage) {
+      // Use immediate scroll for own messages, smooth for others
+      setTimeout(() => scrollToBottom(!isMyMessage), 50);
+    }
+  }, [activeConversation?.messages, currentUserId, isAtBottom]);
+
+  // Initial scroll to bottom
+  useEffect(() => {
+    setTimeout(() => scrollToBottom(false), 100);
+  }, [activeConversation]);
 
   // Read receipts
   useEffect(() => {
@@ -205,6 +247,10 @@ useEffect(() => {
       createdAt: utcNow.toISOString(),
     }));
     setNewMessage('');
+    
+    // Ensure we're at bottom after sending
+    setIsAtBottom(true);
+    setShowJumpToBottom(false);
   };
 
   if (!tokenValidated) return <div className="text-center mt-8">Validating session...</div>;
@@ -214,9 +260,9 @@ useEffect(() => {
   if (!resource) return <div className="text-center text-gray-500">No conversation found.</div>;
 
   return (
-    <div className="mt-4 px-2 sm:px-4 ">
-       <div className="max-w-2xl w-full mx-auto">
-      <div className="mb-2 flex items-center justify-between">
+    <div className="mt-4 px-2 sm:px-4 h-[calc(100vh-8rem)]">
+       <div className="max-w-2xl w-full mx-auto h-full flex flex-col">
+      <div className="mb-2">
         <span
           onClick={() => router.back()}
           className="inline-flex items-center gap-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium cursor-pointer"
@@ -224,16 +270,6 @@ useEffect(() => {
           <RiArrowGoBackFill className="text-xs sm:text-base" />
           <span>Back</span>
         </span>
-        
-        {/* Socket connection indicator */}
-        <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs ${
-          socketConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-        }`}>
-          <div className={`w-2 h-2 rounded-full ${
-            socketConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-          }`} />
-          <span>{socketConnected ? 'Online' : 'Connecting...'}</span>
-        </div>
       </div>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
@@ -245,9 +281,31 @@ useEffect(() => {
         </Link>
       </div>
 
+      {/* Jump to Bottom Button */}
+      {showJumpToBottom && (
+        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10">
+          <button
+            onClick={() => {
+              scrollToBottom(true);
+              setIsAtBottom(true);
+              setShowJumpToBottom(false);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-teal-700 rounded-full shadow-lg hover:bg-yellow-500 transition-all transform hover:scale-105"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+            Jump to latest
+          </button>
+        </div>
+      )}
 
       {/* Messages Container */}
-<div className="relative h-[55vh] sm:h-[60vh] max-h-[65vh] min-h-[20vh] border rounded-xl overflow-y-auto bg-gray-50 shadow-inner px-2 py-3 mb-3 flex flex-col gap-2">
+<div 
+  ref={messagesContainerRef}
+  onScroll={handleScroll}
+  className="relative flex-1 border rounded-xl overflow-y-auto bg-gray-50 shadow-inner px-2 py-3 mb-3 flex flex-col gap-2"
+>
   {activeConversation.messages.length > 0 ? (
     <>
       {activeConversation.messages.reduce((acc, msg, index) => {
@@ -306,14 +364,18 @@ useEffect(() => {
   )}
 </div>
 
-
-      {/* Input */}
-      {/* Message Input Bar */}
-<div className="flex items-end gap-2 p-3 border rounded-xl shadow bg-white mt-4">
+      {/* Message Input Bar - Now at the bottom */}
+<div className="flex items-end gap-2 p-3 border rounded-xl shadow bg-white">
   {/* Auto-growing Textarea */}
   <textarea
     value={newMessage}
     onChange={(e) => setNewMessage(e.target.value)}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage();
+      }
+    }}
     placeholder="Type your message..."
     rows={1}
     className="flex-1 min-h-[2.5rem] max-h-32 resize-none border-none outline-none p-3 rounded-lg bg-gray-50 text-base focus:bg-white focus:ring-2 focus:ring-yellow-400 transition"

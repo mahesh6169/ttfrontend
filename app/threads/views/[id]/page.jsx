@@ -43,10 +43,10 @@ const ThreadChatPage = () => {
 
 
   const [newMessage, setNewMessage] = useState('');
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const messagesEndRef = useRef(null);
-
   const messagesContainerRef = useRef(null);
-  const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
 
   const isMuted = useSelector((state) =>
     state.user.mutedThreads?.includes(threadId)
@@ -91,26 +91,46 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     };
   }, [dispatch, threadId]);
 
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const isNearBottom =
-        container.scrollHeight - container.scrollTop - container.clientHeight <
-        80;
-      setAutoScrollEnabled(isNearBottom);
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    if (autoScrollEnabled && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  // Smooth scroll to bottom function
+  const scrollToBottom = (smooth = true) => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
-  }, [messages, autoScrollEnabled]);
+  };
+
+  // Check if user is at bottom of scroll
+  const checkIfAtBottom = () => {
+    if (!messagesContainerRef.current) return true;
+    
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const threshold = 50; // pixels from bottom
+    const atBottom = scrollHeight - scrollTop - clientHeight < threshold;
+    
+    setIsAtBottom(atBottom);
+    setShowJumpToBottom(!atBottom && scrollHeight > clientHeight);
+  };
+
+  // Handle scroll events
+  const handleScroll = () => {
+    checkIfAtBottom();
+  };
+
+  // Scroll to bottom on new messages (only if user is already at bottom)
+  useEffect(() => {
+    // Always scroll for own messages
+    const lastMessage = messages[messages.length - 1];
+    const isMyMessage = lastMessage && lastMessage.sender?._id === currentUser?._id;
+
+    if (isAtBottom || isMyMessage) {
+      // Use immediate scroll for own messages, smooth for others
+      setTimeout(() => scrollToBottom(!isMyMessage), 50);
+    }
+  }, [messages, currentUser?._id, isAtBottom]);
+
+  // Initial scroll to bottom
+  useEffect(() => {
+    setTimeout(() => scrollToBottom(false), 100);
+  }, [threadId]);
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
@@ -128,6 +148,10 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         })
       );
       setNewMessage('');
+      
+      // Ensure we're at bottom after sending
+      setIsAtBottom(true);
+      setShowJumpToBottom(false);
     }
   };
 
@@ -422,89 +446,38 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
 
 {/* Message Area */}
-<div className="rounded my-6 bg-white shadow space-y-2">
+<div className="rounded my-6 bg-white shadow flex flex-col" style={{ maxHeight: '70vh' }}>
 
-  {/* ✅ Message Box at the Top */}
-  {currentUser ? (
-    <div className="border rounded-lg shadow bg-white p-1">
-      <textarea
-        value={newMessage}
-        onChange={(e) => setNewMessage(e.target.value)}
-        placeholder="Join the conversation..."
-        rows={1}
-        className="w-full border-none outline-none resize-none p-1 text-sm sm:text-base overflow-y-auto"
-        style={{
-          minHeight: '2.5rem',
-          maxHeight: '8rem',
-          height: 'auto',
-        }}
-        onInput={(e) => {
-          e.target.style.height = 'auto';
-          e.target.style.height = `${e.target.scrollHeight}px`;
-        }}
-      />
-      <div className="flex justify-end mt-2">
+  {/* Jump to Bottom Button */}
+  {showJumpToBottom && (
+    <div className="relative">
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
         <button
-          onClick={handleSendMessage}
-          disabled={!newMessage.trim()}
-          className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 disabled:opacity-50"
+          onClick={() => {
+            scrollToBottom(true);
+            setIsAtBottom(true);
+            setShowJumpToBottom(false);
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-teal-700 rounded-full shadow-lg hover:bg-yellow-500 transition-all transform hover:scale-105"
         >
-          Send
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+          Jump to latest
         </button>
       </div>
     </div>
-  ) : (
-    <div className="border rounded-lg shadow bg-white p-4 my-6 ">
-  <textarea
-    disabled
-    placeholder=" 🔒 Log in to join the conversation..."
-    rows={1}
-    className="w-full border border-gray-300 bg-gray-100 text-gray-500 resize-none p-2 text-sm sm:text-base rounded"
-    style={{
-      minHeight: '2.5rem',
-      maxHeight: '8rem',
-      height: 'auto',
-    }}
-  />
-
-  <div className="flex justify-center gap-4">
-    <Link
-      href={`/login?preserveRedirect=true`}
-      onClick={() => {
-        localStorage.setItem(
-          'redirectAfterLogin',
-          `/threads/views/${threadId}`
-        );
-      }}
-      className="px-4 py-2 text-sm sm:text-base bg-teal-600 text-lime-100 rounded hover:bg-teal-700"
-    >
-      Login
-    </Link>
-    <Link
-      href={`/users/register?preserveRedirect=true`}
-      onClick={() => {
-        localStorage.setItem(
-          'redirectAfterLogin',
-          `/threads/views/${threadId}`
-        );
-      }}
-      className="px-4 py-2 text-sm sm:text-base bg-teal-600 text-lime-100 rounded hover:bg-teal-700"
-    >
-      Register
-    </Link>
-  </div>
-</div>
-
   )}
 
-  {/* ✅ Message List Below */}
+  {/* ✅ Message List */}
   <div
     ref={messagesContainerRef}
-    className="max-h-[500px] overflow-y-auto pr-1 border"
+    onScroll={handleScroll}
+    className="flex-1 overflow-y-auto pr-1 border-t border-b"
   >
     {messages.length > 0 ? (
-      [...messages].reverse().reduce((acc, msg, index, reversed) => {
-        const nextMsg = reversed[index - 1];
+      messages.reduce((acc, msg, index) => {
+        const nextMsg = messages[index + 1];
         const msgDate = new Date(msg.createdAt);
         const nextMsgDate = nextMsg ? new Date(nextMsg.createdAt) : null;
 
@@ -594,10 +567,79 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 <p className="text-sm">No messages yet. Start the conversation!</p>
               </div>
             )}
-          </div>
+  </div>
+
+  {/* ✅ Message Input Box at the Bottom */}
+  {currentUser ? (
+    <div className="border-t bg-white p-3">
+      <div className="flex items-end gap-2">
+        <textarea
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSendMessage();
+            }
+          }}
+          placeholder="Join the conversation..."
+          rows={1}
+          className="flex-1 border rounded-lg outline-none resize-none p-2 text-sm sm:text-base"
+          style={{
+            minHeight: '2.5rem',
+            maxHeight: '8rem',
+          }}
+          onInput={(e) => {
+            e.target.style.height = 'auto';
+            e.target.style.height = `${e.target.scrollHeight}px`;
+          }}
+        />
+        <button
+          onClick={handleSendMessage}
+          disabled={!newMessage.trim()}
+          className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 rounded-lg font-semibold disabled:opacity-50 transition-colors"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  ) : (
+    <div className="border-t bg-gray-50 p-4">
+      <div className="text-center">
+        <p className="text-gray-600 mb-3">Join the conversation</p>
+        <div className="flex justify-center gap-4">
+          <Link
+            href={`/login?preserveRedirect=true`}
+            onClick={() => {
+              localStorage.setItem(
+                'redirectAfterLogin',
+                `/threads/views/${threadId}`
+              );
+            }}
+            className="px-4 py-2 text-sm sm:text-base bg-teal-600 text-lime-100 rounded hover:bg-teal-700"
+          >
+            Login
+          </Link>
+          <Link
+            href={`/users/register?preserveRedirect=true`}
+            onClick={() => {
+              localStorage.setItem(
+                'redirectAfterLogin',
+                `/threads/views/${threadId}`
+              );
+            }}
+            className="px-4 py-2 text-sm sm:text-base bg-teal-600 text-lime-100 rounded hover:bg-teal-700"
+          >
+            Register
+          </Link>
         </div>
       </div>
+    </div>
+  )}
 
+</div>
+
+      </div>
     </div>
   );
 };
