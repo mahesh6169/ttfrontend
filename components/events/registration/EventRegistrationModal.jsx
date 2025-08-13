@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { FaTimes, FaPlus, FaTrash, FaUser, FaCalendar } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash, FaUser, FaCalendar, FaPhone } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import { 
   registerForFreeEvent, 
@@ -27,6 +27,7 @@ const EventRegistrationModal = ({ event, isOpen, onClose, onSuccess }) => {
   const [formResponses, setFormResponses] = useState({});
   const [errors, setErrors] = useState({});
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [mobile, setMobile] = useState('');
 
   // Handle modal close (MOVED UP - defined before useEffects)
   const handleClose = () => {
@@ -34,6 +35,7 @@ const EventRegistrationModal = ({ event, isOpen, onClose, onSuccess }) => {
   setFormResponses({});
   setErrors({});
   setShowSuccessMessage(false);
+  setMobile('');
   dispatch(clearRegistrationError());
   dispatch(clearSuccessMessage());
   onClose();
@@ -67,6 +69,7 @@ useEffect(() => {
       setAttendees([{ name: '' }]);
       setFormResponses({});
       setErrors({});
+      setMobile('');
       
       // Clear Redux state
       dispatch(clearRegistrationError());
@@ -123,6 +126,13 @@ useEffect(() => {
   const validateForm = () => {
     const newErrors = {};
 
+    // Validate mobile number
+    if (!mobile.trim()) {
+      newErrors.mobile = 'Mobile number is required';
+    } else if (!/^[0-9+\-\s()]+$/.test(mobile)) {
+      newErrors.mobile = 'Please enter a valid mobile number';
+    }
+
     // Validate attendees
     attendees.forEach((attendee, index) => {
       if (!attendee.name.trim()) {
@@ -153,6 +163,7 @@ useEffect(() => {
     try {
       // Prepare registration data
       const registrationData = {
+        mobile: mobile.trim(),
         attendees: attendees
           .filter(attendee => attendee.name.trim()) // Only include attendees with names
           .map(attendee => ({
@@ -417,7 +428,36 @@ const formatEventDate = (dateTime, timeZone) => {
         {!showSuccessMessage ? (
         <form onSubmit={handleSubmit} className="p-6">
           
-          
+          {/* Mobile Number Section */}
+          <div className="mb-6">
+            <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2 mb-4">
+              <FaPhone />
+              Contact Information
+            </h3>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Mobile Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={mobile}
+              onChange={(e) => {
+                setMobile(e.target.value);
+                // Clear error when user starts typing
+                if (errors.mobile) {
+                  const newErrors = { ...errors };
+                  delete newErrors.mobile;
+                  setErrors(newErrors);
+                }
+              }}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors ${
+                errors.mobile ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter your mobile number"
+            />
+            {errors.mobile && (
+              <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>
+            )}
+          </div>
 
           {/* Attendees Section */}
           <div className="mb-6">
