@@ -386,12 +386,16 @@ const SingleEventCard = ({ event, chatProps }) => {
           <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
             <h3 className="text-sm sm:text-base font-semibold text-gray-800">About This Event</h3>
           </div>
-          <div className="p-3">
-            <div className="text-sm sm:text-base text-gray-700 space-y-2">
+          <div className="p-3 relative">
+            <div 
+              className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto h-[300px] sm:h-[400px] pr-2"
+            >
               {event.description.split('\n').map((para, idx) => (
                 para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
               ))}
             </div>
+            {/* Fade overlay at bottom to indicate scrollable content */}
+            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
           </div>
         </div>
       )}

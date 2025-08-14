@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { formatInTimeZone } from 'date-fns-tz';
-
+import EventSelector from '@/components/shared/EventSelector';
+import DateRangeSelector from '@/components/shared/DateRangeSelector';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const MyFreeEventRegistrationsPage = () => {
@@ -275,17 +276,10 @@ const MyFreeEventRegistrationsPage = () => {
             <label htmlFor="dateFilter" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Filter by Date Range
             </label>
-            <select
-              id="dateFilter"
+            <DateRangeSelector
               value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="3months">Last 3 months</option>
-              <option value="6months">Last 6 months</option>
-              <option value="1year">Last year</option>
-              <option value="all">Show all</option>
-            </select>
+              onChange={setDateFilter}
+            />
           </div>
 
           {/* Event Selector */}
@@ -293,22 +287,12 @@ const MyFreeEventRegistrationsPage = () => {
             <label htmlFor="eventSelect" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Select Event to View Registration Details
             </label>
-            <select
-              id="eventSelect"
+            <EventSelector
               value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
-              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">-- Choose an event --</option>
-              {filteredEvents.map((event) => {
-                const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
-                return (
-                  <option key={event.id} value={event.id}>
-                    {event.title} - {eventDateTime.combined}
-                  </option>
-                );
-              })}
-            </select>
+              onChange={setSelectedEventId}
+              events={filteredEvents}
+              placeholder="-- Choose an event --"
+            />
             {filteredEvents.length === 0 && events.length > 0 && (
               <p className="text-xs sm:text-sm text-gray-500 mt-2">
                 No events found in the selected date range. Try selecting a different range.
