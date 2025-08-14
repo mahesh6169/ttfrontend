@@ -190,14 +190,16 @@ const CheckInFree_AttendeeList = () => {
                   {registration.registrationNumber}
                 </div>
 
-                {/* Row 3: Name and Email */}
+                {/* Row 3: Name, Mobile and Email */}
                 <div>
                   <div className="font-medium text-gray-800 text-sm">
                     {registration.user?.name || registration.userId?.name || 'Former User'}
                   </div>
-                  {registration.email && (
+                  {(registration.mobile || registration.email) && (
                     <div className="text-gray-600 text-xs break-all mt-1">
-                      {registration.email}
+                      {registration.mobile && <span>{registration.mobile}</span>}
+                      {registration.mobile && registration.email && <span> • </span>}
+                      {registration.email && <span>{registration.email}</span>}
                     </div>
                   )}
                 </div>
@@ -224,10 +226,10 @@ const CheckInFree_AttendeeList = () => {
                   {/* User Details */}
                   <div className="text-xs sm:text-sm text-gray-600 mb-2">
                     <span className="font-medium text-gray-700">{registration.user?.name || registration.userId?.name || 'Former User'}</span>
-                    {registration.user?.phone && (
+                    {registration.mobile && (
                       <>
                         <span className="mx-1">•</span>
-                        <span>{registration.user.phone}</span>
+                        <span>{registration.mobile}</span>
                       </>
                     )}
                     {registration.email && (

@@ -149,10 +149,10 @@ const CheckInFree_EventSelector = () => {
             ) : (
               filteredEvents.map((event) => {
                 const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
-                // Always use concise format that works on all screens
+                // Format: EventCode - Title - Date - Time
                 return (
                   <option key={event._id} value={event._id}>
-                    {event.title} • {eventDateTime.date}
+                    {event.eventCode} - {event.title} - {eventDateTime.date} - {eventDateTime.time}
                   </option>
                 );
               })
