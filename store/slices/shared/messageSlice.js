@@ -45,11 +45,11 @@ export const fetchMessages = createAsyncThunk(
 // 3) Send a new message
 export const sendMessage = createAsyncThunk(
   'messages/sendMessage',
-  async ({ resourceId, resourceType, participantId, message, createdAt }, { rejectWithValue }) => {
+  async ({ resourceId, resourceType, participantId, message, createdAt, replyTo }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
         `${BASE_URL}/send`,
-        { resourceId, resourceType, participantId, message, createdAt }, // ✅ include createdAt
+        { resourceId, resourceType, participantId, message, createdAt, replyTo }, // ✅ include createdAt and replyTo
         { withCredentials: true }
       );
       return response.data.data;
@@ -80,6 +80,23 @@ export const deleteConversation = createAsyncThunk(
   }
 );
 
+// 5) Delete a single message
+export const deleteMessage = createAsyncThunk(
+  'messages/deleteMessage',
+  async (messageId, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${BASE_URL}/message/${messageId}`, {
+        withCredentials: true,
+      });
+      return { messageId };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to delete message'
+      );
+    }
+  }
+);
+
 
 /* -------------------------------- Slice -------------------------------- */
 
@@ -98,6 +115,7 @@ const messageSlice = createSlice({
     deleteConversationStatus: 'idle',
     unreadExists: false,
     inActiveChat: false,
+    replyingTo: null,     // For reply feature
   },
   reducers: {
     setActiveConversation(state, { payload }) {
@@ -120,6 +138,7 @@ const messageSlice = createSlice({
     },
 
     addNewMessage(state, { payload }) {
+      // Just add the message as is - canDelete should be set by the component
       state.activeConversation.messages.push(payload);
     },
     markMessageAsRead(state, { payload }) {
@@ -161,6 +180,22 @@ const messageSlice = createSlice({
       });
       
       state.unreadExists = hasUnread;
+    },
+    // Reply feature reducers
+    setReplyingTo(state, action) {
+      state.replyingTo = action.payload;
+    },
+    clearReplyingTo(state) {
+      state.replyingTo = null;
+    },
+    // Handle message deletion
+    markMessageAsDeleted(state, { payload }) {
+      const message = state.activeConversation.messages.find((msg) => msg._id === payload.messageId);
+      if (message) {
+        message.deletedAt = new Date().toISOString();
+        message.isDeleted = true;
+        message.message = '[Message deleted]';
+      }
     }
   },
   extraReducers: (builder) => {
@@ -225,6 +260,26 @@ const messageSlice = createSlice({
       .addCase(deleteConversation.rejected, (state, { payload }) => {
         state.deleteConversationStatus = 'failed'; // ✅ Failed here
         state.error = payload;
+      })
+      // Delete message handlers
+      .addCase(deleteMessage.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(deleteMessage.fulfilled, (state, { payload }) => {
+        const message = state.activeConversation.messages.find(
+          (msg) => msg._id === payload.messageId
+        );
+        if (message) {
+          message.deletedAt = new Date().toISOString();
+          message.isDeleted = true;
+          message.message = '[Message deleted]';
+          message.canDelete = false;
+        }
+        state.status = 'success';
+      })
+      .addCase(deleteMessage.rejected, (state, { payload }) => {
+        state.status = 'failed';
+        state.error = payload;
       });
 
   },
@@ -238,6 +293,9 @@ export const {
   setUnreadExists,
   setInActiveChat,
   recalculateUnreadStatus,
+  setReplyingTo,
+  clearReplyingTo,
+  markMessageAsDeleted,
 } = messageSlice.actions;
 
 export default messageSlice.reducer;

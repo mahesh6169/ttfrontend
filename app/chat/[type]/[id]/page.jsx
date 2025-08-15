@@ -11,12 +11,17 @@ import {
   setUnreadExists,
   setInActiveChat, // Import the new action
   recalculateUnreadStatus,
+  deleteMessage,
+  setReplyingTo,
+  clearReplyingTo,
+  markMessageAsDeleted,
 } from '@/store/slices/shared/messageSlice';
 import socket from '@/config/socket';
 import { useSearchParams, useParams } from 'next/navigation';
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
 import { RiArrowGoBackFill } from "react-icons/ri";
+import { FaReply, FaTrash, FaTimes } from "react-icons/fa";
 import Link from 'next/link';
 
 const ChatPage = () => {
@@ -28,13 +33,14 @@ const ChatPage = () => {
   const dispatch = useDispatch();
   const { tokenValidated, user } = useSelector((state) => state.user);
   const currentUserId = user?._id;
-  const { activeConversation, status, error } = useSelector((state) => state.messages);
+  const { activeConversation, status, error, replyingTo } = useSelector((state) => state.messages);
   const [newMessage, setNewMessage] = useState('');
   const [socketConnected, setSocketConnected] = useState(socket.connected);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const messageInputRef = useRef(null);
 
   const { resource, participants } = activeConversation || {};
   const { owner, participant } = participants || {};
@@ -94,25 +100,33 @@ useEffect(() => {
     setShowJumpToBottom(!atBottom && scrollHeight > clientHeight);
   };
 
-  // Handle scroll events
+  // Handle scroll events with debouncing for Chrome
+  const scrollTimeoutRef = useRef(null);
   const handleScroll = () => {
-    checkIfAtBottom();
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    scrollTimeoutRef.current = setTimeout(() => {
+      checkIfAtBottom();
+    }, 50);
   };
 
   // Scroll to bottom on new messages (only if user is already at bottom)
   useEffect(() => {
-    // Always scroll for own messages
-    const lastMessage = activeConversation?.messages?.[activeConversation.messages.length - 1];
-    const isMyMessage = lastMessage && (
-      (lastMessage.senderRole === 'owner' && lastMessage.owner === currentUserId) ||
-      (lastMessage.senderRole === 'participant' && lastMessage.participant === currentUserId)
-    );
+    if (activeConversation?.messages?.length > 0) {
+      const lastMessage = activeConversation.messages[activeConversation.messages.length - 1];
+      const isMyMessage = lastMessage && lastMessage.senderRole === myRole;
 
-    if (isAtBottom || isMyMessage) {
-      // Use immediate scroll for own messages, smooth for others
-      setTimeout(() => scrollToBottom(!isMyMessage), 50);
+      if (isAtBottom || isMyMessage) {
+        // Simple scroll without complex logic
+        requestAnimationFrame(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        });
+      }
     }
-  }, [activeConversation?.messages, currentUserId, isAtBottom]);
+  }, [activeConversation?.messages?.length, myRole, isAtBottom]);
 
   // Initial scroll to bottom
   useEffect(() => {
@@ -143,13 +157,24 @@ useEffect(() => {
     const handleNewMessage = (msg) => {
       // Recipient only: check for duplicates before adding
       if (!activeConversation?.messages?.some((m) => m._id === msg._id)) {
-        dispatch(addNewMessage(msg));
+        // For received messages, canDelete should be false
+        const messageWithPermissions = {
+          ...msg,
+          canDelete: false,
+          isDeleted: msg.isDeleted || false
+        };
+        dispatch(addNewMessage(messageWithPermissions));
       }
     };
 
     const handleMessageSent = (msg) => {
-      // Sender only: add directly
-      dispatch(addNewMessage(msg));
+      // Sender only: add directly with canDelete true
+      const messageWithPermissions = {
+        ...msg,
+        canDelete: true,
+        isDeleted: false
+      };
+      dispatch(addNewMessage(messageWithPermissions));
     };
   
     socket.on('newMessage', handleNewMessage);
@@ -169,6 +194,19 @@ useEffect(() => {
     socket.on('messageRead', handler);
     return () => socket.off('messageRead', handler);
   }, [dispatch]);
+
+  // Handle message deletion from socket
+  useEffect(() => {
+    const handleMessageDeleted = ({ messageId, resourceType: msgResourceType, resourceId: msgResourceId }) => {
+      // Only handle if it's for the current conversation (compare as strings)
+      if (msgResourceType === resourceType && String(msgResourceId) === String(resourceId)) {
+        console.log('Message deleted event received:', messageId);
+        dispatch(markMessageAsDeleted({ messageId }));
+      }
+    };
+    socket.on('messageDeleted', handleMessageDeleted);
+    return () => socket.off('messageDeleted', handleMessageDeleted);
+  }, [dispatch, resourceType, resourceId]);
 
 
   // Monitor socket connection status
@@ -245,12 +283,34 @@ useEffect(() => {
       participantId: otherUserId,
       message: newMessage,
       createdAt: utcNow.toISOString(),
+      replyTo: replyingTo?._id || null,
     }));
     setNewMessage('');
+    dispatch(clearReplyingTo());
     
     // Ensure we're at bottom after sending
     setIsAtBottom(true);
     setShowJumpToBottom(false);
+  };
+
+  const handleReply = (message) => {
+    dispatch(setReplyingTo(message));
+    // Auto-focus the input field
+    setTimeout(() => {
+      if (messageInputRef.current) {
+        messageInputRef.current.focus();
+      }
+    }, 50);
+  };
+
+  const handleCancelReply = () => {
+    dispatch(clearReplyingTo());
+  };
+
+  const handleDeleteMessage = (messageId) => {
+    if (window.confirm('Are you sure you want to delete this message?')) {
+      dispatch(deleteMessage(messageId));
+    }
   };
 
   if (!tokenValidated) return <div className="text-center mt-8">Validating session...</div>;
@@ -387,19 +447,56 @@ useEffect(() => {
                     ),
                     <div
                       key={msg._id}
-                      className={`flex ${alignment} w-full mb-3 px-3`}
+                      id={`message-${msg._id}`}
+                      className={`flex ${alignment} w-full mb-3 px-3 group`}
                     >
-                      <div
-                        className={`max-w-[70%] px-4 py-2 rounded-lg shadow-sm ${bubbleColor}`}
-                      >
-                        <div className="text-xs mb-1 opacity-75">
-                          <span className="font-semibold">{senderName}</span>
-                          <span className="mx-1">•</span>
-                          <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                      <div className="flex flex-col items-end">
+                        <div
+                          className={`max-w-[70%] px-4 py-2 rounded-lg shadow-sm ${bubbleColor} relative`}
+                        >
+                          {/* Reply indicator */}
+                          {msg.replyTo && (
+                            <div className={`text-xs mb-2 p-2 rounded ${isMyMessage ? 'bg-green-700' : 'bg-gray-100'} border-l-4 ${isMyMessage ? 'border-green-400' : 'border-gray-400'}`}>
+                              <p className="font-semibold opacity-75">
+                                Replying to {msg.replyTo.senderRole === myRole ? 'You' : senderName}
+                              </p>
+                              <p className="opacity-75 italic truncate">
+                                {msg.replyTo.message}
+                              </p>
+                            </div>
+                          )}
+                          
+                          <div className="text-xs mb-1 opacity-75">
+                            <span className="font-semibold">{senderName}</span>
+                            <span className="mx-1">•</span>
+                            <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                          </div>
+                          <p className="text-sm break-words whitespace-pre-wrap">{msg.message}</p>
+                          {String(msg.readBy) === String(otherUserId) && isMyMessage && !msg.isDeleted && (
+                            <div className="text-xs text-right mt-1 opacity-75">✓ Read</div>
+                          )}
                         </div>
-                        <p className="text-sm break-words whitespace-pre-wrap">{msg.message}</p>
-                        {String(msg.readBy) === String(otherUserId) && isMyMessage && (
-                          <div className="text-xs text-right mt-1 opacity-75">✓ Read</div>
+                        
+                        {/* Action buttons */}
+                        {!msg.isDeleted && (
+                          <div className={`flex gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${isMyMessage ? 'flex-row-reverse' : ''}`}>
+                            <button
+                              onClick={() => handleReply(msg)}
+                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                              title="Reply"
+                            >
+                              <FaReply size={12} />
+                            </button>
+                            {msg.canDelete && (
+                              <button
+                                onClick={() => handleDeleteMessage(msg._id)}
+                                className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+                                title="Delete"
+                              >
+                                <FaTrash size={12} />
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>,
@@ -416,8 +513,30 @@ useEffect(() => {
           
           {/* Message Input Box at the Bottom */}
           <div className="border-t bg-white p-3">
+            {/* Reply indicator */}
+            {replyingTo && (
+              <div className="mb-2 p-2 bg-gray-100 rounded-lg flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-gray-700">
+                    Replying to {replyingTo.senderRole === myRole ? 'yourself' : 
+                      (replyingTo.senderRole === 'owner' ? owner?.name : participant?.name)}
+                  </p>
+                  <p className="text-xs text-gray-600 truncate">
+                    {replyingTo.message.substring(0, 80)}...
+                  </p>
+                </div>
+                <button
+                  onClick={handleCancelReply}
+                  className="ml-2 text-gray-500 hover:text-gray-700"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            )}
+            
             <div className="flex items-center gap-2">
               <textarea
+                ref={messageInputRef}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={(e) => {
