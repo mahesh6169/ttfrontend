@@ -84,63 +84,86 @@ const [pendingDelete, setPendingDelete] = useState(null);
       <ul className="space-y-4">
         {conversations.map((conv) => {
            if (!conv.otherUser) return null;
+           
+           // Determine if the current user needs to respond
+           const isOwner = user._id === conv.ownerId;
+           const myRole = isOwner ? 'owner' : 'participant';
+           const needsResponse = conv.lastMessage.senderRole !== myRole;
+           
            return (
 <li
   key={`${conv.resourceId}-${conv.otherUser.id}`}
-  className="px-3 py-2 border rounded-md shadow-sm hover:bg-lime-50 w-full cursor-pointer"
+  className={`px-3 py-3 border rounded-md shadow-sm w-full cursor-pointer transition-colors ${
+    needsResponse 
+      ? 'bg-amber-50 border-amber-300 hover:bg-amber-100' 
+      : 'hover:bg-lime-50'
+  }`}
   onClick={() =>
     router.push(
       `/chat/${conv.resourceType}/${conv.resourceId}?otherUser=${conv.otherUser.id}`
     )
   }
 >
-  <div className="flex flex-col gap-1 sm:gap-2">
-    {/* Row 1 */}
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-      <div className="flex items-center gap-2 min-w-0">
-        <img
-          src={conv.image || '/default.jpg'}
-          alt={conv.title}
-          className="w-10 h-10 rounded-md object-cover shrink-0"
-        />
-        <h2 className="text-xs sm:text-sm font-medium">
+  <div className="flex flex-col gap-3">
+    {/* Row 1: Image and Title/Date */}
+    <div className="flex gap-3">
+      {/* Image - spans height of title + date/time */}
+      <img
+        src={conv.image || '/default.jpg'}
+        alt={conv.title}
+        className="w-12 h-12 sm:w-14 sm:h-14 rounded-md object-cover shrink-0"
+      />
+      
+      {/* Title and Date/Time container */}
+      <div className="flex-1 min-w-0">
+        {/* Title */}
+        <h2 className="text-xs sm:text-sm font-medium text-gray-800 truncate">
           {conv.eventCode ? `${conv.eventCode} - ${conv.title}` : conv.title}
         </h2>
+        
+        {/* Date/Time */}
+        {conv.dateTime ? (
+          <div className="text-xs text-gray-500 mt-1">
+            {new Date(conv.dateTime).toLocaleDateString('en-US', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            })}
+            {' at '}
+            {new Date(conv.dateTime).toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            })}
+            {conv.timeZone && ` (${conv.timeZone})`}
+          </div>
+        ) : (
+          <div className="text-xs text-gray-400 mt-1">No date/time available</div>
+        )}
       </div>
-
-      <p className="text-xs sm:text-sm font-medium text-teal-700 sm:text-start">
-        Chat with {conv.otherUser.name}
-      </p>
     </div>
 
-    {/* Date/Time for events */}
-    {conv.dateTime && (
-      <div className="text-xs text-gray-500 pl-0 sm:pl-[3rem]">
-        {new Date(conv.dateTime).toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        })}
-        {' at '}
-        {new Date(conv.dateTime).toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        })}
-        {conv.timeZone && ` (${conv.timeZone})`}
-      </div>
-    )}
-
-    {/* Last Message */}
-    <div className="pl-0 sm:pl-[3rem] mt-1">
-      <p className="text-xs text-gray-600 truncate w-[90%]">
+    {/* Row 2: Message Preview */}
+    <div className="w-full">
+      <p className="text-xs text-gray-600 truncate">
         {conv.lastMessage.text}
       </p>
     </div>
 
-    {/* Delete Button */}
-    <div className="flex justify-end">
+    {/* Row 3: Chat with user and Delete button */}
+    <div className="flex justify-between items-center">
+      <div className="flex items-center gap-2">
+        <p className="text-xs sm:text-sm text-teal-700">
+          Chat with {conv.otherUser.name}
+        </p>
+        {needsResponse && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+            Awaiting reply
+          </span>
+        )}
+      </div>
+      
       <button
         onClick={(e) => {
           e.stopPropagation(); // 🛑 Prevent click from triggering parent
@@ -150,7 +173,7 @@ const [pendingDelete, setPendingDelete] = useState(null);
             conv.resourceType
           );
         }}
-        className="mt-1 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+        className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
       >
         Delete
       </button>
