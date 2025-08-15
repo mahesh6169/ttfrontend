@@ -260,176 +260,196 @@ useEffect(() => {
   if (!resource) return <div className="text-center text-gray-500">No conversation found.</div>;
 
   return (
-    <div className="mt-4 px-2 sm:px-4 h-[calc(100vh-8rem)]">
-       <div className="max-w-2xl w-full mx-auto h-full flex flex-col">
-      <div className="mb-2">
-        <span
+    <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
+      {/* Navigation Bar */}
+      <div className="mt-4 flex justify-between items-center">
+        {/* Back Button */}
+        <button
           onClick={() => router.back()}
-          className="inline-flex items-center gap-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 px-3 py-1.5 rounded-tr-xl rounded-bl-xl shadow-lg text-sm sm:text-base font-medium cursor-pointer"
+          className="flex items-center gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
         >
           <RiArrowGoBackFill className="text-xs sm:text-base" />
           <span>Back</span>
-        </span>
-      </div>
-      {/* Header */}
-      <div className="flex gap-3 mb-4">
-        {/* Image - spans height of title + date/time */}
-        <Link href={`/${resourceType}s/views/${resourceId}`}>
-          <img 
-            src={resource.image || '/default.jpg'} 
-            alt={resource.title} 
-            className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg cursor-pointer hover:opacity-80 object-cover" 
-          />
-        </Link>
+        </button>
         
-        {/* Title and Date/Time container */}
-        <div className="flex-1 min-w-0">
-          <Link href={`/${resourceType}s/views/${resourceId}`}>
-            <h1 className="text-base sm:text-xl font-bold cursor-pointer hover:text-blue-600 truncate">
-              {resource.eventCode ? `${resource.eventCode} - ${resource.title}` : resource.title}
-            </h1>
-          </Link>
-          
-          {/* Date/Time - only show for events */}
-          {resource.dateTime && (
-            <div className="text-xs sm:text-sm text-gray-500 mt-1">
-              {new Date(resource.dateTime).toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-              {' at '}
-              {new Date(resource.dateTime).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              })}
-              {resource.timeZone && ` (${resource.timeZone})`}
+        {/* View Resource Link */}
+        <Link
+          href={`/${resourceType}s/views/${resourceId}`}
+          className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+        >
+          <span>View {resourceType === 'event' ? 'Event' : 'Advert'} Details</span>
+        </Link>
+      </div>
+      
+      <div className="border rounded shadow-md mt-4 w-full">
+        {/* Header Section */}
+        <div className="border-b border-gray-300 bg-gray-50 p-4">
+          <div className="flex gap-3">
+            {/* Image - spans height of title + date/time */}
+            <Link href={`/${resourceType}s/views/${resourceId}`}>
+              <img 
+                src={resource.image || '/default.jpg'} 
+                alt={resource.title} 
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg cursor-pointer hover:opacity-80 object-cover shadow-sm" 
+              />
+            </Link>
+            
+            {/* Title and Date/Time container */}
+            <div className="flex-1 min-w-0">
+              <Link href={`/${resourceType}s/views/${resourceId}`}>
+                <h1 className="text-lg sm:text-xl font-bold cursor-pointer hover:text-blue-600 text-gray-800">
+                  {resource.eventCode ? `${resource.eventCode} - ${resource.title}` : resource.title}
+                </h1>
+              </Link>
+              
+              {/* Date/Time - only show for events */}
+              {resource.dateTime && (
+                <div className="text-sm text-gray-600 mt-1">
+                  {new Date(resource.dateTime).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                  {' at '}
+                  {new Date(resource.dateTime).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  })}
+                  {resource.timeZone && ` (${resource.timeZone})`}
+                </div>
+              )}
+              
+              {/* Chat participants */}
+              <div className="text-xs text-gray-500 mt-2">
+                Chat between <span className="font-medium">{owner?.name || 'Unknown'}</span> and <span className="font-medium">{participant?.name || 'Unknown'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Message Area */}
+        <div className="rounded my-6 bg-white shadow flex flex-col" style={{ maxHeight: '70vh' }}>
+          {/* Jump to Bottom Button */}
+          {showJumpToBottom && (
+            <div className="relative">
+              <div className="absolute top-4 right-4 z-10">
+                <button
+                  onClick={() => {
+                    scrollToBottom(true);
+                    setIsAtBottom(true);
+                    setShowJumpToBottom(false);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 text-teal-700 rounded-full shadow-lg hover:bg-yellow-500 transition-all transform hover:scale-105 text-sm"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  Jump to latest
+                </button>
+              </div>
             </div>
           )}
+          
+          {/* Messages List */}
+          <div 
+            ref={messagesContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto pr-1 border-t border-b"
+          >
+            {activeConversation.messages.length > 0 ? (
+              <>
+                {activeConversation.messages.reduce((acc, msg, index) => {
+                  const prevMsg = activeConversation.messages[index - 1];
+                  const msgDate = new Date(msg.createdAt);
+                  const prevMsgDate = prevMsg ? new Date(prevMsg.createdAt) : null;
+                  const showDateSeparator = !prevMsg || !isSameDay(msgDate, prevMsgDate);
+
+                  const isMyMessage = msg.senderRole === myRole;
+                  const alignment = isMyMessage ? 'justify-end' : 'justify-start';
+                  const bubbleColor = isMyMessage
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white text-gray-900 border border-gray-200';
+
+                  const senderName = isMyMessage
+                    ? myRole === 'owner' ? owner?.name : participant?.name
+                    : msg.senderRole === 'owner' ? owner?.name : participant?.name;
+
+                  return [
+                    ...acc,
+                    showDateSeparator && (
+                      <div key={`date-${msg._id}`} className="flex justify-center my-3 w-full">
+                        <span className="bg-gray-200 text-gray-700 text-xs py-1 px-3 rounded-full">
+                          {msgDate.toLocaleDateString()}
+                        </span>
+                      </div>
+                    ),
+                    <div
+                      key={msg._id}
+                      className={`flex ${alignment} w-full mb-3 px-3`}
+                    >
+                      <div
+                        className={`max-w-[70%] px-4 py-2 rounded-lg shadow-sm ${bubbleColor}`}
+                      >
+                        <div className="text-xs mb-1 opacity-75">
+                          <span className="font-semibold">{senderName}</span>
+                          <span className="mx-1">•</span>
+                          <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                        </div>
+                        <p className="text-sm break-words whitespace-pre-wrap">{msg.message}</p>
+                        {String(msg.readBy) === String(otherUserId) && isMyMessage && (
+                          <div className="text-xs text-right mt-1 opacity-75">✓ Read</div>
+                        )}
+                      </div>
+                    </div>,
+                  ];
+                }, [])}
+                <div ref={messagesEndRef} />
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-center p-8">
+                <p className="text-sm text-gray-500">No messages yet. Start the conversation!</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Message Input Box at the Bottom */}
+          <div className="border-t bg-white p-3">
+            <div className="flex items-center gap-2">
+              <textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder="Type your message..."
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+                rows={1}
+                style={{
+                  minHeight: '36px',
+                  height: 'auto',
+                  maxHeight: '100px',
+                }}
+                onInput={(e) => {
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
+                }}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim()}
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                Send
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Jump to Bottom Button */}
-      {showJumpToBottom && (
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10">
-          <button
-            onClick={() => {
-              scrollToBottom(true);
-              setIsAtBottom(true);
-              setShowJumpToBottom(false);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-teal-700 rounded-full shadow-lg hover:bg-yellow-500 transition-all transform hover:scale-105"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-            Jump to latest
-          </button>
-        </div>
-      )}
-
-      {/* Messages Container */}
-<div 
-  ref={messagesContainerRef}
-  onScroll={handleScroll}
-  className="relative flex-1 border rounded-xl overflow-y-auto bg-gray-50 shadow-inner px-2 py-3 mb-3 flex flex-col gap-2"
->
-  {activeConversation.messages.length > 0 ? (
-    <>
-      {activeConversation.messages.reduce((acc, msg, index) => {
-        const prevMsg = activeConversation.messages[index - 1];
-        const msgDate = new Date(msg.createdAt);
-        const prevMsgDate = prevMsg ? new Date(prevMsg.createdAt) : null;
-        const showDateSeparator = !prevMsg || !isSameDay(msgDate, prevMsgDate);
-
-        const isMyMessage = msg.senderRole === myRole;
-        const alignment = isMyMessage ? 'justify-end' : 'justify-start';
-        const bubbleColor = isMyMessage
-          ? 'bg-green-600 text-white'
-          : 'bg-white text-gray-900 border border-gray-200';
-
-        const senderName = isMyMessage
-          ? myRole === 'owner' ? owner?.name : participant?.name
-          : msg.senderRole === 'owner' ? owner?.name : participant?.name;
-
-        return [
-          ...acc,
-          showDateSeparator && (
-            <div key={`date-${msg._id}`} className="flex justify-center my-2 w-full">
-              <span className="bg-gray-300/80 text-gray-700 text-xs py-1 px-3 rounded-full shadow-sm">
-                {msgDate.toLocaleDateString()}
-              </span>
-            </div>
-          ),
-          <div
-            key={msg._id}
-            className={`flex ${alignment} w-full`}
-          >
-            <div
-              className={`max-w-[80%] sm:max-w-[60%] px-4 py-2 rounded-2xl shadow ${bubbleColor} break-words whitespace-pre-wrap transition-all duration-150`}
-            >
-              <div className="flex items-center gap-x-2 text-xs mb-1 opacity-80">
-  <span className="font-semibold">{senderName}</span>
-  {/* Optional dot divider */}
-  <span className="text-gray-300 text-lg leading-none select-none">•</span>
-  <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-</div>
-
-              <p className="text-base">{msg.message}</p>
-              {String(msg.readBy) === String(otherUserId) && (
-                <div className="text-xs text-green-300 text-right mt-1">(read)</div>
-              )}
-            </div>
-          </div>,
-        ];
-      }, [])}
-      <div ref={messagesEndRef} />
-    </>
-  ) : (
-    <div className="flex-1 flex items-center justify-center text-center text-gray-400 text-sm">
-      No messages yet. Start the conversation!
-    </div>
-  )}
-</div>
-
-      {/* Message Input Bar - Now at the bottom */}
-<div className="flex items-end gap-2 p-3 border rounded-xl shadow bg-white">
-  {/* Auto-growing Textarea */}
-  <textarea
-    value={newMessage}
-    onChange={(e) => setNewMessage(e.target.value)}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSendMessage();
-      }
-    }}
-    placeholder="Type your message..."
-    rows={1}
-    className="flex-1 min-h-[2.5rem] max-h-32 resize-none border-none outline-none p-3 rounded-lg bg-gray-50 text-base focus:bg-white focus:ring-2 focus:ring-yellow-400 transition"
-    style={{ height: 'auto' }}
-    onInput={e => {
-      e.target.style.height = 'auto';
-      e.target.style.height = `${e.target.scrollHeight}px`;
-    }}
-  />
-
-  {/* Send Button */}
-  <button
-    onClick={handleSendMessage}
-    disabled={!newMessage.trim()}
-    className="flex items-center gap-1 px-4 py-2 bg-yellow-400 text-teal-700 rounded-xl font-semibold shadow hover:bg-teal-700 hover:text-lime-100 transition-colors duration-150 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
-    aria-label="Send message"
-    type="button"
-  >
-    Send
-    {/* Optionally add a send icon here, e.g. <FiSend className="ml-1" /> */}
-  </button>
-</div>
-
-    </div>
     </div>
   );
 };
