@@ -1,6 +1,6 @@
 // components/events/addevents/EventDetailsStep.jsx - Mobile Optimized
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { 
   updateField, 
@@ -39,6 +39,7 @@ const EventDetailsStep = ({
   readOnly = false 
 }) => {
   const dispatch = useDispatch();
+  const [endDateError, setEndDateError] = useState('');
   const isEditMode = mode === 'edit';
   const isViewMode = mode === 'view';
   const isAddMode = mode === 'add';
@@ -100,6 +101,27 @@ const EventDetailsStep = ({
 
   const handleRecurrenceEndDateChange = (e) => {
     if (disabled) return;
+    
+    // Validate 6-month limit (we're already in free events section)
+    if (formData.dateTime && e.target.value) {
+      const startDate = new Date(formData.dateTime);
+      const selectedDate = new Date(e.target.value);
+      const maxDate = new Date(startDate);
+      maxDate.setMonth(maxDate.getMonth() + 6);
+      
+      if (selectedDate > maxDate) {
+        // Set error message and use max date
+        setEndDateError('Free recurring events are limited to 6 months. Date has been adjusted to the maximum allowed.');
+        dispatch(setRecurrenceEndDate(maxDate.toISOString().split('T')[0]));
+        
+        // Clear error after 5 seconds
+        setTimeout(() => setEndDateError(''), 5000);
+        return;
+      }
+    }
+    
+    // Clear any existing error
+    setEndDateError('');
     dispatch(setRecurrenceEndDate(e.target.value || null));
   };
 
@@ -511,7 +533,7 @@ const EventDetailsStep = ({
             {/* End Date */}
             <div className="space-y-2">
               <label className="block text-sm font-medium">
-                End Date (Optional)
+                End Date <span className="text-red-500">*</span>
               </label>
               {isEditMode && (
                 <p className="text-xs text-gray-500">
@@ -523,16 +545,34 @@ const EventDetailsStep = ({
                 value={formData.recurrence?.endDate ? new Date(formData.recurrence.endDate).toISOString().split('T')[0] : ''}
                 onChange={handleRecurrenceEndDateChange}
                 min={formData.dateTime ? new Date(formData.dateTime).toISOString().split('T')[0] : ''}
+                max={(() => {
+                  if (!formData.dateTime) return '';
+                  const startDate = new Date(formData.dateTime);
+                  const maxDate = new Date(startDate);
+                  maxDate.setMonth(maxDate.getMonth() + 6);
+                  return maxDate.toISOString().split('T')[0];
+                })()}
                 disabled={disabled}
                 className={getFieldClasses('recurrenceEndDate')}
+                required={formData.recurrence?.isRecurring}
               />
+              {endDateError && (
+                <p className="text-amber-600 text-xs sm:text-sm animate-pulse">
+                  ⚠️ {endDateError}
+                </p>
+              )}
+              {errors?.recurrenceEndDate && (
+                <p className="text-red-500 text-xs sm:text-sm">
+                  {Array.isArray(errors.recurrenceEndDate) ? errors.recurrenceEndDate[0] : errors.recurrenceEndDate}
+                </p>
+              )}
               <p className="text-xs text-gray-500">
                 {isViewMode 
                   ? (formData.recurrence?.endDate 
                       ? 'This recurring series ends on the specified date'
                       : 'This recurring series has no end date'
                     )
-                  : 'If left empty, recurring events will be created for one year from the start date. Set an end date to limit the series duration.'
+                  : 'Required. Maximum 6 months from start date.'
                 }
               </p>
             </div>
