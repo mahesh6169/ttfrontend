@@ -121,8 +121,8 @@ const [pendingDelete, setPendingDelete] = useState(null);
           {conv.eventCode ? `${conv.eventCode} - ${conv.title}` : conv.title}
         </h2>
         
-        {/* Date/Time */}
-        {conv.dateTime ? (
+        {/* Date/Time - only show for events */}
+        {conv.dateTime && (
           <div className="text-xs text-gray-500 mt-1">
             {new Date(conv.dateTime).toLocaleDateString('en-US', {
               weekday: 'short',
@@ -138,8 +138,6 @@ const [pendingDelete, setPendingDelete] = useState(null);
             })}
             {conv.timeZone && ` (${conv.timeZone})`}
           </div>
-        ) : (
-          <div className="text-xs text-gray-400 mt-1">No date/time available</div>
         )}
       </div>
     </div>
