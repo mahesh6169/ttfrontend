@@ -397,13 +397,18 @@ const EventDetailsStep = ({
             id="isRecurring"
             checked={formData.recurrence?.isRecurring || false}
             onChange={handleRecurringToggle}
-            disabled={disabled}
+            disabled={disabled || isEditMode}
             className="w-5 h-5 mt-0.5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 disabled:opacity-50"
           />
           <div className="flex-1">
-            <label htmlFor="isRecurring" className="block text-sm font-medium text-gray-900">
+            <label htmlFor="isRecurring" className={`block text-sm font-medium ${isEditMode ? 'text-gray-500' : 'text-gray-900'}`}>
               Make this a recurring event
             </label>
+            {isEditMode && !formData.recurrence?.isRecurring && (
+              <p className="text-xs text-gray-500 mt-1">
+                Event type cannot be changed after creation
+              </p>
+            )}
             {isEditMode && formData.recurrence?.isRecurring && (
               <p className="text-xs text-amber-600 mt-1">
                 ⚠️ Changes to recurring settings will affect all future instances

@@ -128,7 +128,7 @@ const ManageEventsPage = () => {
   // Render
   return (
     <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Manage Event Renewals</h1>
+      <h1 className="text-xl font-bold mb-4">Event Deletion Management</h1>
 
       {loading && <LoadingSpinner />}
       
