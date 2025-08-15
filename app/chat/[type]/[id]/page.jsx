@@ -272,13 +272,43 @@ useEffect(() => {
         </span>
       </div>
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex gap-3 mb-4">
+        {/* Image - spans height of title + date/time */}
         <Link href={`/${resourceType}s/views/${resourceId}`}>
-          <img src={resource.image || '/default.jpg'} alt={resource.title} className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg cursor-pointer hover:opacity-80" />
+          <img 
+            src={resource.image || '/default.jpg'} 
+            alt={resource.title} 
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg cursor-pointer hover:opacity-80 object-cover" 
+          />
         </Link>
-        <Link href={`/${resourceType}s/views/${resourceId}`}>
-          <h1 className="text-lg sm:text-2xl font-bold cursor-pointer hover:text-blue-600">{resource.title}</h1>
-        </Link>
+        
+        {/* Title and Date/Time container */}
+        <div className="flex-1 min-w-0">
+          <Link href={`/${resourceType}s/views/${resourceId}`}>
+            <h1 className="text-base sm:text-xl font-bold cursor-pointer hover:text-blue-600 truncate">
+              {resource.eventCode ? `${resource.eventCode} - ${resource.title}` : resource.title}
+            </h1>
+          </Link>
+          
+          {/* Date/Time - only show for events */}
+          {resource.dateTime && (
+            <div className="text-xs sm:text-sm text-gray-500 mt-1">
+              {new Date(resource.dateTime).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+              {' at '}
+              {new Date(resource.dateTime).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              })}
+              {resource.timeZone && ` (${resource.timeZone})`}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Jump to Bottom Button */}
