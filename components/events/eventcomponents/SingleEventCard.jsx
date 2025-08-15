@@ -388,7 +388,7 @@ const SingleEventCard = ({ event, chatProps }) => {
           </div>
           <div className="p-3 relative">
             <div 
-              className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto h-[300px] sm:h-[400px] pr-2"
+              className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
             >
               {event.description.split('\n').map((para, idx) => (
                 para.trim() && <p key={idx} className="leading-relaxed">{para}</p>

@@ -103,7 +103,9 @@ const [pendingDelete, setPendingDelete] = useState(null);
           alt={conv.title}
           className="w-10 h-10 rounded-md object-cover shrink-0"
         />
-        <h2 className="text-xs sm:text-sm font-medium">{conv.title}</h2>
+        <h2 className="text-xs sm:text-sm font-medium">
+          {conv.eventCode ? `${conv.eventCode} - ${conv.title}` : conv.title}
+        </h2>
       </div>
 
       <p className="text-xs sm:text-sm font-medium text-teal-700 sm:text-start">
@@ -111,8 +113,27 @@ const [pendingDelete, setPendingDelete] = useState(null);
       </p>
     </div>
 
-    {/* Row 2 */}
-    <div className="pl-0 sm:pl-[3rem]">
+    {/* Date/Time for events */}
+    {conv.dateTime && (
+      <div className="text-xs text-gray-500 pl-0 sm:pl-[3rem]">
+        {new Date(conv.dateTime).toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })}
+        {' at '}
+        {new Date(conv.dateTime).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        })}
+        {conv.timeZone && ` (${conv.timeZone})`}
+      </div>
+    )}
+
+    {/* Last Message */}
+    <div className="pl-0 sm:pl-[3rem] mt-1">
       <p className="text-xs text-gray-600 truncate w-[90%]">
         {conv.lastMessage.text}
       </p>
