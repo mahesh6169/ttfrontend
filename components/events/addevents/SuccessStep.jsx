@@ -138,11 +138,6 @@ console.log('🔍 SuccessStep Debug:', {
 
   return (
     <div className="text-center max-w-4xl mx-auto">
-      {/* Success Icon */}
-      <div className={`mb-8 inline-flex items-center justify-center w-24 h-24 rounded-full ${getColorClasses('bg')} shadow-lg`}>
-        <span className="text-4xl">{config.icon}</span>
-      </div>
-      
       {/* Success Message */}
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">

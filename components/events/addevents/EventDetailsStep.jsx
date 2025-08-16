@@ -188,7 +188,7 @@ const EventDetailsStep = ({
 
   // Enhanced mobile-first field styling with proper touch targets
   const getFieldClasses = (fieldName) => {
-    const baseClasses = 'w-full px-3 py-3 sm:py-2 border rounded-lg transition-colors text-base sm:text-sm';
+    const baseClasses = 'w-full px-3 py-2.5 sm:py-2 border rounded-lg transition-colors text-sm';
     const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50' : 'border-gray-300';
     const readOnlyClasses = disabled 
       ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
@@ -199,7 +199,7 @@ const EventDetailsStep = ({
 
   // Mobile-optimized select styling
   const getSelectClasses = (fieldName) => {
-    const baseClasses = 'w-full px-3 py-3 sm:py-2 border rounded-lg transition-colors text-base sm:text-sm appearance-none bg-white';
+    const baseClasses = 'w-full px-3 py-2.5 sm:py-2 border rounded-lg transition-colors text-sm appearance-none bg-white';
     const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50' : 'border-gray-300';
     const readOnlyClasses = disabled 
       ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
@@ -208,33 +208,6 @@ const EventDetailsStep = ({
     return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
   };
 
-  // Mode-specific help text
-  const getHelpText = (field) => {
-    const helpTexts = {
-      title: {
-        add: 'Choose a clear, descriptive title that tells people what your event is about',
-        edit: 'Update the event title if needed',
-        view: 'Event title as it appears to attendees'
-      },
-      dateTime: {
-        add: 'When will your event take place?',
-        edit: 'You can update the event date and time',
-        view: 'Scheduled date and time for this event'
-      },
-      venue: {
-        add: 'Where will your event be held? Include the venue name',
-        edit: 'Update the venue information if it has changed',
-        view: 'Event venue location'
-      },
-      description: {
-        add: 'Provide detailed information about what attendees can expect',
-        edit: 'Update the event description with any new information',
-        view: 'Event description and details'
-      }
-    };
-    
-    return helpTexts[field]?.[mode] || helpTexts[field]?.add || '';
-  };
 
   return (
     <div className="space-y-4 sm:space-y-6 px-0 sm:px-0">
@@ -264,14 +237,9 @@ const EventDetailsStep = ({
       
       {/* Title - Enhanced for mobile */}
       <div className="space-y-2">
-        <label className="block font-semibold text-sm sm:text-base">
+        <label className="block font-semibold text-sm">
           Event Title <span className="text-red-500">*</span>
         </label>
-        {isEditMode && (
-          <p className="text-xs sm:text-sm text-gray-500">
-            This will update how your event appears to attendees
-          </p>
-        )}
         <input
           type="text"
           name="title"
@@ -287,21 +255,13 @@ const EventDetailsStep = ({
             {Array.isArray(errors.title) ? errors.title[0] : errors.title}
           </p>
         )}
-        <p className="text-xs text-gray-500">
-          {getHelpText('title')}
-        </p>
       </div>
 
       {/* Category - Enhanced dropdown for mobile */}
       <div className="space-y-2">
-        <label className="block font-semibold text-sm sm:text-base">
+        <label className="block font-semibold text-sm">
           Category <span className="text-red-500">*</span>
         </label>
-        {isEditMode && (
-          <p className="text-xs sm:text-sm text-gray-500">
-            Helps people find your event
-          </p>
-        )}
         {disabled ? (
           <input
             type="text"
@@ -323,11 +283,6 @@ const EventDetailsStep = ({
             {Array.isArray(errors.category) ? errors.category[0] : errors.category}
           </p>
         )}
-        {!disabled && (
-          <p className="text-xs text-gray-500">
-            Choose the category that best describes your event
-          </p>
-        )}
       </div>
 
       {/* Community/Language Selection */}
@@ -344,14 +299,9 @@ const EventDetailsStep = ({
 
       {/* Time Zone - Mobile optimized */}
       <div className="space-y-2">
-        <label className="block font-semibold text-sm sm:text-base">
+        <label className="block font-semibold text-sm">
           Event Time Zone <span className="text-red-500">*</span>
         </label>
-        {isEditMode && (
-          <p className="text-xs sm:text-sm text-gray-500">
-            Changing this will affect how times are displayed
-          </p>
-        )}
         {disabled ? (
           <input
             type="text"
@@ -373,24 +323,13 @@ const EventDetailsStep = ({
             {Array.isArray(errors.timeZone) ? errors.timeZone[0] : errors.timeZone}
           </p>
         )}
-        <p className="text-xs text-gray-500">
-          {isViewMode 
-            ? 'Time zone for this event'
-            : 'Select the timezone where your event will take place'
-          }
-        </p>
       </div>
 
       {/* Date & Time - Enhanced mobile experience */}
       <div className="space-y-2">
-        <label className="block font-semibold text-sm sm:text-base">
+        <label className="block font-semibold text-sm">
           Date & Time <span className="text-red-500">*</span>
         </label>
-        {isEditMode && (
-          <p className="text-xs sm:text-sm text-gray-500">
-            Attendees will be notified of any changes
-          </p>
-        )}
         <input
           type="datetime-local"
           name="dateTime"
@@ -405,9 +344,6 @@ const EventDetailsStep = ({
             {Array.isArray(errors.dateTime) ? errors.dateTime[0] : errors.dateTime}
           </p>
         )}
-        <div className="text-xs text-gray-500 space-y-1">
-          <p>{getHelpText('dateTime')}</p>
-        </div>
       </div>
 
       {/* Recurring Event Section - Mobile optimized collapsible - Only show for free events */}
@@ -591,14 +527,9 @@ const EventDetailsStep = ({
 
       {/* Venue - Enhanced for mobile */}
       <div className="space-y-2">
-        <label className="block font-semibold text-sm sm:text-base">
+        <label className="block font-semibold text-sm">
           Venue <span className="text-red-500">*</span>
         </label>
-        {isEditMode && (
-          <p className="text-xs sm:text-sm text-gray-500">
-            Venue changes will be communicated to attendees
-          </p>
-        )}
         <input
           type="text"
           name="venue"
@@ -614,9 +545,6 @@ const EventDetailsStep = ({
             {Array.isArray(errors.venue) ? errors.venue[0] : errors.venue}
           </p>
         )}
-        <p className="text-xs text-gray-500">
-          {getHelpText('venue')}
-        </p>
       </div>
 
       {/* Address - Mobile optimized */}
@@ -645,14 +573,9 @@ const EventDetailsStep = ({
 
       {/* Description - Enhanced textarea for mobile */}
       <div className="space-y-2">
-        <label className="block font-semibold text-sm sm:text-base">
+        <label className="block font-semibold text-sm">
           Description <span className="text-red-500">*</span>
         </label>
-        {isEditMode && (
-          <p className="text-xs sm:text-sm text-gray-500">
-            Updates will be visible to all attendees
-          </p>
-        )}
         <textarea
           name="description"
           value={formData.description || ''}
@@ -665,13 +588,9 @@ const EventDetailsStep = ({
         />
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1">
-            {errors?.description ? (
+            {errors?.description && (
               <p className="text-red-500 text-xs sm:text-sm">
                 {Array.isArray(errors.description) ? errors.description[0] : errors.description}
-              </p>
-            ) : (
-              <p className="text-gray-500 text-xs">
-                {getHelpText('description')}
               </p>
             )}
           </div>

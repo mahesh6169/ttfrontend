@@ -1301,24 +1301,6 @@ const handleAddAnother = useCallback(() => {
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <RequireVerifiedAccount message="You must be logged in to manage events.">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-teal-700">
-            {customTitle ||
-              (isEditingMode
-                ? 'Edit Event'
-                : isViewMode
-                ? 'View Event'
-                : 'Add New Event')}
-          </h1>
-          <p className="text-gray-600">
-            {customDescription ||
-              (isEditingMode
-                ? 'Update your event details below'
-                : isViewMode
-                ? 'Event details (read-only)'
-                : 'Fill in the details to create your event')}
-          </p>
-        </div>
 
         {/* Step Indicator */}
         <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
@@ -1399,7 +1381,7 @@ const handleAddAnother = useCallback(() => {
     type="button"
     onClick={handleNext}
     disabled={isLoading}
-    className={`px-6 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+    className={`px-3 sm:px-6 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm sm:text-base ${
       isLoading
         ? 'bg-gray-400 cursor-not-allowed text-white'
         : 'bg-teal-600 hover:bg-teal-700 text-white'
@@ -1438,7 +1420,7 @@ const handleAddAnother = useCallback(() => {
     type="button"
     onClick={handleSubmit}
     disabled={isLoading}
-    className={`px-6 py-2 ${
+    className={`px-3 sm:px-6 py-2 text-sm sm:text-base ${
       isLoading
         ? 'bg-gray-400 cursor-not-allowed'
         : 'bg-teal-600 hover:bg-teal-700'

@@ -163,9 +163,7 @@ const ImageUploader = ({
             onChange={handleFileChange}
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
           />
-          <p className="text-xs text-gray-500 mt-1">
-            You can select multiple images at once (max {maxImages - images.length} more)
-          </p>
+         
         </div>
       )}
 

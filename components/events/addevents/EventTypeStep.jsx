@@ -143,7 +143,7 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
       <div className="flex flex-col gap-6">
         {/* Free Event Option */}
         <div
-          className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+          className={`p-3 sm:p-6 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
             !formData.isPaid
               ? 'border-teal-600 bg-teal-50 shadow-md'
               : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
@@ -165,42 +165,37 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
               </div>
             </div>
             <div className="ml-4 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold">Free Event</h3>
-                <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                  Registration Only
-                </span>
-              </div>
-              <p className="text-gray-600 mt-2">
+              <h3 className="text-base sm:text-lg font-semibold">Free Event</h3>
+              <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">
                 Create a free event with simple registration. Perfect for community gatherings,
                 meetups, networking events, and informal gatherings.
               </p>
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div className="flex items-center text-sm text-gray-600">
+              <div className="mt-2 sm:mt-4 grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-2">
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
                   <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                   Simple attendee registration
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
                   <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                   Manage event capacity
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
                   <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                   Track and manage attendees
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
                   <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                   Custom registration fields
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
                   <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
@@ -214,7 +209,7 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
         
         {/* Paid Event Option */}
         <div
-          className={`p-6 border-2 rounded-lg transition-all duration-200 ${
+          className={`p-3 sm:p-6 border-2 rounded-lg transition-all duration-200 ${
             formData.isPaid
               ? 'border-teal-600 bg-teal-50 shadow-md'
               : isRecurringEvent || !isStripeFullyActive
@@ -238,55 +233,49 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
               </div>
             </div>
             <div className="ml-4 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold">Paid Event</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <h3 className="text-base sm:text-lg font-semibold">Paid Event</h3>
                 
                 {/* Status badges */}
                 {isRecurringEvent && (
-                  <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">
+                  <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full inline-block">
                     Not Available for Recurring Events
                   </span>
                 )}
                 
                 {/* Status badges with consistent styling */}
                 {!isRecurringEvent && !isStripeFullyActive && (
-                  <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded-full">
+                  <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded-full inline-block">
                     Payment Setup Required
-                  </span>
-                )}
-
-                {!isRecurringEvent && isStripeFullyActive && (
-                  <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                    ✓ Payment Setup Completed
                   </span>
                 )}
               </div>
               
-              <p className="text-gray-600 mt-2">
+              <p className="text-sm sm:text-base text-gray-600 mt-2">
                 Sell tickets for your event with multiple pricing tiers and optional seating
                 arrangements. Ideal for concerts, workshops, conferences, and premium events.
               </p>
               
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div className="flex items-center text-sm text-gray-600">
+              <div className="mt-2 sm:mt-4 grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-2">
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
                   <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                   Multiple ticket types & pricing
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
                   <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                   Optional seating arrangements
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
                   <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                   Secure payment processing
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
                   <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
@@ -298,16 +287,12 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
         </div>
       </div>
 
-      {/* Minimal Setup Section - button and purpose only */}
-      {!isRecurringEvent && (
-        <div className="p-4 border border-gray-200 rounded-lg">
+      {/* Minimal Setup Section - only show when setup is needed */}
+      {!isRecurringEvent && !isStripeFullyActive && (
+        <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
           <button
             onClick={handleStripeSetup}
-            className={`w-full px-4 py-2 rounded transition-colors flex items-center justify-center gap-2 ${
-              isStripeFullyActive
-                ? 'bg-green-600 text-white hover:bg-green-700'
-                : 'bg-orange-600 text-white hover:bg-orange-700'
-            }`}
+            className="w-full px-4 py-2 bg-orange-600 text-white hover:bg-orange-700 rounded transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>

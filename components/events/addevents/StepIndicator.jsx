@@ -203,25 +203,9 @@ const isStepComplete = (stepNumber) => {
       {/* Header with mode-specific information */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">{config.icon}</span>
-            <h3 className="text-lg font-medium text-gray-900">
-              {config.title}
-            </h3>
-          </div>
           
           {/* Mode and Status Indicators */}
           <div className="flex items-center space-x-2">
-            {/* Event Type Badge */}
-            {formData?.isPaid !== undefined && (
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                formData.isPaid 
-                  ? 'bg-blue-100 text-blue-800' 
-                  : 'bg-green-100 text-green-800'
-              }`}>
-                {formData.isPaid ? 'Paid Event' : 'Free Event'}
-              </span>
-            )}
             
             {/* Recurring Event Badge */}
             {isRecurringEvent && (
@@ -260,11 +244,6 @@ const isStepComplete = (stepNumber) => {
           <div className="text-sm text-gray-500">
             Step {currentStep} of {actualTotalSteps}
           </div>
-          {mode !== 'view' && (
-            <div className="text-xs text-gray-400">
-              {getCompletionPercentage()}% Complete
-            </div>
-          )}
         </div>
       </div>
 

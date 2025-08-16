@@ -119,11 +119,6 @@ const AddressInput = ({
       <label className="block font-semibold text-sm sm:text-base">
         Event Address <span className="text-red-500">*</span>
       </label>
-      {mode === 'edit' && (
-        <p className="text-xs sm:text-sm text-gray-500">
-          Address changes will be communicated to attendees
-        </p>
-      )}
       <LoadScriptNext
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
         libraries={libraries}
@@ -152,13 +147,6 @@ const AddressInput = ({
         </p>
       )}
       
-      {/* Help Text */}
-      <p className="text-xs text-gray-500">
-        {mode === 'view' 
-          ? 'Event location address'
-          : 'Enter the full address where your event will take place'
-        }
-      </p>
     </div>
   );
 };

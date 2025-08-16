@@ -21,8 +21,6 @@ const AddEventPage = () => {
       mode="add"
       onComplete={handleEventCreated}
       allowCancel={true}
-      customTitle="Add New Event"
-      customDescription="Fill in the details to create your event"
     />
   );
 };

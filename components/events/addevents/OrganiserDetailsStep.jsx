@@ -117,10 +117,10 @@ const getFieldClasses = (fieldName) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
           {/* Organizer Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
               Organizer Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -136,21 +136,18 @@ const getFieldClasses = (fieldName) => {
     {Array.isArray(errors.organizer) ? errors.organizer[0] : errors.organizer}
   </p>
 )}
-            <p className="mt-1 text-xs text-gray-500">
-              This can be your personal name or your organization name
-            </p>
           </div>
 
           {/* Website */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
               Website
             </label>
             <input
               type="url"
               value={formData.organizer?.website || ''}
               onChange={(e) => handleOrganizerChange('website', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
+              className="w-full p-2.5 sm:p-3 text-sm border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
               placeholder="https://yourwebsite.com"
               maxLength="200"
             />
@@ -158,7 +155,7 @@ const getFieldClasses = (fieldName) => {
 
           {/* Contact */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
               Contact Number <span className="text-red-500">*</span>
             </label>
            <input
@@ -178,14 +175,14 @@ const getFieldClasses = (fieldName) => {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
               Contact Email
             </label>
             <input
               type="email"
               value={formData.organizer?.email || ''}
               onChange={(e) => handleOrganizerChange('email', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
+              className="w-full p-2.5 sm:p-3 text-sm border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
               placeholder="contact@example.com"
               maxLength="100"
             />
@@ -194,14 +191,14 @@ const getFieldClasses = (fieldName) => {
           {/* ABN - Only for paid events */}
           {isPaidEvent && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
                 ABN (Australian Business Number)
               </label>
               <input
                 type="text"
                 value={formData.organizer?.abn || ''}
                 onChange={(e) => handleOrganizerChange('abn', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
+                className="w-full p-2.5 sm:p-3 text-sm border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
                 placeholder="XX XXX XXX XXX"
                 maxLength="14"
               />
@@ -296,27 +293,25 @@ const getFieldClasses = (fieldName) => {
         </div>
       </div>
 
-{/* Event Coordinators Section */}
-<div className="bg-white border-0 sm:border sm:border-gray-200 rounded-lg p-1 sm:p-6 mb-6">
-  <h2 className="text-xl font-semibold mb-2">
-    Event Coordinators
-    <span className="text-sm font-normal text-gray-500 ml-2">(optional)</span>
-  </h2>
-  <p className="text-gray-600 text-sm mb-4">
-    Add coordinators who will be helping to manage this event.
-    Coordinators are optional but recommended for larger events.
-    {isRecurringEvent && (
-      <span className="block mt-1 text-blue-600 font-medium">
-        These coordinators will be responsible for all instances of your recurring event.
-      </span>
-    )}
-  </p>
-
-  {/* You can add coordinator input fields below here */}
-</div>
 
 
       
+
+      {/* Event Coordinators Section */}
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-2">
+          Event Coordinators
+          <span className="text-sm font-normal text-gray-500 ml-2">(optional)</span>
+        </h2>
+        <p className="text-gray-600 text-sm mb-4">
+          Add coordinators who will help manage this event. Recommended for larger events.
+          {isRecurringEvent && (
+            <span className="block mt-1 text-blue-600 font-medium">
+              These coordinators will be responsible for all instances of your recurring event.
+            </span>
+          )}
+        </p>
+      </div>
 
       {/* Coordinators List */}
       <div className="space-y-4">
@@ -378,10 +373,10 @@ const getFieldClasses = (fieldName) => {
             </div>
 
             {/* Form Fields */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               {/* Name */}
               <div className="lg:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
                   Full Name
                 </label>
                 <input
@@ -399,7 +394,7 @@ const getFieldClasses = (fieldName) => {
                   maxLength="100"
                 />
                 {getFieldError(index, 'name') && (
-                  <p className="mt-1 text-red-500 text-sm">
+                  <p className="mt-1 text-red-500 text-xs sm:text-sm">
                     {getFieldError(index, 'name')}
                   </p>
                 )}
@@ -407,7 +402,7 @@ const getFieldClasses = (fieldName) => {
 
               {/* Role */}
               <div className="lg:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
                   Role/Responsibility
                 </label>
                 <input
@@ -416,18 +411,15 @@ const getFieldClasses = (fieldName) => {
                   onChange={(e) =>
                     handleUpdateCoordinator(index, 'role', e.target.value)
                   }
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
+                  className="w-full p-2.5 sm:p-3 text-sm border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
                   placeholder="e.g., Event Manager, Registration Coordinator, Volunteer Lead"
                   maxLength="100"
                 />
-                <p className="mt-1 text-xs text-gray-500">
-                  What will this coordinator be responsible for?
-                </p>
               </div>
 
               {/* Phone */}
               <div className="lg:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
                   Phone Number <span className="text-red-500" title="Required if name is provided">*</span>
                 </label>
                 <input
@@ -446,25 +438,22 @@ const getFieldClasses = (fieldName) => {
                   maxLength="20"
                 />
                 {getFieldError(index, 'phone') && (
-                  <p className="mt-1 text-red-500 text-sm">
+                  <p className="mt-1 text-red-500 text-xs sm:text-sm">
                     {getFieldError(index, 'phone')}
                   </p>
                 )}
                 {coordinator?.phone &&
                   !isValidPhone(coordinator.phone) &&
                   !getFieldError(index, 'phone') && (
-                    <p className="mt-1 text-red-500 text-sm">
+                    <p className="mt-1 text-red-500 text-xs sm:text-sm">
                       Please enter a valid phone number
                     </p>
                   )}
-                <p className="mt-1 text-xs text-gray-500">
-                  Primary contact number for this coordinator
-                </p>
               </div>
 
               {/* Email */}
               <div className="lg:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
                   Email Address
                 </label>
                 <input
@@ -483,20 +472,17 @@ const getFieldClasses = (fieldName) => {
                   maxLength="100"
                 />
                 {getFieldError(index, 'email') && (
-                  <p className="mt-1 text-red-500 text-sm">
+                  <p className="mt-1 text-red-500 text-xs sm:text-sm">
                     {getFieldError(index, 'email')}
                   </p>
                 )}
                 {coordinator?.email &&
                   !isValidEmail(coordinator.email) &&
                   !getFieldError(index, 'email') && (
-                    <p className="mt-1 text-red-500 text-sm">
+                    <p className="mt-1 text-red-500 text-xs sm:text-sm">
                       Please enter a valid email address
                     </p>
                   )}
-                <p className="mt-1 text-xs text-gray-500">
-                  Optional - for event notifications and updates
-                </p>
               </div>
             </div>
 

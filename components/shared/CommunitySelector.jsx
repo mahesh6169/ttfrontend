@@ -27,7 +27,7 @@ const CommunitySelector = ({
       )}
       
       {showHint && (
-        <p className="text-sm text-gray-600 mb-2">
+        <p className="text-xs text-gray-600 mb-2">
           Your advert is listed for everyone by default. Select one or more communities/languages so it appears when users filter by them.
         </p>
       )}
@@ -55,7 +55,7 @@ const CommunitySelector = ({
       </div>
       
       {showHint && (
-        <p className="text-sm text-gray-600 mt-2">
+        <p className="text-xs text-gray-600 mt-2">
           Don't see your community/language listed? <a href="/support/contact" className="text-blue-600 hover:text-blue-800 underline">Request it here</a>.
         </p>
       )}
