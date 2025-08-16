@@ -53,6 +53,7 @@ const ThreadChatPage = () => {
   const [newMessage, setNewMessage] = useState('');
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const lastMessageCountRef = useRef(0);
@@ -84,6 +85,20 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       dispatch(fetchThreads());
     }
   }, [dispatch, threadId, thread._id]);
+
+  // Click outside handler for delete confirmation
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (deleteConfirmId && !e.target.closest('.delete-popover')) {
+        setDeleteConfirmId(null);
+      }
+    };
+
+    if (deleteConfirmId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [deleteConfirmId]);
 
   // Fetch messages & join socket room
   useEffect(() => {
@@ -272,9 +287,16 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   };
 
   const handleDeleteMessage = (messageId) => {
-    if (window.confirm('Are you sure you want to delete this message?')) {
-      dispatch(deleteThreadMessage({ threadId, messageId }));
-    }
+    setDeleteConfirmId(messageId);
+  };
+
+  const confirmDelete = (messageId) => {
+    dispatch(deleteThreadMessage({ threadId, messageId }));
+    setDeleteConfirmId(null);
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmId(null);
   };
 
   const handleToggleMute = () => {
@@ -306,7 +328,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   );
 
   const usefulAnswers = sortedMessages
-    .filter((msg) => msg.likes - msg.dislikes > 0)
+    .filter((msg) => !msg.deletedAt && msg.likes - msg.dislikes > 0)
     .slice(0, 3);
 
     if ((threadStatus === 'idle' || threadStatus === 'loading') && !thread._id) {
@@ -677,27 +699,31 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               )}
 
               <div className="flex items-center space-x-3 mt-2 text-xs">
-                <button
-                  onClick={() => handleLike(msg._id)}
-                  className={`flex items-center space-x-1 ${
-                    currentUser && isRightSide
-                      ? 'hover:text-yellow-300'
-                      : 'hover:text-blue-600'
-                  }`}
-                >
-                  👍 <span>{msg.likes || 0}</span>
-                </button>
+                {!msg.deletedAt && (
+                  <>
+                    <button
+                      onClick={() => handleLike(msg._id)}
+                      className={`flex items-center space-x-1 ${
+                        currentUser && isRightSide
+                          ? 'hover:text-yellow-300'
+                          : 'hover:text-blue-600'
+                      }`}
+                    >
+                      👍 <span>{msg.likes || 0}</span>
+                    </button>
 
-                <button
-                  onClick={() => handleUnlike(msg._id)}
-                  className={`flex items-center space-x-1 ${
-                    currentUser && isRightSide
-                      ? 'hover:text-red-300'
-                      : 'hover:text-red-600'
-                  }`}
-                >
-                  👎 <span>{msg.dislikes || 0}</span>
-                </button>
+                    <button
+                      onClick={() => handleUnlike(msg._id)}
+                      className={`flex items-center space-x-1 ${
+                        currentUser && isRightSide
+                          ? 'hover:text-red-300'
+                          : 'hover:text-red-600'
+                      }`}
+                    >
+                      👎 <span>{msg.dislikes || 0}</span>
+                    </button>
+                  </>
+                )}
 
                 {currentUser && !msg.deletedAt && (
                   <button
@@ -714,17 +740,54 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 )}
 
                 {currentUser && msg.sender?._id === currentUser._id && !msg.deletedAt && (
-                  <button
-                    onClick={() => handleDeleteMessage(msg._id)}
-                    className={`${
-                      isRightSide
-                        ? 'hover:text-red-300'
-                        : 'hover:text-red-600'
-                    }`}
-                    title="Delete"
-                  >
-                    <MdDelete size={16} />
-                  </button>
+                  <div className="relative inline-block">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteMessage(msg._id);
+                      }}
+                      className={`${
+                        isRightSide
+                          ? 'hover:text-red-300'
+                          : 'hover:text-red-600'
+                      }`}
+                      title="Delete"
+                    >
+                      <MdDelete size={16} />
+                    </button>
+                    
+                    {deleteConfirmId === msg._id && (
+                      <div className="delete-popover absolute bottom-full right-0 mb-2 z-50">
+                        <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3 text-sm">
+                          <div className="flex flex-col gap-2">
+                            <p className="text-gray-700 dark:text-gray-300 whitespace-nowrap">Delete message?</p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  confirmDelete(msg._id);
+                                }}
+                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs font-medium"
+                              >
+                                Yes
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  cancelDelete();
+                                }}
+                                className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-medium"
+                              >
+                                No
+                              </button>
+                            </div>
+                          </div>
+                          {/* Arrow pointing down */}
+                          <div className="absolute -bottom-2 right-2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white dark:border-t-gray-800"></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
