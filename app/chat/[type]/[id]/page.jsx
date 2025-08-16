@@ -478,13 +478,18 @@ useEffect(() => {
                           {msg.replyTo && (
                             <div 
                               onClick={() => {
-                                const replyElement = document.getElementById(`message-${msg.replyTo._id}`);
+                                // Handle both cases: replyTo as object or just ID
+                                const replyId = typeof msg.replyTo === 'object' ? msg.replyTo._id : msg.replyTo;
+                                const replyElement = document.getElementById(`message-${replyId}`);
                                 if (replyElement) {
                                   replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                   replyElement.classList.add('bg-yellow-200');
                                   setTimeout(() => {
                                     replyElement.classList.remove('bg-yellow-200');
                                   }, 1500);
+                                } else {
+                                  // Message not found in current view
+                                  console.log('Reply message not found in current messages');
                                 }
                               }}
                               className={`mb-2 p-2 rounded cursor-pointer transition-all ${
@@ -493,12 +498,20 @@ useEffect(() => {
                                   : 'bg-gray-200 hover:bg-gray-300 border-l-4 border-gray-400'
                               }`}
                             >
-                              <p className="text-xs font-semibold opacity-80">
-                                ↩ {msg.replyTo.senderRole === myRole ? 'You' : senderName}
-                              </p>
-                              <p className="text-xs opacity-70 truncate">
-                                {msg.replyTo.deletedAt ? '[This message was deleted]' : msg.replyTo.message ? `${msg.replyTo.message.substring(0, 50)}...` : '[Message unavailable]'}
-                              </p>
+                              {typeof msg.replyTo === 'object' && msg.replyTo.senderRole ? (
+                                <>
+                                  <p className="text-xs font-semibold opacity-80">
+                                    ↩ {msg.replyTo.senderRole === myRole ? 'You' : 
+                                       msg.replyTo.senderRole === 'owner' ? owner?.name : participant?.name}
+                                  </p>
+                                  <p className="text-xs opacity-70 truncate">
+                                    {msg.replyTo.deletedAt ? '[This message was deleted]' : 
+                                     msg.replyTo.message ? `${msg.replyTo.message.substring(0, 50)}...` : '[Message unavailable]'}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-xs opacity-70 italic">Click to view replied message</p>
+                              )}
                             </div>
                           )}
                           
