@@ -837,17 +837,6 @@ const TicketConfigStep = ({ formData = {}, errors = {} }) => {
 
   return (
     <div className="space-y-6">
-      {/* Dynamic Header - Only show for paid events */}
-      {formData.isPaid && (
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Paid Event Configuration
-          </h2>
-          <p className="text-gray-600">
-            Set up ticket pricing, seating, and payment processing for your event
-          </p>
-        </div>
-      )}
 
       {/* Conditional Content Based on Event Type */}
       {formData.isPaid ? (
