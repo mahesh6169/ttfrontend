@@ -25,9 +25,9 @@ import {
 import threadSocket from '@/config/threadSocket';
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaReply } from 'react-icons/fa';
 import { FaTimes } from 'react-icons/fa';
-import { MdNotificationsActive, MdNotificationsOff } from "react-icons/md";
+import { MdNotificationsActive, MdNotificationsOff, MdDelete } from "react-icons/md";
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
@@ -702,26 +702,28 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 {currentUser && !msg.deletedAt && (
                   <button
                     onClick={() => handleReply(msg)}
-                    className={`flex items-center space-x-1 ${
+                    className={`${
                       currentUser && isRightSide
                         ? 'hover:text-lime-300'
                         : 'hover:text-teal-600'
                     }`}
+                    title="Reply"
                   >
-                    ↩ Reply
+                    <FaReply size={14} />
                   </button>
                 )}
 
                 {currentUser && msg.sender?._id === currentUser._id && !msg.deletedAt && (
                   <button
                     onClick={() => handleDeleteMessage(msg._id)}
-                    className={`flex items-center space-x-1 ${
+                    className={`${
                       isRightSide
                         ? 'hover:text-red-300'
                         : 'hover:text-red-600'
                     }`}
+                    title="Delete"
                   >
-                    🗑️ Delete
+                    <MdDelete size={16} />
                   </button>
                 )}
               </div>
