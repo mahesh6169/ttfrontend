@@ -277,6 +277,13 @@ const threadSlice = createSlice({
                 const message = state.messages[threadId].find(msg => msg._id === messageId);
                 if (message) {
                     message.deletedAt = new Date().toISOString();
+                    
+                    // Update all reply previews that reference this deleted message
+                    state.messages[threadId].forEach((msg) => {
+                        if (msg.replyTo && msg.replyTo._id === messageId) {
+                            msg.replyTo.deletedAt = new Date().toISOString();
+                        }
+                    });
                 }
             }
         },
@@ -372,6 +379,13 @@ const threadSlice = createSlice({
                     const message = state.messages[threadId].find(msg => msg._id === messageId);
                     if (message) {
                         message.deletedAt = deletedAt;
+                        
+                        // Update all reply previews that reference this deleted message
+                        state.messages[threadId].forEach((msg) => {
+                            if (msg.replyTo && msg.replyTo._id === messageId) {
+                                msg.replyTo.deletedAt = deletedAt;
+                            }
+                        });
                     }
                 }
             })
