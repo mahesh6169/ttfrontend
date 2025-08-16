@@ -45,6 +45,24 @@ const EventDetailsStep = ({
   const isAddMode = mode === 'add';
   const disabled = readOnly || isViewMode;
 
+  // Check if this is a recurring event
+  const isRecurringEvent = formData.recurrence?.isRecurring || false;
+
+  // Calculate recurring event details for display
+  const getRecurringScheduleText = () => {
+    if (!isRecurringEvent || !formData.recurrence?.repeatSchedule?.length) {
+      return '';
+    }
+    
+    const schedules = formData.recurrence.repeatSchedule;
+    if (schedules.length === 1) {
+      return `Every ${schedules[0].day} at ${schedules[0].time}`;
+    } else {
+      const days = schedules.map(s => s.day).join(', ');
+      return `Multiple times per week (${days})`;
+    }
+  };
+
   // Mode-specific configurations
   const modeConfig = {
     add: {
@@ -211,29 +229,32 @@ const EventDetailsStep = ({
 
   return (
     <div className="space-y-4 sm:space-y-6 px-0 sm:px-0">
-      {/* Mobile-optimized header with better spacing */}
-      <div className="border-b border-gray-200 pb-3 sm:pb-4">
-        <h2 className="text-lg sm:text-xl font-semibold mb-2 flex flex-col sm:flex-row sm:items-center">
-          <span>{config.title}</span>
-          <div className="flex gap-2 mt-1 sm:mt-0 sm:ml-2">
-            {isEditMode && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Editing
-              </span>
-            )}
-            {isViewMode && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                View Only
-              </span>
-            )}
+      {/* Recurring Event Info Banner */}
+      {isRecurringEvent && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">Recurring Event Detected</h3>
+              <div className="mt-1 text-sm text-blue-700">
+                <p>
+                  This is a recurring event: <strong>{getRecurringScheduleText()}</strong>
+                  {formData.recurrence?.endDate && (
+                    <span> until {new Date(formData.recurrence.endDate).toLocaleDateString()}</span>
+                  )}
+                </p>
+                <p className="mt-1">
+                  Recurring events can only be free events. Paid tickets are not supported for recurring events.
+                </p>
+              </div>
+            </div>
           </div>
-        </h2>
-        <p className="text-gray-600 text-sm sm:text-base">{config.subtitle}</p>
-      </div>
+        </div>
+      )}
       
       {/* Title - Enhanced for mobile */}
       <div className="space-y-2">

@@ -113,32 +113,6 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
     <div className="space-y-6">
       <h2 className="text-xl font-semibold mb-4">Event Type</h2>
       
-      {/* Recurring Event Info Banner */}
-      {isRecurringEvent && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">Recurring Event Detected</h3>
-              <div className="mt-1 text-sm text-blue-700">
-                <p>
-                  This is a recurring event: <strong>{getRecurringScheduleText()}</strong>
-                  {formData.recurrence?.endDate && (
-                    <span> until {new Date(formData.recurrence.endDate).toLocaleDateString()}</span>
-                  )}
-                </p>
-                <p className="mt-1">
-                  Recurring events can only be free events. Paid tickets are not supported for recurring events.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       
       <div className="flex flex-col gap-6">
         {/* Free Event Option */}
