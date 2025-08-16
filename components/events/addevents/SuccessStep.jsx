@@ -283,7 +283,7 @@ console.log('🔍 SuccessStep Debug:', {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Seating Layout:</span>
                   <span className="font-medium">
-                    {(event.seatingLayout || []).length > 0 ? 'Configured' : 'Open seating'}
+                    {(event.seatingLayout || []).length > 0 ? 'Configured' : 'General Admission'}
                   </span>
                 </div>
                 

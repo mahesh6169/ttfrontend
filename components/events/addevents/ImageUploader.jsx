@@ -141,11 +141,6 @@ const ImageUploader = ({
     <div className={className}>
       <label className="block font-bold mb-2">
         Upload Images (Max {maxImages})
-        {mode === 'edit' && (
-          <span className="text-sm font-normal text-gray-500 ml-2">
-            (Changes will update how your event appears)
-          </span>
-        )}
         {mode === 'view' && (
           <span className="text-sm font-normal text-gray-500 ml-2">
             (View only)

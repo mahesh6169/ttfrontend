@@ -636,11 +636,6 @@ const EventDetailsStep = ({
             {Array.isArray(errors.images) ? errors.images[0] : errors.images}
           </p>
         )}
-        {isEditMode && !disabled && (
-          <p className="text-xs text-amber-600">
-            💡 Image changes will update how your event appears in listings and to attendees
-          </p>
-        )}
       </div>
 
 

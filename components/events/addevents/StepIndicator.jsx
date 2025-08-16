@@ -106,6 +106,11 @@ const StepIndicator = ({
     
   
   const handleStepClick = (stepNumber) => {
+    // Don't allow clicking on step 1 in edit mode
+    if (mode === 'edit' && stepNumber === 1) {
+      return;
+    }
+    
     // Only allow clicking if not in view mode and on completed steps or current step
     if (!readOnly && mode !== 'view' && stepNumber <= currentStep && stepNumber <= actualTotalSteps) {
       dispatch(setStep(stepNumber));
@@ -274,7 +279,7 @@ const isStepComplete = (stepNumber) => {
         <div className="flex items-center justify-between">
           {steps.map((step, index) => {
             const status = getStepStatus(step.number);
-            const isClickable = !readOnly && mode !== 'view' && step.number <= currentStep;
+            const isClickable = !readOnly && mode !== 'view' && step.number <= currentStep && !(mode === 'edit' && step.number === 1);
             
             return (
               <React.Fragment key={step.number}>
@@ -287,7 +292,7 @@ const isStepComplete = (stepNumber) => {
                 >
                   {/* Step Circle */}
                   <div className={`relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-200 ${
-                    getColorClasses(status)
+                    mode === 'edit' && step.number === 1 ? 'bg-gray-100 border-gray-300 text-gray-400' : getColorClasses(status)
                   } ${isClickable ? 'group-hover:shadow-lg' : ''}`}>
                     {status === 'completed' ? (
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

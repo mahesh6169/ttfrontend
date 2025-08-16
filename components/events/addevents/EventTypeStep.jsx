@@ -6,10 +6,13 @@ import { useRouter } from 'next/navigation';
 import { toggleIsPaid } from '@/store/slices/events/eventSlice';
 import { toast } from 'react-toastify';
 
-const EventTypeStep = ({ formData = {}, errors = {} }) => {
+const EventTypeStep = ({ formData = {}, errors = {}, mode = 'add' }) => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { user } = useSelector((state) => state.user);
+
+  // Check if we're in edit mode
+  const isEditMode = mode === 'edit';
 
   // Check if this is a recurring event
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
@@ -110,9 +113,17 @@ const EventTypeStep = ({ formData = {}, errors = {} }) => {
   const setupInfo = getStripeSetupInfo();
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isEditMode ? 'opacity-50 pointer-events-none' : ''}`}>
       <h2 className="text-xl font-semibold mb-4">Event Type</h2>
       
+      {/* Notice when in edit mode */}
+      {isEditMode && (
+        <div className="mb-4 p-3 bg-gray-100 rounded-lg border border-gray-300">
+          <p className="text-sm text-gray-600 font-medium">
+            Event type cannot be changed after creation
+          </p>
+        </div>
+      )}
       
       <div className="flex flex-col gap-6">
         {/* Free Event Option */}
