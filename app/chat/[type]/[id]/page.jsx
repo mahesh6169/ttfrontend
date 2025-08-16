@@ -21,7 +21,8 @@ import { useSearchParams, useParams } from 'next/navigation';
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
 import { RiArrowGoBackFill } from "react-icons/ri";
-import { FaTimes } from "react-icons/fa";
+import { FaTimes, FaReply } from "react-icons/fa";
+import { MdDelete, MdOutlineRemoveRedEye } from "react-icons/md";
 import Link from 'next/link';
 
 const ChatPage = () => {
@@ -522,38 +523,47 @@ useEffect(() => {
                             <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                           </div>
                           <p className="text-sm break-words whitespace-pre-wrap">{msg.message}</p>
-                          {String(msg.readBy) === String(otherUserId) && isMyMessage && !msg.isDeleted && (
-                            <div className="text-xs text-right mt-1 opacity-75">✓ Read</div>
-                          )}
                           
-                          {/* Action buttons */}
-                          {!msg.isDeleted && (
-                            <div className="flex items-center space-x-3 mt-2 text-xs">
-                              <button
-                                onClick={() => handleReply(msg)}
-                                className={`flex items-center space-x-1 ${
-                                  isMyMessage
-                                    ? 'hover:text-lime-300'
-                                    : 'hover:text-teal-600'
-                                }`}
-                              >
-                                ↩ Reply
-                              </button>
-                              
-                              {msg.canDelete && (
+                          {/* Action buttons and read indicator on same line */}
+                          <div className="flex items-center justify-between mt-2">
+                            {/* Action buttons */}
+                            {!msg.isDeleted && (
+                              <div className="flex items-center space-x-3">
                                 <button
-                                  onClick={() => handleDeleteMessage(msg._id)}
-                                  className={`flex items-center space-x-1 ${
+                                  onClick={() => handleReply(msg)}
+                                  className={`${
                                     isMyMessage
-                                      ? 'hover:text-red-300'
-                                      : 'hover:text-red-600'
+                                      ? 'hover:text-lime-300'
+                                      : 'hover:text-teal-600'
                                   }`}
+                                  title="Reply"
                                 >
-                                  Delete
+                                  <FaReply size={14} />
                                 </button>
-                              )}
-                            </div>
-                          )}
+                                
+                                {msg.canDelete && (
+                                  <button
+                                    onClick={() => handleDeleteMessage(msg._id)}
+                                    className={`${
+                                      isMyMessage
+                                        ? 'hover:text-red-300'
+                                        : 'hover:text-red-600'
+                                    }`}
+                                    title="Delete"
+                                  >
+                                    <MdDelete size={16} />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Read indicator - show if message was read by anyone other than sender */}
+                            {msg.readBy && String(msg.readBy) !== String(currentUserId) && isMyMessage && !msg.isDeleted && (
+                              <div className="opacity-75" title="Read">
+                                <MdOutlineRemoveRedEye size={16} />
+                              </div>
+                            )}
+                          </div>
                         </div>
                     </div>,
                   ];
