@@ -410,7 +410,7 @@ useEffect(() => {
         </div>
 
         {/* Message Area */}
-        <div className="rounded my-6 bg-white shadow flex flex-col h-[500px] md:h-[600px]">
+        <div className="rounded my-6 bg-white shadow flex flex-col h-[400px] md:h-[600px]">
           {/* Jump to Bottom Button */}
           {showJumpToBottom && (
             <div className="relative">
