@@ -342,28 +342,29 @@ useEffect(() => {
   return (
     <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
       {/* Navigation Bar */}
-      <div className="mt-4 flex justify-between items-center">
+      <div className="mt-2 md:mt-4 flex justify-between items-center">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
+          className="flex items-center gap-1 md:gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-2 py-1 md:px-4 md:py-2 rounded shadow font-semibold text-xs md:text-base transition-colors"
         >
-          <RiArrowGoBackFill className="text-xs sm:text-base" />
-          <span>Back</span>
+          <RiArrowGoBackFill className="text-sm md:text-base" />
+          <span className="hidden md:inline">Back</span>
         </button>
         
         {/* View Resource Link */}
         <Link
           href={`/${resourceType}s/views/${resourceId}`}
-          className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+          className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-blue-600 hover:text-blue-800 transition-colors"
         >
-          <span>View {resourceType === 'event' ? 'Event' : 'Advert'} Details</span>
+          <span className="hidden md:inline">View {resourceType === 'event' ? 'Event' : 'Advert'} Details</span>
+          <span className="md:hidden">View Details</span>
         </Link>
       </div>
       
       <div className="border rounded shadow-md mt-4 w-full">
         {/* Header Section */}
-        <div className="border-b border-gray-300 bg-gray-50 p-4">
+        <div className="hidden md:block border-b border-gray-300 bg-gray-50 p-4">
           <div className="flex gap-3">
             {/* Image - spans height of title + date/time */}
             <Link href={`/${resourceType}s/views/${resourceId}`}>
@@ -410,7 +411,7 @@ useEffect(() => {
         </div>
 
         {/* Message Area */}
-        <div className="rounded my-6 bg-white shadow flex flex-col h-[400px] md:h-[600px]">
+        <div className="rounded my-6 bg-white shadow flex flex-col h-[500px] md:h-[600px]">
           {/* Jump to Bottom Button */}
           {showJumpToBottom && (
             <div className="relative">
