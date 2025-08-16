@@ -1,6 +1,6 @@
 // components/events/addevents/SeatingLayoutSection.jsx
 
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import {
   updateField,
   addSeatingRow,
@@ -12,11 +12,12 @@ import { FaInfoCircle } from 'react-icons/fa';
 
 const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
   const [showInstructions, setShowInstructions] = useState(false);
+  const [seatInputValues, setSeatInputValues] = useState({});
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6">
-      <div className="flex items-center mb-4">
-        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+    <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-6">
+      <div className="flex items-center mb-3">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
           <svg
             className="w-5 h-5 text-purple-600"
             fill="none"
@@ -49,23 +50,129 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
 
       {(formData.seatingLayout || []).length > 0 ? (
         <>
+          <style jsx>{`
+            .seat-layout-container::-webkit-scrollbar {
+              height: 8px;
+            }
+            .seat-layout-container::-webkit-scrollbar-track {
+              background: #f7fafc;
+              border-radius: 4px;
+            }
+            .seat-layout-container::-webkit-scrollbar-thumb {
+              background: #cbd5e0;
+              border-radius: 4px;
+            }
+            .seat-layout-container::-webkit-scrollbar-thumb:hover {
+              background: #a0aec0;
+            }
+          `}</style>
+          
+          {/* Stage indicator */}
+          <div className="text-center py-1.5 mb-2 sm:py-2 sm:mb-4 border border-gray-200 bg-gradient-to-b from-gray-100 to-gray-50 rounded-lg">
+            <div className="inline-block bg-gray-800 text-white px-4 py-1 sm:px-6 sm:py-1.5 rounded text-[10px] sm:text-xs font-semibold tracking-wider">
+              STAGE / FRONT
+            </div>
+          </div>
+
           <div className="mb-4">
-            {/* Fixed container with proper overflow handling */}
-            <div className="border border-gray-200 rounded-lg bg-gray-50">
-              <div className="p-4 space-y-3 max-h-80 overflow-y-auto">
+            {/* Seating layout container */}
+            <div className="seat-layout-container border border-gray-200 rounded-lg bg-white" style={{ scrollbarWidth: 'thin', scrollbarColor: '#CBD5E0 #F7FAFC' }}>
+              <div className="p-2 sm:p-4 space-y-2">
                 {(formData.seatingLayout || []).map((row, rowIndex) => (
-                  <div
-                    key={rowIndex}
-                    className="bg-white rounded-lg border border-gray-200 shadow-sm"
-                  >
-                    {/* Full-width container for each row */}
-                    <div className="p-4">
-                      <div className="flex items-start gap-4">
-                        {/* Row Label - Fixed Width */}
-                        <div className="flex-shrink-0 w-20">
-                          <label className="block text-xs font-medium text-gray-500 mb-2">
-                            Row
-                          </label>
+                  <div key={rowIndex} className="flex items-center">
+                    {/* Fixed controls container */}
+                    <div className="flex items-center gap-2 flex-shrink-0 pr-2">
+                      {/* Delete Button (X) */}
+                      <button
+                        type="button"
+                        onClick={() => dispatch(removeSeatingRow(rowIndex))}
+                        className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Remove row"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+
+                      {/* Seat count input box */}
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={seatInputValues[rowIndex] !== undefined ? seatInputValues[rowIndex] : (row?.seats || []).length}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          
+                          // Only allow numeric input
+                          if (value === '' || /^\d+$/.test(value)) {
+                            // Update local state
+                            setSeatInputValues(prev => ({
+                              ...prev,
+                              [rowIndex]: value
+                            }));
+                            
+                            // Update Redux if valid number
+                            if (value !== '') {
+                              const numValue = parseInt(value);
+                              if (numValue >= 1 && numValue <= 100) {
+                                dispatch(
+                                  updateSeatCount({
+                                    rowIndex,
+                                    count: numValue,
+                                  })
+                                );
+                              }
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          let finalValue = 1;
+                          
+                          if (value !== '') {
+                            const numValue = parseInt(value);
+                            if (numValue >= 1 && numValue <= 100) {
+                              finalValue = numValue;
+                            }
+                          }
+                          
+                          // Clear local state
+                          setSeatInputValues(prev => {
+                            const newState = { ...prev };
+                            delete newState[rowIndex];
+                            return newState;
+                          });
+                          
+                          // Update Redux with final value
+                          dispatch(
+                            updateSeatCount({
+                              rowIndex,
+                              count: finalValue,
+                            })
+                          );
+                        }}
+                        className="w-12 sm:w-14 p-0.5 sm:p-1 border border-gray-300 rounded text-center text-xs sm:text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      />
+
+                      {/* "seats" text */}
+                      <span className="text-xs sm:text-sm text-gray-500">seats</span>
+                    </div>
+
+                    {/* Scrollable section */}
+                    <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#CBD5E0 #F7FAFC' }}>
+                      <div className="flex items-center gap-2 min-w-fit">
+                        {/* Row label (A, B, C, etc.) */}
+                        <div className="w-6 sm:w-8 text-center font-bold text-gray-700 text-xs sm:text-sm flex-shrink-0 bg-gray-100 rounded px-1 sm:px-2 py-0.5 sm:py-1">
                           <input
                             type="text"
                             value={row?.rowLabel || ''}
@@ -77,118 +184,60 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
                                 })
                               )
                             }
-                            className="w-full p-2 border border-gray-300 rounded text-center font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                            className="w-full bg-transparent text-center font-bold focus:outline-none focus:ring-1 focus:ring-teal-500 rounded"
                             maxLength="3"
                             placeholder="A"
                           />
                         </div>
 
-                        {/* Seats Container - Flexible Width */}
-                        <div className="flex-1 min-w-0">
-                          <label className="block text-xs font-medium text-gray-500 mb-2">
-                            Seats ({(row?.seats || []).length} total)
-                          </label>
+                        {/* Seats */}
+                        {(row?.seats || []).map((seat, seatIndex) => {
+                          // Add visual separator every 10 seats
+                          const showSeparator = seatIndex > 0 && (seatIndex) % 10 === 0;
                           
-                          {/* Horizontal scrollable seats container */}
-                          <div className="overflow-x-auto border border-gray-200 rounded-md bg-gray-50 p-2">
-                            <div className="flex gap-0.5 pb-1" style={{ minWidth: 'max-content' }}>
-                              {(row?.seats || []).map((seat, seatIndex) => {
-                                // Add visual separator every 10 seats
-                                const showSeparator = seatIndex > 0 && (seatIndex) % 10 === 0;
-                                
-                                return (
-                                  <div key={seatIndex} className="flex items-center">
-                                    {showSeparator && (
-                                      <div className="w-px h-6 bg-gray-300 mx-2 flex-shrink-0"></div>
-                                    )}
-                                    <div
-                                      className="w-5 h-5 bg-teal-100 border border-teal-300 flex items-center justify-center rounded text-[10px] font-medium text-teal-700 flex-shrink-0 hover:bg-teal-200 transition-colors"
-                                      title={`Row ${row.rowLabel || 'A'}, Seat ${
-                                        seat?.seatNumber || seatIndex + 1
-                                      }`}
-                                    >
-                                      {seat?.seatNumber || seatIndex + 1}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                          
-                          {/* Seat count indicators */}
-                          {(row?.seats || []).length > 20 && (
-                            <div className="mt-1 text-xs text-gray-500 flex gap-4">
-                              <span>1-10</span>
-                              {(row?.seats || []).length > 10 && <span>11-20</span>}
-                              {(row?.seats || []).length > 20 && (
-                                <span>21-{(row?.seats || []).length}</span>
+                          return (
+                            <Fragment key={seatIndex}>
+                              {showSeparator && (
+                                <div className="w-1 sm:w-2 h-8 flex items-center justify-center">
+                                  <div className="w-px h-6 bg-gray-300"></div>
+                                </div>
                               )}
-                            </div>
-                          )}
-                        </div>
+                              <div
+                                className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-50 border-2 border-gray-300 flex items-center justify-center rounded text-xs font-semibold text-gray-700 flex-shrink-0 hover:bg-gray-100 transition-colors"
+                                title={`Row ${row.rowLabel || 'A'}, Seat ${
+                                  seat?.seatNumber || seatIndex + 1
+                                }`}
+                              >
+                                {seat?.seatNumber || seatIndex + 1}
+                              </div>
+                            </Fragment>
+                          );
+                        })}
 
-                        {/* Controls - Fixed Width */}
-                        <div className="flex-shrink-0 flex flex-col items-end gap-3">
-                          {/* Seat Count Input */}
-                          <div className="text-right">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">
-                              Count
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="100"
-                              value={(row?.seats || []).length}
-                              onChange={(e) =>
-                                dispatch(
-                                  updateSeatCount({
-                                    rowIndex,
-                                    count: Math.max(
-                                      1,
-                                      Math.min(100, parseInt(e.target.value) || 1)
-                                    ),
-                                  })
-                                )
-                              }
-                              className="w-20 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                            />
-                          </div>
-
-                          {/* Delete Button */}
-                          <button
-                            type="button"
-                            onClick={() => dispatch(removeSeatingRow(rowIndex))}
-                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors border border-transparent hover:border-red-200"
-                            title="Remove row"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
+                        {/* Right row label */}
+                        <div className="w-6 sm:w-8 text-center font-bold text-gray-700 text-xs sm:text-sm flex-shrink-0 bg-gray-100 rounded px-1 sm:px-2 py-0.5 sm:py-1 ml-2">
+                          {row?.rowLabel || 'A'}
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+              
+              {/* Scroll hint for mobile */}
+              <div className="md:hidden bg-gray-50 px-2 py-1 text-center border-t border-gray-200">
+                <div className="text-xs text-gray-500">
+                  ← Swipe to view all seats →
+                </div>
+              </div>
             </div>
 
             {/* Controls Row */}
-            <div className="flex items-center justify-between mt-4 px-2">
+            <div className="flex items-center justify-between mt-3 px-1 sm:px-2">
               <button
                 type="button"
                 onClick={() => dispatch(addSeatingRow())}
-                className="inline-flex items-center px-4 py-2 text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-teal-600 hover:text-teal-700 font-medium transition-colors text-sm sm:text-base"
               >
                 <svg
                   className="w-4 h-4 mr-2"
@@ -206,7 +255,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
                 Add Row
               </button>
 
-              <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+              <div className="text-xs sm:text-sm text-gray-600 bg-gray-100 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
                 Total Seats:{' '}
                 <span className="font-semibold text-gray-900">
                   {(formData.seatingLayout || []).reduce(
@@ -220,7 +269,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
 
           {/* Organizer Reserved Seats */}
           {(formData.seatingLayout || []).length > 0 && (
-            <div className="border-t border-gray-200 pt-6 mb-6">
+            <div className="border-t border-gray-200 pt-4 mb-4 sm:pt-6 sm:mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Reserve Seats for Organizer
                 <span className="text-xs text-gray-400 ml-1">(optional)</span>
@@ -236,7 +285,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
                     })
                   )
                 }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                 placeholder="A1,A4-A6,B1,C3-C5"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -246,7 +295,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
           )}
 
           {/* Seating Layout Image Upload */}
-          <div className="border-t border-gray-200 pt-6">
+          <div className="border-t border-gray-200 pt-4 sm:pt-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Seating Layout Image (Optional)
             </label>
@@ -271,7 +320,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
           </div>
         </>
       ) : (
-        <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+        <div className="text-center py-6 sm:py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
           <svg
             className="w-12 h-12 text-gray-400 mx-auto mb-4"
             fill="none"
@@ -289,7 +338,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
           <button
             type="button"
             onClick={() => dispatch(addSeatingRow())}
-            className="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+            className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base"
           >
             <svg
               className="w-4 h-4 mr-2"
@@ -311,14 +360,14 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
 
       {/* Row Name Instructions Modal */}
       {showInstructions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Row Name Instructions</h3>
                 <button
                   onClick={() => setShowInstructions(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-1"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -345,9 +394,9 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
                 <div>
                   <p className="font-medium text-gray-700 mb-1">Reserve Seats Examples:</p>
                   <div className="bg-gray-50 p-3 rounded font-mono text-xs space-y-1">
-                    <p>[A1, A5-A6]</p>
-                    <p>[AA1, AA5-AA6]</p>
-                    <p>[1A1, 1A5-1A7]</p>
+                    <p>A1, A5-A6</p>
+                    <p>AA1, AA5-AA6</p>
+                    <p>1A1, 1A5-1A7</p>
                   </div>
                 </div>
               </div>

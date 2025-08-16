@@ -734,10 +734,14 @@ updateGstIncluded: (state, action) => {
       // Generate next row label (A, B, C, etc.)
       const nextRowLabel = String.fromCharCode(65 + state.formData.seatingLayout.length);
       
-      // Create new row with 10 seats by default
+      // Get seat count from previous row, or default to 10
+      const previousRow = state.formData.seatingLayout[state.formData.seatingLayout.length - 1];
+      const seatCount = previousRow ? previousRow.seats.length : 10;
+      
+      // Create new row with same number of seats as previous row
       const newRow = {
         rowLabel: nextRowLabel,
-        seats: Array(10).fill().map((_, i) => ({
+        seats: Array(seatCount).fill().map((_, i) => ({
           seatNumber: String(i + 1),
           status: 'available'
         }))
