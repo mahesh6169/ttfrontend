@@ -41,6 +41,7 @@ const ChatPage = () => {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const messageInputRef = useRef(null);
+  const scrollTimeoutRef = useRef(null);
 
   const { resource, participants } = activeConversation || {};
   const { owner, participant } = participants || {};
@@ -101,7 +102,6 @@ useEffect(() => {
   };
 
   // Handle scroll events with debouncing for Chrome
-  const scrollTimeoutRef = useRef(null);
   const handleScroll = () => {
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
@@ -111,14 +111,14 @@ useEffect(() => {
     }, 50);
   };
 
-  // Scroll to bottom on new messages (only if user is already at bottom)
+  // Scroll to bottom on new messages (only if user sent it)
   useEffect(() => {
     if (activeConversation?.messages?.length > 0) {
       const lastMessage = activeConversation.messages[activeConversation.messages.length - 1];
       const isMyMessage = lastMessage && lastMessage.senderRole === myRole;
 
-      if (isAtBottom || isMyMessage) {
-        // Simple scroll without complex logic
+      // Only auto-scroll if I sent the message, not when receiving messages
+      if (isMyMessage) {
         requestAnimationFrame(() => {
           if (messagesContainerRef.current) {
             messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
@@ -126,7 +126,7 @@ useEffect(() => {
         });
       }
     }
-  }, [activeConversation?.messages?.length, myRole, isAtBottom]);
+  }, [activeConversation?.messages?.length, myRole]);
 
   // Initial scroll to bottom
   useEffect(() => {
@@ -288,9 +288,10 @@ useEffect(() => {
     setNewMessage('');
     dispatch(clearReplyingTo());
     
-    // Ensure we're at bottom after sending
+    // Immediately scroll to bottom after sending
     setIsAtBottom(true);
     setShowJumpToBottom(false);
+    setTimeout(() => scrollToBottom(true), 50);
   };
 
   const handleReply = (message) => {
@@ -417,6 +418,7 @@ useEffect(() => {
             ref={messagesContainerRef}
             onScroll={handleScroll}
             className="flex-1 overflow-y-auto pr-1 border-t border-b"
+            style={{ overscrollBehavior: 'contain' }}
           >
             {activeConversation.messages.length > 0 ? (
               <>
