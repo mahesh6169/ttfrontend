@@ -505,7 +505,7 @@ useEffect(() => {
                                        msg.replyTo.senderRole === 'owner' ? owner?.name : participant?.name}
                                   </p>
                                   <p className="text-xs opacity-70 truncate">
-                                    {msg.replyTo.deletedAt ? '[This message was deleted]' : 
+                                    {msg.replyTo.deletedAt || msg.replyTo.message === '[Message deleted]' ? '[This message was deleted]' : 
                                      msg.replyTo.message ? `${msg.replyTo.message.substring(0, 50)}...` : '[Message unavailable]'}
                                   </p>
                                 </>

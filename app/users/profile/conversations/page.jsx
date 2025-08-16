@@ -39,9 +39,19 @@ const [pendingDelete, setPendingDelete] = useState(null);
         dispatch(recalculateUnreadStatus({ currentUserId: user._id }));
       }
     };
+    
+    const handleMessageDeleted = () => {
+      // Refresh conversations to update the last message preview
+      dispatch(fetchConversations());
+    };
   
     socket.on('newMessage', handleNewMessage);
-    return () => socket.off('newMessage', handleNewMessage);
+    socket.on('messageDeleted', handleMessageDeleted);
+    
+    return () => {
+      socket.off('newMessage', handleNewMessage);
+      socket.off('messageDeleted', handleMessageDeleted);
+    };
   }, [dispatch, user]);
   
 

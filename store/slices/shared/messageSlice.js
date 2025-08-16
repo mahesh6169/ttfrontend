@@ -195,6 +195,26 @@ const messageSlice = createSlice({
         message.deletedAt = new Date().toISOString();
         message.isDeleted = true;
         message.message = '[Message deleted]';
+        
+        // Update all reply previews that reference this deleted message
+        state.activeConversation.messages.forEach((msg) => {
+          if (msg.replyTo && typeof msg.replyTo === 'object' && msg.replyTo._id === payload.messageId) {
+            msg.replyTo.message = '[Message deleted]';
+            msg.replyTo.deletedAt = new Date().toISOString();
+          }
+        });
+        
+        // Update the conversation list if this is the last message
+        if (state.conversations && state.activeConversation) {
+          const conversation = state.conversations.find(conv => 
+            conv.resourceId === state.activeConversation.resource._id &&
+            conv.resourceType === state.activeConversation.resource.relatedTo
+          );
+          
+          if (conversation && conversation.lastMessage && conversation.lastMessage.id === payload.messageId) {
+            conversation.lastMessage.text = '[Message deleted]';
+          }
+        }
       }
     }
   },
@@ -274,6 +294,26 @@ const messageSlice = createSlice({
           message.isDeleted = true;
           message.message = '[Message deleted]';
           message.canDelete = false;
+          
+          // Update all reply previews that reference this deleted message
+          state.activeConversation.messages.forEach((msg) => {
+            if (msg.replyTo && typeof msg.replyTo === 'object' && msg.replyTo._id === payload.messageId) {
+              msg.replyTo.message = '[Message deleted]';
+              msg.replyTo.deletedAt = new Date().toISOString();
+            }
+          });
+          
+          // Update the conversation list if this is the last message
+          if (state.conversations && state.activeConversation) {
+            const conversation = state.conversations.find(conv => 
+              conv.resourceId === state.activeConversation.resource._id &&
+              conv.resourceType === state.activeConversation.resource.relatedTo
+            );
+            
+            if (conversation && conversation.lastMessage && conversation.lastMessage.id === payload.messageId) {
+              conversation.lastMessage.text = '[Message deleted]';
+            }
+          }
         }
         state.status = 'success';
       })
