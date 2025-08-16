@@ -21,7 +21,7 @@ import { useSearchParams, useParams } from 'next/navigation';
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
 import { RiArrowGoBackFill } from "react-icons/ri";
-import { FaReply, FaTrash, FaTimes } from "react-icons/fa";
+import { FaTimes } from "react-icons/fa";
 import Link from 'next/link';
 
 const ChatPage = () => {
@@ -155,26 +155,46 @@ useEffect(() => {
   // Handle incoming socket messages
   useEffect(() => {
     const handleNewMessage = (msg) => {
-      // Recipient only: check for duplicates before adding
-      if (!activeConversation?.messages?.some((m) => m._id === msg._id)) {
-        // For received messages, canDelete should be false
-        const messageWithPermissions = {
-          ...msg,
-          canDelete: false,
-          isDeleted: msg.isDeleted || false
-        };
-        dispatch(addNewMessage(messageWithPermissions));
+      // Check if message belongs to current conversation
+      const messageResourceId = msg[msg.relatedTo]?._id || msg[msg.relatedTo];
+      const messageResourceType = msg.relatedTo;
+      
+      // Only add message if it belongs to current conversation
+      if (messageResourceType === resourceType && 
+          String(messageResourceId) === String(resourceId) &&
+          (String(msg.owner) === String(currentUserId) || String(msg.participant) === String(currentUserId)) &&
+          (String(msg.owner) === String(otherUserId) || String(msg.participant) === String(otherUserId))) {
+        
+        // Check for duplicates
+        if (!activeConversation?.messages?.some((m) => m._id === msg._id)) {
+          const messageWithPermissions = {
+            ...msg,
+            canDelete: false,
+            isDeleted: msg.isDeleted || false
+          };
+          dispatch(addNewMessage(messageWithPermissions));
+        }
       }
     };
 
     const handleMessageSent = (msg) => {
-      // Sender only: add directly with canDelete true
-      const messageWithPermissions = {
-        ...msg,
-        canDelete: true,
-        isDeleted: false
-      };
-      dispatch(addNewMessage(messageWithPermissions));
+      // Check if message belongs to current conversation
+      const messageResourceId = msg[msg.relatedTo]?._id || msg[msg.relatedTo];
+      const messageResourceType = msg.relatedTo;
+      
+      // Only add message if it belongs to current conversation
+      if (messageResourceType === resourceType && 
+          String(messageResourceId) === String(resourceId) &&
+          (String(msg.owner) === String(currentUserId) || String(msg.participant) === String(currentUserId)) &&
+          (String(msg.owner) === String(otherUserId) || String(msg.participant) === String(otherUserId))) {
+        
+        const messageWithPermissions = {
+          ...msg,
+          canDelete: true,
+          isDeleted: false
+        };
+        dispatch(addNewMessage(messageWithPermissions));
+      }
     };
   
     socket.on('newMessage', handleNewMessage);
@@ -184,7 +204,7 @@ useEffect(() => {
       socket.off('newMessage', handleNewMessage);
       socket.off('messageSent', handleMessageSent);
     };
-  }, [dispatch, activeConversation]);
+  }, [dispatch, activeConversation, resourceType, resourceId, currentUserId, otherUserId]);
   
   // Handle read from socket
   useEffect(() => {
@@ -200,7 +220,6 @@ useEffect(() => {
     const handleMessageDeleted = ({ messageId, resourceType: msgResourceType, resourceId: msgResourceId }) => {
       // Only handle if it's for the current conversation (compare as strings)
       if (msgResourceType === resourceType && String(msgResourceId) === String(resourceId)) {
-        console.log('Message deleted event received:', messageId);
         dispatch(markMessageAsDeleted({ messageId }));
       }
     };
@@ -391,7 +410,7 @@ useEffect(() => {
         </div>
 
         {/* Message Area */}
-        <div className="rounded my-6 bg-white shadow flex flex-col" style={{ maxHeight: '70vh' }}>
+        <div className="rounded my-6 bg-white shadow flex flex-col h-[500px] md:h-[600px]">
           {/* Jump to Bottom Button */}
           {showJumpToBottom && (
             <div className="relative">
@@ -450,20 +469,35 @@ useEffect(() => {
                     <div
                       key={msg._id}
                       id={`message-${msg._id}`}
-                      className={`flex ${alignment} w-full mb-3 px-3 group`}
+                      className={`mb-2 flex ${alignment} transition-colors duration-300`}
                     >
-                      <div className="flex flex-col items-end">
-                        <div
-                          className={`max-w-[70%] px-4 py-2 rounded-lg shadow-sm ${bubbleColor} relative`}
-                        >
+                      <div
+                        className={`relative max-w-[85%] min-w-[100px] px-3 py-2 rounded-lg shadow-sm break-words ${bubbleColor}`}
+                      >
                           {/* Reply indicator */}
                           {msg.replyTo && (
-                            <div className={`text-xs mb-2 p-2 rounded ${isMyMessage ? 'bg-green-700' : 'bg-gray-100'} border-l-4 ${isMyMessage ? 'border-green-400' : 'border-gray-400'}`}>
-                              <p className="font-semibold opacity-75">
-                                Replying to {msg.replyTo.senderRole === myRole ? 'You' : senderName}
+                            <div 
+                              onClick={() => {
+                                const replyElement = document.getElementById(`message-${msg.replyTo._id}`);
+                                if (replyElement) {
+                                  replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  replyElement.classList.add('bg-yellow-200');
+                                  setTimeout(() => {
+                                    replyElement.classList.remove('bg-yellow-200');
+                                  }, 1500);
+                                }
+                              }}
+                              className={`mb-2 p-2 rounded cursor-pointer transition-all ${
+                                isMyMessage
+                                  ? 'bg-green-700 hover:bg-green-800 border-l-4 border-green-400'
+                                  : 'bg-gray-200 hover:bg-gray-300 border-l-4 border-gray-400'
+                              }`}
+                            >
+                              <p className="text-xs font-semibold opacity-80">
+                                ↩ {msg.replyTo.senderRole === myRole ? 'You' : senderName}
                               </p>
-                              <p className="opacity-75 italic truncate">
-                                {msg.replyTo.message}
+                              <p className="text-xs opacity-70 truncate">
+                                {msg.replyTo.deletedAt ? '[This message was deleted]' : msg.replyTo.message ? `${msg.replyTo.message.substring(0, 50)}...` : '[Message unavailable]'}
                               </p>
                             </div>
                           )}
@@ -477,30 +511,36 @@ useEffect(() => {
                           {String(msg.readBy) === String(otherUserId) && isMyMessage && !msg.isDeleted && (
                             <div className="text-xs text-right mt-1 opacity-75">✓ Read</div>
                           )}
-                        </div>
-                        
-                        {/* Action buttons */}
-                        {!msg.isDeleted && (
-                          <div className={`flex gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${isMyMessage ? 'flex-row-reverse' : ''}`}>
-                            <button
-                              onClick={() => handleReply(msg)}
-                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                              title="Reply"
-                            >
-                              <FaReply size={12} />
-                            </button>
-                            {msg.canDelete && (
+                          
+                          {/* Action buttons */}
+                          {!msg.isDeleted && (
+                            <div className="flex items-center space-x-3 mt-2 text-xs">
                               <button
-                                onClick={() => handleDeleteMessage(msg._id)}
-                                className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
-                                title="Delete"
+                                onClick={() => handleReply(msg)}
+                                className={`flex items-center space-x-1 ${
+                                  isMyMessage
+                                    ? 'hover:text-lime-300'
+                                    : 'hover:text-teal-600'
+                                }`}
                               >
-                                <FaTrash size={12} />
+                                ↩ Reply
                               </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                              
+                              {msg.canDelete && (
+                                <button
+                                  onClick={() => handleDeleteMessage(msg._id)}
+                                  className={`flex items-center space-x-1 ${
+                                    isMyMessage
+                                      ? 'hover:text-red-300'
+                                      : 'hover:text-red-600'
+                                  }`}
+                                >
+                                  Delete
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                     </div>,
                   ];
                 }, [])}
