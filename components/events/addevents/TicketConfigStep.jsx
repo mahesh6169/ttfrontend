@@ -25,27 +25,6 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
 
   return (
     <div className="space-y-6">
-      {/* Header with recurring event info */}
-      <div className="flex items-start justify-between">
-        {isRecurringEvent && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-            <svg
-              className="w-3 h-3 mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            Recurring Event
-          </span>
-        )}
-      </div>
 
       {/* Capacity Management */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -191,27 +170,6 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
 
   return (
     <div className="space-y-6">
-      {/* Header with recurring event info */}
-      <div className="flex items-start justify-between">
-        {isRecurringEvent && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-            <svg
-              className="w-3 h-3 mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            Recurring Event
-          </span>
-        )}
-      </div>
 
       {/* Capacity Management */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">

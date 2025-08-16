@@ -3,6 +3,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setStep } from '@/store/slices/events/eventSlice';
+import EventBadge from './EventBadge';
 
 const StepIndicator = ({ 
   currentStep = 1, 
@@ -203,19 +204,11 @@ const isStepComplete = (stepNumber) => {
       {/* Header with mode-specific information */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center space-x-4">
+          {/* Event Badge - Always show */}
+          <EventBadge isPaid={formData?.isPaid} isRecurring={isRecurringEvent} />
           
           {/* Mode and Status Indicators */}
           <div className="flex items-center space-x-2">
-            
-            {/* Recurring Event Badge */}
-            {isRecurringEvent && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Recurring
-              </span>
-            )}
             
             {/* Unsaved Changes Badge (Edit Mode Only) */}
             {mode === 'edit' && hasUnsavedChanges && (
