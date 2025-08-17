@@ -12,6 +12,7 @@ const PlatformFeeManagement = () => {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [currentFeeInfo, setCurrentFeeInfo] = useState(null);
   const [newFee, setNewFee] = useState('');
+  const [newPercentage, setNewPercentage] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -89,8 +90,9 @@ const PlatformFeeManagement = () => {
       
       if (data.success) {
         setCurrentFeeInfo(data);
-        // Pre-fill the input with current effective fee
-        setNewFee(data.platformFee !== null ? data.platformFee.toString() : '');
+        // Pre-fill the inputs with current fees (with proper formatting)
+        setNewFee(data.platformFee !== null ? data.platformFee.toFixed(2) : '');
+        setNewPercentage(data.platformFeePercentage !== null ? data.platformFeePercentage.toFixed(2) : '');
         console.log('✅ Loaded platform fee info:', data);
       } else {
         throw new Error(data.message || 'Failed to fetch platform fee');
@@ -120,8 +122,9 @@ const PlatformFeeManagement = () => {
       setSaving(true);
       setMessage({ type: '', text: '' });
 
-      // Determine the fee value to send
+      // Determine the fee values to send
       let feeValue = newFee.trim() === '' ? null : parseFloat(newFee);
+      let percentageValue = newPercentage.trim() === '' ? null : parseFloat(newPercentage);
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/events/${selectedEventId}/platform-fee`,
@@ -131,7 +134,7 @@ const PlatformFeeManagement = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ platformFee: feeValue }),
+          body: JSON.stringify({ platformFee: feeValue, platformFeePercentage: percentageValue }),
         }
       );
 
@@ -151,13 +154,16 @@ const PlatformFeeManagement = () => {
         setCurrentFeeInfo(prev => ({
           ...prev,
           platformFee: data.platformFee,
-          effectiveFee: data.effectiveFee
+          platformFeePercentage: data.platformFeePercentage,
+          effectiveFlatFee: data.effectiveFlatFee,
+          effectivePercentage: data.effectivePercentage,
+          effectiveFeeBreakdown: data.effectiveFeeBreakdown
         }));
 
         // Update the event in the dropdown list
         setEvents(prev => prev.map(event => 
           event._id === selectedEventId 
-            ? { ...event, platformFee: data.platformFee }
+            ? { ...event, platformFee: data.platformFee, platformFeePercentage: data.platformFeePercentage }
             : event
         ));
 
@@ -179,6 +185,7 @@ const PlatformFeeManagement = () => {
   // Reset fee to default
   const handleResetToDefault = () => {
     setNewFee('');
+    setNewPercentage('');
   };
 
   // Format date for display
@@ -199,7 +206,7 @@ const PlatformFeeManagement = () => {
             Platform Fee Management
           </h1>
           <p className="text-gray-600">
-            Configure custom platform fees for individual events. Default fee is $1.00 per ticket.
+            Configure custom platform fees for individual events. Default fee is $0.70 + 0% per ticket.
           </p>
         </div>
 
@@ -236,7 +243,7 @@ const PlatformFeeManagement = () => {
               {events.map((event) => (
                 <option key={event._id} value={event._id}>
                   {event.title} - {event.eventCode} ({formatDate(event.dateTime)})
-                  {event.platformFee !== null && event.platformFee !== undefined && ` - Custom Fee: $${event.platformFee.toFixed(2)}`}
+                  {(event.platformFee !== null || event.platformFeePercentage !== null) && ` - Custom Fee: $${(event.platformFee || 0.70).toFixed(2)} + ${(event.platformFeePercentage || 0).toFixed(2)}%`}
                 </option>
               ))}
             </select>
@@ -273,22 +280,25 @@ const PlatformFeeManagement = () => {
             <div className="mb-6">
               <h4 className="font-medium text-gray-900 mb-2">Current Platform Fee</h4>
               <div className="bg-blue-50 border border-blue-200 rounded p-4">
-                {currentFeeInfo.platformFee !== null ? (
+                {(currentFeeInfo.platformFee !== null || currentFeeInfo.platformFeePercentage !== null) ? (
                   <div>
                     <p className="text-lg font-semibold text-blue-900">
-                      ${currentFeeInfo.platformFee.toFixed(2)} per ticket
+                      ${(currentFeeInfo.platformFee || currentFeeInfo.defaultFee).toFixed(2)} + {(currentFeeInfo.platformFeePercentage || currentFeeInfo.defaultPercentage).toFixed(2)}% per ticket
                     </p>
                     <p className="text-sm text-blue-700 mt-1">
+                      Effective fee: {currentFeeInfo.effectiveFeeBreakdown}
+                    </p>
+                    <p className="text-sm text-blue-700">
                       Custom fee is set for this event
                     </p>
                   </div>
                 ) : (
                   <div>
                     <p className="text-lg font-semibold text-blue-900">
-                      ${currentFeeInfo.defaultFee.toFixed(2)} per ticket
+                      ${currentFeeInfo.defaultFee.toFixed(2)} + {currentFeeInfo.defaultPercentage.toFixed(2)}% per ticket
                     </p>
                     <p className="text-sm text-blue-700 mt-1">
-                      Using platform default fee
+                      Using platform default fees
                     </p>
                   </div>
                 )}
@@ -297,12 +307,13 @@ const PlatformFeeManagement = () => {
 
             {/* Update Form */}
             <form onSubmit={handleUpdateFee}>
-              <div className="mb-4">
-                <label htmlFor="newFee" className="block text-sm font-medium text-gray-700 mb-2">
-                  Set New Platform Fee (per ticket)
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
+              <div className="space-y-4">
+                {/* Flat Fee Input */}
+                <div>
+                  <label htmlFor="newFee" className="block text-sm font-medium text-gray-700 mb-2">
+                    Flat Fee (per ticket)
+                  </label>
+                  <div className="relative">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
                       $
                     </span>
@@ -312,11 +323,9 @@ const PlatformFeeManagement = () => {
                       value={newFee}
                       onChange={(e) => {
                         const value = e.target.value;
-                        // Check for decimal places
                         if (value && value.includes('.')) {
                           const decimals = value.split('.')[1];
                           if (decimals && decimals.length > 2) {
-                            // Truncate to 2 decimal places
                             setNewFee(parseFloat(value).toFixed(2));
                             return;
                           }
@@ -327,21 +336,62 @@ const PlatformFeeManagement = () => {
                       min="0"
                       max="20"
                       step="0.01"
-                      placeholder="Leave empty for default"
+                      placeholder="Leave empty for default ($0.70)"
                       className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Enter $0.00 to $20.00, or leave empty for default
+                  </p>
+                </div>
+
+                {/* Percentage Fee Input */}
+                <div>
+                  <label htmlFor="newPercentage" className="block text-sm font-medium text-gray-700 mb-2">
+                    Percentage Fee (of total amount)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      id="newPercentage"
+                      value={newPercentage}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value && value.includes('.')) {
+                          const decimals = value.split('.')[1];
+                          if (decimals && decimals.length > 2) {
+                            setNewPercentage(parseFloat(value).toFixed(2));
+                            return;
+                          }
+                        }
+                        setNewPercentage(value);
+                      }}
+                      onWheel={(e) => e.target.blur()}
+                      min="0"
+                      max="10"
+                      step="0.01"
+                      placeholder="Leave empty for default (0%)"
+                      className="w-full pr-8 pl-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      %
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Enter 0% to 10%, supports decimals (e.g., 0.30%)
+                  </p>
+                </div>
+
+                {/* Reset Button */}
+                <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={handleResetToDefault}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                   >
-                    Reset to Default
+                    Reset Both to Default
                   </button>
                 </div>
-                <p className="mt-2 text-sm text-gray-500">
-                  Enter a value between $0.00 and $20.00, or leave empty to use the default fee
-                </p>
               </div>
 
               {/* Action Buttons */}
@@ -374,10 +424,11 @@ const PlatformFeeManagement = () => {
         <div className="mt-8 bg-amber-50 border border-amber-200 rounded-lg p-4">
           <h3 className="font-medium text-amber-900 mb-2">Important Notes:</h3>
           <ul className="text-sm text-amber-800 space-y-1 list-disc list-inside">
-            <li>Platform fees are charged per ticket, not per order</li>
-            <li>The fee is deducted from the ticket price (not added on top)</li>
+            <li>Platform fees consist of a flat fee per ticket + percentage of total amount</li>
+            <li>The total fee is deducted from the ticket price (not added on top)</li>
             <li>Changes only affect new purchases, not existing tickets</li>
-            <li>Setting fee to $0 waives platform fees for that event</li>
+            <li>Setting both fees to $0 and 0% waives all platform fees for that event</li>
+            <li>Example: $100 order (2 tickets) with $0.70 + 0.30% = $1.40 + $0.30 = $1.70 total fee</li>
           </ul>
         </div>
       </div>
