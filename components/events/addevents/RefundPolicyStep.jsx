@@ -85,15 +85,10 @@ const RefundPolicyStep = ({
       </div>
 
       {/* Refund Policy Configuration */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-          <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Processing Fee Policy
-        </h3>
-        <p className="text-gray-600 mb-6">
-          Choose how processing fees are handled when refunds are issued to your customers.
+      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+        
+        <p className="text-xs text-blue-600 mb-4 sm:mb-6">
+          Customers will need to acknowledge the refund policy at checkout
         </p>
         
         <div className="space-y-4">
@@ -101,7 +96,7 @@ const RefundPolicyStep = ({
           <div className="space-y-4">
             {/* Non-refundable option (default) */}
             <div
-              className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+              className={`p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
                 formData.refundPolicy?.processingFeePolicy === 'non-refundable'
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
@@ -122,47 +117,38 @@ const RefundPolicyStep = ({
                     )}
                   </div>
                 </div>
-                <div className="ml-3 w-full">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-gray-800">Processing fees are non-refundable</h4>
-                    <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded-full">
+                <div className="ml-2 sm:ml-3 w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                    <h4 className="text-sm font-medium text-gray-800">Processing fees are non-refundable</h4>
+                    <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded-full mt-1 sm:mt-0 inline-block w-fit">
                       Customer absorbs processing fees
                     </span>
                   </div>
                   
-                  {/* Refund Breakdown Table */}
-                  <div className="mt-3 bg-amber-50 rounded-lg p-3 border border-amber-200">
-                    <div className="flex items-center justify-between mb-2">
+                  {/* Refund Breakdown - Mobile Optimized */}
+                  <div className="mt-2 bg-amber-50 rounded-lg p-3 border border-amber-200">
+                    <div className="mb-3">
                       <span className="text-xs font-medium text-amber-800">💡 Refund Example - $10 Ticket</span>
-                      <button 
-                        type="button"
-                        className="text-xs text-amber-700 hover:text-amber-800 flex items-center gap-1"
-                      >
-                        📋 Copy
-                      </button>
                     </div>
-                    <div className="overflow-hidden">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-amber-100 text-amber-800">
-                            <th className="text-left py-1 px-2 rounded-tl">Ticket Price</th>
-                            <th className="text-left py-1 px-2">Platform Fee</th>
-                            <th className="text-left py-1 px-2">Stripe Fee (1.7% + $0.30)</th>
-                            <th className="text-left py-1 px-2 rounded-tr">Refund to Customer</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="bg-white text-gray-700">
-                            <td className="py-1 px-2 font-medium">$10.00</td>
-                            <td className="py-1 px-2">$0.53</td>
-                            <td className="py-1 px-2">$0.47</td>
-                            <td className="py-1 px-2 font-bold text-gray-700">$9.00</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    {/* Mobile-first vertical layout */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center py-1.5 border-b border-amber-200">
+                        <span className="text-xs text-gray-700">Ticket Price</span>
+                        <span className="text-xs font-medium text-gray-900">$10.00</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5 border-b border-amber-200">
+                        <span className="text-xs text-gray-700">Platform Fee</span>
+                        <span className="text-xs text-red-600">- $0.53</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5 border-b border-amber-200">
+                        <span className="text-xs text-gray-700">Stripe Fee</span>
+                        <span className="text-xs text-red-600">- $0.47</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2">
+                        <span className="text-sm font-semibold text-gray-900">Customer Refund</span>
+                        <span className="text-sm font-bold text-green-600">$9.00</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-amber-700 mt-2">
-                    </p>
                   </div>
                 </div>
               </div>
@@ -170,7 +156,7 @@ const RefundPolicyStep = ({
             
             {/* Refundable option */}
             <div
-              className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+              className={`p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
                 formData.refundPolicy?.processingFeePolicy === 'refunded'
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
@@ -191,47 +177,41 @@ const RefundPolicyStep = ({
                     )}
                   </div>
                 </div>
-                <div className="ml-3 w-full">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-gray-800">Processing fees are refunded</h4>
-                    <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded-full">
+                <div className="ml-2 sm:ml-3 w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                    <h4 className="text-sm font-medium text-gray-800">Processing fees are refunded</h4>
+                    <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded-full mt-1 sm:mt-0 inline-block w-fit">
                       Organiser absorbs processing fees
                     </span>
                   </div>
                   
-                  {/* Refund Breakdown Table for Full Refund */}
-                  <div className="mt-3 bg-amber-50 rounded-lg p-3 border border-amber-200">
-                    <div className="flex items-center justify-between mb-2">
+                  {/* Refund Breakdown - Mobile Optimized */}
+                  <div className="mt-2 bg-amber-50 rounded-lg p-3 border border-amber-200">
+                    <div className="mb-3">
                       <span className="text-xs font-medium text-amber-800">💡 Refund Example - $10 Ticket</span>
-                      <button 
-                        type="button"
-                        className="text-xs text-amber-700 hover:text-amber-800 flex items-center gap-1"
-                      >
-                        📋 Copy
-                      </button>
                     </div>
-                    <div className="overflow-hidden">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-amber-100 text-amber-800">
-                            <th className="text-left py-1 px-2 rounded-tl">Ticket Price</th>
-                            <th className="text-left py-1 px-2">Platform Fee</th>
-                            <th className="text-left py-1 px-2">Stripe Fee (1.7% + $0.30)</th>
-                            <th className="text-left py-1 px-2 rounded-tr">Refund to Customer</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="bg-white text-gray-700">
-                            <td className="py-1 px-2 font-medium">$10.00</td>
-                            <td className="py-1 px-2">$0.53</td>
-                            <td className="py-1 px-2">$0.47</td>
-                            <td className="py-1 px-2 font-bold text-gray-700">$10.00</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    {/* Mobile-first vertical layout */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center py-1.5 border-b border-amber-200">
+                        <span className="text-xs text-gray-700">Ticket Price</span>
+                        <span className="text-xs font-medium text-gray-900">$10.00</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5 border-b border-amber-200">
+                        <span className="text-xs text-gray-700">Platform Fee</span>
+                        <span className="text-xs text-gray-500">$0.53</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5 border-b border-amber-200">
+                        <span className="text-xs text-gray-700">Stripe Fee</span>
+                        <span className="text-xs text-gray-500">$0.47</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2">
+                        <span className="text-sm font-semibold text-gray-900">Customer Refund</span>
+                        <span className="text-sm font-bold text-green-600">$10.00</span>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-amber-200">
+                        <span className="text-xs text-amber-700 italic">Organiser covers all fees</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-amber-700 mt-2">
-                    </p>
                   </div>
                 </div>
               </div>
@@ -241,7 +221,7 @@ const RefundPolicyStep = ({
           {/* Optional Policy Text */}
           <div className="space-y-2">
             <label htmlFor="policyText" className="text-sm font-medium text-gray-700">
-              Additional Policy Notes <span className="text-gray-400">(Optional)</span>
+              Additional Policy Notes <span className="text-gray-400 text-xs">(Optional)</span>
             </label>
             <textarea
               id="policyText"
@@ -295,9 +275,9 @@ const RefundPolicyStep = ({
       {showPreviewModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowPreviewModal(false)}>
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Customer Checkout Preview</h3>
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Customer Checkout Preview</h3>
                 <button 
                   onClick={() => setShowPreviewModal(false)}
                   className="text-gray-400 hover:text-gray-600"
