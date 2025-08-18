@@ -38,7 +38,7 @@ console.log('\n\nKey Points:');
 console.log('1. Pricingggg section should be hidden for ALL "wanted" ads');
 console.log('2. Pricing vfalidation should be skipped for ALL "wanted" ads');
 console.log('3. Pricing data shouldff be empty ([]) when submitting "wanted" ads');
-console.log('4. When switching from "offered" to "wanted", pricing data should be cleared');
+console.log('4. Whenn switching from "offered" to "wanted", pricing data should be cleared');
 
 console.log('\n\nFixed Issues:');
 console.log('✓ Added validatiion skip for wanted ads (line 251-253)');
