@@ -81,6 +81,7 @@ const ThreadChatPage = () => {
 
   const [isFullscreen, setIsFullscreen] = useState(false);
 const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentUsefulIndex, setCurrentUsefulIndex] = useState(0);
   
 
   // ✅ Visitor Sender-Side Assignment..
@@ -525,75 +526,133 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       {/* Topic Description Section */}
       {thread.question && (
         <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+          <div className="px-3 py-1.5 border-b border-gray-300">
             <h3 className="text-sm sm:text-base font-semibold text-gray-800">Topic Description</h3>
           </div>
-          <div className="p-3">
-            <div className="text-sm sm:text-base text-gray-700 space-y-2">
+          <div className="p-3 relative">
+            <div 
+              className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
+            >
               {thread.question.split('\n').map((para, idx) => (
                 para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
               ))}
             </div>
+            {/* Fade overlay at bottom to indicate scrollable content */}
+            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
           </div>
         </div>
       )}
 
       {/* Useful Answers Section */}
       {usefulAnswers.length > 0 ? (
-        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Comments Marked as Useful</h3>
-            <p className="text-xs text-gray-600 mt-1">Click thumbs up 👍 to mark comments as useful</p>
-          </div>
-          <div className="p-3 space-y-3">
-    {usefulAnswers.map((msg) => (
-              <div
-                key={msg._id}
-                className="p-3 bg-yellow-50 rounded border border-yellow-200"
-              >
-                <p className="text-sm font-semibold text-gray-800 mb-1">
-                  {msg.sender?.name || 'Former Member'}
-                </p>
-                <p className="text-sm sm:text-base text-gray-700">{msg.message}</p>
-                <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                  <span>
-                    {format(new Date(msg.createdAt), 'dd MMM yyyy, h:mm a')}
-                  </span>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => handleLike(msg._id)}
-                      className={`flex items-center space-x-1 ${
-                        msg.likedBy?.includes(currentUser?._id)
-                          ? 'text-blue-500'
-                          : 'text-gray-500'
-                      } hover:text-blue-600`}
-                    >
-                      👍 {msg.likes || 0}
-                    </button>
-                    <button
-                      onClick={() => handleUnlike(msg._id)}
-                      className={`flex items-center space-x-1 ${
-                        msg.dislikedBy?.includes(currentUser?._id)
-                          ? 'text-red-500'
-                          : 'text-gray-500'
-                      } hover:text-red-600`}
-                    >
-                      👎 {msg.dislikes || 0}
-                    </button>
-                  </div>
-                </div>
+        <div className="border border-teal-600 rounded-lg shadow-sm my-4 mx-2">
+          <div className="px-3 py-1.5 border-b border-gray-300">
+            <div className="flex items-start sm:items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-800">
+                  <span className="sm:hidden">Useful Comments</span>
+                  <span className="hidden sm:inline">Useful Comments</span>
+                </h3>
+                <p className="text-xs text-gray-600 mt-1 hidden sm:block">Click thumbs up 👍 to mark comments as useful</p>
               </div>
-            ))}
+              {/* Navigation Buttons in Header */}
+              {usefulAnswers.length > 1 && (
+                <div className="flex items-center space-x-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => setCurrentUsefulIndex((prev) => (prev === 0 ? usefulAnswers.length - 1 : prev - 1))}
+                    className="border border-teal-600 text-teal-700 p-1.5 rounded-full hover:bg-teal-50 transition"
+                  >
+                    <FaChevronLeft className="text-xs" />
+                  </button>
+                  <span className="text-xs text-gray-600 font-medium whitespace-nowrap">
+                    {currentUsefulIndex + 1} / {usefulAnswers.length}
+                  </span>
+                  <button
+                    onClick={() => setCurrentUsefulIndex((prev) => (prev + 1) % usefulAnswers.length)}
+                    className="border border-teal-600 text-teal-700 p-1.5 rounded-full hover:bg-teal-50 transition"
+                  >
+                    <FaChevronRight className="text-xs" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="p-2 relative">
+            <div className="min-h-[100px] max-h-[200px] relative">
+              {/* Current Useful Comment */}
+              {usefulAnswers[currentUsefulIndex] && (
+                <div className="p-2 bg-white rounded-lg h-full overflow-y-auto">
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-semibold text-gray-800">
+                        {usefulAnswers[currentUsefulIndex].sender?.name || 'Former Member'}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {format(new Date(usefulAnswers[currentUsefulIndex].createdAt), 'dd MMM, h:mm a')}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleLike(usefulAnswers[currentUsefulIndex]._id)}
+                        className={`flex items-center space-x-1 text-xs ${
+                          usefulAnswers[currentUsefulIndex].likedBy?.includes(currentUser?._id)
+                            ? 'text-blue-500'
+                            : 'text-gray-500'
+                        } hover:text-blue-600`}
+                      >
+                        👍 {usefulAnswers[currentUsefulIndex].likes || 0}
+                      </button>
+                      <button
+                        onClick={() => handleUnlike(usefulAnswers[currentUsefulIndex]._id)}
+                        className={`flex items-center space-x-1 text-xs ${
+                          usefulAnswers[currentUsefulIndex].dislikedBy?.includes(currentUser?._id)
+                            ? 'text-red-500'
+                            : 'text-gray-500'
+                        } hover:text-red-600`}
+                      >
+                        👎 {usefulAnswers[currentUsefulIndex].dislikes || 0}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-sm sm:text-base text-gray-700 overflow-y-auto max-h-[140px] pr-2">
+                    {usefulAnswers[currentUsefulIndex].message}
+                  </div>
+                  {/* Fade overlay for long messages */}
+                  <div className="absolute bottom-3 left-3 right-3 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+                </div>
+              )}
+
+              {/* Carousel Indicators */}
+              {usefulAnswers.length > 1 && (
+                <div className="flex justify-center mt-3 space-x-1">
+                  {usefulAnswers.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentUsefulIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === currentUsefulIndex ? 'bg-teal-600 w-6' : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : (
-        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+        <div className="border border-teal-600 rounded-lg shadow-sm my-4 mx-2">
+          <div className="px-3 py-1.5 border-b border-gray-300">
             <h3 className="text-sm sm:text-base font-semibold text-gray-800">Comments Marked as Useful</h3>
             <p className="text-xs text-gray-600 mt-1">Click thumbs up 👍 to mark comments as useful</p>
           </div>
-          <div className="p-3">
-            <p className="text-sm text-gray-500 text-center">No comments marked as useful yet</p>
+          <div 
+            className="p-2 min-h-[200px] flex items-center justify-center"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='grayscale'%3E%3CfeColorMatrix type='matrix' values='0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Cstyle%3E.emoji%7Bfont-family:Arial,sans-serif;font-size:16px;fill:%23e5e7eb;opacity:0.25;filter:url(%23grayscale)%7D.small%7Bfont-size:12px%7D%3C/style%3E%3C/defs%3E%3Ctext class='emoji' x='10' y='20'%3E⭐%3C/text%3E%3Ctext class='emoji' x='50' y='20'%3E🌙%3C/text%3E%3Ctext class='emoji' x='90' y='20'%3E😊%3C/text%3E%3Ctext class='emoji small' x='30' y='40'%3E✨%3C/text%3E%3Ctext class='emoji' x='70' y='40'%3E🎉%3C/text%3E%3Ctext class='emoji' x='10' y='60'%3E🌟%3C/text%3E%3Ctext class='emoji small' x='50' y='60'%3E💫%3C/text%3E%3Ctext class='emoji' x='90' y='60'%3E🎊%3C/text%3E%3Ctext class='emoji' x='30' y='80'%3E😄%3C/text%3E%3Ctext class='emoji' x='70' y='80'%3E🌛%3C/text%3E%3Ctext class='emoji small' x='10' y='100'%3E⚡%3C/text%3E%3Ctext class='emoji' x='50' y='100'%3E🎈%3C/text%3E%3Ctext class='emoji small' x='90' y='100'%3E💖%3C/text%3E%3C/svg%3E")`,
+              backgroundSize: '240px 240px',
+            }}
+          >
+            <p className="text-sm text-gray-600 font-medium">No comments marked as useful yet 👍</p>
           </div>
         </div>
       )}
@@ -601,7 +660,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
 
 {/* Message Area */}
-<div className="rounded my-6 bg-white shadow flex flex-col" style={{ maxHeight: '70vh' }}>
+<div className="border border-gray-300 rounded shadow-sm my-4 mx-2 bg-white flex flex-col" style={{ maxHeight: '70vh' }}>
 
   {/* Jump to Bottom Button */}
   {showJumpToBottom && (
@@ -628,7 +687,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   <div
     ref={messagesContainerRef}
     onScroll={handleScroll}
-    className="flex-1 overflow-y-auto pr-1 border-t border-b"
+    className={`flex-1 overflow-y-auto p-3 border-t border-b ${messages.length === 0 ? 'min-h-[200px]' : ''}`}
   >
     {messages.length > 0 ? (
       messages.reduce((acc, msg, index) => {
@@ -811,8 +870,14 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         ];
       }, [])
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-sm">No messages yet. Start the conversation!</p>
+              <div 
+                className="flex items-center justify-center h-full min-h-[200px] text-gray-500 relative overflow-hidden"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='grayscale'%3E%3CfeColorMatrix type='matrix' values='0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Cstyle%3E.emoji%7Bfont-family:Arial,sans-serif;font-size:16px;fill:%23e5e7eb;opacity:0.25;filter:url(%23grayscale)%7D.small%7Bfont-size:12px%7D%3C/style%3E%3C/defs%3E%3Ctext class='emoji' x='10' y='20'%3E⭐%3C/text%3E%3Ctext class='emoji' x='50' y='20'%3E🌙%3C/text%3E%3Ctext class='emoji' x='90' y='20'%3E😊%3C/text%3E%3Ctext class='emoji small' x='30' y='40'%3E✨%3C/text%3E%3Ctext class='emoji' x='70' y='40'%3E🎉%3C/text%3E%3Ctext class='emoji' x='10' y='60'%3E🌟%3C/text%3E%3Ctext class='emoji small' x='50' y='60'%3E💫%3C/text%3E%3Ctext class='emoji' x='90' y='60'%3E🎊%3C/text%3E%3Ctext class='emoji' x='30' y='80'%3E😄%3C/text%3E%3Ctext class='emoji' x='70' y='80'%3E🌛%3C/text%3E%3Ctext class='emoji small' x='10' y='100'%3E⚡%3C/text%3E%3Ctext class='emoji' x='50' y='100'%3E🎈%3C/text%3E%3Ctext class='emoji small' x='90' y='100'%3E💖%3C/text%3E%3C/svg%3E")`,
+                  backgroundSize: '240px 240px',
+                }}
+              >
+                <p className="text-sm font-medium text-gray-600">No messages yet. Start the conversation! 🎉</p>
               </div>
             )}
   </div>
