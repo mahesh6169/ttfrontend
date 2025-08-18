@@ -454,7 +454,7 @@ useEffect(() => {
         <div className="flex justify-between mt-4">
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded"
           >
             Update Thread
           </button>
@@ -465,7 +465,7 @@ useEffect(() => {
               localStorage.removeItem('cancelRedirectUrl');
               router.push(backTo || '/users/profile/managethreads');
             }}
-            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500"
+            className="bg-red-400 text-white hover:bg-red-600 px-4 py-2 rounded"
           >
             Cancel
           </button>
