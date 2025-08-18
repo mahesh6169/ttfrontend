@@ -35,8 +35,20 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
 import { selectEventCapacityState } from '@/store/slices/events/eventCapacitySlice';
 
-const FALLBACK_IMAGE_URL =
-  'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
+// Add this helper function right after your imports
+const getOptimizedImageUrl = (imageObj) => {
+  if (!imageObj) return null;
+  if (typeof imageObj === 'string') return imageObj;
+  
+  // Use pre-optimized URLs from backend
+  if (imageObj.optimizedUrls) {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    return isMobile ? imageObj.optimizedUrls.mobile : imageObj.optimizedUrls.desktop;
+  }
+  
+  // Fallback to original URL
+  return imageObj.url || null;
+};
 
 const SingleEventCard = ({ event, chatProps }) => {
   const dispatch = useDispatch();
@@ -69,13 +81,17 @@ const SingleEventCard = ({ event, chatProps }) => {
   }, [dispatch, event?._id]);
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % event.images.length);
+    if (event.images?.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % event.images.length);
+    }
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? event.images.length - 1 : prev - 1
-    );
+    if (event.images?.length > 1) {
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? event.images.length - 1 : prev - 1
+      );
+    }
   };
 
   const handleWishlistToggle = () => {
@@ -115,21 +131,15 @@ const SingleEventCard = ({ event, chatProps }) => {
   return (
     <div className="border rounded shadow-md mx-auto">
       {/* Image Section */}
-      <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded">
-        {event.images?.length > 0 ? (
-          <img
-            src={event.images[currentImageIndex].url}
-            alt={event.title || 'Event Image'}
-            className="object-contain w-full h-full cursor-pointer"
-            onClick={() => setIsFullscreen(true)}
-          />
-        ) : (
-          <img
-            src={FALLBACK_IMAGE_URL}
-            alt="No Image"
-            className="object-contain w-full h-full"
-          />
-        )}
+<div className="relative w-full mx-auto bg-gray-200 overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]">
+  {event.images?.length > 0 && (
+    <img
+      src={getOptimizedImageUrl(event.images[currentImageIndex])}
+      alt={event.title || 'Event Image'}
+      className="object-cover w-full h-full cursor-pointer"
+      onClick={() => setIsFullscreen(true)}
+    />
+  )}
 
         {/* Image Navigation */}
         {event.images?.length > 1 && (
@@ -171,10 +181,16 @@ const SingleEventCard = ({ event, chatProps }) => {
       </div>
 
       {/* Fullscreen Modal */}
-      {isFullscreen && (
+      {isFullscreen && event.images?.length > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
           <img
-            src={event.images[currentImageIndex].url}
+            src={getOptimizedImageUrl({
+              ...event.images[currentImageIndex],
+              optimizedUrls: {
+                ...event.images[currentImageIndex].optimizedUrls,
+                desktop: event.images[currentImageIndex].optimizedUrls?.fullscreen || event.images[currentImageIndex].optimizedUrls?.desktop
+              }
+            }) || event.images[currentImageIndex].url}
             alt={event.title || 'Event Image'}
             className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
           />

@@ -7,8 +7,20 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
 
-const FALLBACK_IMAGE_URL =
-  'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
+// Helper function to get optimized image URL
+const getOptimizedImageUrl = (imageObj) => {
+  if (!imageObj) return '';
+  if (typeof imageObj === 'string') return imageObj;
+  
+  // Use pre-optimized URLs from backend
+  if (imageObj.optimizedUrls) {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    return isMobile ? imageObj.optimizedUrls.mobile : imageObj.optimizedUrls.desktop;
+  }
+  
+  // Fallback to original URL
+  return imageObj.url || '';
+};
 
 // Helper function to format field names
 const formatFieldName = (fieldName) => {
@@ -82,21 +94,23 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
   return (
     <div id="SingleAdvertCard" className="border rounded shadow-md mx-auto">
-      {/* Image Section - Keeping as is */}
-      <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded">
-        {advert.images?.length > 0 ? (
+      {/* Image Section */}
+      <div className="relative w-full mx-auto bg-gray-200 overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]">
+        {advert.images?.length > 0 && getOptimizedImageUrl(advert.images[currentImageIndex]) ? (
           <img
-            src={advert.images[currentImageIndex].url} 
+            src={getOptimizedImageUrl(advert.images[currentImageIndex])}
             alt={advert.title || 'Advert Image'}
-            className="object-contain w-full h-full cursor-pointer"
+            className="object-cover w-full h-full cursor-pointer"
             onClick={handleImageClick}
+            onError={(e) => {
+              console.error('Image failed to load:', e.target.src);
+              e.target.style.display = 'none';
+            }}
           />
         ) : (
-          <img
-            src={FALLBACK_IMAGE_URL}
-            alt="No Image"
-            className="object-contain w-full h-full"
-          />
+          <div className="flex items-center justify-center h-full">
+            <span className="text-gray-500 text-sm">No image available</span>
+          </div>
         )}
 
         {advert.images?.length > 1 && (
@@ -134,13 +148,23 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
         </button>
       </div>
 
-      {/* Fullscreen Modal - Keeping as is */}
-      {isFullscreen && (
+      {/* Fullscreen Modal */}
+      {isFullscreen && advert.images?.length > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
           <img
-            src={advert.images[currentImageIndex].url}
+            src={getOptimizedImageUrl({
+              ...advert.images[currentImageIndex],
+              optimizedUrls: {
+                ...advert.images[currentImageIndex]?.optimizedUrls,
+                desktop: advert.images[currentImageIndex]?.optimizedUrls?.fullscreen || advert.images[currentImageIndex]?.optimizedUrls?.desktop
+              }
+            })}
             alt={advert.title || 'Advert Image'}
             className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
+            onError={(e) => {
+              console.error('Fullscreen image failed to load:', e.target.src);
+              handleCloseFullscreen();
+            }}
           />
 
           <button
