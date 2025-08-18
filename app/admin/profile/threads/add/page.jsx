@@ -54,15 +54,29 @@ const CreateThreadPage = () => {
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    if (files.length + preview.length > 3) {
-      alert('You can upload up to 3 images only.');
+    if (files.length + preview.length > 10) {
+      alert('You can upload up to 10 images only.');
       return;
     }
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
+    const validFiles = files.filter(file => {
+      if (!allowedTypes.includes(file.type)) {
+        alert(`Unsupported file type: ${file.name}. Only JPEG, PNG, WebP, and GIF formats are allowed.`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`${file.name} is too large. Each image must be under 5MB.`);
+        return false;
+      }
+      return true;
+    });
+    
+    const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
     setPreview((prev) => [...prev, ...newPreviews]);
     setFormData((prev) => ({
       ...prev,
-      images: [...prev.images, ...files],
+      images: [...prev.images, ...validFiles],
     }));
   };
 
@@ -169,11 +183,11 @@ const CreateThreadPage = () => {
 
           {/* Image Upload */}
           <div>
-            <label className="block font-semibold">Upload Images (Max 3)</label>
+            <label className="block font-semibold">Upload Images (Max 10, 5MB each)</label>
             <input
               type="file"
               multiple
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
               onChange={handleFileChange}
               className="w-full p-2 border rounded"
             />

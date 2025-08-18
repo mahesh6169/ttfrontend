@@ -33,6 +33,22 @@ import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
 
 
+// Add this helper function for optimized image URLs
+const getOptimizedImageUrl = (imageObj, size = 'desktop') => {
+  if (!imageObj) return null;
+  if (typeof imageObj === 'string') return imageObj;
+  
+  // Use pre-optimized URLs from backend
+  if (imageObj.optimizedUrls) {
+    if (size === 'fullscreen') return imageObj.optimizedUrls.fullscreen;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    return isMobile ? imageObj.optimizedUrls.mobile : imageObj.optimizedUrls.desktop;
+  }
+  
+  // Fallback to original URL
+  return imageObj.url || null;
+};
+
 const ThreadChatPage = () => {
   const { id: threadId } = useParams();
   const dispatch = useDispatch();
@@ -379,11 +395,11 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
       {/* Image Section */}
       {thread.images?.length > 0 && (
-        <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded">
+        <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]">
           <img
-            src={thread.images[currentImageIndex].url}
+            src={getOptimizedImageUrl(thread.images[currentImageIndex])}
             alt="Thread Image"
-            className="object-contain w-full h-full cursor-pointer"
+            className="object-cover w-full h-full cursor-pointer"
             onClick={() => setIsFullscreen(true)}
           />
 
@@ -410,7 +426,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       {isFullscreen && (
         <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
           <img
-            src={thread.images[currentImageIndex].url}
+            src={getOptimizedImageUrl(thread.images[currentImageIndex], 'fullscreen')}
             alt={thread.title || 'Thread Image'}
             className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
           />

@@ -132,14 +132,14 @@ useEffect(() => {
       return;
     }
   
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
     const validFiles = files.filter((file) => {
       if (!allowedTypes.includes(file.type)) {
-        toast.error(`Unsupported file type: ${file.type}`);
+        toast.error(`Unsupported file type: ${file.name}. Only JPEG, PNG, WebP, and GIF formats are allowed.`);
         return false;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('Each image must be under 10MB.');
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Each image must be under 5MB.`);
         return false;
       }
       return true;
