@@ -334,15 +334,23 @@ useEffect(() => {
             name="question"
             value={formData.question || ''}
             onChange={handleChange}
-            className={`w-full p-2 border rounded-lg ${
-              errors.question ? 'border-red-500' : ''
+            className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
+              errors.question ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
             }`}
             placeholder="Describe your question..."
             required
+            maxLength="15000"
           />
-          {errors.question && (
-            <p className="text-red-500 text-sm mt-1">{errors.question}</p>
-          )}
+          <div className="flex justify-between items-start gap-2">
+            <div className="flex-1">
+              {errors.question && (
+                <p className="text-red-500 text-sm mt-1">{errors.question}</p>
+              )}
+            </div>
+            <span className="text-xs text-gray-400 whitespace-nowrap">
+              {(formData.question || '').length}/15000
+            </span>
+          </div>
         </div>
         
         <div>

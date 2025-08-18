@@ -117,7 +117,7 @@ const AddressInput = ({
   return (
     <div className="space-y-2">
       <label className="block font-semibold text-sm sm:text-base">
-        Event Address <span className="text-red-500">*</span>
+        Address <span className="text-red-500">*</span>
       </label>
       <LoadScriptNext
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}

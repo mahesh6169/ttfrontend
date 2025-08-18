@@ -6,7 +6,7 @@ export const PRICING_CONFIG = {
     options: {
       sell: {
         enabled: true,
-        label: 'Sell Price',
+        label: 'Sell',
         units: null,
       },
       rent: {
@@ -26,7 +26,7 @@ export const PRICING_CONFIG = {
     options: {
       sell: {
         enabled: true,
-        label: 'Sell Price',
+        label: 'Sell',
         units: null,
       },
       rent: {
@@ -44,7 +44,7 @@ export const PRICING_CONFIG = {
   'Music & Games': {
   required: true,
   options: {
-    sell: { enabled: true, label: 'Sell Price', units: null },
+    sell: { enabled: true, label: 'Sell', units: null },
     rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
     hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
   }
@@ -71,7 +71,7 @@ export const PRICING_CONFIG = {
   'Fashion & Accessories': {
   required: true,
   options: {
-    sell: { enabled: true, label: 'Sell Price', units: null },
+    sell: { enabled: true, label: 'Sell', units: null },
     rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
     hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
   }
@@ -80,7 +80,7 @@ export const PRICING_CONFIG = {
 'Health, Sport & Fitness': {
   required: true,
   options: {
-    sell: { enabled: true, label: 'Sell Price', units: null },
+    sell: { enabled: true, label: 'Sell', units: null },
     rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
     hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
   }
@@ -89,7 +89,7 @@ export const PRICING_CONFIG = {
 'Home & Garden': {
   required: true,
   options: {
-    sell: { enabled: true, label: 'Sell Price', units: null },
+    sell: { enabled: true, label: 'Sell', units: null },
     rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
     hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
   }
@@ -98,7 +98,7 @@ export const PRICING_CONFIG = {
 'Pets': {
   required: true,
   options: {
-    sell: { enabled: true, label: 'Sell Price', units: null },
+    sell: { enabled: true, label: 'Sell', units: null },
     rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
     hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
   }
@@ -131,7 +131,7 @@ export const PRICING_CONFIG = {
     options: {
       sell: {
         enabled: true,
-        label: 'Sell Price',
+        label: 'Sell',
         units: null,
         validFor: ['House', 'Land', 'Commercial'] // Only valid for these property types
       },
@@ -155,7 +155,7 @@ export const PRICING_CONFIG = {
     options: {
       sell: {
         enabled: true,
-        label: 'Sell Price',
+        label: 'Sell',
         units: null,
         validFor: ['*'] // Valid for all goods types
       }
@@ -167,7 +167,7 @@ export const PRICING_CONFIG = {
     options: {
       sell: {
         enabled: true,
-        label: 'Sell Price',
+        label: 'Sell',
         units: null,
       },
       rent: {

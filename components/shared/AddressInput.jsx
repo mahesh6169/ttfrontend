@@ -9,7 +9,7 @@ const AddressInput = ({
   formData,
   setFormData,
   errors = [],
-  placeholder = 'Enter address or suburb',
+  placeholder = 'Enter your address or suburb',
   disabled = false
 }) => {
   const [formattedAddress, setFormattedAddress] = useState(
@@ -102,7 +102,7 @@ const AddressInput = ({
   return (
     <div>
       <label className="block font-bold mb-2 text-gray-700">
-        Address <span className="text-red-500">*</span>
+        Location <span className="text-red-500">*</span>
       </label>
       <LoadScriptNext
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}

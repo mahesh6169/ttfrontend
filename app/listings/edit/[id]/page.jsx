@@ -124,13 +124,12 @@ const EditAdvertPage = () => {
     : advert;
 
   return (
-    <div className="max-w-4xl mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-6">Edit Listing</h1>
+    <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-6 sm:py-8 lg:py-10">
       <RequireVerifiedAccount>
 
       {fetchStatus === 'loading' && (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
-          <p className="text-blue-700">Loading Listing...</p>
+        <div className="mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm sm:text-base text-blue-700">Loading Listing...</p>
         </div>
       )}
 
@@ -140,14 +139,14 @@ const EditAdvertPage = () => {
 
       {/* Show only API error messages, not validation errors */}
       {message && success === false && (!errors || errors.length === 0) && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded">
-          <p className="text-red-700">{message}</p>
+        <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm sm:text-base text-red-700">{message}</p>
         </div>
       )}
       
       {/* If advert fetch failed but status is success */}
       {fetchStatus === 'succeeded' && !displayData && (
-        <div className="text-red-600 mb-4">
+        <div className="text-sm sm:text-base text-red-600 mb-4 p-3">
           Listing not found or you're not authorized to edit it.
         </div>
       )}

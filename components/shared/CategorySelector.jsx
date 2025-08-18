@@ -25,10 +25,13 @@ const CategorySelector = ({ value, onChange, categories, placeholder = "Select a
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Focus search input when dropdown opens
+  // Focus search input when dropdown opens (desktop only)
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+      // Only auto-focus on desktop (screens wider than 768px)
+      if (window.innerWidth >= 768) {
+        inputRef.current.focus();
+      }
     }
   }, [isOpen]);
 

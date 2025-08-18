@@ -319,14 +319,22 @@ if (createThread.fulfilled.match(resultAction)) {
               placeholder="Describe what would you like to ask"
               value={formData.question}
               onChange={handleChange}
-              className={`w-full p-2 border rounded h-48 ${
-                errors.question ? 'border-red-500' : ''
+              className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
+                errors.question ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
               }`}
               required
+              maxLength="15000"
             />
-            {errors.question && (
-              <p className="text-red-500 text-sm mt-1">{errors.question}</p>
-            )}
+            <div className="flex justify-between items-start gap-2">
+              <div className="flex-1">
+                {errors.question && (
+                  <p className="text-red-500 text-sm mt-1">{errors.question}</p>
+                )}
+              </div>
+              <span className="text-xs text-gray-400 whitespace-nowrap">
+                {(formData.question || '').length}/15000
+              </span>
+            </div>
           </div>
 
           <div>
@@ -354,7 +362,7 @@ if (createThread.fulfilled.match(resultAction)) {
           {/* Location/Suburb Selector - Fixed to allow typing */}
           <div>
             <label className="block font-medium">
-              Suburb <span className="text-red-500">*</span>
+              Location <span className="text-red-500">*</span>
             </label>
             <LoadScriptNext
               googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
@@ -370,7 +378,7 @@ if (createThread.fulfilled.match(resultAction)) {
               >
                 <input
                   type="text"
-                  placeholder="Enter your suburb only to be listed in search results"
+                  placeholder="Enter your suburb"
                   className={`w-full p-2 border rounded ${
                     errors.suburb ? 'border-red-500' : 'border-gray-300'
                   }`}

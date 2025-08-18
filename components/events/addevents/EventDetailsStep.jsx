@@ -206,6 +206,18 @@ const EventDetailsStep = ({
 
   // Enhanced mobile-first field styling with proper touch targets
   const getFieldClasses = (fieldName) => {
+    // Special handling for description field to match listings page
+    if (fieldName === 'description') {
+      const baseClasses = 'w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded';
+      const errorClasses = errors?.[fieldName] ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300';
+      const readOnlyClasses = disabled 
+        ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
+        : 'focus:outline-none focus:ring-2';
+      
+      return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
+    }
+    
+    // Default for other fields
     const baseClasses = 'w-full px-3 py-2.5 sm:py-2 border rounded-lg transition-colors text-sm';
     const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50' : 'border-gray-300';
     const readOnlyClasses = disabled 
@@ -602,10 +614,10 @@ const EventDetailsStep = ({
           value={formData.description || ''}
           onChange={handleChange}
           disabled={disabled}
-          className={`${getFieldClasses('description')} resize-none`}
-          rows="4"
+          className={`${getFieldClasses('description')} min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y`}
+          rows="6"
           placeholder={disabled ? '' : 'Describe your event - what attendees can expect, agenda, special requirements, etc.'}
-          maxLength="2000"
+          maxLength="15000"
         />
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1">
@@ -616,7 +628,7 @@ const EventDetailsStep = ({
             )}
           </div>
           <span className="text-xs text-gray-400 whitespace-nowrap">
-            {(formData.description || '').length}/2000
+            {(formData.description || '').length}/15000
           </span>
         </div>
       </div>

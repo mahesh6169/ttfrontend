@@ -7,6 +7,7 @@ import AddressInput from '../shared/AddressInput';
 import ImageUploader from '../shared/ImageUploader';
 import CategorySelector from '../shared/CategorySelector';
 import CommunitySelector from '../shared/CommunitySelector';
+import SimpleDropdown from '../shared/SimpleDropdown';
 import FieldSystem from './fieldSystem';
 
 const AdvertForm = ({ 
@@ -187,7 +188,7 @@ const AdvertForm = ({
   const renderField = (field) => {
     const value = formData.fields[field.id] || '';
     const hasError = localErrors.some(err => err.includes(field.label));
-    const baseClasses = `w-full p-2 border rounded focus:outline-none focus:ring-2 ${
+    const baseClasses = `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded focus:outline-none focus:ring-2 ${
       hasError ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
     }`;
 
@@ -211,7 +212,7 @@ const AdvertForm = ({
           <div>
             <input type="text" value={value} onChange={e => handleFieldChange(field.id, e.target.value)} placeholder={getPlaceholder()} className={baseClasses} required={field.required} />
             {fieldErrors[field.id] && (
-              <p className="text-red-500 text-sm mt-1">{fieldErrors[field.id]}</p>
+              <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors[field.id]}</p>
             )}
           </div>
         );
@@ -243,7 +244,7 @@ const AdvertForm = ({
               required={field.required} 
             />
             {fieldErrors[field.id] && (
-              <p className="text-red-500 text-sm mt-1">{fieldErrors[field.id]}</p>
+              <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors[field.id]}</p>
             )}
           </div>
         );
@@ -255,27 +256,30 @@ const AdvertForm = ({
         
         return (
           <div>
-            <select 
-              value={value} 
-              onChange={e => handleFieldChange(field.id, e.target.value)} 
-              className={`${baseClasses} ${isVehicleTypeLocked ? 'bg-gray-100 cursor-not-allowed' : ''}`} 
-              required={field.required}
+            <SimpleDropdown
+              value={value}
+              onChange={(newValue) => handleFieldChange(field.id, newValue)}
+              options={field.options}
+              placeholder={`Select ${field.label}`}
               disabled={isVehicleTypeLocked}
-            >
-              <option value="">Select {field.label}</option>
-              {field.options.map(option => <option key={option} value={option}>{option}</option>)}
-            </select>
+            />
             {fieldErrors[field.id] && (
-              <p className="text-red-500 text-sm mt-1">{fieldErrors[field.id]}</p>
+              <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors[field.id]}</p>
             )}
           </div>
         );
       case 'textarea':
         return (
           <div>
-            <textarea value={value} onChange={e => handleFieldChange(field.id, e.target.value)} placeholder={field.placeholder} className={`${baseClasses} h-24`} required={field.required} />
+            <textarea 
+              value={value} 
+              onChange={e => handleFieldChange(field.id, e.target.value)} 
+              placeholder={field.placeholder} 
+              className={`${baseClasses} min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y`} 
+              required={field.required} 
+            />
             {fieldErrors[field.id] && (
-              <p className="text-red-500 text-sm mt-1">{fieldErrors[field.id]}</p>
+              <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors[field.id]}</p>
             )}
           </div>
         );
@@ -294,8 +298,8 @@ const renderPricingInputs = (pricingOptions) => {
   return (
     <div className="mt-4">
       <div className="mb-4">
-        <div className="flex gap-4">
-          <div>
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
+          <div className="sm:w-40">
             <input
               type="number"
               min="0"
@@ -323,28 +327,25 @@ const renderPricingInputs = (pricingOptions) => {
               }}
               onWheel={(e) => e.target.blur()}
               placeholder={selectedPriceType === 'sell' ? '0.00' : selectedPriceType === 'rent' ? '0.00' : '0.00'}
-              className="p-2 border rounded w-40"
+              className="w-full sm:w-40 p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-300"
             />
             {fieldErrors[`pricing_${selectedPriceType}`] && (
-              <p className="text-red-500 text-sm mt-1">{fieldErrors[`pricing_${selectedPriceType}`]}</p>
+              <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors[`pricing_${selectedPriceType}`]}</p>
             )}
           </div>
           {config.units && (
-            <select
+            <SimpleDropdown
               value={current.unit || ''}
-              onChange={(e) => {
+              onChange={(newValue) => {
                 const updated = formData.pricing.map(p =>
-                  p.priceType === selectedPriceType ? { ...p, unit: e.target.value } : p
+                  p.priceType === selectedPriceType ? { ...p, unit: newValue } : p
                 );
                 handlePricingChange(updated);
               }}
-              className="p-2 border rounded w-40"
-            >
-              <option value="">Select unit</option>
-              {config.units.map(unit => (
-                <option key={unit} value={unit}>{unit}</option>
-              ))}
-            </select>
+              options={config.units}
+              placeholder="Select unit"
+              className="sm:w-40"
+            />
           )}
         </div>
       </div>
@@ -502,10 +503,12 @@ const handleSubmit = (e) => {
 const availableCategories = FieldSystem.getCategoriesForRole(userRole);
 
 return (
-  <form onSubmit={handleSubmit} className="space-y-6">
+  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
     {/* Common fields - always show these */}
     <div>
-      <label className="block font-bold mb-2 text-gray-700">Title <span className="text-red-500">*</span></label>
+      <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        Title <span className="text-red-500">*</span>
+      </label>
       <input 
         type="text" 
         value={formData.title} 
@@ -516,27 +519,31 @@ return (
             setFieldErrors(prev => ({ ...prev, title: null }));
           }
         }} 
-        className={`w-full p-2 border rounded focus:outline-none focus:ring-2 ${
+        className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded focus:outline-none focus:ring-2 ${
           fieldErrors.title ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
         }`} 
         placeholder="Enter a descriptive title" 
       />
       {fieldErrors.title && (
-        <p className="text-red-500 text-sm mt-1">{fieldErrors.title}</p>
+        <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.title}</p>
       )}
     </div>
 
     {/* Ad Type */}
     <div>
-      <label className="block font-bold mb-2 text-gray-700">
+      <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
         Ad Type
-        {initialData && <span className="text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
+        {initialData && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
       </label>
-      <div className="flex border border-gray-300 rounded overflow-hidden">
+      <div className="grid grid-cols-2 gap-2 sm:gap-0 sm:flex sm:border sm:border-gray-300 rounded-lg sm:rounded overflow-hidden">
         <button 
           type="button" 
           disabled={!!initialData}
-          className={`flex-1 p-3 ${formData.adType === 'offered' ? 'bg-teal-600 text-white' : 'bg-white text-gray-700'} ${initialData ? 'opacity-50 cursor-not-allowed' : ''}`} 
+          className={`p-3 sm:flex-1 rounded-lg sm:rounded-none border sm:border-0 ${
+            formData.adType === 'offered' 
+              ? 'bg-teal-600 text-white border-teal-600' 
+              : 'bg-white text-gray-700 border-gray-300'
+          } ${initialData ? 'opacity-50 cursor-not-allowed' : ''} transition-colors`} 
           onClick={() => {
             if (!initialData) {
               handleChange('adType', 'offered');
@@ -548,7 +555,11 @@ return (
         <button 
           type="button" 
           disabled={!!initialData}
-          className={`flex-1 p-3 ${formData.adType === 'wanted' ? 'bg-teal-600 text-white' : 'bg-white text-gray-700'} ${initialData ? 'opacity-50 cursor-not-allowed' : ''}`} 
+          className={`p-3 sm:flex-1 rounded-lg sm:rounded-none border sm:border-0 ${
+            formData.adType === 'wanted' 
+              ? 'bg-teal-600 text-white border-teal-600' 
+              : 'bg-white text-gray-700 border-gray-300'
+          } ${initialData ? 'opacity-50 cursor-not-allowed' : ''} transition-colors`} 
           onClick={() => {
             if (!initialData) {
               handleChange('adType', 'wanted');
@@ -562,9 +573,9 @@ return (
 
     {/* Category */}
     <div>
-      <label className="block font-bold mb-2 text-gray-700">
+      <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
         Category <span className="text-red-500">*</span>
-        {initialData && <span className="text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
+        {initialData && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
       </label>
       <CategorySelector
         value={formData.category}
@@ -583,7 +594,7 @@ return (
         disabled={!!initialData}
       />
       {fieldErrors.category && (
-        <p className="text-red-500 text-sm mt-1">{fieldErrors.category}</p>
+        <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.category}</p>
       )}
     </div>
 
@@ -603,30 +614,30 @@ return (
       }
       
       return (
-        <div key={section.id} className={index > 0 ? "border-t pt-4" : ""}>
+        <div key={section.id} className={index > 0 ? "border-t pt-4 sm:pt-6" : ""}>
           {/* Section title if it has one - but not for pricing sections that will be handled specially */}
           {section.title && section.specialField !== 'pricing' && (
-            <h3 className="font-bold text-lg mb-4 text-gray-700">{section.title}</h3>
+            <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-3 sm:mb-4 text-gray-700">{section.title}</h3>
           )}
           
           {/* Special handling for pricing section */}
           {section.specialField === 'pricing' && formData.adType === 'offered' && section.pricingOptions && Object.keys(section.pricingOptions).length > 0 && (
             <>
-            <h3 className="font-bold text-lg mb-2 text-gray-700">
+            <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-2 sm:mb-3 text-gray-700">
               {section.title}
               <span className="text-red-500 ml-1">*</span>
             </h3>
             
-            <div className="flex flex-wrap gap-4 mb-4">
+            <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 sm:gap-3 mb-4">
               {Object.entries(section.pricingOptions).map(([type, config]) => (
                 <button
                   key={type}
                   type="button"
-                  className={`px-4 py-2 border rounded ${
+                  className={`px-2 sm:px-4 py-2.5 sm:py-2 border rounded-lg sm:rounded text-sm sm:text-base ${
                     selectedPriceType === type
-                      ? 'bg-teal-600 text-white'
+                      ? 'bg-teal-600 text-white border-teal-600'
                       : 'bg-white text-gray-700 border-gray-300'
-                  }`}
+                  } transition-colors`}
                   onClick={() => handlePricingTypeSelect(type, config)}
                 >
                   {config.label}
@@ -647,20 +658,15 @@ return (
         {section.specialField === 'condition' && formData.adType === 'offered' && 
          formData.pricing.some(p => p.priceType === 'sell') && (
           <div className="mb-4">
-            <label className="block font-bold mb-2 text-gray-700">
+            <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
               Condition <span className="text-red-500 ml-1">*</span>
             </label>
-            <select
+            <SimpleDropdown
               value={formData.condition}
-              onChange={(e) => handleChange('condition', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
-              required={true}
-            >
-              <option value="">Select Condition</option>
-              <option value="New">New</option>
-              <option value="Used">Used</option>
-              <option value="Refurbished">Refurbished</option>
-            </select>
+              onChange={(newValue) => handleChange('condition', newValue)}
+              options={['New', 'Used', 'Refurbished']}
+              placeholder="Select Condition"
+            />
           </div>
         )}
         
@@ -673,10 +679,10 @@ return (
           
           return (
             <div key={field.id} className="mb-4">
-              <label className="block font-bold mb-2 text-gray-700">
+              <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
                 {field.label}
                 {field.required && <span className="text-red-500 ml-1">*</span>}
-                {isVehicleTypeLocked && <span className="text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
+                {isVehicleTypeLocked && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
               </label>
               {renderField(field)}
             </div>
@@ -688,7 +694,9 @@ return (
 
     {/* Description - always show this */}
     <div>
-      <label className="block font-bold mb-2 text-gray-700">Description <span className="text-red-500">*</span></label>
+      <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        Description <span className="text-red-500">*</span>
+      </label>
       <textarea 
         value={formData.description} 
         onChange={(e) => {
@@ -698,23 +706,31 @@ return (
             setFieldErrors(prev => ({ ...prev, description: null }));
           }
         }} 
-        className={`w-full p-2 border rounded h-32 focus:outline-none focus:ring-2 ${
+        className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
           fieldErrors.description ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
         }`} 
         placeholder={formData.adType === 'wanted' 
           ? "Describe what you're looking for, including specific requirements or preferences" 
-          : "Provide detailed information about your item or service"} 
+          : "Provide detailed information about your item or service"}
+        maxLength="15000"
       />
-      {fieldErrors.description && (
-        <p className="text-red-500 text-sm mt-1">{fieldErrors.description}</p>
-      )}
+      <div className="flex justify-between items-start gap-2">
+        <div className="flex-1">
+          {fieldErrors.description && (
+            <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.description}</p>
+          )}
+        </div>
+        <span className="text-xs text-gray-400 whitespace-nowrap">
+          {(formData.description || '').length}/15000
+        </span>
+      </div>
     </div>
 
     {/* Address */}
     <div>
       <AddressInput formData={formData} setFormData={setFormData} disabled={isLoading} />
       {fieldErrors.address && (
-        <p className="text-red-500 text-sm mt-1">{fieldErrors.address}</p>
+        <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.address}</p>
       )}
     </div>
 
@@ -732,27 +748,27 @@ return (
 
     {/* Errors - Only show general errors that aren't field-specific */}
     {(localErrors.length > 0 || errors.length > 0) && (
-      <div className="bg-red-50 border border-red-200 rounded p-4">
-        <p className="font-bold text-red-700 mb-2">Please fix the following errors:</p>
+      <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+        <p className="font-semibold sm:font-bold text-red-700 mb-2 text-sm sm:text-base">Please fix the following errors:</p>
         <ul className="list-disc list-inside space-y-1">
           {localErrors.map((error, index) => (
-            <li key={`local-${error}-${index}`} className="text-red-600 text-sm">{error}</li>
+            <li key={`local-${error}-${index}`} className="text-red-600 text-xs sm:text-sm">{error}</li>
           ))}
           {errors.map((error, index) => (
-            <li key={`backend-${error}-${index}`} className="text-red-600 text-sm">{error}</li>
+            <li key={`backend-${error}-${index}`} className="text-red-600 text-xs sm:text-sm">{error}</li>
           ))}
         </ul>
       </div>
     )}
 
     {/* Submit */}
-    <div className="flex gap-4">
+    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
       <button 
         type="submit" 
         disabled={isLoading} 
-        className={`px-6 py-3 rounded font-medium ${
+        className={`w-full sm:w-auto px-6 py-3 rounded-lg sm:rounded font-medium text-sm sm:text-base ${
           isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-700 text-white'
-        }`}
+        } transition-colors`}
       >
         {isSuccess ? 
           (initialData ? 'Updated! Redirecting...' : 'Created! Redirecting...') : 
@@ -778,7 +794,7 @@ return (
             router.push('/listings');
           }
         }} 
-        className="px-6 py-3 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+        className="w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-lg sm:rounded text-gray-700 hover:bg-gray-50 text-sm sm:text-base transition-colors"
       >
         Cancel
       </button>
