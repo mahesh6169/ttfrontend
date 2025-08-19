@@ -51,22 +51,20 @@ const SeatLegend = () => {
   ];
 
   return (
-    <div className="space-y-3">
-      
-      {/* ✅ MOBILE ENHANCED: Compact horizontal layout for legend items */}
-      <div className="flex flex-wrap gap-4 justify-center">
+    <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+      {/* Mobile: Horizontal scroll, Desktop: Wrap */}
+      <div className="flex sm:flex-wrap gap-2 sm:gap-3 sm:justify-center min-w-max sm:min-w-0">
         {legendItems.map((item) => (
-          <div key={item.status} className="flex items-center space-x-2">
-            <div className={`w-6 h-6 rounded text-[10px] font-medium border flex items-center justify-center ${item.color}`}>
+          <div key={item.status} className="flex items-center space-x-1 sm:space-x-1.5">
+            <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded text-[8px] sm:text-[10px] font-medium border flex items-center justify-center ${item.color}`}>
               {item.icon}
             </div>
-            <div className="text-xs">
-              <div className="font-medium text-gray-700">{item.label}</div>
+            <div className="text-[10px] sm:text-xs font-medium text-gray-700 whitespace-nowrap">
+              {item.label}
             </div>
           </div>
         ))}
       </div>
-
     </div>
   );
 };

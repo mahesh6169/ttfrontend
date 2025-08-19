@@ -492,20 +492,15 @@ useEffect(() => {
   }, [reserveError]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {/* Compact Status Bar - Responsive for mobile */}
-      <div className="bg-white rounded-lg border border-gray-200 p-3 sm:px-4 sm:py-2.5">
+      <div className="border-t border-gray-200 pt-2 sm:pt-3">
         {/* Desktop Layout - Horizontal */}
         <div className="hidden sm:flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Title */}
-            <h3 className="text-sm font-semibold text-gray-900">Select Your Seats</h3>
-            
-            <div className="h-4 w-px bg-gray-300"></div>
-            
             {/* Selection count - always visible as guidance */}
             <div className="text-sm font-medium text-gray-700">
-              {selectedSeats.length}/{requiredSeats} selected
+              {selectedSeats.length}/{requiredSeats} Seats Selected
             </div>
             
             {/* Show seat numbers and timer only when seats are selected */}
@@ -561,61 +556,60 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Mobile Layout - Stacked */}
-        <div className="sm:hidden">
-          {/* Title and controls row */}
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-900">Select Your Seats</h3>
-            <div className="flex items-center gap-2">
-              {/* Toggle layout button */}
-              {event.seatingLayoutImage?.url && (
-                <button
-                  onClick={() => setShowSeatingImage(!showSeatingImage)}
-                  className="text-xs text-gray-600 hover:text-gray-800"
-                >
-                  {showSeatingImage ? 'Hide' : 'Show'} Layout
-                </button>
-              )}
-              
-              {/* Clear button - only when seats selected */}
-              {selectedSeats.length > 0 && (
-                <button
-                  onClick={handleClearSelection}
-                  disabled={isLoading || pendingReservation}
-                  className="text-xs text-red-600 hover:text-red-700 disabled:opacity-50"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-          
-          {/* Selection status */}
-          <div className="space-y-1.5">
+        {/* Mobile Layout - Single Line */}
+        <div className="sm:hidden flex items-center justify-between">
+          <div className="flex items-center gap-2">
             {/* Selection count */}
-            <div className="text-sm font-medium text-gray-700">
-              {selectedSeats.length}/{requiredSeats} selected
+            <div className="text-xs font-medium text-gray-700">
+              {selectedSeats.length}/{requiredSeats} Seats Selected
             </div>
             
             {/* Seat numbers - only when seats selected */}
             {selectedSeats.length > 0 && (
-              <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                <span className="truncate">{selectedSeats.join(', ')}</span>
-              </div>
+              <>
+                <div className="h-3 w-px bg-gray-300"></div>
+                <div className="text-[10px] text-gray-600 max-w-[120px] truncate">
+                  {selectedSeats.join(', ')}
+                </div>
+              </>
             )}
             
-            {/* Timer - only when reservation active */}
+            {/* Timer - compact inline */}
             {currentReservation?.reservedUntil && (
-              <SeatReservationTimer
-                expiryTime={currentReservation.reservedUntil}
-                onExpire={handleTimerExpire}
-                eventId={eventId}
-                pauseWhenNavigating={true}
-                compact={true}
-              />
+              <>
+                <div className="h-3 w-px bg-gray-300"></div>
+                <SeatReservationTimer
+                  expiryTime={currentReservation.reservedUntil}
+                  onExpire={handleTimerExpire}
+                  eventId={eventId}
+                  pauseWhenNavigating={true}
+                  compact={true}
+                />
+              </>
+            )}
+          </div>
+          
+          {/* Right side controls */}
+          <div className="flex items-center gap-2">
+            {/* Toggle layout button */}
+            {event.seatingLayoutImage?.url && (
+              <button
+                onClick={() => setShowSeatingImage(!showSeatingImage)}
+                className="text-[10px] text-gray-600 hover:text-gray-800"
+              >
+                {showSeatingImage ? 'Hide' : 'Show'} Layout
+              </button>
+            )}
+            
+            {/* Clear button - only when seats selected */}
+            {selectedSeats.length > 0 && (
+              <button
+                onClick={handleClearSelection}
+                disabled={isLoading || pendingReservation}
+                className="text-[10px] text-red-600 hover:text-red-700 disabled:opacity-50"
+              >
+                Clear
+              </button>
             )}
           </div>
         </div>
@@ -623,8 +617,8 @@ useEffect(() => {
 
       {/* Seating layout image (if toggled) */}
       {showSeatingImage && event.seatingLayoutImage?.url && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">
+        <div className="mb-3 sm:mb-6 p-2 sm:p-4 bg-gray-50 rounded-md sm:rounded-lg border border-gray-200">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-900 mb-2 sm:mb-3">
             Venue Layout Reference
           </h3>
           <img
@@ -636,7 +630,7 @@ useEffect(() => {
       )}
 
       {/* ✅ MOBILE ENHANCED: Improved seat map with horizontal scrolling */}
-      <div className="relative bg-white border border-gray-200 rounded-lg max-w-full mx-auto">
+      <div className="relative border border-gray-200 rounded-md sm:rounded-lg max-w-full mx-auto">
         {seatingLayout.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <svg
@@ -659,8 +653,8 @@ useEffect(() => {
         ) : (
           <div>
             {/* ✅ MOBILE ENHANCED: Compact stage indicator */}
-            <div className="text-center py-2 border-b border-gray-200 bg-gradient-to-b from-gray-100 to-gray-50">
-              <div className="inline-block bg-gray-800 text-white px-6 py-1.5 rounded text-xs font-semibold tracking-wider">
+            <div className="text-center py-1.5 sm:py-2 border-b border-gray-200 bg-gradient-to-b from-gray-100 to-gray-50">
+              <div className="inline-block bg-gray-800 text-white px-4 sm:px-6 py-1 sm:py-1.5 rounded text-[10px] sm:text-xs font-medium sm:font-semibold tracking-wider">
                 STAGE
               </div>
             </div>
@@ -693,14 +687,14 @@ useEffect(() => {
                 }
               `}</style>
 
-              <div className="seat-container min-w-max p-3 space-y-1">
+              <div className="seat-container min-w-max p-2 sm:p-3 space-y-0.5 sm:space-y-1">
                 {seatingLayout.map((row, rowIndex) => (
                   <div
                     key={`row-${rowIndex}-${row.rowLabel}`}
                     className="flex items-center gap-1 min-w-max"
                   >
                     {/* Left row label - compact */}
-                    <div className="w-6 text-center font-semibold text-gray-600 text-xs flex-shrink-0 sticky left-0 bg-white z-10 pr-1">
+                    <div className="w-4 sm:w-6 text-center font-medium sm:font-semibold text-gray-600 text-[10px] sm:text-xs flex-shrink-0 sticky left-0 bg-white z-10 pr-0.5 sm:pr-1">
                       {row.rowLabel}
                     </div>
 
@@ -757,7 +751,7 @@ useEffect(() => {
                     </div>
 
                     {/* Right row label - compact */}
-                    <div className="w-6 text-center font-semibold text-gray-600 text-xs flex-shrink-0 sticky right-0 bg-white z-10 pl-1">
+                    <div className="w-4 sm:w-6 text-center font-medium sm:font-semibold text-gray-600 text-[10px] sm:text-xs flex-shrink-0 sticky right-0 bg-white z-10 pl-0.5 sm:pl-1">
                       {row.rowLabel}
                     </div>
                   </div>
@@ -766,8 +760,8 @@ useEffect(() => {
             </div>
 
             {/* Scroll hint for mobile - More subtle */}
-            <div className="md:hidden bg-gray-50 px-4 py-1.5 text-center">
-              <div className="text-[10px] text-gray-500">
+            <div className="md:hidden bg-gray-50 px-3 py-1 text-center">
+              <div className="text-[9px] text-gray-500">
                 ← Swipe to view all seats →
               </div>
             </div>

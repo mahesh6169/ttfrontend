@@ -456,46 +456,51 @@ const handleProceedToCheckout = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Main content container - matching tickets page style */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="w-full max-w-7xl mx-auto px-3 py-4 sm:px-4 sm:py-6">
         {/* Back to Tickets Button */}
-        <div className="mb-6">
+        <div className="mb-3 sm:mb-6">
           <button
             onClick={handleBack}
-            className="inline-flex items-center px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg transition-colors"
+            className="inline-flex items-center px-2.5 py-1 text-xs sm:px-4 sm:py-2 sm:text-base bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md sm:rounded-lg transition-colors"
           >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Tickets Page
+            <span className="text-xs sm:text-base">Back</span>
           </button>
         </div>
 
         <SeatSocketListener eventId={eventId}/>
-        <div className="space-y-6">
+        
+        {/* Single container for everything */}
+        <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-6">
+          {/* Title */}
+          <h1 className="text-lg sm:text-2xl font-semibold sm:font-bold text-gray-900 text-center mb-3 sm:mb-6">
+            Select Seats
+          </h1>
           
-          {/* Row 1: Seating Legend - More compact */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+          {/* Seating Legend - Inline and compact */}
+          <div className="mb-4 sm:mb-6">
             <SeatLegend />
           </div>
           
-          {/* Row 2: Seat Selection - Full width seat map */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          {/* Seat Selection */}
+          <div className="">
             <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection} eventId={eventId}/>
             
             {/* Proceed to Checkout Button - Only show when all seats are selected */}
             {canProceed && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="mt-3 sm:mt-6 pt-3 sm:pt-6 border-t border-gray-200">
                 <button
                   onClick={handleProceedToCheckout}
-                  className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center"
+                  className="w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium sm:font-semibold text-sm sm:text-base text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center"
                 >
-                  <FaShoppingCart className="mr-2" />
-                  Proceed to Checkout
+                  <FaShoppingCart className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
+                  <span className="text-sm sm:text-base">Proceed to Checkout</span>
                 </button>
               </div>
             )}
           </div>
-          
         </div>
       </div>
 

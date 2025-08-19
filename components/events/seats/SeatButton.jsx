@@ -73,7 +73,7 @@ const SeatButton = ({
   // ✅ MOBILE ENHANCED: Improved styling with better mobile UX and compact design
   const getSeatStyles = () => {
     const baseStyles =
-      'w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded text-[10px] sm:text-xs font-medium border transition-all duration-200 flex items-center justify-center cursor-pointer select-none relative overflow-hidden touch-manipulation';
+      'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded text-[8px] sm:text-[10px] md:text-xs font-medium border transition-all duration-200 flex items-center justify-center cursor-pointer select-none relative overflow-hidden touch-manipulation';
 
     switch (status) {
       case 'selected':
@@ -186,7 +186,7 @@ const SeatButton = ({
         );
       default:
         return (
-          <span className="text-xs sm:text-[10px] md:text-xs font-bold">
+          <span className="text-[8px] sm:text-[10px] md:text-xs font-bold">
             {safeSeat.seatNumber}
           </span>
         );
