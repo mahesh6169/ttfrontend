@@ -320,30 +320,30 @@ const TicketSelectionPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="w-full max-w-4xl mx-auto px-3 py-4 sm:px-4 sm:py-6">
         {/* Back to Events Button */}
-        <div className="mb-6">
+        <div className="mb-3 sm:mb-6">
           <button
             onClick={handleBack}
-            className="inline-flex items-center px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg transition-colors"
+            className="inline-flex items-center px-2.5 py-1 text-xs sm:px-4 sm:py-2 sm:text-base bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md sm:rounded-lg transition-colors"
           >
-            <FaArrowLeft className="mr-2" />
-            Back to Event Page
+            <FaArrowLeft className="mr-1 sm:mr-2 text-[10px] sm:text-base" />
+            <span className="text-xs sm:text-base">Back</span>
           </button>
         </div>
 
         {/* Single Column Layout - Full Width */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-6">
           {/* Centered Title */}
-          <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">
+          <h1 className="text-lg sm:text-2xl font-semibold sm:font-bold text-gray-900 text-center mb-3 sm:mb-6">
             Select Tickets
           </h1>
           {/* Ticket Types */}
-          <div className="space-y-4 mb-6">
+          <div className="space-y-2 sm:space-y-4 mb-3 sm:mb-6">
 
             {/* Event Capacity Info */}
-            <div className="flex items-center text-sm text-gray-600 mb-4">
-              <FaUsers className="mr-2" />
+            <div className="flex items-center text-[10px] sm:text-sm text-gray-600 mb-2 sm:mb-4">
+              <FaUsers className="mr-1 sm:mr-2 text-xs sm:text-base" />
               <span>
   {capacityLoading ? (
     'Loading availability...'
@@ -436,17 +436,65 @@ const TicketSelectionPage = () => {
               return (
                 <div
                   key={ticketType._id}
-                  className={`border rounded-lg p-4 transition-all ${
+                  className={`border rounded-lg p-2 sm:p-4 transition-all ${
                     isAvailable
                       ? 'border-gray-200 hover:border-blue-300 hover:shadow-md'
                       : 'border-gray-100 bg-gray-50 opacity-75'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  {/* Mobile Layout - Compact Single Row */}
+                  <div className="flex items-center justify-between sm:hidden">
+                    {/* Left: Name and Price */}
+                    <div className="flex-1 min-w-0 mr-2">
+                      <h4 className="font-medium text-gray-900 text-xs truncate">
+                        {ticketType.name}
+                      </h4>
+                      <p className="text-sm font-bold text-green-600">
+                        ${ticketType.price?.toFixed(2) || '0.00'}
+                      </p>
+                    </div>
+
+                    {/* Right: Quantity Selector */}
+                    {isAvailable && (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() =>
+                            handleQuantityChange(ticketType._id, -1)
+                          }
+                          disabled={selectedQty === 0 || loading.initializing}
+                          className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <FaMinus className="text-[10px]" />
+                        </button>
+
+                        <span className="w-6 text-center font-semibold text-xs">
+                          {selectedQty}
+                        </span>
+
+                        <button
+                          onClick={() =>
+                            handleQuantityChange(ticketType._id, 1)
+                          }
+                          disabled={
+                            totals.totalQuantity >= maxPerOrder ||
+                            remainingQty <= 0 ||
+                            loading.initializing ||
+                            eventCapacity?.status === 'sold-out'
+                          }
+                          className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <FaPlus className="text-[10px]" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Desktop Layout - Keep existing */}
+                  <div className="hidden sm:flex sm:items-center sm:justify-between">
                     {/* Ticket Info */}
                     <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold text-gray-900 text-base">
                           {ticketType.name}
                         </h4>
                         <div className="text-right">
@@ -457,7 +505,7 @@ const TicketSelectionPage = () => {
                       </div>
                     </div>
 
-                    {/* Quantity Selector - Moved to right side */}
+                    {/* Quantity Selector */}
                     {isAvailable && (
                       <div className="flex items-center space-x-3 ml-6">
                         <button
@@ -499,8 +547,9 @@ const TicketSelectionPage = () => {
                    if (!status) return null;
                    
                    return (
-                     <div className={`mt-2 text-xs font-medium ${status.className}`}>
-                       {status.icon} {status.message}
+                     <div className={`mt-1 sm:mt-2 text-[10px] sm:text-xs font-medium ${status.className}`}>
+                       <span className="inline-block">{status.icon}</span>
+                       <span className="ml-0.5 sm:ml-1">{status.message}</span>
                      </div>
                    );
                  })()}
@@ -517,13 +566,13 @@ const TicketSelectionPage = () => {
 
           {/* Proceed Button - Placed right after seating info */}
           {totals.totalQuantity > 0 && (
-            <div className="mb-6">
+            <div className="mb-3 sm:mb-6">
               <button
                 onClick={handleProceed}
                 disabled={
                   !canProceedToNext || isLoading || loading.initializing
                 }
-                className={`w-full py-3 px-4 rounded-lg font-semibold flex items-center justify-center transition-all ${
+                className={`w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
                   canProceedToNext && !isLoading && !loading.initializing
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -532,19 +581,19 @@ const TicketSelectionPage = () => {
                 {isLoading || loading.initializing ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Processing...
+                    <span className="text-sm sm:text-base">Processing...</span>
                   </>
                 ) : (
                   <>
                     {hasSeatingLayout ? (
                       <>
-                        <FaChair className="mr-2" />
-                        Select Seats
+                        <FaChair className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
+                        <span className="text-sm sm:text-base">Select Seats</span>
                       </>
                     ) : (
                       <>
-                        <FaShoppingCart className="mr-2" />
-                        Purchase Tickets
+                        <FaShoppingCart className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
+                        <span className="text-sm sm:text-base">Purchase Tickets</span>
                       </>
                     )}
                   </>
@@ -555,38 +604,38 @@ const TicketSelectionPage = () => {
 
           {/* Error Messages */}
           {purchaseError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
               <div className="flex items-start">
-                <FaExclamationTriangle className="text-red-600 mr-3 mt-1" />
-                <div>
-                  <h4 className="font-medium text-red-800 mb-1">
+                <FaExclamationTriangle className="text-red-600 mr-2 sm:mr-3 mt-0.5 sm:mt-1 text-sm sm:text-base flex-shrink-0" />
+                <div className="min-w-0">
+                  <h4 className="font-medium text-red-800 mb-1 text-sm sm:text-base">
                     Purchase Error
                   </h4>
-                  <p className="text-sm text-red-700">{purchaseError}</p>
+                  <p className="text-xs sm:text-sm text-red-700 break-words">{purchaseError}</p>
                 </div>
               </div>
             </div>
           )}
 
           {errors.selection && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
               <div className="flex items-start">
-                <FaExclamationTriangle className="text-red-600 mr-3 mt-1" />
-                <div>
-                  <h4 className="font-medium text-red-800 mb-1">
+                <FaExclamationTriangle className="text-red-600 mr-2 sm:mr-3 mt-0.5 sm:mt-1 text-sm sm:text-base flex-shrink-0" />
+                <div className="min-w-0">
+                  <h4 className="font-medium text-red-800 mb-1 text-sm sm:text-base">
                     Selection Error
                   </h4>
-                  <p className="text-sm text-red-700">{errors.selection}</p>
+                  <p className="text-xs sm:text-sm text-red-700 break-words">{errors.selection}</p>
                 </div>
               </div>
             </div>
           )}
 
           {errors.general && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
               <div className="flex items-start">
-                <FaExclamationTriangle className="text-red-600 mr-3 mt-1" />
-                <p className="text-sm text-red-700">{errors.general}</p>
+                <FaExclamationTriangle className="text-red-600 mr-2 sm:mr-3 mt-0.5 sm:mt-1 text-sm sm:text-base flex-shrink-0" />
+                <p className="text-xs sm:text-sm text-red-700 break-words">{errors.general}</p>
               </div>
             </div>
           )}
