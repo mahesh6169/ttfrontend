@@ -13,34 +13,9 @@ import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import { useRef } from 'react';
 import CategorySelector from '@/components/shared/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
+import { threadCategoryOptions } from '@/components/threads/categories';
 
 const libraries = ['places'];
-
-const categoryOptions = [
-  'Education',
-  'Migration',
-  'Travel',
-  'Jobs',
-  'Entertainment & Hobbies',
-  'Baby & Children',
-  'Arts & Crafts',
-  'Cars & Vehicles',
-  'Fashion & Accessories',
-  'Electronics & Computer',
-  'Home & Garden',
-  'Miscellaneous',
-  'Pets',
-  'Real Estate',
-  'Party Hires & Services',
-  'Sport & Fitness',
-  'Food & Catering Services',
-  'Health & Beauty',
-  'Business & Shops',
-  'Events & Community',
-  'Services',
-  'Travel Partner',
-  'financial aid',
-];
 
 const EditThreadPage = () => {
   const dispatch = useDispatch();
@@ -357,7 +332,7 @@ useEffect(() => {
           <CategorySelector
             value={formData.category}
             onChange={(value) => setFormData({ ...formData, category: value })}
-            categories={categoryOptions}
+            categories={threadCategoryOptions}
             placeholder="Select Category"
             required={true}
           />

@@ -7,6 +7,8 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import Pagination from '@/components/Pagination';
 
 const ManageAdvertsPage = () => {
+  console.log('[RENEWALS] Component rendering...');
+  
   // State management - replaces Redux store
   const [adverts, setAdverts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,15 +23,23 @@ const ManageAdvertsPage = () => {
   const [deletingAdverts, setDeletingAdverts] = useState({});
   
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  console.log('[RENEWALS] BASE_URL:', BASE_URL);
 
   // Fetch adverts - replaces getManageAdverts Redux action
   const fetchAdverts = async (pageNum = 1) => {
+    console.log('[RENEWALS] fetchAdverts called with page:', pageNum);
     setLoading(true);
     try {
-      const { data } = await axios.get(
-        `${BASE_URL}/admin/adverts/manage?page=${pageNum}&limit=10`,
-        { withCredentials: true }
-      );
+      const url = `${BASE_URL}/admin/adverts/manage?page=${pageNum}&limit=10`;
+      console.log('[RENEWALS] Fetching from URL:', url);
+      
+      const { data } = await axios.get(url, { withCredentials: true });
+      
+      console.log('[RENEWALS] Response received:', {
+        success: data.success,
+        advertCount: data.adverts?.length,
+        meta: data.meta
+      });
       
       if (data.success) {
         setAdverts(data.adverts || []);
@@ -42,7 +52,13 @@ const ManageAdvertsPage = () => {
         setPage(pageNum);
       }
     } catch (error) {
-      console.error('Error fetching adverts:', error);
+      console.error('[RENEWALS] Error fetching adverts:', error);
+      console.error('[RENEWALS] Error details:', {
+        status: error.response?.status,
+        message: error.message,
+        data: error.response?.data
+      });
+      
       if (error.response?.status === 401) {
         toast.error('Session expired. Please login again.');
         // Could redirect to login if needed
@@ -56,6 +72,7 @@ const ManageAdvertsPage = () => {
 
   // Initial load
   useEffect(() => {
+    console.log('[RENEWALS] useEffect - Initial load triggered');
     fetchAdverts(1);
   }, []);
 

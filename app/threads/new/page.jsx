@@ -10,34 +10,9 @@ import { toast } from 'react-toastify';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/shared/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
+import { threadCategoryOptions } from '@/components/threads/categories';
 
 const libraries = ['places'];
-
-const categoryOptions = [
-  'Migration',
-  "Community & Cultural",
-  "Devotional & Spiritual",
-  "Entertainment & Music",
-  "Family & Kids",
-  "Arts & Dance",
-  "Sports",
-  "Wellness & Fitness",
-  'Food & Catering',
-  "Academic & Education",
-  'Cars & Vehicles',
-  'Home & Garden',  
-  'Electronics & Computer',
-  'Fashion & Accessories',
-  'Real Estate',
-  'Jobs',
-  "Travel & Adventure",
-  'Pets',
-  "Business & Professional",
-  "Community Aid & Fundraisers",
-  "Volunteering & Charity",
-  'Travel Partner',
-  "Miscellaneous",
-];
 
 const CreateThreadPage = () => {
   const dispatch = useDispatch();
@@ -341,7 +316,7 @@ if (createThread.fulfilled.match(resultAction)) {
             <CategorySelector
               value={formData.category}
               onChange={(value) => setFormData({ ...formData, category: value })}
-              categories={categoryOptions}
+              categories={threadCategoryOptions}
               placeholder="Select Category"
               required={true}
             />

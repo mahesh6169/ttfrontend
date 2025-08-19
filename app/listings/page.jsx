@@ -263,7 +263,7 @@ const getCurrentSortLabel = () => {
           </div>
 
           {/* Filter Content */}
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto p-3 pb-20 sm:pb-3">
             {/* State Filter */}
             <div className="mb-4">
               <h3 className="font-semibold text-gray-700 mb-3">State</h3>
@@ -307,40 +307,56 @@ const getCurrentSortLabel = () => {
                 libraries={libraries}
                 onLoad={() => setIsScriptLoaded(true)}
               >
-                <Autocomplete
-                  onLoad={(autocompleteInstance) => setAutocomplete(autocompleteInstance)}
-                  onPlaceChanged={() => {
-                    if (autocomplete && !tempFilters.state) {
-                      const place = autocomplete.getPlace();
-                      if (place.geometry) {
-                        const coordinates = [
-                          place.geometry.location.lng(),
-                          place.geometry.location.lat()
-                        ];
-                        const location = {
-                          coordinates,
-                          radius: tempFilters.location?.radius || 10,
-                          name: place.formatted_address || 'Selected Location'
-                        };
-                        setTempFilters({ ...tempFilters, location, state: '' });
-                        setLocationInput(place.formatted_address);
+                <div className="relative">
+                  <Autocomplete
+                    onLoad={(autocompleteInstance) => setAutocomplete(autocompleteInstance)}
+                    onPlaceChanged={() => {
+                      if (autocomplete && !tempFilters.state) {
+                        const place = autocomplete.getPlace();
+                        if (place.geometry) {
+                          const coordinates = [
+                            place.geometry.location.lng(),
+                            place.geometry.location.lat()
+                          ];
+                          const location = {
+                            coordinates,
+                            radius: tempFilters.location?.radius || 10,
+                            name: place.formatted_address || 'Selected Location'
+                          };
+                          setTempFilters({ ...tempFilters, location, state: '' });
+                          setLocationInput(place.formatted_address);
+                        }
                       }
-                    }
-                  }}
-                  options={{
-                    componentRestrictions: { country: 'au' },
-                    types: ['geocode']
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Enter location..."
-                    value={locationInput}
-                    onChange={(e) => setLocationInput(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    disabled={!!tempFilters.state}
-                  />
-                </Autocomplete>
+                    }}
+                    options={{
+                      componentRestrictions: { country: 'au' },
+                      types: ['geocode']
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Enter Suburb & Radius of search..."
+                      value={locationInput}
+                      onChange={(e) => setLocationInput(e.target.value)}
+                      className="w-full p-3 pr-10 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      disabled={!!tempFilters.state}
+                    />
+                  </Autocomplete>
+                  {tempFilters.location && (
+                    <button
+                      onClick={() => {
+                        setTempFilters({ ...tempFilters, location: null });
+                        setLocationInput('');
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Clear location"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </LoadScriptNext>
               
               {tempFilters.location && (
@@ -374,19 +390,8 @@ const getCurrentSortLabel = () => {
                       [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:bg-teal-700"
                   />
                   <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                    <div className="flex gap-8">
-                      <span>1 km</span>
-                      <span>200 km</span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setTempFilters({ ...tempFilters, location: null });
-                        setLocationInput('');
-                      }}
-                      className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
-                    >
-                      Clear location
-                    </button>
+                    <span>1 km</span>
+                    <span>200 km</span>
                   </div>
                 </div>
               )}

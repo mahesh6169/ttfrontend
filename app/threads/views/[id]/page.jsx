@@ -648,8 +648,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           <div 
             className="p-2 min-h-[200px] flex items-center justify-center"
             style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='grayscale'%3E%3CfeColorMatrix type='matrix' values='0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Cstyle%3E.emoji%7Bfont-family:Arial,sans-serif;font-size:16px;fill:%23e5e7eb;opacity:0.25;filter:url(%23grayscale)%7D.small%7Bfont-size:12px%7D%3C/style%3E%3C/defs%3E%3Ctext class='emoji' x='10' y='20'%3E⭐%3C/text%3E%3Ctext class='emoji' x='50' y='20'%3E🌙%3C/text%3E%3Ctext class='emoji' x='90' y='20'%3E😊%3C/text%3E%3Ctext class='emoji small' x='30' y='40'%3E✨%3C/text%3E%3Ctext class='emoji' x='70' y='40'%3E🎉%3C/text%3E%3Ctext class='emoji' x='10' y='60'%3E🌟%3C/text%3E%3Ctext class='emoji small' x='50' y='60'%3E💫%3C/text%3E%3Ctext class='emoji' x='90' y='60'%3E🎊%3C/text%3E%3Ctext class='emoji' x='30' y='80'%3E😄%3C/text%3E%3Ctext class='emoji' x='70' y='80'%3E🌛%3C/text%3E%3Ctext class='emoji small' x='10' y='100'%3E⚡%3C/text%3E%3Ctext class='emoji' x='50' y='100'%3E🎈%3C/text%3E%3Ctext class='emoji small' x='90' y='100'%3E💖%3C/text%3E%3C/svg%3E")`,
-              backgroundSize: '240px 240px',
+              background: 'linear-gradient(135deg, #f5f5f5 0%, #f9f9f9 50%, #f5f5f5 100%)',
             }}
           >
             <p className="text-sm text-gray-600 font-medium">No comments marked as useful yet 👍</p>
@@ -873,11 +872,10 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               <div 
                 className="flex items-center justify-center h-full min-h-[200px] text-gray-500 relative overflow-hidden"
                 style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='grayscale'%3E%3CfeColorMatrix type='matrix' values='0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Cstyle%3E.emoji%7Bfont-family:Arial,sans-serif;font-size:16px;fill:%23e5e7eb;opacity:0.25;filter:url(%23grayscale)%7D.small%7Bfont-size:12px%7D%3C/style%3E%3C/defs%3E%3Ctext class='emoji' x='10' y='20'%3E⭐%3C/text%3E%3Ctext class='emoji' x='50' y='20'%3E🌙%3C/text%3E%3Ctext class='emoji' x='90' y='20'%3E😊%3C/text%3E%3Ctext class='emoji small' x='30' y='40'%3E✨%3C/text%3E%3Ctext class='emoji' x='70' y='40'%3E🎉%3C/text%3E%3Ctext class='emoji' x='10' y='60'%3E🌟%3C/text%3E%3Ctext class='emoji small' x='50' y='60'%3E💫%3C/text%3E%3Ctext class='emoji' x='90' y='60'%3E🎊%3C/text%3E%3Ctext class='emoji' x='30' y='80'%3E😄%3C/text%3E%3Ctext class='emoji' x='70' y='80'%3E🌛%3C/text%3E%3Ctext class='emoji small' x='10' y='100'%3E⚡%3C/text%3E%3Ctext class='emoji' x='50' y='100'%3E🎈%3C/text%3E%3Ctext class='emoji small' x='90' y='100'%3E💖%3C/text%3E%3C/svg%3E")`,
-                  backgroundSize: '240px 240px',
+                  background: 'linear-gradient(135deg, #f5f5f5 0%, #f9f9f9 50%, #f5f5f5 100%)',
                 }}
               >
-                <p className="text-sm font-medium text-gray-600">No messages yet. Start the conversation! 🎉</p>
+                <p className="text-sm font-medium text-gray-600">No messages yet. Start the conversation!</p>
               </div>
             )}
   </div>
