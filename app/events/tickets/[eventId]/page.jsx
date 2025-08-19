@@ -332,57 +332,14 @@ const TicketSelectionPage = () => {
           </button>
         </div>
 
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+        {/* Single Column Layout - Full Width */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
           {/* Centered Title */}
           <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">
             Select Tickets
           </h1>
-
-          {/* Event Title and Info */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              {selectedEvent.title}
-            </h2>
-
-            {/* Event Info */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center">
-                <FaCalendarAlt className="mr-2 text-blue-600" />
-                <span>{date}</span>
-              </div>
-              <div className="flex items-center">
-                <FaClock className="mr-2 text-green-600" />
-                <span>{time}</span>
-              </div>
-              {selectedEvent.timeZone && (
-                <div className="flex items-center text-gray-500">
-                  <span className="mr-1">🌐</span>
-                  <span>Timezone: {selectedEvent.timeZone}</span>
-                </div>
-              )}
-              <div className="flex items-center">
-                <FaMapMarkerAlt className="mr-2 text-red-600" />
-                <span>{selectedEvent.venue}</span>
-              </div>
-              {hasSeatingLayout && (
-                <div className="flex items-center">
-                  <FaChair className="mr-2 text-purple-600" />
-                  <span>Assigned Seating</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Single Column Layout - Full Width */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
           {/* Ticket Types */}
           <div className="space-y-4 mb-6">
-            <h3 className="text-lg font-semibold flex items-center">
-              <FaTicketAlt className="mr-2 text-blue-600" />
-              Available Tickets
-            </h3>
 
             {/* Event Capacity Info */}
             <div className="flex items-center text-sm text-gray-600 mb-4">
