@@ -118,6 +118,19 @@ const PaymentForm = ({
         />
       </div>
 
+      {/* Error Display */}
+      {paymentError && (
+        <div className="bg-red-50 border border-red-200 rounded-md sm:rounded-lg p-3 sm:p-4">
+          <div className="flex items-start">
+            <FaExclamationTriangle className="text-red-600 mr-2 sm:mr-3 mt-0.5 sm:mt-1 flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
+            <div className="flex-1">
+              <h4 className="font-medium sm:font-semibold text-red-800 mb-0.5 sm:mb-1 text-sm sm:text-base">Payment Error</h4>
+              <p className="text-xs sm:text-sm text-red-700">{paymentError}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Submit Button */}
       <button

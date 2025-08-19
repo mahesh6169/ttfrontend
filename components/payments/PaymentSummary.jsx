@@ -70,40 +70,40 @@ const PaymentSummary = ({
   const { date, time } = formatDateTime(event.dateTime, event.timeZone);
 
   return (
-    <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
+    <div className={`bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6 ${className}`}>
       {/* Order Summary Header */}
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold flex items-center">
-          <FaTicketAlt className="mr-2 text-green-600" />
+      <div className="mb-3 sm:mb-4 lg:mb-6">
+        <h2 className="text-sm sm:text-lg lg:text-xl font-semibold flex items-center">
+          <FaTicketAlt className="mr-1.5 sm:mr-2 text-green-600 w-4 h-4 sm:w-5 sm:h-5" />
           Order Summary
         </h2>
       </div>
 
       {/* Event Details Section */}
       {showEventDetails && (
-        <div className="mb-6 pb-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-3">{event.title}</h3>
+        <div className="mb-3 sm:mb-4 lg:mb-6 pb-3 sm:pb-4 lg:pb-6 border-b border-gray-200">
+          <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-2 sm:mb-3">{event.title}</h3>
           
-          <div className="space-y-2 text-sm text-gray-600">
+          <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
             <div className="flex items-center">
-              <FaCalendarAlt className="mr-2 text-blue-600 w-4" />
-              <span>{date}</span>
+              <FaCalendarAlt className="mr-1.5 sm:mr-2 text-blue-600 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">{date}</span>
             </div>
             <div className="flex items-center">
-              <FaClock className="mr-2 text-green-600 w-4" />
+              <FaClock className="mr-1.5 sm:mr-2 text-green-600 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
               <span>{time}</span>
               {event.timeZone && (
-                <span className="ml-2 text-gray-500">({event.timeZone})</span>
+                <span className="ml-1 sm:ml-2 text-gray-500 text-[10px] sm:text-xs">({event.timeZone})</span>
               )}
             </div>
             <div className="flex items-center">
-              <FaMapMarkerAlt className="mr-2 text-red-600 w-4" />
-              <span>{event.venue}</span>
+              <FaMapMarkerAlt className="mr-1.5 sm:mr-2 text-red-600 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">{event.venue}</span>
             </div>
             {event.address && (
-              <div className="flex items-center">
-                <FaMapMarkerAlt className="mr-2 text-purple-600 w-4" />
-                <span>
+              <div className="flex items-start">
+                <FaMapMarkerAlt className="mr-1.5 sm:mr-2 text-purple-600 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
+                <span className="text-xs sm:text-sm leading-relaxed">
                   {(() => {
                     // Custom format: street number, street, suburb, state
                     const parts = [];
@@ -123,20 +123,20 @@ const PaymentSummary = ({
 
       {/* Buyer Information Section */}
       {showBuyerInfo && buyerInfo && (
-        <div className="mb-6 pb-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-3">Buyer Information</h3>
+        <div className="mb-3 sm:mb-4 lg:mb-6 pb-3 sm:pb-4 lg:pb-6 border-b border-gray-200">
+          <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-2 sm:mb-3">Buyer Information</h3>
           
-          <div className="space-y-2 text-sm text-gray-600">
+          <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
             <div className="flex items-center">
-              <FaUser className="mr-2 text-blue-600 w-4" />
+              <FaUser className="mr-1.5 sm:mr-2 text-blue-600 w-3 h-3 sm:w-4 sm:h-4" />
               <span>{buyerInfo.firstName} {buyerInfo.lastName}</span>
             </div>
             <div className="flex items-center">
-              <FaEnvelope className="mr-2 text-green-600 w-4" />
-              <span>{buyerInfo.email}</span>
+              <FaEnvelope className="mr-1.5 sm:mr-2 text-green-600 w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="truncate">{buyerInfo.email}</span>
             </div>
             <div className="flex items-center">
-              <FaPhone className="mr-2 text-purple-600 w-4" />
+              <FaPhone className="mr-1.5 sm:mr-2 text-purple-600 w-3 h-3 sm:w-4 sm:h-4" />
               <span>{buyerInfo.phone}</span>
             </div>
           </div>
@@ -145,30 +145,30 @@ const PaymentSummary = ({
 
       {/* Selected Seats */}
       {selectedSeats && selectedSeats.length > 0 && (
-        <div className="mb-6 pb-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Seats Selected:</span>
-            <span className="text-sm text-gray-900">{formatSelectedSeats()}</span>
+        <div className="mb-3 sm:mb-4 lg:mb-6 pb-3 sm:pb-4 lg:pb-6 border-b border-gray-200">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-xs sm:text-sm font-medium text-gray-700">Seats:</span>
+            <span className="text-xs sm:text-sm text-gray-900 text-right">{formatSelectedSeats()}</span>
           </div>
         </div>
       )}
 
       {/* Selected Tickets */}
-      <div className="mb-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-3">Selected Tickets</h3>
+      <div className="mb-3 sm:mb-4 lg:mb-6">
+        <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-2 sm:mb-3">Tickets</h3>
         
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {selectedTickets.map((ticket, index) => (
-            <div key={ticket._id || index} className="flex justify-between items-start">
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">{ticket.name}</p>
-                <div className="flex items-center text-sm text-gray-600 mt-1">
-                  <span>Quantity: {ticket.quantity}</span>
-                  <span className="mx-2">•</span>
-                  <span>${ticket.price?.toFixed(2)} each</span>
+            <div key={ticket._id || index} className="flex justify-between items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 text-xs sm:text-sm truncate">{ticket.name}</p>
+                <div className="flex items-center text-[10px] sm:text-xs text-gray-600 mt-0.5 sm:mt-1">
+                  <span>Qty: {ticket.quantity}</span>
+                  <span className="mx-1 sm:mx-2">•</span>
+                  <span>${ticket.price?.toFixed(2)} ea</span>
                 </div>
               </div>
-              <p className="font-medium text-gray-900 ml-4">
+              <p className="font-medium text-gray-900 text-xs sm:text-sm whitespace-nowrap">
                 ${ticket.totalPrice?.toFixed(2)}
               </p>
             </div>
@@ -177,18 +177,18 @@ const PaymentSummary = ({
       </div>
 
       {/* Price Breakdown */}
-      <div className="border-t border-gray-200 pt-4 space-y-2">
-        <div className="flex justify-between text-gray-600">
+      <div className="border-t border-gray-200 pt-2 sm:pt-3 lg:pt-4 space-y-1.5 sm:space-y-2">
+        <div className="flex justify-between text-xs sm:text-sm text-gray-600">
           <span>Subtotal</span>
           <span className="font-medium">${totals.subtotal?.toFixed(2)}</span>
         </div>
         
         {/* Only show GST if it exists and is greater than 0 */}
         {totals.gst && totals.gst > 0 && (
-          <div className="flex justify-between text-gray-600">
+          <div className="flex justify-between text-xs sm:text-sm text-gray-600">
             <span className="flex items-center">
               GST (10%)
-              <FaInfoCircle className="ml-1 text-gray-400" title="Goods and Services Tax" />
+              <FaInfoCircle className="ml-0.5 sm:ml-1 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" title="Goods and Services Tax" />
             </span>
             <span className="font-medium">${totals.gst.toFixed(2)}</span>
           </div>
@@ -196,38 +196,39 @@ const PaymentSummary = ({
         
         {/* Service Fee (if applicable) */}
         {totals.serviceFee && totals.serviceFee > 0 && (
-          <div className="flex justify-between text-gray-600">
+          <div className="flex justify-between text-xs sm:text-sm text-gray-600">
             <span className="flex items-center">
               Service Fee
-              <FaInfoCircle className="ml-1 text-gray-400" title="Payment processing fee" />
+              <FaInfoCircle className="ml-0.5 sm:ml-1 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" title="Payment processing fee" />
             </span>
             <span className="font-medium">${totals.serviceFee.toFixed(2)}</span>
           </div>
         )}
         
         {/* Total */}
-        <div className="flex justify-between text-lg font-bold text-green-600 pt-2 border-t border-gray-200">
+        <div className="flex justify-between text-sm sm:text-base lg:text-lg font-bold text-green-600 pt-1.5 sm:pt-2 border-t border-gray-200">
           <span>Total</span>
           <span>${totals.total?.toFixed(2)}</span>
         </div>
-           {/* GST Inclusion Note */}
+        {/* GST Inclusion Note */}
         {event.gstIncluded && (
-          <div className="flex justify-start text-sm text-gray-500 italic pt-1">
+          <div className="flex justify-start text-[10px] sm:text-xs text-gray-500 italic pt-0.5 sm:pt-1">
             <span>GST included</span>
           </div>
         )}
-      </div>
-{/* Refund Policy Note - Only for paid events */}
+        
+        {/* Refund Policy Note - Only for paid events */}
         {event.isPaid && event.refundPolicy && (
-          <div className="flex justify-start text-sm text-gray-500 italic pt-1">
+          <div className="flex justify-start text-[10px] sm:text-xs text-gray-500 italic pt-0.5 sm:pt-1">
             <span>
               {event.refundPolicy.processingFeePolicy === 'refunded' 
                 ? 'Full refunds available' 
-                : 'Processing fees non-refundable'
+                : 'Fees non-refundable'
               }
             </span>
           </div>
         )}
+      </div>
       
 
 

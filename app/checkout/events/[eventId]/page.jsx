@@ -17,6 +17,7 @@ import {
   FaSpinner,
   FaCheckCircle,
   FaChair,
+  FaTicketAlt,
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import RequireLogin from '@/components/Auth/RequireLogin';
@@ -84,10 +85,11 @@ const CheckoutPage = () => {
 
   // Local state management (only for UI, not for flow control)
   const [event, setEvent] = useState(null);
-const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState({});
   const [initializationAttempted, setInitializationAttempted] = useState(false);
+  const [showOrderSummary, setShowOrderSummary] = useState(false);
   
   // ✅ FIXED: Use Redux slice state instead of local state (like SeatMapSelection)
   const { 
@@ -869,57 +871,63 @@ const handleBackToTickets = () => {
         <SeatSocketListener eventId={params.eventId} />
       )}
       
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-6xl mx-auto px-4">
+      <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-4 sm:mb-6 lg:mb-8">
             {/* Back Button */}
-            <div className="mb-6">
+            <div className="mb-3 sm:mb-4 lg:mb-6">
               <button
                 onClick={
                   currentStep === 'payment'
                     ? handleBackToDetails
                     : handleBackToTickets
                 }
-                className="inline-flex items-center px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg transition-colors"
+                className="inline-flex items-center px-2.5 py-1 text-xs sm:px-4 sm:py-2 sm:text-base bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md sm:rounded-lg transition-colors"
               >
-                <FaArrowLeft className="mr-2" />
-                {currentStep === 'payment' ? 'Back to Buyer Information' : 'Back to Tickets'}
+                <FaArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="text-xs sm:text-base">
+                  {currentStep === 'payment' ? 'Back' : getBackButtonText()}
+                </span>
               </button>
             </div>
 
-            <h1 className="text-3xl font-bold text-gray-900">
-              Checkout Page
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-semibold sm:font-bold text-gray-900">
+              Checkout
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-1">
               {currentStep === 'details'
-                ? 'Review your order and enter your details'
-                : 'Enter your payment information'}
+                ? 'Enter your details'
+                : 'Complete payment'}
             </p>
           </div>
 
-          {/* Progress Indicator */}
-          <div className="mb-8">
-            <div className="flex items-center justify-center space-x-4">
+          {/* Progress Indicator - Compact for mobile */}
+          <div className="mb-4 sm:mb-6 lg:mb-8">
+            <div className="flex items-center justify-center space-x-2 sm:space-x-4">
               <div
                 className={`flex items-center ${
                   currentStep === 'details' ? 'text-blue-600' : 'text-green-600'
                 }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
                     currentStep === 'details'
                       ? 'bg-blue-600 text-white'
                       : 'bg-green-600 text-white'
                   }`}
                 >
-                  {currentStep === 'details' ? '1' : <FaCheckCircle />}
+                  {currentStep === 'details' ? (
+                    <span className="text-xs sm:text-base">1</span>
+                  ) : (
+                    <FaCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                  )}
                 </div>
-                <span className="ml-2 font-medium">Details</span>
+                <span className="ml-1 sm:ml-2 text-xs sm:text-base font-medium">Details</span>
               </div>
 
               <div
-                className={`w-16 h-1 ${
+                className={`w-8 sm:w-16 h-0.5 sm:h-1 ${
                   currentStep === 'payment' ? 'bg-blue-600' : 'bg-gray-200'
                 }`}
               ></div>
@@ -930,29 +938,29 @@ const handleBackToTickets = () => {
                 }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
                     currentStep === 'payment'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-600'
                   }`}
                 >
-                  2
+                  <span className="text-xs sm:text-base">2</span>
                 </div>
-                <span className="ml-2 font-medium">Payment</span>
+                <span className="ml-1 sm:ml-2 text-xs sm:text-base font-medium">Payment</span>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col-reverse lg:grid lg:grid-cols-3 gap-8">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2">
               {/* Seat reservation reminder - responsive */}
 {currentReservation && currentReservation.reservedUntil ? (
-  <div className="bg-amber-50 border border-amber-100 rounded-lg px-4 py-2.5 mb-6">
+  <div className="bg-amber-50 border border-amber-100 rounded-md sm:rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 mb-3 sm:mb-4 lg:mb-6">
     {/* Desktop - single row */}
     <div className="hidden sm:flex items-center justify-between">
       <div className="flex items-center gap-3 text-sm">
-        <span className="text-amber-700 font-medium">Complete your payment soon •</span>
+        <span className="text-amber-700 font-medium">Seats will be relased in</span>
         <SeatReservationTimer
           expiryTime={currentReservation.reservedUntil}
           onExpire={handleTimerExpire}
@@ -962,9 +970,9 @@ const handleBackToTickets = () => {
         />
       </div>
     </div>
-    {/* Mobile - stacked */}
-    <div className="sm:hidden space-y-1">
-      <div className="text-amber-700 font-medium text-sm">Complete your payment soon •</div>
+    {/* Mobile - compact single line */}
+    <div className="sm:hidden flex items-center justify-between">
+      <div className="text-amber-700 font-medium text-xs">Seats will be relased in</div>
       <SeatReservationTimer
         expiryTime={currentReservation.reservedUntil}
         onExpire={handleTimerExpire}
@@ -975,10 +983,10 @@ const handleBackToTickets = () => {
     </div>
   </div>
 ) : seatInfo.requiresSeats && !currentReservation ? (
-  <div className="bg-red-50 border border-red-100 rounded-lg px-4 py-2.5 mb-6 flex items-center justify-between">
-    <div className="flex items-center gap-2 text-sm">
-      <FaExclamationTriangle className="text-red-600" />
-      <span className="text-red-700 font-medium">Seat reservation expired • Please select your seats again using the button above</span>
+  <div className="bg-red-50 border border-red-100 rounded-md sm:rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 mb-3 sm:mb-4 lg:mb-6">
+    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+      <FaExclamationTriangle className="text-red-600 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+      <span className="text-red-700 font-medium">Seats expired • Select again</span>
     </div>
   </div>
 ) : null}
@@ -988,17 +996,17 @@ const handleBackToTickets = () => {
 
 
                   {/* Buyer Information Form */}
-                  <div className="bg-white rounded-lg shadow-md p-6">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center">
-                      <FaUser className="mr-2 text-blue-600" />
+                  <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6">
+                    <h2 className="text-sm sm:text-lg lg:text-xl font-semibold mb-3 sm:mb-4 flex items-center">
+                      <FaUser className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-blue-600" />
                       Buyer Information
                     </h2>
 
-                    <div className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                         {/* First Name */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                             First Name *
                           </label>
                           <input
@@ -1006,15 +1014,15 @@ const handleBackToTickets = () => {
                             name="firstName"
                             value={buyerInfo.firstName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            className={`w-full px-2.5 py-1.5 sm:px-3 sm:py-2 text-sm sm:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                               errors.firstName
                                 ? 'border-red-500 bg-red-50'
                                 : 'border-gray-300'
                             }`}
-                            placeholder="Enter your first name"
+                            placeholder="First name"
                           />
                           {errors.firstName && (
-                            <p className="mt-1 text-sm text-red-600">
+                            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-red-600">
                               {errors.firstName}
                             </p>
                           )}
@@ -1022,7 +1030,7 @@ const handleBackToTickets = () => {
 
                         {/* Last Name */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                             Last Name *
                           </label>
                           <input
@@ -1030,15 +1038,15 @@ const handleBackToTickets = () => {
                             name="lastName"
                             value={buyerInfo.lastName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            className={`w-full px-2.5 py-1.5 sm:px-3 sm:py-2 text-sm sm:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                               errors.lastName
                                 ? 'border-red-500 bg-red-50'
                                 : 'border-gray-300'
                             }`}
-                            placeholder="Enter your last name"
+                            placeholder="Last name"
                           />
                           {errors.lastName && (
-                            <p className="mt-1 text-sm text-red-600">
+                            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-red-600">
                               {errors.lastName}
                             </p>
                           )}
@@ -1047,26 +1055,26 @@ const handleBackToTickets = () => {
 
                       {/* Email */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                           Email Address *
                         </label>
                         <div className="relative">
-                          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <FaEnvelope className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
                           <input
                             type="email"
                             name="email"
                             value={buyerInfo.email || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            className={`w-full pl-8 sm:pl-10 pr-2.5 sm:pr-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                               errors.email
                                 ? 'border-red-500 bg-red-50'
                                 : 'border-gray-300'
                             }`}
-                            placeholder="Enter your email address"
+                            placeholder="Email address"
                           />
                         </div>
                         {errors.email && (
-                          <p className="mt-1 text-sm text-red-600">
+                          <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-red-600">
                             {errors.email}
                           </p>
                         )}
@@ -1074,26 +1082,26 @@ const handleBackToTickets = () => {
 
                       {/* Phone */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                           Phone Number *
                         </label>
                         <div className="relative">
-                          <FaPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <FaPhone className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
                           <input
                             type="tel"
                             name="phone"
                             value={buyerInfo.phone || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            className={`w-full pl-8 sm:pl-10 pr-2.5 sm:pr-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                               errors.phone
                                 ? 'border-red-500 bg-red-50'
                                 : 'border-gray-300'
                             }`}
-                            placeholder="Enter your phone number"
+                            placeholder="Phone number"
                           />
                         </div>
                         {errors.phone && (
-                          <p className="mt-1 text-sm text-red-600">
+                          <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-red-600">
                             {errors.phone}
                           </p>
                         )}
@@ -1106,16 +1114,16 @@ const handleBackToTickets = () => {
                           name="agreeToTerms"
                           checked={buyerInfo.agreeToTerms || false}
                           onChange={handleInputChange}
-                          className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="mt-0.5 sm:mt-1 w-3 h-3 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                         />
-                        <label className="ml-2 text-sm text-gray-600">
+                        <label className="ml-1.5 sm:ml-2 text-xs sm:text-sm text-gray-600">
                           I agree to the{' '}
                           <a
                             href="/support/terms"
                             target="_blank"
                             className="text-blue-600 hover:underline"
                           >
-                            Terms and Conditions
+                            Terms
                           </a>{' '}
                           and{' '}
                           <a
@@ -1128,7 +1136,7 @@ const handleBackToTickets = () => {
                         </label>
                       </div>
                       {errors.agreeToTerms && (
-                        <p className="text-sm text-red-600">
+                        <p className="text-xs sm:text-sm text-red-600 ml-4 sm:ml-6">
                           {errors.agreeToTerms}
                         </p>
                       )}
@@ -1142,14 +1150,14 @@ const handleBackToTickets = () => {
         name="refundPolicyAccepted"
         checked={buyerInfo.refundPolicyAccepted || false}
         onChange={(e) => handleRefundPolicyAcceptance(e.target.checked)}
-        className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+        className="mt-0.5 sm:mt-1 w-3 h-3 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
       />
-      <label className="ml-2 text-sm text-gray-600">
-        I acknowledge and accept the refund policy stated below. *
+      <label className="ml-1.5 sm:ml-2 text-xs sm:text-sm text-gray-600">
+        I accept the refund policy below *
       </label>
     </div>
     {errors.refundPolicyAccepted && (
-      <p className="text-sm text-red-600">
+      <p className="text-xs sm:text-sm text-red-600 ml-4 sm:ml-6">
         {errors.refundPolicyAccepted}
       </p>
     )}
@@ -1159,7 +1167,7 @@ const handleBackToTickets = () => {
 
 {/* Refund Policy Display - Only for paid events */}
 {event?.isPaid && event?.refundPolicy && (
-  <div className="mt-6 border-t pt-6">
+  <div className="mt-3 sm:mt-4 lg:mt-6 border-t pt-3 sm:pt-4 lg:pt-6">
     <RefundPolicyDisplay 
       refundPolicy={event.refundPolicy}
       variant="checkout"
@@ -1171,7 +1179,7 @@ const handleBackToTickets = () => {
                       <button
                         onClick={handleProceedToPayment}
                         disabled={isProcessing || loading.creatingPayment}
-                        className={`w-full mt-6 py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center ${
+                        className={`w-full mt-4 sm:mt-6 py-2 sm:py-3 px-3 sm:px-4 rounded-md sm:rounded-lg font-medium sm:font-semibold text-sm sm:text-base text-white transition-all flex items-center justify-center ${
                           isProcessing || loading.creatingPayment
                             ? 'bg-gray-400 cursor-not-allowed'
                             : 'bg-blue-600 hover:bg-blue-700'
@@ -1179,24 +1187,24 @@ const handleBackToTickets = () => {
                       >
                         {isProcessing || loading.creatingPayment ? (
                           <>
-                            <FaSpinner className="animate-spin mr-2" />
-                            Preparing Payment...
+                            <FaSpinner className="animate-spin mr-1.5 sm:mr-2 w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="text-sm sm:text-base">Preparing...</span>
                           </>
                         ) : (
-                          'Proceed to Payment'
+                          <span className="text-sm sm:text-base">Proceed to Payment</span>
                         )}
                       </button>
 
                       {/* Error Display */}
                       {(errors.payment || purchaseError) && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="bg-red-50 border border-red-200 rounded-md sm:rounded-lg p-3 sm:p-4">
                           <div className="flex items-start">
-                            <FaExclamationTriangle className="text-red-600 mr-3 mt-1 flex-shrink-0" />
+                            <FaExclamationTriangle className="text-red-600 mr-2 sm:mr-3 mt-0.5 sm:mt-1 flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
                             <div className="flex-1">
-                              <h4 className="font-semibold text-red-800 mb-1">
-                                {errors.payment?.includes('sold out') ? 'Event Sold Out' : 'Payment Error'}
+                              <h4 className="font-medium sm:font-semibold text-red-800 mb-0.5 sm:mb-1 text-sm sm:text-base">
+                                {errors.payment?.includes('sold out') ? 'Sold Out' : 'Error'}
                               </h4>
-                              <p className="text-sm text-red-700">
+                              <p className="text-xs sm:text-sm text-red-700">
                                 {errors.payment || purchaseError}
                               </p>
                               {/* Show refresh button for capacity conflicts */}
@@ -1204,13 +1212,13 @@ const handleBackToTickets = () => {
                                 errors.payment?.includes('sold out') ||
                                 errors.payment?.includes('capacity') ||
                                 errors.payment?.includes('🎫')) && (
-                                <div className="mt-3">
+                                <div className="mt-2 sm:mt-3">
                                   <button
                                     onClick={() => router.push(`/events/views/${params.eventId}`)}
-                                    className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                                    className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white text-xs sm:text-sm font-medium rounded-md sm:rounded-lg hover:bg-red-700 transition-colors"
                                   >
-                                    <FaArrowLeft className="mr-2" />
-                                    Return to event details
+                                    <FaArrowLeft className="mr-1.5 sm:mr-2 w-3 h-3 sm:w-4 sm:h-4" />
+                                    Back to event
                                   </button>
                                 </div>
                               )}
@@ -1223,7 +1231,7 @@ const handleBackToTickets = () => {
                 </>
               ) : (
                 /* Payment Step */
-                <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6">
                   {/* Error Display for Payment Step */}
                   {(errors.payment || purchaseError) && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -1294,10 +1302,54 @@ const handleBackToTickets = () => {
               )}
             </div>
 
-{/* Order Summary Sidebar */}
+{/* Order Summary - Collapsible on Mobile */}
             <div className="lg:col-span-1">
-              <div className="space-y-4">
-                {/* Your existing PaymentSummary component */}
+              {/* Mobile Collapsible Summary */}
+              <div className="lg:hidden mb-4">
+                <button
+                  onClick={() => setShowOrderSummary(!showOrderSummary)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center justify-between"
+                >
+                  <div className="flex items-center">
+                    <FaTicketAlt className="text-green-600 mr-2 w-4 h-4" />
+                    <span className="font-medium text-sm">Order Summary</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-green-600 text-sm">${totals.total?.toFixed(2)}</span>
+                    <svg
+                      className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                        showOrderSummary ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </button>
+                
+                {/* Collapsible Content */}
+                <div
+                  className={`transition-all duration-300 overflow-hidden ${
+                    showOrderSummary ? 'max-h-[800px] opacity-100 mt-3' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <PaymentSummary
+                    event={event}
+                    selectedTickets={selectedTicketsDisplay}
+                    totals={totals}
+                    buyerInfo={currentStep === 'payment' ? buyerInfo : null}
+                    selectedSeats={seatInfo.selectedSeats}
+                    formatSelectedSeats={formatSelectedSeats}
+                    showEventDetails={true}
+                    showBuyerInfo={currentStep === 'payment'}
+                  />
+                </div>
+              </div>
+              
+              {/* Desktop Sidebar */}
+              <div className="hidden lg:block space-y-3 sm:space-y-4">
                 <PaymentSummary
                   event={event}
                   selectedTickets={selectedTicketsDisplay}
@@ -1307,7 +1359,7 @@ const handleBackToTickets = () => {
                   formatSelectedSeats={formatSelectedSeats}
                   showEventDetails={true}
                   showBuyerInfo={currentStep === 'payment'}
-                  className="sticky top-8"
+                  className="lg:sticky lg:top-8"
                 />
               </div>
             </div>
