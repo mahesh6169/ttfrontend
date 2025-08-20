@@ -60,6 +60,7 @@ import {
   setCurrentReservation,
 } from '@/store/slices/events/seatSelectionSlice';
 import SeatReservationTimer from '@/components/events/seats/SeatReservationTimer';
+import bookingStateManager from '@/utils/booking/bookingStateManager';
 
 // ✅ REFACTORED: Timer expiration handler following SeatMapSelection pattern
 const CheckoutPage = () => {
@@ -193,6 +194,15 @@ const CheckoutPage = () => {
       }));
     }
   }, [dispatch, currentReservation, params.eventId, seatSessionId, seatInfo.requiresSeats, seatSliceLoading]);
+
+  // Helper to check if proceed button should be disabled
+  const shouldDisableProceed = () => {
+    if (!seatInfo.requiresSeats) return false; // Events without seats are always allowed
+    
+    if (!currentReservation) return true; // Seats required but no reservation (timer expired)
+    
+    return false; // Allow proceed as long as there's a reservation
+  };
 
   // ✅ FIXED: Watch Redux slice state changes for redirect (like SeatMapSelection)
   useEffect(() => {
@@ -357,6 +367,10 @@ const CheckoutPage = () => {
     const updateData = { [name]: type === 'checkbox' ? checked : value };
 
     dispatch(updateBuyerInfo(updateData));
+    
+    // Also save to bookingStateManager
+    const currentBuyer = { ...buyerInfo, ...updateData };
+    bookingStateManager.updateBuyer(currentBuyer);
 
     // Clear field-specific errors
     if (errors[name]) {
@@ -418,6 +432,27 @@ const CheckoutPage = () => {
   // Handle proceeding to payment step
   const handleProceedToPayment = async () => {
     if (!validateForm()) {
+      return;
+    }
+
+    // CRITICAL: Validate seat reservation is still active before payment
+    if (seatInfo.requiresSeats && currentReservation) {
+      const expiryTime = new Date(currentReservation.reservedUntil);
+      const now = new Date();
+      const timeLeft = expiryTime - now;
+      
+      // Block payment if less than 30 seconds left on timer
+      if (timeLeft < 30000) {
+        setErrors({
+          timer: 'Not enough time to complete payment. Please select seats again.',
+        });
+        return;
+      }
+    } else if (seatInfo.requiresSeats && !currentReservation) {
+      // No reservation but seats required
+      setErrors({
+        seats: 'Your seat reservation has expired. Please go back and select seats again.',
+      });
       return;
     }
 
@@ -572,6 +607,24 @@ const handleBackToTickets = () => {
                             (seatInfo.selectedSeats && seatInfo.selectedSeats.length > 0);
     
     if (hasActiveReservation || hasSelectedSeats) {
+      // Save navigation intent to preserve seats
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('navigationIntent', 'checkout-to-seats');
+        sessionStorage.setItem('preserveSeatsTimestamp', Date.now().toString());
+        
+        // Ensure current seat state is saved
+        if (currentReservation && selectedSeats) {
+          bookingStateManager.save({
+            seats: {
+              selected: selectedSeats,
+              reservation: currentReservation,
+              timestamp: new Date().toISOString()
+            },
+            currentStep: 'seats',
+            preserveSeats: true
+          });
+        }
+      }
       // Timer is valid or seats are selected - go back to seat selection
       router.push(`/events/seats/${params.eventId}`);
     } else {
@@ -712,40 +765,88 @@ const handleBackToTickets = () => {
             '⚠️ No Redux session found, checking sessionStorage fallback'
           );
 
-          const storedSelection = sessionStorage.getItem('ticketSelection');
-
-          if (!storedSelection) {
-            alert('No ticket selection found. Please select tickets first.');
-            router.push(`/events/views/${params.eventId}`);
-            return;
-          }
-
-          const selection = JSON.parse(storedSelection);
-
-          // Validate selection hasn't expired (10 minutes max)
-          const selectionAge = Date.now() - selection.timestamp;
-          if (selectionAge > 10 * 60 * 1000) {
-            alert(
-              'Your ticket selection has expired. Please select tickets again.'
-            );
-            sessionStorage.removeItem('ticketSelection');
-            router.push(`/events/views/${params.eventId}`);
-            return;
-          }
-
-          // Validate selection is for correct event
-          if (selection.eventId !== params.eventId) {
-            alert('Invalid ticket selection. Please select tickets again.');
-            sessionStorage.removeItem('ticketSelection');
-            router.push(`/events/views/${params.eventId}`);
-            return;
-          }
-
-          // Initialize Redux and populate data
-          await dispatch(initializePurchaseSession({ eventId: params.eventId }));
+          // First check bookingStateManager for complete state
+          const savedBookingState = bookingStateManager.load(params.eventId);
           
-          // Set step to details
-          dispatch(setCurrentStep('details'));
+          if (savedBookingState && savedBookingState.tickets) {
+            console.log('🔄 Restoring checkout from bookingStateManager');
+            
+            // Restore ticket selection
+            await dispatch(initializePurchaseSession({ eventId: params.eventId }));
+            
+            // Restore tickets
+            if (savedBookingState.tickets.selected) {
+              savedBookingState.tickets.selected.forEach(ticket => {
+                dispatch(updateTicketSelection({
+                  ticketTypeId: ticket.ticketTypeId,
+                  quantity: ticket.quantity,
+                  price: ticket.price,
+                  name: ticket.name
+                }));
+              });
+            }
+            
+            // Restore seat info and reservation
+            if (savedBookingState.seats) {
+              dispatch(updateSeatInfo({
+                selectedSeats: savedBookingState.seats.selected || [],
+                reservationId: savedBookingState.seats.reservation?.reservationId,
+                seatCount: savedBookingState.seats.required || savedBookingState.seats.selected?.length || 0,
+                requiresSeats: true
+              }));
+              
+              // Restore reservation if still valid
+              if (savedBookingState.seats.reservation && bookingStateManager.hasValidReservation()) {
+                dispatch(setCurrentReservation(savedBookingState.seats.reservation));
+              }
+            }
+            
+            // Restore buyer info if available
+            if (savedBookingState.buyer) {
+              dispatch(updateBuyerInfo(savedBookingState.buyer));
+            }
+            
+            // Set current step
+            dispatch(setCurrentStep('details'));
+            
+            // Skip the rest of validation since we restored from bookingStateManager
+          } else {
+            // Fallback to old sessionStorage method
+            const storedSelection = sessionStorage.getItem('ticketSelection');
+
+            if (!storedSelection) {
+              alert('No ticket selection found. Please select tickets first.');
+              router.push(`/events/views/${params.eventId}`);
+              return;
+            }
+
+            const selection = JSON.parse(storedSelection);
+            
+            // Validate selection hasn't expired (10 minutes max)
+            const selectionAge = Date.now() - selection.timestamp;
+            if (selectionAge > 10 * 60 * 1000) {
+              alert(
+                'Your ticket selection has expired. Please select tickets again.'
+              );
+              sessionStorage.removeItem('ticketSelection');
+              router.push(`/events/views/${params.eventId}`);
+              return;
+            }
+
+            // Validate selection is for correct event
+            if (selection.eventId !== params.eventId) {
+              alert('Invalid ticket selection. Please select tickets again.');
+              sessionStorage.removeItem('ticketSelection');
+              router.push(`/events/views/${params.eventId}`);
+              return;
+            }
+
+            // Initialize Redux and populate data
+            await dispatch(initializePurchaseSession({ eventId: params.eventId }));
+            
+            // Set step to details
+            dispatch(setCurrentStep('details'));
+          }
         }
 
         setInitializationAttempted(true);
@@ -990,6 +1091,48 @@ const handleBackToTickets = () => {
     </div>
   </div>
 ) : null}
+
+{/* Timer warning for insufficient time */}
+{errors.timer && currentStep === 'details' && (
+  <div className="bg-red-50 border border-red-200 rounded-md sm:rounded-lg px-3 py-2 sm:px-4 sm:py-3 mb-3 sm:mb-4 lg:mb-6">
+    <div className="flex items-start gap-2">
+      <FaExclamationTriangle className="text-red-600 w-4 h-4 flex-shrink-0 mt-0.5" />
+      <div className="flex-1">
+        <p className="text-xs sm:text-sm text-red-700 font-medium">{errors.timer}</p>
+        <button
+          onClick={() => {
+            sessionStorage.setItem('navigationIntent', 'checkout-to-seats');
+            router.push(`/events/seats/${params.eventId}`);
+          }}
+          className="mt-1.5 text-xs sm:text-sm text-red-700 underline hover:text-red-800"
+        >
+          Go back to select seats
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* Seats error for expired reservation */}
+{errors.seats && currentStep === 'details' && (
+  <div className="bg-red-50 border border-red-200 rounded-md sm:rounded-lg px-3 py-2 sm:px-4 sm:py-3 mb-3 sm:mb-4 lg:mb-6">
+    <div className="flex items-start gap-2">
+      <FaExclamationTriangle className="text-red-600 w-4 h-4 flex-shrink-0 mt-0.5" />
+      <div className="flex-1">
+        <p className="text-xs sm:text-sm text-red-700 font-medium">{errors.seats}</p>
+        <button
+          onClick={() => {
+            sessionStorage.setItem('navigationIntent', 'checkout-to-seats');
+            router.push(`/events/seats/${params.eventId}`);
+          }}
+          className="mt-1.5 text-xs sm:text-sm text-red-700 underline hover:text-red-800"
+        >
+          Go back to select seats
+        </button>
+      </div>
+    </div>
+  </div>
+)}
               {currentStep === 'details' ? (
                 /* Details Step */
                 <>
@@ -1178,9 +1321,9 @@ const handleBackToTickets = () => {
                       {/* Proceed to Payment Button */}
                       <button
                         onClick={handleProceedToPayment}
-                        disabled={isProcessing || loading.creatingPayment}
+                        disabled={isProcessing || loading.creatingPayment || shouldDisableProceed()}
                         className={`w-full mt-4 sm:mt-6 py-2 sm:py-3 px-3 sm:px-4 rounded-md sm:rounded-lg font-medium sm:font-semibold text-sm sm:text-base text-white transition-all flex items-center justify-center ${
-                          isProcessing || loading.creatingPayment
+                          isProcessing || loading.creatingPayment || shouldDisableProceed()
                             ? 'bg-gray-400 cursor-not-allowed'
                             : 'bg-blue-600 hover:bg-blue-700'
                         }`}
@@ -1190,6 +1333,8 @@ const handleBackToTickets = () => {
                             <FaSpinner className="animate-spin mr-1.5 sm:mr-2 w-3 h-3 sm:w-4 sm:h-4" />
                             <span className="text-sm sm:text-base">Preparing...</span>
                           </>
+                        ) : shouldDisableProceed() && seatInfo.requiresSeats ? (
+                          <span className="text-sm sm:text-base">Seat Reservation Expired</span>
                         ) : (
                           <span className="text-sm sm:text-base">Proceed to Payment</span>
                         )}

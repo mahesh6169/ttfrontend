@@ -17,7 +17,10 @@ import {
   selectError as selectSeatError,
   selectCurrentReservation,
   releaseReservation,
-  clearSelection
+  clearSelection,
+  selectSeat,
+  setCurrentReservation,
+  restoreSeatsFromSaved
 
 } from '@/store/slices/events/seatSelectionSlice';
 import { 
@@ -34,6 +37,7 @@ import SeatMapSelection from '@/components/events/seats/SeatMapSelection';
 import SeatLegend from '@/components/events/seats/SeatLegend';
 import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
 import { FaShoppingCart } from 'react-icons/fa';
+import bookingStateManager from '@/utils/booking/bookingStateManager';
 
 const SeatSelectionPage = () => {
   const { eventId } = useParams();
@@ -42,6 +46,7 @@ const SeatSelectionPage = () => {
   
   const [initializationError, setInitializationError] = useState(null);
   const [initializationAttempted, setInitializationAttempted] = useState(false);
+  const [isReturningFromCheckout, setIsReturningFromCheckout] = useState(false);
 
    const latestReservationRef = useRef();
 const isNavigatingToCheckoutRef = useRef(false);
@@ -66,6 +71,17 @@ const isNavigatingToCheckoutRef = useRef(false);
   // Initialize page data
   useEffect(() => {
     const initializePage = async () => {
+      let savedBookingState = null; // Declare at function scope
+      
+      // Check if returning from checkout
+      const navigationIntent = typeof window !== 'undefined' ? 
+        sessionStorage.getItem('navigationIntent') : null;
+      const returningFromCheckout = navigationIntent === 'checkout-to-seats';
+      if (returningFromCheckout) {
+        setIsReturningFromCheckout(true);
+        console.log('🔙 Initializing page after return from checkout');
+      }
+      
       try {
         // Check if we have a valid ticket purchase session
         const hasValidSession = ticketPurchaseState.sessionActive && 
@@ -86,14 +102,44 @@ const isNavigatingToCheckoutRef = useRef(false);
             timestamp: Date.now()
           };
         } else {
-          // Fallback: Check sessionStorage
-          const storedSelection = sessionStorage.getItem('ticketSelection');
-          if (!storedSelection) {
-            setInitializationError('No ticket selection found. Please select tickets first.');
-            return;
-          }
+          // Check bookingStateManager first for better persistence
+          savedBookingState = bookingStateManager.load(eventId);
+          
+          if (savedBookingState && savedBookingState.tickets) {
+            // Restore from bookingStateManager
+            console.log('🔄 Restoring from bookingStateManager');
+            console.log('📦 Full saved state:', savedBookingState);
+            
+            // If we have a valid reservation, restore it
+            console.log('🔍 Checking restoration:', {
+              hasSeats: !!savedBookingState.seats,
+              hasReservation: !!savedBookingState.seats?.reservation,
+              reservedUntil: savedBookingState.seats?.reservation?.reservedUntil,
+              isValid: bookingStateManager.hasValidReservation(),
+              selectedSeats: savedBookingState.seats?.selected,
+              seatsData: savedBookingState.seats
+            });
+            
+            ticketSelection = {
+              eventId: savedBookingState.eventId,
+              tickets: savedBookingState.tickets.selected.reduce((acc, ticket) => {
+                acc[ticket.ticketTypeId] = ticket.quantity;
+                return acc;
+              }, {}),
+              totals: savedBookingState.tickets.totals,
+              hasSeatingLayout: true,
+              timestamp: Date.now()
+            };
+          } else {
+            // Fallback: Check sessionStorage
+            const storedSelection = sessionStorage.getItem('ticketSelection');
+            if (!storedSelection) {
+              setInitializationError('No ticket selection found. Please select tickets first.');
+              return;
+            }
 
-          ticketSelection = JSON.parse(storedSelection);
+            ticketSelection = JSON.parse(storedSelection);
+          }
           
           // Validate ticket selection data
           if (ticketSelection.eventId !== eventId || !ticketSelection.hasSeatingLayout) {
@@ -163,6 +209,35 @@ const isNavigatingToCheckoutRef = useRef(false);
         }
 
         setInitializationAttempted(true);
+
+        // After initialization, check if we need to restore seats
+        if ((savedBookingState?.seats?.reservation && bookingStateManager.hasValidReservation()) || returningFromCheckout) {
+          // Delay restoration to ensure all Redux state is initialized
+          setTimeout(() => {
+            const stateToRestore = savedBookingState || bookingStateManager.load(eventId);
+            if (stateToRestore?.seats?.reservation) {
+              console.log('🔄 Restoring seats after initialization', {
+                fromRefresh: !!savedBookingState,
+                fromCheckout: returningFromCheckout
+              });
+              
+              // Restore seats AFTER setCurrentEvent has been called
+              dispatch(restoreSeatsFromSaved({
+                selectedSeats: stateToRestore.seats.selected || [],
+                reservation: stateToRestore.seats.reservation
+              }));
+              dispatch(setCurrentReservation(stateToRestore.seats.reservation));
+              
+              // Update with restored seat info
+              dispatch(updateSeatInfo({
+                selectedSeats: stateToRestore.seats.selected || [],
+                reservationId: stateToRestore.seats.reservation.reservationId,
+                seatCount: stateToRestore.seats.selected?.length || 0,
+                requiresSeats: true
+              }));
+            }
+          }, 100); // Small delay to ensure Redux state is ready
+        }
 
       } catch (error) {
         console.error('Error initializing seat selection:', error);
@@ -263,18 +338,62 @@ const isNavigatingToCheckoutRef = useRef(false);
 
 // ✅ TASK 2: Primary cleanup strategy - component unmount
 useEffect(() => {
+  // Mark that we might be refreshing on mount
+  if (typeof window !== 'undefined') {
+    // Check if we're returning from checkout
+    const navigationIntent = sessionStorage.getItem('navigationIntent');
+    if (navigationIntent === 'checkout-to-seats') {
+      console.log('🔙 Detected return from checkout - will preserve seats');
+      // Don't remove intent yet - we need it for cleanup check
+    }
+    
+    // If we have a valid booking state on mount, assume it might be a refresh
+    const existingState = bookingStateManager.load(eventId);
+    if (existingState && existingState.seats?.reservation) {
+      console.log('🔍 Found existing booking state on mount - possible refresh scenario');
+    }
+  }
+  
   return () => {
-    performCleanup('component-unmount');
+    // Check navigation intent
+    const navigationIntent = typeof window !== 'undefined' ? 
+      sessionStorage.getItem('navigationIntent') : null;
+    
+    // Clear navigation intent after checking it
+    const shouldClearIntent = navigationIntent === 'checkout-to-seats';
+    if (shouldClearIntent) {
+      sessionStorage.removeItem('navigationIntent');
+    }
+    
+    // Check if it's a refresh or actual navigation
+    const isRefresh = bookingStateManager.isRefresh();
+    const savedState = bookingStateManager.load(eventId);
+    const isReturningFromCheckout = navigationIntent === 'checkout-to-seats';
+    
+    // Check timestamp to prevent race conditions
+    const preserveTimestamp = sessionStorage.getItem('preserveSeatsTimestamp');
+    const shouldPreserveSeats = preserveTimestamp && 
+      (Date.now() - parseInt(preserveTimestamp)) < 5000; // Within 5 seconds
+    
+    if (isReturningFromCheckout || shouldPreserveSeats || savedState?.preserveSeats) {
+      console.log('🔙 Returning from checkout - skipping cleanup to preserve seats', {
+        isReturningFromCheckout,
+        shouldPreserveSeats,
+        preserveSeats: savedState?.preserveSeats
+      });
+      // Clean up the flags
+      sessionStorage.removeItem('preserveSeatsTimestamp');
+      if (savedState?.preserveSeats) {
+        bookingStateManager.save({ ...savedState, preserveSeats: false });
+      }
+    } else if (!isRefresh || !savedState || savedState.currentStep !== 'seats') {
+      // Not a refresh or user navigated away - perform cleanup
+      performCleanup('component-unmount');
+    } else {
+      console.log('🔄 Page refresh detected - skipping cleanup to preserve seats');
+    }
   };
-}, [performCleanup]);
-
-
-// ✅ TASK 2: Primary cleanup strategy - component unmount
-useEffect(() => {
-  return () => {
-    performCleanup('component-unmount');
-  };
-}, [performCleanup]);
+}, [performCleanup, eventId]);
 
 // ✅ TASK 2: Secondary cleanup strategies - page events
 useEffect(() => {
@@ -325,6 +444,12 @@ const handleVisibilityChange = () => {
     // Page is being unloaded (more reliable than beforeunload)
     const freshReservation = latestReservationRef.current;
     if (freshReservation?.seatIds?.length > 0) {
+      // Check if this might be a refresh
+      const savedState = bookingStateManager.load(eventId);
+      if (savedState && savedState.seats?.reservation) {
+        console.log('🔄 Page hide during potential refresh - skipping cleanup');
+        return;
+      }
       performCleanup('page-hide');
     }
   };
@@ -386,6 +511,16 @@ const handleProceedToCheckout = () => {
       sessionStorage.setItem('ticketSelection', JSON.stringify(updatedSelection));
     }
 
+    // Save complete state to bookingStateManager
+    bookingStateManager.save({
+      seats: {
+        selected: selectedSeats,
+        reservation: currentReservation,
+        timestamp: new Date().toISOString()
+      },
+      currentStep: 'checkout'
+    });
+
     // Navigate to checkout
     router.push(`/checkout/events/${eventId}`);
   };
@@ -405,9 +540,12 @@ const handleProceedToCheckout = () => {
         timestamp: Date.now()
       };
     } else {
-      // Fallback to sessionStorage
-      const stored = sessionStorage.getItem('ticketSelection');
-      return stored ? JSON.parse(stored) : null;
+      // Fallback to sessionStorage (only on client side)
+      if (typeof window !== 'undefined') {
+        const stored = sessionStorage.getItem('ticketSelection');
+        return stored ? JSON.parse(stored) : null;
+      }
+      return null;
     }
   };
 
@@ -436,19 +574,35 @@ const handleProceedToCheckout = () => {
   }
 
  // Simple error handling - redirect back to tickets page
-  if (initializationError || seatError || !ticketSelection || !selectedEvent) {
-    console.warn('Seat selection error, redirecting to tickets page:', { 
+  if (initializationError || seatError) {
+    console.warn('Seat selection error:', { 
       initializationError, 
-      seatError,
-      hasTicketSelection: !!ticketSelection,
-      hasSelectedEvent: !!selectedEvent 
+      seatError
     });
-    router.push(`/events/tickets/${eventId}`);
+    
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Error Loading Seats</h2>
+          <p className="text-gray-600 mb-6">{initializationError || seatError}</p>
+          <button
+            onClick={() => router.push(`/events/tickets/${eventId}`)}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Back to Tickets
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Check if we have required data
+  if (!ticketSelection || !selectedEvent) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner size="large" />
-          <p className="mt-4 text-gray-600">Redirecting to ticket selection...</p>
+          <p className="mt-4 text-gray-600">Loading seat selection...</p>
         </div>
       </div>
     );

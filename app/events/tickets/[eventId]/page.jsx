@@ -46,6 +46,7 @@ import {
 } from '@/store/slices/events/eventCapacitySlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import AttendeeInfoSection from '@/components/events/tickets/AttendeeInfoSection';
+import bookingStateManager from '@/utils/booking/bookingStateManager';
 
 const TicketSelectionPage = () => {
   const { eventId } = useParams();
@@ -248,6 +249,20 @@ const TicketSelectionPage = () => {
         'ticketSelection',
         JSON.stringify(ticketSelectionFallback)
       );
+
+      // Also save to bookingStateManager for better persistence
+      bookingStateManager.save({
+        flowId: `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        eventId: selectedEvent._id,
+        eventType: hasSeatingLayout ? 'seated' : 'general',
+        currentStep: hasSeatingLayout ? 'seats' : 'checkout',
+        tickets: {
+          selected: selectedTickets,
+          totals: totals,
+          timestamp: new Date().toISOString()
+        },
+        formResponses: formResponses
+      });
 
       // Navigate based on seating layout
       if (hasSeatingLayout) {

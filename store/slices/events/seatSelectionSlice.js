@@ -171,6 +171,13 @@ state.selectedSeats = [];
 return { ...initialState, sessionId: state.sessionId };
     },
     
+    // ✅ CORE: Restore seats from saved state
+    restoreSeatsFromSaved: (state, action) => {
+      const { selectedSeats, reservation } = action.payload;
+      state.selectedSeats = selectedSeats || [];
+      state.currentReservation = reservation || null;
+    },
+    
 // ✅ CORE: Error handling
 clearError: (state) => {
   state.fetchError = null;
@@ -473,6 +480,7 @@ export const {
   setCurrentEvent,
   setSessionId,
   resetSeatSelection,
+  restoreSeatsFromSaved,
   clearError,
   clearFetchError,
   clearReserveError,

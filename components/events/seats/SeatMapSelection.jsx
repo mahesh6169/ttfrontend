@@ -27,6 +27,7 @@ import {
 } from '@/store/slices/events/seatSelectionSlice';
 import SeatButton from './SeatButton';
 import SeatReservationTimer from './SeatReservationTimer';
+import bookingStateManager from '@/utils/booking/bookingStateManager';
 
 const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
   const dispatch = useDispatch();
@@ -411,6 +412,24 @@ useEffect(() => {
       };
 
       const result = await dispatch(reserveSeats(reservationData)).unwrap();
+
+      // Save to bookingStateManager for persistence across page refreshes
+      const reservationToSave = {
+        eventId: result.eventId,
+        userId: result.userId,
+        sessionId: result.sessionId,
+        reservedUntil: result.reservedUntil,
+        seatIds: selectedSeats,
+        seatCount: selectedSeats.length,
+        reservationId: result.reservationId || `res_${Date.now()}`
+      };
+      
+      console.log('🔵 Saving seats to bookingStateManager:', {
+        selectedSeats,
+        reservation: reservationToSave,
+        eventId
+      });
+      bookingStateManager.updateSeats(selectedSeats, reservationToSave);
 
       // ✅ RESTORE: Restore scroll position after successful reservation
       setTimeout(() => {
