@@ -60,10 +60,11 @@ const Register = () => {
   };
 
   const honeypotRef = useRef(null);
+  const recaptchaRef = useRef(null);
   
   const dispatch = useDispatch();
   const router = useRouter();
-  const { loading } = useSelector((state) => state.user);
+  const { loading, error: reduxError } = useSelector((state) => state.user);
   const searchParams = useSearchParams();
   const preserveRedirect = searchParams.get('preserveRedirect') === 'true';
 
@@ -94,6 +95,7 @@ const Register = () => {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
+    
   };
 
   const handlePlaceChanged = () => {
@@ -202,8 +204,9 @@ const Register = () => {
     const now = Date.now();
     const tokenAge = now - (captchaTokenTime || 0);
   
+    // Check reCAPTCHA on every submission
     if (!captchaToken || tokenAge > 110000) {
-      toast.error('reCAPTCHA expired or missing. Please complete it again.');
+      toast.error('Please complete the reCAPTCHA verification');
       setCaptchaToken(null);
       setIsSubmitting(false);
       return;
@@ -247,11 +250,25 @@ const Register = () => {
       
     } catch (err) {
       const errorMessage =
-    err?.response?.data?.message || // Axios-style error
-    err?.message ||                 // JS error object
-    err ||                          // rejectWithValue string
-    'An unexpected error occurred.';
-  setMessage(errorMessage);
+        err?.response?.data?.message || // Axios-style error
+        err?.message ||                 // JS error object
+        err ||                          // rejectWithValue string
+        'An unexpected error occurred.';
+      
+      // Show error as toast
+      toast.error(errorMessage);
+      
+      // Clear any previous message
+      setMessage('');
+      
+      // Reset reCAPTCHA properly - both the token and the visual widget
+      setCaptchaToken(null);
+      setCaptchaTokenTime(null);
+      
+      // Reset the visual ReCAPTCHA widget so it doesn't show as checked
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -522,11 +539,12 @@ const Register = () => {
 
           {/* ReCAPTCHA */}
           <ReCAPTCHA
-  sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-  onChange={(token) => {
-    setCaptchaToken(token);
-    setCaptchaTokenTime(Date.now());
-  }}
+            ref={recaptchaRef}
+            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+            onChange={(token) => {
+              setCaptchaToken(token);
+              setCaptchaTokenTime(Date.now());
+            }}
   onExpired={() => {
     setCaptchaToken(null);
     setCaptchaTokenTime(null);
@@ -543,7 +561,6 @@ const Register = () => {
           </button>
         </form>
 
-        {message && <p className="mt-4 text-center text-red-500">{message}</p>}
 
         <div className="mt-6 text-center">
           <p>
