@@ -314,9 +314,10 @@ const handleVisibilityChange = () => {
       return;
     }
     
-    // Only cleanup for actual tab switches (not navigation)
-    console.log('🔄 VISIBILITY: User switched tabs/minimized - performing cleanup');
-    performCleanup('visibility-hidden');
+    // ✅ REMOVED: No longer cleaning up on tab switches
+    // Users can switch tabs without losing their seat selection
+    console.log('🔄 VISIBILITY: Tab hidden but keeping seats reserved');
+    // performCleanup('visibility-hidden'); // REMOVED - too aggressive
   }
 };
 
