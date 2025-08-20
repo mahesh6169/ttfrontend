@@ -371,7 +371,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     <div className="mt-4 flex justify-between items-center">
       {/* Back to Topics */}
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push('/threads')}
         className="flex items-center gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
       >
         <RiArrowGoBackFill className="text-xs sm:text-base" />
@@ -938,33 +938,19 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   ) : (
     <div className="border-t bg-gray-50 p-4">
       <div className="text-center">
-        <p className="text-gray-600 mb-3">Join the conversation</p>
-        <div className="flex justify-center gap-4">
-          <Link
-            href={`/login?preserveRedirect=true`}
-            onClick={() => {
-              localStorage.setItem(
-                'redirectAfterLogin',
-                `/threads/views/${threadId}`
-              );
-            }}
-            className="px-4 py-2 text-sm sm:text-base bg-teal-600 text-lime-100 rounded hover:bg-teal-700"
-          >
-            Login
-          </Link>
-          <Link
-            href={`/users/register?preserveRedirect=true`}
-            onClick={() => {
-              localStorage.setItem(
-                'redirectAfterLogin',
-                `/threads/views/${threadId}`
-              );
-            }}
-            className="px-4 py-2 text-sm sm:text-base bg-teal-600 text-lime-100 rounded hover:bg-teal-700"
-          >
-            Register
-          </Link>
-        </div>
+        <p className="text-gray-600 mb-3">Login to join the conversation</p>
+        <Link
+          href={`/login?preserveRedirect=true`}
+          onClick={() => {
+            localStorage.setItem(
+              'redirectAfterLogin',
+              `/threads/views/${threadId}`
+            );
+          }}
+          className="inline-block px-6 py-2 text-sm sm:text-base bg-teal-600 text-lime-100 rounded hover:bg-teal-700"
+        >
+          Login
+        </Link>
       </div>
     </div>
   )}

@@ -67,7 +67,15 @@ const EventDetail = () => {
       <div className="text-center text-red-500 mt-8">
         <p>{error}</p>
         <button 
-          onClick={() => router.back()}
+          onClick={() => {
+            const returnUrl = localStorage.getItem('eventViewReturnUrl');
+            if (returnUrl && returnUrl.includes('/listings/views/')) {
+              router.push(returnUrl);
+              localStorage.removeItem('eventViewReturnUrl');
+            } else {
+              router.push('/events');
+            }
+          }}
           className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
         >
           Go Back
@@ -81,7 +89,15 @@ const EventDetail = () => {
       <div className="text-center text-gray-500 mt-8">
         <p>Event not found.</p>
         <button 
-          onClick={() => router.back()}
+          onClick={() => {
+            const returnUrl = localStorage.getItem('eventViewReturnUrl');
+            if (returnUrl && returnUrl.includes('/listings/views/')) {
+              router.push(returnUrl);
+              localStorage.removeItem('eventViewReturnUrl');
+            } else {
+              router.push('/events');
+            }
+          }}
           className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
         >
           Go Back
@@ -94,13 +110,24 @@ const EventDetail = () => {
     <div className="flex flex-col gap-2 px-2">
       {/* Navigation Bar */}
       <div className="mt-4 flex justify-between items-center">
-        {/* Back to Events */}
+        {/* Back Button - Smart Navigation */}
         <button
-          onClick={() => router.back()}
+          onClick={() => {
+            // Check if we came from a listing view
+            const returnUrl = localStorage.getItem('eventViewReturnUrl');
+            if (returnUrl && returnUrl.includes('/listings/views/')) {
+              // Go back to the listing view
+              router.push(returnUrl);
+              localStorage.removeItem('eventViewReturnUrl');
+            } else {
+              // Default to events page
+              router.push('/events');
+            }
+          }}
           className="flex items-center gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
         >
           <RiArrowGoBackFill className="text-xs sm:text-base" />
-          <span>Back to Events</span>
+          <span>Back</span>
         </button>
 
         {/* Report this Event */}

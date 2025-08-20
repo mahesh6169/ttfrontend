@@ -83,3 +83,17 @@ input[type="number"] {
 .Toastify__toast--error .Toastify__progress-bar {
   background-color: #dc2626 !important; /* red-600 */
 }
+
+/* Modal slide up animation for mobile */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}

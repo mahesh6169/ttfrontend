@@ -280,8 +280,10 @@ const TicketSelectionPage = () => {
     }
   };
 
-  // Handle back navigation
- const handleBack = () => {
+  // Handle back navigation with smart routing
+  const handleBack = () => {
+    // Always go back to the event view page
+    // The event view page will handle the smart navigation back to listings if needed
     router.push(`/events/views/${eventId}`);
   };
 

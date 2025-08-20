@@ -595,44 +595,34 @@ const CheckoutPage = () => {
   };
 
 const handleBackToTickets = () => {
-  // For events that require seat selection
+  // Simplified back navigation based on event type
   if (event?.seatingLayout || seatInfo.requiresSeats) {
-    // Check if we have an active reservation (timer still valid)
-    const hasActiveReservation = currentReservation && 
-                                currentReservation.reservedUntil && 
-                                new Date(currentReservation.reservedUntil) > new Date();
+    // For seated events, always go back to seats page
+    // The seats page will handle whether to show seats or redirect to tickets if expired
     
-    // Check if we have selected seats in Redux state
-    const hasSelectedSeats = (selectedSeats && selectedSeats.length > 0) ||
-                            (seatInfo.selectedSeats && seatInfo.selectedSeats.length > 0);
-    
-    if (hasActiveReservation || hasSelectedSeats) {
-      // Save navigation intent to preserve seats
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('navigationIntent', 'checkout-to-seats');
-        sessionStorage.setItem('preserveSeatsTimestamp', Date.now().toString());
-        
-        // Ensure current seat state is saved
-        if (currentReservation && selectedSeats) {
-          bookingStateManager.save({
-            seats: {
-              selected: selectedSeats,
-              reservation: currentReservation,
-              timestamp: new Date().toISOString()
-            },
-            currentStep: 'seats',
-            preserveSeats: true
-          });
-        }
+    // Save navigation intent to preserve seats if they exist
+    if (typeof window !== 'undefined' && (currentReservation || selectedSeats?.length > 0)) {
+      sessionStorage.setItem('navigationIntent', 'checkout-to-seats');
+      sessionStorage.setItem('preserveSeatsTimestamp', Date.now().toString());
+      
+      // Ensure current seat state is saved
+      if (currentReservation && selectedSeats) {
+        bookingStateManager.save({
+          seats: {
+            selected: selectedSeats,
+            reservation: currentReservation,
+            timestamp: new Date().toISOString()
+          },
+          currentStep: 'seats',
+          preserveSeats: true
+        });
       }
-      // Timer is valid or seats are selected - go back to seat selection
-      router.push(`/events/seats/${params.eventId}`);
-    } else {
-      // Timer expired and no seats selected - go back to ticket selection
-      router.push(`/events/tickets/${params.eventId}`);
     }
+    
+    // Always go to seats page for seated events
+    router.push(`/events/seats/${params.eventId}`);
   } else {
-    // General admission events - always go back to ticket selection
+    // General admission events - go back to ticket selection
     router.push(`/events/tickets/${params.eventId}`);
   }
 };
@@ -643,25 +633,13 @@ const handleBackToTickets = () => {
       return 'Back to Details';
     }
     
-    // For events that require seat selection
+    // For seated events, always show "Back to Seats"
     if (event?.seatingLayout || seatInfo.requiresSeats) {
-      // Check if we have an active reservation (timer still valid)
-      const hasActiveReservation = currentReservation && 
-                                  currentReservation.reservedUntil && 
-                                  new Date(currentReservation.reservedUntil) > new Date();
-      
-      // Check if we have selected seats
-      const hasSelectedSeats = (selectedSeats && selectedSeats.length > 0) ||
-                              (seatInfo.selectedSeats && seatInfo.selectedSeats.length > 0);
-      
-      if (hasActiveReservation || hasSelectedSeats) {
-        return 'Back to Seat Selection';
-      } else {
-        return 'Back to Tickets';
-      }
-    } else {
-      return 'Back to Tickets';
+      return 'Back to Seats';
     }
+    
+    // For general admission events
+    return 'Back to Tickets';
   };
 
   // Handle back to details step

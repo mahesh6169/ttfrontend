@@ -216,25 +216,44 @@ const isNavigatingToCheckoutRef = useRef(false);
           setTimeout(() => {
             const stateToRestore = savedBookingState || bookingStateManager.load(eventId);
             if (stateToRestore?.seats?.reservation) {
-              console.log('🔄 Restoring seats after initialization', {
+              // Check if reservation is still valid
+              const reservedUntil = new Date(stateToRestore.seats.reservation.reservedUntil);
+              const now = new Date();
+              const isExpired = reservedUntil <= now;
+              
+              console.log('🔄 Checking seat restoration', {
                 fromRefresh: !!savedBookingState,
-                fromCheckout: returningFromCheckout
+                fromCheckout: returningFromCheckout,
+                isExpired,
+                reservedUntil: reservedUntil.toISOString(),
+                now: now.toISOString()
               });
               
-              // Restore seats AFTER setCurrentEvent has been called
-              dispatch(restoreSeatsFromSaved({
-                selectedSeats: stateToRestore.seats.selected || [],
-                reservation: stateToRestore.seats.reservation
-              }));
-              dispatch(setCurrentReservation(stateToRestore.seats.reservation));
-              
-              // Update with restored seat info
-              dispatch(updateSeatInfo({
-                selectedSeats: stateToRestore.seats.selected || [],
-                reservationId: stateToRestore.seats.reservation.reservationId,
-                seatCount: stateToRestore.seats.selected?.length || 0,
-                requiresSeats: true
-              }));
+              if (isExpired) {
+                console.log('⏰ Seats have expired - clearing state instead of restoring');
+                // Clear the expired state
+                bookingStateManager.clear();
+                dispatch(clearSelection());
+                // Don't show error - just let user select new seats
+                if (returningFromCheckout) {
+                  sessionStorage.removeItem('navigationIntent');
+                }
+              } else {
+                // Seats are still valid - restore them
+                dispatch(restoreSeatsFromSaved({
+                  selectedSeats: stateToRestore.seats.selected || [],
+                  reservation: stateToRestore.seats.reservation
+                }));
+                dispatch(setCurrentReservation(stateToRestore.seats.reservation));
+                
+                // Update with restored seat info
+                dispatch(updateSeatInfo({
+                  selectedSeats: stateToRestore.seats.selected || [],
+                  reservationId: stateToRestore.seats.reservation.reservationId,
+                  seatCount: stateToRestore.seats.selected?.length || 0,
+                  requiresSeats: true
+                }));
+              }
             }
           }, 100); // Small delay to ensure Redux state is ready
         }
@@ -376,11 +395,25 @@ useEffect(() => {
       (Date.now() - parseInt(preserveTimestamp)) < 5000; // Within 5 seconds
     
     if (isReturningFromCheckout || shouldPreserveSeats || savedState?.preserveSeats) {
-      console.log('🔙 Returning from checkout - skipping cleanup to preserve seats', {
-        isReturningFromCheckout,
-        shouldPreserveSeats,
-        preserveSeats: savedState?.preserveSeats
-      });
+      // Check if seats are expired
+      let seatsExpired = false;
+      if (savedState?.seats?.reservation) {
+        const reservedUntil = new Date(savedState.seats.reservation.reservedUntil);
+        seatsExpired = reservedUntil <= new Date();
+      }
+      
+      if (seatsExpired) {
+        console.log('⏰ Seats expired - performing cleanup');
+        performCleanup('expired-seats');
+        bookingStateManager.clear();
+      } else {
+        console.log('🔙 Returning from checkout - skipping cleanup to preserve seats', {
+          isReturningFromCheckout,
+          shouldPreserveSeats,
+          preserveSeats: savedState?.preserveSeats
+        });
+      }
+      
       // Clean up the flags
       sessionStorage.removeItem('preserveSeatsTimestamp');
       if (savedState?.preserveSeats) {
@@ -635,7 +668,7 @@ const handleProceedToCheckout = () => {
           </h1>
           
           {/* Seating Legend - Inline and compact */}
-          <div className="mb-4 sm:mb-6">
+          <div className="mb-6 sm:mb-6">
             <SeatLegend />
           </div>
           

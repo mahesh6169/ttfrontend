@@ -231,7 +231,7 @@ const Login = () => {
           <p>
             Don't have an account?{' '}
             <Link
-              href="/register"
+              href={preserveRedirect ? "/register?preserveRedirect=true" : "/register"}
               className="text-teal-700 hover:underline"
             >
               Register here

@@ -47,6 +47,17 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaTokenTime, setCaptchaTokenTime] = useState(null);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
+  
+  // Password validation checks
+  const getPasswordStrength = () => {
+    const checks = {
+      length: formData.password.length >= 8,
+      uppercase: /[A-Z]/.test(formData.password),
+      lowercase: /[a-z]/.test(formData.password),
+      number: /[0-9]/.test(formData.password),
+    };
+    return checks;
+  };
 
   const honeypotRef = useRef(null);
   
@@ -335,15 +346,32 @@ const Register = () => {
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">{errors.password}</p>
             )}
-            {showPasswordHint && !errors.password && (
-              <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded text-sm">
-                <p className="text-gray-700 font-medium mb-1">Password Requirements:</p>
-                <ul className="text-gray-600 text-xs space-y-1">
-                  <li>• Minimum 8 characters</li>
-                  <li>• At least 1 uppercase letter (A-Z)</li>
-                  <li>• At least 1 lowercase letter (a-z)</li>
-                  <li>• At least 1 number (0-9)</li>
-                </ul>
+            {showPasswordHint && formData.password && (
+              <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-xs">
+                {(() => {
+                  const checks = getPasswordStrength();
+                  const allValid = Object.values(checks).every(Boolean);
+                  return (
+                    <div className="space-y-0.5">
+                      <div className={`flex items-center ${checks.length ? 'text-green-600' : 'text-gray-500'}`}>
+                        <span className="mr-1">{checks.length ? '✓' : '○'}</span>
+                        <span>8+ characters</span>
+                      </div>
+                      <div className={`flex items-center ${checks.uppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        <span className="mr-1">{checks.uppercase ? '✓' : '○'}</span>
+                        <span>One uppercase (A-Z)</span>
+                      </div>
+                      <div className={`flex items-center ${checks.lowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        <span className="mr-1">{checks.lowercase ? '✓' : '○'}</span>
+                        <span>One lowercase (a-z)</span>
+                      </div>
+                      <div className={`flex items-center ${checks.number ? 'text-green-600' : 'text-gray-500'}`}>
+                        <span className="mr-1">{checks.number ? '✓' : '○'}</span>
+                        <span>One number (0-9)</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -369,6 +397,22 @@ const Register = () => {
             />
             {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+            )}
+            {/* Real-time password match indicator */}
+            {formData.confirmPassword && formData.password && (
+              <div className="mt-1">
+                {formData.password === formData.confirmPassword ? (
+                  <p className="text-green-600 text-xs flex items-center">
+                    <span className="mr-1">✓</span>
+                    <span>Passwords match</span>
+                  </p>
+                ) : (
+                  <p className="text-gray-500 text-xs flex items-center">
+                    <span className="mr-1">○</span>
+                    <span>Passwords do not match</span>
+                  </p>
+                )}
+              </div>
             )}
           </div>
           

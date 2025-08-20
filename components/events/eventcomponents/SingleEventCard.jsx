@@ -80,6 +80,21 @@ const SingleEventCard = ({ event, chatProps }) => {
     }
   }, [dispatch, event?._id]);
 
+  // Check if user just logged in and wanted to register
+  useEffect(() => {
+    if (isAuthenticated && event?._id) {
+      const pendingEventId = localStorage.getItem('eventRegistrationPending');
+      if (pendingEventId === event._id) {
+        // Clear the flag
+        localStorage.removeItem('eventRegistrationPending');
+        // Open registration modal for free events
+        if (!event.isPaid) {
+          setShowRegistrationForm(true);
+        }
+      }
+    }
+  }, [isAuthenticated, event?._id, event?.isPaid]);
+
   const handleNextImage = () => {
     if (event.images?.length > 1) {
       setCurrentImageIndex((prev) => (prev + 1) % event.images.length);
@@ -105,8 +120,15 @@ const SingleEventCard = ({ event, chatProps }) => {
   // Handle ticket purchase navigation
   const handlePurchaseTickets = () => {
     if (!isAuthenticated) {
-      alert('Please log in to purchase tickets.');
-      router.push('/login');
+      // Save intended destination
+      localStorage.setItem('redirectAfterLogin', `/events/tickets/${event._id}`);
+      // Don't overwrite eventViewReturnUrl if it already exists
+      // This preserves the original navigation path
+      if (!localStorage.getItem('eventViewReturnUrl')) {
+        localStorage.setItem('eventViewReturnUrl', '/events');
+      }
+      // Redirect to login with preserve redirect flag
+      router.push('/login?preserveRedirect=true');
       return;
     }
     // Navigate to the ticket selection page
@@ -497,7 +519,16 @@ const SingleEventCard = ({ event, chatProps }) => {
 <button
   onClick={() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      // Save intended action
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      localStorage.setItem('eventRegistrationPending', event._id);
+      // Don't overwrite eventViewReturnUrl if it already exists
+      // This preserves the original navigation path
+      if (!localStorage.getItem('eventViewReturnUrl')) {
+        localStorage.setItem('eventViewReturnUrl', '/events');
+      }
+      // Redirect to login with preserve redirect flag
+      router.push('/login?preserveRedirect=true');
       return;
     }
     setShowRegistrationForm(true);

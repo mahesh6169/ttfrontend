@@ -74,6 +74,7 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
   const [localSelectionTimer, setLocalSelectionTimer] = useState(null);
   
   const [showReserveErrorModal, setShowReserveErrorModal] = useState(false);
+  const [reserveErrorType, setReserveErrorType] = useState('conflict'); // 'conflict' | 'limit'
 
   // ✅ NEW: Track scroll position to prevent jump on re-render
   const scrollContainerRef = useRef(null);
@@ -159,39 +160,41 @@ useEffect(() => {
     isLoading,
   ]);
 
-  // Automatically releases reservation when user deselects seats below the required count.
+  // Automatically releases reservation when user changes their selection after reservation.
   useEffect(() => {
-    const shouldAutoRelease =
-      selectedSeats.length < requiredSeats && // Less than required seats
-      selectedSeats.length >= 0 && // Valid count
-      currentReservation && // Has active reservation
-      currentReservation.seatIds && // Has reserved seats
-      currentReservation.seatIds.length > 0 && // Not empty
-      !pendingReservation && // Not currently processing reservation
-      !pendingAutoRelease && // ✅ NEW: Not currently processing auto-release
-      !isLoading; // Not loading
+    // Only proceed if we have a current reservation
+    if (!currentReservation || !currentReservation.seatIds || currentReservation.seatIds.length === 0) {
+      return;
+    }
 
-    if (shouldAutoRelease) {
-      console.log(
-        '🔓 Auto-releasing reservation due to incomplete selection:',
-        {
-          selectedSeats: selectedSeats.length,
-          required: requiredSeats,
-          reservedSeats: currentReservation.seatIds,
-        }
-      );
+    // Check if the selected seats differ from the reserved seats
+    const reservedSeatsSet = new Set(currentReservation.seatIds);
+    const selectedSeatsSet = new Set(selectedSeats);
+    
+    // Check if sets are different (either different size or different contents)
+    const seatsChanged = 
+      reservedSeatsSet.size !== selectedSeatsSet.size ||
+      [...reservedSeatsSet].some(seat => !selectedSeatsSet.has(seat)) ||
+      [...selectedSeatsSet].some(seat => !reservedSeatsSet.has(seat));
+
+    if (seatsChanged && !pendingReservation && !pendingAutoRelease && !isLoading) {
+      console.log('🔄 Seats changed after reservation - releasing current reservation', {
+        reserved: currentReservation.seatIds,
+        selected: selectedSeats
+      });
+      
+      // Release the current reservation since seats have changed
       handleAutoRelease();
     }
   }, [
-    selectedSeats.length,
-    requiredSeats,
+    selectedSeats,
     currentReservation,
     pendingReservation,
-    pendingAutoRelease, // ✅ NEW: Include in dependencies
+    pendingAutoRelease,
     isLoading,
   ]);
 
-  // Local timer to clear partial selections after 2 minutes of inactivity
+  // Local timer to clear partial selections after 30 seconds of inactivity
 useEffect(() => {
   // Clear any existing timer
   if (localSelectionTimer) {
@@ -199,11 +202,11 @@ useEffect(() => {
     setLocalSelectionTimer(null);
   }
 
-  // Only start timer for partial selections (not complete or empty)
+  // Only start timer for partial selections when NO reservation exists
   const shouldStartLocalTimer =
     selectedSeats.length > 0 &&
     selectedSeats.length < requiredSeats &&
-    !currentReservation &&
+    !currentReservation && // No active reservation
     !pendingReservation &&
     !isLoading;
 
@@ -214,7 +217,7 @@ useEffect(() => {
       console.log('🧹 Local timer expired - clearing partial selection');
       dispatch(clearSelection());
       setLocalSelectionTimer(null);
-    }, 30 * 1000); // 30 seconds  ← CHANGE THIS LINE
+    }, 30 * 1000); // 30 seconds
 
     setLocalSelectionTimer(timerId);
   }
@@ -246,15 +249,33 @@ useEffect(() => {
 
     const isCurrentlySelected = selectedSeats.includes(seatId);
 
-    // Validate selection limit
-    if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
+    // Validate seat exists in layout
+    const seatDetails = findSeatInLayout(seatId);
+    if (!seatDetails) {
+       setReserveErrorType('conflict');
        setShowReserveErrorModal(true);
       return;
     }
 
-    // Validate seat exists in layout
-    const seatDetails = findSeatInLayout(seatId);
-    if (!seatDetails) {
+    // ✅ SEAT SWITCHING LOGIC: If user has already reserved required seats and clicks a new seat
+    if (!isCurrentlySelected && selectedSeats.length >= requiredSeats && currentReservation) {
+      console.log(`🔄 Seat switching: User wants to change from ${selectedSeats.join(', ')} to ${seatId}`);
+      
+      // For single seat switching (when only 1 seat is required)
+      if (requiredSeats === 1) {
+        handleSeatSwitch(seatId);
+        return;
+      } else {
+        // For multiple seats, show error - user needs to deselect first
+        setReserveErrorType('limit');
+        setShowReserveErrorModal(true);
+        return;
+      }
+    }
+
+    // Validate selection limit for normal selection
+    if (!isCurrentlySelected && selectedSeats.length >= requiredSeats) {
+       setReserveErrorType('limit');
        setShowReserveErrorModal(true);
       return;
     }
@@ -298,8 +319,49 @@ useEffect(() => {
   const handleReserveErrorOk = () => {
     setShowReserveErrorModal(false);
     dispatch(clearReserveError());
-    dispatch(clearSelection());
-    router.push(`/events/seats/${eventId}`);
+    
+    // Only clear selection and refresh for conflict errors
+    if (reserveErrorType === 'conflict') {
+      dispatch(clearSelection());
+      router.push(`/events/seats/${eventId}`);
+    }
+    // For limit errors, just close the modal
+  };
+
+  // ✅ NEW: Handle seat switching for single seat reservations
+  const handleSeatSwitch = async (newSeatId) => {
+    console.log(`🔄 Initiating seat switch from ${selectedSeats[0]} to ${newSeatId}`);
+    
+    // Set loading state
+    setPendingReservation(true);
+    
+    try {
+      // Step 1: Release current reservation
+      if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
+        await dispatch(releaseReservation({
+          eventId: eventId,
+          seatIds: currentReservation.seatIds,
+          sessionId: currentReservation.sessionId || sessionId,
+        })).unwrap();
+        console.log(`✅ Released previous seat: ${currentReservation.seatIds[0]}`);
+      }
+      
+      // Step 2: Clear current selection in Redux
+      dispatch(clearSelection());
+      
+      // Step 3: Select the new seat
+      dispatch(selectSeat(newSeatId));
+      
+      // Step 4: Reserve the new seat (will happen automatically via useEffect)
+      console.log(`✅ Selected new seat: ${newSeatId}, waiting for auto-reserve`);
+      
+    } catch (error) {
+      console.error('❌ Error during seat switch:', error);
+      setReserveErrorType('conflict');
+      setShowReserveErrorModal(true);
+    } finally {
+      setPendingReservation(false);
+    }
   };
 
   // Manages automatic reservation release with loading state and error handling.
@@ -361,6 +423,7 @@ useEffect(() => {
   if (conflictSeats.length > 0) {
     console.log('🚨 Seats taken by others:', conflictSeats);
     dispatch(clearSelection());
+    setReserveErrorType('conflict');
     setShowReserveErrorModal(true);
     return; // STOP - no API call
   }
@@ -373,6 +436,7 @@ useEffect(() => {
 
     // Validate seat count matches ticket count
     if (selectedSeats.length !== requiredSeats) {
+      setReserveErrorType('limit');
       setShowReserveErrorModal(true);
       return;
     }
@@ -397,6 +461,7 @@ useEffect(() => {
 
     if (invalidSeats.length > 0) {
       console.error('❌ Invalid seats found:', invalidSeats);
+      setReserveErrorType('conflict');
       setShowReserveErrorModal(true);
       return;
     }
@@ -476,20 +541,16 @@ useEffect(() => {
 
   // Determines seat status (selected, reserved, booked, etc.) based on user selection and backend data.
   const getSeatStatus = (seat, seatId) => {
-    // Priority 1: Check if selected in current session
+    // Priority 1: Check if selected in current session (this takes precedence)
     const isSelectedByUser = selectedSeats.includes(seatId);
     if (isSelectedByUser) return 'selected';
 
-    // Priority 2: Check if reserved by current user
-    const isReservedByUser = currentReservation?.seatIds?.includes(seatId);
-    if (isReservedByUser) return 'selected';
-
-    // Priority 3: Check backend seat status
+    // Priority 2: Check backend seat status
     if (seat.status === 'booked') return 'booked';
     if (seat.status === 'disabled') return 'disabled';
     if (seat.status === 'reserved') return 'reserved';
 
-    // Priority 4: Check if held by another user (with valid expiry)
+    // Priority 3: Check if held by another user (with valid expiry)
     if (seat.status === 'selected' && seat.reservedBy && seat.reservedUntil) {
       const isExpired = new Date(seat.reservedUntil) <= new Date();
       if (!isExpired && seat.reservedBy !== userId) {
@@ -506,6 +567,7 @@ useEffect(() => {
     console.log('🔍 Reserve error useEffect triggered:', { reserveError, showReserveErrorModal });
     if (reserveError) {
       console.log('🚨 Reserve error detected, showing modal:', reserveError);
+      setReserveErrorType('conflict');
       setShowReserveErrorModal(true);
     }
   }, [reserveError]);
@@ -750,9 +812,7 @@ useEffect(() => {
                               seat={{ ...seat, seatId }}
                               row={row}
                               isSelected={selectedSeats.includes(seatId)}
-                              isReservedByUser={currentReservation?.seatIds?.includes(
-                                seatId
-                              )}
+                              isReservedByUser={false}
                               onClick={() =>
                                 handleSeatClick(seatId, seatStatus)
                               }
@@ -779,9 +839,11 @@ useEffect(() => {
             </div>
 
             {/* Scroll hint for mobile - More subtle */}
-            <div className="md:hidden bg-gray-50 px-3 py-1 text-center">
-              <div className="text-[9px] text-gray-500">
-                ← Swipe to view all seats →
+            <div className="md:hidden bg-gray-50 px-3 py-2 text-center border-t border-gray-200">
+              <div className="text-[9px] text-gray-500 flex items-center justify-center gap-1">
+                <span>←</span>
+                <span>Swipe to view all seats</span>
+                <span>→</span>
               </div>
             </div>
           </div>
@@ -806,15 +868,17 @@ useEffect(() => {
 
 
 
-      {/* Reserve Error Modal */}
+      {/* Reserve Error Modal - Mobile First Design */}
       {console.log('🔍 Modal render check:', { showReserveErrorModal, reserveError })}
       {showReserveErrorModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50">
+          {/* Mobile: Slide up from bottom, Desktop: Center modal */}
+          <div className="bg-white rounded-t-2xl sm:rounded-lg p-4 sm:p-6 w-full sm:max-w-sm mx-0 sm:mx-4 shadow-xl animate-slide-up sm:animate-none">
             <div className="text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              {/* Smaller icon on mobile */}
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <svg
-                  className="w-6 h-6 text-red-600"
+                  className="w-5 h-5 sm:w-6 sm:h-6 text-red-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -827,18 +891,42 @@ useEffect(() => {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Booking Conflict has Occurred
+              
+              {/* Responsive title */}
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+                {reserveErrorType === 'limit' ? 'Seat Limit Reached' : 'Seat Unavailable'}
               </h3>
-              <p className="text-gray-600 text-sm mb-6">
-                 The seats you selected are no longer available. Another user may have selected them. Please choose different seats.
+              
+              {/* Mobile-optimized message */}
+              <p className="text-gray-600 text-sm mb-4 sm:mb-6 px-2 sm:px-0">
+                {reserveErrorType === 'limit' 
+                  ? (
+                    <>
+                      <span className="block mb-1">You've selected {requiredSeats} seat{requiredSeats > 1 ? 's' : ''}.</span>
+                      <span className="block text-xs">To change seats, clear your selection first.</span>
+                    </>
+                  )
+                  : (
+                    <>
+                      <span className="block mb-1">This seat is no longer available.</span>
+                      <span className="block text-xs">Please choose a different seat.</span>
+                    </>
+                  )
+                }
               </p>
+              
+              {/* Larger touch target for mobile */}
               <button
                 onClick={handleReserveErrorOk}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                className="w-full bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors active:bg-blue-800"
               >
                 OK
               </button>
+              
+              {/* Optional: Add drag handle for mobile */}
+              <div className="sm:hidden mt-4 mb-2">
+                <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto"></div>
+              </div>
             </div>
           </div>
         </div>

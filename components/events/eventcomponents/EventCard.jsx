@@ -66,7 +66,16 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
       </button>
 
       {/* Main Card */}
-      <Link href={`/events/views/${event._id}`} className="block">
+      <Link 
+        href={`/events/views/${event._id}`} 
+        className="block"
+        onClick={() => {
+          // Save the current URL if we're coming from a listing view
+          if (typeof window !== 'undefined' && window.location.pathname.includes('/listings/views/')) {
+            localStorage.setItem('eventViewReturnUrl', window.location.pathname);
+          }
+        }}
+      >
         {/* Image */}
         <div className="relative w-full h-40 sm:h-48 md:h-56">
           {images?.length > 0 ? (
