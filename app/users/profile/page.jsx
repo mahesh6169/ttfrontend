@@ -1,19 +1,19 @@
 'use client';
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useRouter } from 'next/navigation';
+import React from 'react';
+import { useSelector } from 'react-redux';
 import Link from 'next/link';
-import { FaAd, FaCalendarAlt, FaEnvelope, FaMoneyCheckAlt } from 'react-icons/fa';
+import { 
+  FaAd, FaCalendarAlt, FaEnvelope, FaUser, FaPlus,
+  FaCog, FaCheckCircle, FaEye, FaFileInvoice, FaTicketAlt
+} from 'react-icons/fa';
 import { MdFavorite } from 'react-icons/md';
-import { BsChatText } from 'react-icons/bs';
+import { BsChatText, BsChatDots } from 'react-icons/bs';
+import { RiMoneyDollarCircleFill } from 'react-icons/ri';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const ProfilePage = () => {
-  const dispatch = useDispatch();
-  const router = useRouter();
   const { user, status } = useSelector((state) => state.user);
  
-  // Show loading spinner while fetching profile
   if (status === 'loading') {
     return (
       <div className="flex justify-center items-center h-screen w-full">
@@ -22,107 +22,204 @@ const ProfilePage = () => {
     );
   }
 
-  const quickLinks = [
-    {
-      title: 'My Listings',
-      description: 'View and manage your posted Listings',
-      icon: <FaAd className="w-8 h-8" />,
-      href: '/users/profile/manageads',
-      color: 'bg-blue-100 text-blue-600'
-    },
-    {
-      title: 'My Events',
-      description: 'Manage your created events',
-      icon: <FaCalendarAlt className="w-8 h-8" />,
-      href: '/users/profile/manageevents',
-      color: 'bg-green-100 text-green-600'
-    },
-    {
-      title: 'My Topics',
-      description: 'View your forum discussions',
-      icon: <BsChatText className="w-8 h-8" />,
-      href: '/users/profile/managethreads',
-      color: 'bg-purple-100 text-purple-600'
-    },
-    {
-      title: 'Favourites',
-      description: 'Your saved items',
-      icon: <MdFavorite className="w-8 h-8" />,
-      href: '/users/profile/favourites',
-      color: 'bg-red-100 text-red-600'
-    },
-    {
-      title: 'Messages',
-      description: 'View your conversations',
-      icon: <FaEnvelope className="w-8 h-8" />,
-      href: '/users/profile/conversations',
-      color: 'bg-yellow-100 text-yellow-600'
-    },
-    {
-      title: 'My Registrations',
-      description: 'Events you\'ve registered for',
-      icon: <FaCalendarAlt className="w-8 h-8" />,
-      href: '/users/profile/myregistrations',
-      color: 'bg-indigo-100 text-indigo-600'
-    }
-  ];
-
   return (
-    <div className="my-8 w-full max-w-7xl mx-auto px-4">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold mb-2">
-          Welcome back, {user?.name || 'User'}!
+    <div className="w-full max-w-6xl mx-auto px-2 py-3 sm:px-4 sm:py-6">
+      {/* Welcome Header - Compact */}
+      <div className="mb-4">
+        <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+          Welcome, {user?.name || 'User'}!
         </h1>
-        <p className="text-gray-600">
-          Here's your dashboard overview. What would you like to do today?
-        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {quickLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-          >
-            <div className={`inline-flex p-3 rounded-lg ${link.color} mb-4`}>
-              {link.icon}
+      {/* First Container: Account Settings & Check-in */}
+      <div className="border border-gray-300 rounded-lg mb-3 p-3 sm:p-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          {/* Account Settings Column */}
+          <div>
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
+              <FaCog className="text-gray-600" />
+              Account Settings
+            </h3>
+            <div className="space-y-1.5">
+              <Link 
+                href="/users/profile/settings" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → User Settings
+              </Link>
+              <Link 
+                href="/users/profile/settings/stripeSetup" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Stripe Setup
+              </Link>
             </div>
-            <h3 className="text-lg font-semibold mb-2">{link.title}</h3>
-            <p className="text-gray-600 text-sm">{link.description}</p>
-          </Link>
-        ))}
-      </div>
+          </div>
 
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-          <div className="space-y-3">
-            <Link href="/listings/add" className="block w-full text-center bg-teal-600 text-white py-2 px-4 rounded hover:bg-teal-700 transition">
-              Post New Listing
-            </Link>
-            <Link href="/events/create" className="block w-full text-center bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">
-              Create New Event
-            </Link>
-            <Link href="/threads/create" className="block w-full text-center bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700 transition">
-              Start New Topic
-            </Link>
+          {/* Check-in Column */}
+          <div>
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
+              <FaCheckCircle className="text-gray-600" />
+              Check-in...
+            </h3>
+            <div className="space-y-1.5">
+              <Link 
+                href="/users/profile/checkInFree" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → RSVPs
+              </Link>
+              <Link 
+                href="/users/profile/checkInPaid" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Paid Events
+              </Link>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
-          <div className="space-y-3">
-            <Link href="/users/profile/settings" className="block text-teal-600 hover:underline">
-              → Edit Profile Settings
-            </Link>
-            <Link href="/users/profile/settings/stripeSetup" className="block text-teal-600 hover:underline">
-              → Setup Payment (Stripe)
-            </Link>
-            <Link href="/users/profile/checkInFree" className="block text-teal-600 hover:underline">
-              → Event Check-In
-            </Link>
+      {/* Second Container: Add & Manage */}
+      <div className="border border-gray-300 rounded-lg mb-3 p-3 sm:p-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          {/* Add Column */}
+          <div>
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
+              <FaPlus className="text-gray-600" />
+              Add a...
+            </h3>
+            <div className="space-y-1.5">
+              <Link 
+                href="/listings/add" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Listing
+              </Link>
+              <Link 
+                href="/events/create" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Event
+              </Link>
+              <Link 
+                href="/threads/create" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Topic
+              </Link>
+            </div>
           </div>
+
+          {/* Manage Column */}
+          <div>
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
+              <FaCog className="text-gray-600" />
+              Manage...
+            </h3>
+            <div className="space-y-1.5">
+              <Link 
+                href="/users/profile/manageads" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Listings
+              </Link>
+              <Link 
+                href="/users/profile/manageevents" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Events
+              </Link>
+              <Link 
+                href="/users/profile/managethreads" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Topics
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Third Container: Event Organizer & View */}
+      <div className="border border-gray-300 rounded-lg mb-3 p-3 sm:p-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          {/* Event Organizer Column */}
+          <div>
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
+              <RiMoneyDollarCircleFill className="text-gray-600" />
+              Event Organizer
+            </h3>
+            <div className="space-y-1.5">
+              <Link 
+                href="/users/profile/settings/stripeSetup" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Stripe Setup
+              </Link>
+              <Link 
+                href="/users/profile/refunds" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Manage Refunds
+              </Link>
+            </div>
+          </div>
+
+          {/* View Column */}
+          <div>
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
+              <FaEye className="text-gray-600" />
+              View...
+            </h3>
+            <div className="space-y-1.5">
+              <Link 
+                href="/users/profile/myregistrations" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → My RSVPs
+              </Link>
+              <Link 
+                href="/users/profile/mytickets" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → My Tickets
+              </Link>
+              <Link 
+                href="/users/profile/myinvoices" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → My Invoices
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Last Container: Favorites & Messages */}
+      <div className="border border-gray-300 rounded-lg p-3 sm:p-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          {/* Favorites */}
+          <Link 
+            href="/users/profile/favourites"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors group"
+          >
+            <MdFavorite className="text-red-500 text-lg sm:text-xl" />
+            <span className="text-sm sm:text-base font-medium text-gray-700 group-hover:text-gray-900">
+              Favourites
+            </span>
+          </Link>
+
+          {/* Messages */}
+          <Link 
+            href="/users/profile/conversations"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors group"
+          >
+            <BsChatDots className="text-blue-500 text-lg sm:text-xl" />
+            <span className="text-sm sm:text-base font-medium text-gray-700 group-hover:text-gray-900">
+              Messages
+            </span>
+          </Link>
         </div>
       </div>
     </div>
