@@ -9,11 +9,11 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
   
   // Generate the full URL
   let fullUrl;
-  if (type === 'website') {
-    // For website sharing, use the homepage URL
+  if (type === 'website' || type === 'share') {
+    // For website/share, use the share page URL
     fullUrl = typeof window !== 'undefined' 
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
+      ? `${window.location.origin}/share`
+      : `${process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au'}/share`;
   } else {
     // For specific items, use slug URL
     const slugUrl = buildSlugUrl(type, title, id);

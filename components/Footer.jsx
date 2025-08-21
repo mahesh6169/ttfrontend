@@ -31,7 +31,7 @@ const Footer = () => {
           
           {/* Right - Social links */}
           <ShareIcons 
-            type="website"
+            type="share"
             title="Desify - Your Local Marketplace"
             compact={true}
             className="text-lime-100"
