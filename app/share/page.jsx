@@ -1,29 +1,34 @@
-export const metadata = {
-  title: 'Desify - Your Local Marketplace',
-  description: 'Buy and sell items locally on Desify. Find great deals on furniture, electronics, cars, real estate, jobs and more in your area.',
-  openGraph: {
-    title: 'Desify - Your Local Marketplace',
-    description: 'Buy and sell items locally on Desify. Find great deals on furniture, electronics, cars, real estate, jobs and more in your area.',
-    url: 'https://desify.com.au',
-    siteName: 'Desify',
-    images: [
-      {
-        url: '/desify-og-image.jpg', // You'll need to add this image
-        width: 1200,
-        height: 630,
-        alt: 'Desify - Your Local Marketplace',
-      }
-    ],
-    locale: 'en_AU',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Desify - Your Local Marketplace',
-    description: 'Buy and sell items locally on Desify. Find great deals in your area.',
-    images: ['/desify-og-image.jpg'],
-  },
-};
+export async function generateMetadata() {
+  const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
+  const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
+  
+  return {
+    title: `${siteName} - Your Local Marketplace`,
+    description: `Buy and sell items locally on ${siteName}. Find great deals on furniture, electronics, cars, real estate, jobs and more in your area.`,
+    openGraph: {
+      title: `${siteName} - Your Local Marketplace`,
+      description: `Buy and sell items locally on ${siteName}. Find great deals on furniture, electronics, cars, real estate, jobs and more in your area.`,
+      url: siteUrl,
+      siteName: siteName,
+      images: [
+        {
+          url: `${siteUrl}/desify-og-default.jpg`,
+          width: 1200,
+          height: 630,
+          alt: `${siteName} - Your Local Marketplace`,
+        }
+      ],
+      locale: 'en_AU',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${siteName} - Your Local Marketplace`,
+      description: `Buy and sell items locally on ${siteName}. Find great deals in your area.`,
+      images: [`${siteUrl}/desify-og-default.jpg`],
+    },
+  };
+}
 
 export default function SharePage() {
   return (

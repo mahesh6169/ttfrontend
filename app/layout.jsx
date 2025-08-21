@@ -19,14 +19,13 @@ export const metadata = {
     description: `Buy and sell items on ${siteName} - Your trusted local marketplace`,
     url: siteUrl,
     siteName: siteName,
-    // images: [
-    //   {
-    //     url: `${siteUrl}/desify-og-default.jpg`,
-    //     width: 1200,
-    //     height: 630,
-    //   }
-    // ],
-    images: [], // Commented out until logo is available
+    images: [
+      {
+        url: `${siteUrl}/desify-og-default.jpg`,
+        width: 1200,
+        height: 630,
+      }
+    ],
     locale: 'en_AU',
     type: 'website',
   },
