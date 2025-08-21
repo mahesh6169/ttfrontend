@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FaFacebookF, FaWhatsapp, FaXTwitter } from 'react-icons/fa6';
+import ShareIcons from './shared/ShareIcons';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -30,35 +30,13 @@ const Footer = () => {
           <span>© {currentYear} Telugufy</span>
           
           {/* Right - Social links */}
-          <div className="flex gap-2">
-            <a
-              href="https://www.facebook.com/sharer/sharer.php?u=https://www.tagtelugu.com.au/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-lime-50"
-              title="Share on Facebook"
-            >
-              <FaFacebookF size={16} />
-            </a>
-            <a
-              href="https://api.whatsapp.com/send?text=Check%20out%20Telugufy%20-%20https://www.tagtelugu.com.au/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-lime-50"
-              title="Share on WhatsApp"
-            >
-              <FaWhatsapp size={16} />
-            </a>
-            <a
-              href="https://twitter.com/intent/tweet?url=https://www.tagtelugu.com.au&text=Check%20out%20Telugufy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-lime-50"
-              title="Share on X (Twitter)"
-            >
-              <FaXTwitter size={16} />
-            </a>
-          </div>
+          <ShareIcons 
+            type="website"
+            title="Desify - Your Local Marketplace"
+            compact={true}
+            className="text-lime-100"
+            hoverClassName="hover:text-lime-50"
+          />
         </div>
       </div>
     </footer>

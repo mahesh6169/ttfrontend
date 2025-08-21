@@ -4,14 +4,23 @@ import { FaXTwitter } from 'react-icons/fa6';
 import { buildSlugUrl } from '@/utils/slugUtils';
 import { toast } from 'react-toastify';
 
-const ShareIcons = ({ type, title, id, className = '' }) => {
+const ShareIcons = ({ type, title, id, className = '', compact = false, hoverClassName = '' }) => {
   const [copied, setCopied] = useState(false);
   
   // Generate the full URL
-  const slugUrl = buildSlugUrl(type, title, id);
-  const fullUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}${slugUrl}`
-    : slugUrl;
+  let fullUrl;
+  if (type === 'website') {
+    // For website sharing, use the homepage URL
+    fullUrl = typeof window !== 'undefined' 
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
+  } else {
+    // For specific items, use slug URL
+    const slugUrl = buildSlugUrl(type, title, id);
+    fullUrl = typeof window !== 'undefined' 
+      ? `${window.location.origin}${slugUrl}`
+      : slugUrl;
+  }
   
   const handleCopyLink = async () => {
     try {
@@ -75,57 +84,65 @@ const ShareIcons = ({ type, title, id, className = '' }) => {
     }
   };
   
-  const iconClass = "w-8 h-8 p-1.5 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer";
+  const iconClass = compact 
+    ? "transition-all duration-200 cursor-pointer" 
+    : "w-8 h-8 p-1.5 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer";
+  
+  const iconSize = compact ? "w-4 h-4" : "w-4 h-4";
   
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      {/* Copy Link */}
-      <button
-        onClick={handleCopyLink}
-        className={`${iconClass} ${
-          copied 
-            ? 'bg-green-500 text-white' 
-            : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-        }`}
-        title="Copy link"
-      >
-        <FaCopy className="w-4 h-4" />
-      </button>
+      {/* Copy Link - hide in compact mode */}
+      {!compact && (
+        <button
+          onClick={handleCopyLink}
+          className={`${iconClass} ${
+            copied 
+              ? 'bg-green-500 text-white' 
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+          }`}
+          title="Copy link"
+        >
+          <FaCopy className={iconSize} />
+        </button>
+      )}
       
       {/* WhatsApp */}
       <button
         onClick={() => handleShare('whatsapp')}
-        className={`${iconClass} bg-green-500 hover:bg-green-600 text-white`}
+        className={compact ? hoverClassName : `${iconClass} bg-green-500 hover:bg-green-600 text-white`}
         title="Share on WhatsApp"
       >
-        <FaWhatsapp className="w-4 h-4" />
+        <FaWhatsapp className={compact ? "text-base" : iconSize} />
       </button>
       
-      {/* Instagram */}
-      <button
-        onClick={() => handleShare('instagram')}
-        className={`${iconClass} bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white`}
-        title="Share on Instagram"
-      >
-        <FaInstagram className="w-4 h-4" />
-      </button>
+      {/* Instagram - hide in compact mode */}
+      {!compact && (
+        <button
+          onClick={() => handleShare('instagram')}
+          className={`${iconClass} bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white`}
+          title="Share on Instagram"
+        >
+          <FaInstagram className={iconSize} />
+        </button>
+      )}
       
       {/* Facebook */}
       <button
         onClick={() => handleShare('facebook')}
-        className={`${iconClass} bg-blue-600 hover:bg-blue-700 text-white`}
+        className={compact ? hoverClassName : `${iconClass} bg-blue-600 hover:bg-blue-700 text-white`}
         title="Share on Facebook"
       >
-        <FaFacebookF className="w-4 h-4" />
+        <FaFacebookF className={compact ? "text-base" : iconSize} />
       </button>
       
       {/* Twitter/X */}
       <button
         onClick={() => handleShare('twitter')}
-        className={`${iconClass} bg-black hover:bg-gray-800 text-white`}
+        className={compact ? hoverClassName : `${iconClass} bg-black hover:bg-gray-800 text-white`}
         title="Share on X"
       >
-        <FaXTwitter className="w-4 h-4" />
+        <FaXTwitter className={compact ? "text-base" : iconSize} />
       </button>
     </div>
   );
