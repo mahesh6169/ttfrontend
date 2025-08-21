@@ -94,7 +94,7 @@ export default async function ThreadSlugPage({ params }) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
         <p>Topic not found</p>
-        <meta httpEquiv="refresh" content="0; url=/threads" />
+        <meta httpEquiv="refresh" content="3; url=/threads" />
       </div>
     );
   }
@@ -104,7 +104,7 @@ export default async function ThreadSlugPage({ params }) {
   return (
     <div style={{ padding: '20px', textAlign: 'center' }}>
       <p>Loading topic...</p>
-      <meta httpEquiv="refresh" content={`0; url=/threads/views/${threadId}`} />
+      <meta httpEquiv="refresh" content={`3; url=/threads/views/${threadId}`} />
     </div>
   );
 }

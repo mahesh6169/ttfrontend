@@ -101,7 +101,7 @@ export default async function ListingSlugPage({ params }) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
         <p>Listing not found</p>
-        <meta httpEquiv="refresh" content="0; url=/listings" />
+        <meta httpEquiv="refresh" content="3; url=/listings" />
       </div>
     );
   }
@@ -111,7 +111,7 @@ export default async function ListingSlugPage({ params }) {
   return (
     <div style={{ padding: '20px', textAlign: 'center' }}>
       <p>Loading listing...</p>
-      <meta httpEquiv="refresh" content={`0; url=/listings/views/${listingId}`} />
+      <meta httpEquiv="refresh" content={`3; url=/listings/views/${listingId}`} />
     </div>
   );
 }

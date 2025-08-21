@@ -100,7 +100,7 @@ export default async function EventSlugPage({ params }) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
         <p>Event not found</p>
-        <meta httpEquiv="refresh" content="0; url=/events" />
+        <meta httpEquiv="refresh" content="3; url=/events" />
       </div>
     );
   }
@@ -110,7 +110,7 @@ export default async function EventSlugPage({ params }) {
   return (
     <div style={{ padding: '20px', textAlign: 'center' }}>
       <p>Loading event...</p>
-      <meta httpEquiv="refresh" content={`0; url=/events/views/${eventId}`} />
+      <meta httpEquiv="refresh" content={`3; url=/events/views/${eventId}`} />
     </div>
   );
 }
