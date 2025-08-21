@@ -6,9 +6,9 @@ export async function generateMetadata() {
     title: `${siteName} - Your Local Marketplace`,
     description: `Buy and sell items locally on ${siteName}. Find great deals on furniture, electronics, cars, real estate, jobs and more in your area.`,
     openGraph: {
-      title: `${siteName} - Your Local Marketplace`,
-      description: `Buy and sell items locally on ${siteName}. Find great deals on furniture, electronics, cars, real estate, jobs and more in your area.`,
-      url: siteUrl,
+      title: 'Your Local Marketplace',
+      description: 'Buy and sell items locally. Find great deals in your area.',
+      url: `${siteUrl}/share`,
       siteName: siteName,
       images: [
         {
