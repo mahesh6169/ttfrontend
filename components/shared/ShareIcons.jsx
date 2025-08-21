@@ -66,7 +66,7 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
     const encodedTitle = encodeURIComponent(title);
     
     const shareUrls = {
-      whatsapp: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
+      whatsapp: `https://wa.me/?text=${encodedUrl}`, // WhatsApp needs ONLY URL for previews
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
       twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
       instagram: null // Instagram doesn't support direct URL sharing
