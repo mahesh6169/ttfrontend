@@ -31,6 +31,7 @@ import { MdNotificationsActive, MdNotificationsOff, MdDelete } from "react-icons
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
+import ShareIcons from '@/components/shared/ShareIcons';
 
 
 // Add this helper function for optimized image URLs
@@ -390,6 +391,16 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         <span className="hidden sm:inline">Report this topic</span>
         <span className="sm:hidden">Report</span>
       </Link>
+    </div>
+
+    {/* Share Icons Row */}
+    <div className="flex items-center justify-center py-3 px-4 bg-gray-50 rounded-lg mt-4">
+      <span className="text-sm text-gray-600 mr-3">Share this topic:</span>
+      <ShareIcons 
+        type="thread"
+        title={thread.title}
+        id={thread._id}
+      />
     </div>
 
     <div className="border rounded shadow-md mt-4 w-full"> 

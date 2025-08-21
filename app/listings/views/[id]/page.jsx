@@ -9,6 +9,7 @@ import { getAdvertById } from '@/store/slices/adverts/advertSlice';
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
 import Link from 'next/link';
+import ShareIcons from '@/components/shared/ShareIcons';
 
 const AdvertDetail = () => {
   const { id } = useParams();
@@ -61,6 +62,16 @@ const AdvertDetail = () => {
           <span className="hidden sm:inline">Report this advert</span>
           <span className="sm:hidden">Report</span>
         </Link>
+      </div>
+
+      {/* Share Icons Row */}
+      <div className="flex items-center justify-center py-3 px-4 bg-gray-50 rounded-lg">
+        <span className="text-sm text-gray-600 mr-3">Share this listing:</span>
+        <ShareIcons 
+          type="listing"
+          title={advert.title}
+          id={advert._id}
+        />
       </div>
 
       {/* Main Content Grid */}

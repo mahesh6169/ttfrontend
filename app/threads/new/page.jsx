@@ -11,6 +11,7 @@ import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/shared/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import { threadCategoryOptions } from '@/components/threads/categories';
+import ShareToast from '@/components/adverts/ShareToast';
 
 const libraries = ['places'];
 
@@ -43,6 +44,8 @@ const CreateThreadPage = () => {
   const [autocomplete, setAutocomplete] = useState(null);
   const [errors, setErrors] = useState({});
   const [locationInput, setLocationInput] = useState('');
+  const [showShareToast, setShowShareToast] = useState(false);
+  const [createdThread, setCreatedThread] = useState(null);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -258,7 +261,18 @@ const CreateThreadPage = () => {
 
 if (createThread.fulfilled.match(resultAction)) {
   toast.success('Thread created successfully!');
-  router.push('/threads');
+  
+  // Get the created thread data
+  const thread = resultAction.payload.data || resultAction.payload;
+  if (thread) {
+    setCreatedThread(thread);
+    setShowShareToast(true);
+  }
+  
+  // Redirect after 15 seconds to match toast duration
+  setTimeout(() => {
+    router.push('/threads');
+  }, 15000);
 } else {
   toast.error(resultAction?.error?.message || 'Failed to create thread.');
 }
@@ -433,6 +447,15 @@ if (createThread.fulfilled.match(resultAction)) {
           </div>
         </form>
 </RequireVerifiedAccount>
+
+      {/* Share Toast */}
+      {showShareToast && createdThread && (
+        <ShareToast
+          title={createdThread.title}
+          id={createdThread._id}
+          onClose={() => setShowShareToast(false)}
+        />
+      )}
     </div>
   );
 };

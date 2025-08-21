@@ -7,10 +7,34 @@ import '@/assets/styles/globals.css';
 import { SocketListener } from '@/components/chat/SocketListener';
 
 
+const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
+const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
+
 export const metadata = {
-  title: 'Marketplace',
-  description: 'Buy and sell items',
-  keywords: 'marketplace, buy, sell, items',
+  title: `${siteName} - Your Local Marketplace`,
+  description: `Buy and sell items on ${siteName} - Your trusted local marketplace for listings, events, and community discussions`,
+  keywords: `${siteName.toLowerCase()}, marketplace, buy, sell, items, events, community, australia`,
+  openGraph: {
+    title: `${siteName} - Your Local Marketplace`,
+    description: `Buy and sell items on ${siteName} - Your trusted local marketplace`,
+    url: siteUrl,
+    siteName: siteName,
+    images: [
+      {
+        url: `${siteUrl}/desify-og-default.jpg`,
+        width: 1200,
+        height: 630,
+      }
+    ],
+    locale: 'en_AU',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${siteName} - Your Local Marketplace`,
+    description: `Buy and sell items on ${siteName}`,
+    images: [`${siteUrl}/desify-og-default.jpg`],
+  },
 };
 
 const ParentLayout = ({ children }) => {

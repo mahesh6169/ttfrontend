@@ -3,16 +3,19 @@
 
 import { useDispatch, useSelector } from 'react-redux';
 import { addAdvert, clearAdvert } from '@/store/slices/adverts/advertSlice';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdvertForm from '@/components/adverts/AdvertForm';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
+import ShareToast from '@/components/adverts/ShareToast';
 
 const AddAdvertPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const [showShareToast, setShowShareToast] = useState(false);
+  
   // Update to use createStatus instead of status
-  const { createStatus, success, message, errors } = useSelector(state => state.advert);
+  const { createStatus, success, message, errors, advert } = useSelector(state => state.advert);
   const { user } = useSelector(state => state.user); // Get user for role
 
   // Clear state on mount and unmount
@@ -79,13 +82,17 @@ const AddAdvertPage = () => {
 
   // Update to check createStatus instead of status
   useEffect(() => {
-    if (success && createStatus === 'succeeded') {
+    if (success && createStatus === 'succeeded' && advert) {
+      // Show share toast
+      setShowShareToast(true);
+      
+      // Redirect after 15 seconds to match toast duration
       setTimeout(() => {
         router.push('/users/profile/manageads');
         dispatch(clearAdvert());
-      }, 1000);
+      }, 15000);
     }
-  }, [success, createStatus, router, dispatch]);
+  }, [success, createStatus, advert, router, dispatch]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-6 sm:py-8 lg:py-10">
@@ -114,6 +121,15 @@ const AddAdvertPage = () => {
         isSuccess={success && createStatus === 'succeeded'}
       />
        </RequireVerifiedAccount>
+       
+      {/* Share Toast */}
+      {showShareToast && advert && (
+        <ShareToast
+          title={advert.title}
+          id={advert._id}
+          onClose={() => setShowShareToast(false)}
+        />
+      )}
     </div>
     
   );

@@ -9,6 +9,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import AdvertForm from '@/components/adverts/AdvertForm';
 import { toast } from 'react-toastify';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
+import ShareToast from '@/components/adverts/ShareToast';
 
 const EditAdvertPage = () => {
   const dispatch = useDispatch();
@@ -19,6 +20,7 @@ const EditAdvertPage = () => {
 
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [formData, setFormData] = useState(null); // Store the submitted form data
+  const [showShareToast, setShowShareToast] = useState(false);
 
   // Fetch advert on load
   useEffect(() => {
@@ -110,10 +112,14 @@ const EditAdvertPage = () => {
   useEffect(() => {
     if (hasSubmitted && success && updateStatus === 'succeeded') {
       toast.success("Advert updated successfully!");
+      // Show share toast
+      setShowShareToast(true);
+      
+      // Redirect after 15 seconds to match toast duration
       setTimeout(() => {
         router.push('/users/profile/manageads');
         dispatch(clearAdvert());
-      }, 1000);
+      }, 15000);
     }
   }, [hasSubmitted, success, updateStatus, router, dispatch]);
 
@@ -167,6 +173,15 @@ const EditAdvertPage = () => {
         />
       )}
        </RequireVerifiedAccount>
+       
+      {/* Share Toast */}
+      {showShareToast && displayData && (
+        <ShareToast
+          title={displayData.title}
+          id={displayData._id || id}
+          onClose={() => setShowShareToast(false)}
+        />
+      )}
     </div>
   );
 };

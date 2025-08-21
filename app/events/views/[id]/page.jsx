@@ -12,6 +12,7 @@ import SendMessage from '@/components/chat/SendMessage';
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
 import Link from 'next/link';
+import ShareIcons from '@/components/shared/ShareIcons';
 
 
 const EventDetail = () => {
@@ -142,6 +143,16 @@ const EventDetail = () => {
           <span className="hidden sm:inline">Report this event</span>
           <span className="sm:hidden">Report</span>
         </Link>
+      </div>
+
+      {/* Share Icons Row */}
+      <div className="flex items-center justify-center py-3 px-4 bg-gray-50 rounded-lg">
+        <span className="text-sm text-gray-600 mr-3">Share this event:</span>
+        <ShareIcons 
+          type="event"
+          title={selectedEvent.title}
+          id={selectedEvent._id}
+        />
       </div>
 
       {/* Layout: Card + Chat */}

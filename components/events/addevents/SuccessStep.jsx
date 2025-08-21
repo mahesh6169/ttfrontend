@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useSelector } from 'react-redux';
+import ShareIcons from '@/components/shared/ShareIcons';
 
 const SuccessStep = ({ 
   
@@ -187,6 +188,16 @@ console.log('🔍 SuccessStep Debug:', {
             {mode === 'add' && '✨ New Event'}
             {mode === 'edit' && '🔄 Updated'}
           </span>
+        </div>
+        
+        {/* Share Icons */}
+        <div className="flex items-center justify-center py-4">
+          <span className="text-sm text-gray-600 mr-3">Share your event:</span>
+          <ShareIcons 
+            type="event"
+            title={event.title || latestEvent?.title || 'Event'}
+            id={eventId}
+          />
         </div>
       </div>
       

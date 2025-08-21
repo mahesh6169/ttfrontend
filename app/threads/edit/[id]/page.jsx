@@ -14,6 +14,7 @@ import { useRef } from 'react';
 import CategorySelector from '@/components/shared/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import { threadCategoryOptions } from '@/components/threads/categories';
+import ShareToast from '@/components/adverts/ShareToast';
 
 const libraries = ['places'];
 
@@ -48,6 +49,7 @@ const EditThreadPage = () => {
   const [errors, setErrors] = useState({});
   const [locationInput, setLocationInput] = useState('');
   const fileInputRef = useRef(null);
+  const [showShareToast, setShowShareToast] = useState(false);
 
   useEffect(() => {
     if (threadId) {
@@ -276,7 +278,14 @@ useEffect(() => {
 
     if (updateThread.fulfilled.match(result)) {
       toast.success('Thread updated successfully.');
-      router.push('/users/profile/managethreads');
+      
+      // Show share toast
+      setShowShareToast(true);
+      
+      // Redirect after 15 seconds to match toast duration
+      setTimeout(() => {
+        router.push('/users/profile/managethreads');
+      }, 15000);
     } else {
       toast.error(result.payload || 'Failed to update thread.');
     }
@@ -447,6 +456,15 @@ useEffect(() => {
         </div>
       </form>
       </RequireVerifiedAccount>
+      
+      {/* Share Toast */}
+      {showShareToast && thread && (
+        <ShareToast
+          title={thread.title}
+          id={thread._id || threadId}
+          onClose={() => setShowShareToast(false)}
+        />
+      )}
     </div>
   );
 };
