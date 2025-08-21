@@ -10,10 +10,10 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
   // Generate the full URL
   let fullUrl;
   if (type === 'website' || type === 'share') {
-    // For website/share, use the share page URL
+    // For website/share, use the homepage URL
     fullUrl = typeof window !== 'undefined' 
-      ? `${window.location.origin}/share`
-      : `${process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au'}/share`;
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
   } else {
     // For specific items, use slug URL
     const slugUrl = buildSlugUrl(type, title, id);
@@ -66,7 +66,7 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
     const encodedTitle = encodeURIComponent(title);
     
     const shareUrls = {
-      whatsapp: `https://wa.me/?text=${fullUrl}`, // Don't encode for WhatsApp - it handles it
+      whatsapp: `https://wa.me/?text=${encodedUrl}`, // Encode URL for WhatsApp
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
       twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
       instagram: null // Instagram doesn't support direct URL sharing
