@@ -40,10 +40,10 @@ export async function generateMetadata({ params }) {
     const listing = data.advert || data;
     
     // Generate meta tags
-    const title = listing.title ? `${listing.title} - Desify` : 'Listing - Desify';
+    const title = listing.title || 'Listing';
     const description = listing.description 
-      ? listing.description.substring(0, META_DEFAULTS.descriptionMaxLength) 
-      : META_DEFAULTS.defaultDescription;
+      ? listing.description.substring(0, 80) 
+      : 'Find great deals on local marketplace';
     
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
@@ -59,10 +59,10 @@ export async function generateMetadata({ params }) {
     const url = `${META_DEFAULTS.siteUrl}/listings/${slug}`;
     
     return {
-      title,
+      title: `${title} - ${META_DEFAULTS.siteName}`,
       description,
       openGraph: {
-        title,
+        title, // No branding for WhatsApp
         description,
         url,
         siteName: META_DEFAULTS.siteName,

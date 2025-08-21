@@ -34,15 +34,15 @@ export async function generateMetadata({ params }) {
     const event = data.event || data;
     
     // Generate meta tags
-    const title = event.title ? `${event.title} - Desify Events` : 'Event - Desify';
+    const title = event.title || 'Event';
     
     // Build description with event details
     let description = event.description || '';
     if (event.dateTime) {
-      const eventDate = format(new Date(event.dateTime), 'EEE dd MMM yyyy');
+      const eventDate = format(new Date(event.dateTime), 'dd MMM');
       description = `${eventDate} - ${description}`;
     }
-    description = description.substring(0, META_DEFAULTS.descriptionMaxLength) || META_DEFAULTS.defaultDescription;
+    description = description.substring(0, 80) || 'Local events and activities';
     
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
@@ -58,10 +58,10 @@ export async function generateMetadata({ params }) {
     const url = `${META_DEFAULTS.siteUrl}/events/${slug}`;
     
     return {
-      title,
+      title: `${title} - ${META_DEFAULTS.siteName}`,
       description,
       openGraph: {
-        title,
+        title, // No branding for WhatsApp
         description,
         url,
         siteName: META_DEFAULTS.siteName,

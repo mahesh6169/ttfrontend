@@ -33,10 +33,10 @@ export async function generateMetadata({ params }) {
     const thread = data.thread || data;
     
     // Generate meta tags
-    const title = thread.title ? `${thread.title} - Desify Community` : 'Topic - Desify';
+    const title = thread.title || 'Community Topic';
     const description = thread.question 
-      ? thread.question.substring(0, META_DEFAULTS.descriptionMaxLength) 
-      : META_DEFAULTS.defaultDescription;
+      ? thread.question.substring(0, 80) 
+      : 'Join the community discussion';
     
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
@@ -52,10 +52,10 @@ export async function generateMetadata({ params }) {
     const url = `${META_DEFAULTS.siteUrl}/threads/${slug}`;
     
     return {
-      title,
+      title: `${title} - ${META_DEFAULTS.siteName}`,
       description,
       openGraph: {
-        title,
+        title, // No branding for WhatsApp
         description,
         url,
         siteName: META_DEFAULTS.siteName,
