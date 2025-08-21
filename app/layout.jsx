@@ -19,13 +19,14 @@ export const metadata = {
     description: `Buy and sell items on ${siteName} - Your trusted local marketplace`,
     url: siteUrl,
     siteName: siteName,
-    images: [
-      {
-        url: `${siteUrl}/desify-og-default.jpg`,
-        width: 1200,
-        height: 630,
-      }
-    ],
+    // images: [
+    //   {
+    //     url: `${siteUrl}/desify-og-default.jpg`,
+    //     width: 1200,
+    //     height: 630,
+    //   }
+    // ],
+    images: [], // Commented out until logo is available
     locale: 'en_AU',
     type: 'website',
   },
@@ -33,7 +34,8 @@ export const metadata = {
     card: 'summary_large_image',
     title: `${siteName} - Your Local Marketplace`,
     description: `Buy and sell items on ${siteName}`,
-    images: [`${siteUrl}/desify-og-default.jpg`],
+    // images: [`${siteUrl}/desify-og-default.jpg`],
+    images: [], // Commented out until logo is available
   },
 };
 

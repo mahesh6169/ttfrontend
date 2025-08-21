@@ -1,15 +1,19 @@
-import { redirect } from 'next/navigation';
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
 import { format } from 'date-fns';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL;
+
+// If no backend URL is configured, we can't fetch metadata
+if (!API_BASE_URL) {
+  console.error('NEXT_PUBLIC_BACKEND_BASE_URL is not configured');
+}
 
 // Generate Open Graph meta tags for social media previews
 export async function generateMetadata({ params }) {
   const { slug } = params;
   const eventId = extractIdFromSlug(slug);
   
-  if (!eventId) {
+  if (!eventId || !API_BASE_URL) {
     return {
       title: 'Event Not Found - Desify',
       description: META_DEFAULTS.defaultDescription,
@@ -18,7 +22,7 @@ export async function generateMetadata({ params }) {
   
   try {
     // Fetch event data from API
-    const response = await fetch(`${API_BASE_URL}/events/views/${eventId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/events/views/${eventId}`, {
       next: { revalidate: 3600 } // Cache for 1 hour
     });
     
@@ -42,7 +46,13 @@ export async function generateMetadata({ params }) {
     
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    const image = event.images?.[0]?.url || `${siteUrl}${META_DEFAULTS.defaultImage}`;
+    // const image = event.images?.[0]?.url || `${siteUrl}${META_DEFAULTS.defaultImage}`;
+    let image = event.images?.[0]?.url || null; // Comment out default image for now
+    
+    // Ensure image URL is absolute
+    if (image && !image.startsWith('http')) {
+      image = image.startsWith('/') ? `${siteUrl}${image}` : `${siteUrl}/${image}`;
+    }
     
     // Build the canonical URL
     const url = `${META_DEFAULTS.siteUrl}/events/${slug}`;
@@ -55,22 +65,22 @@ export async function generateMetadata({ params }) {
         description,
         url,
         siteName: META_DEFAULTS.siteName,
-        images: [
+        images: image ? [
           {
             url: image,
             width: 1200,
             height: 630,
             alt: event.title || 'Event image',
           }
-        ],
+        ] : [],
         locale: 'en_AU',
         type: 'website',
       },
       twitter: {
-        card: 'summary_large_image',
+        card: image ? 'summary_large_image' : 'summary',
         title,
         description,
-        images: [image],
+        images: image ? [image] : [],
       },
     };
   } catch (error) {
@@ -82,17 +92,25 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default function EventSlugPage({ params }) {
+export default async function EventSlugPage({ params }) {
   const { slug } = params;
-  
-  // Extract ID from the slug
   const eventId = extractIdFromSlug(slug);
   
-  // If we couldn't extract a valid ID, redirect to events page
   if (!eventId) {
-    redirect('/events');
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <p>Event not found</p>
+        <meta httpEquiv="refresh" content="0; url=/events" />
+      </div>
+    );
   }
   
-  // Redirect to the actual view page
-  redirect(`/events/views/${eventId}`);
+  // Use meta refresh instead of JavaScript redirect
+  // This allows crawlers to read the meta tags before following the redirect
+  return (
+    <div style={{ padding: '20px', textAlign: 'center' }}>
+      <p>Loading event...</p>
+      <meta httpEquiv="refresh" content={`0; url=/events/views/${eventId}`} />
+    </div>
+  );
 }
