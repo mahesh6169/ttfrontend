@@ -20,11 +20,11 @@ export async function generateMetadata({ params }) {
   }
   
   try {
-    // Fetch thread data from API with timeout
+    // Fetch thread data from public API endpoint
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
     
-    const response = await fetch(`${API_BASE_URL}/threads/thread/${threadId}`, {
+    const response = await fetch(`${API_BASE_URL}/threads/public/${threadId}`, {
       next: { revalidate: 3600 }, // Cache for 1 hour
       signal: controller.signal
     });
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }) {
     }
     
     const data = await response.json();
-    const thread = data.data?.thread || data.data || data.thread || data;
+    const thread = data.thread;
     
     // Generate meta tags
     const title = thread.title || 'Community Topic';
