@@ -1,5 +1,6 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
 import { format } from 'date-fns';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -134,9 +135,13 @@ export default async function EventSlugPage({ params }) {
   
   if (!eventId) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p>Event not found</p>
-        <meta httpEquiv="refresh" content="3; url=/events" />
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">Event not found</p>
+          <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
+        </div>
+        {/* <meta httpEquiv="refresh" content="3; url=/events" /> */}
+        <meta httpEquiv="refresh" content="0; url=/events" />
       </div>
     );
   }
@@ -144,9 +149,10 @@ export default async function EventSlugPage({ params }) {
   // Use meta refresh instead of JavaScript redirect
   // This allows crawlers to read the meta tags before following the redirect
   return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <p>Loading event...</p>
-      <meta httpEquiv="refresh" content={`3; url=/events/views/${eventId}`} />
+    <div className="flex justify-center items-center min-h-screen">
+      <LoadingSpinner />
+      {/* <meta httpEquiv="refresh" content={`3; url=/events/views/${eventId}`} /> */}
+      <meta httpEquiv="refresh" content={`0; url=/events/views/${eventId}`} />
     </div>
   );
 }

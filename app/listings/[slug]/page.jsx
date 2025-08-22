@@ -1,5 +1,6 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
 import { headers } from 'next/headers';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -124,9 +125,13 @@ export default async function ListingSlugPage({ params }) {
   
   if (!listingId) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p>Listing not found</p>
-        <meta httpEquiv="refresh" content="3; url=/listings" />
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">Listing not found</p>
+          <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
+        </div>
+        {/* <meta httpEquiv="refresh" content="3; url=/listings" /> */}
+        <meta httpEquiv="refresh" content="0; url=/listings" />
       </div>
     );
   }
@@ -134,9 +139,10 @@ export default async function ListingSlugPage({ params }) {
   // Use meta refresh instead of JavaScript redirect
   // This allows crawlers to read the meta tags before following the redirect
   return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <p>Loading listing...</p>
-      <meta httpEquiv="refresh" content={`3; url=/listings/views/${listingId}`} />
+    <div className="flex justify-center items-center min-h-screen">
+      <LoadingSpinner />
+      {/* <meta httpEquiv="refresh" content={`3; url=/listings/views/${listingId}`} /> */}
+      <meta httpEquiv="refresh" content={`0; url=/listings/views/${listingId}`} />
     </div>
   );
 }

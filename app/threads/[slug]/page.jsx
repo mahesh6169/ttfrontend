@@ -1,4 +1,5 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -104,9 +105,13 @@ export default async function ThreadSlugPage({ params }) {
   
   if (!threadId) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p>Topic not found</p>
-        <meta httpEquiv="refresh" content="3; url=/threads" />
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">Topic not found</p>
+          <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
+        </div>
+        {/* <meta httpEquiv="refresh" content="3; url=/threads" /> */}
+      <meta httpEquiv="refresh" content="0; url=/threads" />
       </div>
     );
   }
@@ -114,9 +119,10 @@ export default async function ThreadSlugPage({ params }) {
   // Use meta refresh instead of JavaScript redirect
   // This allows crawlers to read the meta tags before following the redirect
   return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <p>Loading topic...</p>
-      <meta httpEquiv="refresh" content={`3; url=/threads/views/${threadId}`} />
+    <div className="flex justify-center items-center min-h-screen">
+      <LoadingSpinner />
+      {/* <meta httpEquiv="refresh" content={`3; url=/threads/views/${threadId}`} /> */}
+      <meta httpEquiv="refresh" content={`0; url=/threads/views/${threadId}`} />
     </div>
   );
 }
