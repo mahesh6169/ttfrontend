@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaCopy, FaWhatsapp, FaFacebookF, FaInstagram } from 'react-icons/fa';
+import { FaCopy, FaWhatsapp, FaFacebookF } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import { buildSlugUrl } from '@/utils/slugUtils';
 import { toast } from 'react-toastify';
@@ -68,16 +68,8 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
     const shareUrls = {
       whatsapp: `https://wa.me/?text=${encodedUrl}`, // Encode URL for WhatsApp
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-      twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
-      instagram: null // Instagram doesn't support direct URL sharing
+      twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`
     };
-    
-    if (platform === 'instagram') {
-      // Copy link for Instagram
-      handleCopyLink();
-      toast.info('Link copied! Share it on Instagram');
-      return;
-    }
     
     if (shareUrls[platform]) {
       window.open(shareUrls[platform], '_blank', 'width=600,height=400');
@@ -115,17 +107,6 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
       >
         <FaWhatsapp className={compact ? "text-base" : iconSize} />
       </button>
-      
-      {/* Instagram - hide in compact mode */}
-      {!compact && (
-        <button
-          onClick={() => handleShare('instagram')}
-          className={`${iconClass} bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white`}
-          title="Share on Instagram"
-        >
-          <FaInstagram className={iconSize} />
-        </button>
-      )}
       
       {/* Facebook */}
       <button

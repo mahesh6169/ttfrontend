@@ -4,7 +4,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // If no backend URL is configured, we can't fetch metadata
 if (!API_BASE_URL) {
-  console.error('NEXT_PUBLIC_BACKEND_BASE_URL is not configured');
+  console.error('NEXT_PUBLIC_API_BASE_URL is not configured');
 }
 
 // Generate Open Graph meta tags for social media previews
@@ -20,10 +20,16 @@ export async function generateMetadata({ params }) {
   }
   
   try {
-    // Fetch thread data from API
-    const response = await fetch(`${API_BASE_URL}/threads/${threadId}`, {
-      next: { revalidate: 3600 } // Cache for 1 hour
+    // Fetch thread data from API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch(`${API_BASE_URL}/threads/thread/${threadId}`, {
+      next: { revalidate: 3600 }, // Cache for 1 hour
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       throw new Error('Thread not found');
@@ -55,7 +61,7 @@ export async function generateMetadata({ params }) {
     // Build the canonical URL
     const url = `${META_DEFAULTS.siteUrl}/threads/${slug}`;
     
-    return {
+    const metadata = {
       title: `${title} - ${META_DEFAULTS.siteName}`,
       description,
       openGraph: {
@@ -81,6 +87,8 @@ export async function generateMetadata({ params }) {
         images: image ? [image] : [],
       },
     };
+    
+    return metadata;
   } catch (error) {
     console.error('Error fetching thread for meta tags:', error);
     return {
