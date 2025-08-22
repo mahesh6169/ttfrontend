@@ -30,7 +30,7 @@ export async function generateMetadata({ params }) {
     }
     
     const data = await response.json();
-    const thread = data.thread || data;
+    const thread = data.data?.thread || data.data || data.thread || data;
     
     // Generate meta tags
     const title = thread.title || 'Community Topic';

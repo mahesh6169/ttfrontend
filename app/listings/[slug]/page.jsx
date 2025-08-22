@@ -37,7 +37,7 @@ export async function generateMetadata({ params }) {
     }
     
     const data = await response.json();
-    const listing = data.advert || data;
+    const listing = data.data?.advert || data.data || data.advert || data;
     
     // Generate meta tags
     const title = listing.title || 'Listing';
