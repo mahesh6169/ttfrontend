@@ -78,7 +78,12 @@ export async function generateMetadata({ params }) {
     
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    let image = event.images?.[0]?.url || `${siteUrl}${META_DEFAULTS.defaultImage}`;
+    let image = event.images?.[0]?.url;
+    
+    // Check if it's the "No_image" placeholder and replace with branded image
+    if (!image || image.includes('No_image')) {
+      image = `${siteUrl}${META_DEFAULTS.defaultImage}`;
+    }
     
     // Ensure image URL is absolute
     if (image && !image.startsWith('http')) {

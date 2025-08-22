@@ -34,14 +34,18 @@ export async function generateMetadata({ params }) {
     
     // Generate meta tags
     const title = thread.title || 'Community Topic';
-    const description = thread.question 
-      ? thread.question.substring(0, 80) 
-      : 'Join the community discussion';
+    
+    // Simple call-to-action description
+    const description = 'Join the conversation now!';
     
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    // const image = thread.images?.[0]?.url || `${siteUrl}${META_DEFAULTS.defaultImage}`;
-    let image = thread.images?.[0]?.url || null; // Comment out default image for now
+    let image = thread.images?.[0]?.url;
+    
+    // Check if it's the "No_image" placeholder and replace with branded image
+    if (!image || image.includes('No_image')) {
+      image = `${siteUrl}${META_DEFAULTS.defaultImage}`;
+    }
     
     // Ensure image URL is absolute
     if (image && !image.startsWith('http')) {

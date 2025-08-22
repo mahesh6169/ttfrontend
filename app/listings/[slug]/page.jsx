@@ -41,14 +41,39 @@ export async function generateMetadata({ params }) {
     
     // Generate meta tags
     const title = listing.title || 'Listing';
-    const description = listing.description 
-      ? listing.description.substring(0, 80) 
-      : 'Find great deals on local marketplace';
+    
+    // Build structured description with price and location
+    let description = '';
+    
+    // Add price or "Request for quote"
+    if (listing.pricing && listing.pricing.length > 0 && listing.pricing[0].amount > 0) {
+      const price = listing.pricing[0];
+      description = `$${price.amount}`;
+      if (price.unit && price.unit !== 'item') {
+        description += `/${price.unit}`;
+      }
+    } else {
+      description = 'Request for quote';
+    }
+    
+    // Add location (suburb, state)
+    if (listing.address?.suburb && listing.address?.state) {
+      description += ` • ${listing.address.suburb}, ${listing.address.state}`;
+    }
+    
+    // Ensure it fits within 80 chars
+    if (description.length > 80) {
+      description = description.substring(0, 77) + '...';
+    }
     
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    // const image = listing.images?.[0]?.url || `${siteUrl}${META_DEFAULTS.defaultImage}`;
-    let image = listing.images?.[0]?.url || null; // Comment out default image for now
+    let image = listing.images?.[0]?.url;
+    
+    // Check if it's the "No_image" placeholder and replace with branded image
+    if (!image || image.includes('No_image')) {
+      image = `${siteUrl}${META_DEFAULTS.defaultImage}`;
+    }
     
     // Ensure image URL is absolute
     if (image && !image.startsWith('http')) {
