@@ -1,6 +1,6 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // If no backend URL is configured, we can't fetch metadata
 if (!API_BASE_URL) {
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }) {
   
   try {
     // Fetch thread data from API
-    const response = await fetch(`${API_BASE_URL}/api/threads/${threadId}`, {
+    const response = await fetch(`${API_BASE_URL}/threads/${threadId}`, {
       next: { revalidate: 3600 } // Cache for 1 hour
     });
     

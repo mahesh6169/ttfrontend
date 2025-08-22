@@ -1,7 +1,7 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
 import { format } from 'date-fns';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // If no backend URL is configured, we can't fetch metadata
 if (!API_BASE_URL) {
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }) {
   
   try {
     // Fetch event data from API
-    const response = await fetch(`${API_BASE_URL}/api/events/views/${eventId}`, {
+    const response = await fetch(`${API_BASE_URL}/events/views/${eventId}`, {
       next: { revalidate: 3600 } // Cache for 1 hour
     });
     
@@ -36,18 +36,49 @@ export async function generateMetadata({ params }) {
     // Generate meta tags
     const title = event.title || 'Event';
     
-    // Build description with event details
-    let description = event.description || '';
+    // Build description with event details and call-to-action
+    let description = '';
+    
+    // Add date if available
     if (event.dateTime) {
       const eventDate = format(new Date(event.dateTime), 'dd MMM');
-      description = `${eventDate} - ${description}`;
+      description = `${eventDate}`;
     }
-    description = description.substring(0, 80) || 'Local events and activities';
+    
+    // Add venue if available
+    if (event.venue) {
+      description += description ? ` - ${event.venue}. ` : `${event.venue}. `;
+    } else if (description) {
+      description += ' - ';
+    }
+    
+    // Add call-to-action based on event type
+    const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
+    if (event.isPaid) {
+      description += `Don't wait—get your ticket now at ${siteName}!`;
+    } else {
+      description += `Don't wait—RSVP now at ${siteName}!`;
+    }
+    
+    // Ensure it fits within 80 chars
+    if (description.length > 80) {
+      // If too long, use shorter version without venue
+      if (event.dateTime) {
+        const eventDate = format(new Date(event.dateTime), 'dd MMM');
+        description = event.isPaid 
+          ? `${eventDate} - Get your ticket at ${siteName}!`
+          : `${eventDate} - RSVP now at ${siteName}!`;
+      } else {
+        // No date available, just call-to-action
+        description = event.isPaid 
+          ? `Get your ticket now at ${siteName}!`
+          : `RSVP now at ${siteName}!`;
+      }
+    }
     
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    // const image = event.images?.[0]?.url || `${siteUrl}${META_DEFAULTS.defaultImage}`;
-    let image = event.images?.[0]?.url || null; // Comment out default image for now
+    let image = event.images?.[0]?.url || `${siteUrl}${META_DEFAULTS.defaultImage}`;
     
     // Ensure image URL is absolute
     if (image && !image.startsWith('http')) {

@@ -1,7 +1,7 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
 import { headers } from 'next/headers';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // If no backend URL is configured, we can't fetch metadata
 if (!API_BASE_URL) {
@@ -25,7 +25,7 @@ export async function generateMetadata({ params }) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
     
-    const response = await fetch(`${API_BASE_URL}/api/adverts/byid/${listingId}`, {
+    const response = await fetch(`${API_BASE_URL}/adverts/byid/${listingId}`, {
       next: { revalidate: 3600 }, // Cache for 1 hour
       signal: controller.signal
     });

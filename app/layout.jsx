@@ -11,12 +11,12 @@ const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 
 export const metadata = {
-  title: `${siteName} - Your Local Marketplace`,
-  description: `Buy and sell items on ${siteName} - Your trusted local marketplace for listings, events, and community discussions`,
+  title: `${siteName} - Classifieds, Events & Community Forum`,
+  description: `Classifieds – promote your business, buy & sell, discover events, and join community discussions.`,
   keywords: `${siteName.toLowerCase()}, marketplace, buy, sell, items, events, community, australia`,
   openGraph: {
-    title: `${siteName} - Your Local Marketplace`,
-    description: `Buy and sell items on ${siteName} - Your trusted local marketplace`,
+    title: `${siteName} - Classifieds, Events & Community Forum`,
+    description: `Classifieds – promote your business, buy & sell, discover events, and join community discussions.`,
     url: siteUrl,
     siteName: siteName,
     images: [
@@ -24,6 +24,7 @@ export const metadata = {
         url: `${siteUrl}/desify-og-default.jpg`,
         width: 1200,
         height: 630,
+        alt: `${siteName} - Your local marketplace for classifieds, events and community`,
       }
     ],
     locale: 'en_AU',
@@ -31,10 +32,9 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${siteName} - Your Local Marketplace`,
-    description: `Buy and sell items on ${siteName}`,
-    // images: [`${siteUrl}/desify-og-default.jpg`],
-    images: [], // Commented out until logo is available
+    title: `${siteName} - Classifieds, Events & Community Forum`,
+    description: `Classifieds – promote your business, buy & sell, discover events, and join community discussions.`,
+    images: [`${siteUrl}/desify-og-default.jpg`],
   },
 };
 
