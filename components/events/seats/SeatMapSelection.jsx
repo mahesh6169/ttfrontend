@@ -11,6 +11,8 @@ import React, {
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
+import { HiOutlineClock } from 'react-icons/hi';
+import { AiOutlineHourglass } from 'react-icons/ai';
 
 import {
   toggleSeat,
@@ -40,6 +42,8 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
     maxSeatsPerSelection,
     sessionId,
     isLoading,
+    socketConnected,
+    socketJoinedRoom,
   } = useSelector((state) => state.seatSelection);
 
   const reserveError = useSelector(selectReserveError);
@@ -231,6 +235,23 @@ useEffect(() => {
     }
   };
 }, [selectedSeats.length, requiredSeats, currentReservation, pendingReservation, isLoading, dispatch]);
+
+  // Clear bookingStateManager when all seats are deselected
+  useEffect(() => {
+    if (selectedSeats.length === 0 && !currentReservation) {
+      console.log('🧹 Clearing bookingStateManager seat data - no seats selected');
+      // Clear only the seat data from bookingStateManager
+      const currentState = bookingStateManager.load(eventId);
+      if (currentState?.seats) {
+        // Update state to remove seats but keep ticket selection
+        bookingStateManager.save({
+          ...currentState,
+          seats: null,
+          currentStep: 'seats'
+        });
+      }
+    }
+  }, [selectedSeats.length, currentReservation, eventId]);
 
   // Handles seat selection/deselection with validation for availability, limits, and loading states.
   const handleSeatClick = (seatId, seatStatus) => {
@@ -574,6 +595,16 @@ useEffect(() => {
 
   return (
     <div className="space-y-2 sm:space-y-3">
+      {/* Loading State - Simple spinner */}
+      {(!socketConnected || !socketJoinedRoom || isLoading) && (
+        <div className="flex justify-center items-center py-8">
+          <div className="text-center">
+            <AiOutlineHourglass className="h-12 w-12 text-teal-600 animate-spin mx-auto mb-2" />
+            <p className="text-sm text-gray-600">Loading seats...</p>
+          </div>
+        </div>
+      )}
+      
       {/* Compact Status Bar - Responsive for mobile */}
       <div className="border-t border-gray-200 pt-2 sm:pt-3">
         {/* Desktop Layout - Horizontal */}
@@ -711,7 +742,9 @@ useEffect(() => {
       )}
 
       {/* ✅ MOBILE ENHANCED: Improved seat map with horizontal scrolling */}
-      <div className="relative border border-gray-200 rounded-md sm:rounded-lg max-w-full mx-auto">
+      <div className={`relative border border-gray-200 rounded-md sm:rounded-lg max-w-full mx-auto ${
+        (!socketConnected || !socketJoinedRoom || isLoading) ? 'opacity-50 pointer-events-none' : ''
+      }`}>
         {seatingLayout.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <svg

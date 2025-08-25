@@ -121,7 +121,11 @@ extendError: null,
   // Event context
   currentEventId: null,
   maxSeatsPerSelection: 10,
-  sessionId: null
+  sessionId: null,
+  
+  // WebSocket connection state
+  socketConnected: false,
+  socketJoinedRoom: false
 };
 
 const seatSelectionSlice = createSlice({
@@ -164,6 +168,15 @@ state.selectedSeats = [];
     // ✅ CORE: Session management
     setSessionId: (state, action) => {
       state.sessionId = action.payload;
+    },
+    
+    // WebSocket connection management
+    setSocketConnected: (state, action) => {
+      state.socketConnected = action.payload;
+    },
+    
+    setSocketJoinedRoom: (state, action) => {
+      state.socketJoinedRoom = action.payload;
     },
     
     // ✅ CORE: State reset
@@ -479,6 +492,8 @@ export const {
   clearSelection,
   setCurrentEvent,
   setSessionId,
+  setSocketConnected,
+  setSocketJoinedRoom,
   resetSeatSelection,
   restoreSeatsFromSaved,
   clearError,

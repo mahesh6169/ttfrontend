@@ -7,7 +7,9 @@ import socket from '@/config/socket';
 import {
   handleRemoteSeatUpdate,
   selectSessionId,
-  fetchSeatAvailability
+  fetchSeatAvailability,
+  setSocketConnected,
+  setSocketJoinedRoom
 } from '@/store/slices/events/seatSelectionSlice';
 
 const SeatSocketListener = ({ eventId, children }) => {
@@ -36,6 +38,7 @@ const SeatSocketListener = ({ eventId, children }) => {
     const onConnect = () => {
       //console.log('✅ Seat Selection Socket connected');
       state.isConnected = true;
+      dispatch(setSocketConnected(true));
       
       // Auto-join event room if we have required data
       if (eventId && sessionId && !state.hasJoinedEvent) {
@@ -48,12 +51,15 @@ const SeatSocketListener = ({ eventId, children }) => {
       //console.log('❌ Seat Selection Socket disconnected:', reason);
       state.isConnected = false;
       state.hasJoinedEvent = false;
+      dispatch(setSocketConnected(false));
+      dispatch(setSocketJoinedRoom(false));
     };
 
     // Handles socket reconnection and refreshes seat data
     const onReconnect = (attemptNumber) => {
       //console.log(`🔄 Seat Selection Socket Reconnected after ${attemptNumber} attempts`);
       state.isConnected = true;
+      dispatch(setSocketConnected(true));
       
       if (eventId && sessionId) {
         joinEventRoom();
@@ -80,6 +86,7 @@ const SeatSocketListener = ({ eventId, children }) => {
         state.eventId = eventId;
         state.hasJoinedEvent = true;
         state.sessionId = sessionId;
+        dispatch(setSocketJoinedRoom(true));
       }
     };
 
@@ -127,28 +134,14 @@ const SeatSocketListener = ({ eventId, children }) => {
       state.eventId = eventId;
       state.hasJoinedEvent = true;
       state.sessionId = sessionId;
+      dispatch(setSocketJoinedRoom(true));
     }
   }, [eventId, sessionId]);
 
 
 
   // Renders children or connection status indicator
-  return children || (
-    <div className="fixed bottom-4 right-4 z-50">
-      <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg text-xs font-medium transition-all duration-200 ${
-        socket.connected 
-          ? 'bg-green-100 text-green-800 border border-green-200' 
-          : 'bg-red-100 text-red-800 border border-red-200'
-      }`}>
-        <div className={`w-2 h-2 rounded-full ${
-          socket.connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-        }`}></div>
-        <span>
-          {socket.connected ? 'Live updates active' : 'Connecting...'}
-        </span>
-      </div>
-    </div>
-  );
+  return children || null;
 };
 
 export default SeatSocketListener;
