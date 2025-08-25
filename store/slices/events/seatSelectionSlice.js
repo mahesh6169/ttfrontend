@@ -33,8 +33,11 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${e
       });
       
       const data = await response.json();
-if (!response.ok) {
-        console.error('❌ Reservation failed:', data);
+      if (!response.ok) {
+        // Don't log expected errors like seat unavailable
+        if (!data.message?.includes('not available')) {
+          console.error('❌ Reservation failed:', data);
+        }
         return rejectWithValue(data.message || 'Failed to reserve seats');
       }
       
@@ -46,7 +49,10 @@ if (!response.ok) {
       
       return data;
     } catch (error) {
-      console.error('❌ Network error during reservation:', error);
+      // Only log actual network errors, not business logic errors
+      if (error.name === 'TypeError' || error.name === 'NetworkError') {
+        console.error('❌ Network error during reservation:', error);
+      }
       return rejectWithValue(error.message);
     }
   }
@@ -369,7 +375,10 @@ state.isLoading = false;
         state.isLoading = false;
         state.reserveError = action.payload;
         state.selectedSeats = [];
-        console.error('❌ Seat reservation failed:', action.payload);
+        // Don't log expected errors like seat unavailable
+        if (!action.payload?.includes('not available')) {
+          console.error('❌ Seat reservation failed:', action.payload);
+        }
       });
     
 // ✅ ENHANCED: Release reservation - Updated for better state management

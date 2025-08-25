@@ -94,20 +94,36 @@ const SeatMapSelection = ({ event, ticketSelection, eventId }) => {
 
   // ✅ ENHANCED: Better scroll position preservation using useLayoutEffect
   useLayoutEffect(() => {
-    if (scrollContainerRef.current && scrollPosition > 0) {
-      // Clear any pending scroll restore
-      if (scrollRestoreTimeoutRef.current) {
-        clearTimeout(scrollRestoreTimeoutRef.current);
-      }
-
-      // Use requestAnimationFrame for smooth restoration
-      requestAnimationFrame(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollLeft = scrollPosition;
+    if (scrollContainerRef.current) {
+      // If we have a saved scroll position, restore it
+      if (scrollPosition > 0) {
+        // Clear any pending scroll restore
+        if (scrollRestoreTimeoutRef.current) {
+          clearTimeout(scrollRestoreTimeoutRef.current);
         }
-      });
+
+        // Use requestAnimationFrame for smooth restoration
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollLeft = scrollPosition;
+          }
+        });
+      } else if (!socketConnected || !socketJoinedRoom) {
+        // Don't center if still loading
+        return;
+      } else {
+        // Center the scroll view on initial load (especially for mobile)
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            const scrollWidth = scrollContainerRef.current.scrollWidth;
+            const clientWidth = scrollContainerRef.current.clientWidth;
+            const centerPosition = (scrollWidth - clientWidth) / 2;
+            scrollContainerRef.current.scrollLeft = centerPosition;
+          }
+        });
+      }
     }
-  });
+  }, [socketConnected, socketJoinedRoom]);
 
 
 
@@ -239,16 +255,25 @@ useEffect(() => {
   // Clear bookingStateManager when all seats are deselected
   useEffect(() => {
     if (selectedSeats.length === 0 && !currentReservation) {
-      console.log('🧹 Clearing bookingStateManager seat data - no seats selected');
-      // Clear only the seat data from bookingStateManager
-      const currentState = bookingStateManager.load(eventId);
-      if (currentState?.seats) {
-        // Update state to remove seats but keep ticket selection
-        bookingStateManager.save({
-          ...currentState,
-          seats: null,
-          currentStep: 'seats'
-        });
+      // Check if we're returning from checkout before clearing
+      const navigationIntent = typeof window !== 'undefined' ? 
+        sessionStorage.getItem('navigationIntent') : null;
+      const isReturningFromCheckout = navigationIntent === 'checkout-to-seats';
+      
+      if (!isReturningFromCheckout) {
+        console.log('🧹 Clearing bookingStateManager seat data - no seats selected');
+        // Clear only the seat data from bookingStateManager
+        const currentState = bookingStateManager.load(eventId);
+        if (currentState?.seats) {
+          // Update state to remove seats but keep ticket selection
+          bookingStateManager.save({
+            ...currentState,
+            seats: null,
+            currentStep: 'seats'
+          });
+        }
+      } else {
+        console.log('🔙 Returning from checkout - preserving booking state');
       }
     }
   }, [selectedSeats.length, currentReservation, eventId]);
@@ -524,7 +549,8 @@ useEffect(() => {
         }
       }, 100);
     } catch (error) {
-      console.error('❌ Failed to reserve seats:', error);
+      // Error is already handled by showing the modal, no need to log it
+      // The error modal will be shown via the reserveError useEffect
     } finally {
       setPendingReservation(false);
     }
@@ -805,7 +831,7 @@ useEffect(() => {
                 {seatingLayout.map((row, rowIndex) => (
                   <div
                     key={`row-${rowIndex}-${row.rowLabel}`}
-                    className="flex items-center gap-1 min-w-max"
+                    className="flex items-center gap-1 min-w-max justify-center"
                   >
                     {/* Left row label - compact */}
                     <div className="w-4 sm:w-6 text-center font-medium sm:font-semibold text-gray-600 text-[10px] sm:text-xs flex-shrink-0 sticky left-0 bg-white z-10 pr-0.5 sm:pr-1">

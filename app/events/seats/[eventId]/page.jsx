@@ -61,6 +61,7 @@ const isNavigatingToCheckoutRef = useRef(false);
   
   const selectedSeats = useSelector(selectSelectedSeats);
   const { selectedEvent } = useSelector((state) => state.events);
+  const { user } = useSelector((state) => state.user);
   
   // Ticket purchase state
   const ticketPurchaseState = useSelector(selectTicketPurchase);
@@ -206,6 +207,73 @@ const isNavigatingToCheckoutRef = useRef(false);
         // Validate seat data structure
         if (!seatData.seatingLayout || !Array.isArray(seatData.seatingLayout)) {
           throw new Error('Invalid seating layout data received from server');
+        }
+
+        // Check if user already has seats reserved in the backend
+        const userId = user?._id;
+        const userReservedSeats = [];
+        let userReservation = null;
+        
+        if (userId) {
+          for (const row of seatData.seatingLayout) {
+            for (const seat of row.seats || []) {
+              if (seat.status === 'selected' && 
+                  seat.reservedBy && 
+                  seat.reservedBy.toString() === userId.toString() &&
+                  seat.reservedUntil && 
+                  new Date(seat.reservedUntil) > new Date()) {
+                userReservedSeats.push(seat.seatId);
+                if (!userReservation) {
+                  userReservation = {
+                    eventId: eventId,
+                    userId: userId,
+                    sessionId: seat.sessionId || sessionId,
+                    reservedUntil: seat.reservedUntil,
+                    seatIds: []
+                  };
+                }
+              }
+            }
+          }
+        }
+
+        // If user has existing reservation, restore it
+        if (userReservedSeats.length > 0 && userReservation) {
+          userReservation.seatIds = userReservedSeats;
+          userReservation.seatCount = userReservedSeats.length;
+          
+          console.log('🔍 Found existing user reservation in backend:', {
+            userId,
+            seatCount: userReservedSeats.length,
+            seats: userReservedSeats,
+            reservedUntil: userReservation.reservedUntil
+          });
+          
+          // Restore the seats immediately
+          dispatch(restoreSeatsFromSaved({
+            selectedSeats: userReservedSeats,
+            reservation: userReservation
+          }));
+          dispatch(setCurrentReservation(userReservation));
+          
+          // Update seat info in ticket purchase slice
+          dispatch(updateSeatInfo({
+            selectedSeats: userReservedSeats,
+            reservationId: userReservation.reservationId || `existing_${Date.now()}`,
+            seatCount: userReservedSeats.length,
+            requiresSeats: true
+          }));
+          
+          // Save to bookingStateManager for persistence
+          bookingStateManager.save({
+            ...bookingStateManager.load(eventId),
+            seats: {
+              selected: userReservedSeats,
+              reservation: userReservation,
+              timestamp: new Date().toISOString()
+            },
+            currentStep: 'seats'
+          });
         }
 
         setInitializationAttempted(true);
