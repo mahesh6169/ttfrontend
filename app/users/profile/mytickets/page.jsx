@@ -442,16 +442,16 @@ const EnhancedMyTicketsPage = () => {
                           </p>
                         </div>
                         
-                        {eventInfo.organizer?.contact && (
+                        {(eventInfo.organizer?.contact || eventInfo.organizer?.phone) && (
                           <div>
                             <span className="text-sm text-gray-600">Contact:</span>
                             <p className="text-sm text-gray-900">
-                              {eventInfo.organizer.contact}
+                              {eventInfo.organizer.contact || eventInfo.organizer.phone}
                             </p>
                           </div>
                         )}
                         
-                        {eventInfo.organizer?.email && (
+                        {eventInfo.organizer?.email && eventInfo.organizer.email.trim() && (
                           <div>
                             <span className="text-sm text-gray-600">Email-id:</span>
                             <p className="text-sm text-gray-900 break-all">
@@ -465,6 +465,17 @@ const EnhancedMyTicketsPage = () => {
                             <span className="text-sm text-gray-600">ABN:</span>
                             <p className="text-sm text-gray-900">
                               {eventInfo.organizer.abn}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {eventInfo.organizer?.website && eventInfo.organizer.website.trim() && (
+                          <div>
+                            <span className="text-sm text-gray-600">Website:</span>
+                            <p className="text-sm text-gray-900 break-all">
+                              <a href={eventInfo.organizer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                {eventInfo.organizer.website}
+                              </a>
                             </p>
                           </div>
                         )}

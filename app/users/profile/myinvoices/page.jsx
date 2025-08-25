@@ -413,20 +413,31 @@ const MyInvoicesPage = () => {
                           </div>
                         )}
                         
-                        {selectedEvent.organizer?.contact && (
+                        {(selectedEvent.organizer?.contact || selectedEvent.organizer?.phone) && (
                           <div>
                             <span className="text-sm text-gray-600">Contact:</span>
                             <p className="text-sm text-gray-900">
-                              {selectedEvent.organizer.contact}
+                              {selectedEvent.organizer.contact || selectedEvent.organizer.phone}
                             </p>
                           </div>
                         )}
                         
-                        {selectedEvent.organizer?.email && (
+                        {selectedEvent.organizer?.email && selectedEvent.organizer.email.trim() && (
                           <div>
                             <span className="text-sm text-gray-600">Email-id:</span>
                             <p className="text-sm text-gray-900 break-all">
                               {selectedEvent.organizer.email}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {selectedEvent.organizer?.website && selectedEvent.organizer.website.trim() && (
+                          <div>
+                            <span className="text-sm text-gray-600">Website:</span>
+                            <p className="text-sm text-gray-900 break-all">
+                              <a href={selectedEvent.organizer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                {selectedEvent.organizer.website}
+                              </a>
                             </p>
                           </div>
                         )}

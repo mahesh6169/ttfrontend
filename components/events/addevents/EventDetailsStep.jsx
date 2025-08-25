@@ -370,6 +370,7 @@ const EventDetailsStep = ({
           onChange={handleChange}
           min={getMinDate()}
           disabled={disabled}
+          onWheel={(e) => e.target.blur()}
           className={getFieldClasses('dateTime')}
         />
         {errors?.dateTime && (
@@ -464,6 +465,7 @@ const EventDetailsStep = ({
                         value={schedule?.time || '18:00'}
                         onChange={(e) => handleUpdateRepeatSchedule(index, 'time', e.target.value)}
                         disabled={disabled}
+                        onWheel={(e) => e.target.blur()}
                         className={`w-full px-3 py-2 border rounded-lg text-sm ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
                       />
                     </div>
@@ -522,6 +524,7 @@ const EventDetailsStep = ({
                   return maxDate.toISOString().split('T')[0];
                 })()}
                 disabled={disabled}
+                onWheel={(e) => e.target.blur()}
                 className={getFieldClasses('recurrenceEndDate')}
                 required={formData.recurrence?.isRecurring}
               />

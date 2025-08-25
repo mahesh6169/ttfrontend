@@ -1,6 +1,6 @@
 // components/events/addevents/TicketConfigStep.jsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import {
   updateField,
@@ -156,6 +156,17 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
 // Paid Event Configuration Component
 const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
+  const [priceErrors, setPriceErrors] = useState({});
+
+  // Decimal validation function
+  const validatePriceDecimals = (value) => {
+    if (!value || value === '') return true;
+    const strValue = value.toString();
+    const decimalIndex = strValue.indexOf('.');
+    if (decimalIndex === -1) return true;
+    const decimals = strValue.length - decimalIndex - 1;
+    return decimals <= 2;
+  };
 
   return (
     <div className="space-y-6">
@@ -212,6 +223,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                   })
                 );
               }}
+              onWheel={(e) => e.target.blur()}
               placeholder="0 for unlimited"
               className={`w-full p-2.5 sm:p-3 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
                 errors?.capacity ? 'border-red-500' : 'border-gray-300'
@@ -391,41 +403,56 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     Price <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                      <span className="text-gray-500 text-sm">$</span>
-                    </div>
-                    <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={
-                        ticket.price === undefined || ticket.price === null
-                          ? ''
-                          : ticket.price
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={
+                      ticket.price === undefined || ticket.price === null
+                        ? ''
+                        : ticket.price
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      
+                      // Validate decimal places
+                      if (!validatePriceDecimals(val)) {
+                        setPriceErrors({
+                          ...priceErrors,
+                          [index]: 'Maximum 2 decimal places allowed'
+                        });
+                      } else {
+                        // Clear error for this index
+                        const newErrors = { ...priceErrors };
+                        delete newErrors[index];
+                        setPriceErrors(newErrors);
                       }
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        dispatch(
-                          updateTicketType({
-                            index,
-                            field: 'price',
-                            value: val,
-                          })
-                        );
-                      }}
-                      className={`w-full pl-7 p-2 sm:p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-                        errors?.[`ticketPrice_${index}`]
-                          ? 'border-red-500'
-                          : 'border-gray-300'
-                      }`}
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
+                      
+                      dispatch(
+                        updateTicketType({
+                          index,
+                          field: 'price',
+                          value: val,
+                        })
+                      );
+                    }}
+                    onWheel={(e) => e.target.blur()}
+                    className={`w-full p-2 sm:p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                      errors?.[`ticketPrice_${index}`] || priceErrors[index]
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="0.00"
+                    required
+                  />
                   {errors?.[`ticketPrice_${index}`] && (
                     <p className="mt-0.5 text-red-500 text-xs">
                       {errors[`ticketPrice_${index}`][0]}
+                    </p>
+                  )}
+                  {priceErrors[index] && (
+                    <p className="mt-0.5 text-red-500 text-xs">
+                      {priceErrors[index]}
                     </p>
                   )}
                 </div>
@@ -454,6 +481,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                         })
                       )
                     }
+                    onWheel={(e) => e.target.blur()}
                     className={`w-full p-2 sm:p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
                       errors?.[`ticketStartDate_${index}`]
                         ? 'border-red-500'
@@ -491,6 +519,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                         })
                       )
                     }
+                    onWheel={(e) => e.target.blur()}
                     className={`w-full p-2 sm:p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
                       errors?.[`ticketExpiryDate_${index}`]
                         ? 'border-red-500'

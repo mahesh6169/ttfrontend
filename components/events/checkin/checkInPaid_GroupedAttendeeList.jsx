@@ -324,7 +324,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
                       }
                     `}
                   >
-                    <span className="sm:hidden">Tickets</span>
+                    <span className="sm:hidden">View Tickets</span>
                     <span className="hidden sm:inline">View Tickets</span>
                   </button>
                   {representative.formResponses && representative.formResponses.length > 0 && (
