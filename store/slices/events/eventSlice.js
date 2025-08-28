@@ -482,6 +482,9 @@ deleteError: null,
     // Loading states
     isInitializing: false,
     initializationError: null,
+    
+    // Capacity warning
+    capacityWarning: null,
   },
   
   reducers: {
@@ -731,23 +734,42 @@ updateGstIncluded: (state, action) => {
     
     // Seating Layout with change tracking
     addSeatingRow: (state) => {
-      // Generate next row label (A, B, C, etc.)
+      // Check if capacity is 0
+      if (state.formData.capacity === 0 || state.formData.capacity === '0' || !state.formData.capacity) {
+        state.capacityWarning = 'Seating events cannot have unlimited capacity. Please set a capacity limit above 0.';
+        return;
+      }
+      
       const nextRowLabel = String.fromCharCode(65 + state.formData.seatingLayout.length);
       
-      // Get seat count from previous row, or default to 10
-      const previousRow = state.formData.seatingLayout[state.formData.seatingLayout.length - 1];
-      const seatCount = previousRow ? previousRow.seats.length : 10;
+      // Check current total
+      const currentTotal = state.formData.seatingLayout.reduce(
+        (total, row) => total + row.seats.length, 0
+      );
       
-      // Create new row with same number of seats as previous row
-      const newRow = {
+      if (currentTotal >= state.formData.capacity) {
+        // Can't add new row - at capacity
+        state.capacityWarning = `Cannot add more seats. Total seats must equal capacity (${state.formData.capacity}).`;
+        return;
+      }
+      
+      // Add row with limited seats
+      const remainingCapacity = state.formData.capacity - currentTotal;
+      const defaultSeats = Math.min(10, remainingCapacity);
+      
+      state.formData.seatingLayout.push({
         rowLabel: nextRowLabel,
-        seats: Array(seatCount).fill().map((_, i) => ({
-          seatNumber: String(i + 1),
+        seats: Array(defaultSeats).fill(null).map((_, index) => ({
+          seatNumber: String(index + 1),
+          seatId: `${nextRowLabel}-${index + 1}`,
           status: 'available'
         }))
-      };
+      });
       
-      state.formData.seatingLayout.push(newRow);
+      if (defaultSeats < 10) {
+        state.capacityWarning = `Row limited to ${defaultSeats} seats. Total must equal capacity (${state.formData.capacity})`;
+      }
+      
       state.hasUnsavedChanges = true;
     },
     updateRowLabel: (state, action) => {
@@ -757,18 +779,30 @@ updateGstIncluded: (state, action) => {
     },
     updateSeatCount: (state, action) => {
       const { rowIndex, count } = action.payload;
-      const currentCount = state.formData.seatingLayout[rowIndex].seats.length;
-      const row = state.formData.seatingLayout[rowIndex];
       
-      if (count > currentCount) {
-        // Add more seats
-        for (let i = currentCount + 1; i <= count; i++) {
-          row.seats.push({ seatNumber: String(i), status: 'available' });
-        }
-      } else if (count < currentCount) {
-        // Remove seats
-        row.seats = row.seats.slice(0, count);
+      // Calculate current total excluding this row
+      const otherRowsTotal = state.formData.seatingLayout.reduce((total, row, idx) => 
+        idx === rowIndex ? total : total + (row.seats?.length || 0), 0
+      );
+      
+      // Limit count to not exceed capacity
+      const maxAllowed = state.formData.capacity - otherRowsTotal;
+      const actualCount = Math.min(count, Math.max(1, maxAllowed));
+      
+      // Update with limited count
+      state.formData.seatingLayout[rowIndex].seats = Array(actualCount)
+        .fill(null)
+        .map((_, index) => ({
+          seatNumber: String(index + 1),
+          seatId: `${state.formData.seatingLayout[rowIndex].rowLabel}-${index + 1}`,
+          status: 'available'
+        }));
+        
+      // Set warning flag if count was limited
+      if (count > actualCount) {
+        state.capacityWarning = `Seats limited to ${actualCount}. Total seats must equal capacity (${state.formData.capacity})`;
       }
+      
       state.hasUnsavedChanges = true;
     },
     removeSeatingRow: (state, action) => {
@@ -874,6 +908,11 @@ updateGstIncluded: (state, action) => {
     // Success message management
     clearSuccessMessage: (state) => {
       state.successMessage = '';
+    },
+    
+    // Capacity warning management
+    clearCapacityWarning: (state) => {
+      state.capacityWarning = null;
     },
     // Delete status management
 clearDeleteError: (state) => {
@@ -1161,6 +1200,9 @@ updateGstIncluded,
   
   // Success messages
   clearSuccessMessage,
+  
+  // Capacity warning
+  clearCapacityWarning,
 
   // Delete management
 clearDeleteError,

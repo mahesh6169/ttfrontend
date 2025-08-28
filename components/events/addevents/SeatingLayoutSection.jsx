@@ -1,18 +1,31 @@
 // components/events/addevents/SeatingLayoutSection.jsx
 
-import React, { useState, Fragment } from 'react';
+import React, { useState, Fragment, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import {
   updateField,
   addSeatingRow,
   updateRowLabel,
   updateSeatCount,
   removeSeatingRow,
+  clearCapacityWarning,
 } from '@/store/slices/events/eventSlice';
 import { FaInfoCircle } from 'react-icons/fa';
 
 const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
   const [showInstructions, setShowInstructions] = useState(false);
   const [seatInputValues, setSeatInputValues] = useState({});
+  const capacityWarning = useSelector((state) => state.events.capacityWarning);
+  
+  // Clear warning after 5 seconds
+  useEffect(() => {
+    if (capacityWarning) {
+      const timer = setTimeout(() => {
+        dispatch(clearCapacityWarning());
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [capacityWarning, dispatch]);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-6">
@@ -37,6 +50,23 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
           <p className="text-sm text-gray-500">
             Optional seating arrangement for your venue
           </p>
+          {formData.capacity > 0 && formData.seatingLayout?.length > 0 && (
+            <p className="text-xs mt-1 font-medium">
+              Seats/Capacity: {(() => {
+                const totalSeats = formData.seatingLayout.reduce((total, row) => total + (row.seats?.length || 0), 0);
+                const isMatching = totalSeats === Number(formData.capacity);
+                const seatColor = isMatching ? 'text-green-600' : 'text-red-600';
+                return (
+                  <>
+                    <span className={seatColor}>{totalSeats}</span>
+                    <span className="text-gray-600">/</span>
+                    <span className={isMatching ? 'text-green-600' : 'text-gray-600'}>{formData.capacity}</span>
+                    {!isMatching && <span className="text-red-600 ml-1">(must match)</span>}
+                  </>
+                );
+              })()}
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -48,6 +78,18 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
         </button>
       </div>
 
+      {/* Validation Errors */}
+      {errors?.seatingLayout && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="text-red-700 text-sm">
+            {Array.isArray(errors.seatingLayout) 
+              ? errors.seatingLayout.map((err, i) => <p key={i} className="mb-1">• {err}</p>)
+              : <p>• {errors.seatingLayout}</p>
+            }
+          </div>
+        </div>
+      )}
+      
       {(formData.seatingLayout || []).length > 0 ? (
         <>
           <style jsx>{`
@@ -231,6 +273,18 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
                 </div>
               </div>
             </div>
+            
+            {/* Capacity Warning */}
+            {capacityWarning && (
+              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-yellow-700 text-xs sm:text-sm flex items-center">
+                  <svg className="w-4 h-4 mr-1.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  {capacityWarning}
+                </p>
+              </div>
+            )}
 
             {/* Controls Row */}
             <div className="flex items-center justify-between mt-3 px-1 sm:px-2">
@@ -335,6 +389,19 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
             />
           </svg>
           <p className="text-gray-500 mb-4">No seating layout configured</p>
+          
+          {/* Capacity Warning for Create Button */}
+          {capacityWarning && (
+            <div className="max-w-md mx-auto mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-700 text-sm flex items-center justify-center">
+                <svg className="w-4 h-4 mr-1.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                {capacityWarning}
+              </p>
+            </div>
+          )}
+          
           <button
             type="button"
             onClick={() => dispatch(addSeatingRow())}

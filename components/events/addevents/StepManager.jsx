@@ -501,6 +501,20 @@ if (ticket.startDate && ticket.expiryDate) {
       // Seating layout validation (if provided)
       if (formData.seatingLayout && formData.seatingLayout.length > 0) {
         const seatingErrors = [];
+        
+        // Check if capacity is 0 when seating layout exists
+        if (!formData.capacity || formData.capacity === 0 || formData.capacity === '0') {
+          seatingErrors.push('Seating events cannot have unlimited capacity. Please set a capacity limit above 0.');
+        } else {
+          // Check if total seats match capacity exactly
+          const totalSeats = formData.seatingLayout.reduce(
+            (total, row) => total + (row.seats?.length || 0), 0
+          );
+          if (totalSeats !== Number(formData.capacity)) {
+            seatingErrors.push(`For seated events, capacity must match total seats. Current: ${totalSeats} seats, ${formData.capacity} capacity`);
+          }
+        }
+        
         formData.seatingLayout.forEach((row, index) => {
           if (!row.rowLabel?.trim()) {
             seatingErrors.push(`Row ${index + 1} label is required`);
@@ -627,6 +641,36 @@ const validateCurrentStep = useCallback(() => {
             'Please enter 0 for unlimited or a positive number',
           ];
         }
+        
+        // Seating layout validation for paid events
+        if (formData.seatingLayout && formData.seatingLayout.length > 0) {
+          const seatingErrors = [];
+          
+          // Check if capacity is 0 when seating layout exists
+          if (!formData.capacity || formData.capacity === 0 || formData.capacity === '0') {
+            seatingErrors.push('Seating events cannot have unlimited capacity. Please set a capacity limit above 0.');
+          } else {
+            // Check if total seats match capacity exactly
+            const totalSeats = formData.seatingLayout.reduce(
+              (total, row) => total + (row.seats?.length || 0), 0
+            );
+            if (totalSeats !== Number(formData.capacity)) {
+              seatingErrors.push(`For seated events, capacity must match total seats. Current: ${totalSeats} seats, ${formData.capacity} capacity`);
+            }
+          }
+          
+          formData.seatingLayout.forEach((row, index) => {
+            if (!row.rowLabel?.trim()) {
+              seatingErrors.push(`Row ${index + 1} label is required`);
+            }
+            if (!row.seats || row.seats.length === 0) {
+              seatingErrors.push(`Row ${index + 1} must have at least one seat`);
+            }
+          });
+          
+          if (seatingErrors.length > 0) errors.seatingLayout = seatingErrors;
+        }
+        
         if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
           errors.ticketTypes = [
             'At least one ticket type is required for paid events',
