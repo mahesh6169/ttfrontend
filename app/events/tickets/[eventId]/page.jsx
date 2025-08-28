@@ -77,33 +77,35 @@ const TicketSelectionPage = () => {
   }, [eventId, dispatch]);
 
   // Fetch event capacity
-  useEffect(() => {
-    const fetchCapacity = async () => {
-      if (!eventId || !selectedEvent) return;
-      
-      setCapacityLoading(true);
-      try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/capacity`
-        );
-        setEventCapacity(response.data.capacity);
-      } catch (error) {
-        console.error('Error fetching capacity:', error);
-        // Set default capacity if error
-        setEventCapacity({
-          total: selectedEvent.maxAttendees || 100,
-          sold: 0,
-          remaining: selectedEvent.maxAttendees || 100,
-          isUnlimited: !selectedEvent.maxAttendees,
-          status: 'available'
-        });
-      } finally {
-        setCapacityLoading(false);
-      }
-    };
-
-    fetchCapacity();
+  const fetchCapacity = useCallback(async () => {
+    if (!eventId || !selectedEvent) return;
+    
+    setCapacityLoading(true);
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/capacity`,
+        { withCredentials: true }
+      );
+      setEventCapacity(response.data.capacity);
+    } catch (error) {
+      console.error('Error fetching capacity:', error);
+      // Set default capacity if error
+      setEventCapacity({
+        total: selectedEvent.maxAttendees || 100,
+        sold: 0,
+        remaining: selectedEvent.maxAttendees || 100,
+        isUnlimited: !selectedEvent.maxAttendees,
+        status: 'available'
+      });
+    } finally {
+      setCapacityLoading(false);
+    }
   }, [eventId, selectedEvent]);
+
+  // Fetch capacity on mount or when event changes
+  useEffect(() => {
+    fetchCapacity();
+  }, [fetchCapacity]);
 
   // Run cleanup task when tickets page loads
   useEffect(() => {
@@ -200,6 +202,9 @@ const TicketSelectionPage = () => {
           tickets: response.data.tickets,
           totalAmount: response.data.totalAmount
         });
+        
+        // Refetch capacity to show updated numbers
+        await fetchCapacity();
       }
     } catch (error) {
       console.error('Error creating reservation:', error);
@@ -275,6 +280,9 @@ const TicketSelectionPage = () => {
           { withCredentials: true }
         );
         setReservation(null);
+        
+        // Refetch capacity to show updated numbers after deletion
+        await fetchCapacity();
       } catch (error) {
         console.error('Error deleting reservation:', error);
       }
@@ -485,7 +493,7 @@ const TicketSelectionPage = () => {
   ) : eventCapacity?.status === 'sold-out' ? (
     'Event sold out'
   ) : totals.totalQuantity > 0 ? (
-    `${totals.totalQuantity} ticket${totals.totalQuantity > 1 ? 's' : ''} selected • ${(eventCapacity?.remaining || 0) - totals.totalQuantity} of ${eventCapacity?.total || 0} remaining`
+    `${totals.totalQuantity} ticket${totals.totalQuantity > 1 ? 's' : ''} selected • ${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
   ) : (
     `${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
   )}

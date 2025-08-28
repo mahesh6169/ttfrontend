@@ -222,69 +222,9 @@ const SeatMapSelectionNoRedux = forwardRef(({
     }
   };
 
-  // DEPRECATED - We now use existing reservation from tickets page
-  const createReservation = async (seatIds) => {
-    return true; // Just return success, parent handles reservation
-  };
-  
-  /* OLD IMPLEMENTATION
-    try {
-      setPendingOperation(true);
-      
-      console.log('Creating reservation with:', {
-        seatIds,
-        ticketTypes: ticketRequirement.types,
-        eventId
-      });
-      
-      const response = await axios.post(
-        `${API_BASE_URL}/events/${eventId}/seats/reserve`,
-        { 
-          seatIds,
-          ticketTypes: ticketRequirement.types 
-        },
-        { 
-          withCredentials: true,
-          headers: {
-            'x-session-id': sessionStorage.getItem('sessionId') || 'web'
-          }
-        }
-      );
-      
-      if (response.data.success && response.data.reservation) {
-        console.log('Reservation created successfully:', response.data);
-        
-        const { reservation } = response.data;
-        
-        const newReservation = {
-          _id: reservation.id,
-          reservationId: reservation.id,
-          eventId: reservation.eventId,
-          seatIds: reservation.seatIds,
-          seats: reservation.seatIds.map(id => ({ seatId: id, label: id })),
-          reservedUntil: reservation.expiresAt || reservation.reservedUntil,
-          sessionId: sessionStorage.getItem('sessionId'),
-          createdAt: new Date().toISOString()
-        };
-        // setReservation(newReservation); // Using parent reservation
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Failed to create reservation:', error);
-      console.error('Error details:', {
-        status: error.response?.status,
-        message: error.response?.data?.message,
-        data: error.response?.data
-      });
-      setReserveErrorMessage(error.response?.data?.message || 'Failed to reserve seats');
-      setShowReserveErrorModal(true);
-      return false;
-    } finally {
-      setPendingOperation(false);
-    }
-  };
-  */
+  // DEPRECATED - Seat updates are now handled via parent component's onSeatsSelected callback
+  // The parent component (seats page) manages the reservation and calls the proper
+  // reservation API endpoints (/events/:id/reservation/:id/seats)
 
   // Handle seat click
   const handleSeatClick = async (seatId, seatStatus) => {
@@ -423,22 +363,18 @@ const SeatMapSelectionNoRedux = forwardRef(({
       
       {/* Status Bar */}
       <div className="border-t border-gray-200 pt-2 sm:pt-3">
-        <div className="hidden sm:flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             {/* Selection count */}
-            <div className="text-sm font-medium text-gray-700">
+            <div className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">
               {selectedSeats.length}/{requiredSeats} Seats Selected
             </div>
             
-            {/* Show seat numbers and timer when seats are selected */}
+            {/* Show seat numbers when seats are selected */}
             {selectedSeats.length > 0 && (
-              <>
-                {/* Seat numbers */}
-                <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                  <span className="truncate max-w-[200px]">{selectedSeats.join(', ')}</span>
-                </div>
-                
-              </>
+              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 min-w-0">
+                <span className="truncate">{selectedSeats.join(', ')}</span>
+              </div>
             )}
           </div>
           
@@ -523,12 +459,12 @@ const SeatMapSelectionNoRedux = forwardRef(({
 
       {/* Error Modal */}
       {showReserveErrorModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-3 sm:p-4 lg:p-6 max-w-xs sm:max-w-sm mx-auto shadow-xl">
             <div className="text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 lg:mb-4">
                 <svg
-                  className="w-6 h-6 text-red-600"
+                  className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-red-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -542,11 +478,11 @@ const SeatMapSelectionNoRedux = forwardRef(({
                 </svg>
               </div>
               
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">
                 Seat Selection Error
               </h3>
               
-              <p className="text-gray-600 text-sm mb-6">
+              <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 lg:mb-6">
                 {reserveErrorMessage}
               </p>
               
@@ -555,7 +491,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
                   setShowReserveErrorModal(false);
                   setReserveErrorMessage('');
                 }}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                className="w-full bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors"
               >
                 OK
               </button>

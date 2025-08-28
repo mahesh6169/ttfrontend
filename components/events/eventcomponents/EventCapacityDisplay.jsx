@@ -102,11 +102,12 @@ useEffect(() => {
   const {
     total: totalCapacity,
     sold: registeredCount,
+    remaining: remainingCapacity,
     isUnlimited,
     status
   } = capacity;
 
-  const isFull = status === 'sold-out' || (totalCapacity > 0 && registeredCount >= totalCapacity);
+  const isFull = status === 'sold-out';
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -122,7 +123,7 @@ useEffect(() => {
       <div className="text-sm sm:text-base">
         <span className="font-semibold text-gray-700">Remaining:</span>{' '}
         <span className="text-gray-600">
-          {isUnlimited ? 'Unlimited' : Math.max(totalCapacity - registeredCount, 0)}
+          {isUnlimited ? 'Unlimited' : remainingCapacity}
         </span>
       </div>
 

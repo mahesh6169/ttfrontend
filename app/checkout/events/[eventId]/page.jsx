@@ -19,6 +19,8 @@ import {
   FaCheckCircle,
   FaChair,
   FaTicketAlt,
+  FaChevronUp,
+  FaChevronDown,
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import RequireLogin from '@/components/Auth/RequireLogin';
@@ -61,6 +63,7 @@ const CheckoutPage = () => {
   
   // Two-step process state
   const [currentStep, setCurrentStep] = useState('details'); // 'details' or 'payment'
+  const [showMobileOrderSummary, setShowMobileOrderSummary] = useState(false);
   
   // Ref to track if reservation is currently being fetched
   const isFetchingReservation = useRef(false);
@@ -180,16 +183,15 @@ const CheckoutPage = () => {
 
   // Calculate totals - memoized to prevent excessive recalculation
   const ticketTotals = useMemo(() => {
-    const totals = {
-      totalQuantity: selectedTickets.reduce((sum, t) => sum + t.quantity, 0),
-      totalPrice: selectedTickets.reduce((sum, t) => {
-        const price = t.price || 0;
-        const quantity = t.quantity || 0;
-        console.log('Ticket calculation:', t.ticketName, 'price:', price, 'qty:', quantity, 'subtotal:', price * quantity);
-        return sum + (price * quantity);
-      }, 0)
-    };
+    const totalQuantity = selectedTickets.reduce((sum, t) => sum + (t.quantity || 0), 0);
+    const totalPrice = selectedTickets.reduce((sum, t) => {
+      const price = t.price || 0;
+      const quantity = t.quantity || 0;
+      console.log('Ticket calculation:', t.ticketName, 'price:', price, 'qty:', quantity, 'subtotal:', price * quantity);
+      return sum + (price * quantity);
+    }, 0);
     
+    const totals = { totalQuantity, totalPrice };
     console.log('Ticket totals calculated:', totals);
     console.log('Reservation totalAmount:', reservation?.totalAmount);
     return totals;
@@ -220,9 +222,10 @@ const CheckoutPage = () => {
       gst: 0, // GST is display only, not calculated
       serviceFee: 0, // No service fee shown to customer
       processingFee: 0, // No processing fee shown to customer
-      total: finalTotal // Total equals subtotal
+      total: finalTotal, // Total equals subtotal
+      totalQuantity: ticketTotals.totalQuantity
     };
-  }, [reservation?.totalAmount, ticketTotals.totalPrice]);
+  }, [reservation?.totalAmount, ticketTotals]);
 
   // Format selected tickets for PaymentSummary - memoized
   const formattedTickets = useMemo(() => {
@@ -625,9 +628,9 @@ const CheckoutPage = () => {
   return (
     <RequireLogin>
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+        <div className="max-w-7xl mx-auto px-2 py-2 sm:px-4 sm:py-4 lg:px-6 lg:py-6">
           {/* Back Button - Smart behavior based on current step */}
-          <div className="mb-3 sm:mb-6">
+          <div className="mb-2 sm:mb-4">
             <button
               onClick={() => {
                 if (currentStep === 'payment') {
@@ -638,15 +641,15 @@ const CheckoutPage = () => {
                   hasSeatingLayout ? router.push(`/events/seats/${params.eventId}`) : router.push(`/events/tickets/${params.eventId}`);
                 }
               }}
-              className="inline-flex items-center px-2.5 py-1 text-xs sm:px-4 sm:py-2 sm:text-base bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md sm:rounded-lg transition-colors"
+              className="inline-flex items-center px-2 py-1 text-xs sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md transition-colors"
             >
-              <FaArrowLeft className="mr-1 sm:mr-2 text-[10px] sm:text-base" />
-              <span className="text-xs sm:text-base">Back</span>
+              <FaArrowLeft className="mr-1 text-[10px] sm:text-xs lg:text-sm" />
+              <span className="text-xs sm:text-sm">Back</span>
             </button>
           </div>
           
           {/* Step Indicator */}
-          <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-2 sm:p-3 lg:p-4 mb-2 sm:mb-4">
             <div className="flex items-center justify-center">
               <div
                 className={`flex items-center ${
@@ -654,23 +657,23 @@ const CheckoutPage = () => {
                 }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  className={`w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center ${
                     currentStep === 'details'
                       ? 'bg-emerald-600 text-white'
                       : 'bg-green-600 text-white'
                   }`}
                 >
                   {currentStep === 'payment' ? (
-                    <FaCheckCircle className="w-4 h-4" />
+                    <FaCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                   ) : (
-                    <span className="text-base">1</span>
+                    <span className="text-xs sm:text-sm lg:text-base">1</span>
                   )}
                 </div>
-                <span className="ml-2 text-base font-medium">Details</span>
+                <span className="ml-1.5 sm:ml-2 text-xs sm:text-sm lg:text-base font-medium">Details</span>
               </div>
 
               <div
-                className={`w-16 h-1 mx-4 ${
+                className={`w-8 sm:w-12 lg:w-16 h-0.5 sm:h-1 mx-2 sm:mx-3 lg:mx-4 ${
                   currentStep === 'payment' ? 'bg-emerald-600' : 'bg-gray-200'
                 }`}
               ></div>
@@ -681,15 +684,15 @@ const CheckoutPage = () => {
                 }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  className={`w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center ${
                     currentStep === 'payment'
                       ? 'bg-emerald-600 text-white'
                       : 'bg-gray-200 text-gray-600'
                   }`}
                 >
-                  <span className="text-base">2</span>
+                  <span className="text-xs sm:text-sm lg:text-base">2</span>
                 </div>
-                <span className="ml-2 text-base font-medium">Payment</span>
+                <span className="ml-1.5 sm:ml-2 text-xs sm:text-sm lg:text-base font-medium">Payment</span>
               </div>
             </div>
           </div>
@@ -719,25 +722,64 @@ const CheckoutPage = () => {
             onSeatUpdate={handleSeatUpdate}
           />
 
+          {/* Mobile Order Summary - Show above main content on mobile */}
+          <div className="lg:hidden mb-2">
+            <button
+              onClick={() => setShowMobileOrderSummary(!showMobileOrderSummary)}
+              className="w-full bg-white border border-gray-200 rounded-lg p-2 flex items-center justify-between shadow-sm hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center">
+                <FaTicketAlt className="text-green-600 mr-1.5 w-3.5 h-3.5" />
+                <span className="font-medium text-xs">Order Summary</span>
+                <span className="ml-1.5 text-gray-600 text-xs">({totals.totalQuantity || 0} items)</span>
+              </div>
+              <div className="flex items-center">
+                <span className="font-bold text-green-600 text-xs mr-1.5">${totals.total?.toFixed(2)}</span>
+                {showMobileOrderSummary ? (
+                  <FaChevronUp className="w-3 h-3 text-gray-500" />
+                ) : (
+                  <FaChevronDown className="w-3 h-3 text-gray-500" />
+                )}
+              </div>
+            </button>
+            
+            {/* Collapsible Content */}
+            {showMobileOrderSummary && (
+              <div className="mt-1.5 transition-all duration-300">
+                <PaymentSummary
+                  event={event}
+                  selectedTickets={formattedTickets}
+                  totals={totals}
+                  buyerInfo={currentStep === 'payment' ? buyerInfo : null}
+                  selectedSeats={reservation?.seatIds}
+                  formatSelectedSeats={formatSelectedSeats}
+                  showEventDetails={true}
+                  showBuyerInfo={currentStep === 'payment'}
+                  className="!p-2"
+                />
+              </div>
+            )}
+          </div>
+
           {/* Main Content */}
-          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {/* Main Content - Step based */}
             <div className="lg:col-span-2">
               {currentStep === 'details' ? (
                 /* Details Step */
                 <>
                   {/* Buyer Information Form */}
-                  <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-                    <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center">
-                      <FaUser className="w-5 h-5 mr-2 text-emerald-600" />
+                  <div className="bg-white rounded-lg shadow-sm border p-2 sm:p-4 lg:p-6">
+                    <h2 className="text-sm sm:text-lg lg:text-xl font-semibold mb-2 sm:mb-4 flex items-center">
+                      <FaUser className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2 text-emerald-600" />
                       Buyer Information
                     </h2>
                     
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
                         {/* First Name */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-[11px] sm:text-xs lg:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
                             First Name *
                           </label>
                           <input
@@ -745,19 +787,19 @@ const CheckoutPage = () => {
                             name="firstName"
                             value={buyerInfo.firstName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            className={`w-full px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
                               errors.firstName ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="First name"
                           />
                           {errors.firstName && (
-                            <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+                            <p className="mt-0.5 text-[10px] sm:text-xs text-red-600">{errors.firstName}</p>
                           )}
                         </div>
                         
                         {/* Last Name */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-[11px] sm:text-xs lg:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
                             Last Name *
                           </label>
                           <input
@@ -765,60 +807,60 @@ const CheckoutPage = () => {
                             name="lastName"
                             value={buyerInfo.lastName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            className={`w-full px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
                               errors.lastName ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="Last name"
                           />
                           {errors.lastName && (
-                            <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+                            <p className="mt-0.5 text-[10px] sm:text-xs text-red-600">{errors.lastName}</p>
                           )}
                         </div>
                       </div>
 
                       {/* Email */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-[11px] sm:text-xs lg:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
                           Email Address *
                         </label>
                         <div className="relative">
-                          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <FaEnvelope className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
                           <input
                             type="email"
                             name="email"
                             value={buyerInfo.email || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            className={`w-full pl-7 sm:pl-10 pr-2 sm:pr-3 py-1 sm:py-2 text-xs sm:text-sm lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
                               errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="Email address"
                           />
                         </div>
                         {errors.email && (
-                          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                          <p className="mt-0.5 text-[10px] sm:text-xs text-red-600">{errors.email}</p>
                         )}
                       </div>
 
                       {/* Phone */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-[11px] sm:text-xs lg:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
                           Phone Number *
                         </label>
                         <div className="relative">
-                          <FaPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <FaPhone className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
                           <input
                             type="tel"
                             name="phone"
                             value={buyerInfo.phone || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            className={`w-full pl-7 sm:pl-10 pr-2 sm:pr-3 py-1 sm:py-2 text-xs sm:text-sm lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
                               errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="Phone number"
                           />
                         </div>
                         {errors.phone && (
-                          <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                          <p className="mt-0.5 text-[10px] sm:text-xs text-red-600">{errors.phone}</p>
                         )}
                       </div>
                       
@@ -829,9 +871,9 @@ const CheckoutPage = () => {
                           name="agreeToTerms"
                           checked={buyerInfo.agreeToTerms || false}
                           onChange={handleInputChange}
-                          className="mt-1 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                          className="mt-0.5 sm:mt-1 w-3 h-3 sm:w-4 sm:h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                         />
-                        <label className="ml-2 text-sm text-gray-600">
+                        <label className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs lg:text-sm text-gray-600">
                           I agree to the{' '}
                           <a
                             href="/support/terms"
@@ -851,7 +893,7 @@ const CheckoutPage = () => {
                         </label>
                       </div>
                       {errors.agreeToTerms && (
-                        <p className="text-sm text-red-600 ml-6">
+                        <p className="text-[10px] sm:text-xs text-red-600 ml-4 sm:ml-6">
                           {errors.agreeToTerms}
                         </p>
                       )}
@@ -865,14 +907,14 @@ const CheckoutPage = () => {
                               name="refundPolicyAccepted"
                               checked={refundPolicyAccepted || false}
                               onChange={(e) => setRefundPolicyAccepted(e.target.checked)}
-                              className="mt-1 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                              className="mt-0.5 sm:mt-1 w-3 h-3 sm:w-4 sm:h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                             />
-                            <label className="ml-2 text-sm text-gray-600">
+                            <label className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs lg:text-sm text-gray-600">
                               I accept the organiser refund policy below *
                             </label>
                           </div>
                           {errors.refundPolicyAccepted && (
-                            <p className="text-sm text-red-600 ml-6">
+                            <p className="text-[10px] sm:text-xs text-red-600 ml-4 sm:ml-6">
                               {errors.refundPolicyAccepted}
                             </p>
                           )}
@@ -881,7 +923,7 @@ const CheckoutPage = () => {
                       
                       {/* Refund Policy Display - Only for paid events */}
                       {event?.isPaid && event?.refundPolicy && (
-                        <div className="mt-6 border-t pt-6">
+                        <div className="mt-3 sm:mt-4 border-t pt-3 sm:pt-4">
                           <RefundPolicyDisplay 
                             refundPolicy={event.refundPolicy}
                             variant="checkout"
@@ -894,7 +936,7 @@ const CheckoutPage = () => {
                       <button
                         onClick={handleProceedToPayment}
                         disabled={isProcessing || shouldDisableProceed()}
-                        className={`w-full mt-6 py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center ${
+                        className={`w-full mt-3 sm:mt-4 py-2 sm:py-2.5 lg:py-3 px-3 sm:px-4 rounded-md sm:rounded-lg font-medium sm:font-semibold text-xs sm:text-sm lg:text-base text-white transition-all flex items-center justify-center ${
                           isProcessing || shouldDisableProceed()
                             ? 'bg-gray-400 cursor-not-allowed'
                             : 'bg-emerald-600 hover:bg-emerald-700'
@@ -902,7 +944,7 @@ const CheckoutPage = () => {
                       >
                         {isProcessing ? (
                           <>
-                            <FaSpinner className="animate-spin mr-2" />
+                            <FaSpinner className="animate-spin mr-1.5 sm:mr-2 w-3 h-3 sm:w-4 sm:h-4" />
                             Processing...
                           </>
                         ) : (
@@ -916,22 +958,22 @@ const CheckoutPage = () => {
               ) : (
                 /* Payment Step */
                 <>
-                  <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-                    <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center">
+                  <div className="bg-white rounded-lg shadow-sm border p-2 sm:p-4 lg:p-6">
+                    <h2 className="text-sm sm:text-lg lg:text-xl font-semibold mb-2 sm:mb-4 flex items-center">
                       Payment Details
                     </h2>
                     
                     {paymentStatus.clientSecret ? (
                       <>
                         {purchaseError && (
-                          <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
-                            <p className="text-red-800 text-sm">{purchaseError}</p>
+                          <div className="bg-red-50 border border-red-200 rounded-md p-2 sm:p-3 mb-3 sm:mb-4">
+                            <p className="text-red-800 text-xs sm:text-sm">{purchaseError}</p>
                           </div>
                         )}
                         
                         {errors.payment && (
-                          <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
-                            <p className="text-red-800 text-sm">{errors.payment}</p>
+                          <div className="bg-red-50 border border-red-200 rounded-md p-2 sm:p-3 mb-3 sm:mb-4">
+                            <p className="text-red-800 text-xs sm:text-sm">{errors.payment}</p>
                           </div>
                         )}
                         
@@ -954,24 +996,24 @@ const CheckoutPage = () => {
                         />
                         
                         {/* Back to Details Button */}
-                        <div className="mt-6 text-center">
+                        <div className="mt-3 sm:mt-4 lg:mt-6 text-center">
                           <button
                             onClick={handleBackToDetails}
-                            className="text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2 mx-auto"
+                            className="text-gray-600 hover:text-gray-900 flex items-center justify-center gap-1.5 sm:gap-2 mx-auto text-xs sm:text-sm"
                           >
-                            <FaArrowLeft className="text-sm" />
+                            <FaArrowLeft className="text-[10px] sm:text-xs" />
                             <span>Back to Details</span>
                           </button>
                         </div>
                       </>
                     ) : (
                       // Loading state while payment intent is being created
-                      <div className="text-center py-12">
-                        <FaSpinner className="animate-spin mx-auto text-4xl text-emerald-600 mb-4" />
-                        <p className="text-gray-600 text-lg">
+                      <div className="text-center py-6 sm:py-8 lg:py-12">
+                        <FaSpinner className="animate-spin mx-auto text-2xl sm:text-3xl lg:text-4xl text-emerald-600 mb-2 sm:mb-3 lg:mb-4" />
+                        <p className="text-gray-600 text-sm sm:text-base lg:text-lg">
                           Preparing secure payment...
                         </p>
-                        <p className="text-gray-500 text-sm mt-2">
+                        <p className="text-gray-500 text-xs sm:text-sm mt-1 sm:mt-2">
                           This usually takes just a few seconds
                         </p>
                       </div>
@@ -1002,54 +1044,9 @@ const CheckoutPage = () => {
               )}
             </div>
 
-            {/* Right Column - Order Summary (Persistent Sidebar) */}
-            <div className="lg:col-span-1">
-              {/* Mobile Collapsible Summary */}
-              <div className="lg:hidden mb-4">
-                <button
-                  onClick={() => setShowOrderSummary(!showOrderSummary)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center justify-between"
-                >
-                  <div className="flex items-center">
-                    <FaTicketAlt className="text-green-600 mr-2 w-4 h-4" />
-                    <span className="font-medium text-sm">Order Summary</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-green-600 text-sm">${totals.total?.toFixed(2)}</span>
-                    <svg
-                      className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
-                        showOrderSummary ? 'rotate-180' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </button>
-                
-                {/* Collapsible Content */}
-                <div
-                  className={`transition-all duration-300 overflow-hidden ${
-                    showOrderSummary ? 'max-h-[800px] opacity-100 mt-3' : 'max-h-0 opacity-0'
-                  }`}
-                >
-                  <PaymentSummary
-                    event={event}
-                    selectedTickets={formattedTickets}
-                    totals={totals}
-                    buyerInfo={currentStep === 'payment' ? buyerInfo : null}
-                    selectedSeats={reservation?.seatIds}
-                    formatSelectedSeats={formatSelectedSeats}
-                    showEventDetails={true}
-                    showBuyerInfo={currentStep === 'payment'}
-                  />
-                </div>
-              </div>
-              
-              {/* Desktop Sidebar */}
-              <div className="hidden lg:block space-y-4">
+            {/* Right Column - Order Summary (Desktop Only) */}
+            <div className="hidden lg:block lg:col-span-1">
+              <div className="sticky top-4">
                 <PaymentSummary
                   event={event}
                   selectedTickets={formattedTickets}
@@ -1059,7 +1056,6 @@ const CheckoutPage = () => {
                   formatSelectedSeats={formatSelectedSeats}
                   showEventDetails={true}
                   showBuyerInfo={currentStep === 'payment'}
-                  className="lg:sticky lg:top-8"
                 />
               </div>
             </div>

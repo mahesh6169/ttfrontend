@@ -124,7 +124,7 @@ const ReservationTimer = ({
     <div className={`reservation-timer ${isWarning ? 'warning' : ''} ${isExpired ? 'expired' : ''}`}>
       <div className="timer-content">
         <div className="timer-icon">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
@@ -151,12 +151,13 @@ const ReservationTimer = ({
       </div>
       
       <style jsx>{`
+        /* Mobile-first styles */
         .reservation-timer {
           background-color: #f3f4f6;
           border: 1px solid #e5e7eb;
-          border-radius: 0.5rem;
-          padding: 1rem;
-          margin-bottom: 1rem;
+          border-radius: 0.375rem;
+          padding: 0.5rem;
+          margin-bottom: 0.5rem;
           transition: all 0.3s ease;
         }
 
@@ -174,17 +175,12 @@ const ReservationTimer = ({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 0.5rem;
+          gap: 0.375rem;
         }
 
         .timer-icon {
           flex-shrink: 0;
           color: #6b7280;
-        }
-
-        .timer-icon svg {
-          width: 1.25rem;
-          height: 1.25rem;
         }
 
         .warning .timer-icon {
@@ -200,7 +196,7 @@ const ReservationTimer = ({
           display: flex;
           align-items: center;
           gap: 0.25rem;
-          font-size: 0.875rem;
+          font-size: 0.75rem;
         }
 
         .timer-label {
@@ -211,6 +207,7 @@ const ReservationTimer = ({
           font-weight: 600;
           color: #111827;
           font-family: 'Monaco', 'Consolas', monospace;
+          font-size: 0.75rem;
         }
 
         .warning .timer-countdown {
@@ -220,18 +217,20 @@ const ReservationTimer = ({
         .expired-text {
           color: #ef4444;
           font-weight: 500;
+          font-size: 0.75rem;
         }
 
         .clear-button {
-          padding: 0.375rem 0.75rem;
-          font-size: 0.875rem;
+          padding: 0.25rem 0.5rem;
+          font-size: 0.75rem;
           font-weight: 500;
           color: #6b7280;
           background-color: white;
           border: 1px solid #d1d5db;
-          border-radius: 0.375rem;
+          border-radius: 0.25rem;
           cursor: pointer;
           transition: all 0.15s ease;
+          white-space: nowrap;
         }
 
         .clear-button:hover:not(:disabled) {
@@ -245,20 +244,46 @@ const ReservationTimer = ({
           cursor: not-allowed;
         }
 
-        /* Mobile responsive */
-        @media (max-width: 640px) {
+        /* Tablet styles (sm breakpoint) */
+        @media (min-width: 640px) {
+          .reservation-timer {
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+          }
+
           .timer-content {
-            flex-wrap: wrap;
+            gap: 0.5rem;
           }
 
           .timer-text {
-            flex-basis: 100%;
-            order: 2;
-            margin-top: 0.5rem;
+            font-size: 0.875rem;
+          }
+
+          .timer-countdown {
+            font-size: 0.875rem;
+          }
+
+          .expired-text {
+            font-size: 0.875rem;
           }
 
           .clear-button {
-            margin-left: auto;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+          }
+        }
+
+        /* Desktop styles (lg breakpoint) */
+        @media (min-width: 1024px) {
+          .reservation-timer {
+            padding: 1rem;
+            margin-bottom: 1rem;
+          }
+
+          .timer-text {
+            font-size: 0.875rem;
           }
         }
       `}</style>

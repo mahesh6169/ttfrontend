@@ -223,12 +223,6 @@ const SeatSelectionPage = () => {
             />
           </div>
           
-          {/* Selection Status */}
-          <div className="mb-3 sm:mb-6 text-center">
-            <p className="text-sm sm:text-base text-gray-600">
-              {selectedSeats.length} of {ticketRequirement.total} seat{ticketRequirement.total !== 1 ? 's' : ''} selected
-            </p>
-          </div>
           
           {/* Proceed to Checkout Button - Same style as tickets page */}
           <button
