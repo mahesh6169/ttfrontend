@@ -33,7 +33,7 @@ import EventRegistrationModal from '../registration/EventRegistrationModal';
 import EventCapacityDisplay from './EventCapacityDisplay';
 import { formatInTimeZone } from 'date-fns-tz';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
-import { selectEventCapacityState } from '@/store/slices/events/eventCapacitySlice';
+import { selectCapacityDataMemoized } from '@/store/slices/events/eventCapacitySlice';
 
 // Add this helper function right after your imports
 const getOptimizedImageUrl = (imageObj) => {
@@ -64,7 +64,7 @@ const SingleEventCard = ({ event, chatProps }) => {
   const isRegistered = !!currentRegistration && currentRegistration.status === 'registered';
   
   // Get capacity data for the event
-  const { capacity } = useSelector(state => selectEventCapacityState(state, event?._id || ''));
+  const capacity = useSelector(state => selectCapacityDataMemoized(state, event?._id || ''));
 
   if (!event) {
     return (

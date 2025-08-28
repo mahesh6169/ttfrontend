@@ -2,9 +2,10 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
 import {
   FaCalendarAlt,
   FaClock,
@@ -25,1109 +26,718 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import StripePaymentForm from '@/components/payments/StripePaymentForm';
 import PaymentSummary from '@/components/payments/PaymentSummary';
 import RefundPolicyDisplay from '@/components/events/refunds/RefundPolicyDisplay';
-import {
-  initializePurchaseSession,
-  updateBuyerInfo,
-  setCurrentStep,
-  setSeatRequirement,
-  updateSeatInfo,
-  createPaymentIntent,
-  confirmPayment,
-  resetPurchaseSession,
-  clearError,
-  selectTicketPurchase,
-  selectSelectedTickets,
-  selectTicketTotals,
-  selectBuyerInfo,
-  selectSeatInfo,
-  selectPaymentStatus,
-  selectCurrentStep,
-  selectPurchaseLoading,
-  selectPurchaseError,
-  updateTicketSelection,
-    setRefundPolicyInfo,
-  acceptRefundPolicy,
-  clearRefundPolicyAcceptance,
-  selectRefundPolicyInfo,
-  selectFormResponses
-} from '@/store/slices/events/ticketPurchaseSlice';
-import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
-import {
-  selectCurrentReservation,
-  releaseReservation,
-  clearSelection,
-  selectSessionId,
-  setCurrentReservation,
-} from '@/store/slices/events/seatSelectionSlice';
-import SeatReservationTimer from '@/components/events/seats/SeatReservationTimer';
-import bookingStateManager from '@/utils/booking/bookingStateManager';
+import SeatSocketListenerNoRedux from '@/components/events/seats/SeatSocketListenerNoRedux';
+import ReservationTimer from '@/components/events/ReservationTimer';
 
-// ✅ REFACTORED: Timer expiration handler following SeatMapSelection pattern
 const CheckoutPage = () => {
   const params = useParams();
   const router = useRouter();
-  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
 
-  // Redux state
-  const ticketPurchaseState = useSelector(selectTicketPurchase);
-  const selectedTickets = useSelector(selectSelectedTickets);
-  const totals = useSelector(selectTicketTotals);
-  const buyerInfo = useSelector(selectBuyerInfo);
-  const seatInfo = useSelector(selectSeatInfo);
-  const paymentStatus = useSelector(selectPaymentStatus);
-  const currentStep = useSelector(selectCurrentStep);
-  const loading = useSelector(selectPurchaseLoading);
-  const purchaseError = useSelector(selectPurchaseError);
-  const refundPolicyInfo = useSelector(selectRefundPolicyInfo);
-  const currentReservation = useSelector(selectCurrentReservation);
-  const seatSessionId = useSelector(selectSessionId);
-  const formResponses = useSelector(selectFormResponses);
+  // State from reservation API
+  const [reservation, setReservation] = useState(null);
+  const [reservationLoading, setReservationLoading] = useState(true);
+  const [selectedTickets, setSelectedTickets] = useState([]);
+  const [buyerInfo, setBuyerInfo] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    agreeToTerms: false
+  });
+  const [formResponses, setFormResponses] = useState({});
+  const [refundPolicyAccepted, setRefundPolicyAccepted] = useState(false);
+  const [refundPolicyInfo, setRefundPolicyInfo] = useState(null);
 
-  // Local state management (only for UI, not for flow control)
+  // Local state
   const [event, setEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState({});
-  const [initializationAttempted, setInitializationAttempted] = useState(false);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState({ status: null, clientSecret: null, amount: 0 });
+  const [purchaseError, setPurchaseError] = useState(null);
+  const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
   
-  // ✅ FIXED: Use Redux slice state instead of local state (like SeatMapSelection)
-  const { 
-    selectedSeats, 
-    isLoading: seatSliceLoading, 
-    error: seatSliceError 
-  } = useSelector((state) => state.seatSelection);
+  // Two-step process state
+  const [currentStep, setCurrentStep] = useState('details'); // 'details' or 'payment'
+  
+  // Ref to track if reservation is currently being fetched
+  const isFetchingReservation = useRef(false);
 
-  // ✅ FIXED: Following SeatMapSelection pattern with Redux state management
-  const handleTimerExpire = useCallback(async () => {
-    // ✅ Use Redux loading state instead of local state (like SeatMapSelection)
-    if (seatSliceLoading) {
-      console.log('🔄 Seat slice already loading, skipping duplicate cleanup call');
+  // Fetch reservation data
+  const fetchReservation = useCallback(async () => {
+    if (!params.eventId || !user) {
+      setReservationLoading(false);
       return;
     }
-
-    console.log('⏰ Checkout: Timer expired - starting sequential cleanup');
+    
+    // Prevent duplicate fetches
+    if (isFetchingReservation.current) return;
 
     try {
-      // ✅ STEP 1: Release backend reservation (following SeatMapSelection pattern)
-      if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
-        console.log('🔓 Releasing expired reservation:', {
-          reservationId: currentReservation.reservationId,
-          seatCount: currentReservation.seatIds.length,
-          seatsToRelease: currentReservation.seatIds,
-        });
+      isFetchingReservation.current = true;
+      setReservationLoading(true);
+      console.log('Fetching reservation for event:', params.eventId);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation`,
+        { withCredentials: true }
+      );
+      console.log('Reservation API response:', response.data);
+
+      if (response.data.success && response.data.reservation) {
+        const res = response.data.reservation;
+        console.log('Checkout: Fetched reservation:', res);
+        console.log('Checkout: Reservation tickets:', res.tickets);
+        console.log('Checkout: Total amount:', res.totalAmount);
+        console.log('Checkout: Seat IDs:', res.seatIds);
+        setReservation(res);
         
-        // ✅ CRITICAL: Use .unwrap() like SeatMapSelection to wait for completion
-        await dispatch(
-          releaseReservation({
-            eventId: params.eventId,
-            seatIds: currentReservation.seatIds,
-            sessionId: currentReservation.sessionId || seatSessionId,
-          })
-        ).unwrap();
-
-        console.log('✅ Backend reservation released successfully');
-      } else {
-        console.log('ℹ️ No backend reservation to release, just clearing selection');
-        // Clear selection as fallback (like SeatMapSelection)
-        dispatch(clearSelection());
-      }
-
-      // ✅ STEP 2: Update sessionStorage with expiry information
-      console.log('💾 Updating sessionStorage with expiry info...');
-      const expiryInfo = {
-        eventId: params.eventId,
-        expired: true,
-        expiredAt: new Date().toISOString(),
-        expiredFrom: 'checkout',
-        message: 'Your seat reservation expired during checkout. Please select seats again.'
-      };
-
-      const storedSelection = sessionStorage.getItem('ticketSelection');
-      if (storedSelection) {
-        try {
-          const selection = JSON.parse(storedSelection);
-          const updatedSelection = {
-            ...selection,
-            selectedSeats: [],
-            reservationId: null,
-            ...expiryInfo
-          };
-          sessionStorage.setItem('ticketSelection', JSON.stringify(updatedSelection));
-        } catch (parseError) {
-          console.warn('⚠️ Failed to parse existing ticket selection, creating new expiry record');
-          sessionStorage.setItem('ticketSelection', JSON.stringify(expiryInfo));
-        }
-      } else {
-        sessionStorage.setItem('ticketSelection', JSON.stringify(expiryInfo));
-      }
-
-      console.log('✅ Timer expiry cleanup completed successfully');
-
-    } catch (error) {
-      console.error('❌ Failed to release reservation during expiry:', error);
-
-      // ✅ Enhanced error handling like SeatMapSelection
-      if (error.message && error.message.includes('not found')) {
-        console.log('ℹ️ Reservation already released or not found - continuing cleanup');
-        dispatch(clearSelection());
-      } else {
-        console.error('🚨 Unexpected expiry error, forcing local cleanup');
-        dispatch(clearSelection());
-        dispatch(updateSeatInfo({
-          selectedSeats: [],
-          reservationId: null,
-          seatCount: 0,
-          requiresSeats: seatInfo.requiresSeats
-        }));
-      }
-
-      // Set error flag in sessionStorage
-      sessionStorage.setItem('ticketSelection', JSON.stringify({
-        eventId: params.eventId,
-        expired: true,
-        expiredAt: new Date().toISOString(),
-        expiredFrom: 'checkout',
-        error: error.message,
-        message: 'Timer expired with errors - please select seats again'
-      }));
-    }
-  }, [dispatch, currentReservation, params.eventId, seatSessionId, seatInfo.requiresSeats, seatSliceLoading]);
-
-  // Helper to check if proceed button should be disabled
-  const shouldDisableProceed = () => {
-    if (!seatInfo.requiresSeats) return false; // Events without seats are always allowed
-    
-    if (!currentReservation) return true; // Seats required but no reservation (timer expired)
-    
-    return false; // Allow proceed as long as there's a reservation
-  };
-
-  // ✅ FIXED: Watch Redux slice state changes for redirect (like SeatMapSelection)
-  useEffect(() => {
-    // Only redirect when timer has expired AND Redux state confirms cleanup is complete
-    const shouldRedirect = 
-      !seatSliceLoading &&                                    // Not loading
-      !currentReservation &&                                  // No active reservation
-      (!selectedSeats || selectedSeats.length === 0) &&      // No selected seats
-      (!seatInfo.selectedSeats || seatInfo.selectedSeats.length === 0); // No seats in ticket slice
-
-    // Check if we're coming from a timer expiry (sessionStorage will have expired flag)
-    const storedSelection = sessionStorage.getItem('ticketSelection');
-    let hasExpired = false;
-    
-    if (storedSelection) {
-      try {
-        const selection = JSON.parse(storedSelection);
-        hasExpired = selection.expired && selection.expiredFrom === 'checkout';
-      } catch (e) {
-        // Ignore parse errors
-      }
-    }
-
-    if (shouldRedirect && hasExpired) {
-      console.log('🔄 Redux state cleanup verified, redirecting to seat selection');
-      
-      const queryParams = new URLSearchParams({
-        expired: 'true',
-        from: 'checkout',
-        timestamp: new Date().toISOString()
-      });
-      
-      router.push(`/events/seats/${params.eventId}?${queryParams.toString()}`);
-    }
-  }, [seatSliceLoading, currentReservation, selectedSeats, seatInfo.selectedSeats, params.eventId, router]);
-
-  // ✅ FIXED: Manual cleanup using Redux state (like SeatMapSelection)
-  const handleManualCleanup = useCallback(async () => {
-    console.log('🧹 Manual cleanup initiated from checkout page');
-    
-    if (currentReservation?.seatIds && currentReservation.seatIds.length > 0) {
-      console.log('🔓 Manually releasing current reservation:', {
-        reservationId: currentReservation.reservationId,
-        seatCount: currentReservation.seatIds.length,
-        seatsToRelease: currentReservation.seatIds,
-      });
-
-      try {
-        // ✅ Use .unwrap() like SeatMapSelection
-        await dispatch(
-          releaseReservation({
-            eventId: params.eventId,
-            seatIds: currentReservation.seatIds,
-            sessionId: currentReservation.sessionId || seatSessionId,
-          })
-        ).unwrap();
-        
-        console.log('✅ Manual reservation release successful');
-      } catch (error) {
-        console.error('❌ Failed to release reservation manually:', error);
-        // Continue with clearing selection even if release fails (like SeatMapSelection)
-      }
-    } else {
-      console.log('ℹ️ No active reservation to release, just clearing selection');
-    }
-
-    // Clear all local state (like SeatMapSelection does)
-    dispatch(clearSelection());
-  }, [dispatch, currentReservation, params.eventId, seatSessionId]);
-
-  // Payment states from Redux
-  const clientSecret = ticketPurchaseState.clientSecret;
-  const paymentIntentId = ticketPurchaseState.paymentIntent?.id;
-
-  // ✅ NEW: Function to format selected seats for display
-  const formatSelectedSeats = () => {
-    // Use Redux seat selection state instead of ticketPurchaseSlice
-    const seatsToDisplay = selectedSeats || seatInfo.selectedSeats || [];
-    
-    if (!seatsToDisplay || seatsToDisplay.length === 0) {
-      return 'No seats selected';
-    }
-
-    // Handle case where seats are just IDs (strings like "A-1", "B-3")
-    if (typeof seatsToDisplay[0] === 'string') {
-      // Parse seat IDs and group consecutive seats
-      const parsedSeats = seatsToDisplay.map(seatId => {
-        // Assuming format like "A-1", "B-3", etc.
-        const parts = seatId.split('-');
-        if (parts.length >= 2) {
-          return {
-            seatId,
-            row: parts[0],
-            seatNumber: parseInt(parts[1]) || parts[1]
-          };
-        }
-        return { seatId, row: seatId, seatNumber: '' };
-      });
-
-      // Sort by row then seat number
-      const sortedSeats = parsedSeats.sort((a, b) => {
-        if (a.row !== b.row) {
-          return a.row.localeCompare(b.row);
-        }
-        if (typeof a.seatNumber === 'number' && typeof b.seatNumber === 'number') {
-          return a.seatNumber - b.seatNumber;
-        }
-        return String(a.seatNumber).localeCompare(String(b.seatNumber));
-      });
-
-      // Group consecutive seats in same row
-      const groupedSeats = [];
-      let currentGroup = [];
-      
-      sortedSeats.forEach((seat, index) => {
-        if (index === 0) {
-          currentGroup = [seat];
-        } else {
-          const prevSeat = sortedSeats[index - 1];
-          const isConsecutive = 
-            seat.row === prevSeat.row &&
-            typeof seat.seatNumber === 'number' &&
-            typeof prevSeat.seatNumber === 'number' &&
-            seat.seatNumber === prevSeat.seatNumber + 1;
-
-          if (isConsecutive) {
-            currentGroup.push(seat);
-          } else {
-            groupedSeats.push(currentGroup);
-            currentGroup = [seat];
+        // Ensure tickets have all required fields
+        if (res.tickets && res.tickets.length > 0) {
+          // Check if tickets have all required properties
+          const validTickets = res.tickets.filter(t => 
+            t.ticketTypeId && t.quantity && t.hasOwnProperty('price') && t.ticketName
+          );
+          
+          if (validTickets.length !== res.tickets.length) {
+            console.warn('Some tickets are missing required fields:', res.tickets);
           }
-        }
-
-        if (index === sortedSeats.length - 1) {
-          groupedSeats.push(currentGroup);
-        }
-      });
-
-      // Format groups
-      const formattedGroups = groupedSeats.map(group => {
-        if (group.length === 1) {
-          return group[0].seatId;
+          
+          setSelectedTickets(res.tickets);
         } else {
-          const firstSeat = group[0];
-          const lastSeat = group[group.length - 1];
-          return `${firstSeat.row}-${firstSeat.seatNumber} to ${lastSeat.seatNumber}`;
+          console.warn('No tickets found in reservation:', res);
+          setSelectedTickets([]);
         }
-      });
-
-      return formattedGroups.join(', ');
+        
+        // Pre-fill buyer info with user data (NOT from reservation)
+        if (user) {
+          setBuyerInfo({
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            email: user.email || '',
+            phone: '',
+            agreeToTerms: false
+          });
+        }
+        
+        // Load form responses from sessionStorage if available
+        const storedFormResponses = sessionStorage.getItem(`formResponses_${params.eventId}`);
+        if (storedFormResponses) {
+          setFormResponses(JSON.parse(storedFormResponses));
+        }
+      } else {
+        // No reservation found
+        setErrors({ general: 'No active reservation found. Please select tickets first.' });
+        setTimeout(() => {
+          router.push(`/events/tickets/${params.eventId}`);
+        }, 2000);
+      }
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setErrors({ general: 'No active reservation found. Please select tickets first.' });
+        setTimeout(() => {
+          router.push(`/events/tickets/${params.eventId}`);
+        }, 2000);
+      } else {
+        console.error('Error fetching reservation:', error);
+        setPurchaseError('Failed to load reservation data');
+      }
+    } finally {
+      setReservationLoading(false);
+      isFetchingReservation.current = false;
     }
+  }, [params.eventId, user, router]);
 
-    // Handle case where seats are objects with full details
-    return seatsToDisplay.map(seat => seat.seatId || seat.id || 'Unknown').join(', ');
-  };
+  // Socket event handler
+  const handleSeatUpdate = useCallback((data) => {
+    console.log('🔄 Checkout: Received seat update:', data);
+    
+    // Refetch reservation to get latest state
+    fetchReservation();
+  }, [fetchReservation]);
 
-  // ✅ MISSING FUNCTIONS: Add all the handler functions from original checkout
-  
-  // Handle form input changes
+  // Handle input change for buyer info
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const updateData = { [name]: type === 'checkbox' ? checked : value };
-
-    dispatch(updateBuyerInfo(updateData));
+    const newValue = type === 'checkbox' ? checked : value;
     
-    // Also save to bookingStateManager
-    const currentBuyer = { ...buyerInfo, ...updateData };
-    bookingStateManager.updateBuyer(currentBuyer);
-
-    // Clear field-specific errors
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }));
-    }
+    const updatedInfo = { ...buyerInfo, [name]: newValue };
+    setBuyerInfo(updatedInfo);
   };
 
-   // Handle refund policy acceptance
-  const handleRefundPolicyAcceptance = (checked) => {
-    if (checked) {
-      dispatch(acceptRefundPolicy());
-    } else {
-      dispatch(clearRefundPolicyAcceptance());
-    }
+  // Remove buyer info backend update - buyer info stays local until payment
+  // Buyer info is only saved to paidTicket and eventInvoice after successful payment
 
-    // Clear refund policy errors
-    if (errors.refundPolicyAccepted) {
-      setErrors((prev) => ({ ...prev, refundPolicyAccepted: null }));
-    }
-  };
-
-// Validate form
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!buyerInfo.firstName?.trim()) {
-      newErrors.firstName = 'First name is required';
-    }
-
-    if (!buyerInfo.lastName?.trim()) {
-      newErrors.lastName = 'Last name is required';
-    }
-
-    if (!buyerInfo.email?.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerInfo.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (!buyerInfo.phone?.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^[\d\s\-\+\(\)]+$/.test(buyerInfo.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
-
-    if (!buyerInfo.agreeToTerms) {
-      newErrors.agreeToTerms = 'You must agree to the terms and conditions';
-    }
-
-    // Validate refund policy acceptance for paid events
-    if (event?.isPaid && event?.refundPolicy && !buyerInfo.refundPolicyAccepted) {
-      newErrors.refundPolicyAccepted = 'You must acknowledge the refund policy to proceed';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Handle proceeding to payment step
-  const handleProceedToPayment = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    // CRITICAL: Validate seat reservation is still active before payment
-    if (seatInfo.requiresSeats && currentReservation) {
-      const expiryTime = new Date(currentReservation.reservedUntil);
-      const now = new Date();
-      const timeLeft = expiryTime - now;
-      
-      // Block payment if less than 30 seconds left on timer
-      if (timeLeft < 30000) {
-        setErrors({
-          timer: 'Not enough time to complete payment. Please select seats again.',
-        });
-        return;
-      }
-    } else if (seatInfo.requiresSeats && !currentReservation) {
-      // No reservation but seats required
-      setErrors({
-        seats: 'Your seat reservation has expired. Please go back and select seats again.',
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    setErrors({});
-
-    try {
-      console.log('🚀 Creating payment intent with Redux...');
-
-      // Create payment intent using Redux
-      const result = await dispatch(
-        createPaymentIntent({
-          eventId: params.eventId,
-          ticketData: selectedTickets,
-          buyerInfo,
-        })
-      );
-
-      if (createPaymentIntent.fulfilled.match(result)) {
-        console.log('✅ Payment Intent created via Redux');
-        dispatch(setCurrentStep('payment'));
-      } else {
-        throw new Error(result.payload || 'Failed to create payment intent');
-      }
-    } catch (error) {
-      console.error('❌ Error creating payment intent:', error);
-      setErrors({
-        payment:
-          error.message || 'Failed to initialize payment. Please try again.',
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-// ✅ FIXED: Handle successful payment - simplified to match backend
-  const handlePaymentSuccess = async (paymentIntent) => {
-    setIsProcessing(true);
-
-    try {
-      console.log('🎉 Payment succeeded, confirming with Redux...');
-
-
-    // ✅ VALIDATION: Ensure refund policy acceptance for paid events
-    if (event?.isPaid && event?.refundPolicy && !buyerInfo.refundPolicyAccepted) {
-      throw new Error('Refund policy acceptance is required but was not confirmed. Please refresh and try again.');
-    }
-
-      // ✅ Convert selectedTickets array to tickets object that backend expects
-      const ticketsObject = selectedTickets.reduce((acc, ticket) => {
-        acc[ticket.ticketTypeId] = ticket.quantity;
-        return acc;
-      }, {});
-
-      // ✅ ENHANCED: Include explicit refund policy acceptance data
-      const enhancedBuyerInfo = {
-        ...buyerInfo,
-        // Ensure refund policy acceptance is explicitly included
-        refundPolicyAccepted: buyerInfo.refundPolicyAccepted || false,
-        // Include policy details for audit trail
-        refundPolicyInfo: event?.isPaid && event?.refundPolicy ? {
-          policyType: event.refundPolicy.processingFeePolicy || 'non-refundable',
-          policyText: event.refundPolicy.policyText || '',
-          acceptedAt: buyerInfo.refundPolicyAccepted ? new Date().toISOString() : null
-        } : null
-      };
-
-      console.log('🐛 checkoutpage: DEBUG: confirmPayment payload:', {
-        eventId: params.eventId,
-        paymentIntentId: paymentIntent.id,
-        paymentMethodId: paymentIntent.payment_method?.id,
-        tickets: ticketsObject,
-        buyerInfo: enhancedBuyerInfo
-      });
-
-       // ✅ LOG: Refund policy acceptance details for audit
-    if (event?.isPaid && event?.refundPolicy) {
-      console.log('📋 Refund Policy Acceptance Details:', {
-        policyType: event.refundPolicy.processingFeePolicy,
-        policyText: event.refundPolicy.policyText ? 'Custom text provided' : 'No custom text',
-        userAccepted: buyerInfo.refundPolicyAccepted,
-        acceptedAt: buyerInfo.refundPolicyAccepted ? new Date().toISOString() : 'Not accepted',
-        buyerEmail: buyerInfo.email
-      });
-    }
-
-     // ✅ ENHANCED: Simplified confirmPayment call with explicit policy data
-      const result = await dispatch(confirmPayment({
-        eventId: params.eventId,
-        paymentIntentId: paymentIntent.id,
-        paymentMethodId: paymentIntent.payment_method?.id, // Optional
-        tickets: ticketsObject, // Object format: { ticketTypeId: quantity }
-        buyerInfo: enhancedBuyerInfo,
-        formResponses: formResponses || {}
-      }));
-
-      if (confirmPayment.fulfilled.match(result)) {
-        console.log('✅ Payment confirmed via Redux');
-        // Redux will automatically set currentStep to 'complete'
-
-        // Clear sessionStorage since we're using Redux now
-        sessionStorage.removeItem('ticketSelection');
-      } else {
-        // The error is in result.payload when using rejectWithValue
-        console.error('❌ Redux thunk rejected with:', result.payload);
-        throw new Error(result.payload || 'Failed to confirm payment');
-      }
-    } catch (error) {
-      console.error('❌ Error confirming payment:', error);
-      
-      // Check if this is a capacity conflict error
-      let errorMessage = error.message || 'Payment successful but failed to create tickets. Please contact support.';
-      let requiresRefresh = false;
-      
-      // The error message from rejectWithValue comes directly as error.message
-      // Check for capacity-related keywords in the error message
-      if (errorMessage.includes('sold out') || 
-          errorMessage.includes('capacity') || 
-          errorMessage.includes('remaining') ||
-          errorMessage.includes('🎫')) {
-        // This is likely a capacity conflict
-        requiresRefresh = true;
-        
-        // No auto-redirect - let user read the message and click the button
-      }
-      
-      setErrors({
-        payment: errorMessage
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-  // Handle payment error
-  const handlePaymentError = (error) => {
-    console.error('❌ Payment failed:', error);
-    setErrors({
-      payment: error || 'Payment failed. Please try again.',
-    });
-  };
-
-const handleBackToTickets = () => {
-  // Simplified back navigation based on event type
-  if (event?.seatingLayout || seatInfo.requiresSeats) {
-    // For seated events, always go back to seats page
-    // The seats page will handle whether to show seats or redirect to tickets if expired
-    
-    // Save navigation intent to preserve seats if they exist
-    if (typeof window !== 'undefined' && (currentReservation || selectedSeats?.length > 0)) {
-      sessionStorage.setItem('navigationIntent', 'checkout-to-seats');
-      sessionStorage.setItem('preserveSeatsTimestamp', Date.now().toString());
-      
-      // Ensure current seat state is saved
-      if (currentReservation && selectedSeats) {
-        bookingStateManager.save({
-          seats: {
-            selected: selectedSeats,
-            reservation: currentReservation,
-            timestamp: new Date().toISOString()
-          },
-          currentStep: 'seats',
-          preserveSeats: true
-        });
-      }
-    }
-    
-    // Always go to seats page for seated events
-    router.push(`/events/seats/${params.eventId}`);
-  } else {
-    // General admission events - go back to ticket selection
-    router.push(`/events/tickets/${params.eventId}`);
-  }
-};
-
-// Get dynamic back button text based on current state
-  const getBackButtonText = () => {
-    if (currentStep === 'payment') {
-      return 'Back to Details';
-    }
-    
-    // For seated events, always show "Back to Seats"
-    if (event?.seatingLayout || seatInfo.requiresSeats) {
-      return 'Back to Seats';
-    }
-    
-    // For general admission events
-    return 'Back to Tickets';
-  };
-
-  // Handle back to details step
-  const handleBackToDetails = () => {
-    dispatch(setCurrentStep('details'));
-    dispatch(clearError());
-    setErrors({});
-  };
-
-  // Format event date/time
-  const getFormattedDateTime = () => {
-    if (!event?.dateTime) return { date: '', time: '' };
-
-    const timeZone = event.timeZone || 'Australia/Sydney';
-    const date = formatInTimeZone(
-      event.dateTime,
-      timeZone,
-      'EEEE, MMMM do, yyyy'
-    );
-    const time = formatInTimeZone(event.dateTime, timeZone, 'h:mm a');
-
-    return { date, time };
-  };
-
-  // Get selected tickets for display
-  const getSelectedTickets = () => {
-    if (!event?.ticketTypes || !selectedTickets?.length) return [];
-
-    return selectedTickets
-      .filter((ticket) => ticket.quantity > 0)
-      .map((ticket) => {
-        const ticketType = event.ticketTypes.find(
-          (t) => t._id === ticket.ticketTypeId
-        );
-        return {
-          ...ticket,
-          ...ticketType,
-          totalPrice: ticket.price * ticket.quantity,
-          // Add seat information if available
-          seats: seatInfo.selectedSeats || [],
-        };
-      });
-  };
-
-  // ✅ ADD: Load event and initialize checkout useEffect
+  // Initialize on mount
   useEffect(() => {
-    const loadCheckoutData = async () => {
+    fetchReservation();
+  }, [fetchReservation]);
+
+  // Check if event has seats
+  const hasSeatingLayout = event?.seatingLayout && event.seatingLayout.length > 0;
+  const requiresSeats = hasSeatingLayout && reservation?.seatIds;
+
+  // Calculate totals - memoized to prevent excessive recalculation
+  const ticketTotals = useMemo(() => {
+    const totals = {
+      totalQuantity: selectedTickets.reduce((sum, t) => sum + t.quantity, 0),
+      totalPrice: selectedTickets.reduce((sum, t) => {
+        const price = t.price || 0;
+        const quantity = t.quantity || 0;
+        console.log('Ticket calculation:', t.ticketName, 'price:', price, 'qty:', quantity, 'subtotal:', price * quantity);
+        return sum + (price * quantity);
+      }, 0)
+    };
+    
+    console.log('Ticket totals calculated:', totals);
+    console.log('Reservation totalAmount:', reservation?.totalAmount);
+    return totals;
+  }, [selectedTickets, reservation?.totalAmount]);
+
+  // Payment states
+  const isPaymentPending = paymentStatus.status === 'pending' || paymentStatus.status === 'processing';
+
+  // Calculate seat info and totals
+  const seatInfo = {
+    requiresSeats: event?.seatSelection === 'required',
+    selectedSeats: reservation?.seatIds || []
+  };
+
+  // Simple totals - memoized to prevent recalculation
+  const totals = useMemo(() => {
+    // Use reservation's totalAmount if available, otherwise calculate from tickets
+    const finalTotal = reservation?.totalAmount || ticketTotals.totalPrice;
+    
+    console.log('Final total calculation:', {
+      reservationTotal: reservation?.totalAmount,
+      ticketTotalsPrice: ticketTotals.totalPrice,
+      finalTotal: finalTotal
+    });
+    
+    return {
+      subtotal: finalTotal,
+      gst: 0, // GST is display only, not calculated
+      serviceFee: 0, // No service fee shown to customer
+      processingFee: 0, // No processing fee shown to customer
+      total: finalTotal // Total equals subtotal
+    };
+  }, [reservation?.totalAmount, ticketTotals.totalPrice]);
+
+  // Format selected tickets for PaymentSummary - memoized
+  const formattedTickets = useMemo(() => {
+    return selectedTickets.map(ticket => ({
+      _id: ticket.ticketTypeId,
+      name: ticket.ticketName || 'Ticket',
+      quantity: ticket.quantity,
+      price: ticket.price,
+      totalPrice: ticket.price * ticket.quantity
+    }));
+  }, [selectedTickets]);
+
+  // Format selected seats for display
+  const formatSelectedSeats = () => {
+    if (!reservation?.seatIds || reservation.seatIds.length === 0) {
+      return 'No seats selected';
+    }
+    return reservation.seatIds.join(', ');
+  };
+
+  // Fetch event details
+  useEffect(() => {
+    const fetchEvent = async () => {
       try {
-        setIsLoading(true);
-
-        // Load event details
-        const eventResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/views/${params.eventId}`,
-          {
-            credentials: 'include',
-          }
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/views/${params.eventId}`
         );
-
-        if (!eventResponse.ok) {
-          throw new Error('Failed to load event details');
+        
+        // Log the response status and URL
+        console.log('Event fetch URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/views/${params.eventId}`);
+        console.log('Event fetch response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch event: ${response.status}`);
         }
-
-        const eventData = await eventResponse.json();
-        setEvent(eventData);
-
-        // Check if we have ticket selection in Redux
-        const hasReduxSession =
-          ticketPurchaseState.sessionActive &&
-          ticketPurchaseState.eventId === params.eventId &&
-          selectedTickets.length > 0;
-
-        if (hasReduxSession) {
-          console.log('✅ Using existing Redux session');
-
-          // Update buyer info with user data if not already set
-          if (user && !buyerInfo.firstName && !buyerInfo.lastName) {
-            dispatch(
-              updateBuyerInfo({
-                firstName: user.firstName || '',
-                lastName: user.lastName || '',
-                email: user.email || '',
-              })
-            );
-          }
-
-          // Set current step to checkout if coming from ticket selection
-          if (currentStep === 'ticket-selection') {
-            dispatch(setCurrentStep('checkout'));
-          }
-           // Initialize refund policy info for paid events
-          if (eventData.isPaid && eventData.refundPolicy) {
-            dispatch(setRefundPolicyInfo({
-              policyType: eventData.refundPolicy.processingFeePolicy || 'non-refundable',
-              policyText: eventData.refundPolicy.policyText || '',
-              policyDisplayed: true
-            }));
-          }
-        } else {
-          // Fallback: Try to get data from sessionStorage and initialize Redux
-          console.log(
-            '⚠️ No Redux session found, checking sessionStorage fallback'
-          );
-
-          // First check bookingStateManager for complete state
-          const savedBookingState = bookingStateManager.load(params.eventId);
-          
-          if (savedBookingState && savedBookingState.tickets) {
-            console.log('🔄 Restoring checkout from bookingStateManager');
-            
-            // Restore ticket selection
-            await dispatch(initializePurchaseSession({ eventId: params.eventId }));
-            
-            // Restore tickets
-            if (savedBookingState.tickets.selected) {
-              savedBookingState.tickets.selected.forEach(ticket => {
-                dispatch(updateTicketSelection({
-                  ticketTypeId: ticket.ticketTypeId,
-                  quantity: ticket.quantity,
-                  price: ticket.price,
-                  name: ticket.name
-                }));
-              });
-            }
-            
-            // Restore seat info and reservation
-            if (savedBookingState.seats) {
-              dispatch(updateSeatInfo({
-                selectedSeats: savedBookingState.seats.selected || [],
-                reservationId: savedBookingState.seats.reservation?.reservationId,
-                seatCount: savedBookingState.seats.required || savedBookingState.seats.selected?.length || 0,
-                requiresSeats: true
-              }));
-              
-              // Restore reservation if still valid
-              if (savedBookingState.seats.reservation && bookingStateManager.hasValidReservation()) {
-                dispatch(setCurrentReservation(savedBookingState.seats.reservation));
-              }
-            }
-            
-            // Restore buyer info if available
-            if (savedBookingState.buyer) {
-              dispatch(updateBuyerInfo(savedBookingState.buyer));
-            }
-            
-            // Set current step
-            dispatch(setCurrentStep('details'));
-            
-            // Skip the rest of validation since we restored from bookingStateManager
-          } else {
-            // Fallback to old sessionStorage method
-            const storedSelection = sessionStorage.getItem('ticketSelection');
-
-            if (!storedSelection) {
-              alert('No ticket selection found. Please select tickets first.');
-              router.push(`/events/views/${params.eventId}`);
-              return;
-            }
-
-            const selection = JSON.parse(storedSelection);
-            
-            // Validate selection hasn't expired (10 minutes max)
-            const selectionAge = Date.now() - selection.timestamp;
-            if (selectionAge > 10 * 60 * 1000) {
-              alert(
-                'Your ticket selection has expired. Please select tickets again.'
-              );
-              sessionStorage.removeItem('ticketSelection');
-              router.push(`/events/views/${params.eventId}`);
-              return;
-            }
-
-            // Validate selection is for correct event
-            if (selection.eventId !== params.eventId) {
-              alert('Invalid ticket selection. Please select tickets again.');
-              sessionStorage.removeItem('ticketSelection');
-              router.push(`/events/views/${params.eventId}`);
-              return;
-            }
-
-            // Initialize Redux and populate data
-            await dispatch(initializePurchaseSession({ eventId: params.eventId }));
-            
-            // Set step to details
-            dispatch(setCurrentStep('details'));
-          }
+        
+        const text = await response.text();
+        console.log('Event response text:', text.substring(0, 100)); // Log first 100 chars
+        
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          console.error('Failed to parse event response:', parseError);
+          console.error('Response text:', text);
+          return;
         }
-
-        setInitializationAttempted(true);
+        
+        if (data.event) {
+          console.log('Checkout: Event loaded:', data.event);
+          console.log('Checkout: GST Included:', data.event.gstIncluded);
+          console.log('Checkout: Refund Policy:', data.event.refundPolicy);
+          setEvent(data.event);
+          setRefundPolicyInfo(data.event.refundPolicy || null);
+        } else if (data) {
+          // Maybe the event is returned directly without wrapper
+          console.log('Checkout: Event data structure:', data);
+          setEvent(data);
+          setRefundPolicyInfo(data.refundPolicy || null);
+        }
       } catch (error) {
-        console.error('Error loading checkout data:', error);
-        alert('Error loading checkout page. Please try again.');
-        router.push(`/events/views/${params.eventId}`);
+        console.error('Error fetching event:', error);
+        console.error('NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (params.eventId && !initializationAttempted) {
-      loadCheckoutData();
+    fetchEvent();
+  }, [params.eventId]);
+
+  // Enrich ticket data when event is loaded
+  useEffect(() => {
+    if (event && event.ticketTypes && reservation && selectedTickets.length > 0) {
+      const needsEnrichment = selectedTickets.some(ticket => !ticket.ticketName);
+      
+      if (needsEnrichment) {
+        const enrichedTickets = selectedTickets.map(ticket => {
+          const ticketType = event.ticketTypes.find(
+            t => t._id === ticket.ticketTypeId
+          );
+          
+          if (ticketType && !ticket.ticketName) {
+            console.log('Enriching ticket:', ticket.ticketTypeId, 'with', ticketType.name);
+            return {
+              ...ticket,
+              ticketName: ticketType.name,
+              price: ticket.price !== undefined ? ticket.price : ticketType.price
+            };
+          }
+          return ticket;
+        });
+        
+        console.log('Setting enriched tickets:', enrichedTickets);
+        setSelectedTickets(enrichedTickets);
+      }
     }
-  }, [params.eventId, router, user, dispatch, initializationAttempted]);
+  }, [event]); // Only depend on event to avoid loops
 
-  // ✅ DERIVED VALUES
-  const { date, time } = getFormattedDateTime();
-  const selectedTicketsDisplay = getSelectedTickets();
+  // Form validation
+  const validateBuyerInfo = () => {
+    const newErrors = {};
+    if (!buyerInfo.firstName?.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    if (!buyerInfo.lastName?.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    if (!buyerInfo.email?.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(buyerInfo.email)) {
+      newErrors.email = 'Invalid email address';
+    }
+    if (!buyerInfo.phone?.trim()) {
+      newErrors.phone = 'Phone is required';
+    }
+    if (!buyerInfo.agreeToTerms) {
+      newErrors.agreeToTerms = 'You must agree to the terms and conditions';
+    }
+    if (event?.isPaid && event?.refundPolicy && !refundPolicyAccepted) {
+      newErrors.refundPolicyAccepted = 'You must accept the refund policy';
+    }
+    return newErrors;
+  };
 
-  // ✅ EARLY RETURNS
-  // Loading state
-  if (isLoading) {
+  // Validate seat count
+  const validateSeatCount = () => {
+    if (requiresSeats && reservation) {
+      const totalTickets = selectedTickets.reduce((sum, ticket) => sum + ticket.quantity, 0);
+      const selectedSeatCount = reservation.seatIds?.length || 0;
+      
+      if (selectedSeatCount !== totalTickets) {
+        return `Please select exactly ${totalTickets} seat${totalTickets > 1 ? 's' : ''}. Currently selected: ${selectedSeatCount}`;
+      }
+    }
+    return null;
+  };
+
+  // Handle proceed to payment step
+  const handleProceedToPayment = () => {
+    const validationErrors = validateBuyerInfo();
+    const seatError = validateSeatCount();
+    
+    if (Object.keys(validationErrors).length > 0 || seatError) {
+      setErrors({ ...validationErrors, seats: seatError });
+      return;
+    }
+
+    setErrors({});
+    setCurrentStep('payment');
+    
+    // Create payment intent when moving to payment step
+    // Add small delay to ensure state is updated
+    setTimeout(() => {
+      handleCreatePaymentIntent();
+    }, 100);
+  };
+
+  // Handle payment intent creation
+  const handleCreatePaymentIntent = async () => {
+    setIsProcessing(true);
+    
+    console.log('Creating payment intent with:', {
+      reservationTotal: reservation?.totalAmount,
+      calculatedTotal: totals.total,
+      selectedTickets: selectedTickets
+    });
+
+    try {
+      // Create payment intent
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/paid/create-payment-intent`,
+        {
+          buyerInfo: {
+            ...buyerInfo,
+            refundPolicyAccepted: refundPolicyAccepted
+          },
+          tickets: selectedTickets.reduce((acc, ticket) => {
+            acc[ticket.ticketTypeId] = ticket.quantity;
+            return acc;
+          }, {})
+        },
+        { withCredentials: true }
+      );
+
+      if (response.data.clientSecret) {
+        const currentAmount = reservation?.totalAmount || totals.total || 0;
+        console.log('Payment intent created. Setting amount:', {
+          currentAmount: currentAmount,
+          reservationTotal: reservation?.totalAmount,
+          ticketTotalsPrice: ticketTotals.totalPrice,
+          totalsTotal: totals.total,
+          finalTotal: reservation?.totalAmount || totals.total || 0
+        });
+        setPaymentStatus({ 
+          status: 'ready', 
+          clientSecret: response.data.clientSecret,
+          stripeAccountId: response.data.stripeAccountId,
+          amount: currentAmount
+        });
+      }
+    } catch (error) {
+      console.error('Payment intent creation failed:', error);
+      setErrors({ 
+        payment: error.response?.data?.message || 'Failed to create payment intent'
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+
+  // Handle navigation
+  const handleBackToSeats = () => {
+    router.push(`/events/seats/${params.eventId}`);
+  };
+
+  const handleBackToTickets = () => {
+    router.push(`/events/tickets/${params.eventId}`);
+  };
+  
+  const handleBackToDetails = () => {
+    setCurrentStep('details');
+    setErrors({});
+  };
+
+  const shouldDisableProceed = () => {
+    // Check if required fields are filled
+    return !buyerInfo.firstName || !buyerInfo.lastName || !buyerInfo.email || !buyerInfo.phone ||
+           !buyerInfo.agreeToTerms ||
+           (refundPolicyInfo && !refundPolicyAccepted);
+  };
+
+  const handlePaymentSuccess = async (paymentIntent) => {
+    console.log('Payment successful, confirming with backend:', paymentIntent.id);
+    setIsProcessing(true);
+    
+    try {
+      // Convert selectedTickets array to tickets object that backend expects
+      const ticketsObject = selectedTickets.reduce((acc, ticket) => {
+        acc[ticket.ticketTypeId] = ticket.quantity;
+        return acc;
+      }, {});
+
+      console.log('Sending payment confirmation with:', {
+        paymentIntentId: paymentIntent.id,
+        tickets: ticketsObject,
+        buyerInfo: buyerInfo
+      });
+
+      // Call backend to confirm payment and create tickets
+      const confirmResponse = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/paid/confirm-payment`,
+        {
+          paymentIntentId: paymentIntent.id,
+          tickets: ticketsObject,
+          buyerInfo: buyerInfo,
+          formResponses: formResponses || {}
+        },
+        { withCredentials: true }
+      );
+      
+      if (confirmResponse.data.success) {
+        console.log('✅ Payment confirmed via backend');
+        
+        // Mark reservation as completed
+        try {
+          if (reservation?._id) {
+            await axios.put(
+              `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation/${reservation._id}`,
+              { status: 'completed' },
+              { withCredentials: true }
+            );
+          }
+        } catch (error) {
+          console.error('Failed to update reservation status:', error);
+          // Continue anyway - payment is successful
+        }
+        
+        // Clear session data
+        sessionStorage.removeItem(`formResponses_${params.eventId}`);
+        
+        // Set success state to show success UI
+        setCurrentStep('complete');
+        setIsPaymentSuccessful(true);
+        setPaymentStatus({ ...paymentStatus, status: 'succeeded' });
+      } else {
+        throw new Error(confirmResponse.data.message || 'Payment confirmation failed');
+      }
+    } catch (error) {
+      console.error('Payment confirmation failed:', error);
+      
+      // Check if this is a capacity conflict error
+      let errorMessage = error.response?.data?.message || error.message || 'Payment successful but failed to create tickets. Please contact support.';
+      
+      setErrors({ payment: errorMessage });
+      setIsPaymentSuccessful(false);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Loading states
+  if (!user) {
+    return <RequireLogin message="Please log in to complete your purchase" />;
+  }
+
+  if (isLoading || reservationLoading) {
     return (
-      <RequireLogin message="You must be logged in to complete your purchase.">
-        {seatInfo.requiresSeats && params.eventId && (
-          <SeatSocketListener eventId={params.eventId} />
-        )}
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <LoadingSpinner size="large" />
-            <p className="mt-4 text-gray-600">Loading checkout...</p>
-          </div>
-        </div>
-      </RequireLogin>
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner />
+      </div>
     );
   }
 
-  // Error state - no ticket selection found
-  if (!event || selectedTickets.length === 0) {
+  if (selectedTickets.length === 0) {
     return (
-      <RequireLogin message="You must be logged in to complete your purchase.">
-        {seatInfo.requiresSeats && params.eventId && (
-          <SeatSocketListener eventId={params.eventId} />
-        )}
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Checkout Error
-            </h2>
-            <p className="text-gray-600 mb-6">
-              No ticket selection found. Please select tickets first.
+      <div className="flex flex-col items-center justify-center min-h-screen px-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full">
+          <FaExclamationTriangle className="text-amber-500 text-4xl sm:text-5xl mb-4 mx-auto" />
+          <h2 className="text-xl sm:text-2xl font-bold text-center mb-4 text-gray-800">
+            No Tickets Selected
+          </h2>
+          <p className="text-gray-600 text-center mb-6 text-sm sm:text-base">
+            {reservation ? 
+              'Your reservation exists but no ticket data was found. Please try selecting tickets again.' :
+              'Please select tickets before proceeding to checkout.'}
+          </p>
+          {reservation && (
+            <p className="text-xs text-gray-500 text-center mb-4">
+              Reservation ID: {reservation._id}
             </p>
-            <button
-              onClick={() => router.push(`/events/views/${params.eventId}`)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Back to Event
-            </button>
-          </div>
+          )}
+          <button
+            onClick={() => router.push(`/events/tickets/${params.eventId}`)}
+            className="w-full bg-emerald-600 text-white py-2.5 sm:py-3 rounded-md sm:rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm sm:text-base"
+          >
+            Back to Ticket Selection
+          </button>
         </div>
-      </RequireLogin>
+      </div>
     );
   }
 
-  // Success Step
-  if (currentStep === 'complete' || paymentStatus === 'succeeded') {
+  // Success Step (matching old checkout page)
+  if (currentStep === 'complete' || (paymentStatus.status === 'succeeded' && isPaymentSuccessful)) {
     return (
-      <RequireLogin message="You must be logged in to complete your purchase.">
-        <div className="min-h-screen bg-gray-50 py-8">
-          <div className="max-w-2xl mx-auto px-4">
-            <div className="bg-white rounded-lg shadow-md p-8 text-center">
-              <FaCheckCircle className="mx-auto text-6xl text-green-600 mb-6" />
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                Payment Successful!
-              </h1>
-              <p className="text-lg text-gray-600 mb-6">
-                Your tickets have been purchased successfully.
-              </p>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <FaCheckCircle className="mx-auto text-6xl text-green-600 mb-6" />
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              Payment Successful!
+            </h1>
+            <p className="text-lg text-gray-600 mb-6">
+              Your tickets have been purchased successfully.
+            </p>
 
-              <div className="bg-green-50 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-green-800 mb-2">
-                  What's Next?
-                </h3>
-                <ul className="text-green-700 space-y-1">
-                  <li>📧 Check your email for confirmation and tickets</li>
-                  <li>🎫 Your tickets will be delivered within 5 minutes</li>
-                  <li>📱 Save your tickets to your phone for easy access</li>
-                  <li>🎪 Present your tickets at the event entrance</li>
-                </ul>
-              </div>
+            <div className="bg-green-50 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-green-800 mb-2">
+                What's Next?
+              </h3>
+              <ul className="text-green-700 space-y-1">
+                <li>📧 Check your email for confirmation and tickets</li>
+                <li>🎫 Your tickets will be delivered within 5 minutes</li>
+                <li>📱 Save your tickets to your phone for easy access</li>
+                <li>🎪 Present your tickets at the event entrance</li>
+              </ul>
+            </div>
 
-              <div className="space-y-4">
-                <button
-                  onClick={() => router.push('/users/profile/mytickets')}
-                  className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  View My Tickets
-                </button>
+            <div className="space-y-4">
+              <button
+                onClick={() => router.push('/users/profile/mytickets')}
+                className="w-full px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+              >
+                View My Tickets
+              </button>
 
-                <button
-                  onClick={() => {
-                    dispatch(resetPurchaseSession());
-                    router.push(`/events/views/${params.eventId}`);
-                  }}
-                  className="w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-                >
-                  Back to Event
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  // Reset all state
+                  setReservation(null);
+                  setSelectedTickets([]);
+                  setCurrentStep('details');
+                  setIsPaymentSuccessful(false);
+                  setPaymentStatus({ status: null, clientSecret: null, amount: 0 });
+                  router.push(`/events/views/${params.eventId}`);
+                }}
+                className="w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+              >
+                Back to Event
+              </button>
             </div>
           </div>
         </div>
-      </RequireLogin>
+      </div>
     );
   }
 
   return (
-    <RequireLogin message="You must be logged in to complete your purchase.">
-      {/* Add socket listener for real-time seat updates */}
-      {seatInfo.requiresSeats && params.eventId && (
-        <SeatSocketListener eventId={params.eventId} />
-      )}
-      
-      <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
-        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4">
-          {/* Header */}
-          <div className="mb-4 sm:mb-6 lg:mb-8">
-            {/* Back Button */}
-            <div className="mb-3 sm:mb-4 lg:mb-6">
-              <button
-                onClick={
-                  currentStep === 'payment'
-                    ? handleBackToDetails
-                    : handleBackToTickets
+    <RequireLogin>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+          {/* Back Button - Smart behavior based on current step */}
+          <div className="mb-3 sm:mb-6">
+            <button
+              onClick={() => {
+                if (currentStep === 'payment') {
+                  // If on payment step, go back to details step
+                  handleBackToDetails();
+                } else {
+                  // If on details step, go back to seats/tickets
+                  hasSeatingLayout ? router.push(`/events/seats/${params.eventId}`) : router.push(`/events/tickets/${params.eventId}`);
                 }
-                className="inline-flex items-center px-2.5 py-1 text-xs sm:px-4 sm:py-2 sm:text-base bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md sm:rounded-lg transition-colors"
-              >
-                <FaArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                <span className="text-xs sm:text-base">
-                  {currentStep === 'payment' ? 'Back' : getBackButtonText()}
-                </span>
-              </button>
-            </div>
-
-            <h1 className="text-lg sm:text-2xl lg:text-3xl font-semibold sm:font-bold text-gray-900">
-              Checkout
-            </h1>
-            <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-1">
-              {currentStep === 'details'
-                ? 'Enter your details'
-                : 'Complete payment'}
-            </p>
+              }}
+              className="inline-flex items-center px-2.5 py-1 text-xs sm:px-4 sm:py-2 sm:text-base bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md sm:rounded-lg transition-colors"
+            >
+              <FaArrowLeft className="mr-1 sm:mr-2 text-[10px] sm:text-base" />
+              <span className="text-xs sm:text-base">Back</span>
+            </button>
           </div>
-
-          {/* Progress Indicator - Compact for mobile */}
-          <div className="mb-4 sm:mb-6 lg:mb-8">
-            <div className="flex items-center justify-center space-x-2 sm:space-x-4">
+          
+          {/* Step Indicator */}
+          <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div className="flex items-center justify-center">
               <div
                 className={`flex items-center ${
-                  currentStep === 'details' ? 'text-blue-600' : 'text-green-600'
+                  currentStep === 'details' ? 'text-emerald-600' : 'text-green-600'
                 }`}
               >
                 <div
-                  className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
                     currentStep === 'details'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-emerald-600 text-white'
                       : 'bg-green-600 text-white'
                   }`}
                 >
-                  {currentStep === 'details' ? (
-                    <span className="text-xs sm:text-base">1</span>
+                  {currentStep === 'payment' ? (
+                    <FaCheckCircle className="w-4 h-4" />
                   ) : (
-                    <FaCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="text-base">1</span>
                   )}
                 </div>
-                <span className="ml-1 sm:ml-2 text-xs sm:text-base font-medium">Details</span>
+                <span className="ml-2 text-base font-medium">Details</span>
               </div>
 
               <div
-                className={`w-8 sm:w-16 h-0.5 sm:h-1 ${
-                  currentStep === 'payment' ? 'bg-blue-600' : 'bg-gray-200'
+                className={`w-16 h-1 mx-4 ${
+                  currentStep === 'payment' ? 'bg-emerald-600' : 'bg-gray-200'
                 }`}
               ></div>
 
               <div
                 className={`flex items-center ${
-                  currentStep === 'payment' ? 'text-blue-600' : 'text-gray-400'
+                  currentStep === 'payment' ? 'text-emerald-600' : 'text-gray-400'
                 }`}
               >
                 <div
-                  className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
                     currentStep === 'payment'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-emerald-600 text-white'
                       : 'bg-gray-200 text-gray-600'
                   }`}
                 >
-                  <span className="text-xs sm:text-base">2</span>
+                  <span className="text-base">2</span>
                 </div>
-                <span className="ml-1 sm:ml-2 text-xs sm:text-base font-medium">Payment</span>
+                <span className="ml-2 text-base font-medium">Payment</span>
               </div>
             </div>
           </div>
 
+          {/* Timer and Status */}
+          {reservation && (
+            <ReservationTimer
+              expiresAt={reservation.expiresAt}
+              eventId={params.eventId}
+              reservationId={reservation._id}
+              mode="checkout"
+              hasSeatingLayout={hasSeatingLayout}
+              onExpire={() => {
+                router.push(`/events/tickets/${params.eventId}`);
+              }}
+              onClear={() => {
+                // Navigate first to avoid showing "No Tickets" modal
+                router.push(`/events/views/${params.eventId}`);
+                // State will be cleared by the ReservationTimer's handleClearReservation
+              }}
+            />
+          )}
+
+          {/* Socket Listener */}
+          <SeatSocketListenerNoRedux 
+            eventId={params.eventId} 
+            onSeatUpdate={handleSeatUpdate}
+          />
+
+          {/* Main Content */}
           <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-            {/* Main Content */}
+            {/* Main Content - Step based */}
             <div className="lg:col-span-2">
-              {/* Seat reservation reminder - responsive */}
-{currentReservation && currentReservation.reservedUntil ? (
-  <div className="bg-amber-50 border border-amber-100 rounded-md sm:rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 mb-3 sm:mb-4 lg:mb-6">
-    {/* Desktop - single row */}
-    <div className="hidden sm:flex items-center justify-between">
-      <div className="flex items-center gap-3 text-sm">
-        <span className="text-amber-700 font-medium">Seats will be relased in</span>
-        <SeatReservationTimer
-          expiryTime={currentReservation.reservedUntil}
-          onExpire={handleTimerExpire}
-          eventId={params.eventId}
-          pauseWhenNavigating={true}
-          compact={true}
-        />
-      </div>
-    </div>
-    {/* Mobile - compact single line */}
-    <div className="sm:hidden flex items-center justify-between">
-      <div className="text-amber-700 font-medium text-xs">Seats will be relased in</div>
-      <SeatReservationTimer
-        expiryTime={currentReservation.reservedUntil}
-        onExpire={handleTimerExpire}
-        eventId={params.eventId}
-        pauseWhenNavigating={true}
-        compact={true}
-      />
-    </div>
-  </div>
-) : seatInfo.requiresSeats && !currentReservation ? (
-  <div className="bg-red-50 border border-red-100 rounded-md sm:rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 mb-3 sm:mb-4 lg:mb-6">
-    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-      <FaExclamationTriangle className="text-red-600 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-      <span className="text-red-700 font-medium">Seats expired • Select again</span>
-    </div>
-  </div>
-) : null}
-
-{/* Timer warning for insufficient time */}
-{errors.timer && currentStep === 'details' && (
-  <div className="bg-red-50 border border-red-200 rounded-md sm:rounded-lg px-3 py-2 sm:px-4 sm:py-3 mb-3 sm:mb-4 lg:mb-6">
-    <div className="flex items-start gap-2">
-      <FaExclamationTriangle className="text-red-600 w-4 h-4 flex-shrink-0 mt-0.5" />
-      <div className="flex-1">
-        <p className="text-xs sm:text-sm text-red-700 font-medium">{errors.timer}</p>
-        <button
-          onClick={() => {
-            sessionStorage.setItem('navigationIntent', 'checkout-to-seats');
-            router.push(`/events/seats/${params.eventId}`);
-          }}
-          className="mt-1.5 text-xs sm:text-sm text-red-700 underline hover:text-red-800"
-        >
-          Go back to select seats
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-{/* Seats error for expired reservation */}
-{errors.seats && currentStep === 'details' && (
-  <div className="bg-red-50 border border-red-200 rounded-md sm:rounded-lg px-3 py-2 sm:px-4 sm:py-3 mb-3 sm:mb-4 lg:mb-6">
-    <div className="flex items-start gap-2">
-      <FaExclamationTriangle className="text-red-600 w-4 h-4 flex-shrink-0 mt-0.5" />
-      <div className="flex-1">
-        <p className="text-xs sm:text-sm text-red-700 font-medium">{errors.seats}</p>
-        <button
-          onClick={() => {
-            sessionStorage.setItem('navigationIntent', 'checkout-to-seats');
-            router.push(`/events/seats/${params.eventId}`);
-          }}
-          className="mt-1.5 text-xs sm:text-sm text-red-700 underline hover:text-red-800"
-        >
-          Go back to select seats
-        </button>
-      </div>
-    </div>
-  </div>
-)}
               {currentStep === 'details' ? (
                 /* Details Step */
                 <>
-
-
                   {/* Buyer Information Form */}
-                  <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6">
-                    <h2 className="text-sm sm:text-lg lg:text-xl font-semibold mb-3 sm:mb-4 flex items-center">
-                      <FaUser className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-blue-600" />
+                  <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center">
+                      <FaUser className="w-5 h-5 mr-2 text-emerald-600" />
                       Buyer Information
                     </h2>
-
-                    <div className="space-y-3 sm:space-y-4">
-                      <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                    
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* First Name */}
                         <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             First Name *
                           </label>
                           <input
@@ -1135,23 +745,19 @@ const handleBackToTickets = () => {
                             name="firstName"
                             value={buyerInfo.firstName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-2.5 py-1.5 sm:px-3 sm:py-2 text-sm sm:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              errors.firstName
-                                ? 'border-red-500 bg-red-50'
-                                : 'border-gray-300'
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              errors.firstName ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="First name"
                           />
                           {errors.firstName && (
-                            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-red-600">
-                              {errors.firstName}
-                            </p>
+                            <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
                           )}
                         </div>
-
+                        
                         {/* Last Name */}
                         <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Last Name *
                           </label>
                           <input
@@ -1159,75 +765,63 @@ const handleBackToTickets = () => {
                             name="lastName"
                             value={buyerInfo.lastName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-2.5 py-1.5 sm:px-3 sm:py-2 text-sm sm:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              errors.lastName
-                                ? 'border-red-500 bg-red-50'
-                                : 'border-gray-300'
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              errors.lastName ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="Last name"
                           />
                           {errors.lastName && (
-                            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-red-600">
-                              {errors.lastName}
-                            </p>
+                            <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
                           )}
                         </div>
                       </div>
 
                       {/* Email */}
                       <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Email Address *
                         </label>
                         <div className="relative">
-                          <FaEnvelope className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
+                          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                           <input
                             type="email"
                             name="email"
                             value={buyerInfo.email || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-8 sm:pl-10 pr-2.5 sm:pr-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              errors.email
-                                ? 'border-red-500 bg-red-50'
-                                : 'border-gray-300'
+                            className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="Email address"
                           />
                         </div>
                         {errors.email && (
-                          <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-red-600">
-                            {errors.email}
-                          </p>
+                          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
                         )}
                       </div>
 
                       {/* Phone */}
                       <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Phone Number *
                         </label>
                         <div className="relative">
-                          <FaPhone className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
+                          <FaPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                           <input
                             type="tel"
                             name="phone"
                             value={buyerInfo.phone || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-8 sm:pl-10 pr-2.5 sm:pr-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              errors.phone
-                                ? 'border-red-500 bg-red-50'
-                                : 'border-gray-300'
+                            className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="Phone number"
                           />
                         </div>
                         {errors.phone && (
-                          <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-red-600">
-                            {errors.phone}
-                          </p>
+                          <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
                         )}
                       </div>
-
+                      
                       {/* Terms Agreement */}
                       <div className="flex items-start">
                         <input
@@ -1235,14 +829,14 @@ const handleBackToTickets = () => {
                           name="agreeToTerms"
                           checked={buyerInfo.agreeToTerms || false}
                           onChange={handleInputChange}
-                          className="mt-0.5 sm:mt-1 w-3 h-3 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="mt-1 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                         />
-                        <label className="ml-1.5 sm:ml-2 text-xs sm:text-sm text-gray-600">
+                        <label className="ml-2 text-sm text-gray-600">
                           I agree to the{' '}
                           <a
                             href="/support/terms"
                             target="_blank"
-                            className="text-blue-600 hover:underline"
+                            className="text-emerald-600 hover:underline"
                           >
                             Terms
                           </a>{' '}
@@ -1250,182 +844,165 @@ const handleBackToTickets = () => {
                           <a
                             href="/support/privacy"
                             target="_blank"
-                            className="text-blue-600 hover:underline"
+                            className="text-emerald-600 hover:underline"
                           >
                             Privacy Policy
                           </a>
                         </label>
                       </div>
                       {errors.agreeToTerms && (
-                        <p className="text-xs sm:text-sm text-red-600 ml-4 sm:ml-6">
+                        <p className="text-sm text-red-600 ml-6">
                           {errors.agreeToTerms}
                         </p>
                       )}
 
                       {/* Refund Policy Acceptance - Only for paid events */}
-{event?.isPaid && event?.refundPolicy && (
-  <>
-    <div className="flex items-start">
-      <input
-        type="checkbox"
-        name="refundPolicyAccepted"
-        checked={buyerInfo.refundPolicyAccepted || false}
-        onChange={(e) => handleRefundPolicyAcceptance(e.target.checked)}
-        className="mt-0.5 sm:mt-1 w-3 h-3 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-      />
-      <label className="ml-1.5 sm:ml-2 text-xs sm:text-sm text-gray-600">
-        I accept the refund policy below *
-      </label>
-    </div>
-    {errors.refundPolicyAccepted && (
-      <p className="text-xs sm:text-sm text-red-600 ml-4 sm:ml-6">
-        {errors.refundPolicyAccepted}
-      </p>
-    )}
-  </>
-)}
+                      {event?.isPaid && event?.refundPolicy && (
+                        <>
+                          <div className="flex items-start">
+                            <input
+                              type="checkbox"
+                              name="refundPolicyAccepted"
+                              checked={refundPolicyAccepted || false}
+                              onChange={(e) => setRefundPolicyAccepted(e.target.checked)}
+                              className="mt-1 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                            />
+                            <label className="ml-2 text-sm text-gray-600">
+                              I accept the organiser refund policy below *
+                            </label>
+                          </div>
+                          {errors.refundPolicyAccepted && (
+                            <p className="text-sm text-red-600 ml-6">
+                              {errors.refundPolicyAccepted}
+                            </p>
+                          )}
+                        </>
+                      )}
+                      
+                      {/* Refund Policy Display - Only for paid events */}
+                      {event?.isPaid && event?.refundPolicy && (
+                        <div className="mt-6 border-t pt-6">
+                          <RefundPolicyDisplay 
+                            refundPolicy={event.refundPolicy}
+                            variant="checkout"
+                            showNote={false}
+                          />
+                        </div>
+                      )}
 
-
-{/* Refund Policy Display - Only for paid events */}
-{event?.isPaid && event?.refundPolicy && (
-  <div className="mt-3 sm:mt-4 lg:mt-6 border-t pt-3 sm:pt-4 lg:pt-6">
-    <RefundPolicyDisplay 
-      refundPolicy={event.refundPolicy}
-      variant="checkout"
-      showNote={false}
-    />
-  </div>
-)}
                       {/* Proceed to Payment Button */}
                       <button
                         onClick={handleProceedToPayment}
-                        disabled={isProcessing || loading.creatingPayment || shouldDisableProceed()}
-                        className={`w-full mt-4 sm:mt-6 py-2 sm:py-3 px-3 sm:px-4 rounded-md sm:rounded-lg font-medium sm:font-semibold text-sm sm:text-base text-white transition-all flex items-center justify-center ${
-                          isProcessing || loading.creatingPayment || shouldDisableProceed()
+                        disabled={isProcessing || shouldDisableProceed()}
+                        className={`w-full mt-6 py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center ${
+                          isProcessing || shouldDisableProceed()
                             ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-blue-600 hover:bg-blue-700'
+                            : 'bg-emerald-600 hover:bg-emerald-700'
                         }`}
                       >
-                        {isProcessing || loading.creatingPayment ? (
+                        {isProcessing ? (
                           <>
-                            <FaSpinner className="animate-spin mr-1.5 sm:mr-2 w-3 h-3 sm:w-4 sm:h-4" />
-                            <span className="text-sm sm:text-base">Preparing...</span>
+                            <FaSpinner className="animate-spin mr-2" />
+                            Processing...
                           </>
-                        ) : shouldDisableProceed() && seatInfo.requiresSeats ? (
-                          <span className="text-sm sm:text-base">Seat Reservation Expired</span>
                         ) : (
-                          <span className="text-sm sm:text-base">Proceed to Payment</span>
+                          'Proceed to Payment'
                         )}
                       </button>
-
-                      {/* Error Display */}
-                      {(errors.payment || purchaseError) && (
-                        <div className="bg-red-50 border border-red-200 rounded-md sm:rounded-lg p-3 sm:p-4">
-                          <div className="flex items-start">
-                            <FaExclamationTriangle className="text-red-600 mr-2 sm:mr-3 mt-0.5 sm:mt-1 flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
-                            <div className="flex-1">
-                              <h4 className="font-medium sm:font-semibold text-red-800 mb-0.5 sm:mb-1 text-sm sm:text-base">
-                                {errors.payment?.includes('sold out') ? 'Sold Out' : 'Error'}
-                              </h4>
-                              <p className="text-xs sm:text-sm text-red-700">
-                                {errors.payment || purchaseError}
-                              </p>
-                              {/* Show refresh button for capacity conflicts */}
-                              {(errors.payment?.includes('ticket') || 
-                                errors.payment?.includes('sold out') ||
-                                errors.payment?.includes('capacity') ||
-                                errors.payment?.includes('🎫')) && (
-                                <div className="mt-2 sm:mt-3">
-                                  <button
-                                    onClick={() => router.push(`/events/views/${params.eventId}`)}
-                                    className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white text-xs sm:text-sm font-medium rounded-md sm:rounded-lg hover:bg-red-700 transition-colors"
-                                  >
-                                    <FaArrowLeft className="mr-1.5 sm:mr-2 w-3 h-3 sm:w-4 sm:h-4" />
-                                    Back to event
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                      
                     </div>
                   </div>
                 </>
               ) : (
                 /* Payment Step */
-                <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6">
-                  {/* Error Display for Payment Step */}
-                  {(errors.payment || purchaseError) && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                      <div className="flex items-start">
-                        <FaExclamationTriangle className="text-red-600 mr-3 mt-1 flex-shrink-0" />
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-red-800 mb-1">
-                            {errors.payment?.includes('sold out') ? 'Event Sold Out' : 'Purchase Failed'}
-                          </h4>
-                          <p className="text-sm text-red-700">
-                            {errors.payment || purchaseError}
-                          </p>
-                          {/* Show refresh button for capacity conflicts */}
-                          {(errors.payment?.includes('ticket') || 
-                            errors.payment?.includes('sold out') ||
-                            errors.payment?.includes('capacity') ||
-                            errors.payment?.includes('🎫')) && (
-                            <div className="mt-3">
-                              <button
-                                onClick={() => router.push(`/events/views/${params.eventId}`)}
-                                className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-                              >
-                                <FaArrowLeft className="mr-2" />
-                                Return to event details
-                              </button>
-                            </div>
-                          )}
+                <>
+                  <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center">
+                      Payment Details
+                    </h2>
+                    
+                    {paymentStatus.clientSecret ? (
+                      <>
+                        {purchaseError && (
+                          <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                            <p className="text-red-800 text-sm">{purchaseError}</p>
+                          </div>
+                        )}
+                        
+                        {errors.payment && (
+                          <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                            <p className="text-red-800 text-sm">{errors.payment}</p>
+                          </div>
+                        )}
+                        
+                        {console.log('StripePaymentForm props:', {
+                          totalAmount: paymentStatus.amount,
+                          paymentStatusAmount: paymentStatus.amount,
+                          reservationTotal: reservation?.totalAmount,
+                          totalsTotal: totals.total,
+                          clientSecret: paymentStatus.clientSecret ? 'present' : 'missing',
+                          stripeAccountId: paymentStatus.stripeAccountId
+                        })}
+                        <StripePaymentForm
+                          key={`stripe-form-${paymentStatus.amount}`}
+                          clientSecret={paymentStatus.clientSecret}
+                          onSuccess={handlePaymentSuccess}
+                          onError={(error) => setErrors({ payment: error.message })}
+                          totalAmount={paymentStatus.amount}
+                          buyerInfo={buyerInfo}
+                          stripeAccountId={paymentStatus.stripeAccountId}
+                        />
+                        
+                        {/* Back to Details Button */}
+                        <div className="mt-6 text-center">
+                          <button
+                            onClick={handleBackToDetails}
+                            className="text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2 mx-auto"
+                          >
+                            <FaArrowLeft className="text-sm" />
+                            <span>Back to Details</span>
+                          </button>
                         </div>
+                      </>
+                    ) : (
+                      // Loading state while payment intent is being created
+                      <div className="text-center py-12">
+                        <FaSpinner className="animate-spin mx-auto text-4xl text-emerald-600 mb-4" />
+                        <p className="text-gray-600 text-lg">
+                          Preparing secure payment...
+                        </p>
+                        <p className="text-gray-500 text-sm mt-2">
+                          This usually takes just a few seconds
+                        </p>
                       </div>
-                    </div>
-                  )}
-
-                  {clientSecret ? (
-                    <StripePaymentForm
-                      clientSecret={clientSecret}
-                       stripeAccountId={ticketPurchaseState.stripeAccountId}
-                      buyerInfo={buyerInfo}
-                      totalAmount={totals.total}
-                      onSuccess={handlePaymentSuccess}
-                      onError={handlePaymentError}
-                      disabled={isProcessing || loading.confirmingPayment}
-                    />
-                  ) : (
-                    // Loading state while payment intent is being created
-                    <div className="text-center py-12">
-                      <FaSpinner className="animate-spin mx-auto text-4xl text-blue-600 mb-4" />
-                      <p className="text-gray-600 text-lg">
-                        Preparing secure payment...
-                      </p>
-                      <p className="text-gray-500 text-sm mt-2">
-                        This usually takes just a few seconds
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* ✅ FIXED: Loading overlay using Redux slice state (like SeatMapSelection) */}
-              {seatSliceLoading && (
-                <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-lg z-50">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-sm text-gray-600">
-                      Releasing seats and redirecting...
-                    </p>
+                    )}
                   </div>
+                </>
+              )}
+
+              {/* Success Message */}
+              {isPaymentSuccessful && (
+                <div className="bg-white rounded-lg shadow-md p-6 sm:p-8 text-center">
+                  <div className="mb-4">
+                    <FaCheckCircle className="text-green-500 text-5xl sm:text-6xl mx-auto" />
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+                    Payment Successful!
+                  </h2>
+                  <p className="text-gray-600 mb-6">
+                    Your tickets have been purchased successfully.
+                  </p>
+                  <button
+                    onClick={() => router.push('/profile/tickets')}
+                    className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                  >
+                    View My Tickets
+                  </button>
                 </div>
               )}
             </div>
 
-{/* Order Summary - Collapsible on Mobile */}
+            {/* Right Column - Order Summary (Persistent Sidebar) */}
             <div className="lg:col-span-1">
               {/* Mobile Collapsible Summary */}
               <div className="lg:hidden mb-4">
@@ -1460,10 +1037,10 @@ const handleBackToTickets = () => {
                 >
                   <PaymentSummary
                     event={event}
-                    selectedTickets={selectedTicketsDisplay}
+                    selectedTickets={formattedTickets}
                     totals={totals}
                     buyerInfo={currentStep === 'payment' ? buyerInfo : null}
-                    selectedSeats={seatInfo.selectedSeats}
+                    selectedSeats={reservation?.seatIds}
                     formatSelectedSeats={formatSelectedSeats}
                     showEventDetails={true}
                     showBuyerInfo={currentStep === 'payment'}
@@ -1472,13 +1049,13 @@ const handleBackToTickets = () => {
               </div>
               
               {/* Desktop Sidebar */}
-              <div className="hidden lg:block space-y-3 sm:space-y-4">
+              <div className="hidden lg:block space-y-4">
                 <PaymentSummary
                   event={event}
-                  selectedTickets={selectedTicketsDisplay}
+                  selectedTickets={formattedTickets}
                   totals={totals}
                   buyerInfo={currentStep === 'payment' ? buyerInfo : null}
-                  selectedSeats={seatInfo.selectedSeats}
+                  selectedSeats={reservation?.seatIds}
                   formatSelectedSeats={formatSelectedSeats}
                   showEventDetails={true}
                   showBuyerInfo={currentStep === 'payment'}

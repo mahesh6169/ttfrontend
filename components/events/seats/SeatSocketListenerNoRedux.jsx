@@ -1,32 +1,23 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import socket from '@/config/socket';
 
-import {
-  handleRemoteSeatUpdate,
-  selectSessionId,
-  fetchSeatAvailability,
-  setSocketConnected,
-  setSocketJoinedRoom
-} from '@/store/slices/events/seatSelectionSlice';
-
-const SeatSocketListener = ({ eventId, children }) => {
-  const dispatch = useDispatch();
-  const sessionId = useSelector(selectSessionId);
-  
+const SeatSocketListenerNoRedux = ({ 
+  eventId, 
+  onSeatUpdate, // Callback to update parent component
+  onSocketConnected,
+  onSocketJoinedRoom,
+  children 
+}) => {
   // Tracks socket connection state to prevent duplicate listeners and room joins
   const connectionStateRef = useRef({
     isConnected: false,
     hasJoinedEvent: false,
     eventId: null,
-    sessionId: null,
     listenersAttached: false
   });
 
-
-  
   // Sets up socket event listeners once on component mount
   useEffect(() => {
     const state = connectionStateRef.current;
@@ -36,57 +27,70 @@ const SeatSocketListener = ({ eventId, children }) => {
 
     // Handles successful socket connection
     const onConnect = () => {
-      //console.log('✅ Seat Selection Socket connected');
       state.isConnected = true;
-      dispatch(setSocketConnected(true));
+      onSocketConnected?.(true);
       
       // Auto-join event room if we have required data
-      if (eventId && sessionId && !state.hasJoinedEvent) {
+      if (eventId && !state.hasJoinedEvent) {
         joinEventRoom();
       }
     };
 
     // Handles socket disconnection and resets room state
     const onDisconnect = (reason) => {
-      //console.log('❌ Seat Selection Socket disconnected:', reason);
       state.isConnected = false;
       state.hasJoinedEvent = false;
-      dispatch(setSocketConnected(false));
-      dispatch(setSocketJoinedRoom(false));
+      onSocketConnected?.(false);
+      onSocketJoinedRoom?.(false);
     };
 
     // Handles socket reconnection and refreshes seat data
     const onReconnect = (attemptNumber) => {
-      //console.log(`🔄 Seat Selection Socket Reconnected after ${attemptNumber} attempts`);
       state.isConnected = true;
-      dispatch(setSocketConnected(true));
+      onSocketConnected?.(true);
       
-      if (eventId && sessionId) {
+      if (eventId) {
         joinEventRoom();
-        // Refresh seat data to catch any missed updates during disconnection
-        dispatch(fetchSeatAvailability(eventId));
+        // Trigger parent to refresh seat data
+        onSeatUpdate?.({ type: 'reconnect' });
       }
     };
     
-    // Processes real-time seat status changes from other users
+    // Processes real-time seat status changes
     const onSeatStatusChanged = (data) => {
       // Only process events for the current event
       if (data.eventId && data.eventId !== eventId) return;
-      dispatch(handleRemoteSeatUpdate(data));
+      
+      // Notify parent component to update seat status
+      onSeatUpdate?.({
+        type: 'seat_update',
+        seatId: data.seatId,
+        status: data.status,
+        reservedBy: data.reservedBy,
+        reservedUntil: data.reservedUntil,
+        operationType: data.operationType
+      });
     };
 
-
+    // Handle user's own reservation events
+    const onReservationConfirmed = (data) => {
+      if (data.eventId !== eventId) return;
+      console.log('✅ Reservation confirmed by backend:', data.reservation);
+    };
+    
+    const onReservationReleased = (data) => {
+      if (data.eventId !== eventId) return;
+      console.log('🔓 Reservation released by backend:', data.releasedSeats);
+    };
 
     // Joins the event-specific socket room for targeted broadcasts
     const joinEventRoom = () => {
-      if (socket.connected && eventId && sessionId && !state.hasJoinedEvent) {
-        //console.log(`🚪 Seat Selection Socket Joining event room: ${eventId}`);
+      if (socket.connected && eventId && !state.hasJoinedEvent) {
         socket.emit('seat:join_event', eventId);
         
         state.eventId = eventId;
         state.hasJoinedEvent = true;
-        state.sessionId = sessionId;
-        dispatch(setSocketJoinedRoom(true));
+        onSocketJoinedRoom?.(true);
       }
     };
 
@@ -95,6 +99,8 @@ const SeatSocketListener = ({ eventId, children }) => {
     socket.on('disconnect', onDisconnect);
     socket.on('reconnect', onReconnect);
     socket.on('seat:status_changed', onSeatStatusChanged);
+    socket.on('seat:reservation_confirmed', onReservationConfirmed);
+    socket.on('seat:reservation_released', onReservationReleased);
 
     state.listenersAttached = true;
 
@@ -112,36 +118,30 @@ const SeatSocketListener = ({ eventId, children }) => {
       socket.off('disconnect', onDisconnect);
       socket.off('reconnect', onReconnect);
       socket.off('seat:status_changed', onSeatStatusChanged);
-
-
+      socket.off('seat:reservation_confirmed', onReservationConfirmed);
+      socket.off('seat:reservation_released', onReservationReleased);
 
       state.listenersAttached = false;
       state.hasJoinedEvent = false;
     };
-  }, []);
+  }, []); // Only run once on mount
 
-  // Handles joining new event rooms when eventId or sessionId changes
+  // Handles joining new event rooms when eventId changes
   useEffect(() => {
     const state = connectionStateRef.current;
     
-    if (eventId && sessionId && socket.connected && !state.hasJoinedEvent) {
-
-
-
+    if (eventId && socket.connected && !state.hasJoinedEvent) {
       // Join the new event room
       socket.emit('seat:join_event', eventId);
       
       state.eventId = eventId;
       state.hasJoinedEvent = true;
-      state.sessionId = sessionId;
-      dispatch(setSocketJoinedRoom(true));
+      onSocketJoinedRoom?.(true);
     }
-  }, [eventId, sessionId]);
+  }, [eventId, onSocketJoinedRoom]);
 
-
-
-  // Renders children or connection status indicator
+  // Renders children or nothing
   return children || null;
 };
 
-export default SeatSocketListener;
+export default SeatSocketListenerNoRedux;

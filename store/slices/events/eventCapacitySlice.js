@@ -1,6 +1,6 @@
 // store/slices/events/eventCapacitySlice.js
 
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -198,5 +198,32 @@ export const selectCartAwareCapacity = (state, eventId, cartQuantity = 0) => {
     }
   };
 };
+
+// ========================================
+// MEMOIZED SELECTORS
+// ========================================
+
+// Base selectors
+const selectEventCapacityData = (state) => state.eventCapacity.data;
+const selectEventCapacityLoading = (state) => state.eventCapacity.loading;
+const selectEventCapacityErrors = (state) => state.eventCapacity.errors;
+const selectEventId = (_, eventId) => eventId;
+
+// 🎯 Memoized selector for event capacity state
+export const selectEventCapacityStateMemoized = createSelector(
+  [selectEventCapacityData, selectEventCapacityLoading, selectEventCapacityErrors, selectEventId],
+  (data, loading, errors, eventId) => ({
+    capacity: data[eventId]?.capacity || null,
+    isLoading: loading[eventId] || false,
+    error: errors[eventId] || null,
+    lastFetched: data[eventId]?.lastUpdated || null,
+  })
+);
+
+// 📊 Memoized selector for just capacity data
+export const selectCapacityDataMemoized = createSelector(
+  [selectEventCapacityData, selectEventId],
+  (data, eventId) => data[eventId]?.capacity || null
+);
 
 export default eventCapacitySlice.reducer;

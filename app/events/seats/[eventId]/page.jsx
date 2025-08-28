@@ -1,767 +1,250 @@
 // app/events/seats/[eventId]/page.jsx
+// New version without Redux for seat management
 
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { useRef, useCallback } from 'react';
-
-import { 
-  fetchSeatAvailability,
-  setCurrentEvent,
-  setSessionId,
-  resetSeatSelection,
-  selectSelectedSeats,
-  selectIsLoading as selectSeatLoading,
-  selectError as selectSeatError,
-  selectCurrentReservation,
-  releaseReservation,
-  clearSelection,
-  selectSeat,
-  setCurrentReservation,
-  restoreSeatsFromSaved
-
-} from '@/store/slices/events/seatSelectionSlice';
-import { 
-  updateSeatInfo,
-  setCurrentStep,
-  selectTicketPurchase,
-  selectSelectedTickets,
-  selectTicketTotals,
-  selectSeatInfo
-} from '@/store/slices/events/ticketPurchaseSlice';
+import axios from 'axios';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import SeatMapSelection from '@/components/events/seats/SeatMapSelection';
+import SeatMapWithSocket from '@/components/events/seats/SeatMapWithSocket';
 import SeatLegend from '@/components/events/seats/SeatLegend';
-import SeatSocketListener from '@/components/events/seats/SeatSocketListener';
-import { FaShoppingCart } from 'react-icons/fa';
-import bookingStateManager from '@/utils/booking/bookingStateManager';
+import ReservationTimer from '@/components/events/ReservationTimer';
+import { FaShoppingCart, FaArrowLeft } from 'react-icons/fa';
 
 const SeatSelectionPage = () => {
   const { eventId } = useParams();
   const router = useRouter();
   const dispatch = useDispatch();
   
-  const [initializationError, setInitializationError] = useState(null);
-  const [initializationAttempted, setInitializationAttempted] = useState(false);
-  const [isReturningFromCheckout, setIsReturningFromCheckout] = useState(false);
-
-   const latestReservationRef = useRef();
-const isNavigatingToCheckoutRef = useRef(false);
-
-  // Redux state from both slices
-  const { 
-    seatingLayout, 
-    isLoading: seatLoading, 
-    error: seatError,
-    currentReservation 
-  } = useSelector((state) => state.seatSelection);
-  
-  const selectedSeats = useSelector(selectSelectedSeats);
-  const { selectedEvent } = useSelector((state) => state.events);
+  // Redux state - only for event data
   const { user } = useSelector((state) => state.user);
-  
-  // Ticket purchase state
-  const ticketPurchaseState = useSelector(selectTicketPurchase);
-  const selectedTickets = useSelector(selectSelectedTickets);
-  const totals = useSelector(selectTicketTotals);
-  const seatInfo = useSelector(selectSeatInfo);
+  const { selectedEvent, status: eventStatus } = useSelector((state) => state.events);
 
-  // Initialize page data
-  useEffect(() => {
-    const initializePage = async () => {
-      let savedBookingState = null; // Declare at function scope
-      
-      // Check if returning from checkout
-      const navigationIntent = typeof window !== 'undefined' ? 
-        sessionStorage.getItem('navigationIntent') : null;
-      const returningFromCheckout = navigationIntent === 'checkout-to-seats';
-      if (returningFromCheckout) {
-        setIsReturningFromCheckout(true);
-        console.log('🔙 Initializing page after return from checkout');
-      }
-      
-      try {
-        // Check if we have a valid ticket purchase session
-        const hasValidSession = ticketPurchaseState.sessionActive && 
-                               ticketPurchaseState.eventId === eventId &&
-                               selectedTickets.length > 0;
+  // Local state
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [reservation, setReservation] = useState(null);
+  const [selectedTickets, setSelectedTickets] = useState([]);
+  const [ticketTotals, setTicketTotals] = useState({ totalQuantity: 0, totalPrice: 0 });
 
-        let ticketSelection = null;
-
-        if (hasValidSession) {
-          ticketSelection = {
-            eventId: ticketPurchaseState.eventId,
-            tickets: selectedTickets.reduce((acc, ticket) => {
-              acc[ticket.ticketTypeId] = ticket.quantity;
-              return acc;
-            }, {}),
-            totals: totals,
-            hasSeatingLayout: seatInfo.requiresSeats,
-            timestamp: Date.now()
-          };
-        } else {
-          // Check bookingStateManager first for better persistence
-          savedBookingState = bookingStateManager.load(eventId);
-          
-          if (savedBookingState && savedBookingState.tickets) {
-            // Restore from bookingStateManager
-            console.log('🔄 Restoring from bookingStateManager');
-            console.log('📦 Full saved state:', savedBookingState);
-            
-            // If we have a valid reservation, restore it
-            console.log('🔍 Checking restoration:', {
-              hasSeats: !!savedBookingState.seats,
-              hasReservation: !!savedBookingState.seats?.reservation,
-              reservedUntil: savedBookingState.seats?.reservation?.reservedUntil,
-              isValid: bookingStateManager.hasValidReservation(),
-              selectedSeats: savedBookingState.seats?.selected,
-              seatsData: savedBookingState.seats
-            });
-            
-            ticketSelection = {
-              eventId: savedBookingState.eventId,
-              tickets: savedBookingState.tickets.selected.reduce((acc, ticket) => {
-                acc[ticket.ticketTypeId] = ticket.quantity;
-                return acc;
-              }, {}),
-              totals: savedBookingState.tickets.totals,
-              hasSeatingLayout: true,
-              timestamp: Date.now()
-            };
-          } else {
-            // Fallback: Check sessionStorage
-            const storedSelection = sessionStorage.getItem('ticketSelection');
-            if (!storedSelection) {
-              setInitializationError('No ticket selection found. Please select tickets first.');
-              return;
-            }
-
-            ticketSelection = JSON.parse(storedSelection);
-          }
-          
-          // Validate ticket selection data
-          if (ticketSelection.eventId !== eventId || !ticketSelection.hasSeatingLayout) {
-            setInitializationError('Invalid ticket selection for this event.');
-            return;
-          }
-
-          // Check if ticket selection is not too old (30 minutes)
-          const selectionAge = Date.now() - ticketSelection.timestamp;
-          if (selectionAge > 30 * 60 * 1000) {
-            setInitializationError('Ticket selection has expired. Please select tickets again.');
-            return;
-          }
-        }
-
-        // Validate that seating is required
-        if (!ticketSelection.hasSeatingLayout) {
-          setInitializationError('This event does not require seat selection.');
-          return;
-        }
-
-        // Calculate total seats needed
-        const totalSeatsNeeded = Object.values(ticketSelection.tickets).reduce((sum, qty) => sum + qty, 0);
-
-        // Generate session ID for seat selection
-        const sessionId = `seat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        dispatch(setSessionId(sessionId));
-
-        // Set current event context for seat selection
-        dispatch(setCurrentEvent({ 
-          eventId, 
-          maxSeatsPerSelection: totalSeatsNeeded
-        }));
-
-        // Update ticket purchase slice with seat coordination info
-        dispatch(updateSeatInfo({
-          requiresSeats: true,
-          seatCount: totalSeatsNeeded,
-          selectedSeats: [] // Will be updated as user selects seats
-        }));
-
-        // Update current step in ticket purchase flow
-        dispatch(setCurrentStep('seat-selection'));
-
-        // Fetch event details if not already loaded
-        if (!selectedEvent || selectedEvent._id !== eventId) {
-          await dispatch(fetchEventById(eventId)).unwrap();
-        }
-
-        // ✅ ADD: Validate that loaded event matches URL parameter
-        validateEventId(selectedEvent || await dispatch(fetchEventById(eventId)).unwrap(), eventId);
-
-        // Fetch seat availability
-        const seatData = await dispatch(fetchSeatAvailability(eventId)).unwrap();
-        // Log the fetched seat data
-        console.log('🪑SeatSelectionPage: Fetched seat data:', {
-          eventId,
-          seatData,
-          seatingLayoutLength: seatData?.seatingLayout?.length,
-          totalSeats: seatData?.seatingLayout?.reduce((total, row) => total + (row.seats?.length || 0), 0),
-          timestamp: new Date().toISOString()
-        });
-
-        // Validate seat data structure
-        if (!seatData.seatingLayout || !Array.isArray(seatData.seatingLayout)) {
-          throw new Error('Invalid seating layout data received from server');
-        }
-
-        // Check if user already has seats reserved in the backend
-        const userId = user?._id;
-        const userReservedSeats = [];
-        let userReservation = null;
-        
-        if (userId) {
-          for (const row of seatData.seatingLayout) {
-            for (const seat of row.seats || []) {
-              if (seat.status === 'selected' && 
-                  seat.reservedBy && 
-                  seat.reservedBy.toString() === userId.toString() &&
-                  seat.reservedUntil && 
-                  new Date(seat.reservedUntil) > new Date()) {
-                userReservedSeats.push(seat.seatId);
-                if (!userReservation) {
-                  userReservation = {
-                    eventId: eventId,
-                    userId: userId,
-                    sessionId: seat.sessionId || sessionId,
-                    reservedUntil: seat.reservedUntil,
-                    seatIds: []
-                  };
-                }
-              }
-            }
-          }
-        }
-
-        // If user has existing reservation, restore it
-        if (userReservedSeats.length > 0 && userReservation) {
-          userReservation.seatIds = userReservedSeats;
-          userReservation.seatCount = userReservedSeats.length;
-          
-          console.log('🔍 Found existing user reservation in backend:', {
-            userId,
-            seatCount: userReservedSeats.length,
-            seats: userReservedSeats,
-            reservedUntil: userReservation.reservedUntil
-          });
-          
-          // Restore the seats immediately
-          dispatch(restoreSeatsFromSaved({
-            selectedSeats: userReservedSeats,
-            reservation: userReservation
-          }));
-          dispatch(setCurrentReservation(userReservation));
-          
-          // Update seat info in ticket purchase slice
-          dispatch(updateSeatInfo({
-            selectedSeats: userReservedSeats,
-            reservationId: userReservation.reservationId || `existing_${Date.now()}`,
-            seatCount: userReservedSeats.length,
-            requiresSeats: true
-          }));
-          
-          // Save to bookingStateManager for persistence
-          bookingStateManager.save({
-            ...bookingStateManager.load(eventId),
-            seats: {
-              selected: userReservedSeats,
-              reservation: userReservation,
-              timestamp: new Date().toISOString()
-            },
-            currentStep: 'seats'
-          });
-        }
-
-        setInitializationAttempted(true);
-
-        // After initialization, check if we need to restore seats
-        if ((savedBookingState?.seats?.reservation && bookingStateManager.hasValidReservation()) || returningFromCheckout) {
-          // Delay restoration to ensure all Redux state is initialized
-          setTimeout(() => {
-            const stateToRestore = savedBookingState || bookingStateManager.load(eventId);
-            if (stateToRestore?.seats?.reservation) {
-              // Check if reservation is still valid
-              const reservedUntil = new Date(stateToRestore.seats.reservation.reservedUntil);
-              const now = new Date();
-              const isExpired = reservedUntil <= now;
-              
-              console.log('🔄 Checking seat restoration', {
-                fromRefresh: !!savedBookingState,
-                fromCheckout: returningFromCheckout,
-                isExpired,
-                reservedUntil: reservedUntil.toISOString(),
-                now: now.toISOString()
-              });
-              
-              if (isExpired) {
-                console.log('⏰ Seats have expired - clearing state instead of restoring');
-                // Clear the expired state
-                bookingStateManager.clear();
-                dispatch(clearSelection());
-                // Don't show error - just let user select new seats
-                if (returningFromCheckout) {
-                  sessionStorage.removeItem('navigationIntent');
-                }
-              } else {
-                // Seats are still valid - restore them
-                dispatch(restoreSeatsFromSaved({
-                  selectedSeats: stateToRestore.seats.selected || [],
-                  reservation: stateToRestore.seats.reservation
-                }));
-                dispatch(setCurrentReservation(stateToRestore.seats.reservation));
-                
-                // Update with restored seat info
-                dispatch(updateSeatInfo({
-                  selectedSeats: stateToRestore.seats.selected || [],
-                  reservationId: stateToRestore.seats.reservation.reservationId,
-                  seatCount: stateToRestore.seats.selected?.length || 0,
-                  requiresSeats: true
-                }));
-              }
-            }
-          }, 100); // Small delay to ensure Redux state is ready
-        }
-
-      } catch (error) {
-        console.error('Error initializing seat selection:', error);
-        setInitializationError(error.message || 'Failed to load seat selection data');
-      }
-    };
-
-    // Add event ID validation
-    const validateEventId = (loadedEvent, urlEventId) => {
-      if (!loadedEvent || !loadedEvent._id) {
-        throw new Error('Event not found');
-      }
-      if (loadedEvent._id !== urlEventId) {
-        throw new Error(`Event ID mismatch: URL has ${urlEventId} but loaded event has ${loadedEvent._id}`);
-      }
-    };
-
-    if (eventId && !initializationAttempted) {
-      initializePage();
-    }
-
-  }, [eventId, dispatch, selectedEvent, ticketPurchaseState.sessionActive, 
-      ticketPurchaseState.eventId, selectedTickets, totals, seatInfo.requiresSeats, initializationAttempted]);
-
-
-  // Synchronizes selected seats between different Redux slices to maintain consistent state.
-  useEffect(() => {
-    if (selectedSeats.length > 0) {
-      dispatch(updateSeatInfo({
-        selectedSeats: selectedSeats,
-      }));
-    }
-  }, [selectedSeats, dispatch]);
-
-  //Keep ref updated with latest reservation
-  useEffect(() => {
-    latestReservationRef.current = currentReservation;
-  }, [currentReservation])
-
-  // ✅ TASK 1: Keep ref updated with latest reservation
-  useEffect(() => {
-    latestReservationRef.current = currentReservation;
-  }, [currentReservation]);
-
-  // ✅ TASK 2: Centralized cleanup function with multiple strategies
-  const performCleanup = useCallback(async (reason = 'unknown') => {
-
- // ✅ Skip cleanup if navigating to checkout
-  if (isNavigatingToCheckoutRef.current && reason === 'component-unmount') {
-    console.log(`🔄 CLEANUP: Skipping ${reason} cleanup - navigating to checkout`);
-    return;
-  }
-
-    const freshReservation = latestReservationRef.current;
-    
-    console.log(`🔧 CLEANUP: Starting cleanup (${reason})`, {
-      hasReservation: !!freshReservation,
-      seatCount: freshReservation?.seatIds?.length || 0,
-      eventId
-    });
-
-    if (freshReservation?.seatIds?.length > 0) {
-      try {
-        // Strategy 1: Normal release with sessionId
-        const result = await dispatch(releaseReservation({
-          eventId: eventId,
-          seatIds: freshReservation.seatIds,
-          sessionId: freshReservation.sessionId,
-        })).unwrap();
-        
-        console.log(`✅ CLEANUP (${reason}): Primary strategy succeeded`, result);
-        
-      } catch (error) {
-        console.error(`❌ CLEANUP (${reason}): Primary strategy failed`, error);
-        
-        // Strategy 2: Fallback - release all user's seats (ignore sessionId)
-        try {
-          console.log(`🔄 CLEANUP (${reason}): Trying fallback strategy`);
-          await dispatch(releaseReservation({
-            eventId: eventId,
-            seatIds: null, // Release all user's seats
-            sessionId: null, // Ignore sessionId matching
-          })).unwrap();
-          
-          console.log(`✅ CLEANUP (${reason}): Fallback strategy succeeded`);
-        } catch (fallbackError) {
-          console.error(`❌ CLEANUP (${reason}): Fallback strategy failed`, fallbackError);
-        }
-        
-        // Strategy 3: Force clear local state regardless
-        console.log(`🧹 CLEANUP (${reason}): Force clearing local state`);
-        dispatch(clearSelection());
-      }
-    } else {
-      console.log(`ℹ️ CLEANUP (${reason}): No reservation to clean up`);
-    }
-  }, [dispatch, eventId]);
-
-// ✅ TASK 2: Primary cleanup strategy - component unmount
-useEffect(() => {
-  // Mark that we might be refreshing on mount
-  if (typeof window !== 'undefined') {
-    // Check if we're returning from checkout
-    const navigationIntent = sessionStorage.getItem('navigationIntent');
-    if (navigationIntent === 'checkout-to-seats') {
-      console.log('🔙 Detected return from checkout - will preserve seats');
-      // Don't remove intent yet - we need it for cleanup check
-    }
-    
-    // If we have a valid booking state on mount, assume it might be a refresh
-    const existingState = bookingStateManager.load(eventId);
-    if (existingState && existingState.seats?.reservation) {
-      console.log('🔍 Found existing booking state on mount - possible refresh scenario');
-    }
-  }
-  
-  return () => {
-    // Check navigation intent
-    const navigationIntent = typeof window !== 'undefined' ? 
-      sessionStorage.getItem('navigationIntent') : null;
-    
-    // Clear navigation intent after checking it
-    const shouldClearIntent = navigationIntent === 'checkout-to-seats';
-    if (shouldClearIntent) {
-      sessionStorage.removeItem('navigationIntent');
-    }
-    
-    // Check if it's a refresh or actual navigation
-    const isRefresh = bookingStateManager.isRefresh();
-    const savedState = bookingStateManager.load(eventId);
-    const isReturningFromCheckout = navigationIntent === 'checkout-to-seats';
-    
-    // Check timestamp to prevent race conditions
-    const preserveTimestamp = sessionStorage.getItem('preserveSeatsTimestamp');
-    const shouldPreserveSeats = preserveTimestamp && 
-      (Date.now() - parseInt(preserveTimestamp)) < 5000; // Within 5 seconds
-    
-    if (isReturningFromCheckout || shouldPreserveSeats || savedState?.preserveSeats) {
-      // Check if seats are expired
-      let seatsExpired = false;
-      if (savedState?.seats?.reservation) {
-        const reservedUntil = new Date(savedState.seats.reservation.reservedUntil);
-        seatsExpired = reservedUntil <= new Date();
-      }
-      
-      if (seatsExpired) {
-        console.log('⏰ Seats expired - performing cleanup');
-        performCleanup('expired-seats');
-        bookingStateManager.clear();
-      } else {
-        console.log('🔙 Returning from checkout - skipping cleanup to preserve seats', {
-          isReturningFromCheckout,
-          shouldPreserveSeats,
-          preserveSeats: savedState?.preserveSeats
-        });
-      }
-      
-      // Clean up the flags
-      sessionStorage.removeItem('preserveSeatsTimestamp');
-      if (savedState?.preserveSeats) {
-        bookingStateManager.save({ ...savedState, preserveSeats: false });
-      }
-    } else if (!isRefresh || !savedState || savedState.currentStep !== 'seats') {
-      // Not a refresh or user navigated away - perform cleanup
-      performCleanup('component-unmount');
-    } else {
-      console.log('🔄 Page refresh detected - skipping cleanup to preserve seats');
-    }
-  };
-}, [performCleanup, eventId]);
-
-// ✅ TASK 2: Secondary cleanup strategies - page events
-useEffect(() => {
-  const handleBeforeUnload = () => {
-    const freshReservation = latestReservationRef.current;
-    if (freshReservation?.seatIds?.length > 0) {
-      // Use sendBeacon for reliable cleanup during page unload
-      try {
-        const data = JSON.stringify({
-          seatIds: freshReservation.seatIds,
-          sessionId: freshReservation.sessionId
-        });
-        
-        // Convert to proper request format for sendBeacon
-        const blob = new Blob([data], { type: 'application/json' });
-        
-        navigator.sendBeacon(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/seats/reserve`,
-          blob
-        );
-        console.log('📡 CLEANUP (beforeunload): Beacon sent for emergency cleanup');
-      } catch (error) {
-        console.error('❌ CLEANUP (beforeunload): Beacon failed:', error);
-      }
-    }
+  // Calculate ticket requirement
+  const ticketRequirement = {
+    total: ticketTotals?.totalQuantity || 0,
+    types: selectedTickets?.reduce((acc, ticket) => {
+      acc[ticket.ticketTypeId] = ticket.quantity;
+      return acc;
+    }, {}) || {}
   };
 
-const handleVisibilityChange = () => {
-  if (document.visibilityState === 'hidden') {
-    // ✅ EXCEPTION: Don't cleanup when navigating to checkout
-    if (isNavigatingToCheckoutRef.current) {
-      console.log('🔄 VISIBILITY: Skipping cleanup - navigating to checkout');
-      // Clear flag after delay (in case navigation fails)
-      setTimeout(() => {
-        isNavigatingToCheckoutRef.current = false;
-      }, 2000);
-      return;
+  // Fetch event data
+  useEffect(() => {
+    if (eventId) {
+      dispatch(fetchEventById(eventId));
     }
-    
-    // ✅ REMOVED: No longer cleaning up on tab switches
-    // Users can switch tabs without losing their seat selection
-    console.log('🔄 VISIBILITY: Tab hidden but keeping seats reserved');
-    // performCleanup('visibility-hidden'); // REMOVED - too aggressive
-  }
-};
+  }, [eventId, dispatch]);
 
-  const handlePageHide = () => {
-    // Page is being unloaded (more reliable than beforeunload)
-    const freshReservation = latestReservationRef.current;
-    if (freshReservation?.seatIds?.length > 0) {
-      // Check if this might be a refresh
-      const savedState = bookingStateManager.load(eventId);
-      if (savedState && savedState.seats?.reservation) {
-        console.log('🔄 Page hide during potential refresh - skipping cleanup');
+  // Fetch reservation data
+  useEffect(() => {
+    const fetchReservation = async () => {
+      if (!selectedEvent?._id || !user) {
+        setIsLoading(false);
         return;
       }
-      performCleanup('page-hide');
+
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${selectedEvent._id}/reservation`,
+          { withCredentials: true }
+        );
+
+        if (response.data.success && response.data.reservation) {
+          const res = response.data.reservation;
+          setReservation(res);
+          
+          // Set selected tickets from reservation
+          const tickets = res.tickets || [];
+          setSelectedTickets(tickets);
+          
+          // Calculate totals
+          const totals = {
+            totalQuantity: tickets.reduce((sum, t) => sum + t.quantity, 0),
+            totalPrice: res.totalAmount || 0
+          };
+          setTicketTotals(totals);
+          
+          // Set selected seats if any
+          if (res.seatIds && res.seatIds.length > 0) {
+            setSelectedSeats(res.seatIds);
+          }
+        } else {
+          // No reservation found
+          setError('Please select tickets first');
+          setTimeout(() => {
+            router.push(`/events/tickets/${eventId}`);
+          }, 2000);
+        }
+      } catch (error) {
+        if (error.response?.status === 404) {
+          // No reservation found
+          setError('Please select tickets first');
+          setTimeout(() => {
+            router.push(`/events/tickets/${eventId}`);
+          }, 2000);
+        } else {
+          console.error('Error fetching reservation:', error);
+          setError('Failed to load reservation data');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReservation();
+  }, [selectedEvent?._id, eventId, user, router]);
+
+  // Handle seat selection updates
+  const handleSeatsUpdated = async (newSelectedSeats) => {
+    if (!reservation) return;
+    
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/reservation/${reservation._id}/seats`,
+        { seatIds: newSelectedSeats },
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        setSelectedSeats(newSelectedSeats);
+      }
+    } catch (error) {
+      console.error('Error updating seats:', error);
+      setError('Failed to update seat selection');
     }
   };
 
-  // Register event listeners
-  window.addEventListener('beforeunload', handleBeforeUnload);
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  window.addEventListener('pagehide', handlePageHide);
-
-  return () => {
-    // Cleanup event listeners
-    window.removeEventListener('beforeunload', handleBeforeUnload);
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-    window.removeEventListener('pagehide', handlePageHide);
-  };
-}, [performCleanup, eventId]);
-
-  // Handles navigation back to ticket selection page
-  const handleBack = () => {
-     router.push(`/events/tickets/${eventId}`);
-  };
-
-  // Handle proceed to checkout
-const handleProceedToCheckout = () => {
-  // ✅ Set flag to prevent visibility cleanup during navigation
-  isNavigatingToCheckoutRef.current = true;
-  
-  if (selectedSeats.length === 0) {
-    alert('Please select your seats before proceeding.');
-    isNavigatingToCheckoutRef.current = false; // Reset flag
-    return;
+  // Handle loading states
+  if (eventStatus === 'loading' || isLoading) {
+    return <LoadingSpinner />;
   }
-    // Validate seat count matches ticket count
-    const expectedSeatCount = seatInfo.seatCount || 0;
-    if (selectedSeats.length !== expectedSeatCount) {
-      alert(`Please select exactly ${expectedSeatCount} seat${expectedSeatCount !== 1 ? 's' : ''}.`);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-gray-600">Redirecting to ticket selection...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!selectedEvent) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">Event not found</p>
+      </div>
+    );
+  }
+
+
+  // Handle checkout navigation
+  const handleProceedToCheckout = () => {
+    if (!reservation || selectedSeats.length !== ticketRequirement.total) {
       return;
     }
-
-    // Update ticket purchase slice with final seat selection
-    dispatch(updateSeatInfo({
-      selectedSeats: selectedSeats,
-      reservationId: currentReservation?.reservationId,
-      seatCount: selectedSeats.length
-    }));
-
-    // Set step to details (so checkout page shows the form)
-    dispatch(setCurrentStep('details'));
-
-    // Update sessionStorage as fallback during transition
-    const currentSelection = sessionStorage.getItem('ticketSelection');
-    if (currentSelection) {
-      const updatedSelection = {
-        ...JSON.parse(currentSelection),
-        selectedSeats,
-        reservationId: currentReservation?.reservationId,
-        timestamp: Date.now()
-      };
-      sessionStorage.setItem('ticketSelection', JSON.stringify(updatedSelection));
-    }
-
-    // Save complete state to bookingStateManager
-    bookingStateManager.save({
-      seats: {
-        selected: selectedSeats,
-        reservation: currentReservation,
-        timestamp: new Date().toISOString()
-      },
-      currentStep: 'checkout'
-    });
 
     // Navigate to checkout
     router.push(`/checkout/events/${eventId}`);
   };
 
-  // Get ticket selection for display (prioritize Redux, fallback to sessionStorage)
-  const getTicketSelectionForDisplay = () => {
-    if (ticketPurchaseState.sessionActive && selectedTickets.length > 0) {
-      // Use Redux data
-      return {
-        eventId: ticketPurchaseState.eventId,
-        tickets: selectedTickets.reduce((acc, ticket) => {
-          acc[ticket.ticketTypeId] = ticket.quantity;
-          return acc;
-        }, {}),
-        totals: totals,
-        hasSeatingLayout: seatInfo.requiresSeats,
-        timestamp: Date.now()
-      };
-    } else {
-      // Fallback to sessionStorage (only on client side)
-      if (typeof window !== 'undefined') {
-        const stored = sessionStorage.getItem('ticketSelection');
-        return stored ? JSON.parse(stored) : null;
-      }
-      return null;
-    }
+  // Handle back navigation
+  const handleBackToTickets = () => {
+    router.push(`/events/tickets/${eventId}`);
   };
 
-  const ticketSelection = getTicketSelectionForDisplay();
-
-  // Debug: Check actual values
-  console.log('DEBUG canProceed:', {
-    selectedSeats: selectedSeats.length,
-    seatInfoSeatCount: seatInfo.seatCount,
-    canProceed: selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0
-  });
-
-  // Check if all required seats are selected
-  const canProceed = selectedSeats.length === (seatInfo.seatCount || 0) && selectedSeats.length > 0;
-
-  // Loading state
-  if (seatLoading || !selectedEvent || !ticketSelection) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="large" />
-          <p className="mt-4 text-gray-600">Loading seat selection...</p>
-        </div>
-      </div>
-    );
-  }
-
- // Simple error handling - redirect back to tickets page
-  if (initializationError || seatError) {
-    console.warn('Seat selection error:', { 
-      initializationError, 
-      seatError
-    });
-    
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Error Loading Seats</h2>
-          <p className="text-gray-600 mb-6">{initializationError || seatError}</p>
-          <button
-            onClick={() => router.push(`/events/tickets/${eventId}`)}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Back to Tickets
-          </button>
-        </div>
-      </div>
-    );
-  }
-  
-  // Check if we have required data
-  if (!ticketSelection || !selectedEvent) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner size="large" />
-          <p className="mt-4 text-gray-600">Loading seat selection...</p>
-        </div>
-      </div>
-    );
-  }
+  const canProceed = reservation && selectedSeats.length === ticketRequirement.total;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Main content container - matching tickets page style */}
-      <div className="w-full max-w-7xl mx-auto px-3 py-4 sm:px-4 sm:py-6">
-        {/* Back to Tickets Button */}
+      <div className="w-full max-w-4xl mx-auto px-3 py-4 sm:px-4 sm:py-6">
+        {/* Back to Tickets Button - Same as tickets page */}
         <div className="mb-3 sm:mb-6">
           <button
-            onClick={handleBack}
+            onClick={handleBackToTickets}
             className="inline-flex items-center px-2.5 py-1 text-xs sm:px-4 sm:py-2 sm:text-base bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md sm:rounded-lg transition-colors"
           >
-            <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
+            <FaArrowLeft className="mr-1 sm:mr-2 text-[10px] sm:text-base" />
             <span className="text-xs sm:text-base">Back</span>
           </button>
         </div>
 
-        <SeatSocketListener eventId={eventId}/>
-        
-        {/* Single container for everything */}
+        {/* Single Column Layout - Full Width */}
         <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-6">
-          {/* Title */}
+          {/* Centered Title */}
           <h1 className="text-lg sm:text-2xl font-semibold sm:font-bold text-gray-900 text-center mb-3 sm:mb-6">
             Select Seats
           </h1>
           
-          {/* Seating Legend - Inline and compact */}
-          <div className="mb-6 sm:mb-6">
+          {/* Seat Legend - Horizontal layout */}
+          <div className="mb-3 sm:mb-6">
             <SeatLegend />
           </div>
           
-          {/* Seat Selection */}
-          <div className="">
-            <SeatMapSelection event={selectedEvent} ticketSelection={ticketSelection} eventId={eventId}/>
-            
-            {/* Proceed to Checkout Button - Only show when all seats are selected */}
-            {canProceed && (
-              <div className="mt-3 sm:mt-6 pt-3 sm:pt-6 border-t border-gray-200">
-                <button
-                  onClick={handleProceedToCheckout}
-                  className="w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium sm:font-semibold text-sm sm:text-base text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center"
-                >
-                  <FaShoppingCart className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
-                  <span className="text-sm sm:text-base">Proceed to Checkout</span>
-                </button>
-              </div>
-            )}
+          {/* Reservation Timer */}
+          {reservation && (
+            <ReservationTimer
+              expiresAt={reservation.expiresAt}
+              eventId={selectedEvent._id}
+              reservationId={reservation._id}
+              mode="seats"
+              onExpire={() => {
+                router.push(`/events/tickets/${eventId}`);
+              }}
+              onClear={() => {
+                setSelectedSeats([]);
+                router.push(`/events/tickets/${eventId}`);
+              }}
+            />
+          )}
+          
+          {/* Seat Map */}
+          <div className="mb-3 sm:mb-6">
+            <SeatMapWithSocket
+              event={selectedEvent}
+              ticketRequirement={ticketRequirement}
+              eventId={eventId}
+              userId={user?._id}
+              existingReservation={reservation}
+              onSeatsChange={handleSeatsUpdated}
+            />
           </div>
+          
+          {/* Selection Status */}
+          <div className="mb-3 sm:mb-6 text-center">
+            <p className="text-sm sm:text-base text-gray-600">
+              {selectedSeats.length} of {ticketRequirement.total} seat{ticketRequirement.total !== 1 ? 's' : ''} selected
+            </p>
+          </div>
+          
+          {/* Proceed to Checkout Button - Same style as tickets page */}
+          <button
+            onClick={handleProceedToCheckout}
+            disabled={!canProceed}
+            className={`w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
+              canProceed
+                ? 'bg-green-600 hover:bg-green-700 text-white'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            <FaShoppingCart className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
+            <span className="text-sm sm:text-base">Proceed to Payment</span>
+          </button>
         </div>
       </div>
-
-
-
     </div>
   );
 };

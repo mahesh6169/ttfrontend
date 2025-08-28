@@ -82,7 +82,10 @@ const PaymentSummary = ({
       {/* Event Details Section */}
       {showEventDetails && (
         <div className="mb-3 sm:mb-4 lg:mb-6 pb-3 sm:pb-4 lg:pb-6 border-b border-gray-200">
-          <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-2 sm:mb-3">{event.title}</h3>
+          <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-1">{event.title}</h3>
+          {event.eventCode && (
+            <p className="text-xs text-gray-500 mb-2 sm:mb-3">Event Code: {event.eventCode}</p>
+          )}
           
           <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
             <div className="flex items-center">
@@ -158,7 +161,7 @@ const PaymentSummary = ({
         <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-2 sm:mb-3">Tickets</h3>
         
         <div className="space-y-2 sm:space-y-3">
-          {selectedTickets.map((ticket, index) => (
+          {selectedTickets.filter(ticket => ticket && ticket.name && ticket.quantity > 0).map((ticket, index) => (
             <div key={ticket._id || index} className="flex justify-between items-start gap-2">
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-gray-900 text-xs sm:text-sm truncate">{ticket.name}</p>
@@ -178,35 +181,8 @@ const PaymentSummary = ({
 
       {/* Price Breakdown */}
       <div className="border-t border-gray-200 pt-2 sm:pt-3 lg:pt-4 space-y-1.5 sm:space-y-2">
-        <div className="flex justify-between text-xs sm:text-sm text-gray-600">
-          <span>Subtotal</span>
-          <span className="font-medium">${totals.subtotal?.toFixed(2)}</span>
-        </div>
-        
-        {/* Only show GST if it exists and is greater than 0 */}
-        {totals.gst && totals.gst > 0 && (
-          <div className="flex justify-between text-xs sm:text-sm text-gray-600">
-            <span className="flex items-center">
-              GST (10%)
-              <FaInfoCircle className="ml-0.5 sm:ml-1 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" title="Goods and Services Tax" />
-            </span>
-            <span className="font-medium">${totals.gst.toFixed(2)}</span>
-          </div>
-        )}
-        
-        {/* Service Fee (if applicable) */}
-        {totals.serviceFee && totals.serviceFee > 0 && (
-          <div className="flex justify-between text-xs sm:text-sm text-gray-600">
-            <span className="flex items-center">
-              Service Fee
-              <FaInfoCircle className="ml-0.5 sm:ml-1 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" title="Payment processing fee" />
-            </span>
-            <span className="font-medium">${totals.serviceFee.toFixed(2)}</span>
-          </div>
-        )}
-        
         {/* Total */}
-        <div className="flex justify-between text-sm sm:text-base lg:text-lg font-bold text-green-600 pt-1.5 sm:pt-2 border-t border-gray-200">
+        <div className="flex justify-between text-sm sm:text-base lg:text-lg font-bold text-green-600">
           <span>Total</span>
           <span>${totals.total?.toFixed(2)}</span>
         </div>

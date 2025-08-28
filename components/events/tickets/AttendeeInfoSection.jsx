@@ -1,16 +1,9 @@
 // components/events/tickets/AttendeeInfoSection.jsx
 
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { FaInfoCircle, FaAsterisk } from 'react-icons/fa';
-import {
-  updateFormResponse,
-  selectFormResponses,
-} from '@/store/slices/events/ticketPurchaseSlice';
 
-const AttendeeInfoSection = ({ event, errors = {} }) => {
-  const dispatch = useDispatch();
-  const formResponses = useSelector(selectFormResponses);
+const AttendeeInfoSection = ({ event, errors = {}, formResponses = {}, onFormResponseUpdate }) => {
 
   // Check if event has custom registration fields
   if (!event?.registrationFields || event.registrationFields.length === 0) {
@@ -18,7 +11,9 @@ const AttendeeInfoSection = ({ event, errors = {} }) => {
   }
 
   const handleFieldChange = (fieldName, value) => {
-    dispatch(updateFormResponse({ fieldName, value }));
+    if (onFormResponseUpdate) {
+      onFormResponseUpdate(fieldName, value);
+    }
   };
 
   const renderFormField = (field) => {

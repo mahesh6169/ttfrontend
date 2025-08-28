@@ -2,9 +2,10 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
+import axios from 'axios';
 import {
   FaTicketAlt,
   FaCalendarAlt,
@@ -21,32 +22,10 @@ import {
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getEventTicketStatus, getTicketSaleStatus } from '@/utils/events/ticketStatusHelper';
-import {
-  initializePurchaseSession,
-  updateTicketSelection,
-  setSeatRequirement,
-  setCurrentStep,
-  resetPurchaseSession,
-  updateBuyerInfo,
-  selectTicketPurchase,
-  selectSelectedTickets,
-  selectTicketTotals,
-  selectCanProceedToNext,
-  selectPurchaseError,
-  selectPurchaseLoading,
-  setRefundPolicyInfo,
-  selectFormResponses,
-  updateFormResponse,
-} from '@/store/slices/events/ticketPurchaseSlice';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
-import {
-  selectEventCapacityState,
-  selectShouldRefreshCapacity,
-  fetchEventCapacity,
-} from '@/store/slices/events/eventCapacitySlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import AttendeeInfoSection from '@/components/events/tickets/AttendeeInfoSection';
-import bookingStateManager from '@/utils/booking/bookingStateManager';
+import ReservationTimer from '@/components/events/ReservationTimer';
 
 const TicketSelectionPage = () => {
   const { eventId } = useParams();
@@ -61,26 +40,30 @@ const TicketSelectionPage = () => {
     error: eventError,
   } = useSelector((state) => state.events);
 
-  // Redux state
-  const ticketPurchaseState = useSelector(selectTicketPurchase);
-  const selectedTickets = useSelector(selectSelectedTickets);
-  const totals = useSelector(selectTicketTotals);
-  const canProceedToNext = useSelector(selectCanProceedToNext);
-  const purchaseError = useSelector(selectPurchaseError);
-  const loading = useSelector(selectPurchaseLoading);
-  const formResponses = useSelector(selectFormResponses);
-
-  // ✅ Get capacity from Redux instead of local state
-  const { capacity: eventCapacity, isLoading: capacityLoading } = useSelector(state => 
-    selectEventCapacityState(state, eventId)
-  );
-  const shouldRefreshCapacity = useSelector(state => 
-    selectShouldRefreshCapacity(state, eventId)
-  );
-
+  // Reservation state (replacing Redux)
+  const [reservation, setReservation] = useState(null);
+  const [selectedTickets, setSelectedTickets] = useState([]);
+  const [formResponses, setFormResponses] = useState({});
+  const [purchaseError, setPurchaseError] = useState(null);
+  const [apiLoading, setApiLoading] = useState(false);
+  
   // Local state for UI
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isInitializing, setIsInitializing] = useState(true);
+  
+  // Event capacity state
+  const [eventCapacity, setEventCapacity] = useState(null);
+  const [capacityLoading, setCapacityLoading] = useState(false);
+  
+  // Calculate totals based on selected tickets
+  const totals = {
+    totalQuantity: selectedTickets.reduce((sum, t) => sum + t.quantity, 0),
+    totalPrice: selectedTickets.reduce((sum, t) => sum + (t.quantity * t.price), 0)
+  };
+  
+  // Determine if can proceed
+  const canProceedToNext = totals.totalQuantity > 0 && !Object.keys(errors).length;
 
   // Check if event has seating layout
   const hasSeatingLayout =
@@ -93,55 +76,147 @@ const TicketSelectionPage = () => {
     }
   }, [eventId, dispatch]);
 
-  // ✅ Fetch capacity data when needed
+  // Fetch event capacity
   useEffect(() => {
-    if (eventId && shouldRefreshCapacity) {
-      // Fetching capacity for event
-      dispatch(fetchEventCapacity(eventId));
-    }
-  }, [eventId, shouldRefreshCapacity, dispatch]);
-
-  // Initialize purchase session when event is loaded
-  useEffect(() => {
-    if (selectedEvent?._id && eventId) {
-      // Initialize purchase session
-      dispatch(initializePurchaseSession({ eventId: selectedEvent._id }));
-
-      // Set seat requirement
-      dispatch(setSeatRequirement(hasSeatingLayout));
-
-      // Set current step to ticket selection
-      dispatch(setCurrentStep('ticket-selection'));
-
-      // Set refund policy info if it's a paid event
-      if (selectedEvent.isPaid && selectedEvent.refundPolicy) {
-        dispatch(
-          setRefundPolicyInfo({
-            policyType:
-              selectedEvent.refundPolicy.processingFeePolicy ||
-              'non-refundable',
-            policyText: selectedEvent.refundPolicy.policyText || '',
-            policyDisplayed: true,
-          })
+    const fetchCapacity = async () => {
+      if (!eventId || !selectedEvent) return;
+      
+      setCapacityLoading(true);
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/capacity`
         );
+        setEventCapacity(response.data.capacity);
+      } catch (error) {
+        console.error('Error fetching capacity:', error);
+        // Set default capacity if error
+        setEventCapacity({
+          total: selectedEvent.maxAttendees || 100,
+          sold: 0,
+          remaining: selectedEvent.maxAttendees || 100,
+          isUnlimited: !selectedEvent.maxAttendees,
+          status: 'available'
+        });
+      } finally {
+        setCapacityLoading(false);
+      }
+    };
+
+    fetchCapacity();
+  }, [eventId, selectedEvent]);
+
+  // Run cleanup task when tickets page loads
+  useEffect(() => {
+    if (eventId && selectedEvent?._id && user) {
+      // Trigger cleanup in background only for authenticated users
+      axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/reservation/cleanup`,
+        {},
+        { withCredentials: true }
+      ).catch(err => {
+        // Silently handle errors - cleanup is non-critical
+        console.log('Cleanup task error (non-critical):', err.response?.status);
+      });
+    }
+  }, [eventId, selectedEvent?._id, user]);
+
+  // Fetch existing reservation when component mounts
+  useEffect(() => {
+    const fetchReservation = async () => {
+      if (!eventId || !user) {
+        setIsInitializing(false);
+        return;
       }
 
-      // Pre-fill buyer info with user data if available
-      if (user) {
-        dispatch(
-          updateBuyerInfo({
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            email: user.email || '',
-          })
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/reservation`,
+          { withCredentials: true }
         );
+
+        if (response.data.success && response.data.reservation) {
+          const res = response.data.reservation;
+          setReservation(res);
+          
+          // Convert reservation tickets to selectedTickets format
+          const tickets = res.tickets.map(t => ({
+            ticketTypeId: t.ticketTypeId,
+            quantity: t.quantity,
+            price: t.price,
+            name: t.ticketName
+          }));
+          setSelectedTickets(tickets);
+        }
+      } catch (error) {
+        if (error.response?.status !== 404) {
+          console.error('Error fetching reservation:', error);
+        }
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    fetchReservation();
+  }, [eventId, user]);
+
+  // Restore form responses from sessionStorage when component mounts
+  useEffect(() => {
+    if (eventId) {
+      const savedFormResponses = sessionStorage.getItem(`formResponses_${eventId}`);
+      if (savedFormResponses) {
+        try {
+          const parsed = JSON.parse(savedFormResponses);
+          setFormResponses(parsed);
+        } catch (error) {
+          console.error('Error parsing saved form responses:', error);
+        }
       }
     }
-  }, [selectedEvent?._id, eventId, hasSeatingLayout, user, dispatch]);
+  }, [eventId]);
+
+  // Create or update reservation
+  const createOrUpdateReservation = useCallback(async (tickets) => {
+    if (!user || !eventId) return;
+
+    setApiLoading(true);
+    setPurchaseError(null);
+
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/reservation`,
+        {
+          tickets: tickets.filter(t => t.quantity > 0).map(t => ({
+            ticketTypeId: t.ticketTypeId,
+            quantity: t.quantity
+          }))
+        },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setReservation({
+          _id: response.data.reservationId,
+          expiresAt: response.data.expiresAt,
+          tickets: response.data.tickets,
+          totalAmount: response.data.totalAmount
+        });
+      }
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      setPurchaseError(error.response?.data?.message || 'Failed to update ticket selection');
+    } finally {
+      setApiLoading(false);
+    }
+  }, [user, eventId]);
 
   // Handle quantity change
-  const handleQuantityChange = (ticketId, change) => {
+  const handleQuantityChange = async (ticketId, change) => {
     if (!selectedEvent?.ticketTypes) return;
+    if (!user) {
+      alert('Please log in to select tickets');
+      router.push('/login');
+      return;
+    }
 
     const ticketType = selectedEvent.ticketTypes.find(
       (t) => t._id === ticketId
@@ -163,19 +238,47 @@ const TicketSelectionPage = () => {
         : maxPerOrder;
     const maxQuantity = Math.min(maxPerOrder, capacityLimit);
 
-    // Update Redux state
-    dispatch(
-      updateTicketSelection({
+    // Update local state
+    const updatedTickets = [...selectedTickets];
+    const existingIndex = updatedTickets.findIndex(t => t.ticketTypeId === ticketId);
+    
+    if (existingIndex >= 0) {
+      if (Math.min(newQuantity, maxQuantity) === 0) {
+        // Remove ticket if quantity is 0
+        updatedTickets.splice(existingIndex, 1);
+      } else {
+        updatedTickets[existingIndex].quantity = Math.min(newQuantity, maxQuantity);
+      }
+    } else if (newQuantity > 0) {
+      // Add new ticket
+      updatedTickets.push({
         ticketTypeId: ticketId,
         quantity: Math.min(newQuantity, maxQuantity),
         price: ticketType.price || 0,
-        name: ticketType.name,
-        maxQuantity: maxQuantity,
-      })
-    );
-
+        name: ticketType.name
+      });
+    }
+    
+    setSelectedTickets(updatedTickets);
+    
     // Clear any previous errors
     setErrors({});
+    
+    // Update reservation in backend only if there are tickets selected
+    if (updatedTickets.length > 0) {
+      await createOrUpdateReservation(updatedTickets);
+    } else if (reservation) {
+      // If no tickets selected and we have a reservation, delete it
+      try {
+        await axios.delete(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/reservation/${reservation._id}`,
+          { withCredentials: true }
+        );
+        setReservation(null);
+      } catch (error) {
+        console.error('Error deleting reservation:', error);
+      }
+    }
   };
 
   // Validate selection
@@ -226,51 +329,29 @@ const TicketSelectionPage = () => {
 
     if (!validateSelection()) return;
 
+    if (!reservation) {
+      setErrors({ general: 'Please select tickets before proceeding.' });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Mark step as completed
-      dispatch(setCurrentStep(hasSeatingLayout ? 'seat-selection' : 'details'));
-
-      // Store ticket selection in sessionStorage as fallback during transition
-      const ticketSelectionFallback = {
-        eventId: selectedEvent._id,
-        tickets: selectedTickets.reduce((acc, ticket) => {
-          acc[ticket.ticketTypeId] = ticket.quantity;
-          return acc;
-        }, {}),
-        totals: totals,
-        hasSeatingLayout,
-        formResponses: formResponses,
-        timestamp: Date.now(),
-      };
-
-      sessionStorage.setItem(
-        'ticketSelection',
-        JSON.stringify(ticketSelectionFallback)
-      );
-
-      // Also save to bookingStateManager for better persistence
-      bookingStateManager.save({
-        flowId: `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        eventId: selectedEvent._id,
-        eventType: hasSeatingLayout ? 'seated' : 'general',
-        currentStep: hasSeatingLayout ? 'seats' : 'checkout',
-        tickets: {
-          selected: selectedTickets,
-          totals: totals,
-          timestamp: new Date().toISOString()
-        },
-        formResponses: formResponses
-      });
+      // Store form responses in sessionStorage for checkout to pick up
+      if (Object.keys(formResponses).length > 0) {
+        sessionStorage.setItem(
+          `formResponses_${eventId}`,
+          JSON.stringify(formResponses)
+        );
+      }
 
       // Navigate based on seating layout
       if (hasSeatingLayout) {
         // Navigate to seat selection
-        router.push(`/events/seats/${selectedEvent._id}`);
+        router.push(`/events/seats/${eventId}`);
       } else {
         // Navigate directly to checkout
-        router.push(`/checkout/events/${selectedEvent._id}`);
+        router.push(`/checkout/events/${eventId}`);
       }
     } catch (error) {
       console.error('Error proceeding to checkout:', error);
@@ -281,10 +362,26 @@ const TicketSelectionPage = () => {
   };
 
   // Handle back navigation with smart routing
-  const handleBack = () => {
+  const handleBack = async () => {
+    // Clear reservation when leaving tickets page to avoid stale data
+    if (reservation && reservation._id) {
+      try {
+        await axios.delete(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/reservation/${reservation._id}`,
+          { withCredentials: true }
+        );
+      } catch (error) {
+        console.error('Error clearing reservation on back navigation:', error);
+      }
+    }
+    
     // Always go back to the event view page
-    // The event view page will handle the smart navigation back to listings if needed
     router.push(`/events/views/${eventId}`);
+  };
+
+  // Handle form response updates
+  const handleFormResponseUpdate = (fieldName, value) => {
+    setFormResponses(prev => ({ ...prev, [fieldName]: value }));
   };
 
   // Format event date/time
@@ -303,7 +400,7 @@ const TicketSelectionPage = () => {
   };
 
   // Show loading spinner while fetching event
-  if (eventStatus === 'loading') {
+  if (eventStatus === 'loading' || isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
@@ -355,6 +452,25 @@ const TicketSelectionPage = () => {
           <h1 className="text-lg sm:text-2xl font-semibold sm:font-bold text-gray-900 text-center mb-3 sm:mb-6">
             Select Tickets
           </h1>
+          
+          {/* Reservation Timer */}
+          {reservation && (
+            <ReservationTimer
+              expiresAt={reservation.expiresAt}
+              eventId={eventId}
+              reservationId={reservation._id}
+              mode="tickets"
+              onExpire={() => {
+                setReservation(null);
+                setSelectedTickets([]);
+              }}
+              onClear={() => {
+                setReservation(null);
+                setSelectedTickets([]);
+                router.push(`/events/views/${eventId}`);
+              }}
+            />
+          )}
           {/* Ticket Types */}
           <div className="space-y-2 sm:space-y-4 mb-3 sm:mb-6">
 
@@ -478,7 +594,7 @@ const TicketSelectionPage = () => {
                           onClick={() =>
                             handleQuantityChange(ticketType._id, -1)
                           }
-                          disabled={selectedQty === 0 || loading.initializing}
+                          disabled={selectedQty === 0 || apiLoading}
                           className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaMinus className="text-[10px]" />
@@ -495,7 +611,7 @@ const TicketSelectionPage = () => {
                           disabled={
                             totals.totalQuantity >= maxPerOrder ||
                             remainingQty <= 0 ||
-                            loading.initializing ||
+                            apiLoading ||
                             eventCapacity?.status === 'sold-out'
                           }
                           className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -529,7 +645,7 @@ const TicketSelectionPage = () => {
                           onClick={() =>
                             handleQuantityChange(ticketType._id, -1)
                           }
-                          disabled={selectedQty === 0 || loading.initializing}
+                          disabled={selectedQty === 0 || apiLoading}
                           className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaMinus className="text-xs" />
@@ -546,7 +662,7 @@ const TicketSelectionPage = () => {
                           disabled={
                             totals.totalQuantity >= maxPerOrder ||
                             remainingQty <= 0 ||
-                            loading.initializing ||
+                            apiLoading ||
                             eventCapacity?.status === 'sold-out'
                           }
                           className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -577,7 +693,12 @@ const TicketSelectionPage = () => {
 
           {/* Attendee Additional Information */}
           {totals.totalQuantity > 0 && (
-            <AttendeeInfoSection event={selectedEvent} errors={errors} />
+            <AttendeeInfoSection 
+              event={selectedEvent} 
+              errors={errors}
+              formResponses={formResponses}
+              onFormResponseUpdate={handleFormResponseUpdate}
+            />
           )}
 
 
@@ -587,15 +708,15 @@ const TicketSelectionPage = () => {
               <button
                 onClick={handleProceed}
                 disabled={
-                  !canProceedToNext || isLoading || loading.initializing
+                  !canProceedToNext || isLoading || apiLoading || !reservation
                 }
                 className={`w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
-                  canProceedToNext && !isLoading && !loading.initializing
+                  canProceedToNext && !isLoading && !apiLoading && reservation
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {isLoading || loading.initializing ? (
+                {isLoading || apiLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     <span className="text-sm sm:text-base">Processing...</span>

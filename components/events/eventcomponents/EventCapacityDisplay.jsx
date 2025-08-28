@@ -5,9 +5,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { FaUsers } from 'react-icons/fa';
 import {
   fetchEventCapacity,
-  selectEventCapacityState,
+  selectEventCapacityStateMemoized,
   selectShouldRefreshCapacity,
-   markCapacityStale,
+  markCapacityStale,
 } from '@/store/slices/events/eventCapacitySlice';
 
 const EventCapacityDisplay = ({ eventId, isPaid = false, showInTicketSection = false, maxPerRegistration }) => {
@@ -15,7 +15,7 @@ const EventCapacityDisplay = ({ eventId, isPaid = false, showInTicketSection = f
   
   // ✅ Get capacity state from Redux
   const { capacity, isLoading, error } = useSelector(state => 
-    selectEventCapacityState(state, eventId)
+    selectEventCapacityStateMemoized(state, eventId)
   );
   
   // ✅ Check if data needs refresh

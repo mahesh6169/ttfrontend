@@ -4,7 +4,6 @@ import React, { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEventById, clearSelectedEvent, clearError } from '@/store/slices/events/eventSlice';
-import { resetPurchaseSession } from '@/store/slices/events/ticketPurchaseSlice';
 import { markCapacityStale } from '@/store/slices/events/eventCapacitySlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SingleEventCard from '@/components/events/eventcomponents/SingleEventCard';
@@ -22,10 +21,6 @@ const EventDetail = () => {
 
   const { selectedEvent, status, error } = useSelector((state) => state.events);
 
-  // 🔍 DEBUG: Add these console logs
-  console.log('Redux state:', { selectedEvent, status, error });
-  console.log('Event ID from params:', id);
-
   // ✅ FIX: Safe destructuring - use optional chaining instead
   const showSeatSelection = selectedEvent?.isPaid && 
                            selectedEvent?.seatingLayout && 
@@ -34,17 +29,7 @@ const EventDetail = () => {
 
   useEffect(() => {
     if (id) {
-      // Clear any previous data and errors
-      dispatch(clearSelectedEvent());
       dispatch(clearError());
-
-      // ✅ ADD: Reset any completed purchase sessions
-      dispatch(resetPurchaseSession());
-      
-      // Mark capacity as stale to force refresh
-      dispatch(markCapacityStale(id));
-    
-      // Fetch the event
       dispatch(fetchEventById(id));
     }
 
