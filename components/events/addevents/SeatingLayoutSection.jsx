@@ -12,11 +12,57 @@ import {
 } from '@/store/slices/events/eventSlice';
 import { FaInfoCircle } from 'react-icons/fa';
 
-const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
+const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false }) => {
   const [showInstructions, setShowInstructions] = useState(false);
   const [seatInputValues, setSeatInputValues] = useState({});
   const capacityWarning = useSelector((state) => state.events.capacityWarning);
   const [reservedSeatsError, setReservedSeatsError] = useState('');
+  
+  // Track original row count when component mounts in edit mode
+  const [originalRowCount] = useState(() => 
+    isEditMode ? (formData.seatingLayout?.length || 0) : 0
+  );
+  
+  // Parse reserved seats for dynamic coloring
+  const parseReservedSeats = (reservedString) => {
+    const reserved = new Set();
+    if (!reservedString || !reservedString.trim()) return reserved;
+    
+    try {
+      const parts = reservedString.split(',').map(p => p.trim()).filter(Boolean);
+      
+      parts.forEach(part => {
+        if (part.includes('-')) {
+          // Handle range like A4-A6
+          const [start, end] = part.split('-');
+          const startMatch = start.match(/^([A-Z]+)(\d+)$/);
+          const endMatch = end.match(/^([A-Z]+)(\d+)$/);
+          
+          if (startMatch && endMatch && startMatch[1] === endMatch[1]) {
+            const rowLabel = startMatch[1];
+            const startNum = parseInt(startMatch[2]);
+            const endNum = parseInt(endMatch[2]);
+            
+            for (let i = startNum; i <= endNum; i++) {
+              reserved.add(`${rowLabel}${i}`);
+            }
+          }
+        } else {
+          // Handle single seat like A1
+          const match = part.match(/^([A-Z]+)(\d+)$/);
+          if (match) {
+            reserved.add(part);
+          }
+        }
+      });
+    } catch (e) {
+      // Invalid format, return empty set
+    }
+    
+    return reserved;
+  };
+  
+  const reservedSeats = parseReservedSeats(formData.organizerReservedSeats);
   
   // Clear warning after 5 seconds
   useEffect(() => {
@@ -35,12 +81,21 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
       return;
     }
     
-    const seatPattern = /^[A-Z0-9]+\d+(-[A-Z0-9]+\d+)?$/;
+    const seatPattern = /^[A-Z]+\d+(-[A-Z]+\d+)?$/;
     const parts = value.trim().split(',').map(part => part.trim()).filter(Boolean);
     const invalidSeats = parts.filter(part => !seatPattern.test(part));
     
     if (invalidSeats.length > 0) {
-      setReservedSeatsError(`Invalid format: ${invalidSeats.join(', ')}. Use A1 or A1-A5`);
+      // Generate helpful examples based on actual row labels
+      const rows = formData.seatingLayout || [];
+      let exampleFormat = "A1 or A1-A5";
+      
+      if (rows.length > 0 && rows[0]?.rowLabel) {
+        const label = rows[0].rowLabel;
+        exampleFormat = `${label}1 or ${label}1-${label}5`;
+      }
+      
+      setReservedSeatsError(`Invalid format: ${invalidSeats.join(', ')}. Use format like ${exampleFormat}`);
     } else {
       setReservedSeatsError('');
     }
@@ -111,43 +166,134 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
       
       {(formData.seatingLayout || []).length > 0 ? (
         <>
-          <style jsx>{`
-            .seat-layout-container::-webkit-scrollbar {
-              height: 8px;
-            }
-            .seat-layout-container::-webkit-scrollbar-track {
-              background: #f7fafc;
-              border-radius: 4px;
-            }
-            .seat-layout-container::-webkit-scrollbar-thumb {
-              background: #cbd5e0;
-              border-radius: 4px;
-            }
-            .seat-layout-container::-webkit-scrollbar-thumb:hover {
-              background: #a0aec0;
-            }
-          `}</style>
-          
-          {/* Stage indicator */}
-          <div className="text-center py-1.5 mb-2 sm:py-2 sm:mb-4 border border-gray-200 bg-gradient-to-b from-gray-100 to-gray-50 rounded-lg">
-            <div className="inline-block bg-gray-800 text-white px-4 py-1 sm:px-6 sm:py-1.5 rounded text-[10px] sm:text-xs font-semibold tracking-wider">
-              STAGE / FRONT
-            </div>
-          </div>
-
+          {/* Configuration Section with Fixed Height */}
           <div className="mb-4">
-            {/* Seating layout container */}
-            <div className="seat-layout-container border border-gray-200 rounded-lg bg-white" style={{ scrollbarWidth: 'thin', scrollbarColor: '#CBD5E0 #F7FAFC' }}>
-              <div className="p-2 sm:p-4 space-y-2">
+            <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
+              <h5 className="text-sm font-medium text-gray-700 mb-3">Configure Rows</h5>
+              {isEditMode && originalRowCount > 0 && (
+                <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
+                  <strong>Edit Mode:</strong> Existing rows cannot be modified or deleted to preserve sold tickets. New rows can be added and configured normally.
+                </div>
+              )}
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#CBD5E0 #F7FAFC' }}>
                 {(formData.seatingLayout || []).map((row, rowIndex) => (
-                  <div key={rowIndex} className="flex items-center">
-                    {/* Fixed controls container */}
-                    <div className="flex items-center gap-2 flex-shrink-0 pr-2">
-                      {/* Delete Button (X) */}
+                  <div key={rowIndex} className="flex items-center gap-3">
+                    {/* Row label input */}
+                    <input
+                      type="text"
+                      value={row?.rowLabel || ''}
+                      disabled={isEditMode && rowIndex < originalRowCount}
+                      onChange={(e) => {
+                        if (isEditMode && rowIndex < originalRowCount) return;
+                        const value = e.target.value.toUpperCase();
+                        
+                        // Only allow letters (no numbers or alphanumeric)
+                        if (value === '' || /^[A-Z]+$/.test(value)) {
+                          const isDuplicate = formData.seatingLayout.some(
+                            (r, i) => i !== rowIndex && r.rowLabel === value && value !== ''
+                          );
+                          
+                          if (!isDuplicate) {
+                            dispatch(
+                              updateRowLabel({
+                                index: rowIndex,
+                                value: value,
+                              })
+                            );
+                          }
+                        }
+                      }}
+                      className={`w-16 p-2 border border-gray-300 rounded text-center font-bold text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        isEditMode && rowIndex < originalRowCount ? 'bg-gray-100 cursor-not-allowed' : ''
+                      }`}
+                      maxLength="3"
+                      placeholder={(() => {
+                        // Show previous label as placeholder for complex patterns
+                        if (rowIndex > 0 && !row?.rowLabel) {
+                          const prevLabel = formData.seatingLayout[rowIndex - 1]?.rowLabel;
+                          // If previous label is complex (not single letter), show it as hint
+                          if (prevLabel && !/^[A-Z]$/.test(prevLabel)) {
+                            return prevLabel;
+                          }
+                        }
+                        return "A";
+                      })()}
+                    />
+
+                    {/* Seat count input */}
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      disabled={isEditMode && rowIndex < originalRowCount}
+                      value={seatInputValues[rowIndex] !== undefined ? seatInputValues[rowIndex] : (row?.seats || []).length}
+                      onChange={(e) => {
+                        if (isEditMode && rowIndex < originalRowCount) return;
+                        const value = e.target.value;
+                        
+                        // Only allow numeric input
+                        if (value === '' || /^\d+$/.test(value)) {
+                          // Update local state
+                          setSeatInputValues(prev => ({
+                            ...prev,
+                            [rowIndex]: value
+                          }));
+                          
+                          // Update Redux if valid number
+                          if (value !== '') {
+                            const numValue = parseInt(value);
+                            if (numValue >= 1 && numValue <= 100) {
+                              dispatch(
+                                updateSeatCount({
+                                  rowIndex,
+                                  count: numValue,
+                                })
+                              );
+                            }
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (isEditMode && rowIndex < originalRowCount) return;
+                        const value = e.target.value;
+                        let finalValue = 1;
+                        
+                        if (value !== '') {
+                          const numValue = parseInt(value);
+                          if (numValue >= 1 && numValue <= 100) {
+                            finalValue = numValue;
+                          }
+                        }
+                        
+                        // Clear local state
+                        setSeatInputValues(prev => {
+                          const newState = { ...prev };
+                          delete newState[rowIndex];
+                          return newState;
+                        });
+                        
+                        // Update Redux with final value
+                        dispatch(
+                          updateSeatCount({
+                            rowIndex,
+                            count: finalValue,
+                          })
+                        );
+                      }}
+                      className={`w-20 p-2 border border-gray-300 rounded text-center text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        isEditMode && rowIndex < originalRowCount ? 'bg-gray-100 cursor-not-allowed' : ''
+                      }`}
+                      placeholder="10"
+                    />
+
+                    <span className="text-sm text-gray-600">seats</span>
+
+                    {/* Delete Button - Hidden only for existing rows in edit mode */}
+                    {!(isEditMode && rowIndex < originalRowCount) && (
                       <button
                         type="button"
                         onClick={() => dispatch(removeSeatingRow(rowIndex))}
-                        className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        className="ml-auto p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                         title="Remove row"
                       >
                         <svg
@@ -164,156 +310,32 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
                           />
                         </svg>
                       </button>
-
-                      {/* Seat count input box */}
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={seatInputValues[rowIndex] !== undefined ? seatInputValues[rowIndex] : (row?.seats || []).length}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          
-                          // Only allow numeric input
-                          if (value === '' || /^\d+$/.test(value)) {
-                            // Update local state
-                            setSeatInputValues(prev => ({
-                              ...prev,
-                              [rowIndex]: value
-                            }));
-                            
-                            // Update Redux if valid number
-                            if (value !== '') {
-                              const numValue = parseInt(value);
-                              if (numValue >= 1 && numValue <= 100) {
-                                dispatch(
-                                  updateSeatCount({
-                                    rowIndex,
-                                    count: numValue,
-                                  })
-                                );
-                              }
-                            }
-                          }
-                        }}
-                        onBlur={(e) => {
-                          const value = e.target.value;
-                          let finalValue = 1;
-                          
-                          if (value !== '') {
-                            const numValue = parseInt(value);
-                            if (numValue >= 1 && numValue <= 100) {
-                              finalValue = numValue;
-                            }
-                          }
-                          
-                          // Clear local state
-                          setSeatInputValues(prev => {
-                            const newState = { ...prev };
-                            delete newState[rowIndex];
-                            return newState;
-                          });
-                          
-                          // Update Redux with final value
-                          dispatch(
-                            updateSeatCount({
-                              rowIndex,
-                              count: finalValue,
-                            })
-                          );
-                        }}
-                        className="w-12 sm:w-14 p-0.5 sm:p-1 border border-gray-300 rounded text-center text-xs sm:text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                      />
-
-                      {/* "seats" text */}
-                      <span className="text-xs sm:text-sm text-gray-500">seats</span>
-                    </div>
-
-                    {/* Scrollable section */}
-                    <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#CBD5E0 #F7FAFC' }}>
-                      <div className="flex items-center gap-2 min-w-fit">
-                        {/* Row label (A, B, C, etc.) */}
-                        <div className="w-6 sm:w-8 text-center font-bold text-gray-700 text-xs sm:text-sm flex-shrink-0 bg-gray-100 rounded px-1 sm:px-2 py-0.5 sm:py-1">
-                          <input
-                            type="text"
-                            value={row?.rowLabel || ''}
-                            onChange={(e) =>
-                              dispatch(
-                                updateRowLabel({
-                                  index: rowIndex,
-                                  value: e.target.value,
-                                })
-                              )
-                            }
-                            className="w-full bg-transparent text-center font-bold focus:outline-none focus:ring-1 focus:ring-teal-500 rounded"
-                            maxLength="3"
-                            placeholder="A"
-                          />
-                        </div>
-
-                        {/* Seats */}
-                        {(row?.seats || []).map((seat, seatIndex) => {
-                          // Add visual separator every 10 seats
-                          const showSeparator = seatIndex > 0 && (seatIndex) % 10 === 0;
-                          
-                          return (
-                            <Fragment key={seatIndex}>
-                              {showSeparator && (
-                                <div className="w-1 sm:w-2 h-8 flex items-center justify-center">
-                                  <div className="w-px h-6 bg-gray-300"></div>
-                                </div>
-                              )}
-                              <div
-                                className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-50 border-2 border-gray-300 flex items-center justify-center rounded text-xs font-semibold text-gray-700 flex-shrink-0 hover:bg-gray-100 transition-colors"
-                                title={`Row ${row.rowLabel || 'A'}, Seat ${
-                                  seat?.seatNumber || seatIndex + 1
-                                }`}
-                              >
-                                {seat?.seatNumber || seatIndex + 1}
-                              </div>
-                            </Fragment>
-                          );
-                        })}
-
-                        {/* Right row label */}
-                        <div className="w-6 sm:w-8 text-center font-bold text-gray-700 text-xs sm:text-sm flex-shrink-0 bg-gray-100 rounded px-1 sm:px-2 py-0.5 sm:py-1 ml-2">
-                          {row?.rowLabel || 'A'}
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
               
-              {/* Scroll hint for mobile */}
-              <div className="md:hidden bg-gray-50 px-2 py-1 text-center border-t border-gray-200">
-                <div className="text-xs text-gray-500">
-                  ← Swipe to view all seats →
-                </div>
-              </div>
-            </div>
-            
-            {/* Capacity Warning */}
-            {capacityWarning && (
-              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-yellow-700 text-xs sm:text-sm flex items-center">
-                  <svg className="w-4 h-4 mr-1.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  {capacityWarning}
-                </p>
-              </div>
-            )}
-
-            {/* Controls Row */}
-            <div className="flex items-center justify-between mt-3 px-1 sm:px-2">
+              {/* Add Row Button */}
               <button
                 type="button"
                 onClick={() => dispatch(addSeatingRow())}
-                className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-teal-600 hover:text-teal-700 font-medium transition-colors text-sm sm:text-base"
+                disabled={(() => {
+                  const totalSeats = formData.seatingLayout.reduce((sum, row) => sum + (row.seats?.length || 0), 0);
+                  const capacity = Number(formData.capacity) || 0;
+                  return capacity > 0 && totalSeats >= capacity;
+                })()}
+                className={`mt-3 inline-flex items-center px-3 py-1.5 text-sm font-medium transition-colors ${
+                  (() => {
+                    const totalSeats = formData.seatingLayout.reduce((sum, row) => sum + (row.seats?.length || 0), 0);
+                    const capacity = Number(formData.capacity) || 0;
+                    return capacity > 0 && totalSeats >= capacity;
+                  })()
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-teal-600 hover:text-teal-700'
+                }`}
               >
                 <svg
-                  className="w-4 h-4 mr-2"
+                  className="w-4 h-4 mr-1.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -327,57 +349,201 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
                 </svg>
                 Add Row
               </button>
-
-              <div className="text-xs sm:text-sm text-gray-600 bg-gray-100 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
-                Total Seats:{' '}
-                <span className="font-semibold text-gray-900">
-                  {(formData.seatingLayout || []).reduce(
-                    (total, row) => total + (row.seats?.length || 0),
-                    0
-                  )}
-                </span>
-              </div>
             </div>
           </div>
 
-          {/* Organizer Reserved Seats */}
-          {(formData.seatingLayout || []).length > 0 && (
-            <div className="border-t border-gray-200 pt-4 mb-4 sm:pt-6 sm:mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reserve Seats for Organizer
-                <span className="text-xs text-gray-400 ml-1">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={formData.organizerReservedSeats || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  dispatch(
-                    updateField({
-                      field: 'organizerReservedSeats',
-                      value: value,
-                    })
+          {/* Visual Preview Section */}
+          <div className="border border-gray-200 rounded-lg bg-white p-4">
+            {/* Stage indicator */}
+            <div className="text-center py-2 mb-4 border border-gray-200 bg-gradient-to-b from-gray-100 to-gray-50 rounded">
+              <div className="inline-block bg-gray-800 text-white px-6 py-1 rounded text-xs font-semibold tracking-wider">
+                STAGE / FRONT
+              </div>
+            </div>
+            
+            {/* Theater-style dotted visualization */}
+            <div className="max-h-64 overflow-y-auto overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#CBD5E0 #F7FAFC' }}>
+              <div className="min-w-fit">
+                {(formData.seatingLayout || []).map((row, rowIndex) => {
+                  const seatCount = row.seats?.length || 0;
+                  const totalRows = formData.seatingLayout.length;
+                  // Calculate padding to create theater effect (first row most padded)
+                  const paddingPercentage = ((totalRows - rowIndex - 1) / Math.max(totalRows - 1, 1)) * 25;
+                  
+                  return (
+                    <div key={rowIndex} className="flex items-center h-8">
+                      {/* Row label - fixed width and right aligned */}
+                      <div className="w-12 flex-shrink-0 text-right pr-4">
+                        <span className="font-bold text-gray-700 text-sm">
+                          {row.rowLabel || (() => {
+                            // Use same logic as Add Row for default labels
+                            if (rowIndex === 0) return 'A';
+                            
+                            const prevRow = formData.seatingLayout[rowIndex - 1];
+                            if (!prevRow?.rowLabel) return '';
+                            
+                            // Single letter progression
+                            if (/^[A-Z]$/.test(prevRow.rowLabel)) {
+                              if (prevRow.rowLabel === 'Z') {
+                                return 'AA';
+                              } else {
+                                return String.fromCharCode(prevRow.rowLabel.charCodeAt(0) + 1);
+                              }
+                            }
+                            
+                            // For any other pattern, return empty (show previous label)
+                            return prevRow.rowLabel;
+                          })()}
+                        </span>
+                      </div>
+                      
+                      {/* Centered container for dots */}
+                      <div className="flex-1 flex justify-center">
+                        {/* Seats as dots with theater-style padding */}
+                        <div className="flex items-center" style={{ paddingLeft: `${paddingPercentage}%`, paddingRight: `${paddingPercentage}%` }}>
+                          {Array.from({ length: seatCount }).map((_, seatIndex) => {
+                            const seatId = `${row.rowLabel || 'A'}${seatIndex + 1}`;
+                            const isReserved = reservedSeats.has(seatId);
+                            
+                            return (
+                              <span 
+                                key={seatIndex} 
+                                className={`mx-0.5 text-xl ${isReserved ? 'text-purple-600' : 'text-gray-400'}`}
+                                title={isReserved ? `Reserved: ${seatId}` : seatId}
+                              >
+                                •
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
                   );
-                  validateReservedSeats(value);
-                }}
-                className={`w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm ${
-                  reservedSeatsError ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="A1,A4-A6,B1,C3-C5"
-              />
-              {reservedSeatsError && (
-                <p className="text-red-500 text-xs mt-1">{reservedSeatsError}</p>
-              )}
-              <p className="text-xs text-gray-500 mt-1">
-                Reserve specific seats for organizer use. Format: A1 for single seat, A4-A6 for consecutive seats in same row. Separate multiple selections with commas.
+                })}
+              </div>
+            </div>
+            
+            {/* Total seats indicator and legend */}
+            <div className="mt-4 pt-3 border-t border-gray-200">
+              <div className="flex items-center justify-center gap-4 flex-wrap">
+                <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                  Total Seats:{' '}
+                  <span className="font-semibold text-gray-900">
+                    {(formData.seatingLayout || []).reduce(
+                      (total, row) => total + (row.seats?.length || 0),
+                      0
+                    )}
+                  </span>
+                </span>
+                {reservedSeats.size > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-400 text-xl">•</span>
+                    <span className="text-gray-600">Available</span>
+                    <span className="text-purple-600 text-xl ml-2">•</span>
+                    <span className="text-gray-600">Reserved ({reservedSeats.size})</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Capacity Warning */}
+          {capacityWarning && (
+            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-700 text-xs sm:text-sm flex items-center">
+                <svg className="w-4 h-4 mr-1.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                {capacityWarning}
               </p>
             </div>
           )}
 
-          {/* Seating Layout Image Upload */}
-          <div className="border-t border-gray-200 pt-4 sm:pt-6">
+          {/* Organizer Reserved Seats */}
+          <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Seating Layout Image (Optional)
+              Reserve Seats for Organizer
+              <span className="text-xs text-gray-400 ml-1">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={formData.organizerReservedSeats || ''}
+              onChange={(e) => {
+                const value = e.target.value.toUpperCase();
+                dispatch(
+                  updateField({
+                    field: 'organizerReservedSeats',
+                    value: value,
+                  })
+                );
+                validateReservedSeats(value);
+              }}
+              className={`w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm ${
+                reservedSeatsError ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder={(() => {
+                const rows = formData.seatingLayout || [];
+                if (rows.length === 0) return "A1,A4-A6,B1,C3-C5";
+                
+                // Categorize row labels by type
+                const labelTypes = {
+                  singleLetter: [],    // A, B, C
+                  doubleLetter: [],    // AA, BB
+                  word: []            // VIP, BAL
+                };
+                
+                rows.forEach(row => {
+                  if (!row?.rowLabel) return;
+                  const label = row.rowLabel;
+                  
+                  if (/^[A-Z]$/.test(label)) {
+                    labelTypes.singleLetter.push(row);
+                  } else if (/^[A-Z]{2}$/.test(label)) {
+                    labelTypes.doubleLetter.push(row);
+                  } else if (/^[A-Z]{3,}$/.test(label)) {
+                    labelTypes.word.push(row);
+                  }
+                });
+                
+                const examples = [];
+                
+                // Add one example from each type (single seat + range)
+                Object.values(labelTypes).forEach(typeRows => {
+                  if (typeRows.length > 0) {
+                    const row = typeRows[0];
+                    examples.push(`${row.rowLabel}1`);
+                    
+                    if (row.seats?.length >= 4) {
+                      examples.push(`${row.rowLabel}1-${row.rowLabel}4`);
+                    }
+                  }
+                });
+                
+                // If we have very few examples, add more from available rows
+                if (examples.length < 4 && rows.length > 1) {
+                  for (let i = 1; i < rows.length && examples.length < 6; i++) {
+                    if (rows[i]?.rowLabel && !examples.some(ex => ex.startsWith(rows[i].rowLabel))) {
+                      examples.push(`${rows[i].rowLabel}1`);
+                    }
+                  }
+                }
+                
+                return examples.join(',') || "A1,A4-A6,B1,C3-C5";
+              })()}
+            />
+            {reservedSeatsError && (
+              <p className="text-red-500 text-xs mt-1">{reservedSeatsError}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Reserve seats for organizer use. These will be excluded from sale.
+            </p>
+          </div>
+
+          {/* Seating Layout Image Upload */}
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Venu Seating
+              <span className="text-xs text-gray-400 ml-1">(optional)</span>
             </label>
             <input
               type="file"

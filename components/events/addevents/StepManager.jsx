@@ -651,6 +651,16 @@ const validateCurrentStep = useCallback(() => {
         // Basic seating layout validation - required fields only
         if (formData.seatingLayout && formData.seatingLayout.length > 0) {
           const seatingErrors = [];
+          const totalSeats = formData.seatingLayout.reduce(
+            (total, row) => total + (row.seats?.length || 0), 0
+          );
+          
+          // Check if capacity matches total seats for seated events
+          if (formData.capacity && Number(formData.capacity) > 0) {
+            if (totalSeats !== Number(formData.capacity)) {
+              seatingErrors.push(`For seated events, capacity must match total seats. Current: ${totalSeats} seats, ${formData.capacity} capacity`);
+            }
+          }
           
           formData.seatingLayout.forEach((row, index) => {
             if (!row.rowLabel?.trim()) {

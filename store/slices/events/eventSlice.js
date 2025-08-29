@@ -740,7 +740,27 @@ updateGstIncluded: (state, action) => {
         return;
       }
       
-      const nextRowLabel = String.fromCharCode(65 + state.formData.seatingLayout.length);
+      // Smart row label generation
+      let nextRowLabel = '';
+      if (state.formData.seatingLayout.length > 0) {
+        const lastLabel = state.formData.seatingLayout[state.formData.seatingLayout.length - 1].rowLabel;
+        
+        // Single uppercase letter (A-Z)
+        if (/^[A-Z]$/.test(lastLabel)) {
+          if (lastLabel === 'Z') {
+            nextRowLabel = 'AA'; // After Z, go to AA
+          } else {
+            nextRowLabel = String.fromCharCode(lastLabel.charCodeAt(0) + 1);
+          }
+        }
+        // For any other pattern (AA, VIP, etc), don't auto-generate
+        else {
+          nextRowLabel = '';
+        }
+      } else {
+        // First row defaults to 'A'
+        nextRowLabel = 'A';
+      }
       
       // Check current total
       const currentTotal = state.formData.seatingLayout.reduce(

@@ -177,7 +177,7 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
 };
 
 // Paid Event Configuration Component
-const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
+const PaidEventConfig = ({ formData = {}, errors = {}, dispatch, isEditMode }) => {
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
   const [priceErrors, setPriceErrors] = useState({});
   const [bookingLimitError, setBookingLimitError] = useState('');
@@ -694,6 +694,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
         formData={formData}
         errors={errors}
         dispatch={dispatch}
+        isEditMode={isEditMode}
       />
     </div>
   );
@@ -861,8 +862,9 @@ const CustomRegistrationFields = ({
 };
 
 // Main TicketConfigStep Component
-const TicketConfigStep = ({ formData = {}, errors = {} }) => {
+const TicketConfigStep = ({ formData = {}, errors = {}, mode = 'add' }) => {
   const dispatch = useDispatch();
+  const isEditMode = mode === 'edit';
   
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
 
@@ -875,6 +877,7 @@ const TicketConfigStep = ({ formData = {}, errors = {} }) => {
           formData={formData}
           errors={errors}
           dispatch={dispatch}
+          isEditMode={isEditMode}
         />
       ) : (
         <FreeEventConfig
