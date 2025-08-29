@@ -272,8 +272,8 @@ const createDefaultFormData = () => ({
 
   // Ticketing
    isPaid: false, // Default to free event
-  capacity: 0,
-  maxAttendeesPerRegistration: 10,
+  capacity: '',
+  maxAttendeesPerRegistration: '',
   registrationFields: [],
   
   // Paid Event Details
@@ -424,8 +424,8 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
       parentEventId: eventData.recurrence?.parentEventId || null
     },
     isPaid: eventData.isPaid || false,
-    capacity: eventData.capacity || 0,
-    maxAttendeesPerRegistration: eventData.maxAttendeesPerRegistration || 5,
+    capacity: eventData.capacity || '',
+    maxAttendeesPerRegistration: eventData.maxAttendeesPerRegistration || '',
     registrationFields: eventData.registrationFields || [],
     ticketTypes: (eventData.ticketTypes && eventData.ticketTypes.length > 0) 
   ? processTicketDatesForEdit(eventData.ticketTypes, eventData.timeZone)

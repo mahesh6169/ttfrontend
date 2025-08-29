@@ -16,12 +16,15 @@ import {
   updateFieldOptions,
   removeRegistrationField,
   updateGstIncluded,
+  setFormErrors,
 } from '@/store/slices/events/eventSlice';
 import SeatingLayoutSection from './SeatingLayoutSection';
 
 // Free Event Configuration Component
 const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
+  const [bookingLimitError, setBookingLimitError] = useState('');
+  const [bookingLimitTouched, setBookingLimitTouched] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -49,7 +52,7 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               Capacity Management
             </h4>
             <p className="text-xs sm:text-sm text-gray-500">
-              Control attendance limits
+              Set Capacity and Booking Limits
             </p>
           </div>
         </div>
@@ -73,16 +76,22 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                     value: val === '' ? '' : Math.max(0, Number(val) || 0),
                   })
                 );
-              }}
-              onBlur={(e) => {
-                if (e.target.value === '') {
-                  dispatch(updateField({ field: 'capacity', value: 0 }));
+                
+                // Clear StepManager error for this field when user starts typing
+                if (errors?.capacity) {
+                  const newErrors = { ...errors };
+                  delete newErrors.capacity;
+                  dispatch(setFormErrors(newErrors));
                 }
               }}
+              onBlur={(e) => {
+                // Keep it blank if user leaves it empty
+              }}
+              onWheel={(e) => e.target.blur()}
               className={`w-full p-2.5 sm:p-3 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
                 errors?.capacity ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder="0 for unlimited"
+              placeholder="Enter a number (0 or above)"
             />
             {errors?.capacity && (
               <p className="mt-1 text-red-500 text-xs sm:text-sm">{errors.capacity}</p>
@@ -95,7 +104,7 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
           {/* Maximum Attendees per Booking */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-              Max per Booking
+              Booking Limit
             </label>
             <input
               type="number"
@@ -107,37 +116,51 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               }
               onChange={(e) => {
                 const val = e.target.value;
+                const numVal = Number(val);
+                
+                // Show error if 0 is entered
+                if (val !== '' && numVal === 0) {
+                  setBookingLimitError('Booking limit must be 1 or above');
+                } else if (val !== '' && numVal < 0) {
+                  setBookingLimitError('Booking limit cannot be negative');
+                } else {
+                  setBookingLimitError('');
+                }
+                
                 dispatch(
                   updateField({
                     field: 'maxAttendeesPerRegistration',
                     value: val,
                   })
                 );
-              }}
-              onBlur={(e) => {
-                if (e.target.value === '' || Number(e.target.value) < 1) {
-                  dispatch(
-                    updateField({
-                      field: 'maxAttendeesPerRegistration',
-                      value: 10,
-                    })
-                  );
+                
+                // Clear StepManager error for this field when user starts typing
+                if (errors?.maxAttendeesPerRegistration) {
+                  const newErrors = { ...errors };
+                  delete newErrors.maxAttendeesPerRegistration;
+                  dispatch(setFormErrors(newErrors));
                 }
               }}
+              onWheel={(e) => e.target.blur()}
               className={`w-full p-2.5 sm:p-3 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-                errors?.maxAttendeesPerRegistration
+                errors?.maxAttendeesPerRegistration || bookingLimitError
                   ? 'border-red-500'
                   : 'border-gray-300'
               }`}
-              placeholder="Min 1"
+              placeholder="Enter a number (1 or above)"
             />
             {errors?.maxAttendeesPerRegistration && (
               <p className="mt-1 text-red-500 text-xs sm:text-sm">
                 {errors.maxAttendeesPerRegistration}
               </p>
             )}
+            {!errors?.maxAttendeesPerRegistration && bookingLimitError && (
+              <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                {bookingLimitError}
+              </p>
+            )}
             <p className="text-xs text-gray-500 mt-1">
-              Per booking limit
+              Maximum seats per order
             </p>
           </div>
         </div>
@@ -157,6 +180,7 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
 const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
   const [priceErrors, setPriceErrors] = useState({});
+  const [bookingLimitError, setBookingLimitError] = useState('');
 
   // Decimal validation function
   const validatePriceDecimals = (value) => {
@@ -222,6 +246,13 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                     value: val,
                   })
                 );
+                
+                // Clear StepManager error for this field when user starts typing
+                if (errors?.capacity) {
+                  const newErrors = { ...errors };
+                  delete newErrors.capacity;
+                  dispatch(setFormErrors(newErrors));
+                }
               }}
               onWheel={(e) => e.target.blur()}
               placeholder="0 for unlimited"
@@ -240,7 +271,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
           {/* Maximum Attendees per Booking */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-              Max per Booking
+              Booking Limit
             </label>
             <input
               type="number"
@@ -254,37 +285,51 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
               }
               onChange={(e) => {
                 const val = e.target.value;
+                const numVal = Number(val);
+                
+                // Show error if 0 is entered
+                if (val !== '' && numVal === 0) {
+                  setBookingLimitError('Booking limit must be 1 or above');
+                } else if (val !== '' && numVal < 0) {
+                  setBookingLimitError('Booking limit cannot be negative');
+                } else {
+                  setBookingLimitError('');
+                }
+                
                 dispatch(
                   updateField({
                     field: 'maxAttendeesPerRegistration',
                     value: val,
                   })
                 );
-              }}
-              onBlur={(e) => {
-                if (e.target.value === '' || Number(e.target.value) < 1) {
-                  dispatch(
-                    updateField({
-                      field: 'maxAttendeesPerRegistration',
-                      value: 10,
-                    })
-                  );
+                
+                // Clear StepManager error for this field when user starts typing
+                if (errors?.maxAttendeesPerRegistration) {
+                  const newErrors = { ...errors };
+                  delete newErrors.maxAttendeesPerRegistration;
+                  dispatch(setFormErrors(newErrors));
                 }
               }}
+              onWheel={(e) => e.target.blur()}
               className={`w-full p-2.5 sm:p-3 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-                errors?.maxAttendeesPerRegistration
+                errors?.maxAttendeesPerRegistration || bookingLimitError
                   ? 'border-red-500'
                   : 'border-gray-300'
               }`}
-              placeholder="Min 1"
+              placeholder="Enter a number (1 or above)"
             />
             {errors?.maxAttendeesPerRegistration && (
               <p className="mt-1 text-red-500 text-xs sm:text-sm">
                 {errors.maxAttendeesPerRegistration}
               </p>
             )}
+            {!errors?.maxAttendeesPerRegistration && bookingLimitError && (
+              <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                {bookingLimitError}
+              </p>
+            )}
             <p className="text-xs text-gray-500 mt-1">
-              Per booking limit
+              Maximum seats per order
             </p>
           </div>
         </div>
@@ -373,15 +418,22 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                   <input
                     type="text"
                     value={ticket?.name || ''}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       dispatch(
                         updateTicketType({
                           index,
                           field: 'name',
                           value: e.target.value,
                         })
-                      )
-                    }
+                      );
+                      
+                      // Clear StepManager error for this field when user starts typing
+                      if (errors?.[`ticketName_${index}`]) {
+                        const newErrors = { ...errors };
+                        delete newErrors[`ticketName_${index}`];
+                        dispatch(setFormErrors(newErrors));
+                      }
+                    }}
                     placeholder="Early Bird"
                     className={`w-full p-2 sm:p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
                       errors?.[`ticketName_${index}`]
@@ -435,6 +487,13 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                           value: val,
                         })
                       );
+                      
+                      // Clear StepManager error for this field when user starts typing
+                      if (errors?.[`ticketPrice_${index}`]) {
+                        const newErrors = { ...errors };
+                        delete newErrors[`ticketPrice_${index}`];
+                        dispatch(setFormErrors(newErrors));
+                      }
                     }}
                     onWheel={(e) => e.target.blur()}
                     className={`w-full p-2 sm:p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
@@ -587,7 +646,7 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="text-base sm:text-lg font-medium text-gray-900">
-              GST Configuration
+              GST Display
             </h4>
           </div>
         </div>
@@ -606,10 +665,10 @@ const PaidEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
                 htmlFor="gstIncluded"
                 className="block text-sm font-medium text-gray-900 cursor-pointer"
               >
-                Prices include GST
+                Show prices as GST-inclusive
               </label>
               <p className="text-xs text-gray-500 mt-0.5">
-                Check if your ticket prices already include GST
+                Check this if your ticket prices already include GST. The displayed price will show ‘incl. GST’.
               </p>
             </div>
           </div>
@@ -668,10 +727,10 @@ const CustomRegistrationFields = ({
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-base sm:text-lg font-medium text-gray-900">
-            Additional Questions
+            Attende Information
           </h4>
           <p className="text-xs sm:text-sm text-gray-500">
-            Collect extra info from attendees
+            Collect information from attendees when they book (e.g. diet).
             {isRecurring && (
               <span className="block text-blue-600 text-xs font-medium mt-0.5">
                 Applied to all recurring instances
@@ -804,6 +863,7 @@ const CustomRegistrationFields = ({
 // Main TicketConfigStep Component
 const TicketConfigStep = ({ formData = {}, errors = {} }) => {
   const dispatch = useDispatch();
+  
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
 
   return (

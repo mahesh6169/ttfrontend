@@ -628,36 +628,29 @@ const validateCurrentStep = useCallback(() => {
       }
       break;
 
-    case 4: // Ticket Config (unchanged)
+    case 4: // Ticket Config - Required field validation only
       if (formData.isPaid) {
+        // Capacity is required
         if (
           formData.capacity === '' ||
           formData.capacity === undefined ||
-          formData.capacity === null ||
-          isNaN(Number(formData.capacity)) ||
-          Number(formData.capacity) < 0
+          formData.capacity === null
         ) {
-          errors.capacity = [
-            'Please enter 0 for unlimited or a positive number',
-          ];
+          errors.capacity = ['Event capacity is required'];
         }
         
-        // Seating layout validation for paid events
+        // Booking limit is required
+        if (
+          formData.maxAttendeesPerRegistration === undefined ||
+          formData.maxAttendeesPerRegistration === null ||
+          formData.maxAttendeesPerRegistration === ''
+        ) {
+          errors.maxAttendeesPerRegistration = ['Booking limit is required'];
+        }
+        
+        // Basic seating layout validation - required fields only
         if (formData.seatingLayout && formData.seatingLayout.length > 0) {
           const seatingErrors = [];
-          
-          // Check if capacity is 0 when seating layout exists
-          if (!formData.capacity || formData.capacity === 0 || formData.capacity === '0') {
-            seatingErrors.push('Seating events cannot have unlimited capacity. Please set a capacity limit above 0.');
-          } else {
-            // Check if total seats match capacity exactly
-            const totalSeats = formData.seatingLayout.reduce(
-              (total, row) => total + (row.seats?.length || 0), 0
-            );
-            if (totalSeats !== Number(formData.capacity)) {
-              seatingErrors.push(`For seated events, capacity must match total seats. Current: ${totalSeats} seats, ${formData.capacity} capacity`);
-            }
-          }
           
           formData.seatingLayout.forEach((row, index) => {
             if (!row.rowLabel?.trim()) {
@@ -676,88 +669,31 @@ const validateCurrentStep = useCallback(() => {
             'At least one ticket type is required for paid events',
           ];
         } else {
-          const ticketErrors = [];
           formData.ticketTypes.forEach((ticket, index) => {
-            const ticketName = ticket.name?.trim() || `Ticket ${index + 1}`;
-            
-            // Name is required (has * in form)
+            // Name is required
             if (!ticket.name?.trim()) {
-              // Individual field error only
-              errors[`ticketName_${index}`] = ['Ticket Name is required'];
+              errors[`ticketName_${index}`] = ['Ticket name is required'];
             }
 
-            // Price is required and must be > 0 (has * in form)
+            // Price is required
             if (
               ticket.price === undefined ||
               ticket.price === null ||
-              ticket.price === '' ||
-              isNaN(Number(ticket.price)) ||
-              Number(ticket.price) <= 0
+              ticket.price === ''
             ) {
-              // Individual field error only
-              errors[`ticketPrice_${index}`] = [`${ticketName}: Price must be greater than 0`];
-            }
-
-            // Date validation: dates must be today or future, startDate before expiryDate
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Start of today
-
-            if (ticket.startDate) {
-              const startDate = new Date(ticket.startDate);
-              if (startDate < today) {
-                // Individual field error only
-                errors[`ticketStartDate_${index}`] = [`${ticketName} ticket: Start date cannot be in the past`];
-              }
-            }
-
-            if (ticket.expiryDate) {
-              const expiryDate = new Date(ticket.expiryDate);
-              const eventDate = new Date(formData.dateTime);
-              
-              if (expiryDate < today) {
-                // Individual field error only
-                errors[`ticketExpiryDate_${index}`] = [`${ticketName} ticket: Expiry date cannot be in the past`];
-              } else if (expiryDate > eventDate) {
-                // Individual field error only
-                errors[`ticketExpiryDate_${index}`] = [`${ticketName} ticket: Expiry date cannot be after event date`];
-              }
-            }
-
-            if (ticket.startDate && ticket.expiryDate) {
-              const startDate = new Date(ticket.startDate);
-              const expiryDate = new Date(ticket.expiryDate);
-              if (startDate >= expiryDate) {
-                // General error with specific ticket name for cross-field validation
-                ticketErrors.push(
-                  `${ticketName} ticket: Start date must be before expiry date`
-                );
-              }
+              errors[`ticketPrice_${index}`] = ['Ticket price is required'];
             }
           });
-          if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
-        }
-        // Organizer reserved seats validation
-        if (formData.organizerReservedSeats && formData.organizerReservedSeats.trim()) {
-          const reservedSeatsStr = formData.organizerReservedSeats.trim();
-          const seatPattern = /^[A-Z]+\d+(-[A-Z]+\d+)?$/; // Matches A1 or A7-A9
-          const parts = reservedSeatsStr.split(',').map(part => part.trim()).filter(Boolean);
-          
-          const invalidSeats = parts.filter(part => !seatPattern.test(part));
-          if (invalidSeats.length > 0) {
-            errors.organizerReservedSeats = [
-              `Invalid seat format. Use individual seats (A1,A3) or ranges (A7-A9,A12). Invalid: ${invalidSeats.join(', ')}`
-            ];
-          }
         }
       } else {
-        // Free event validation
+        // Free event validation - only check if field is empty
         if (
-          !formData.maxAttendeesPerRegistration ||
-          formData.maxAttendeesPerRegistration === '' ||
-          Number(formData.maxAttendeesPerRegistration) < 1
+          formData.maxAttendeesPerRegistration === undefined ||
+          formData.maxAttendeesPerRegistration === null ||
+          formData.maxAttendeesPerRegistration === ''
         ) {
           errors.maxAttendeesPerRegistration = [
-            'Number should be 1 or above',
+            'Booking limit is required',
           ];
         }
       }

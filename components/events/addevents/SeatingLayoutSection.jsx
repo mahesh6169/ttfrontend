@@ -16,6 +16,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
   const [showInstructions, setShowInstructions] = useState(false);
   const [seatInputValues, setSeatInputValues] = useState({});
   const capacityWarning = useSelector((state) => state.events.capacityWarning);
+  const [reservedSeatsError, setReservedSeatsError] = useState('');
   
   // Clear warning after 5 seconds
   useEffect(() => {
@@ -26,6 +27,24 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
       return () => clearTimeout(timer);
     }
   }, [capacityWarning, dispatch]);
+  
+  // Validate reserved seats format
+  const validateReservedSeats = (value) => {
+    if (!value || !value.trim()) {
+      setReservedSeatsError('');
+      return;
+    }
+    
+    const seatPattern = /^[A-Z0-9]+\d+(-[A-Z0-9]+\d+)?$/;
+    const parts = value.trim().split(',').map(part => part.trim()).filter(Boolean);
+    const invalidSeats = parts.filter(part => !seatPattern.test(part));
+    
+    if (invalidSeats.length > 0) {
+      setReservedSeatsError(`Invalid format: ${invalidSeats.join(', ')}. Use A1 or A1-A5`);
+    } else {
+      setReservedSeatsError('');
+    }
+  };
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-6">
@@ -331,17 +350,24 @@ const SeatingLayoutSection = ({ formData, errors, dispatch }) => {
               <input
                 type="text"
                 value={formData.organizerReservedSeats || ''}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = e.target.value;
                   dispatch(
                     updateField({
                       field: 'organizerReservedSeats',
-                      value: e.target.value,
+                      value: value,
                     })
-                  )
-                }
-                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+                  );
+                  validateReservedSeats(value);
+                }}
+                className={`w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm ${
+                  reservedSeatsError ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="A1,A4-A6,B1,C3-C5"
               />
+              {reservedSeatsError && (
+                <p className="text-red-500 text-xs mt-1">{reservedSeatsError}</p>
+              )}
               <p className="text-xs text-gray-500 mt-1">
                 Reserve specific seats for organizer use. Format: A1 for single seat, A4-A6 for consecutive seats in same row. Separate multiple selections with commas.
               </p>
