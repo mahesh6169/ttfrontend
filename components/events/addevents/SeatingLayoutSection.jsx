@@ -11,8 +11,10 @@ import {
   clearCapacityWarning,
 } from '@/store/slices/events/eventSlice';
 import { FaInfoCircle } from 'react-icons/fa';
+import ImageUploader from './ImageUploader';
 
-const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false }) => {
+const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, onSeatingImagesChange }) => {
+  console.log('🪑 SeatingLayoutSection rendered with formData.seatingLayoutImage:', formData.seatingLayoutImage);
   const [showInstructions, setShowInstructions] = useState(false);
   const [seatInputValues, setSeatInputValues] = useState({});
   const capacityWarning = useSelector((state) => state.events.capacityWarning);
@@ -539,31 +541,24 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false }
             </p>
           </div>
 
-          {/* Seating Layout Image Upload */}
+          {/* Venue Seating Image Upload */}
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Venu Seating
+              Venue Seating Layout
               <span className="text-xs text-gray-400 ml-1">(optional)</span>
             </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  dispatch(
-                    updateField({
-                      field: 'seatingLayoutImage',
-                      value: e.target.files[0],
-                    })
-                  );
-                }
-              }}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            <ImageUploader
+              images={formData.seatingLayoutImage || []}
+              onImagesChange={onSeatingImagesChange}
+              maxImages={4}
+              disabled={false}
+              mode={isEditMode ? 'edit' : 'add'}
             />
             <p className="text-xs text-gray-500 mt-1">
-              Upload a visual reference of your seating layout for attendees
+              Upload visual references of your venue seating layout (up to 4 images).
             </p>
           </div>
+
         </>
       ) : (
         <div className="text-center py-6 sm:py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">

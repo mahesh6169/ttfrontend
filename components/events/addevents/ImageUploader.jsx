@@ -11,6 +11,13 @@ const ImageUploader = ({
   disabled = false,
   mode = 'add'
 }) => {
+  console.log('🖼️ ImageUploader rendered with:', {
+    imagesCount: images.length,
+    maxImages,
+    disabled,
+    mode,
+    images: images
+  });
 
   // Cleanup function for object URLs
   const cleanupPreviews = useCallback((imagesToCleanup) => {
@@ -94,6 +101,7 @@ const ImageUploader = ({
     const updatedImages = [...images, ...newImages];
     
     // Call the parent handler
+    console.log('🖼️ Calling onImagesChange with', updatedImages.length, 'images');
     onImagesChange(updatedImages);
     
     // Reset input

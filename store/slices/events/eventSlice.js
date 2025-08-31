@@ -279,7 +279,7 @@ const createDefaultFormData = () => ({
   // Paid Event Details
   ticketTypes: [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
   seatingLayout: [],
-  seatingLayoutImage: null,
+  seatingLayoutImage: [],
   organizerReservedSeats: '',
   
   // Financial
@@ -431,7 +431,7 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
   ? processTicketDatesForEdit(eventData.ticketTypes, eventData.timeZone)
   : [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
     seatingLayout: eventData.seatingLayout || [],
-    seatingLayoutImage: eventData.seatingLayoutImage || null,
+    seatingLayoutImage: eventData.seatingLayoutImage || [],
     organizerReservedSeats: eventData.organizerReservedSeats || '',
     stripeAccountId: eventData.stripeAccountId || '',
     refundPolicy: eventData.refundPolicy || {

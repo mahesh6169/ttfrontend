@@ -26,7 +26,7 @@ import {
   setImages,
   clearSuccessMessage,
   originalEventData,
-  
+  updateField,
 } from '@/store/slices/events/eventSlice';
 import { markCapacityStale } from '@/store/slices/events/eventCapacitySlice';
 
@@ -72,6 +72,7 @@ const StepManager = ({
 
   // Local state for image files (can't store File objects in Redux)
   const [localImageFiles, setLocalImageFiles] = useState([]);
+  const [localSeatingImageFiles, setLocalSeatingImageFiles] = useState([]);
   
   // Track if we're returning to step 2 to handle blob URL regeneration
   const [isReturningToImageStep, setIsReturningToImageStep] = useState(false);
@@ -303,6 +304,64 @@ const StepManager = ({
     [dispatch]
   );
 
+  // Handle seating images change (following the same pattern as handleImagesChange)
+  const handleSeatingImagesChange = useCallback(
+    (images) => {
+      console.log('🪑 handleSeatingImagesChange called with:', images.length, 'images');
+      
+      // Update local File objects first
+      setLocalSeatingImageFiles(prevFiles => {
+        console.log('🪑 Updating local seating files. Previous count:', prevFiles.length);
+        
+        const existingFileMap = new Map();
+        prevFiles.forEach(localFile => {
+          existingFileMap.set(localFile.id, localFile);
+        });
+        
+        const updatedFiles = [];
+        images.forEach(img => {
+          if (img.isNew && img.file instanceof File) {
+            const existingFile = existingFileMap.get(img.id);
+            if (existingFile) {
+              updatedFiles.push(existingFile);
+            } else {
+              updatedFiles.push({
+                id: img.id,
+                file: img.file,
+                isNew: true
+              });
+            }
+          }
+        });
+        
+        console.log('🪑 Updated local seating files:', updatedFiles.length);
+        return updatedFiles;
+      });
+      
+      // Strip File objects for Redux
+      const safeImages = images.map(img => {
+        const { file, ...safeImg } = img;
+        return {
+          ...safeImg,
+          url: img.url,
+          id: img.id,
+          name: img.name,
+          size: img.size,
+          type: img.type,
+          isExisting: img.isExisting,
+          isNew: img.isNew,
+        };
+      });
+      
+      console.log('🪑 Dispatching to Redux:', safeImages.length, 'safe seating images');
+      console.log('🪑 Safe seating images details:', safeImages);
+      dispatch(updateField({
+        field: 'seatingLayoutImage',
+        value: safeImages
+      }));
+    },
+    [dispatch]
+  );
 
   // Form validation function
   const validateForm = useCallback(() => {
@@ -1055,9 +1114,66 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
     if (existingImages.length > 0) {
       submitFormData.append('existingImages', JSON.stringify(existingImages));
     }
+    
+    // Handle seating layout images for paid events (now supports multiple)
+    console.log('🪑 Checking seating images:', {
+      isPaid: formData.isPaid,
+      seatingLayoutImage: formData.seatingLayoutImage,
+      seatingLayoutImageLength: formData.seatingLayoutImage ? formData.seatingLayoutImage.length : 0,
+      localSeatingImageFiles: localSeatingImageFiles
+    });
+    
+    if (formData.isPaid && formData.seatingLayoutImage && formData.seatingLayoutImage.length > 0) {
+      const seatingImages = Array.isArray(formData.seatingLayoutImage) 
+        ? formData.seatingLayoutImage 
+        : [formData.seatingLayoutImage];
+      
+      console.log('🪑 Preparing seating images for submission:', {
+        seatingImages: seatingImages.length,
+        localSeatingImageFiles: localSeatingImageFiles.length,
+        seatingImagesData: seatingImages
+      });
+      
+      // Get new images that need file upload
+      const newSeatingImages = seatingImages.filter(img => img.isNew);
+      const existingSeatingImages = seatingImages.filter(img => img.isExisting);
+      
+      console.log('🪑 New seating images to upload:', newSeatingImages.length);
+      console.log('🪑 Existing seating images:', existingSeatingImages.length);
+      
+      // Append new files from local state
+      newSeatingImages.forEach(img => {
+        const localFile = localSeatingImageFiles.find(f => f.id === img.id);
+        console.log('🪑 Looking for file with id:', img.id, 'Found:', !!localFile);
+        if (localFile && localFile.file) {
+          console.log('🪑 Appending seating file:', localFile.file.name);
+          submitFormData.append('seatingLayoutImageFiles', localFile.file);
+        }
+      });
+      
+      // Send existing images metadata
+      if (existingSeatingImages.length > 0) {
+        submitFormData.append('existingSeatingLayoutImages', JSON.stringify(
+          existingSeatingImages.map(img => ({
+            url: img.url,
+            publicId: img.publicId
+          }))
+        ));
+      }
+    }
 
+    // Debug log to see all FormData entries
+    console.log('📋 Final FormData entries:');
+    for (let [key, value] of submitFormData.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: File - ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`  ${key}:`, value);
+      }
+    }
+    
     return submitFormData;
-  }, [formData, localImageFiles, isEditMode, originalEventData]);
+  }, [formData, localImageFiles, localSeatingImageFiles, isEditMode, originalEventData]);
 
   // Handle form submission
   const handleSubmit = useCallback(async () => {
@@ -1331,6 +1447,7 @@ const handleAddAnother = useCallback(() => {
       errors={formErrors}
       mode={mode}
       readOnly={isViewMode}
+      onSeatingImagesChange={handleSeatingImagesChange}
     />
   )}
 

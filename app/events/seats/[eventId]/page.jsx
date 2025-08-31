@@ -12,7 +12,22 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import SeatMapWithSocket from '@/components/events/seats/SeatMapWithSocket';
 import SeatLegend from '@/components/events/seats/SeatLegend';
 import ReservationTimer from '@/components/events/ReservationTimer';
-import { FaShoppingCart, FaArrowLeft } from 'react-icons/fa';
+import { FaShoppingCart, FaArrowLeft, FaTimes } from 'react-icons/fa';
+
+// Helper function to get optimized image URL (same pattern as SingleEventCard)
+const getOptimizedImageUrl = (imageObj) => {
+  if (!imageObj) return null;
+  if (typeof imageObj === 'string') return imageObj;
+  
+  // Use pre-optimized URLs from backend
+  if (imageObj.optimizedUrls) {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    return isMobile ? imageObj.optimizedUrls.mobile : imageObj.optimizedUrls.desktop;
+  }
+  
+  // Fallback to original URL
+  return imageObj.url || null;
+};
 
 const SeatSelectionPage = () => {
   const { eventId } = useParams();
@@ -30,6 +45,8 @@ const SeatSelectionPage = () => {
   const [reservation, setReservation] = useState(null);
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [ticketTotals, setTicketTotals] = useState({ totalQuantity: 0, totalPrice: 0 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Calculate ticket requirement
   const ticketRequirement = {
@@ -211,6 +228,46 @@ const SeatSelectionPage = () => {
             />
           )}
           
+          {/* Venue Seating Layout - Only display if images available */}
+          {selectedEvent?.seatingLayoutImage && selectedEvent.seatingLayoutImage.length > 0 && (
+            <div className="mb-3 sm:mb-6">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
+                Venue Seating Layout
+              </h2>
+              
+              {/* Thumbnail Grid */}
+              <div className={`grid gap-2 ${
+                selectedEvent.seatingLayoutImage.length === 1 ? 'grid-cols-1' : 
+                selectedEvent.seatingLayoutImage.length === 2 ? 'grid-cols-2' : 
+                selectedEvent.seatingLayoutImage.length === 3 ? 'grid-cols-3' : 
+                'grid-cols-2 sm:grid-cols-4'
+              }`}>
+                {selectedEvent.seatingLayoutImage.map((image, index) => (
+                  <div 
+                    key={index} 
+                    className="relative group cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-all"
+                    onClick={() => {
+                      setCurrentImageIndex(index);
+                      setIsFullscreen(true);
+                    }}
+                  >
+                    <img
+                      src={getOptimizedImageUrl(image)}
+                      alt={`Venue Seating Layout ${index + 1}`}
+                      className="w-full h-24 sm:h-32 object-cover group-hover:scale-105 transition-transform duration-200"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity duration-200 flex items-center justify-center">
+                      <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-sm">
+                        Click to view
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           {/* Seat Map */}
           <div className="mb-3 sm:mb-6">
             <SeatMapWithSocket
@@ -239,6 +296,66 @@ const SeatSelectionPage = () => {
           </button>
         </div>
       </div>
+      
+      {/* Fullscreen Modal for Seating Images */}
+      {isFullscreen && selectedEvent?.seatingLayoutImage?.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+          <img
+            src={getOptimizedImageUrl({
+              ...selectedEvent.seatingLayoutImage[currentImageIndex],
+              optimizedUrls: {
+                ...selectedEvent.seatingLayoutImage[currentImageIndex].optimizedUrls,
+                desktop: selectedEvent.seatingLayoutImage[currentImageIndex].optimizedUrls?.fullscreen || 
+                         selectedEvent.seatingLayoutImage[currentImageIndex].optimizedUrls?.desktop
+              }
+            }) || selectedEvent.seatingLayoutImage[currentImageIndex].url}
+            alt={`Venue Seating Layout ${currentImageIndex + 1}`}
+            className="object-contain w-[95vw] h-[95vh] sm:w-[90vw] sm:h-[90vh] rounded shadow-2xl"
+          />
+          
+          {/* Navigation for multiple images */}
+          {selectedEvent.seatingLayoutImage.length > 1 && (
+            <>
+              <button
+                onClick={() => setCurrentImageIndex((prev) => 
+                  prev === 0 ? selectedEvent.seatingLayoutImage.length - 1 : prev - 1
+                )}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 p-2 rounded-full shadow-lg transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              <button
+                onClick={() => setCurrentImageIndex((prev) => 
+                  (prev + 1) % selectedEvent.seatingLayoutImage.length
+                )}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 p-2 rounded-full shadow-lg transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
+          
+          {/* Close button */}
+          <button
+            onClick={() => setIsFullscreen(false)}
+            className="absolute top-4 right-4 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 p-2 rounded-full shadow-lg transition-all"
+          >
+            <FaTimes size={24} />
+          </button>
+          
+          {/* Image counter */}
+          {selectedEvent.seatingLayoutImage.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black bg-opacity-60 text-white px-4 py-2 rounded-full text-sm">
+              {currentImageIndex + 1} / {selectedEvent.seatingLayoutImage.length}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
