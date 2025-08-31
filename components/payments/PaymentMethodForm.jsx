@@ -48,10 +48,17 @@ const PaymentMethodForm = ({ disabled = false }) => {
   };
 
   // Handle card element changes
-const handleCardChange = (event) => {
-  setCardError(event.error ? event.error.message : '');
-  setCardComplete(event.complete);
-};
+  const handleCardChange = (event) => {
+    // Check for card brand
+    if (event.brand && ['amex', 'diners', 'discover', 'jcb', 'unionpay'].includes(event.brand)) {
+      setCardError('Sorry, we only accept Visa and Mastercard from Australian banks');
+      setCardComplete(false);
+      return;
+    }
+    
+    setCardError(event.error ? event.error.message : '');
+    setCardComplete(event.complete);
+  };
 
   // Handle card element focus
   const handleCardFocus = () => {

@@ -491,19 +491,8 @@ const CheckoutPage = () => {
       if (confirmResponse.data.success) {
         console.log('✅ Payment confirmed via backend');
         
-        // Mark reservation as completed
-        try {
-          if (reservation?._id) {
-            await axios.put(
-              `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation/${reservation._id}`,
-              { status: 'completed' },
-              { withCredentials: true }
-            );
-          }
-        } catch (error) {
-          console.error('Failed to update reservation status:', error);
-          // Continue anyway - payment is successful
-        }
+        // Note: Reservation cleanup happens automatically on the backend
+        // when tickets are created successfully
         
         // Clear session data
         sessionStorage.removeItem(`formResponses_${params.eventId}`);
