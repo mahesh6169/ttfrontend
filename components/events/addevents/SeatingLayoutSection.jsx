@@ -530,7 +530,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
                   }
                 }
                 
-                return examples.join(',') || "A1,A4-A6,B1,C3-C5";
+                return "E.g. " + (examples.join(',') || "A1,A4-A6,B1,C3-C5");
               })()}
             />
             {reservedSeatsError && (
@@ -629,28 +629,54 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
                 </button>
               </div>
 
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="font-medium text-gray-700 mb-1">Seating Row Name Default:</p>
-                  <p className="text-gray-600">A, B, C, D... and so on</p>
+              <div className="space-y-3 text-sm">
+                {/* Row Labels Section */}
+                <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                  <p className="font-semibold text-gray-800 mb-2 text-xs uppercase tracking-wide">Row Labels</p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Pattern:</span>
+                      <span className="font-mono">Letters only (A-Z)</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Max length:</span>
+                      <span className="font-mono">3 characters</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Examples:</span>
+                      <span className="font-mono">A, AA, VIP, BAL</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <p className="font-medium text-gray-700 mb-1">Seating Row Name Character Limit:</p>
-                  <p className="text-gray-600">3 characters maximum</p>
+                {/* Seats Section */}
+                <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                  <p className="font-semibold text-gray-800 mb-2 text-xs uppercase tracking-wide">Seats per Row</p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Min/Max:</span>
+                      <span className="font-mono">1-100 seats</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total must equal:</span>
+                      <span className="font-mono">Event capacity</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <p className="font-medium text-gray-700 mb-1">Seating Row Names Allowed:</p>
-                  <p className="text-gray-600">A, AA, 1A, VIP, BAL</p>
-                </div>
-
-                <div>
-                  <p className="font-medium text-gray-700 mb-1">Reserve Seats Examples:</p>
-                  <div className="bg-gray-50 p-3 rounded font-mono text-xs space-y-1">
-                    <p>A1, A5-A6</p>
-                    <p>AA1, AA5-AA6</p>
-                    <p>1A1, 1A5-1A7</p>
+                {/* Reserved Seats Section */}
+                <div className="border border-gray-200 rounded-lg p-3 bg-purple-50">
+                  <p className="font-semibold text-purple-800 mb-2 text-xs uppercase tracking-wide">Reserved Seats Format</p>
+                  <div className="space-y-2">
+                    <div className="text-xs text-gray-700">
+                      <span className="font-medium">Format:</span> <span className="font-mono">[Row][Seat#]</span>
+                    </div>
+                    <div className="bg-white rounded p-2 font-mono text-xs space-y-1">
+                      <div className="text-green-700">✓ Single: A1, B5, VIP2</div>
+                      <div className="text-green-700">✓ Range: A1-A5, AA1-AA3</div>
+                      <div className="text-green-700">✓ Multiple: A1,A5-A7,B2</div>
+                      <div className="text-red-700 mt-2">✗ Invalid: 1A, A-5, A1-B1</div>
+                    </div>
                   </div>
                 </div>
               </div>

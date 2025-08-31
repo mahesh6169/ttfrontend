@@ -157,21 +157,33 @@ const ImageUploader = ({
       </label>
 
       {/* File Input */}
-      {images.length < maxImages && !disabled && (
+      {!disabled && (
         <div className="mb-4">
           <input
             type="file"
             multiple
             accept="image/*"
             onChange={handleFileChange}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            disabled={images.length >= maxImages}
+            className={`w-full p-2 border rounded-lg ${
+              images.length >= maxImages 
+                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed' 
+                : 'border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500'
+            }`}
           />
-         
+          {images.length >= maxImages && (
+            <p className="text-xs text-amber-600 mt-1 flex items-center">
+              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              Maximum {maxImages} images reached
+            </p>
+          )}
         </div>
       )}
 
       {/* Disabled state message */}
-      {disabled && images.length < maxImages && (
+      {disabled && (
         <div className="mb-4 p-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600">
           Image uploads are disabled in view mode
         </div>
@@ -270,17 +282,10 @@ const ImageUploader = ({
       )}
 
       {/* Status Information */}
-      <div className="flex justify-between items-center mt-2">
+      <div className="mt-2">
         <p className="text-sm text-gray-500">
           {images.length}/{maxImages} images uploaded
         </p>
-        
-        {images.length > 0 && (
-          <p className="text-xs text-gray-400">
-            New: {images.filter(img => img.isNew).length} | 
-            Existing: {images.filter(img => img.isExisting).length}
-          </p>
-        )}
       </div>
     </div>
   );
