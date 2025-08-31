@@ -138,6 +138,17 @@ const PaymentMethodForm = ({ disabled = false }) => {
         )}
       </div>
 
+      {/* Australian Cards Notice */}
+      <div className="bg-amber-50 rounded-md sm:rounded-lg p-2.5 sm:p-3 border border-amber-200">
+        <div className="flex items-start space-x-1.5 sm:space-x-2">
+          <FaExclamationCircle className="text-amber-600 mt-0.5 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4" />
+          <div className="text-xs sm:text-sm text-amber-800">
+            <p className="font-medium">Australian cards only</p>
+            <p className="mt-0.5 leading-relaxed">We currently only accept Visa and Mastercard issued by Australian banks.</p>
+          </div>
+        </div>
+      </div>
+
       {/* Security Information */}
       <div className="bg-gray-50 rounded-md sm:rounded-lg p-2.5 sm:p-3">
         <div className="flex items-start space-x-1.5 sm:space-x-2">
@@ -151,31 +162,33 @@ const PaymentMethodForm = ({ disabled = false }) => {
 
       {/* Accepted Cards */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-500">
-        <span className="mb-1.5 sm:mb-0">Accepted cards:</span>
+        <span className="mb-1.5 sm:mb-0">Accepted cards (Australian only):</span>
         <div className="flex space-x-1.5 sm:space-x-2">
           <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-100 rounded text-[10px] sm:text-xs font-mono">VISA</span>
-          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-100 rounded text-[10px] sm:text-xs font-mono">MC</span>
-          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-100 rounded text-[10px] sm:text-xs font-mono">AMEX</span>
-          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-100 rounded text-[10px] sm:text-xs font-mono">DISC</span>
+          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-100 rounded text-[10px] sm:text-xs font-mono">Mastercard</span>
         </div>
       </div>
 
       {/* Test Card Information (Development Only) */}
       {process.env.NODE_ENV === 'development' && (
         <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-blue-50 border border-blue-200 rounded-md sm:rounded-lg">
-          <h4 className="text-xs sm:text-sm font-medium text-blue-800 mb-1.5 sm:mb-2">Test Cards:</h4>
+          <h4 className="text-xs sm:text-sm font-medium text-blue-800 mb-1.5 sm:mb-2">Australian Test Cards:</h4>
           <div className="grid grid-cols-1 gap-1 sm:gap-2 text-xs sm:text-sm text-blue-700">
             <div className="flex items-center">
-              <span className="font-mono text-[10px] sm:text-xs">4242 4242 4242 4242</span>
-              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-blue-600">Success</span>
+              <span className="font-mono text-[10px] sm:text-xs">4000 0036 0000 0006</span>
+              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-blue-600">AU Visa</span>
             </div>
             <div className="flex items-center">
-              <span className="font-mono text-[10px] sm:text-xs">4000 0000 0000 0002</span>
-              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-blue-600">Declined</span>
+              <span className="font-mono text-[10px] sm:text-xs">5555 5536 0000 0008</span>
+              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-blue-600">AU Mastercard</span>
+            </div>
+            <div className="flex items-center text-red-600">
+              <span className="font-mono text-[10px] sm:text-xs line-through opacity-50">3782 822463 10005</span>
+              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs">AMEX (Not Accepted)</span>
             </div>
           </div>
           <p className="text-[10px] sm:text-xs text-blue-600 mt-1.5 sm:mt-2">
-            Use any future date and 3-digit CVC.
+            Use any future date and 3-digit CVC. International cards will be rejected.
           </p>
         </div>
       )}
