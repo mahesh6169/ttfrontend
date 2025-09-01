@@ -537,7 +537,55 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
               <p className="text-red-500 text-xs mt-1">{reservedSeatsError}</p>
             )}
             <p className="text-xs text-gray-500 mt-1">
-              Reserve seats for organizer use. These will be excluded from sale.
+              Reserve seats for organizer use. These will be excluded from sale. {(() => {
+                const rows = formData.seatingLayout || [];
+                if (rows.length === 0) return "E.g. A1,A4-A6,B1,C3-C5";
+                
+                // Categorize row labels by type
+                const labelTypes = {
+                  singleLetter: [],    // A, B, C
+                  doubleLetter: [],    // AA, BB
+                  word: []            // VIP, BAL
+                };
+                
+                rows.forEach(row => {
+                  if (!row?.rowLabel) return;
+                  const label = row.rowLabel;
+                  
+                  if (/^[A-Z]$/.test(label)) {
+                    labelTypes.singleLetter.push(row);
+                  } else if (/^[A-Z]{2}$/.test(label)) {
+                    labelTypes.doubleLetter.push(row);
+                  } else if (/^[A-Z]{3,}$/.test(label)) {
+                    labelTypes.word.push(row);
+                  }
+                });
+                
+                const examples = [];
+                
+                // Add one example from each type (single seat + range)
+                Object.values(labelTypes).forEach(typeRows => {
+                  if (typeRows.length > 0) {
+                    const row = typeRows[0];
+                    examples.push(`${row.rowLabel}1`);
+                    
+                    if (row.seats?.length >= 4) {
+                      examples.push(`${row.rowLabel}1-${row.rowLabel}4`);
+                    }
+                  }
+                });
+                
+                // If we have very few examples, add more from available rows
+                if (examples.length < 4 && rows.length > 1) {
+                  for (let i = 1; i < rows.length && examples.length < 6; i++) {
+                    if (rows[i]?.rowLabel && !examples.some(ex => ex.startsWith(rows[i].rowLabel))) {
+                      examples.push(`${rows[i].rowLabel}1`);
+                    }
+                  }
+                }
+                
+                return "E.g. " + (examples.join(',') || "A1,A4-A6,B1,C3-C5");
+              })()}
             </p>
           </div>
 
