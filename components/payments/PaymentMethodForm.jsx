@@ -174,7 +174,7 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
           <h4 className="text-xs sm:text-sm font-medium text-blue-800 mb-1.5 sm:mb-2">Australian Test Cards:</h4>
           <div className="grid grid-cols-1 gap-1 sm:gap-2 text-xs sm:text-sm text-blue-700">
             <div className="flex items-center">
-              <span className="font-mono text-[10px] sm:text-xs">4000 0036 0000 0006</span>
+              <span className="font-mono text-[10px] sm:text-xs">4000 0003 6000 0006</span>
               <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-blue-600">AU Visa</span>
             </div>
             <div className="flex items-center">

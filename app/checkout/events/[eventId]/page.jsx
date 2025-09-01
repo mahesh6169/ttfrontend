@@ -491,13 +491,36 @@ const CheckoutPage = () => {
       if (confirmResponse.data.success) {
         console.log('✅ Payment confirmed via backend');
         
-        // Note: Reservation cleanup happens automatically on the backend
-        // when tickets are created successfully
+        // Clean up reservation data before showing success
+        try {
+          // Delete reservation from backend (if it still exists)
+          if (reservation?._id) {
+            await axios.delete(
+              `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation/${reservation._id}`,
+              { withCredentials: true }
+            ).catch(err => {
+              // Ignore 404 errors as reservation might already be cleaned up by backend
+              if (err.response?.status !== 404) {
+                console.log('Reservation cleanup note:', err.message);
+              }
+            });
+          }
+          
+          // Clear all reservation-related session storage
+          sessionStorage.removeItem(`reservation_${params.eventId}`);
+          sessionStorage.removeItem(`selectedTickets_${params.eventId}`);
+          sessionStorage.removeItem(`formResponses_${params.eventId}`);
+          
+          // Clear reservation state
+          setReservation(null);
+          
+          console.log('✅ Cleanup completed');
+        } catch (cleanupError) {
+          console.error('Cleanup error (non-blocking):', cleanupError);
+          // Don't block success flow for cleanup errors
+        }
         
-        // Clear session data
-        sessionStorage.removeItem(`formResponses_${params.eventId}`);
-        
-        // Set success state to show success UI
+        // NOW show success state after cleanup is done
         setCurrentStep('complete');
         setIsPaymentSuccessful(true);
         setPaymentStatus({ ...paymentStatus, status: 'succeeded' });
@@ -529,6 +552,7 @@ const CheckoutPage = () => {
       </div>
     );
   }
+
 
   if (selectedTickets.length === 0) {
     return (
@@ -563,7 +587,7 @@ const CheckoutPage = () => {
   if (currentStep === 'complete' || (paymentStatus.status === 'succeeded' && isPaymentSuccessful)) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
-        <div className="max-w-lg mx-auto px-3 sm:px-4">
+        <div className="max-w-lg lg:max-w-2xl mx-auto px-3 sm:px-4">
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8 text-center">
             <FaCheckCircle className="mx-auto text-4xl sm:text-5xl lg:text-6xl text-green-600 mb-3 sm:mb-4 lg:mb-6" />
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-3 lg:mb-4">
@@ -963,7 +987,22 @@ const CheckoutPage = () => {
               ) : (
                 /* Payment Step */
                 <>
-                  <div className="bg-white rounded-lg shadow-sm border p-2 sm:p-4 lg:p-6">
+                  <div className="bg-white rounded-lg shadow-sm border p-2 sm:p-4 lg:p-6 relative">
+                    {/* Loading overlay during payment processing */}
+                    {isProcessing && (
+                      <div className="absolute inset-0 bg-white bg-opacity-90 z-50 flex items-center justify-center rounded-lg">
+                        <div className="text-center">
+                          <FaSpinner className="animate-spin mx-auto text-3xl sm:text-4xl text-emerald-600 mb-3" />
+                          <p className="text-sm sm:text-base font-semibold text-gray-800">
+                            Processing Payment...
+                          </p>
+                          <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                            Please do not close this page
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
                     <h2 className="text-sm sm:text-lg lg:text-xl font-semibold mb-2 sm:mb-4 flex items-center">
                       Payment Details
                     </h2>
@@ -998,6 +1037,7 @@ const CheckoutPage = () => {
                           totalAmount={paymentStatus.amount}
                           buyerInfo={buyerInfo}
                           stripeAccountId={paymentStatus.stripeAccountId}
+                          disabled={isProcessing}
                         />
                       </>
                     ) : (
