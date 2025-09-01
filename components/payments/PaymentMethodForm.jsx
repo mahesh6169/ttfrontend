@@ -14,13 +14,18 @@ import {
   FaCheckCircle,
   FaExclamationCircle 
 } from 'react-icons/fa';
+import { 
+  SiVisa, 
+  SiMastercard 
+} from 'react-icons/si';
 
-const PaymentMethodForm = ({ disabled = false }) => {
+const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [cardComplete, setCardComplete] = useState(false);
   const [cardError, setCardError] = useState(null);
   const [cardFocused, setCardFocused] = useState(false);
+  const [cardBrand, setCardBrand] = useState(null);
 
   // Card Element styling options - responsive
   const cardOptions = {
@@ -49,14 +54,41 @@ const PaymentMethodForm = ({ disabled = false }) => {
 
   // Handle card element changes
   const handleCardChange = (event) => {
-    // Check for card brand
-    if (event.brand && ['amex', 'diners', 'discover', 'jcb', 'unionpay'].includes(event.brand)) {
+    // Update card brand
+    setCardBrand(event.brand || null);
+    
+    // Define accepted card brands
+    const acceptedCards = ['visa', 'mastercard'];
+    
+    // Check if card brand is accepted
+    if (event.brand && !acceptedCards.includes(event.brand)) {
       setCardError('Sorry, we only accept Visa and Mastercard from Australian banks');
       setCardComplete(false);
+      if (onValidationChange) {
+        onValidationChange(false, 'invalid_card_brand');
+      }
       return;
     }
     
-    setCardError(event.error ? event.error.message : '');
+    // For accepted cards (Visa/Mastercard)
+    if (event.brand && acceptedCards.includes(event.brand) && event.complete) {
+      setCardError(null);
+      if (onValidationChange) {
+        onValidationChange(true, null);
+      }
+    } else if (event.error) {
+      setCardError(event.error.message);
+      if (onValidationChange) {
+        onValidationChange(false, 'card_error');
+      }
+    } else {
+      setCardError(null);
+      // Card is incomplete but no errors
+      if (onValidationChange) {
+        onValidationChange(event.complete, null);
+      }
+    }
+    
     setCardComplete(event.complete);
   };
 
@@ -72,6 +104,15 @@ const PaymentMethodForm = ({ disabled = false }) => {
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      {/* Accepted Cards */}
+      <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600">
+        <span>Accepted cards (Australian only):</span>
+        <div className="flex items-center space-x-2">
+          <SiVisa className="text-xl sm:text-2xl text-[#1A1F71]" />
+          <SiMastercard className="text-xl sm:text-2xl text-[#EB001B]" />
+        </div>
+      </div>
+
       {/* Card Input Section */}
       <div className="space-y-1.5 sm:space-y-2">
         <label className="block text-xs sm:text-sm font-medium text-gray-700">
@@ -87,17 +128,6 @@ const PaymentMethodForm = ({ disabled = false }) => {
             ? 'border-blue-500 bg-blue-50' 
             : 'border-gray-300 bg-white'
         }`}>
-          {/* Card Icon. */}
-          <div className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 z-10">
-            <FaCreditCard className={`text-sm sm:text-lg ${
-              cardError 
-                ? 'text-red-500' 
-                : cardComplete 
-                ? 'text-green-500' 
-                : 'text-gray-400'
-            }`} />
-          </div>
-
           {/* Status Icon */}
           <div className="absolute right-2.5 sm:right-3 top-1/2 transform -translate-y-1/2 z-10">
             {cardError ? (
@@ -110,7 +140,7 @@ const PaymentMethodForm = ({ disabled = false }) => {
           </div>
 
           {/* Stripe Card Element */}
-          <div className="px-10 sm:px-12 py-2.5 sm:py-3">
+          <div className="px-3 sm:px-4 py-2.5 sm:py-3">
             <CardElement
               options={cardOptions}
               onChange={handleCardChange}
@@ -136,37 +166,6 @@ const PaymentMethodForm = ({ disabled = false }) => {
             Card details are valid
           </p>
         )}
-      </div>
-
-      {/* Australian Cards Notice */}
-      <div className="bg-amber-50 rounded-md sm:rounded-lg p-2.5 sm:p-3 border border-amber-200">
-        <div className="flex items-start space-x-1.5 sm:space-x-2">
-          <FaExclamationCircle className="text-amber-600 mt-0.5 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4" />
-          <div className="text-xs sm:text-sm text-amber-800">
-            <p className="font-medium">Australian cards only</p>
-            <p className="mt-0.5 leading-relaxed">We currently only accept Visa and Mastercard issued by Australian banks.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Security Information */}
-      <div className="bg-gray-50 rounded-md sm:rounded-lg p-2.5 sm:p-3">
-        <div className="flex items-start space-x-1.5 sm:space-x-2">
-          <FaLock className="text-gray-500 mt-0.5 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4" />
-          <div className="text-xs sm:text-sm text-gray-600">
-            <p className="font-medium">Your payment is secure</p>
-            <p className="mt-0.5 leading-relaxed">We use industry-standard encryption to protect your card information.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Accepted Cards */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-500">
-        <span className="mb-1.5 sm:mb-0">Accepted cards (Australian only):</span>
-        <div className="flex space-x-1.5 sm:space-x-2">
-          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-100 rounded text-[10px] sm:text-xs font-mono">VISA</span>
-          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-100 rounded text-[10px] sm:text-xs font-mono">Mastercard</span>
-        </div>
       </div>
 
       {/* Test Card Information (Development Only) */}

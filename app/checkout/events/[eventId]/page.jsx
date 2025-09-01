@@ -559,51 +559,67 @@ const CheckoutPage = () => {
     );
   }
 
-  // Success Step (matching old checkout page)
+  // Success Step - Mobile-first optimized
   if (currentStep === 'complete' || (paymentStatus.status === 'succeeded' && isPaymentSuccessful)) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <FaCheckCircle className="mx-auto text-6xl text-green-600 mb-6" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+      <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
+        <div className="max-w-lg mx-auto px-3 sm:px-4">
+          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8 text-center">
+            <FaCheckCircle className="mx-auto text-4xl sm:text-5xl lg:text-6xl text-green-600 mb-3 sm:mb-4 lg:mb-6" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-3 lg:mb-4">
               Payment Successful!
             </h1>
-            <p className="text-lg text-gray-600 mb-6">
+            <p className="text-sm sm:text-base lg:text-lg text-gray-600 mb-3 sm:mb-4 lg:mb-6">
               Your tickets have been purchased successfully.
             </p>
 
-            <div className="bg-green-50 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-green-800 mb-2">
+            <div className="bg-green-50 rounded-md sm:rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 lg:mb-6">
+              <h3 className="font-semibold text-green-800 mb-1.5 sm:mb-2 text-sm sm:text-base">
                 What's Next?
               </h3>
-              <ul className="text-green-700 space-y-1">
-                <li>📧 Check your email for confirmation and tickets</li>
-                <li>🎫 Your tickets will be delivered within 5 minutes</li>
-                <li>📱 Save your tickets to your phone for easy access</li>
-                <li>🎪 Present your tickets at the event entrance</li>
+              <ul className="text-green-700 space-y-0.5 sm:space-y-1 text-xs sm:text-sm lg:text-base text-left">
+                <li className="flex items-start">
+                  <span className="mr-1.5 flex-shrink-0">📧</span>
+                  <span>An email is on the way with your event, invoice, and ticket details</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-1.5 flex-shrink-0">🎫</span>
+                  <span>You can always save or find them in Dashboard → Profile → My Tickets</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-1.5 flex-shrink-0">📱</span>
+                  <span>Keep them handy on your phone for easy access</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-1.5 flex-shrink-0">🧑‍💼</span>
+                  <span>Need help? Reach out to the organiser</span>
+                </li>
               </ul>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-2 sm:space-y-3 lg:space-y-4">
               <button
                 onClick={() => router.push('/users/profile/mytickets')}
-                className="w-full px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-emerald-600 text-white rounded-md sm:rounded-lg hover:bg-emerald-700 transition-colors text-sm sm:text-base font-medium"
               >
                 View My Tickets
               </button>
 
               <button
                 onClick={() => {
-                  // Reset all state
-                  setReservation(null);
-                  setSelectedTickets([]);
-                  setCurrentStep('details');
-                  setIsPaymentSuccessful(false);
-                  setPaymentStatus({ status: null, clientSecret: null, amount: 0 });
+                  // Navigate first, then reset state
                   router.push(`/events/views/${params.eventId}`);
+                  
+                  // Reset state after navigation starts
+                  setTimeout(() => {
+                    setReservation(null);
+                    setSelectedTickets([]);
+                    setCurrentStep('details');
+                    setIsPaymentSuccessful(false);
+                    setPaymentStatus({ status: null, clientSecret: null, amount: 0 });
+                  }, 100);
                 }}
-                className="w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-gray-200 text-gray-800 rounded-md sm:rounded-lg hover:bg-gray-300 transition-colors text-sm sm:text-base font-medium"
               >
                 Back to Event
               </button>
@@ -983,17 +999,6 @@ const CheckoutPage = () => {
                           buyerInfo={buyerInfo}
                           stripeAccountId={paymentStatus.stripeAccountId}
                         />
-                        
-                        {/* Back to Details Button */}
-                        <div className="mt-3 sm:mt-4 lg:mt-6 text-center">
-                          <button
-                            onClick={handleBackToDetails}
-                            className="text-gray-600 hover:text-gray-900 flex items-center justify-center gap-1.5 sm:gap-2 mx-auto text-xs sm:text-sm"
-                          >
-                            <FaArrowLeft className="text-[10px] sm:text-xs" />
-                            <span>Back to Details</span>
-                          </button>
-                        </div>
                       </>
                     ) : (
                       // Loading state while payment intent is being created

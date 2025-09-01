@@ -27,12 +27,19 @@ const PaymentForm = ({
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
+  const [isCardValid, setIsCardValid] = useState(false);
+  const [cardValidationError, setCardValidationError] = useState(null);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!stripe || !elements || !clientSecret) {
       setPaymentError('Payment system not initialized. Please refresh the page.');
+      return;
+    }
+
+    if (!isCardValid) {
+      setPaymentError('Please enter a valid Visa or Mastercard to continue.');
       return;
     }
 
@@ -106,17 +113,14 @@ const PaymentForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Payment Method Section */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <FaLock className="mr-2 text-green-600" />
-          Payment Information
-        </h3>
-        
-        <PaymentMethodForm 
-          disabled={isProcessing || disabled}
-          onReady={() => setPaymentError(null)}
-        />
-      </div>
+      <PaymentMethodForm 
+        disabled={isProcessing || disabled}
+        onReady={() => setPaymentError(null)}
+        onValidationChange={(valid, errorType) => {
+          setIsCardValid(valid);
+          setCardValidationError(errorType);
+        }}
+      />
 
       {/* Error Display */}
       {paymentError && (
@@ -135,9 +139,9 @@ const PaymentForm = ({
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={!stripe || isProcessing || disabled}
+        disabled={!stripe || isProcessing || disabled || !isCardValid}
         className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center ${
-          isProcessing || disabled
+          isProcessing || disabled || !isCardValid
             ? 'bg-gray-400 cursor-not-allowed'
             : 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
         }`}
@@ -160,15 +164,6 @@ const PaymentForm = ({
         <FaLock className="mr-2" />
         <span>Your payment information is secure and encrypted</span>
       </div>
-
-      {/* Test Mode Notice (only in development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <p className="text-sm text-blue-800">
-            <strong>Test Mode:</strong> Use card number 4242 4242 4242 4242 with any future date and CVC.
-          </p>
-        </div>
-      )}
     </form>
   );
 };
