@@ -52,6 +52,14 @@ const SeatMapSelectionNoRedux = forwardRef(({
   const scrollContainerRef = useRef(null);
   const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
+  
+  // Drag to scroll state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragAxis, setDragAxis] = useState(null); // 'horizontal' or 'vertical'
+  const [startX, setStartX] = useState(0);
+  const [startY, setStartY] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
 
   // Calculate required seats
   const requiredSeats = ticketRequirement?.total || 0;
@@ -324,6 +332,70 @@ const SeatMapSelectionNoRedux = forwardRef(({
 
   // Remove scroll handling to prevent flickering on mobile
 
+  // Drag to scroll handlers (desktop only)
+  const handleMouseDown = (e) => {
+    // Only enable on desktop
+    if ('ontouchstart' in window) return;
+    
+    // Only start drag if clicking on container background, not on seats
+    if (e.target.closest('.seat-button') || e.target.closest('button')) return;
+    
+    setIsDragging(true);
+    setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
+    setStartY(e.pageY - scrollContainerRef.current.offsetTop);
+    setScrollLeft(scrollContainerRef.current.scrollLeft);
+    setScrollTop(scrollContainerRef.current.scrollTop);
+    setDragAxis(null);
+    
+    // Change cursor
+    scrollContainerRef.current.style.cursor = 'grabbing';
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    
+    e.preventDefault();
+    
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const y = e.pageY - scrollContainerRef.current.offsetTop;
+    const walkX = (x - startX);
+    const walkY = (y - startY);
+    
+    // Determine drag axis on first significant movement
+    if (!dragAxis && (Math.abs(walkX) > 5 || Math.abs(walkY) > 5)) {
+      if (Math.abs(walkX) > Math.abs(walkY)) {
+        setDragAxis('horizontal');
+      } else {
+        setDragAxis('vertical');
+      }
+    }
+    
+    // Apply scrolling based on axis
+    if (dragAxis === 'horizontal') {
+      scrollContainerRef.current.scrollLeft = scrollLeft - walkX;
+    } else if (dragAxis === 'vertical') {
+      scrollContainerRef.current.scrollTop = scrollTop - walkY;
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging) return;
+    
+    setIsDragging(false);
+    setDragAxis(null);
+    
+    // Reset cursor
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.style.cursor = 'grab';
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (isDragging) {
+      handleMouseUp();
+    }
+  };
+
   // Check if can proceed to checkout
   const canProceed = reservation && selectedSeats.length === requiredSeats;
 
@@ -408,7 +480,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
       
       {/* Status Bar - Enhanced */}
       <div className="bg-white border-2 border-teal-500 rounded-lg p-3 sm:p-4 shadow-md">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex flex-col gap-2">
           {/* Selection count - Enhanced */}
           <div className={`text-sm sm:text-lg font-bold whitespace-nowrap flex items-center gap-2 ${
             selectedSeats.length === requiredSeats 
@@ -437,9 +509,11 @@ const SeatMapSelectionNoRedux = forwardRef(({
           
           {/* Show seat numbers when seats are selected - wraps on mobile */}
           {selectedSeats.length > 0 && (
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-teal-800 bg-teal-50 px-2 py-1 rounded-md flex-wrap">
-              <MdEventSeat className="w-4 h-4 text-teal-600 flex-shrink-0" />
-              <span className="break-all">{selectedSeats.join(', ')}</span>
+            <div className="flex items-start gap-1.5 text-xs sm:text-sm font-medium text-teal-800 bg-teal-50 px-2 py-1 rounded-md">
+              <MdEventSeat className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
+              <span className="break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                {selectedSeats.join(', ')}
+              </span>
             </div>
           )}
         </div>
@@ -466,7 +540,15 @@ const SeatMapSelectionNoRedux = forwardRef(({
             <div
               ref={scrollContainerRef}
               className="overflow-auto pb-3 -webkit-overflow-scrolling-touch max-h-[60vh] sm:max-h-[70vh] seat-container"
-              style={{ scrollbarWidth: 'thin', scrollbarColor: '#CBD5E0 #F7FAFC' }}
+              style={{ 
+                scrollbarWidth: 'thin', 
+                scrollbarColor: '#CBD5E0 #F7FAFC',
+                cursor: isDragging ? 'grabbing' : 'grab'
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
             >
               <div className="seat-container px-2 sm:px-4 pb-2 sm:pb-4 min-w-max">
                 {seatingLayout.map((row, rowIndex) => {
