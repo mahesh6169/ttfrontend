@@ -3,6 +3,7 @@
 'use client';
 
 import React from 'react';
+import { MdEventSeat } from 'react-icons/md';
 
 const SeatButton = ({
   seat,
@@ -73,19 +74,19 @@ const SeatButton = ({
   // ✅ MOBILE ENHANCED: Improved styling with better mobile UX and compact design
   const getSeatStyles = () => {
     const baseStyles =
-      'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded text-[8px] sm:text-[10px] md:text-xs font-medium border transition-all duration-200 flex items-center justify-center cursor-pointer select-none relative overflow-hidden touch-manipulation';
+      'w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded text-[8px] sm:text-[10px] md:text-xs font-medium border transition-all duration-200 flex items-center justify-center cursor-pointer select-none relative overflow-hidden touch-manipulation';
 
     switch (status) {
       case 'selected':
-        return `${baseStyles} bg-blue-600 text-white border-blue-700 shadow-md`;
+        return `${baseStyles} bg-amber-600 text-white border-amber-700 shadow-md`;
       case 'available':
-        return `${baseStyles} bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 hover:shadow-sm`;
+        return `${baseStyles} bg-green-500 text-white border-green-600 hover:bg-green-600 hover:border-green-700 hover:shadow-sm`;
       case 'selected-by-other':
-        return `${baseStyles} bg-yellow-100 text-yellow-800 border-yellow-300 cursor-not-allowed`;
+        return `${baseStyles} bg-yellow-400 text-yellow-900 border-yellow-500 cursor-not-allowed`;
       case 'booked':
-        return `${baseStyles} bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed`;
+        return `${baseStyles} bg-red-500 text-white border-red-600 cursor-not-allowed`;
       case 'reserved':
-        return `${baseStyles} bg-purple-100 text-purple-700 border-purple-300 cursor-not-allowed`;
+        return `${baseStyles} bg-purple-500 text-white border-purple-600 cursor-not-allowed`;
       case 'disabled':
         return `${baseStyles} bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50`;
       default:
@@ -143,54 +144,8 @@ const SeatButton = ({
 
   // ✅ MOBILE ENHANCED: Better seat icon with responsive sizing
   const getSeatIcon = () => {
-    const iconClass = "w-4 h-4 sm:w-3 sm:h-3 md:w-4 md:h-4";
-    
-    switch (status) {
-      case 'selected':
-        return (
-          <svg className={iconClass} fill="currentColor" viewBox="0 0 20 20" aria-label="Selected">
-            <path
-              fillRule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-        );
-      case 'booked':
-        return (
-          <svg className={iconClass} fill="currentColor" viewBox="0 0 20 20" aria-label="Booked">
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-              clipRule="evenodd"
-            />
-          </svg>
-        );
-      case 'reserved':
-        return (
-          <svg className={iconClass} fill="currentColor" viewBox="0 0 20 20" aria-label="Reserved">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-        );
-      case 'disabled':
-        return (
-          <svg className={iconClass} fill="currentColor" viewBox="0 0 20 20" aria-label="Disabled">
-            <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
-          </svg>
-        );
-      case 'selected-by-other':
-        return (
-          <svg className={iconClass} fill="currentColor" viewBox="0 0 20 20" aria-label="Being selected">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-          </svg>
-        );
-      default:
-        return (
-          <span className="text-[8px] sm:text-[10px] md:text-xs font-bold">
-            {safeSeat.seatNumber}
-          </span>
-        );
-    }
+    // Always show seat icon for all statuses for better mobile experience
+    return <MdEventSeat className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />;
   };
 
   // ✅ NEW: Animation effects for different states

@@ -15,6 +15,8 @@ import React, {
 import { useRouter } from 'next/navigation';
 import { HiOutlineClock } from 'react-icons/hi';
 import { AiOutlineHourglass } from 'react-icons/ai';
+import { FaCheckCircle } from 'react-icons/fa';
+import { MdEventSeat } from 'react-icons/md';
 import axios from 'axios';
 
 import SeatButton from './SeatButton';
@@ -48,6 +50,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
 
   // Refs
   const scrollContainerRef = useRef(null);
+  const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
 
   // Calculate required seats
@@ -319,21 +322,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
     return 'available';
   };
 
-  // Handle scroll
-  const handleScroll = useCallback((e) => {
-    setScrollPosition(e.target.scrollLeft);
-  }, []);
-
-  // Restore scroll position
-  useLayoutEffect(() => {
-    if (scrollContainerRef.current && scrollPosition > 0) {
-      requestAnimationFrame(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollLeft = scrollPosition;
-        }
-      });
-    }
-  });
+  // Remove scroll handling to prevent flickering on mobile
 
   // Check if can proceed to checkout
   const canProceed = reservation && selectedSeats.length === requiredSeats;
@@ -349,8 +338,64 @@ const SeatMapSelectionNoRedux = forwardRef(({
     }
   }, [socketConnected, socketJoinedRoom, fetchSeatData, lastFetchTime]);
 
+  // Auto-center the seating layout on initial load
+  useEffect(() => {
+    if (scrollContainerRef.current && seatingLayout.length > 0 && !hasAutoScrolled && !isLoading) {
+      const container = scrollContainerRef.current;
+      const scrollWidth = container.scrollWidth;
+      const clientWidth = container.clientWidth;
+      
+      if (scrollWidth > clientWidth) {
+        // Calculate center position
+        const centerPosition = (scrollWidth - clientWidth) / 2;
+        
+        // Use requestAnimationFrame for smooth initial positioning
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollLeft = centerPosition;
+            setHasAutoScrolled(true);
+          }
+        });
+      }
+    }
+  }, [seatingLayout, hasAutoScrolled, isLoading]);
+
   return (
     <div className="space-y-2 sm:space-y-3">
+      <style jsx>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        
+        /* Consistent scrollbar styling */
+        .seat-container::-webkit-scrollbar {
+          height: 8px;
+          width: 8px;
+        }
+        
+        .seat-container::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+        
+        .seat-container::-webkit-scrollbar-thumb {
+          background: #cbd5e0;
+          border-radius: 4px;
+          transition: none;
+        }
+        
+        .seat-container::-webkit-scrollbar-thumb:hover {
+          background: #cbd5e0;
+        }
+        
+        .seat-container::-webkit-scrollbar-thumb:active {
+          background: #cbd5e0;
+        }
+      `}</style>
       {/* Loading State */}
       {(!socketConnected || !socketJoinedRoom || isLoading) && (
         <div className="flex justify-center items-center py-8">
@@ -361,23 +406,42 @@ const SeatMapSelectionNoRedux = forwardRef(({
         </div>
       )}
       
-      {/* Status Bar */}
-      <div className="border-t border-gray-200 pt-2 sm:pt-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            {/* Selection count */}
-            <div className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">
-              {selectedSeats.length}/{requiredSeats} Seats Selected
-            </div>
-            
-            {/* Show seat numbers when seats are selected */}
-            {selectedSeats.length > 0 && (
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 min-w-0">
-                <span className="truncate">{selectedSeats.join(', ')}</span>
-              </div>
+      {/* Status Bar - Enhanced */}
+      <div className="bg-white border-2 border-teal-500 rounded-lg p-3 sm:p-4 shadow-md">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          {/* Selection count - Enhanced */}
+          <div className={`text-sm sm:text-lg font-bold whitespace-nowrap flex items-center gap-2 ${
+            selectedSeats.length === requiredSeats 
+              ? 'text-green-700' 
+              : selectedSeats.length > 0 
+              ? 'text-teal-700' 
+              : 'text-gray-800'
+          }`}>
+            <div className={`w-2 h-2 rounded-full animate-pulse ${
+              selectedSeats.length === requiredSeats 
+                ? 'bg-green-600' 
+                : 'bg-teal-600'
+            }`} />
+            <span className="text-lg sm:text-xl">
+              {selectedSeats.length}/{requiredSeats}
+            </span>
+            <span className="text-sm sm:text-base">
+              Seats Selected
+            </span>
+            {selectedSeats.length === 0 && (
+              <span className="text-xs sm:text-sm text-teal-600 font-normal">
+                (Select your seats below)
+              </span>
             )}
           </div>
           
+          {/* Show seat numbers when seats are selected - wraps on mobile */}
+          {selectedSeats.length > 0 && (
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-teal-800 bg-teal-50 px-2 py-1 rounded-md flex-wrap">
+              <MdEventSeat className="w-4 h-4 text-teal-600 flex-shrink-0" />
+              <span className="break-all">{selectedSeats.join(', ')}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -398,47 +462,72 @@ const SeatMapSelectionNoRedux = forwardRef(({
               </div>
             </div>
 
-            {/* Scrollable seat container */}
+            {/* Scrollable seat container - Amphitheater style */}
             <div
               ref={scrollContainerRef}
-              className="overflow-auto pb-3"
-              onScroll={handleScroll}
+              className="overflow-auto pb-3 -webkit-overflow-scrolling-touch max-h-[60vh] sm:max-h-[70vh] seat-container"
+              style={{ scrollbarWidth: 'thin', scrollbarColor: '#CBD5E0 #F7FAFC' }}
             >
-              <div className="seat-container flex flex-col gap-2 sm:gap-3 px-2 sm:px-4 pb-2 sm:pb-4 min-w-fit mx-auto">
-                {seatingLayout.map((row, rowIndex) => (
-                  <div
-                    key={`row-${rowIndex}-${row.rowLabel}`}
-                    className="flex items-center gap-1.5 sm:gap-3 justify-center"
-                  >
-                    {/* Row label */}
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-full flex items-center justify-center font-bold text-gray-700 text-xs sm:text-sm border-2 border-gray-300 shadow-sm">
-                      {row.rowLabel}
+              <div className="seat-container px-2 sm:px-4 pb-2 sm:pb-4 min-w-max">
+                {seatingLayout.map((row, rowIndex) => {
+                  const seatCount = row.seats?.length || 0;
+                  const totalRows = seatingLayout.length;
+                  // Calculate padding to create amphitheater effect (first row most padded)
+                  const paddingPercentage = ((totalRows - rowIndex - 1) / Math.max(totalRows - 1, 1)) * 20;
+                  
+                  return (
+                    <div
+                      key={`row-${rowIndex}-${row.rowLabel}`}
+                      className="flex items-center mb-2 sm:mb-3"
+                    >
+                      {/* Left row label */}
+                      <div className="w-8 sm:w-10 flex-shrink-0 text-center sticky left-0 bg-white z-10">
+                        <span className="font-bold text-gray-700 text-xs sm:text-sm bg-white px-1 py-0.5 rounded shadow-sm inline-block">
+                          {row.rowLabel}
+                        </span>
+                      </div>
+                      
+                      {/* Centered container for seats */}
+                      <div className="flex-1 flex justify-center px-2">
+                        {/* Seats with amphitheater-style padding */}
+                        <div 
+                          className="flex items-center gap-1 sm:gap-1.5" 
+                          style={{ 
+                            paddingLeft: `${paddingPercentage}%`, 
+                            paddingRight: `${paddingPercentage}%` 
+                          }}
+                        >
+                          {(row.seats || []).map((seat, seatIndex) => {
+                            const seatId = seat.seatId;
+                            if (!seatId) return null;
+
+                            const seatStatus = getSeatStatus(seat, seatId);
+
+                            return (
+                              <SeatButton
+                                key={`${seatId}-${seatIndex}`}
+                                seat={{ ...seat, seatId }}
+                                row={row}
+                                isSelected={selectedSeats.includes(seatId)}
+                                isReservedByUser={false}
+                                onClick={() => handleSeatClick(seatId, seatStatus)}
+                                disabled={pendingOperation || isLoading}
+                                userId={userId}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                      
+                      {/* Right row label */}
+                      <div className="w-8 sm:w-10 flex-shrink-0 text-center sticky right-0 bg-white z-10">
+                        <span className="font-bold text-gray-700 text-xs sm:text-sm bg-white px-1 py-0.5 rounded shadow-sm inline-block">
+                          {row.rowLabel}
+                        </span>
+                      </div>
                     </div>
-
-                    {/* Seats in row */}
-                    <div className="flex gap-1 sm:gap-1.5">
-                      {(row.seats || []).map((seat, seatIndex) => {
-                        const seatId = seat.seatId;
-                        if (!seatId) return null;
-
-                        const seatStatus = getSeatStatus(seat, seatId);
-
-                        return (
-                          <SeatButton
-                            key={`${seatId}-${seatIndex}`}
-                            seat={{ ...seat, seatId }}
-                            row={row}
-                            isSelected={selectedSeats.includes(seatId)}
-                            isReservedByUser={false}
-                            onClick={() => handleSeatClick(seatId, seatStatus)}
-                            disabled={pendingOperation || isLoading}
-                            userId={userId}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

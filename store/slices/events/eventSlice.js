@@ -773,9 +773,12 @@ updateGstIncluded: (state, action) => {
         return;
       }
       
-      // Add row with limited seats
+      // Add row with limited seats - copy seat count from previous row if available
       const remainingCapacity = state.formData.capacity - currentTotal;
-      const defaultSeats = Math.min(10, remainingCapacity);
+      const previousRowSeatCount = state.formData.seatingLayout.length > 0 
+        ? state.formData.seatingLayout[state.formData.seatingLayout.length - 1].seats.length 
+        : 10;
+      const defaultSeats = Math.min(previousRowSeatCount, remainingCapacity);
       
       state.formData.seatingLayout.push({
         rowLabel: nextRowLabel,
@@ -786,7 +789,7 @@ updateGstIncluded: (state, action) => {
         }))
       });
       
-      if (defaultSeats < 10) {
+      if (defaultSeats < previousRowSeatCount) {
         state.capacityWarning = `Row limited to ${defaultSeats} seats. Total must equal capacity (${state.formData.capacity})`;
       }
       
