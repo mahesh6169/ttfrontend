@@ -25,10 +25,31 @@ export const registerForFreeEvent = createAsyncThunk(
       return response.data;
       
     } catch (error) {
-      console.error("❌ Frontend: Registration API error", error.response?.data);
-      return rejectWithValue(
-        error.response?.data?.message || 'Registration failed'
-      );
+      // Handle different error scenarios
+      if (error.response) {
+        // Server responded with error status (4xx, 5xx)
+        const errorMessage = error.response.data?.message || 'Registration failed';
+        
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log("❌ Registration failed:", {
+            status: error.response.status,
+            message: errorMessage
+          });
+        }
+        
+        // This is an expected business logic error (like capacity full)
+        // Return it properly without throwing
+        return rejectWithValue(errorMessage);
+      } else if (error.request) {
+        // Request was made but no response (network error)
+        console.error("❌ Network error: No response from server");
+        return rejectWithValue('Network error. Please check your connection.');
+      } else {
+        // Something else happened (very rare)
+        console.error("❌ Unexpected error:", error.message);
+        return rejectWithValue('An unexpected error occurred');
+      }
     }
   }
 );

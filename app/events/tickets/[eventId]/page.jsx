@@ -63,13 +63,13 @@ const TicketSelectionPage = () => {
   };
   
   // Determine if can proceed
-  // No capacity issue if user already has a reservation (capacity already accounts for it)
-  const hasCapacityIssue = eventCapacity?.remaining !== 'unlimited' && 
-    totals.totalQuantity > (eventCapacity?.remaining || 0) &&
-    !reservation; // Only check capacity if no existing reservation
+  // Use the new canBook field which includes user's current reservation
+  const hasCapacityIssue = eventCapacity?.canBook !== 'unlimited' && 
+    totals.totalQuantity > (eventCapacity?.canBook || 0);
   const canProceedToNext = totals.totalQuantity > 0 && 
     !Object.keys(errors).length && 
-    !hasCapacityIssue;
+    !hasCapacityIssue &&
+    !purchaseError;  // Also check for purchase errors
 
   // Check if event has seating layout
   const hasSeatingLayout =
@@ -88,10 +88,12 @@ const TicketSelectionPage = () => {
     
     setCapacityLoading(true);
     try {
+      // Use authenticated v2 endpoint for purchasing context
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/capacity`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/capacity/v2/auth?context=purchasing`,
         { withCredentials: true }
       );
+      console.log('🔍 Capacity response:', response.data.capacity);
       setEventCapacity(response.data.capacity);
     } catch (error) {
       console.error('Error fetching capacity:', error);
@@ -99,7 +101,9 @@ const TicketSelectionPage = () => {
       setEventCapacity({
         total: selectedEvent.maxAttendees || 100,
         sold: 0,
-        remaining: selectedEvent.maxAttendees || 100,
+        available: selectedEvent.maxAttendees || 100,
+        userReservation: 0,
+        canBook: selectedEvent.maxAttendees || 100,
         isUnlimited: !selectedEvent.maxAttendees,
         status: 'available'
       });
@@ -113,28 +117,41 @@ const TicketSelectionPage = () => {
     fetchCapacity();
   }, [fetchCapacity]);
 
-  // Auto-refresh capacity when user sees capacity warnings
+  // Clear selected tickets if capacity changes and user doesn't have a reservation
   useEffect(() => {
-    // Only start auto-refresh if:
-    // 1. User has selected tickets
-    // 2. There's a capacity issue (not enough tickets)
-    // 3. User doesn't have an existing reservation
-    // 4. Event is not unlimited capacity
-    const shouldAutoRefresh = 
+    // If user has selected tickets but no reservation, and capacity shows available tickets
+    // This handles the case where another user's reservation expired
+    if (!reservation && selectedTickets.length > 0 && eventCapacity?.available > 0) {
+      console.log('Clearing stale ticket selection - no reservation but tickets available');
+      setSelectedTickets([]);
+      setPurchaseError('');
+    }
+  }, [eventCapacity?.available, reservation]);
+
+  // Auto-refresh capacity when user sees capacity warnings or sold out
+  useEffect(() => {
+    // Auto-refresh in these scenarios:
+    // 1. User has selected tickets but can't book (capacity issue)
+    // 2. Event is sold out (to catch when tickets become available)
+    const hasCapacityIssue = 
       totals.totalQuantity > 0 && 
-      eventCapacity?.remaining !== 'unlimited' &&
-      totals.totalQuantity > (eventCapacity?.remaining || 0) &&
-      !reservation &&
+      eventCapacity?.canBook !== 'unlimited' &&
+      totals.totalQuantity > (eventCapacity?.canBook || 0) &&
       !capacityLoading;
+      
+    const isSoldOut = eventCapacity?.status === 'sold-out' && !capacityLoading;
+
+    const shouldAutoRefresh = hasCapacityIssue || isSoldOut;
 
     if (shouldAutoRefresh) {
-      console.log('Starting capacity auto-refresh due to capacity warning');
+      console.log('Starting capacity auto-refresh:', { hasCapacityIssue, isSoldOut });
       
-      // Refresh every 5 seconds
+      // Refresh every 3 seconds for sold out, 5 seconds for capacity issues
+      const interval = isSoldOut ? 3000 : 5000;
       const intervalId = setInterval(() => {
         console.log('Auto-refreshing capacity...');
         fetchCapacity();
-      }, 5000);
+      }, interval);
 
       // Cleanup interval on unmount or when conditions change
       return () => {
@@ -142,7 +159,7 @@ const TicketSelectionPage = () => {
         clearInterval(intervalId);
       };
     }
-  }, [totals.totalQuantity, eventCapacity?.remaining, reservation, capacityLoading, fetchCapacity]);
+  }, [totals.totalQuantity, eventCapacity?.canBook, eventCapacity?.status, capacityLoading, fetchCapacity]);
 
   // Run cleanup task when tickets page loads
   useEffect(() => {
@@ -252,9 +269,23 @@ const TicketSelectionPage = () => {
       const errorMessage = error.response?.data?.message || 'Failed to update ticket selection';
       setPurchaseError(errorMessage);
       
-      // If capacity issue, refresh to show accurate info
+      // If capacity issue, refresh to show accurate info and revert ticket selection
       if (errorMessage.includes('sold out') || errorMessage.includes('remaining') || errorMessage.includes('being purchased')) {
         fetchCapacity();
+        
+        // IMPORTANT: Revert the ticket selection to match the current reservation
+        if (reservation && reservation.tickets) {
+          const revertedTickets = reservation.tickets.map(t => ({
+            ticketTypeId: t.ticketTypeId,
+            quantity: t.quantity,
+            price: t.price,
+            name: t.ticketName
+          }));
+          setSelectedTickets(revertedTickets);
+        } else {
+          // No reservation, clear selection
+          setSelectedTickets([]);
+        }
         
         // If temporarily full, set a timer to refresh capacity again
         if (error.response?.data?.isTemporarilyFull) {
@@ -293,9 +324,10 @@ const TicketSelectionPage = () => {
 
     // Calculate max quantity based on capacity and max per order
     const maxPerOrder = selectedEvent.maxAttendeesPerRegistration || 10;
+    // Use canBook which includes user's current reservation
     const capacityLimit =
-      typeof eventCapacity?.remaining === 'number'
-        ? eventCapacity.remaining
+      eventCapacity?.canBook !== 'unlimited' && typeof eventCapacity?.canBook === 'number'
+        ? eventCapacity.canBook
         : maxPerOrder;
     const maxQuantity = Math.min(maxPerOrder, capacityLimit);
 
@@ -304,11 +336,34 @@ const TicketSelectionPage = () => {
       .filter(t => t.ticketTypeId !== ticketId)
       .reduce((sum, t) => sum + t.quantity, 0);
     const potentialTotal = otherTicketsTotal + newQuantity;
+    
+    // Debug logging
+    console.log('🎫 Quantity change debug:', {
+      currentQuantity,
+      newQuantity,
+      change,
+      otherTicketsTotal,
+      potentialTotal,
+      canBook: eventCapacity?.canBook,
+      available: eventCapacity?.available,
+      userReservation: eventCapacity?.userReservation
+    });
 
     // Check if user is trying to exceed capacity
-    if (change > 0 && typeof eventCapacity?.remaining === 'number' && potentialTotal > eventCapacity.remaining) {
-      setPurchaseError(`Not enough tickets available. Only ${eventCapacity.remaining} ticket${eventCapacity.remaining === 1 ? '' : 's'} remaining.`);
-      // Still allow the action but limit to available capacity
+    if (change > 0 && eventCapacity?.canBook !== 'unlimited' && potentialTotal > eventCapacity.canBook) {
+      // Don't allow the quantity to increase
+      const canAddMore = Math.max(0, eventCapacity.canBook - otherTicketsTotal);
+      
+      if (eventCapacity.userReservation > 0) {
+        setPurchaseError(`You have ${eventCapacity.userReservation} tickets reserved. Only ${eventCapacity.available} additional spots available.`);
+      } else if (canAddMore > 0) {
+        setPurchaseError(`Only ${canAddMore} more ticket${canAddMore === 1 ? '' : 's'} available. You can proceed with ${otherTicketsTotal + canAddMore} ticket${(otherTicketsTotal + canAddMore) === 1 ? '' : 's'} or wait for others to release their selections.`);
+      } else {
+        setPurchaseError(`No more tickets available. Maximum ${eventCapacity.canBook} ticket${eventCapacity.canBook === 1 ? '' : 's'} can be selected.`);
+      }
+      
+      // IMPORTANT: Return early to prevent quantity update
+      return;
     } else {
       setPurchaseError(''); // Clear any previous error
     }
@@ -541,6 +596,8 @@ const TicketSelectionPage = () => {
               onExpire={() => {
                 setReservation(null);
                 setSelectedTickets([]);
+                // Refresh capacity to get updated availability
+                fetchCapacity();
               }}
               onClear={() => {
                 setReservation(null);
@@ -555,7 +612,11 @@ const TicketSelectionPage = () => {
             {/* Event Capacity Info */}
             <div className="mb-2 sm:mb-4">
               <div className={`flex items-center text-[10px] sm:text-sm mb-1 ${
-                totals.totalQuantity > (eventCapacity?.remaining || 0) && eventCapacity?.remaining !== 'unlimited' && !reservation
+                eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0
+                  ? 'text-red-600'  // Truly sold out
+                  : eventCapacity?.status === 'sold-out'
+                  ? 'text-orange-600'  // Temporarily unavailable
+                  : totals.totalQuantity > (eventCapacity?.remaining || 0) && eventCapacity?.remaining !== 'unlimited' && !reservation
                   ? 'text-red-600' 
                   : 'text-gray-600'
               }`}>
@@ -565,25 +626,47 @@ const TicketSelectionPage = () => {
       'Loading availability...'
     ) : eventCapacity?.isUnlimited ? (
       'Unlimited capacity'
-    ) : (eventCapacity?.total > 0 && eventCapacity?.confirmedAllocations >= eventCapacity?.total) ? (
-      'Event sold out'
+    ) : eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 ? (
+      // Truly sold out (sold tickets = capacity)
+      <span className="text-red-600 font-semibold">Event Sold Out</span>
+    ) : eventCapacity?.status === 'sold-out' ? (
+      // Temporarily full due to reservations
+      <span className="text-orange-600 font-semibold">Almost Selling Out</span>
     ) : totals.totalQuantity > 0 ? (
-      `${totals.totalQuantity} ticket${totals.totalQuantity > 1 ? 's' : ''} selected • ${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
+      // When user has selected tickets, show their selection
+      `${totals.totalQuantity} ticket${totals.totalQuantity > 1 ? 's' : ''} selected`
     ) : (
-      `${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
+      `${eventCapacity?.available || 0} available`
     )}
   </span>
               </div>
-              {/* Inline capacity warning - only show if no existing reservation */}
-              {totals.totalQuantity > (eventCapacity?.remaining || 0) && eventCapacity?.remaining !== 'unlimited' && !reservation && (
-                <div className="text-xs text-red-600 flex items-center ml-5 sm:ml-6">
-                  <FaExclamationTriangle className="mr-1" />
-                  Not enough tickets available. Please reduce your selection.
+              {/* User reservation info - only show if we have an active reservation */}
+              {eventCapacity?.userReservation > 0 && reservation && (
+                <div className="text-xs text-blue-600 flex items-center ml-5 sm:ml-6">
+                  You have {eventCapacity.userReservation} tickets reserved
+                </div>
+              )}
+              {/* Show appropriate message based on sold out status */}
+              {eventCapacity?.status === 'sold-out' && !reservation && (
+                <div className="text-xs flex items-center ml-5 sm:ml-6 mt-1">
+                  {eventCapacity?.sold >= eventCapacity?.total ? (
+                    <span className="text-red-600">Event is just sold out</span>
+                  ) : (
+                    <span className="text-orange-600">Tickets are currently being purchased by other customers. Please try again in a few minutes.</span>
+                  )}
                 </div>
               )}
             </div>
 
             {selectedEvent.ticketTypes?.map((ticketType) => {
+              // Calculate max available for this ticket type
+              const currentTotal = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
+              const maxAvailable = eventCapacity?.canBook === 'unlimited' 
+                ? selectedEvent.maxAttendeesPerRegistration || 10
+                : Math.min(
+                    selectedEvent.maxAttendeesPerRegistration || 10,
+                    eventCapacity?.canBook || 0
+                  );
               // Check if event has required timezone
               if (!selectedEvent.timeZone) {
                 console.error('Event timezone is required but missing');
@@ -592,7 +675,9 @@ const TicketSelectionPage = () => {
 
               // Use real-time capacity data instead of individual ticket quantities
               const isCapacityAvailable =
-                eventCapacity?.status === 'available' || !eventCapacity?.status;
+                eventCapacity?.status === 'available' || 
+                eventCapacity?.status === 'limited' || 
+                !eventCapacity?.status;
 
               // Check if ticket is available based on start/expiry dates
               const now = new Date();
@@ -639,15 +724,10 @@ const TicketSelectionPage = () => {
               const maxPerOrder =
                 selectedEvent.maxAttendeesPerRegistration || 10;
               
-              // Use the actual event capacity, not the cart-adjusted one
-              // The cart-adjusted capacity already accounts for what's in the cart
-              const actualEventRemaining = eventCapacity?.isUnlimited 
+              // Use canBook which accounts for user's current reservation and other reservations
+              const capacityLimit = eventCapacity?.canBook === 'unlimited' 
                 ? Number.MAX_SAFE_INTEGER 
-                : (eventCapacity?.total || 0) - (eventCapacity?.sold || 0);
-              const capacityLimit =
-                typeof actualEventRemaining === 'number' && !isNaN(actualEventRemaining)
-                  ? actualEventRemaining
-                  : Number.MAX_SAFE_INTEGER;
+                : eventCapacity?.canBook || 0;
                   
               // How many more can be added based on max per order and capacity
               const maxByOrderLimit = maxPerOrder - totals.totalQuantity;
@@ -702,7 +782,8 @@ const TicketSelectionPage = () => {
                             totals.totalQuantity >= maxPerOrder ||
                             remainingQty <= 0 ||
                             apiLoading ||
-                            (eventCapacity?.total > 0 && eventCapacity?.confirmedAllocations >= eventCapacity?.total) ||
+                            (eventCapacity?.available !== 'unlimited' && eventCapacity?.available <= 0) ||
+                            (eventCapacity?.canBook !== 'unlimited' && totals.totalQuantity >= eventCapacity?.canBook) ||
                             !isAvailable
                           }
                           className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -711,6 +792,13 @@ const TicketSelectionPage = () => {
                         </button>
                       </div>
                   </div>
+                  
+                  {/* Show capacity limit indicator for mobile */}
+                  {currentTotal > 0 && eventCapacity?.canBook !== 'unlimited' && currentTotal >= eventCapacity?.canBook && (
+                    <div className="text-[10px] text-orange-600 font-medium text-right mt-1 sm:hidden">
+                      Max reached
+                    </div>
+                  )}
 
                   {/* Desktop Layout - Keep existing */}
                   <div className="hidden sm:flex sm:items-center sm:justify-between">
@@ -752,7 +840,8 @@ const TicketSelectionPage = () => {
                             totals.totalQuantity >= maxPerOrder ||
                             remainingQty <= 0 ||
                             apiLoading ||
-                            (eventCapacity?.total > 0 && eventCapacity?.confirmedAllocations >= eventCapacity?.total) ||
+                            (eventCapacity?.available !== 'unlimited' && eventCapacity?.available <= 0) ||
+                            (eventCapacity?.canBook !== 'unlimited' && totals.totalQuantity >= eventCapacity?.canBook) ||
                             !isAvailable
                           }
                           className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -760,6 +849,13 @@ const TicketSelectionPage = () => {
                           <FaPlus className="text-xs" />
                         </button>
                       </div>
+                      
+                      {/* Show capacity limit indicator */}
+                      {currentTotal > 0 && eventCapacity?.canBook !== 'unlimited' && currentTotal >= eventCapacity?.canBook && (
+                        <div className="ml-4 text-xs text-orange-600 font-medium">
+                          Max reached
+                        </div>
+                      )}
                   </div>
 
                  {/* Ticket Sale Status */}
@@ -829,14 +925,14 @@ const TicketSelectionPage = () => {
             </div>
           )}
 
-          {/* Error Messages */}
-          {purchaseError && (
+          {/* Error Messages - Don't show concurrent purchase message in alert box */}
+          {purchaseError && !purchaseError.includes('being purchased') && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
               <div className="flex items-start">
                 <FaExclamationTriangle className="text-red-600 mr-2 sm:mr-3 mt-0.5 sm:mt-1 text-sm sm:text-base flex-shrink-0" />
                 <div className="min-w-0">
                   <h4 className="font-medium text-red-800 mb-1 text-sm sm:text-base">
-                    Purchase Error
+                    Selection Error
                   </h4>
                   <p className="text-xs sm:text-sm text-red-700 break-words">{purchaseError}</p>
                 </div>

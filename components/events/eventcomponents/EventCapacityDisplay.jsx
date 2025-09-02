@@ -1,58 +1,105 @@
 // components/events/eventcomponents/EventCapacityDisplay.jsx
 
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useSelector } from 'react-redux';
 import { FaUsers } from 'react-icons/fa';
-import {
-  fetchEventCapacity,
-  selectEventCapacityStateMemoized,
-  selectShouldRefreshCapacity,
-  markCapacityStale,
-} from '@/store/slices/events/eventCapacitySlice';
+import axios from 'axios';
 
-const EventCapacityDisplay = ({ eventId, isPaid = false, showInTicketSection = false, maxPerRegistration }) => {
-  const dispatch = useDispatch();
+const EventCapacityDisplay = ({ 
+  eventId, 
+  isPaid = false, 
+  showInTicketSection = false, 
+  maxPerRegistration,
+  context = 'viewing', // 'viewing' | 'purchasing'
+  onCapacityUpdate, // Callback when capacity changes
+  refreshInterval // Custom refresh interval (ms)
+}) => {
+  // Local state for capacity data
+  const [capacity, setCapacity] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  // ✅ Get capacity state from Redux
-  const { capacity, isLoading, error } = useSelector(state => 
-    selectEventCapacityStateMemoized(state, eventId)
-  );
-  
-  // ✅ Check if data needs refresh
-  const shouldRefresh = useSelector(state => 
-    selectShouldRefreshCapacity(state, eventId)
-  );
-
+  // Still listen to registration status for refresh trigger
   const registrationStatus = useSelector(state => state.freeEvents.registrationStatus);
 
-  // ✅ Fetch capacity data when needed
-  useEffect(() => {
-    console.log(`📊 EventCapacityDisplay: Component mounted/updated with eventId=${eventId}, isPaid=${isPaid}, showInTicketSection=${showInTicketSection}, shouldRefresh=${shouldRefresh}`);
-    
+  // Fetch capacity function
+  const fetchCapacity = useCallback(async () => {
     if (!eventId) {
       console.log(`❌ EventCapacityDisplay: No eventId provided, skipping fetch`);
       return;
     }
-    
-    // Remove the skip logic - we should always fetch capacity when needed
-    // The display logic can handle how to show it differently for paid vs free events
-    
-    // Fetch if no data exists or data is stale
-    if (shouldRefresh) {
-      console.log(`📊 EventCapacityDisplay: Fetching capacity for ${eventId} (shouldRefresh=${shouldRefresh})`);
-      dispatch(fetchEventCapacity(eventId));
-    } else {
-      console.log(`✅ EventCapacityDisplay: Using cached capacity for ${eventId}`);
-    }
-  }, [eventId, isPaid, showInTicketSection, shouldRefresh, dispatch]);
 
-  // ✅ Refresh capacity when registration/unregistration succeeds
-useEffect(() => {
-  if (registrationStatus === 'succeeded' && eventId) {
-    console.log(`🔄 Registration succeeded, refreshing capacity for ${eventId}`);
-    dispatch(markCapacityStale(eventId));
-  }
-}, [registrationStatus, eventId, dispatch]);
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Always use v2 endpoint with context
+      const endpoint = `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/capacity/v2?context=${context}`;
+      
+      console.log(`📊 EventCapacityDisplay: Fetching capacity from ${endpoint}`);
+      
+      const response = await axios.get(endpoint, { withCredentials: true });
+      
+      if (response.data.success) {
+        const newCapacity = response.data.capacity;
+        setCapacity(newCapacity);
+        console.log(`✅ EventCapacityDisplay: Capacity fetched for ${eventId}:`, newCapacity);
+        
+        // Notify parent component if callback provided
+        if (onCapacityUpdate) {
+          onCapacityUpdate(newCapacity);
+        }
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch capacity');
+      }
+    } catch (err) {
+      console.error(`❌ EventCapacityDisplay: Error fetching capacity:`, err);
+      setError(err.response?.data?.message || err.message || 'Unable to load capacity information');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [eventId, context, onCapacityUpdate]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchCapacity();
+  }, [fetchCapacity]);
+
+  // Set up polling based on context and event type
+  useEffect(() => {
+    if (!eventId) return;
+    
+    // Determine polling interval
+    let interval;
+    if (refreshInterval) {
+      // Use custom interval if provided
+      interval = refreshInterval;
+    } else if (context === 'purchasing') {
+      // More frequent updates when purchasing
+      interval = 10000; // 10 seconds
+    } else if (!isPaid) {
+      // Free events in viewing mode
+      interval = 30000; // 30 seconds
+    } else {
+      // Paid events in viewing mode
+      interval = 60000; // 60 seconds
+    }
+    
+    const timer = setInterval(() => {
+      console.log(`🔄 EventCapacityDisplay: Polling capacity for ${eventId} (${context} mode)`);
+      fetchCapacity();
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [eventId, context, isPaid, refreshInterval, fetchCapacity]);
+
+  // Refresh capacity when registration/unregistration succeeds
+  useEffect(() => {
+    if (registrationStatus === 'succeeded' && eventId) {
+      console.log(`🔄 Registration succeeded, refreshing capacity for ${eventId}`);
+      fetchCapacity();
+    }
+  }, [registrationStatus, eventId, fetchCapacity]);
 
   // ✅ Loading state
   if (isLoading) {
@@ -78,80 +125,135 @@ useEffect(() => {
     return null;
   }
 
-  // ✅ For paid events in ticket section, show simplified capacity info
-  if (isPaid && showInTicketSection) {
-    const { total, remaining, isUnlimited, status, confirmedAllocations } = capacity;
-    // Use confirmedAllocations for accurate sold out display
-    const isSoldOut = total > 0 && confirmedAllocations >= total;
+  // ✅ Context-specific rendering for purchasing mode
+  if (context === 'purchasing' && capacity) {
+    const { 
+      available, 
+      userReservation, 
+      canBook, 
+      isUnlimited, 
+      status,
+      activeReservations 
+    } = capacity;
     
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center text-sm text-gray-600">
+          <FaUsers className="mr-2" />
+          <span>
+            {isUnlimited ? (
+              'Unlimited capacity'
+            ) : status === 'sold-out' ? (
+              <span className="text-red-600 font-semibold">Event sold out</span>
+            ) : available === 0 ? (
+              <span className="text-orange-600">No spots currently available</span>
+            ) : available < 5 ? (
+              <span className="text-orange-600">Only {available} spots remaining!</span>
+            ) : (
+              `${available} spots available`
+            )}
+          </span>
+        </div>
+        
+        {userReservation > 0 && (
+          <div className="text-xs text-blue-600">
+            You have {userReservation} tickets reserved
+          </div>
+        )}
+        
+        {activeReservations > 0 && status === 'limited' && (
+          <div className="text-xs text-gray-500">
+            {activeReservations} other users are currently booking
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  // ✅ For paid events in ticket section (legacy support)
+  if (isPaid && showInTicketSection) {
+    const { displayText } = capacity;
     return (
       <div className="flex items-center text-sm text-gray-600 mb-4">
         <FaUsers className="mr-2" />
-        <span>
-          {isUnlimited ? (
-            'Unlimited capacity'
-          ) : isSoldOut ? (
-            'Event sold out'
-          ) : (
-            `${remaining || 0} of ${total || 0} remaining`
-          )}
-        </span>
+        <span>{displayText || 'Loading capacity...'}</span>
       </div>
     );
   }
 
-  // ✅ Full display for free events (and paid events in main view)
+  // ✅ Full display for viewing context (free and paid events)
   const {
     total: totalCapacity,
     sold: registeredCount,
     remaining: remainingCapacity,
     isUnlimited,
     status,
-    confirmedAllocations
+    confirmedAllocations,
+    displayText,
+    lastUpdated
   } = capacity;
 
   // Use confirmedAllocations for accurate sold out display
-  const isFull = totalCapacity > 0 && confirmedAllocations >= totalCapacity;
+  const isFull = totalCapacity > 0 && (confirmedAllocations || registeredCount) >= totalCapacity;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {/* Total Capacity */}
-      <div className="text-sm sm:text-base">
-        <span className="font-semibold text-gray-700">Total Capacity:</span>{' '}
-        <span className="text-gray-600">
-          {isUnlimited ? 'Unlimited' : `${totalCapacity} people`}
-        </span>
-      </div>
-
-      {/* Remaining Capacity */}
-      <div className="text-sm sm:text-base">
-        <span className="font-semibold text-gray-700">Remaining:</span>{' '}
-        <span className="text-gray-600">
-          {isUnlimited ? 'Unlimited' : remainingCapacity}
-        </span>
-      </div>
-
-      {/* Max Attendees Per Registration */}
-      {typeof maxPerRegistration === 'number' && (
+    <div>
+      {/* Summary display for paid events */}
+      {displayText && isPaid && (
+        <div className="text-sm sm:text-base mb-3 text-gray-700">
+          <FaUsers className="inline-block mr-2" />
+          {displayText}
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Total Capacity */}
         <div className="text-sm sm:text-base">
-          <span className="font-semibold text-gray-700">
-            Max per Registration:
-          </span>{' '}
+          <span className="font-semibold text-gray-700">Total Capacity:</span>{' '}
           <span className="text-gray-600">
-            {maxPerRegistration}
+            {isUnlimited ? 'Unlimited' : `${totalCapacity} people`}
           </span>
         </div>
-      )}
 
-      {/* Status: Only show when full */}
-      {isFull && (
-        <div className="text-sm sm:text-base">
-          <span className="font-semibold text-gray-700">Status:</span>{' '}
-          <span className="text-red-600 font-semibold">
-            {isPaid ? 'Sold Out' : 'Fully Booked'}
-          </span>
-        </div>
-      )}
+        {/* Remaining Capacity - only for FREE events */}
+        {!isPaid && (
+          <div className="text-sm sm:text-base">
+            <span className="font-semibold text-gray-700">Remaining:</span>{' '}
+            <span className="text-gray-600">
+              {isUnlimited ? 'Unlimited' : remainingCapacity}
+            </span>
+          </div>
+        )}
+
+        {/* Max Attendees Per Registration */}
+        {typeof maxPerRegistration === 'number' && (
+          <div className="text-sm sm:text-base">
+            <span className="font-semibold text-gray-700">
+              Max per Registration:
+            </span>{' '}
+            <span className="text-gray-600">
+              {maxPerRegistration}
+            </span>
+          </div>
+        )}
+
+        {/* Status: Only show when full */}
+        {isFull && (
+          <div className="text-sm sm:text-base">
+            <span className="font-semibold text-gray-700">Status:</span>{' '}
+            <span className="text-red-600 font-semibold">
+              {isPaid ? 'Sold Out' : 'Fully Booked'}
+            </span>
+          </div>
+        )}
+        
+        {/* Last Updated - subtle indicator for FREE events */}
+        {!isPaid && lastUpdated && (
+          <div className="col-span-full text-xs text-gray-400 mt-1">
+            Updated: {new Date(lastUpdated).toLocaleTimeString()}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -441,28 +441,11 @@ const CheckoutPage = () => {
           }
         }
       } 
-      // For events without seats - check general capacity
+      // For events without seats - skip capacity check
+      // The tickets page already validated capacity and created a reservation
+      // The backend will validate again during payment creation
       else {
-        const capacityCheck = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/capacity`,
-          { withCredentials: true }
-        );
-        
-        if (capacityCheck.data.success) {
-          const capacity = capacityCheck.data.capacity;
-          const totalRequested = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
-          
-          // Use backend-calculated remaining (includes other reservations, excludes current user's)
-          if (capacity.remaining !== 'unlimited' && capacity.remaining < totalRequested) {
-            console.error('❌ Not enough tickets available');
-            setErrors({ 
-              payment: 'Sorry, the tickets you selected have just been purchased by another customer. Please try again with a different quantity.' 
-            });
-            setPaymentStatus(null);
-            setIsProcessing(false);
-            return;
-          }
-        }
+        console.log('✅ Non-seated event - relying on existing reservation validation');
       }
       
       console.log('✅ Availability check passed - creating payment intent');

@@ -33,7 +33,6 @@ import EventRegistrationModal from '../registration/EventRegistrationModal';
 import EventCapacityDisplay from './EventCapacityDisplay';
 import { formatInTimeZone } from 'date-fns-tz';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
-import { selectCapacityDataMemoized } from '@/store/slices/events/eventCapacitySlice';
 
 // Add this helper function right after your imports
 const getOptimizedImageUrl = (imageObj) => {
@@ -62,9 +61,6 @@ const SingleEventCard = ({ event, chatProps }) => {
 
   const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
   const isRegistered = !!currentRegistration && currentRegistration.status === 'registered';
-  
-  // Get capacity data for the event
-  const capacity = useSelector(state => selectCapacityDataMemoized(state, event?._id || ''));
 
   if (!event) {
     return (
@@ -444,7 +440,12 @@ const SingleEventCard = ({ event, chatProps }) => {
           <h3 className="text-sm sm:text-base font-semibold text-gray-800">Event Capacity</h3>
         </div>
         <div className="p-3">
-          <EventCapacityDisplay eventId={event._id} isPaid={event.isPaid} maxPerRegistration={event.maxAttendeesPerRegistration}/>
+          <EventCapacityDisplay 
+            eventId={event._id} 
+            isPaid={event.isPaid} 
+            context="viewing"
+            maxPerRegistration={event.maxAttendeesPerRegistration}
+          />
         </div>
       </div>
         
@@ -474,7 +475,7 @@ const SingleEventCard = ({ event, chatProps }) => {
                   {(() => {
                     if (!event.timeZone) return null;
                     
-                    const status = getTicketSaleStatus(ticket, event.timeZone, capacity);
+                    const status = getTicketSaleStatus(ticket, event.timeZone, null); // Capacity only needed for PAID events
                     
                     if (!status) return null;
                     
