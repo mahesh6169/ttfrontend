@@ -395,6 +395,78 @@ const CheckoutPage = () => {
     });
 
     try {
+      // GUARD RAIL: Pre-flight availability check
+      console.log('🔍 Performing availability check before payment...');
+      
+      // For events with seats - check if selected seats are still available
+      if (event?.seatingLayout?.length > 0 && reservation?.seatIds?.length > 0) {
+        const seatCheck = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/seats`,
+          { withCredentials: true }
+        );
+        
+        if (seatCheck.data.success) {
+          const seatingLayout = seatCheck.data.seatingLayout || [];
+          const unavailableSeats = [];
+          
+          // Check each reserved seat
+          for (const seatId of reservation.seatIds) {
+            let seatAvailable = false;
+            
+            for (const row of seatingLayout) {
+              const seat = row.seats?.find(s => s.seatId === seatId);
+              if (seat) {
+                // Seat is available if it's selected by current user
+                if (seat.status === 'selected' && 
+                    seat.reservedBy?.toString() === reservation.userId?.toString()) {
+                  seatAvailable = true;
+                }
+                break;
+              }
+            }
+            
+            if (!seatAvailable) {
+              unavailableSeats.push(seatId);
+            }
+          }
+          
+          if (unavailableSeats.length > 0) {
+            console.error('❌ Some seats no longer available:', unavailableSeats);
+            setErrors({ 
+              payment: 'Sorry, some of your selected seats have just been taken by another customer. Please go back and select different seats.' 
+            });
+            setPaymentStatus(null);
+            setIsProcessing(false);
+            return;
+          }
+        }
+      } 
+      // For events without seats - check general capacity
+      else {
+        const capacityCheck = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/capacity`,
+          { withCredentials: true }
+        );
+        
+        if (capacityCheck.data.success) {
+          const capacity = capacityCheck.data.capacity;
+          const totalRequested = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
+          
+          // Use backend-calculated remaining (includes other reservations, excludes current user's)
+          if (capacity.remaining !== 'unlimited' && capacity.remaining < totalRequested) {
+            console.error('❌ Not enough tickets available');
+            setErrors({ 
+              payment: 'Sorry, the tickets you selected have just been purchased by another customer. Please try again with a different quantity.' 
+            });
+            setPaymentStatus(null);
+            setIsProcessing(false);
+            return;
+          }
+        }
+      }
+      
+      console.log('✅ Availability check passed - creating payment intent');
+      
       // Create payment intent
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/paid/create-payment-intent`,
@@ -429,9 +501,23 @@ const CheckoutPage = () => {
       }
     } catch (error) {
       console.error('Payment intent creation failed:', error);
+      
+      // Provide user-friendly generic messages
+      let errorMessage = 'Unable to process payment at this time. Please try again.';
+      
+      // Check for specific error scenarios
+      if (error.response?.status === 409 || error.response?.data?.message?.includes('capacity')) {
+        errorMessage = 'Sorry, these tickets are no longer available. Someone else may have just completed their purchase. Please go back and try selecting different tickets.';
+      } else if (error.response?.data?.message?.includes('seat')) {
+        errorMessage = 'Sorry, some of your selected seats are no longer available. Please go back and select different seats.';
+      } else if (error.response?.data?.message?.includes('expired')) {
+        errorMessage = 'Your reservation has expired. Please start your booking again.';
+      }
+      
       setErrors({ 
-        payment: error.response?.data?.message || 'Failed to create payment intent'
+        payment: errorMessage
       });
+      setPaymentStatus(null);
     } finally {
       setIsProcessing(false);
     }

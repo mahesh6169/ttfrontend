@@ -63,7 +63,13 @@ const TicketSelectionPage = () => {
   };
   
   // Determine if can proceed
-  const canProceedToNext = totals.totalQuantity > 0 && !Object.keys(errors).length;
+  // No capacity issue if user already has a reservation (capacity already accounts for it)
+  const hasCapacityIssue = eventCapacity?.remaining !== 'unlimited' && 
+    totals.totalQuantity > (eventCapacity?.remaining || 0) &&
+    !reservation; // Only check capacity if no existing reservation
+  const canProceedToNext = totals.totalQuantity > 0 && 
+    !Object.keys(errors).length && 
+    !hasCapacityIssue;
 
   // Check if event has seating layout
   const hasSeatingLayout =
@@ -106,6 +112,37 @@ const TicketSelectionPage = () => {
   useEffect(() => {
     fetchCapacity();
   }, [fetchCapacity]);
+
+  // Auto-refresh capacity when user sees capacity warnings
+  useEffect(() => {
+    // Only start auto-refresh if:
+    // 1. User has selected tickets
+    // 2. There's a capacity issue (not enough tickets)
+    // 3. User doesn't have an existing reservation
+    // 4. Event is not unlimited capacity
+    const shouldAutoRefresh = 
+      totals.totalQuantity > 0 && 
+      eventCapacity?.remaining !== 'unlimited' &&
+      totals.totalQuantity > (eventCapacity?.remaining || 0) &&
+      !reservation &&
+      !capacityLoading;
+
+    if (shouldAutoRefresh) {
+      console.log('Starting capacity auto-refresh due to capacity warning');
+      
+      // Refresh every 5 seconds
+      const intervalId = setInterval(() => {
+        console.log('Auto-refreshing capacity...');
+        fetchCapacity();
+      }, 5000);
+
+      // Cleanup interval on unmount or when conditions change
+      return () => {
+        console.log('Stopping capacity auto-refresh');
+        clearInterval(intervalId);
+      };
+    }
+  }, [totals.totalQuantity, eventCapacity?.remaining, reservation, capacityLoading, fetchCapacity]);
 
   // Run cleanup task when tickets page loads
   useEffect(() => {
@@ -207,12 +244,31 @@ const TicketSelectionPage = () => {
         await fetchCapacity();
       }
     } catch (error) {
-      console.error('Error creating reservation:', error);
-      setPurchaseError(error.response?.data?.message || 'Failed to update ticket selection');
+      // Only log unexpected errors, not business logic rejections
+      if (!error.response?.data?.message || error.response?.status >= 500) {
+        console.error('Error creating reservation:', error);
+      }
+      
+      const errorMessage = error.response?.data?.message || 'Failed to update ticket selection';
+      setPurchaseError(errorMessage);
+      
+      // If capacity issue, refresh to show accurate info
+      if (errorMessage.includes('sold out') || errorMessage.includes('remaining') || errorMessage.includes('being purchased')) {
+        fetchCapacity();
+        
+        // If temporarily full, set a timer to refresh capacity again
+        if (error.response?.data?.isTemporarilyFull) {
+          setTimeout(() => {
+            fetchCapacity();
+            // Clear the error after refresh to encourage retry
+            setPurchaseError('');
+          }, 5000); // Refresh after 5 seconds
+        }
+      }
     } finally {
       setApiLoading(false);
     }
-  }, [user, eventId]);
+  }, [user, eventId, fetchCapacity]);
 
   // Handle quantity change
   const handleQuantityChange = async (ticketId, change) => {
@@ -242,6 +298,20 @@ const TicketSelectionPage = () => {
         ? eventCapacity.remaining
         : maxPerOrder;
     const maxQuantity = Math.min(maxPerOrder, capacityLimit);
+
+    // Calculate total quantity with this change
+    const otherTicketsTotal = selectedTickets
+      .filter(t => t.ticketTypeId !== ticketId)
+      .reduce((sum, t) => sum + t.quantity, 0);
+    const potentialTotal = otherTicketsTotal + newQuantity;
+
+    // Check if user is trying to exceed capacity
+    if (change > 0 && typeof eventCapacity?.remaining === 'number' && potentialTotal > eventCapacity.remaining) {
+      setPurchaseError(`Not enough tickets available. Only ${eventCapacity.remaining} ticket${eventCapacity.remaining === 1 ? '' : 's'} remaining.`);
+      // Still allow the action but limit to available capacity
+    } else {
+      setPurchaseError(''); // Clear any previous error
+    }
 
     // Update local state
     const updatedTickets = [...selectedTickets];
@@ -483,21 +553,34 @@ const TicketSelectionPage = () => {
           <div className="space-y-2 sm:space-y-4 mb-3 sm:mb-6">
 
             {/* Event Capacity Info */}
-            <div className="flex items-center text-[10px] sm:text-sm text-gray-600 mb-2 sm:mb-4">
-              <FaUsers className="mr-1 sm:mr-2 text-xs sm:text-base" />
-              <span>
-  {capacityLoading ? (
-    'Loading availability...'
-  ) : eventCapacity?.isUnlimited ? (
-    'Unlimited capacity'
-  ) : (eventCapacity?.total > 0 && eventCapacity?.confirmedAllocations >= eventCapacity?.total) ? (
-    'Event sold out'
-  ) : totals.totalQuantity > 0 ? (
-    `${totals.totalQuantity} ticket${totals.totalQuantity > 1 ? 's' : ''} selected • ${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
-  ) : (
-    `${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
-  )}
-</span>
+            <div className="mb-2 sm:mb-4">
+              <div className={`flex items-center text-[10px] sm:text-sm mb-1 ${
+                totals.totalQuantity > (eventCapacity?.remaining || 0) && eventCapacity?.remaining !== 'unlimited' && !reservation
+                  ? 'text-red-600' 
+                  : 'text-gray-600'
+              }`}>
+                <FaUsers className="mr-1 sm:mr-2 text-xs sm:text-base" />
+                <span>
+    {capacityLoading ? (
+      'Loading availability...'
+    ) : eventCapacity?.isUnlimited ? (
+      'Unlimited capacity'
+    ) : (eventCapacity?.total > 0 && eventCapacity?.confirmedAllocations >= eventCapacity?.total) ? (
+      'Event sold out'
+    ) : totals.totalQuantity > 0 ? (
+      `${totals.totalQuantity} ticket${totals.totalQuantity > 1 ? 's' : ''} selected • ${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
+    ) : (
+      `${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
+    )}
+  </span>
+              </div>
+              {/* Inline capacity warning - only show if no existing reservation */}
+              {totals.totalQuantity > (eventCapacity?.remaining || 0) && eventCapacity?.remaining !== 'unlimited' && !reservation && (
+                <div className="text-xs text-red-600 flex items-center ml-5 sm:ml-6">
+                  <FaExclamationTriangle className="mr-1" />
+                  Not enough tickets available. Please reduce your selection.
+                </div>
+              )}
             </div>
 
             {selectedEvent.ticketTypes?.map((ticketType) => {
