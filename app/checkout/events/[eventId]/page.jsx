@@ -746,7 +746,8 @@ const CheckoutPage = () => {
           )}
 
           {/* Socket Listener */}
-          <SeatSocketListenerNoRedux 
+          <
+            SeatSocketListenerNoRedux 
             eventId={params.eventId} 
             onSeatUpdate={handleSeatUpdate}
           />

@@ -12,8 +12,8 @@ import { formatInTimeZone } from 'date-fns-tz';
 export const getTicketSaleStatus = (ticket, eventTimeZone, capacity = null) => {
   const now = new Date();
   
-  // Check if sold out first
-  if (capacity?.status === 'sold-out') {
+  // Check if sold out first - using confirmedAllocations for accurate sold out status
+  if (capacity && capacity.total > 0 && capacity.confirmedAllocations >= capacity.total) {
     return {
       icon: '❌',
       message: 'Sold out',

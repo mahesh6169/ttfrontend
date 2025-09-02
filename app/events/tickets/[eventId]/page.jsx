@@ -490,7 +490,7 @@ const TicketSelectionPage = () => {
     'Loading availability...'
   ) : eventCapacity?.isUnlimited ? (
     'Unlimited capacity'
-  ) : eventCapacity?.status === 'sold-out' ? (
+  ) : (eventCapacity?.total > 0 && eventCapacity?.confirmedAllocations >= eventCapacity?.total) ? (
     'Event sold out'
   ) : totals.totalQuantity > 0 ? (
     `${totals.totalQuantity} ticket${totals.totalQuantity > 1 ? 's' : ''} selected • ${eventCapacity?.remaining || 0} of ${eventCapacity?.total || 0} remaining`
@@ -595,14 +595,13 @@ const TicketSelectionPage = () => {
                       </p>
                     </div>
 
-                    {/* Right: Quantity Selector */}
-                    {isAvailable && (
-                      <div className="flex items-center space-x-2">
+                    {/* Right: Quantity Selector - Always show but disable when not available */}
+                    <div className="flex items-center space-x-2">
                         <button
                           onClick={() =>
                             handleQuantityChange(ticketType._id, -1)
                           }
-                          disabled={selectedQty === 0 || apiLoading}
+                          disabled={selectedQty === 0 || apiLoading || !isAvailable}
                           className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaMinus className="text-[10px]" />
@@ -620,14 +619,14 @@ const TicketSelectionPage = () => {
                             totals.totalQuantity >= maxPerOrder ||
                             remainingQty <= 0 ||
                             apiLoading ||
-                            eventCapacity?.status === 'sold-out'
+                            (eventCapacity?.total > 0 && eventCapacity?.confirmedAllocations >= eventCapacity?.total) ||
+                            !isAvailable
                           }
                           className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaPlus className="text-[10px]" />
                         </button>
                       </div>
-                    )}
                   </div>
 
                   {/* Desktop Layout - Keep existing */}
@@ -646,14 +645,13 @@ const TicketSelectionPage = () => {
                       </div>
                     </div>
 
-                    {/* Quantity Selector */}
-                    {isAvailable && (
-                      <div className="flex items-center space-x-3 ml-6">
+                    {/* Quantity Selector - Always show but disable when not available */}
+                    <div className="flex items-center space-x-3 ml-6">
                         <button
                           onClick={() =>
                             handleQuantityChange(ticketType._id, -1)
                           }
-                          disabled={selectedQty === 0 || apiLoading}
+                          disabled={selectedQty === 0 || apiLoading || !isAvailable}
                           className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaMinus className="text-xs" />
@@ -671,14 +669,14 @@ const TicketSelectionPage = () => {
                             totals.totalQuantity >= maxPerOrder ||
                             remainingQty <= 0 ||
                             apiLoading ||
-                            eventCapacity?.status === 'sold-out'
+                            (eventCapacity?.total > 0 && eventCapacity?.confirmedAllocations >= eventCapacity?.total) ||
+                            !isAvailable
                           }
                           className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaPlus className="text-xs" />
                         </button>
                       </div>
-                    )}
                   </div>
 
                  {/* Ticket Sale Status */}

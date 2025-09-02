@@ -80,7 +80,9 @@ useEffect(() => {
 
   // ✅ For paid events in ticket section, show simplified capacity info
   if (isPaid && showInTicketSection) {
-    const { total, remaining, isUnlimited, status } = capacity;
+    const { total, remaining, isUnlimited, status, confirmedAllocations } = capacity;
+    // Use confirmedAllocations for accurate sold out display
+    const isSoldOut = total > 0 && confirmedAllocations >= total;
     
     return (
       <div className="flex items-center text-sm text-gray-600 mb-4">
@@ -88,7 +90,7 @@ useEffect(() => {
         <span>
           {isUnlimited ? (
             'Unlimited capacity'
-          ) : status === 'sold-out' ? (
+          ) : isSoldOut ? (
             'Event sold out'
           ) : (
             `${remaining || 0} of ${total || 0} remaining`
@@ -104,10 +106,12 @@ useEffect(() => {
     sold: registeredCount,
     remaining: remainingCapacity,
     isUnlimited,
-    status
+    status,
+    confirmedAllocations
   } = capacity;
 
-  const isFull = status === 'sold-out';
+  // Use confirmedAllocations for accurate sold out display
+  const isFull = totalCapacity > 0 && confirmedAllocations >= totalCapacity;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
