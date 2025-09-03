@@ -198,7 +198,7 @@ const CheckoutPage = () => {
   }, [selectedTickets, reservation?.totalAmount]);
 
   // Payment states
-  const isPaymentPending = paymentStatus.status === 'pending' || paymentStatus.status === 'processing';
+  const isPaymentPending = paymentStatus?.status === 'pending' || paymentStatus?.status === 'processing';
 
   // Calculate seat info and totals
   const seatInfo = {
@@ -395,60 +395,8 @@ const CheckoutPage = () => {
     });
 
     try {
-      // GUARD RAIL: Pre-flight availability check
-      console.log('🔍 Performing availability check before payment...');
-      
-      // For events with seats - check if selected seats are still available
-      if (event?.seatingLayout?.length > 0 && reservation?.seatIds?.length > 0) {
-        const seatCheck = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/seats`,
-          { withCredentials: true }
-        );
-        
-        if (seatCheck.data.success) {
-          const seatingLayout = seatCheck.data.seatingLayout || [];
-          const unavailableSeats = [];
-          
-          // Check each reserved seat
-          for (const seatId of reservation.seatIds) {
-            let seatAvailable = false;
-            
-            for (const row of seatingLayout) {
-              const seat = row.seats?.find(s => s.seatId === seatId);
-              if (seat) {
-                // Seat is available if it's selected by current user
-                if (seat.status === 'selected' && 
-                    seat.reservedBy?.toString() === reservation.userId?.toString()) {
-                  seatAvailable = true;
-                }
-                break;
-              }
-            }
-            
-            if (!seatAvailable) {
-              unavailableSeats.push(seatId);
-            }
-          }
-          
-          if (unavailableSeats.length > 0) {
-            console.error('❌ Some seats no longer available:', unavailableSeats);
-            setErrors({ 
-              payment: 'Sorry, some of your selected seats have just been taken by another customer. Please go back and select different seats.' 
-            });
-            setPaymentStatus(null);
-            setIsProcessing(false);
-            return;
-          }
-        }
-      } 
-      // For events without seats - skip capacity check
-      // The tickets page already validated capacity and created a reservation
-      // The backend will validate again during payment creation
-      else {
-        console.log('✅ Non-seated event - relying on existing reservation validation');
-      }
-      
-      console.log('✅ Availability check passed - creating payment intent');
+      // Trust the reservation system - no need for pre-flight checks
+      // The reservation already locks tickets/seats and backend validates during payment
       
       // Create payment intent
       const response = await axios.post(
@@ -500,7 +448,7 @@ const CheckoutPage = () => {
       setErrors({ 
         payment: errorMessage
       });
-      setPaymentStatus(null);
+      setPaymentStatus({ status: null, clientSecret: null, amount: 0 });
     } finally {
       setIsProcessing(false);
     }
@@ -560,28 +508,28 @@ const CheckoutPage = () => {
       if (confirmResponse.data.success) {
         console.log('✅ Payment confirmed via backend');
         
-        // Clean up reservation data before showing success
+        // Clean up reservation data (non-blocking for better UX)
         try {
-          // Delete reservation from backend (if it still exists)
-          if (reservation?._id) {
-            await axios.delete(
-              `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation/${reservation._id}`,
-              { withCredentials: true }
-            ).catch(err => {
-              // Ignore 404 errors as reservation might already be cleaned up by backend
-              if (err.response?.status !== 404) {
-                console.log('Reservation cleanup note:', err.message);
-              }
-            });
-          }
-          
-          // Clear all reservation-related session storage
+          // Clear all reservation-related session storage immediately
           sessionStorage.removeItem(`reservation_${params.eventId}`);
           sessionStorage.removeItem(`selectedTickets_${params.eventId}`);
           sessionStorage.removeItem(`formResponses_${params.eventId}`);
           
           // Clear reservation state
           setReservation(null);
+          
+          // Delete reservation from backend in background (non-blocking)
+          if (reservation?._id) {
+            axios.delete(
+              `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation/${reservation._id}`,
+              { withCredentials: true }
+            ).catch(err => {
+              // Ignore errors - backend will auto-cleanup
+              if (err.response?.status !== 404) {
+                console.log('Reservation cleanup note:', err.message);
+              }
+            });
+          }
           
           console.log('✅ Cleanup completed');
         } catch (cleanupError) {
@@ -653,7 +601,7 @@ const CheckoutPage = () => {
   }
 
   // Success Step - Mobile-first optimized
-  if (currentStep === 'complete' || (paymentStatus.status === 'succeeded' && isPaymentSuccessful)) {
+  if (currentStep === 'complete' || (paymentStatus?.status === 'succeeded' && isPaymentSuccessful)) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
         <div className="max-w-lg lg:max-w-2xl mx-auto px-3 sm:px-4">
