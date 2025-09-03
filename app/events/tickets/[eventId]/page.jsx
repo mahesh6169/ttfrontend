@@ -60,11 +60,10 @@ const TicketSelectionPage = () => {
   const userReservation = eventCapacity?.userReservation || 0;
   
   // Determine if can proceed based on backend data
-  const hasCapacityIssue = eventCapacity?.canBook !== 'unlimited' && 
-    userReservation >= (eventCapacity?.canBook || 0);
+  // For both seated and non-seated events, users should be able to proceed
+  // as long as they have tickets selected and no errors
   const canProceedToNext = userReservation > 0 && 
     !Object.keys(errors).length && 
-    !hasCapacityIssue &&
     !purchaseError &&
     reservation;  // Must have valid reservation
 
@@ -630,12 +629,6 @@ const TicketSelectionPage = () => {
       'Loading availability...'
     ) : eventCapacity?.isUnlimited ? (
       'Unlimited capacity'
-    ) : eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 ? (
-      // Truly sold out (sold tickets = capacity)
-      <span className="text-red-600 font-semibold">Event Sold Out</span>
-    ) : eventCapacity?.status === 'sold-out' ? (
-      // Temporarily full due to reservations
-      <span className="text-orange-600 font-semibold">Almost Selling Out</span>
     ) : eventCapacity?.userReservation > 0 ? (
       // When user has selected tickets, show their selection from backend
       <>
@@ -646,6 +639,12 @@ const TicketSelectionPage = () => {
           </span>
         )}
       </>
+    ) : eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 ? (
+      // Truly sold out (sold tickets = capacity)
+      <span className="text-red-600 font-semibold">Event Sold Out</span>
+    ) : eventCapacity?.status === 'sold-out' ? (
+      // Temporarily full due to reservations
+      <span className="text-orange-600 font-semibold">Almost Selling Out</span>
     ) : (
       // When no tickets selected, show true availability
       eventCapacity?.trueAvailable === 'unlimited' ? 
@@ -654,6 +653,12 @@ const TicketSelectionPage = () => {
     )}
   </span>
               </div>
+              {/* Show max booking limit message when user reaches their limit */}
+              {userReservation > 0 && userReservation >= (selectedEvent.maxAttendeesPerRegistration || 10) && (
+                <div className="text-xs flex items-center ml-5 sm:ml-6 mt-1">
+                  <span className="text-orange-600 font-medium">Max booking limit reached</span>
+                </div>
+              )}
               {/* Show appropriate message based on sold out status */}
               {eventCapacity?.status === 'sold-out' && !reservation && (
                 <div className="text-xs flex items-center ml-5 sm:ml-6 mt-1">
@@ -742,13 +747,23 @@ const TicketSelectionPage = () => {
                 ? Number.MAX_SAFE_INTEGER 
                 : eventCapacity?.canBook || 0;
                   
-              // How many more can be added based on max per order and capacity
+              // How many more can be added based on max per order
+              // For seated events, allow attempts up to max per order regardless of current availability
               const maxByOrderLimit = maxPerOrder - userReservation;
-              const maxByCapacityLimit = capacityLimit - userReservation;
               
-              const remainingQty = Math.max(0, Math.min(maxByOrderLimit, maxByCapacityLimit));
+              const remainingQty = Math.max(0, maxByOrderLimit);
               
-              // Debug logging removed for production
+              // Debug logging
+              console.log('🎫 Button state debug:', {
+                ticketType: ticketType.name,
+                userReservation,
+                maxPerOrder,
+                remainingQty,
+                isAvailable,
+                apiLoading,
+                canBook: eventCapacity?.canBook,
+                trueAvailable: eventCapacity?.trueAvailable
+              });
 
               return (
                 <div
@@ -777,7 +792,7 @@ const TicketSelectionPage = () => {
                           onClick={() =>
                             handleQuantityChange(ticketType._id, -1)
                           }
-                          disabled={selectedQty === 0 || apiLoading || !isAvailable}
+                          disabled={selectedQty === 0 || apiLoading}
                           className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaMinus className="text-[10px]" />
@@ -794,9 +809,8 @@ const TicketSelectionPage = () => {
                           disabled={
                             userReservation >= maxPerOrder ||
                             remainingQty <= 0 ||
+                            eventCapacity?.trueAvailable === 0 ||
                             apiLoading ||
-                            (eventCapacity?.trueAvailable !== 'unlimited' && eventCapacity?.trueAvailable <= 0) ||
-                            (eventCapacity?.canBook !== 'unlimited' && eventCapacity?.userReservation >= eventCapacity?.canBook) ||
                             !isAvailable
                           }
                           className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -806,10 +820,10 @@ const TicketSelectionPage = () => {
                       </div>
                   </div>
                   
-                  {/* Show capacity limit indicator for mobile */}
-                  {userReservation > 0 && eventCapacity?.canBook !== 'unlimited' && userReservation >= eventCapacity?.canBook && (
-                    <div className="text-[10px] text-orange-600 font-medium text-right mt-1 sm:hidden">
-                      Max reached
+                  {/* Show capacity limit indicator for mobile - only when event is permanently sold out */}
+                  {eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 && (
+                    <div className="text-[10px] text-red-600 font-medium text-right mt-1 sm:hidden">
+                      Sold out
                     </div>
                   )}
 
@@ -835,7 +849,7 @@ const TicketSelectionPage = () => {
                           onClick={() =>
                             handleQuantityChange(ticketType._id, -1)
                           }
-                          disabled={selectedQty === 0 || apiLoading || !isAvailable}
+                          disabled={selectedQty === 0 || apiLoading}
                           className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaMinus className="text-xs" />
@@ -852,9 +866,8 @@ const TicketSelectionPage = () => {
                           disabled={
                             userReservation >= maxPerOrder ||
                             remainingQty <= 0 ||
+                            eventCapacity?.trueAvailable === 0 ||
                             apiLoading ||
-                            (eventCapacity?.trueAvailable !== 'unlimited' && eventCapacity?.trueAvailable <= 0) ||
-                            (eventCapacity?.canBook !== 'unlimited' && eventCapacity?.userReservation >= eventCapacity?.canBook) ||
                             !isAvailable
                           }
                           className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -863,10 +876,10 @@ const TicketSelectionPage = () => {
                         </button>
                       </div>
                       
-                      {/* Show capacity limit indicator */}
-                      {userReservation > 0 && eventCapacity?.canBook !== 'unlimited' && userReservation >= eventCapacity?.canBook && (
-                        <div className="ml-4 text-xs text-orange-600 font-medium">
-                          Max reached
+                      {/* Show capacity limit indicator - only when event is permanently sold out */}
+                      {eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 && (
+                        <div className="ml-4 text-xs text-red-600 font-medium">
+                          Sold out
                         </div>
                       )}
                   </div>
