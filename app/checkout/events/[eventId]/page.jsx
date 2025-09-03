@@ -70,6 +70,7 @@ const CheckoutPage = () => {
   // Ticket download state
   const [isDownloadingTickets, setIsDownloadingTickets] = useState(false);
   const [downloadError, setDownloadError] = useState(null);
+  const [purchaseInvoiceNumber, setPurchaseInvoiceNumber] = useState(null);
   
   // Ref to track if reservation is currently being fetched
   const isFetchingReservation = useRef(false);
@@ -514,6 +515,11 @@ const CheckoutPage = () => {
       if (confirmResponse.data.success) {
         console.log('✅ Payment confirmed via backend');
         
+        // Store the invoice number for ticket download
+        if (confirmResponse.data.invoiceNumber) {
+          setPurchaseInvoiceNumber(confirmResponse.data.invoiceNumber);
+        }
+        
         // Clean up reservation data (non-blocking for better UX)
         try {
           // Clear all reservation-related session storage immediately
@@ -619,22 +625,61 @@ const CheckoutPage = () => {
       );
       
       if (response.data.success) {
-        // Filter tickets for this specific event
-        const eventTickets = response.data.tickets.filter(ticket => 
-          ticket.event === params.eventId || 
-          ticket.eventSnapshot?.eventCode === params.eventId
-        );
+        let ticketsToDownload = [];
         
-        if (eventTickets.length === 0) {
-          setDownloadError('Tickets not found. They may still be processing.');
+        // If we have the invoice number from the purchase, use it
+        if (purchaseInvoiceNumber) {
+          ticketsToDownload = response.data.tickets.filter(ticket => 
+            ticket.invoiceNumber === purchaseInvoiceNumber
+          );
+        } else {
+          // Fallback: Filter by event and recent time (shouldn't happen with updated backend)
+          const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+          
+          const recentEventTickets = response.data.tickets.filter(ticket => {
+            const matchesEvent = ticket.event === params.eventId || 
+                                ticket.eventSnapshot?.eventCode === params.eventId;
+            const isRecent = new Date(ticket.createdAt) > tenMinutesAgo;
+            
+            return matchesEvent && isRecent;
+          });
+          
+          if (recentEventTickets.length > 0) {
+            // Group by invoice and take the most recent
+            const ticketsByInvoice = recentEventTickets.reduce((acc, ticket) => {
+              const invoiceNum = ticket.invoiceNumber;
+              if (invoiceNum) {
+                if (!acc[invoiceNum]) {
+                  acc[invoiceNum] = [];
+                }
+                acc[invoiceNum].push(ticket);
+              }
+              return acc;
+            }, {});
+            
+            const invoiceNumbers = Object.keys(ticketsByInvoice);
+            if (invoiceNumbers.length > 0) {
+              const sortedInvoices = invoiceNumbers.sort((a, b) => {
+                const aNewestTicket = Math.max(...ticketsByInvoice[a].map(t => new Date(t.createdAt).getTime()));
+                const bNewestTicket = Math.max(...ticketsByInvoice[b].map(t => new Date(t.createdAt).getTime()));
+                return bNewestTicket - aNewestTicket;
+              });
+              
+              ticketsToDownload = ticketsByInvoice[sortedInvoices[0]];
+            }
+          }
+        }
+        
+        if (ticketsToDownload.length === 0) {
+          setDownloadError('Tickets not found. They may still be processing. Please try again in a moment.');
           return;
         }
         
         // Use event info from first ticket's snapshot
-        const eventInfo = eventTickets[0].eventSnapshot || {};
+        const eventInfo = ticketsToDownload[0].eventSnapshot || {};
         
-        // Generate PDF using common utility
-        generateTicketsPDF(eventTickets, eventInfo, params.eventId);
+        // Generate PDF using common utility with filtered tickets
+        generateTicketsPDF(ticketsToDownload, eventInfo, params.eventId);
       }
     } catch (error) {
       console.error('Error downloading tickets:', error);
@@ -669,31 +714,24 @@ const CheckoutPage = () => {
                 </li>
                 <li className="flex items-start">
                   <span className="mr-1.5 flex-shrink-0">🎫</span>
-                  <span>You can always save or find them in Dashboard → Profile → My Tickets</span>
+                  <span>View tickets at <a href="/users/profile/mytickets" className="underline hover:text-green-800">My Tickets</a></span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-1.5 flex-shrink-0">📱</span>
-                  <span>Keep them handy on your phone for easy access</span>
+                  <span className="mr-1.5 flex-shrink-0">🧾</span>
+                  <span>View invoices at <a href="/users/profile/myinvoices" className="underline hover:text-green-800">My Invoices</a></span>
                 </li>
                 <li className="flex items-start">
                   <span className="mr-1.5 flex-shrink-0">🧑‍💼</span>
-                  <span>Need help? Reach out to the organiser</span>
+                  <span>Enquiries? Visit <a href={`/events/views/${params.eventId}`} className="underline hover:text-green-800">Event page</a> to contact organiser</span>
                 </li>
               </ul>
             </div>
 
             <div className="space-y-2 sm:space-y-3 lg:space-y-4">
               <button
-                onClick={() => router.push('/users/profile/mytickets')}
-                className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-emerald-600 text-white rounded-md sm:rounded-lg hover:bg-emerald-700 transition-colors text-sm sm:text-base font-medium"
-              >
-                View My Tickets
-              </button>
-
-              <button
                 onClick={downloadTickets}
                 disabled={isDownloadingTickets}
-                className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-blue-600 text-white rounded-md sm:rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors text-sm sm:text-base font-medium flex items-center justify-center"
+                className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-emerald-600 text-white rounded-md sm:rounded-lg hover:bg-emerald-700 disabled:bg-emerald-400 disabled:cursor-not-allowed transition-colors text-sm sm:text-base font-medium flex items-center justify-center"
               >
                 {isDownloadingTickets ? (
                   <>
@@ -710,8 +748,8 @@ const CheckoutPage = () => {
 
               <button
                 onClick={() => {
-                  // Navigate first, then reset state
-                  router.push(`/events/views/${params.eventId}`);
+                  // Navigate to events listing
+                  router.push('/events');
                   
                   // Reset state after navigation starts
                   setTimeout(() => {
@@ -724,7 +762,7 @@ const CheckoutPage = () => {
                 }}
                 className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-gray-200 text-gray-800 rounded-md sm:rounded-lg hover:bg-gray-300 transition-colors text-sm sm:text-base font-medium"
               >
-                Back to Event
+                Back to Events
               </button>
             </div>
             
