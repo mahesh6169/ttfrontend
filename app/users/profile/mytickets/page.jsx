@@ -607,51 +607,84 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
     const pageWidth = doc.internal.pageSize.width;
     const leftMargin = 20;
     const rightMargin = 20;
+    const midPoint = pageWidth / 2;
     let currentY = 20;
     
-    // Event Title
-    doc.setFontSize(18);
+    // Event Title [Large]
+    doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
     doc.text(eventInfo.title, pageWidth / 2, currentY, { align: 'center' });
-    currentY += 10;
+    currentY += 12;
     
-    // Event ID
-    doc.setFontSize(12);
+    // Event ID [Medium Font]
+    doc.setFontSize(14);
     doc.setFont(undefined, 'normal');
     doc.text(`Event ID: ${eventInfo.eventCode}`, pageWidth / 2, currentY, { align: 'center' });
-    currentY += 10;
+    currentY += 12;
     
-    // Separator line
+    // First separator line
     doc.setDrawColor(150);
     doc.line(leftMargin, currentY, pageWidth - rightMargin, currentY);
-    currentY += 15;
-    
-    // Event details header
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Date: ${date} at ${time}`, leftMargin, currentY);
-    currentY += 6;
-    doc.text(`Venue: ${eventInfo.venue}`, leftMargin, currentY);
-    if (eventInfo.address) {
-      currentY += 6;
-      doc.text(`Address: ${eventInfo.address}`, leftMargin, currentY);
-    }
-    currentY += 6;
-    doc.text(`From: ${eventInfo.organizer?.name || 'Event Organizer'}`, leftMargin, currentY);
-    if (eventInfo.organizer?.abn) {
-      currentY += 6;
-      doc.text(`ABN: ${eventInfo.organizer.abn}`, leftMargin, currentY);
-    }
-    currentY += 15;
-    
-    // Tickets header
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text('TICKETS', leftMargin, currentY);
     currentY += 10;
     
-    // Process each ticket - simple format
-    doc.setFontSize(11);
+    // Two column layout - Details and Organiser [Small font]
+    doc.setFontSize(10);
+    
+    // Left column - Details
+    doc.setFont(undefined, 'bold');
+    doc.text('Details:', leftMargin, currentY);
+    doc.setFont(undefined, 'normal');
+    
+    let leftColY = currentY + 8;
+    doc.text(`Date: ${date}`, leftMargin + 15, leftColY);
+    leftColY += 6;
+    doc.text(`Time/TimeZone: ${time} ${eventInfo.timeZone ? formatInTimeZone(eventInfo.dateTime, eventInfo.timeZone, 'zzz') : ''}`, leftMargin + 15, leftColY);
+    leftColY += 6;
+    doc.text(`Venue: ${eventInfo.venue || 'TBA'}`, leftMargin + 15, leftColY);
+    if (eventInfo.address) {
+      leftColY += 6;
+      // Handle long addresses
+      const addressLines = doc.splitTextToSize(`Address: ${eventInfo.address}`, midPoint - leftMargin - 20);
+      addressLines.forEach((line, index) => {
+        doc.text(line, leftMargin + 15, leftColY + (index * 6));
+      });
+      leftColY += (addressLines.length * 6);
+    }
+    
+    // Right column - Organiser
+    doc.setFont(undefined, 'bold');
+    doc.text('Organiser:', midPoint, currentY);
+    doc.setFont(undefined, 'normal');
+    
+    let rightColY = currentY + 8;
+    doc.text(`Name: ${eventInfo.organizer?.name || 'Event Organizer'}`, midPoint + 15, rightColY);
+    rightColY += 6;
+    if (eventInfo.organizer?.mobile) {
+      doc.text(`Mobile: ${eventInfo.organizer.mobile}`, midPoint + 15, rightColY);
+      rightColY += 6;
+    }
+    if (eventInfo.organizer?.email) {
+      doc.text(`Email: ${eventInfo.organizer.email}`, midPoint + 15, rightColY);
+      rightColY += 6;
+    }
+    
+    // Move to next section (use whichever column is longer)
+    currentY = Math.max(leftColY, rightColY) + 10;
+    
+    // Second separator line
+    doc.setDrawColor(150);
+    doc.line(leftMargin, currentY, pageWidth - rightMargin, currentY);
+    currentY += 10;
+    
+    // Tickets header [Large font]
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Tickets', leftMargin, currentY);
+    currentY += 10;
+    
+    // Process each ticket [Small font]
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
     ticketGroup.forEach((ticket, index) => {
       // Check if we need a new page
       if (currentY > pageHeight - 30) {
@@ -659,25 +692,16 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
         currentY = 20;
       }
       
-      // Ticket line
-      doc.setFont(undefined, 'normal');
-      let ticketLine = ticket.ticketNumber;
+      // Ticket number on left
+      doc.text(ticket.ticketNumber, leftMargin, currentY);
       
-      // Add spacing to align ticket type
-      const ticketNumWidth = doc.getTextWidth(ticket.ticketNumber);
-      const desiredPosition = 80; // Position for ticket type
-      const spacesNeeded = Math.max(1, Math.floor((desiredPosition - leftMargin - ticketNumWidth) / doc.getTextWidth(' ')));
-      ticketLine += ' '.repeat(spacesNeeded);
-      
-      // Add ticket type
-      ticketLine += ticket.ticketType.name;
-      
-      // Add seat if exists
+      // Ticket type and seat on right (right-aligned)
+      let rightText = ticket.ticketType.name;
       if (ticket.seats && ticket.seats.length > 0) {
-        ticketLine += ` (Seat: ${ticket.seats[0].row}-${ticket.seats[0].seatNumber})`;
+        rightText += ` (Seat: ${ticket.seats[0].row}-${ticket.seats[0].seatNumber})`;
       }
+      doc.text(rightText, pageWidth - rightMargin, currentY, { align: 'right' });
       
-      doc.text(ticketLine, leftMargin, currentY);
       currentY += 8;
     });
     
