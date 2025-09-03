@@ -12,7 +12,7 @@ const categories = [
   { name: 'Electronics & Computers', hasTypeField: true, typeField: 'brand', types: ['Apple', 'Samsung', 'Sony', 'Other'] },
   { name: 'Real Estate', hasTypeField: true, typeField: 'propertyType', types: ['Room', 'House', 'Commercial', 'Land'] },
   { name: 'Jobs', hasTypeField: true, typeField: 'jobType', types: ['Full-time', 'Part-time', 'Contract', 'Internship'] },
-  { name: 'Overseas Goods', hasTypeField: false }
+  { name: 'Overseas Gooods', hasTypeField: false }
 ];
 
 const adTypes = ['offered', 'wanted'];
