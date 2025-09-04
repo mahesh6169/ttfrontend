@@ -612,69 +612,66 @@ const TicketSelectionPage = () => {
           {/* Ticket Types */}
           <div className="space-y-2 sm:space-y-4 mb-3 sm:mb-6">
 
-            {/* Event Capacity Info */}
+            {/* Event Capacity Info - Enhanced Container */}
             <div className="mb-2 sm:mb-4">
-              <div className={`flex items-center text-[10px] sm:text-sm mb-1 ${
-                eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0
-                  ? 'text-red-600'  // Truly sold out
-                  : eventCapacity?.status === 'sold-out'
-                  ? 'text-orange-600'  // Temporarily unavailable
-                  : eventCapacity?.trueAvailable === 0
-                  ? 'text-red-600' 
-                  : 'text-gray-600'
-              }`}>
-                <FaUsers className="mr-1 sm:mr-2 text-xs sm:text-base" />
-                <span>
-    {capacityLoading ? (
-      'Loading availability...'
-    ) : eventCapacity?.isUnlimited ? (
-      'Unlimited capacity'
-    ) : eventCapacity?.userReservation > 0 ? (
-      // When user has selected tickets, show their selection from backend
-      <>
-        {eventCapacity.userReservation} ticket{eventCapacity.userReservation > 1 ? 's' : ''} selected
-        {eventCapacity?.trueAvailable !== 'unlimited' && (
-          <span className="text-gray-500">
-            {' '}• {eventCapacity?.trueAvailable || 0} available
-          </span>
-        )}
-      </>
-    ) : eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 ? (
-      // Truly sold out (sold tickets = capacity)
-      <span className="text-red-600 font-semibold">Event Sold Out</span>
-    ) : eventCapacity?.status === 'sold-out' ? (
-      // Temporarily full due to reservations
-      <span className="text-orange-600 font-semibold">Almost Selling Out</span>
-    ) : (
-      // When no tickets selected, show true availability
-      eventCapacity?.trueAvailable === 'unlimited' ? 
-        'Unlimited capacity' : 
-        `${eventCapacity?.trueAvailable || 0} available`
-    )}
-  </span>
+              <div className="bg-teal-50 border-2 border-teal-600 rounded-lg p-3 sm:p-4">
+                <div className="flex items-center text-sm sm:text-base">
+                  <FaUsers className="mr-2 text-base sm:text-lg text-teal-700" />
+                  <span className="font-bold text-teal-800">
+                    {capacityLoading ? (
+                      'Loading availability...'
+                    ) : eventCapacity?.isUnlimited ? (
+                      'Unlimited capacity'
+                    ) : eventCapacity?.userReservation > 0 ? (
+                      // When user has selected tickets, show their selection from backend
+                      <>
+                        {eventCapacity.userReservation} ticket{eventCapacity.userReservation > 1 ? 's' : ''} selected
+                        {eventCapacity?.trueAvailable !== 'unlimited' && (
+                          <>
+                            {' '}• {eventCapacity?.trueAvailable || 0} available
+                          </>
+                        )}
+                      </>
+                    ) : eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 ? (
+                      // Truly sold out (sold tickets = capacity)
+                      'Event Sold Out'
+                    ) : eventCapacity?.status === 'sold-out' ? (
+                      // Temporarily full due to reservations
+                      'Almost Selling Out'
+                    ) : (
+                      // When no tickets selected, show true availability
+                      eventCapacity?.trueAvailable === 'unlimited' ? 
+                        'Unlimited capacity' : 
+                        `${eventCapacity?.trueAvailable || 0} available`
+                    )}
+                  </span>
+                </div>
+                
+                {/* Show max booking limit message when user reaches their limit */}
+                {userReservation > 0 && userReservation >= (selectedEvent.maxAttendeesPerRegistration || 10) && (
+                  <div className="text-sm mt-2 ml-6 sm:ml-7">
+                    <span className="text-orange-600 font-medium">Max booking limit reached</span>
+                  </div>
+                )}
+                
+                {/* Show appropriate message based on sold out status */}
+                {eventCapacity?.status === 'sold-out' && !reservation && (
+                  <div className="text-sm mt-2 ml-6 sm:ml-7">
+                    {eventCapacity?.sold >= eventCapacity?.total ? (
+                      <span className="text-red-600">Event is just sold out</span>
+                    ) : (
+                      <span className="text-orange-600">Tickets are currently being purchased by other customers. Please try again in a few minutes.</span>
+                    )}
+                  </div>
+                )}
+                
+                {/* Show purchase error inline */}
+                {purchaseError && (
+                  <div className="text-sm text-red-600 mt-2 ml-6 sm:ml-7">
+                    {purchaseError}
+                  </div>
+                )}
               </div>
-              {/* Show max booking limit message when user reaches their limit */}
-              {userReservation > 0 && userReservation >= (selectedEvent.maxAttendeesPerRegistration || 10) && (
-                <div className="text-xs flex items-center ml-5 sm:ml-6 mt-1">
-                  <span className="text-orange-600 font-medium">Max booking limit reached</span>
-                </div>
-              )}
-              {/* Show appropriate message based on sold out status */}
-              {eventCapacity?.status === 'sold-out' && !reservation && (
-                <div className="text-xs flex items-center ml-5 sm:ml-6 mt-1">
-                  {eventCapacity?.sold >= eventCapacity?.total ? (
-                    <span className="text-red-600">Event is just sold out</span>
-                  ) : (
-                    <span className="text-orange-600">Tickets are currently being purchased by other customers. Please try again in a few minutes.</span>
-                  )}
-                </div>
-              )}
-              {/* Show purchase error inline */}
-              {purchaseError && (
-                <div className="text-xs text-red-600 flex items-center ml-5 sm:ml-6 mt-1">
-                  {purchaseError}
-                </div>
-              )}
             </div>
 
             {selectedEvent.ticketTypes?.map((ticketType) => {
@@ -778,10 +775,10 @@ const TicketSelectionPage = () => {
                   <div className="flex items-center justify-between sm:hidden">
                     {/* Left: Name and Price */}
                     <div className="flex-1 min-w-0 mr-2">
-                      <h4 className="font-medium text-gray-900 text-xs truncate">
+                      <h4 className="font-medium text-teal-800 text-xs truncate">
                         {ticketType.name}
                       </h4>
-                      <p className="text-sm font-bold text-green-600">
+                      <p className="text-sm font-bold text-teal-700">
                         ${ticketType.price?.toFixed(2) || '0.00'}
                       </p>
                     </div>
@@ -793,9 +790,9 @@ const TicketSelectionPage = () => {
                             handleQuantityChange(ticketType._id, -1)
                           }
                           disabled={selectedQty === 0 || apiLoading}
-                          className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-7 h-7 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <FaMinus className="text-[10px]" />
+                          <FaMinus className="text-[10px] text-teal-700" />
                         </button>
 
                         <span className="w-6 text-center font-semibold text-xs">
@@ -813,9 +810,9 @@ const TicketSelectionPage = () => {
                             apiLoading ||
                             !isAvailable
                           }
-                          className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-7 h-7 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <FaPlus className="text-[10px]" />
+                          <FaPlus className="text-[10px] text-teal-700" />
                         </button>
                       </div>
                   </div>
@@ -832,11 +829,11 @@ const TicketSelectionPage = () => {
                     {/* Ticket Info */}
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-gray-900 text-base">
+                        <h4 className="font-semibold text-teal-800 text-base">
                           {ticketType.name}
                         </h4>
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-green-600">
+                          <p className="text-2xl font-bold text-teal-700">
                             ${ticketType.price?.toFixed(2) || '0.00'}
                           </p>
                         </div>
@@ -850,9 +847,9 @@ const TicketSelectionPage = () => {
                             handleQuantityChange(ticketType._id, -1)
                           }
                           disabled={selectedQty === 0 || apiLoading}
-                          className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-8 h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <FaMinus className="text-xs" />
+                          <FaMinus className="text-xs text-teal-700" />
                         </button>
 
                         <span className="w-8 text-center font-semibold">
@@ -870,9 +867,9 @@ const TicketSelectionPage = () => {
                             apiLoading ||
                             !isAvailable
                           }
-                          className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-8 h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <FaPlus className="text-xs" />
+                          <FaPlus className="text-xs text-teal-700" />
                         </button>
                       </div>
                       

@@ -196,43 +196,30 @@ const EventCapacityDisplay = ({
   // Use confirmedAllocations for accurate sold out display
   const isFull = totalCapacity > 0 && (confirmedAllocations || registeredCount) >= totalCapacity;
 
+  // Create consistent display text for free events if not provided
+  const consistentDisplayText = displayText || (!isPaid && !isUnlimited 
+    ? `${remainingCapacity} of ${totalCapacity} available`
+    : isUnlimited ? 'Unlimited capacity' : displayText);
+
   return (
     <div>
-      {/* Summary display for paid events */}
-      {displayText && isPaid && (
+      {/* Summary display for both paid and free events - consistent format */}
+      {consistentDisplayText && (
         <div className="text-sm sm:text-base mb-3 text-gray-700">
           <FaUsers className="inline-block mr-2" />
-          {displayText}
+          {consistentDisplayText}
         </div>
       )}
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Total Capacity */}
-        <div className="text-sm sm:text-base">
-          <span className="font-semibold text-gray-700">Total Capacity:</span>{' '}
-          <span className="text-gray-600">
-            {isUnlimited ? 'Unlimited' : `${totalCapacity} people`}
-          </span>
-        </div>
-
-        {/* Remaining Capacity - only for FREE events */}
-        {!isPaid && (
-          <div className="text-sm sm:text-base">
-            <span className="font-semibold text-gray-700">Remaining:</span>{' '}
-            <span className="text-gray-600">
-              {isUnlimited ? 'Unlimited' : remainingCapacity}
-            </span>
-          </div>
-        )}
-
-        {/* Max Attendees Per Registration */}
+        {/* Booking Limit */}
         {typeof maxPerRegistration === 'number' && (
           <div className="text-sm sm:text-base">
             <span className="font-semibold text-gray-700">
-              Max per Registration:
+              Booking Limit:
             </span>{' '}
             <span className="text-gray-600">
-              {maxPerRegistration}
+              {maxPerRegistration} per registration
             </span>
           </div>
         )}
@@ -244,13 +231,6 @@ const EventCapacityDisplay = ({
             <span className="text-red-600 font-semibold">
               {isPaid ? 'Sold Out' : 'Fully Booked'}
             </span>
-          </div>
-        )}
-        
-        {/* Last Updated - subtle indicator for FREE events */}
-        {!isPaid && lastUpdated && (
-          <div className="col-span-full text-xs text-gray-400 mt-1">
-            Updated: {new Date(lastUpdated).toLocaleTimeString()}
           </div>
         )}
       </div>

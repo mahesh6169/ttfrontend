@@ -569,48 +569,14 @@ const CheckoutPage = () => {
     }
   };
 
-  // Loading states
-  if (!user) {
-    return <RequireLogin message="Please log in to complete your purchase" />;
-  }
-
-  if (isLoading || reservationLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-
-  if (selectedTickets.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4">
-        <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full">
-          <FaExclamationTriangle className="text-amber-500 text-4xl sm:text-5xl mb-4 mx-auto" />
-          <h2 className="text-xl sm:text-2xl font-bold text-center mb-4 text-gray-800">
-            No Tickets Selected
-          </h2>
-          <p className="text-gray-600 text-center mb-6 text-sm sm:text-base">
-            {reservation ? 
-              'Your reservation exists but no ticket data was found. Please try selecting tickets again.' :
-              'Please select tickets before proceeding to checkout.'}
-          </p>
-          {reservation && (
-            <p className="text-xs text-gray-500 text-center mb-4">
-              Reservation ID: {reservation._id}
-            </p>
-          )}
-          <button
-            onClick={() => router.push(`/events/tickets/${params.eventId}`)}
-            className="w-full bg-emerald-600 text-white py-2.5 sm:py-3 rounded-md sm:rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm sm:text-base"
-          >
-            Back to Ticket Selection
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Prevent going back to checkout after successful payment
+  // This hook must be called before any conditional returns
+  useEffect(() => {
+    if (isPaymentSuccessful && !reservation && selectedTickets.length === 0) {
+      // Payment was successful but data is cleared - redirect to events
+      router.push('/events');
+    }
+  }, [isPaymentSuccessful, reservation, selectedTickets.length, router]);
 
   // Download tickets function
   const downloadTickets = async () => {
@@ -688,6 +654,56 @@ const CheckoutPage = () => {
       setIsDownloadingTickets(false);
     }
   };
+
+  // Loading states
+  if (!user) {
+    return <RequireLogin message="Please log in to complete your purchase" />;
+  }
+
+  if (isLoading || reservationLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Check if payment was successful FIRST - this should take precedence
+  if (isPaymentSuccessful) {
+    // Don't show any error modals if payment was successful
+    // The success UI is handled below
+    if (currentStep !== 'complete') {
+      setCurrentStep('complete');
+    }
+  } else if (selectedTickets.length === 0 && !reservationLoading) {
+    // Only show the "No Tickets Selected" error if payment was NOT successful
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full">
+          <FaExclamationTriangle className="text-amber-500 text-4xl sm:text-5xl mb-4 mx-auto" />
+          <h2 className="text-xl sm:text-2xl font-bold text-center mb-4 text-gray-800">
+            No Tickets Selected
+          </h2>
+          <p className="text-gray-600 text-center mb-6 text-sm sm:text-base">
+            {reservation ? 
+              'Your reservation exists but no ticket data was found. Please try selecting tickets again.' :
+              'Please select tickets before proceeding to checkout.'}
+          </p>
+          {reservation && (
+            <p className="text-xs text-gray-500 text-center mb-4">
+              Reservation ID: {reservation._id}
+            </p>
+          )}
+          <button
+            onClick={() => router.push(`/events/tickets/${params.eventId}`)}
+            className="w-full bg-emerald-600 text-white py-2.5 sm:py-3 rounded-md sm:rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm sm:text-base"
+          >
+            Back to Ticket Selection
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Success Step - Mobile-first optimized
   if (currentStep === 'complete' || (paymentStatus?.status === 'succeeded' && isPaymentSuccessful)) {

@@ -296,9 +296,6 @@ const EnhancedMyTicketsPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Tickets</h2>
-        <span className="text-xs sm:text-sm text-gray-500">
-          {tickets.length} ticket{tickets.length !== 1 ? 's' : ''} across {events.length} event{events.length !== 1 ? 's' : ''}
-        </span>
       </div>
 
       {/* Event Selector with Date Filter */}

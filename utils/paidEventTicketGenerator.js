@@ -81,8 +81,8 @@ export const generateTicketsPDF = (tickets, eventInfo, eventId = '') => {
   let rightColY = currentY + 8;
   doc.text(`Name: ${eventInfo.organizer?.name || 'Event Organizer'}`, midPoint + 15, rightColY);
   rightColY += 6;
-  if (eventInfo.organizer?.mobile) {
-    doc.text(`Mobile: ${eventInfo.organizer.mobile}`, midPoint + 15, rightColY);
+  if (eventInfo.organizer?.phone || eventInfo.organizer?.mobile) {
+    doc.text(`Mobile: ${eventInfo.organizer.phone || eventInfo.organizer.mobile}`, midPoint + 15, rightColY);
     rightColY += 6;
   }
   if (eventInfo.organizer?.email) {

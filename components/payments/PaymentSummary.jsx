@@ -74,7 +74,7 @@ const PaymentSummary = ({
       {/* Order Summary Header */}
       <div className="mb-2 sm:mb-3 lg:mb-4">
         <h2 className="text-xs sm:text-base lg:text-lg font-semibold flex items-center">
-          <FaTicketAlt className="mr-1 sm:mr-1.5 lg:mr-2 text-green-600 w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+          <FaTicketAlt className="mr-1 sm:mr-1.5 lg:mr-2 text-teal-700 w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
           Order Summary
         </h2>
       </div>
@@ -82,30 +82,31 @@ const PaymentSummary = ({
       {/* Event Details Section */}
       {showEventDetails && (
         <div className="mb-2 sm:mb-3 lg:mb-4 pb-2 sm:pb-3 lg:pb-4 border-b border-gray-200">
-          <h3 className="text-xs sm:text-sm lg:text-base font-medium text-gray-900 mb-0.5 sm:mb-1">{event.title}</h3>
+          <h3 className="text-xs sm:text-sm lg:text-base font-bold text-black mb-1 sm:mb-2">Event Details</h3>
+          <div className="text-[10px] sm:text-xs lg:text-sm text-gray-600 mb-0.5">{event.title}</div>
           {event.eventCode && (
-            <p className="text-[10px] sm:text-xs text-gray-500 mb-1 sm:mb-2">Event Code: {event.eventCode}</p>
+            <div className="text-[10px] sm:text-xs lg:text-sm text-gray-600 mb-1 sm:mb-2">Event Code: {event.eventCode}</div>
           )}
           
           <div className="space-y-1 sm:space-y-1.5 lg:space-y-2 text-[10px] sm:text-xs lg:text-sm text-gray-600">
             <div className="flex items-center">
-              <FaCalendarAlt className="mr-1 sm:mr-1.5 lg:mr-2 text-blue-600 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+              <FaCalendarAlt className="mr-1 sm:mr-1.5 lg:mr-2 text-teal-700 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
               <span className="truncate">{date}</span>
             </div>
             <div className="flex items-center">
-              <FaClock className="mr-1 sm:mr-1.5 lg:mr-2 text-green-600 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+              <FaClock className="mr-1 sm:mr-1.5 lg:mr-2 text-teal-700 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
               <span>{time}</span>
               {event.timeZone && (
                 <span className="ml-1 text-gray-500 text-[9px] sm:text-[10px] lg:text-xs">({event.timeZone})</span>
               )}
             </div>
             <div className="flex items-center">
-              <FaMapMarkerAlt className="mr-1 sm:mr-1.5 lg:mr-2 text-red-600 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+              <FaMapMarkerAlt className="mr-1 sm:mr-1.5 lg:mr-2 text-teal-700 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
               <span className="truncate">{event.venue}</span>
             </div>
             {event.address && (
               <div className="flex items-start">
-                <FaMapMarkerAlt className="mr-1 sm:mr-1.5 lg:mr-2 text-purple-600 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0 mt-0.5" />
+                <FaMapMarkerAlt className="mr-1 sm:mr-1.5 lg:mr-2 text-teal-700 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0 mt-0.5" />
                 <span className="text-[10px] sm:text-xs lg:text-sm leading-relaxed">
                   {(() => {
                     // Custom format: street number, street, suburb, state
@@ -127,19 +128,19 @@ const PaymentSummary = ({
       {/* Buyer Information Section */}
       {showBuyerInfo && buyerInfo && (
         <div className="mb-2 sm:mb-3 lg:mb-4 pb-2 sm:pb-3 lg:pb-4 border-b border-gray-200">
-          <h3 className="text-xs sm:text-sm lg:text-base font-medium text-gray-900 mb-1 sm:mb-2">Buyer Information</h3>
+          <h3 className="text-xs sm:text-sm lg:text-base font-bold text-black mb-1 sm:mb-2">Buyer Information</h3>
           
           <div className="space-y-1 sm:space-y-1.5 lg:space-y-2 text-[10px] sm:text-xs lg:text-sm text-gray-600">
             <div className="flex items-center">
-              <FaUser className="mr-1 sm:mr-1.5 lg:mr-2 text-blue-600 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
+              <FaUser className="mr-1 sm:mr-1.5 lg:mr-2 text-teal-700 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
               <span>{buyerInfo.firstName} {buyerInfo.lastName}</span>
             </div>
             <div className="flex items-center">
-              <FaEnvelope className="mr-1 sm:mr-1.5 lg:mr-2 text-green-600 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
+              <FaEnvelope className="mr-1 sm:mr-1.5 lg:mr-2 text-teal-700 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
               <span className="truncate">{buyerInfo.email}</span>
             </div>
             <div className="flex items-center">
-              <FaPhone className="mr-1 sm:mr-1.5 lg:mr-2 text-purple-600 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
+              <FaPhone className="mr-1 sm:mr-1.5 lg:mr-2 text-teal-700 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
               <span>{buyerInfo.phone}</span>
             </div>
           </div>
@@ -150,7 +151,7 @@ const PaymentSummary = ({
       {selectedSeats && selectedSeats.length > 0 && (
         <div className="mb-2 sm:mb-3 lg:mb-4 pb-2 sm:pb-3 lg:pb-4 border-b border-gray-200">
           <div className="flex items-start justify-between gap-2">
-            <span className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-700">Seats:</span>
+            <span className="text-[10px] sm:text-xs lg:text-sm font-bold text-black">Seats:</span>
             <span className="text-[10px] sm:text-xs lg:text-sm text-gray-900 text-right">{formatSelectedSeats()}</span>
           </div>
         </div>
@@ -158,17 +159,15 @@ const PaymentSummary = ({
 
       {/* Selected Tickets */}
       <div className="mb-2 sm:mb-3 lg:mb-4">
-        <h3 className="text-xs sm:text-sm lg:text-base font-medium text-gray-900 mb-1 sm:mb-2">Tickets</h3>
+        <h3 className="text-xs sm:text-sm lg:text-base font-bold text-black mb-1 sm:mb-2">Tickets</h3>
         
         <div className="space-y-1.5 sm:space-y-2 lg:space-y-3">
           {selectedTickets.filter(ticket => ticket && ticket.name && ticket.quantity > 0).map((ticket, index) => (
             <div key={ticket._id || index} className="flex justify-between items-start gap-2">
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-gray-900 text-[10px] sm:text-xs lg:text-sm truncate">{ticket.name}</p>
-                <div className="flex items-center text-[9px] sm:text-[10px] lg:text-xs text-gray-600 mt-0.5">
+                <div className="text-[9px] sm:text-[10px] lg:text-xs text-gray-600 mt-0.5">
                   <span>Qty: {ticket.quantity}</span>
-                  <span className="mx-1">•</span>
-                  <span>${ticket.price?.toFixed(2)} ea</span>
                 </div>
               </div>
               <p className="font-medium text-gray-900 text-[10px] sm:text-xs lg:text-sm whitespace-nowrap">
@@ -182,7 +181,7 @@ const PaymentSummary = ({
       {/* Price Breakdown */}
       <div className="border-t border-gray-200 pt-1.5 sm:pt-2 lg:pt-3 space-y-1 sm:space-y-1.5 lg:space-y-2">
         {/* Total */}
-        <div className="flex justify-between text-xs sm:text-sm lg:text-base font-bold text-green-600">
+        <div className="flex justify-between text-xs sm:text-sm lg:text-base font-bold text-teal-700">
           <span>Total</span>
           <span>${totals.total?.toFixed(2)}</span>
         </div>
