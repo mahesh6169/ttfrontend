@@ -43,6 +43,8 @@ export default function RefundsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [amountWarnings, setAmountWarnings] = useState({});
   const [localAmounts, setLocalAmounts] = useState({});
+  const [dateFilter, setDateFilter] = useState('3months'); // Add date filter state
+  const [instructionsOpen, setInstructionsOpen] = useState(false); // Add state for collapsible instructions
   const itemsPerPage = 20;
 
   // Fetch events on mount
@@ -210,6 +212,61 @@ export default function RefundsPage() {
     }).format(amount);
   };
 
+  // Format event date with timezone support
+  const formatEventDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
+    try {
+      const date = formatInTimeZone(dateTime, timeZone, 'dd/MM/yyyy');
+      const time = formatInTimeZone(dateTime, timeZone, 'h:mm a');
+      return { date, time, combined: `${date} at ${time}` };
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      const fallbackDate = new Date(dateTime);
+      return {
+        date: fallbackDate.toLocaleDateString(),
+        time: fallbackDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        combined: fallbackDate.toLocaleString()
+      };
+    }
+  };
+
+  // Apply date filtering
+  const getFilteredEvents = () => {
+    if (!events.list || events.list.length === 0) return [];
+    
+    let filtered = [...events.list];
+    
+    switch (dateFilter) {
+      case '3months':
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        filtered = events.list.filter(event => event.dateTime && new Date(event.dateTime) >= threeMonthsAgo);
+        break;
+      case '6months':
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        filtered = events.list.filter(event => event.dateTime && new Date(event.dateTime) >= sixMonthsAgo);
+        break;
+      case '1year':
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        filtered = events.list.filter(event => event.dateTime && new Date(event.dateTime) >= oneYearAgo);
+        break;
+      case 'all':
+      default:
+        // Show all events
+        break;
+    }
+    
+    // Sort by date (most recent first)
+    return filtered.sort((a, b) => {
+      if (!a.dateTime) return 1;
+      if (!b.dateTime) return -1;
+      return new Date(b.dateTime) - new Date(a.dateTime);
+    });
+  };
+
+  const filteredEvents = getFilteredEvents();
+
   // Group tickets by invoice
   const ticketsByInvoice = ticketsState.list.reduce((groups, ticket) => {
     if (!groups[ticket.invoiceNumber]) {
@@ -242,61 +299,211 @@ export default function RefundsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <h1 className="text-3xl font-bold text-gray-900">Refund Management</h1>
-            <p className="mt-2 text-gray-600">Process refunds for your paid events</p>
-          </div>
+    <>
+      <div className="space-y-2 sm:space-y-3">
+        {/* Page Header - Compact */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Refund Management</h2>
         </div>
-      </div>
+        {/* Event Selector - Reduced padding */}
+        <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+          {events.loading ? (
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+              <div className="h-10 bg-gray-200 rounded w-full"></div>
+            </div>
+          ) : events.error ? (
+            <div className="text-red-600 text-sm">
+              Error loading events: {events.error}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Combined Date Filter and Event Selector on Mobile */}
+              <div className="flex flex-col sm:flex-row sm:gap-4">
+              {/* Date Filter - Compact on mobile */}
+              <div className="sm:w-1/3">
+                <label htmlFor="dateFilter" className="block text-xs font-medium text-gray-600 mb-1">
+                  Date Range
+                </label>
+                <select
+                  id="dateFilter"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                >
+                  <option value="3months">Last 3 months</option>
+                  <option value="6months">Last 6 months</option>
+                  <option value="1year">Last year</option>
+                  <option value="all">Show all</option>
+                </select>
+              </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Event Selection */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Event
-          </label>
-          <select
-            value={selectedEvent?._id || ''}
-            onChange={(e) => {
-              const event = events.list.find(ev => ev._id === e.target.value);
-              if (event) handleEventSelect(event);
-            }}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Choose an event...</option>
-            {events.list.map((event) => (
-              <option key={event._id} value={event._id}>
-                {event.title} - {event.eventCode} {event.isDeleted && '(Deleted)'}
-              </option>
-            ))}
-          </select>
+              {/* Event Selector - Optimized for mobile */}
+              <div className="flex-1 mt-3 sm:mt-0">
+                <label htmlFor="eventSelect" className="block text-xs font-medium text-gray-600 mb-1">
+                  Select Paid Event
+                </label>
+                <select
+                  id="eventSelect"
+                  value={selectedEvent?._id || ''}
+                  onChange={(e) => {
+                    const eventId = e.target.value;
+                    if (eventId) {
+                      const event = events.list.find(ev => ev._id === eventId);
+                      if (event) handleEventSelect(event);
+                    } else {
+                      dispatch(setSelectedEvent(null));
+                    }
+                  }}
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white truncate"
+                >
+                  <option value="">Choose a paid event</option>
+                  
+                  {filteredEvents.length === 0 ? (
+                    <option disabled>No paid events found</option>
+                  ) : (
+                    filteredEvents.map((event) => {
+                      const eventDateTime = event.dateTime ? formatEventDateTime(event.dateTime, event.timeZone) : { date: 'No date' };
+                      // Always use concise format that works on all screens
+                      return (
+                        <option key={event._id} value={event._id}>
+                          {event.title} • {eventDateTime.date} {event.isDeleted ? '(Deleted)' : ''}
+                        </option>
+                      );
+                    })
+                  )}
+                </select>
+
+                {filteredEvents.length === 0 && events.list.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    No events in selected range. Try a different date filter.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Data Retention Warning - More compact */}
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
+              <p className="text-xs text-amber-800">
+                <strong>Note:</strong> Events older than 2 years will be deleted.
+              </p>
+            </div>
+          </div>
+          )}
         </div>
+
+        {/* Selected Event Details - Compact */}
+        {selectedEvent && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              {/* Event Title */}
+              <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                {selectedEvent.title}
+              </h3>
+              
+              {/* Event Code */}
+              <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
+                {selectedEvent.eventCode}
+              </span>
+              
+              {/* Deleted Badge if applicable */}
+              {selectedEvent.isDeleted && (
+                <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                  Deleted
+                </span>
+              )}
+              
+              {/* Date & Time */}
+              {selectedEvent.dateTime && (
+                <div className="flex items-center gap-1 text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>{formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone).combined}</span>
+                </div>
+              )}
+              
+              {/* Venue */}
+              {selectedEvent.venue && (
+                <div className="flex items-center gap-1 text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>{selectedEvent.venue}</span>
+                </div>
+              )}
+              
+              {/* Capacity if available */}
+              {selectedEvent.capacity > 0 && (
+                <div className="text-gray-600">
+                  <span>Capacity: {selectedEvent.capacity}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Statistics - Compact spacing */}
+        {selectedEvent && ticketsState.list.length > 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 p-2 sm:p-4">
+            <div className="flex items-center justify-around sm:justify-start sm:space-x-8">
+              {/* Total Invoices */}
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <div className="text-xs sm:text-base">
+                  <span className="font-bold text-blue-600">{Object.keys(ticketsByInvoice).length}</span>
+                  <span className="hidden sm:inline text-gray-600 ml-1">Total Invoices</span>
+                  <span className="sm:hidden text-gray-600 block text-xs">Invoices</span>
+                </div>
+              </div>
+              
+              {/* Refunded */}
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-red-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                </svg>
+                <div className="text-xs sm:text-base">
+                  <span className="font-bold text-red-600">
+                    {Object.entries(ticketsByInvoice).filter(([_, tickets]) => 
+                      tickets.some(t => t.totalRefundedAmount > 0)
+                    ).length}
+                  </span>
+                  <span className="hidden sm:inline text-gray-600 ml-1">Refunded</span>
+                  <span className="sm:hidden text-gray-600 block text-xs">Refunded</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {selectedEvent && (
           <>
-            {/* Show warning if event is deleted */}
-            {selectedEvent.isDeleted && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start">
-                  <IoWarningOutline className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-sm font-medium text-amber-900">Event Deleted</h3>
-                    <p className="text-sm text-amber-700 mt-1">
-                      This event has been deleted from the system, but you can still manage refunds for existing tickets.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* Search and Stats Bar */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 max-w-md">
+            {/* Search Bar - Match CheckIn Page */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-3 border-b bg-gray-50">
+                <div className="relative">
+                  {/* Search Icon */}
+                  <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+                    <svg 
+                      className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                      />
+                    </svg>
+                  </div>
+                  
+                  {/* Search Input */}
                   <input
                     type="text"
                     value={searchTerm}
@@ -304,39 +511,190 @@ export default function RefundsPage() {
                       setSearchTerm(e.target.value);
                       setCurrentPage(1);
                     }}
-                    placeholder="Search by invoice no., ticket no., buyer name / email, or ticket type..."
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Invoice #, Ticket #, Name, Email"
+                    className="block w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
-                  <div className="mt-1 text-xs text-gray-500">
-                    <span className="font-medium">Examples:</span> INV-KYJDS-001, TKT-KYJDS-0001, John Smith, john@example.com
-                  </div>
+                  
+                  {/* Clear Button */}
+                  {searchTerm && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm('');
+                        setCurrentPage(1);
+                      }}
+                      className="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center"
+                      type="button"
+                    >
+                      <svg 
+                        className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M6 18L18 6M6 6l12 12" 
+                        />
+                      </svg>
+                    </button>
+                  )}
                 </div>
-                <div className="ml-4 text-sm text-gray-600">
-                  {filteredInvoices.length} invoices • {ticketsState.list.length} tickets
+                
+                {/* Field hints */}
+                <div className="mt-1 text-xs text-gray-500">
+                  <span className="font-medium">Examples:</span> INV-KYJDS-001, TKT-KYJDS-0001, John Smith, john@example.com
                 </div>
               </div>
             </div>
 
-            {/* Instructions */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start">
-                <IoInformationCircleOutline className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0" />
-                <div>
+            {/* Instructions - Collapsible on Mobile */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setInstructionsOpen(!instructionsOpen)}
+                className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-blue-100 border-b border-blue-200 flex items-center justify-between text-left hover:bg-blue-150 transition-colors"
+              >
+                <div className="flex items-center gap-1.5">
+                  <IoInformationCircleOutline className="h-4 w-4 text-blue-600" />
                   <h3 className="text-sm font-medium text-blue-900">How to process refunds</h3>
-                  <ul className="text-sm text-blue-700 mt-1 space-y-1">
-                    <li>• Click on invoice numbers to expand and see individual tickets</li>
-                    <li>• Select the tickets you want to refund</li>
-                    <li>• Enter custom amounts or leave blank for full refund</li>
-                    <li>• Add a refund reason and click "Process Refund"</li>
-                  </ul>
+                </div>
+                <svg 
+                  className={`h-4 w-4 text-blue-600 transition-transform sm:hidden ${
+                    instructionsOpen ? 'rotate-180' : ''
+                  }`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M19 9l-7 7-7-7" 
+                  />
+                </svg>
+              </button>
+              
+              {/* Instructions Content - Always visible on desktop, collapsible on mobile */}
+              <div className={`${
+                instructionsOpen ? 'block' : 'hidden sm:block'
+              } p-3 sm:p-4`}>
+                <div className="space-y-2 text-xs sm:text-sm text-blue-800">
+                  <div className="flex gap-2">
+                    <span className="font-medium text-blue-900">1.</span>
+                    <span>Click invoice to view tickets</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-medium text-blue-900">2.</span>
+                    <span>Select tickets to refund</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-medium text-blue-900">3.</span>
+                    <span>Enter amount (or leave blank for full refund)</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-medium text-blue-900">4.</span>
+                    <span>Add reason & process refund</span>
+                  </div>
                 </div>
               </div>
+            </div>
+
+            {/* Mobile Refund Summary - Show after instructions on mobile only */}
+            <div className="lg:hidden">
+              {selectedTickets.length > 0 && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-5">
+                  <h3 className="text-base font-semibold text-gray-900 mb-3">Refund Summary</h3>
+                  
+                  <div className="space-y-1.5 mb-3">
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-gray-600">Selected tickets:</span>
+                      <span className="font-medium">{selectedTickets.length}</span>
+                    </div>
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-gray-600">Total refund:</span>
+                      <span className="font-medium text-blue-600">{formatCurrency(calculateRefundTotal())}</span>
+                    </div>
+                  </div>
+
+                  {/* Selected tickets list */}
+                  <div className="mb-3 max-h-40 overflow-y-auto">
+                    <h4 className="text-xs font-medium text-gray-700 mb-2">Selected tickets:</h4>
+                    <div className="space-y-1">
+                      {selectedTickets.map(ticket => {
+                        const customAmount = refundForm.customAmounts[ticket.ticketNumber];
+                        const refundAmount = customAmount !== undefined ? customAmount : 
+                          (ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0));
+                        
+                        return (
+                          <div key={ticket.ticketNumber} className="text-xs text-gray-600 flex justify-between">
+                            <span className="truncate">{ticket.ticketNumber}</span>
+                            <span className="font-medium">{formatCurrency(refundAmount)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                      Refund reason <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={refundReason}
+                      onChange={(e) => handleReasonChange(e.target.value)}
+                      placeholder="Please provide a reason..."
+                      rows={3}
+                      className="w-full border border-gray-300 rounded-md px-2.5 sm:px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-2.5 mb-3">
+                    <div className="flex items-start">
+                      <IoWarningOutline className="h-3.5 w-3.5 text-yellow-600 mr-1.5 flex-shrink-0 mt-0.5" />
+                      <div className="text-xs text-yellow-700">
+                        <p className="font-medium text-xs">Important:</p>
+                        <ul className="mt-0.5 space-y-0.5">
+                          <li>• Cannot be undone</li>
+                          <li>• Tickets will be cancelled</li>
+                          <li>• Seats will be released</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleProcessRefund}
+                    disabled={!refundReason.trim() || processing.loading}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 sm:px-4 text-xs sm:text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {processing.loading ? (
+                      'Processing...'
+                    ) : (
+                      `Process Refund (${formatCurrency(calculateRefundTotal())})`
+                    )}
+                  </button>
+
+                  {processing.error && (
+                    <div className="mt-2 text-xs sm:text-sm text-red-600">
+                      Error: {processing.error}
+                    </div>
+                  )}
+
+                  {processing.success && (
+                    <div className="mt-2 text-xs sm:text-sm text-green-600">
+                      Refund processed successfully!
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Left Column - Tickets List */}
-              <div className="lg:col-span-3 space-y-4">
+              <div className="lg:col-span-3 space-y-2 sm:space-y-3">
               {ticketsState.list.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
                   <IoTicket className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -573,8 +931,8 @@ export default function RefundsPage() {
               )}
               </div>
 
-              {/* Right Column - Sticky Refund Summary */}
-              <div className="lg:col-span-1">
+              {/* Right Column - Sticky Refund Summary - Desktop Only */}
+              <div className="hidden lg:block lg:col-span-1">
                 <div className="sticky top-4">
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Refund Summary</h3>
@@ -651,7 +1009,7 @@ export default function RefundsPage() {
                         <button
                           onClick={handleProcessRefund}
                           disabled={!refundReason.trim() || processing.loading}
-                          className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 sm:px-4 text-xs sm:text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {processing.loading ? (
                             'Processing...'
@@ -680,6 +1038,6 @@ export default function RefundsPage() {
           </>
         )}
       </div>
-    </div>
+    </>
   );
 }
