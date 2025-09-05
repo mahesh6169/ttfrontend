@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { formatInTimeZone } from 'date-fns-tz';
 import { 
   fetchOrganizerEvents,
   fetchRefundableTickets,
@@ -27,6 +28,8 @@ import {
   IoWarningOutline,
   IoInformationCircleOutline
 } from 'react-icons/io5';
+import RefundInvoiceCard from '@/components/events/refunds/RefundInvoiceCard';
+import Pagination from '@/components/Pagination';
 
 export default function RefundsPage() {
   const dispatch = useDispatch();
@@ -206,9 +209,10 @@ export default function RefundsPage() {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-AU', {
       style: 'currency',
-      currency: 'AUD'
+      currency: 'AUD',
+      currencyDisplay: 'symbol'
     }).format(amount);
   };
 
@@ -706,227 +710,33 @@ export default function RefundsPage() {
                     Tickets will appear here once customers make purchases.
                   </p>
                 </div>
-              ) : paginatedInvoices.map(([invoiceNumber, tickets]) => {
-                const isExpanded = expandedInvoices[invoiceNumber];
-                const invoiceTotal = tickets.reduce((sum, t) => sum + t.priceDetails.totalPrice, 0);
-                // totalRefundedAmount is stored per ticket
-                const invoiceRefunded = tickets.reduce((sum, t) => sum + (t.totalRefundedAmount || 0), 0);
-                const hasSelectedTickets = tickets.some(t => 
-                  selectedTickets.some(st => st.ticketNumber === t.ticketNumber)
-                );
-                const allTicketsRefunded = tickets.every(t => {
-                  const maxRefundable = t.priceDetails.totalPrice - (t.totalRefundedAmount || 0);
-                  return maxRefundable <= 0;
-                });
-
-                return (
-                  <div key={invoiceNumber} className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    {/* Invoice Header */}
-                    <div 
-                      className={`p-4 cursor-pointer ${
-                        allTicketsRefunded 
-                          ? 'bg-gray-100 cursor-not-allowed' 
-                          : hasSelectedTickets 
-                          ? 'bg-blue-50 hover:bg-blue-100' 
-                          : 'hover:bg-gray-50'
-                      }`}
-                      onClick={() => toggleInvoiceExpanded(invoiceNumber)}
-
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <IoChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                            <span className={`font-semibold ${allTicketsRefunded ? 'text-gray-500' : 'text-gray-900'}`}>
-                              {invoiceNumber}
-                            </span>
-                            <span className="text-sm text-gray-500">({tickets.length} tickets)</span>
-                            {allTicketsRefunded && (
-                              <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                                Fully Refunded
-                              </span>
-                            )}
-                            {!allTicketsRefunded && invoiceRefunded > 0 && (
-                              <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                                Partially Refunded
-                              </span>
-                            )}
-                            {hasSelectedTickets && (
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                Selected
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            <span>Total: {formatCurrency(invoiceTotal)}</span>
-                            {invoiceRefunded > 0 && (
-                              <span className="ml-3 text-red-600">
-                                Refunded: {formatCurrency(invoiceRefunded)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center ml-7">
-                          <span className="text-sm text-gray-600">
-                            {tickets[0].buyer.firstName} {tickets[0].buyer.lastName} • {tickets[0].buyer.email} • {tickets[0].buyer.phone}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Individual Tickets */}
-                    {isExpanded && (
-                      <div className="border-t border-gray-200 p-4 bg-gray-50 space-y-3">
-                        {tickets.map((ticket) => {
-                          const isSelected = selectedTickets.some(t => t.ticketNumber === ticket.ticketNumber);
-                          const maxRefundable = ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0);
-                          const customAmount = refundForm.customAmounts[ticket.ticketNumber];
-                          const isFullyRefunded = maxRefundable <= 0;
-
-                          return (
-                            <div 
-                              key={ticket.ticketNumber} 
-                              className={`bg-white p-4 rounded-lg border ${
-                                isFullyRefunded 
-                                  ? 'border-red-200 bg-red-50 opacity-75' 
-                                  : isSelected 
-                                  ? 'border-blue-500 bg-blue-50' 
-                                  : 'border-gray-200'
-                              }`}
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-start space-x-3">
-                                  {/* Selection Checkbox */}
-                                  <button
-                                    onClick={() => !isFullyRefunded && handleTicketSelect(ticket)}
-                                    disabled={isFullyRefunded}
-                                    className={`w-5 h-5 rounded border-2 mt-0.5 flex items-center justify-center ${
-                                      isFullyRefunded
-                                        ? 'bg-red-100 border-red-300 cursor-not-allowed'
-                                        : isSelected
-                                        ? 'bg-blue-600 border-blue-600 text-white'
-                                        : 'border-gray-300 hover:border-gray-400'
-                                    }`}
-                                  >
-                                    {isFullyRefunded ? (
-                                      <span className="text-red-600 text-xs">✕</span>
-                                    ) : isSelected ? (
-                                      <IoCheckmarkCircle className="w-3 h-3" />
-                                    ) : null}
-                                  </button>
-
-                                  {/* Ticket Info */}
-                                  <div className="flex-1">
-                                    <div className="flex items-center space-x-2">
-                                      <IoTicket className="h-4 w-4 text-gray-400" />
-                                      <span className="font-mono text-sm font-medium">{ticket.ticketNumber}</span>
-                                      <span className="text-xs text-gray-500">{ticket.ticketType.name}</span>
-                                    </div>
-                                    {ticket.seats?.length > 0 && (
-                                      <div className="text-xs text-gray-500 mt-1">
-                                        Seats: {ticket.seats.map(s => `${s.row}${s.seatNumber}`).join(', ')}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Price Info */}
-                                <div className="text-right">
-                                  <div className="text-sm font-medium">{formatCurrency(ticket.priceDetails.totalPrice)}</div>
-                                  {ticket.totalRefundedAmount > 0 && (
-                                    <div className="text-xs text-red-600">
-                                      Refunded: {formatCurrency(ticket.totalRefundedAmount)}
-                                    </div>
-                                  )}
-                                  <div className="text-xs text-green-600">
-                                    Available: {formatCurrency(maxRefundable)}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Custom Amount Input (when selected) */}
-                              {isSelected && !isFullyRefunded && (
-                                <div className="mt-3 pt-3 border-t border-gray-200">
-                                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                                    Custom refund amount (leave empty for full refund)
-                                  </label>
-                                  <div className="flex items-center space-x-2">
-                                    <div className="relative flex-1">
-                                      <IoCash className="absolute left-2 top-2 h-4 w-4 text-gray-400" />
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        max={maxRefundable}
-                                        step="0.01"
-                                        value={localAmounts[ticket.ticketNumber] !== undefined ? localAmounts[ticket.ticketNumber] : (customAmount || '')}
-                                        onChange={(e) => handleAmountChange(ticket.ticketNumber, e.target.value, maxRefundable)}
-                                        onWheel={(e) => e.target.blur()}
-                                        onBlur={(e) => {
-                                          // Auto-format to 2 decimal places on blur
-                                          const value = e.target.value;
-                                          if (value && !isNaN(value)) {
-                                            const formatted = parseFloat(value).toFixed(2);
-                                            setLocalAmounts(prev => ({
-                                              ...prev,
-                                              [ticket.ticketNumber]: formatted
-                                            }));
-                                            dispatch(setCustomRefundAmount({ ticketNumber: ticket.ticketNumber, amount: parseFloat(formatted) }));
-                                          }
-                                        }}
-                                        placeholder={maxRefundable.toFixed(2)}
-                                        className={`w-full pl-8 pr-3 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 ${
-                                          amountWarnings[ticket.ticketNumber] 
-                                            ? 'border-amber-400 focus:ring-amber-500' 
-                                            : 'border-gray-300 focus:ring-blue-500'
-                                        }`}
-                                      />
-                                    </div>
-                                    <span className="text-xs text-gray-500">
-                                      Max: {formatCurrency(maxRefundable)}
-                                    </span>
-                                  </div>
-                                  {amountWarnings[ticket.ticketNumber] && (
-                                    <div className="mt-1 text-xs text-amber-600 flex items-center">
-                                      <IoWarningOutline className="h-3 w-3 mr-1" />
-                                      {amountWarnings[ticket.ticketNumber]}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              ) : paginatedInvoices.map(([invoiceNumber, tickets]) => (
+                <RefundInvoiceCard
+                  key={invoiceNumber}
+                  invoiceNumber={invoiceNumber}
+                  tickets={tickets}
+                  isExpanded={expandedInvoices[invoiceNumber] || false}
+                  onToggleExpand={toggleInvoiceExpanded}
+                  selectedTickets={selectedTickets}
+                  onTicketSelect={handleTicketSelect}
+                  onAmountChange={handleAmountChange}
+                  localAmounts={localAmounts}
+                  amountWarnings={amountWarnings}
+                  formatCurrency={formatCurrency}
+                />
+              ))}
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-3">
-                  <div className="text-sm text-gray-600">
+                <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                  <div className="text-sm text-gray-600 text-center mb-2">
                     Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredInvoices.length)} of {filteredInvoices.length} invoices
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    <span className="text-sm text-gray-600">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
-                  </div>
+                  <Pagination 
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => setCurrentPage(page)}
+                  />
                 </div>
               )}
               </div>
