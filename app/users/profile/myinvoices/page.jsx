@@ -268,9 +268,6 @@ const MyInvoicesPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Invoices</h2>
-        <span className="text-xs sm:text-sm text-gray-500">
-          {invoices.length} invoice{invoices.length !== 1 ? 's' : ''} across {events.length} event{events.length !== 1 ? 's' : ''}
-        </span>
       </div>
 
       {/* Event Selector with Date Filter */}
@@ -491,12 +488,6 @@ const MyInvoicesPage = () => {
                         </div>
                       </div>
 
-                      {/* Refund info if applicable */}
-                      {invoice.hasRefunds && (
-                        <div className="mt-2 text-xs sm:text-sm text-gray-600">
-                          {invoice.refundCount} refund{invoice.refundCount !== 1 ? 's' : ''} processed
-                        </div>
-                      )}
                     </div>
 
                     {/* Action Button */}
@@ -621,6 +612,9 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     // Two column layout - Organizer and Buyer
     const colWidth = contentWidth / 2;
     
+    // Store starting position for right column
+    const startY = yPosition;
+    
     // From (left column)
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
@@ -632,19 +626,37 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     doc.text(invoiceData.event.organizer?.name || 'Event Organizer', leftMargin, yPosition);
     yPosition += 5;
     doc.setTextColor(100);
+    
+    // Add ABN if exists
     if (invoiceData.event.organizer?.abn) {
       doc.text(`ABN: ${invoiceData.event.organizer.abn}`, leftMargin, yPosition);
       yPosition += 5;
     }
-    doc.text(invoiceData.event.organizer?.email || 'N/A', leftMargin, yPosition);
-    if (invoiceData.event.organizer?.phone) {
+    
+    // Add email if exists
+    if (invoiceData.event.organizer?.email) {
+      doc.text(invoiceData.event.organizer.email, leftMargin, yPosition);
       yPosition += 5;
-      doc.text(invoiceData.event.organizer.phone, leftMargin, yPosition);
     }
+    
+    // Add phone if exists
+    if (invoiceData.event.organizer?.phone) {
+      doc.text(invoiceData.event.organizer.phone, leftMargin, yPosition);
+      yPosition += 5;
+    }
+    
+    // Add website if exists
+    if (invoiceData.event.organizer?.website) {
+      doc.text(invoiceData.event.organizer.website, leftMargin, yPosition);
+      yPosition += 5;
+    }
+    
+    // Adjust yPosition to account for actual fields shown
+    yPosition -= 5; // Remove extra spacing from last field
     doc.setTextColor(0);
     
-    // Bill To (right column) - go back up
-    let rightColY = yPosition - (invoiceData.event.organizer?.phone ? 16 : 11);
+    // Bill To (right column) - use stored starting position
+    let rightColY = startY;
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
     doc.text('Bill To', leftMargin + colWidth, rightColY);
@@ -784,18 +796,17 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     yPosition += 5;
     doc.setFont(undefined, 'bold');
     doc.setFontSize(11);
-    doc.text(`Total Paid: $${invoiceData.amounts.total.toFixed(2)}`, tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' });
+    const totalText = invoiceData.gstIncluded 
+      ? `Total Paid: $${invoiceData.amounts.total.toFixed(2)} (incl. GST)`
+      : `Total Paid: $${invoiceData.amounts.total.toFixed(2)}`;
+    doc.text(totalText, tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' });
     
     // Policy notes
     yPosition += 8;
-    if (invoiceData.gstIncluded || invoiceData.refundPolicy?.processingFeePolicy || invoiceData.refundPolicy?.policyText) {
+    if (invoiceData.refundPolicy?.processingFeePolicy || invoiceData.refundPolicy?.policyText) {
       doc.setFontSize(8);
       doc.setFont(undefined, 'normal');
       doc.setTextColor(100);
-      if (invoiceData.gstIncluded) {
-        doc.text('* GST included', tableLeft, yPosition);
-        yPosition += 4;
-      }
       if (invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable') {
         doc.text('* Processing fees are non-refundable', tableLeft, yPosition);
         yPosition += 4;
@@ -884,77 +895,21 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
         doc.setFontSize(8);
         doc.setTextColor(100);
         doc.text(`Refund Reason: ${refundGroup.reason || 'Customer request'}`, tableLeft, yPosition);
+        yPosition += 4;
         if (invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable') {
-          yPosition += 4;
           doc.text('* Processing fees are non-refundable', tableLeft, yPosition);
+          yPosition += 4;
+        }
+        if (invoiceData.refundPolicy?.policyText) {
+          doc.text(`* ${invoiceData.refundPolicy.policyText}`, tableLeft, yPosition);
+          yPosition += 4;
         }
         doc.setTextColor(0);
-        yPosition += 8;
+        yPosition += 4;
       });
       
-      // Summary totals
-      doc.setDrawColor(200);
-      doc.line(leftMargin, yPosition, pageWidth - rightMargin, yPosition);
-      yPosition += 8;
-      
-      doc.setFontSize(11);
-      doc.setFont(undefined, 'bold');
-      doc.text('Summary', leftMargin, yPosition);
-      yPosition += 6;
-      
-      doc.setFont(undefined, 'normal');
-      doc.text(`Total Amount:`, leftMargin, yPosition);
-      doc.text(`$${invoiceData.amounts.total.toFixed(2)}`, pageWidth - rightMargin - 30, yPosition, { align: 'right' });
-      yPosition += 5;
-      
-      doc.setTextColor(220, 38, 38);
-      doc.text(`Total Refunded:`, leftMargin, yPosition);
-      doc.text(`-$${invoiceData.amounts.totalRefunded.toFixed(2)}`, pageWidth - rightMargin - 30, yPosition, { align: 'right' });
-      yPosition += 5;
-      
-      doc.setTextColor(0);
-      doc.setDrawColor(150);
-      doc.line(pageWidth - rightMargin - 50, yPosition - 1, pageWidth - rightMargin, yPosition - 1);
-      yPosition += 3;
-      
-      doc.setFont(undefined, 'bold');
-      doc.text(`Net Amount:`, leftMargin, yPosition);
-      doc.text(`$${invoiceData.amounts.netAmount.toFixed(2)}`, pageWidth - rightMargin - 30, yPosition, { align: 'right' });
     }
     
-    // Invoice Status
-    yPosition += 15;
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    const statusText = invoiceData.status.replace(/_/g, ' ').toUpperCase();
-    
-    // Status with colored background
-    let statusColor;
-    if (invoiceData.status === 'paid') {
-      statusColor = [34, 197, 94]; // Green
-    } else if (invoiceData.status === 'partially_refunded') {
-      statusColor = [251, 146, 60]; // Orange
-    } else {
-      statusColor = [239, 68, 68]; // Red
-    }
-    
-    doc.setFillColor(...statusColor);
-    doc.setTextColor(255, 255, 255);
-    const statusWidth = doc.getTextWidth(statusText) + 10;
-    doc.roundedRect(leftMargin, yPosition - 4, statusWidth, 8, 2, 2, 'F');
-    doc.text(statusText, leftMargin + 5, yPosition);
-    doc.setTextColor(0);
-    
-    // Footer
-    yPosition = doc.internal.pageSize.height - 30;
-    doc.setDrawColor(200);
-    doc.line(leftMargin, yPosition, pageWidth - rightMargin, yPosition);
-    yPosition += 5;
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text('This is a computer generated invoice', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 4;
-    doc.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, yPosition, { align: 'center' });
     
     // Save the PDF
     const fileName = `Invoice_${invoiceData.invoiceNumber}_${new Date().getFullYear()}.pdf`;
@@ -1178,23 +1133,25 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                       {/* Total Row */}
                       <tr className="bg-gray-50 border-t border-gray-300">
                         <td className="px-4 py-3 text-sm font-medium" colSpan="3"></td>
-                        <td className="px-4 py-3 text-sm text-right font-bold">Total Paid: ${invoiceData.amounts.total.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-right font-bold">
+                          Total Paid: ${invoiceData.amounts.total.toFixed(2)}
+                          {invoiceData.gstIncluded && ' (incl. GST)'}
+                        </td>
                       </tr>
                     </tbody>
                   </table>
                   
                   {/* Policy Notes Below Table */}
-                  <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-600 space-y-1">
-                    {invoiceData.gstIncluded && (
-                      <p>* GST included</p>
-                    )}
-                    {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
-                      <p>* Processing fees are non-refundable</p>
-                    )}
-                    {invoiceData.refundPolicy?.policyText && (
-                      <p>* {invoiceData.refundPolicy.policyText}</p>
-                    )}
-                  </div>
+                  {(invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
+                    <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-600 space-y-1">
+                      {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
+                        <p>* Processing fees are non-refundable</p>
+                      )}
+                      {invoiceData.refundPolicy?.policyText && (
+                        <p>* {invoiceData.refundPolicy.policyText}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1262,6 +1219,9 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                             <p>Refund Reason: {refundGroup.reason || 'Customer request'}</p>
                             {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
                               <p>* Processing fees are non-refundable</p>
+                            )}
+                            {invoiceData.refundPolicy?.policyText && (
+                              <p>* {invoiceData.refundPolicy.policyText}</p>
                             )}
                           </div>
                         </div>

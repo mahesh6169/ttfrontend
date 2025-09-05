@@ -307,6 +307,9 @@ export default function RefundsPage() {
                     placeholder="Search by invoice no., ticket no., buyer name / email, or ticket type..."
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <div className="mt-1 text-xs text-gray-500">
+                    <span className="font-medium">Examples:</span> INV-KYJDS-001, TKT-KYJDS-0001, John Smith, john@example.com
+                  </div>
                 </div>
                 <div className="ml-4 text-sm text-gray-600">
                   {filteredInvoices.length} invoices • {ticketsState.list.length} tickets

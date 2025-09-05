@@ -107,6 +107,11 @@ const CheckInPaid_SearchBar = () => {
           </button>
         )}
       </div>
+      
+      {/* Field hints */}
+      <div className="mt-1 text-xs text-gray-500">
+        <span className="font-medium">Examples:</span> TKT-KYJDS-0001, INV-KYJDS-001, John Smith, john@example.com
+      </div>
     </div>
   );
 };
