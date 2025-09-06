@@ -48,7 +48,7 @@ export default function RefundsPage() {
   const [localAmounts, setLocalAmounts] = useState({});
   const [dateFilter, setDateFilter] = useState('3months'); // Add date filter state
   const [instructionsOpen, setInstructionsOpen] = useState(false); // Add state for collapsible instructions
-  const itemsPerPage = 20;
+  const itemsPerPage = 10; // Reduced for less scrolling
 
   // Fetch events on mount
   useEffect(() => {
