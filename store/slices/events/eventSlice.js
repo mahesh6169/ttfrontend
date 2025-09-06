@@ -272,6 +272,7 @@ const createDefaultFormData = () => ({
 
   // Ticketing
    isPaid: false, // Default to free event
+  isAdvertiseOnly: false, // For free events that are advertise-only
   capacity: '',
   maxAttendeesPerRegistration: '',
   registrationFields: [],
@@ -424,6 +425,7 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
       parentEventId: eventData.recurrence?.parentEventId || null
     },
     isPaid: eventData.isPaid || false,
+    isAdvertiseOnly: eventData.isAdvertiseOnly || false,
     capacity: eventData.capacity || '',
     maxAttendeesPerRegistration: eventData.maxAttendeesPerRegistration || '',
     registrationFields: eventData.registrationFields || [],
@@ -690,10 +692,28 @@ deleteError: null,
       // Update totalSteps based on event type
       state.totalSteps = action.payload ? 5 : 4; // 5 for paid (includes refund policy), 4 for free
       
+      // Reset isAdvertiseOnly if switching to paid event
+      if (action.payload) {
+        state.formData.isAdvertiseOnly = false;
+      }
       
       // Initialize ticket types if switching to paid
       if (action.payload && state.formData.ticketTypes.length === 0) {
         state.formData.ticketTypes = [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }];
+      }
+    },
+    toggleAdvertiseOnly: (state, action) => {
+      // Only allow for free events
+      if (!state.formData.isPaid) {
+        state.formData.isAdvertiseOnly = action.payload;
+        state.hasUnsavedChanges = true;
+        
+        // If enabling advertise-only, clear all registration-related fields
+        if (action.payload) {
+          state.formData.capacity = '';
+          state.formData.maxAttendeesPerRegistration = '';
+          state.formData.registrationFields = [];
+        }
       }
     },
     addTicketType: (state) => {
@@ -1188,6 +1208,7 @@ export const {
   
   // Ticket types
   toggleIsPaid,
+  toggleAdvertiseOnly,
   addTicketType,
   updateTicketType,
   removeTicketType,

@@ -435,6 +435,7 @@ const SingleEventCard = ({ event, chatProps }) => {
       )}
 
       {/* Capacity Display Section */}
+      {!event.isAdvertiseOnly && (
       <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
         <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
           <h3 className="text-sm sm:text-base font-semibold text-gray-800">Event Capacity</h3>
@@ -448,6 +449,7 @@ const SingleEventCard = ({ event, chatProps }) => {
           />
         </div>
       </div>
+      )}
         
       {/* Available Tickets Section (for paid events) */}
       {event.isPaid && event.ticketTypes?.length > 0 && (
@@ -493,7 +495,7 @@ const SingleEventCard = ({ event, chatProps }) => {
       )}
 
       {/* Registration/Purchase Button Section */}
-
+      {!event.isAdvertiseOnly && (
       <div className="px-2 py-4">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Handle Free vs Paid Events */}
@@ -551,6 +553,7 @@ const SingleEventCard = ({ event, chatProps }) => {
         </div>
 
       </div>
+      )}
 
       {/* Chat Container - Mobile Only (At the bottom) */}
       {chatProps && (

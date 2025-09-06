@@ -598,23 +598,25 @@ if (ticket.startDate && ticket.expiryDate) {
         }
       }
     } else {
-      // Free event specific validation
-      if (formData.capacity && formData.capacity < 0) {
-        errors.capacity = ['Event capacity cannot be negative'];
-      }
-      if (
-        !formData.maxAttendeesPerRegistration ||
-        formData.maxAttendeesPerRegistration === '' ||
-        Number(formData.maxAttendeesPerRegistration) < 1
-      ) {
-        errors.maxAttendeesPerRegistration = [
-          'Number should be 1 or above',
-        ];
+      // Free event specific validation - skip if advertise-only
+      if (!formData.isAdvertiseOnly) {
+        if (formData.capacity && formData.capacity < 0) {
+          errors.capacity = ['Event capacity cannot be negative'];
+        }
+        if (
+          !formData.maxAttendeesPerRegistration ||
+          formData.maxAttendeesPerRegistration === '' ||
+          Number(formData.maxAttendeesPerRegistration) < 1
+        ) {
+          errors.maxAttendeesPerRegistration = [
+            'Number should be 1 or above',
+          ];
+        }
       }
     }
 
-    // Custom registration fields validation
-    if (formData.registrationFields && formData.registrationFields.length > 0) {
+    // Custom registration fields validation - skip if advertise-only
+    if (!formData.isAdvertiseOnly && formData.registrationFields && formData.registrationFields.length > 0) {
       const fieldErrors = [];
       formData.registrationFields.forEach((field, index) => {
         if (!field.fieldName?.trim()) {
@@ -755,15 +757,18 @@ const validateCurrentStep = useCallback(() => {
           });
         }
       } else {
-        // Free event validation - only check if field is empty
-        if (
-          formData.maxAttendeesPerRegistration === undefined ||
-          formData.maxAttendeesPerRegistration === null ||
-          formData.maxAttendeesPerRegistration === ''
-        ) {
-          errors.maxAttendeesPerRegistration = [
-            'Booking limit is required',
-          ];
+        // Free event validation - skip if advertise-only
+        if (!formData.isAdvertiseOnly) {
+          // Only validate capacity and booking limit if not advertise-only
+          if (
+            formData.maxAttendeesPerRegistration === undefined ||
+            formData.maxAttendeesPerRegistration === null ||
+            formData.maxAttendeesPerRegistration === ''
+          ) {
+            errors.maxAttendeesPerRegistration = [
+              'Booking limit is required',
+            ];
+          }
         }
       }
       break;
@@ -936,6 +941,9 @@ if (formData.dateTime) {
 
     // Free event specific fields
     if (!formData.isPaid) {
+      // Add isAdvertiseOnly flag
+      submitFormData.append('isAdvertiseOnly', formData.isAdvertiseOnly ? 'true' : 'false');
+      
       if (formData.capacity !== undefined && formData.capacity !== null) {
         submitFormData.append('capacity', formData.capacity.toString());
       }

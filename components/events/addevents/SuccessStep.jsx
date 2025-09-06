@@ -251,12 +251,14 @@ console.log('🔍 SuccessStep Debug:', {
                 Until {format(new Date(event.recurrence.endDate), 'PP')}
               </p>
             )}
-            <p className="text-purple-600 text-xs sm:text-sm mt-1 sm:mt-2 px-2">
-              {mode === 'edit' 
-                ? 'Changes applied to future instances'
-                : 'Attendees can register for individual dates'
-              }
-            </p>
+            {!event.isAdvertiseOnly && (
+              <p className="text-purple-600 text-xs sm:text-sm mt-1 sm:mt-2 px-2">
+                {mode === 'edit' 
+                  ? 'Changes applied to future instances'
+                  : 'Attendees can register for individual dates'
+                }
+              </p>
+            )}
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import {
   updateField,
+  toggleAdvertiseOnly,
   addTicketType,
   updateTicketType,
   removeTicketType,
@@ -21,15 +22,66 @@ import {
 import SeatingLayoutSection from './SeatingLayoutSection';
 
 // Free Event Configuration Component
-const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
+const FreeEventConfig = ({ formData = {}, errors = {}, dispatch, mode = 'add' }) => {
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
   const [bookingLimitError, setBookingLimitError] = useState('');
   const [bookingLimitTouched, setBookingLimitTouched] = useState(false);
+  
+  // Check if in edit mode
+  const isEditMode = mode === 'edit';
+  
+  // Check if any registration data exists
+  const hasRegistrationData = 
+    (formData.capacity !== '' && formData.capacity !== null && formData.capacity !== undefined) ||
+    (formData.maxAttendeesPerRegistration !== '' && formData.maxAttendeesPerRegistration !== null && formData.maxAttendeesPerRegistration !== undefined) ||
+    (formData.registrationFields && formData.registrationFields.length > 0);
 
   return (
     <div className="space-y-6">
 
+      {/* Advertise Only Option */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+        <div className="flex items-start space-x-3">
+          <input
+            type="checkbox"
+            id="advertiseOnly"
+            checked={formData.isAdvertiseOnly || false}
+            onChange={(e) => dispatch(toggleAdvertiseOnly(e.target.checked))}
+            disabled={hasRegistrationData || isEditMode}
+            className={`mt-0.5 w-4 h-4 border-gray-300 rounded focus:ring-purple-500 ${
+              hasRegistrationData || isEditMode
+                ? 'text-gray-400 cursor-not-allowed' 
+                : 'text-purple-600 cursor-pointer'
+            }`}
+          />
+          <div className="flex-1">
+            <label
+              htmlFor="advertiseOnly"
+              className={`block text-sm font-medium cursor-pointer ${
+                hasRegistrationData || isEditMode ? 'text-gray-400' : 'text-gray-900'
+              }`}
+            >
+              Promotional Only (No Registration)
+            </label>
+            <p className={`text-xs mt-0.5 ${
+              hasRegistrationData || isEditMode ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              {isEditMode 
+                ? formData.isAdvertiseOnly
+                  ? 'This is a promotional only event. You cannot change this after creation'
+                  : 'You cannot switch to promotional only after event creation'
+                : hasRegistrationData 
+                  ? 'Remove capacity management fields to go promotional only mode'
+                  : 'This event will be listed for informational and promotional purposes only. Registration and attendance tracking are not available.'
+              }
+            </p>
+          </div>
+        </div>
+
+      </div>
+
       {/* Capacity Management */}
+      {!formData.isAdvertiseOnly && (
       <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
         <div className="flex items-center mb-3 sm:mb-4">
           <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
@@ -165,13 +217,16 @@ const FreeEventConfig = ({ formData = {}, errors = {}, dispatch }) => {
           </div>
         </div>
       </div>
+      )}
 
+      {!formData.isAdvertiseOnly && (
       <CustomRegistrationFields
         formData={formData}
         errors={errors}
         dispatch={dispatch}
         isRecurring={isRecurringEvent}
       />
+      )}
     </div>
   );
 };
@@ -886,6 +941,7 @@ const TicketConfigStep = ({ formData = {}, errors = {}, mode = 'add', onSeatingI
           formData={formData}
           errors={errors}
           dispatch={dispatch}
+          mode={mode}
         />
       )}
     </div>
