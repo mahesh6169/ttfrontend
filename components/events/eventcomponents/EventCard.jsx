@@ -10,7 +10,7 @@ import { FaMoneyBillWave } from 'react-icons/fa';
 import { FaClipboardList } from 'react-icons/fa';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
-  const { title, dateTime, venue, address, images, createdAt, timeZone, isPaid } = event;
+  const { title, dateTime, venue, address, images, createdAt, timeZone, isPaid, isAdvertiseOnly } = event;
 
   const getStateFromTimezone = (timezone) => {
   const timezoneMap = {
@@ -141,21 +141,28 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         <div className="flex items-center justify-between px-2 mb-1">
           <div className="flex items-center gap-1">
             {isPaid ? (
-              <FaMoneyBillWave 
-                className="text-gray-600" 
-                size={12}
-                title="Paid Event"
-              />
-            ) : (
-              <FaClipboardList 
-                className="text-gray-600" 
-                size={12}
-                title="Free Event - RSVP"
-              />
-            )}
-            <span className="text-[10px] text-gray-600 font-medium">
-              {isPaid ? 'Paid' : 'RSVP'}
-            </span>
+              <>
+                <FaMoneyBillWave 
+                  className="text-gray-600" 
+                  size={12}
+                  title="Paid Event"
+                />
+                <span className="text-[10px] text-gray-600 font-medium">
+                  Paid
+                </span>
+              </>
+            ) : !isAdvertiseOnly ? (
+              <>
+                <FaClipboardList 
+                  className="text-gray-600" 
+                  size={12}
+                  title="Free Event - RSVP"
+                />
+                <span className="text-[10px] text-gray-600 font-medium">
+                  RSVP
+                </span>
+              </>
+            ) : null}
           </div>
           <span className="text-xs font-medium text-gray-600 whitespace-nowrap">
             {postedText}
