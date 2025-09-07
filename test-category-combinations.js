@@ -10,7 +10,7 @@ const categories = [
   { name: 'Home & Garden', hasTypeField: false },
   { name: 'Pets', hasTypeField: false },
   { name: 'Electronics & Computers', hasTypeField: true, typeField: 'brand', types: ['Apple', 'Samsung', 'Sony', 'Other'] },
-  { name: 'Real Estate', hasTypeField: true, typeField: 'propertyType', types: ['Room', 'House', 'Commercial', 'Land'] },
+  { name: 'Real Estafte', hasTypeField: true, typeField: 'propertyType', types: ['Room', 'House', 'Commercial', 'Land'] },
   { name: 'Jobs', hasTypeField: true, typeField: 'jobType', types: ['Full-time', 'Part-time', 'Contract', 'Internship'] },
   { name: 'Overseas Gooods', hasTypeField: false }
 ];
