@@ -39,9 +39,9 @@ const EventDetail = () => {
     };
   }, [dispatch, id]);
 
-  if (status === 'loading') {
+  if ((status === 'idle' || status === 'loading') && !selectedEvent) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center min-h-[300px]">
         <LoadingSpinner />
       </div>
     );
@@ -69,7 +69,7 @@ const EventDetail = () => {
     );
   }
 
-  if (!selectedEvent) {
+  if (status === 'succeeded' && !selectedEvent) {
     return (
       <div className="text-center text-gray-500 mt-8">
         <p>Event not found.</p>

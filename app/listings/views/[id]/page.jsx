@@ -10,6 +10,7 @@ import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
 import Link from 'next/link';
 import ShareIcons from '@/components/shared/ShareIcons';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const AdvertDetail = () => {
   const { id } = useParams();
@@ -25,16 +26,40 @@ const AdvertDetail = () => {
     dispatch(getAdvertById(id));
   }, [dispatch, id]);
 
-  if (status === 'idle' || status === 'loading') {
-    return <div className="text-center mt-8">Loading advert details...</div>;
+  if ((status === 'idle' || status === 'loading') && !advert) {
+    return (
+      <div className="flex justify-center items-center min-h-[300px]">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (status === 'failed') {
-    return <div className="text-center text-red-500">{error}</div>;
+    return (
+      <div className="text-center text-red-500 mt-8">
+        <p>{error}</p>
+        <button 
+          onClick={() => router.push('/listings')}
+          className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          Go Back
+        </button>
+      </div>
+    );
   }
 
-  if (!advert) {
-    return <div className="text-center text-gray-500">No advert found.</div>;
+  if (status === 'succeeded' && !advert) {
+    return (
+      <div className="text-center text-gray-500 mt-8">
+        <p>Listing not found.</p>
+        <button 
+          onClick={() => router.push('/listings')}
+          className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          Go Back
+        </button>
+      </div>
+    );
   }
 
   return (
