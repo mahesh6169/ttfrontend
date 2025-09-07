@@ -6,199 +6,67 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-// Map backend status to user-friendly labels
-const getStatusLabel = (backendStatus) => {
-  const statusMap = {
-    no_account: 'Not Connected',
-    account_restricted: 'Action Required',
-    action_required: 'Setup Incomplete',
-    incomplete_setup: 'Setup Incomplete',
-    under_review: 'Under Review',
-    capabilities_pending: 'Processing',
-    fully_active: 'Connected & Active',
-    unknown: 'Status Unknown',
+// Helper to format requirement field names into user-friendly labels
+const getRequirementLabel = (field) => {
+  const labelMap = {
+    // Common fields that appear during initial onboarding
+    'business_profile.mcc': 'Business category',
+    'business_profile.product_description': 'Product description',
+    'business_profile.url': 'Website URL',
+    'business_type': 'Business type',
+    'external_account': 'Bank account details',
+    'tos_acceptance.date': 'Terms of service',
+    'tos_acceptance.ip': 'Terms of service',
+    
+    // Company-specific fields (only for company business type)
+    'company.name': 'Company name',
+    'company.tax_id': 'ABN (Australian Business Number)',
+    
+    // Identity verification (appears later in the process)
+    'individual.verification.document': 'Identity document',
+    'representative.verification.document': 'Identity document',
   };
 
-  return statusMap[backendStatus] || 'Status Unknown';
-};
-
-// Get status badge styling
-const getStatusBadge = (backendStatus) => {
-  const label = getStatusLabel(backendStatus);
-
-  switch (backendStatus) {
-    case 'fully_active':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          ✅ {label}
-        </span>
-      );
-    case 'account_restricted':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          ⚠️ {label}
-        </span>
-      );
-    case 'action_required':
-    case 'incomplete_setup':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-          🔧 {label}
-        </span>
-      );
-    case 'under_review':
-    case 'capabilities_pending':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-          ⏳ {label}
-        </span>
-      );
-    case 'no_account':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-          {label}
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-          {label}
-        </span>
-      );
-  }
-};
-
-// Get status message
-const getStatusMessage = (backendStatus) => {
-  switch (backendStatus) {
-    case 'no_account':
-      return 'To create paid events, you need to set up your Stripe payment account.';
-    case 'account_restricted':
-      return '🚨 Your payment account has restrictions that need to be resolved before you can accept payments.';
-    case 'action_required':
-      return 'Your payment account requires additional information. Please complete the required actions.';
-    case 'incomplete_setup':
-      return 'Complete your Stripe payment account setup to enable paid events.';
-    case 'under_review':
-      return 'Your account is currently being reviewed by Stripe. This usually takes a few minutes.';
-    case 'capabilities_pending':
-      return 'Your account is being processed. This usually takes a few minutes.';
-    case 'fully_active':
-      return '🎉 Your Stripe setup is successfully completed.';
-    default:
-      return 'Please check your account status and complete any required setup.';
-  }
-};
-
-// Get button text
-const getButtonText = (backendStatus, loading) => {
-  if (loading) {
-    return backendStatus === 'no_account'
-      ? 'Creating Account...'
-      : 'Redirecting to Stripe...';
+  // Handle person_ prefixed fields (for identity verification later)
+  if (field.includes('person_') && field.includes('.verification.document')) {
+    return 'Identity document';
   }
 
-  switch (backendStatus) {
-    case 'no_account':
-      return 'Connect with Stripe';
-    case 'account_restricted':
-      return 'Fix Issues Now';
-    case 'action_required':
-    case 'incomplete_setup':
-      return 'Complete Setup';
-    case 'under_review':
-    case 'capabilities_pending':
-      return 'Under Review - Please Wait';
-    case 'fully_active':
-      return 'View Stripe Dashboard';
-    default:
-      return 'Continue Setup';
-  }
-};
-
-// Get button styling
-const getButtonStyle = (backendStatus) => {
-  switch (backendStatus) {
-    case 'fully_active':
-      return 'w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
-    case 'account_restricted':
-      return 'w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50';
-    case 'action_required':
-    case 'incomplete_setup':
-      return 'w-full px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50';
-    case 'under_review':
-    case 'capabilities_pending':
-      return 'w-full px-4 py-2 bg-gray-200 text-gray-600 rounded cursor-not-allowed';
-    default:
-      return 'w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50';
-  }
+  // Default formatting for unmapped fields
+  return labelMap[field] || field.replace(/_/g, ' ').replace(/\./g, ' ');
 };
 
 export default function StripeSetupPage() {
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [accountStatus, setAccountStatus] = useState(null);
-  const [stripeSuccess, setStripeSuccess] = useState(false);
+  const [stripeTabOpen, setStripeTabOpen] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
-
-  // Get return URL from query params
   const returnTo = searchParams.get('returnTo');
 
-  // Check account status on component mount
   useEffect(() => {
     checkAccountStatus();
   }, []);
-
-  // Auto-refresh when account is under review
-  useEffect(() => {
-    let intervalId;
-
-    // Only auto-refresh if account is under review or capabilities pending
-    if (
-      accountStatus?.computedStatus === 'under_review' ||
-      accountStatus?.computedStatus === 'capabilities_pending'
-    ) {
-      intervalId = setInterval(async () => {
-        console.log('🔄 Auto-refreshing account status...');
-        await checkAccountStatus();
-      }, 30000); // Check every 30 seconds
-
-      console.log('⏱️ Started auto-refresh for under review account');
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        console.log('🛑 Stopped auto-refresh');
-      }
-    };
-  }, [accountStatus?.computedStatus]);
-
-  useEffect(() => {
-    // Check for ?success=true in URL after Stripe onboarding
-    if (searchParams.get('success') === 'true') {
-      setStripeSuccess(true);
-      // Refresh account status after successful onboarding
-      setTimeout(() => {
-        checkAccountStatus();
-        // Remove success param but keep returnTo
-        const newUrl = returnTo
-          ? `/users/profile/settings/stripeSetup?returnTo=${encodeURIComponent(
-              returnTo
-            )}`
-          : '/users/profile/settings/stripeSetup';
-        router.replace(newUrl);
-      }, 2000);
-    }
-  }, [searchParams, router, returnTo]);
-
-  // Handle completion and show success message
+  
+  // Reset stripeTabOpen when account becomes active
   useEffect(() => {
     if (accountStatus?.computedStatus === 'fully_active') {
-      console.log('🎉 Stripe setup completed! Stopping auto-refresh.');
+      setStripeTabOpen(false);
     }
   }, [accountStatus?.computedStatus]);
+
+  // Auto-refresh when pending verification
+  useEffect(() => {
+    let intervalId;
+    if (accountStatus?.requirements?.pending_verification?.length > 0 && 
+        accountStatus?.requirements?.currently_due?.length === 0) {
+      intervalId = setInterval(() => {
+        checkAccountStatus();
+      }, 30000); // 30 seconds
+    }
+    return () => intervalId && clearInterval(intervalId);
+  }, [accountStatus]);
 
   const checkAccountStatus = async () => {
     setCheckingStatus(true);
@@ -217,212 +85,234 @@ export default function StripeSetupPage() {
   };
 
   const handleAction = async () => {
-    const status = accountStatus?.computedStatus || 'no_account';
-
-    // For fully active accounts, redirect to Stripe dashboard
-    if (status === 'fully_active') {
+    // For fully active accounts, open dashboard
+    if (accountStatus?.computedStatus === 'fully_active') {
       window.open('https://dashboard.stripe.com', '_blank');
       return;
     }
 
-    // For all other statuses, start/continue onboarding
     setLoading(true);
     try {
-      // Include return URL in Stripe onboard request
       const payload = returnTo ? { returnTo } : {};
-
       const { data } = await axios.post(
         `${API_BASE_URL}/stripe/onboard`,
         payload,
         { withCredentials: true }
       );
 
-      if (data.status === 'complete') {
-        // Account is already set up - redirect back immediately
-        alert('Your Stripe account is already fully set up!');
-        await checkAccountStatus();
-
-        const redirectUrl = data.returnTo || returnTo;
-        if (redirectUrl) {
-          router.push(redirectUrl);
-        }
-        return;
-      } else if (data.url) {
-        // Redirect to Stripe onboarding (URL now includes returnTo)
-        window.location.href = data.url;
-        return;
+      if (data.url) {
+        window.open(data.url, '_blank');
+        setLoading(false);
+        setStripeTabOpen(true);
+        
+        // Start checking status more frequently when Stripe tab is open
+        const intervalId = setInterval(() => {
+          checkAccountStatus();
+        }, 5000); // Check every 5 seconds
+        
+        // Clean up interval after 5 minutes
+        setTimeout(() => clearInterval(intervalId), 300000);
       }
     } catch (err) {
-      alert('Stripe onboarding failed. Please try again.');
       console.error('Stripe onboarding error:', err);
       setLoading(false);
-    }
-  };
-
-  // Handle return to original page
-  const handleReturnToOriginalPage = () => {
-    if (returnTo) {
-      router.push(returnTo);
-    } else {
-      router.push('/events/add'); // Default fallback
+      // Error will be shown in UI through button state
     }
   };
 
   if (checkingStatus) {
     return (
-      <div className="max-w-lg mx-auto mt-12 p-6 bg-white rounded shadow">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded mb-4"></div>
-          <div className="h-10 bg-gray-200 rounded"></div>
+      <div className="min-h-screen bg-gray-50 px-4 py-8">
+        <div className="max-w-md mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded mb-8"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+          </div>
         </div>
       </div>
     );
   }
 
-  const currentStatus = accountStatus?.computedStatus || 'no_account';
+  const status = accountStatus?.computedStatus || 'no_account';
+  const currentlyDue = accountStatus?.requirements?.currently_due || [];
+  const pendingVerification = accountStatus?.requirements?.pending_verification || [];
+  const hasActionRequired = currentlyDue.length > 0;
+  const hasPendingOnly = pendingVerification.length > 0 && currentlyDue.length === 0;
+
+  // Simplified button configuration
+  const getButtonConfig = () => {
+    if (loading) {
+      return { 
+        text: 'Loading...', 
+        disabled: true, 
+        className: 'bg-gray-400' 
+      };
+    }
+
+    // No account yet
+    if (status === 'no_account') {
+      return { 
+        text: 'Connect with Stripe', 
+        disabled: false, 
+        className: 'bg-blue-600 hover:bg-blue-700' 
+      };
+    }
+    
+    // Fully active - can access dashboard
+    if (status === 'fully_active') {
+      return { 
+        text: '✅ Open Stripe Dashboard', 
+        disabled: false, 
+        className: 'bg-green-600 hover:bg-green-700' 
+      };
+    }
+    
+    // Has requirements to complete
+    if (hasActionRequired) {
+      return { 
+        text: 'Complete Setup', 
+        disabled: false, 
+        className: 'bg-orange-600 hover:bg-orange-700' 
+      };
+    }
+    
+    // Only pending verification
+    if (hasPendingOnly) {
+      return { 
+        text: '⏳ Verification in Progress', 
+        disabled: true, 
+        className: 'bg-gray-400' 
+      };
+    }
+    
+    // Default - continue setup
+    return { 
+      text: 'Continue Setup', 
+      disabled: false, 
+      className: 'bg-blue-600 hover:bg-blue-700' 
+    };
+  };
+
+  const buttonConfig = getButtonConfig();
 
   return (
-    <div className="max-w-lg mx-auto mt-12 p-6 bg-white rounded shadow">
-      {/* Show return breadcrumb if we have a return URL */}
-      {returnTo && (
-        <div className="mb-4 text-sm text-gray-600">
+    <div className="min-h-screen bg-gray-50 px-4 py-6">
+      <div className="max-w-md mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-bold">Stripe Payout Setup</h1>
           <button
-            onClick={handleReturnToOriginalPage}
-            className="text-blue-600 hover:text-blue-800 underline"
+            onClick={checkAccountStatus}
+            className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+            disabled={checkingStatus}
           >
-            ← Back to Event Creation
+            <svg className={`w-5 h-5 ${checkingStatus ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
           </button>
         </div>
-      )}
 
-      {/* Header with Status and Refresh */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <h2 className="text-2xl font-bold">Stripe Payout Setup</h2>
-          {getStatusBadge(currentStatus)}
-        </div>
-        <button
-          className="text-gray-400 hover:text-gray-600 transition-colors"
-          onClick={checkAccountStatus}
-          disabled={checkingStatus}
-          title="Refresh Status"
-        >
-          <svg
-            className={`w-5 h-5 ${checkingStatus ? 'animate-spin' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-        </button>
-      </div>
+        {/* Subtitle */}
+        <p className="text-sm text-gray-600 mb-6">
+          Setup Stripe account to receive payments for your paid events
+        </p>
 
-      {/* Account ID - only show if account exists */}
-      {accountStatus?.hasAccount && accountStatus?.accountId && (
-        <div className="mb-4 text-sm text-gray-600">
-          <span className="font-medium">Account ID:</span>
-          <span className="font-mono ml-2">{accountStatus.accountId}</span>
-        </div>
-      )}
-
-      {/* Success Message */}
-      {stripeSuccess && (
-        <div className="bg-green-100 text-green-700 px-4 py-2 rounded mb-4 font-medium">
-          Stripe onboarding step completed! Checking final status...
-        </div>
-      )}
-
-      {/* Auto-refresh indicator for under review */}
-      {(currentStatus === 'under_review' ||
-        currentStatus === 'capabilities_pending') && (
-        <div className="mb-4 text-xs text-yellow-700 bg-yellow-50 p-2 rounded border border-yellow-200">
-          <div className="flex items-center">
-            <div className="animate-pulse w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
-            Auto-checking status every 30 seconds...
+        {/* Stripe Tab Open Notification */}
+        {stripeTabOpen && status !== 'fully_active' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 animate-pulse">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-blue-700">
+                  Stripe setup opened in a new tab. Complete the form there.
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  This page will automatically update when you're done.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Status Message */}
-      <p className="mb-6 text-gray-600">{getStatusMessage(currentStatus)}</p>
+        {/* Action Required Section */}
+        {hasActionRequired && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+            <h2 className="font-semibold text-orange-800 mb-3">Action Required</h2>
+            <div className="space-y-2">
+              {/* Simple list without grouping */}
+              {[...new Set(currentlyDue.map(getRequirementLabel))].map((label, idx) => (
+                <div key={idx} className="flex items-start">
+                  <span className="text-orange-500 mr-2">•</span>
+                  <span className="text-sm text-gray-700">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-      {/* Action Button */}
-      <div className="mb-4">
+        {/* Verification in Progress Section */}
+        {hasPendingOnly && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <h2 className="font-semibold text-yellow-800 mb-3 flex items-center">
+              <span className="animate-pulse w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+              Verification in Progress
+            </h2>
+            <div className="space-y-2">
+              {pendingVerification.map((req, idx) => (
+                <div key={idx} className="flex items-start">
+                  <span className="text-yellow-500 mr-2">•</span>
+                  <span className="text-sm text-gray-700">{getRequirementLabel(req)}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-yellow-700 mt-3">
+              Verification typically completes within a few minutes to a few hours
+            </p>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {status === 'fully_active' && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <p className="text-green-800 font-medium">
+              ✅ Your Stripe setup is complete. You can now receive payments for your events.
+            </p>
+          </div>
+        )}
+
+        {/* Main Action Button */}
         <button
-          className={getButtonStyle(currentStatus)}
           onClick={handleAction}
-          disabled={
-            loading ||
-            currentStatus === 'under_review' ||
-            currentStatus === 'capabilities_pending'
-          }
+          disabled={buttonConfig.disabled}
+          className={`w-full py-3 px-4 text-white font-medium rounded-lg transition-colors ${buttonConfig.className} ${
+            buttonConfig.disabled ? 'cursor-not-allowed' : ''
+          }`}
         >
-          {getButtonText(currentStatus, loading)}
+          {buttonConfig.text}
         </button>
-      </div>
 
-      {/* Create New Event Button - only for fully active accounts */}
-      {currentStatus === 'fully_active' && (
-        <div className="mb-4">
+        {/* Return Link */}
+        {returnTo && (
           <button
-            className="w-full px-4 py-3 bg-teal-600 text-white rounded hover:bg-teal-700 font-medium"
-            onClick={() => window.location.href = '/events/add'}
+            onClick={() => router.push(returnTo)}
+            className="w-full mt-3 py-2 text-gray-600 text-sm hover:text-gray-800 transition-colors"
           >
-            Create New Event
+            ← Return to {returnTo.includes('event') ? 'event creation' : 'previous page'}
           </button>
-        </div>
-      )}
+        )}
 
-      {/* Return button for non-fully-active accounts */}
-      {returnTo && currentStatus !== 'fully_active' && (
-        <button
-          className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 mb-4"
-          onClick={handleReturnToOriginalPage}
-        >
-          Return Later
-        </button>
-      )}
-
-      {/* Continue button for fully active accounts */}
-      {currentStatus === 'fully_active' && returnTo && (
-        <button
-          className="w-full px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 font-medium mb-4"
-          onClick={handleReturnToOriginalPage}
-        >
-          ✅ Continue Creating Event
-        </button>
-      )}
-
-      {/* Additional info for fully active accounts */}
-      {currentStatus === 'fully_active' && (
-        <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
-          <p className="font-medium text-blue-800 mb-1">
-            💡 Your Stripe Dashboard Access
+        {/* Auto-refresh indicator */}
+        {hasPendingOnly && (
+          <p className="text-xs text-gray-500 text-center mt-4">
+            Auto-checking status every 30 seconds...
           </p>
-          <ul className="text-blue-700 space-y-1">
-            <li>
-              • Log in anytime at dashboard.stripe.com using the username and
-              password configured during your Stripe onboarding
-            </li>
-            <li>
-              • View all ticket purchases and sales transactions for your events
-            </li>
-            <li>• Track refunds and process refund requests from attendees</li>
-            <li>
-              • Configure payout settings to control when funds are transferred
-              to your bank account
-            </li>
-          </ul>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
