@@ -42,8 +42,9 @@ const Header = () => {
   const isAuthenticated = tokenValidated && !!user?._id;
   // Show loading during initial state or when actively validating
   const isInitialLoad = status === 'idle' && !tokenValidated && !user;
-  // Always use regular profile path to allow admins to use regular UI
-  const baseProfilePath = '/users/profile';
+  // Smart profile path based on user role
+  const isAdmin = user?.role === 'admin';
+  const baseProfilePath = isAdmin ? '/admin/profile' : '/users/profile';
   const profileLink = baseProfilePath;
   
   // Get both unreadExists and inActiveChat from state
@@ -241,6 +242,36 @@ const Header = () => {
                 </div>
 
                 <nav className="p-4 pb-8 space-y-2 text-lime-100 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-lime-200/30 scrollbar-track-transparent">
+                  {/* Admin Navigation */}
+                  {isAdmin ? (
+                    <>
+                      <NavLink
+                        href="/admin/profile"
+                        icon={<FaUser />}
+                        text="Admin Dashboard"
+                        pathname={pathname}
+                        mobile
+                        onClick={toggleMobileMenu}
+                      />
+                      <NavLink
+                        href="/admin/profile/users"
+                        icon={<FaUser />}
+                        text="Manage Users"
+                        pathname={pathname}
+                        mobile
+                        onClick={toggleMobileMenu}
+                      />
+                      <NavLink
+                        href="/admin/profile/threads/moderation"
+                        icon={<BsChatText />}
+                        text="Thread Moderation"
+                        pathname={pathname}
+                        mobile
+                        onClick={toggleMobileMenu}
+                      />
+                    </>
+                  ) : (
+                    <>
                   {/* User section */}
                   <NavLink
                     href={`${baseProfilePath}/settings`}
@@ -362,6 +393,8 @@ const Header = () => {
                     mobile
                     onClick={toggleMobileMenu}
                   />
+                    </>
+                  )}
                   
                   {/* Divider */}
                   <div className="py-2">
