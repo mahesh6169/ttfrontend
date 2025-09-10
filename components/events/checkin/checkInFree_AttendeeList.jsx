@@ -192,8 +192,12 @@ const CheckInFree_AttendeeList = () => {
 
                 {/* Row 3: Name, Mobile and Email */}
                 <div>
-                  <div className="font-medium text-gray-800 text-sm">
-                    {registration.user?.name || registration.userId?.name || 'Former User'}
+                  <div className="font-medium text-sm">
+                    {registration.user?.name || registration.userId?.name ? (
+                      <span className="text-gray-800">{registration.user?.name || registration.userId?.name}</span>
+                    ) : (
+                      <span className="text-red-600">Deleted User</span>
+                    )}
                   </div>
                   {(registration.mobile || registration.email) && (
                     <div className="text-gray-600 text-xs break-all mt-1">
@@ -225,7 +229,13 @@ const CheckInFree_AttendeeList = () => {
                   
                   {/* User Details */}
                   <div className="text-xs sm:text-sm text-gray-600 mb-2">
-                    <span className="font-medium text-gray-700">{registration.user?.name || registration.userId?.name || 'Former User'}</span>
+                    <span className="font-medium">
+                      {registration.user?.name || registration.userId?.name ? (
+                        <span className="text-gray-700">{registration.user?.name || registration.userId?.name}</span>
+                      ) : (
+                        <span className="text-red-600">Deleted User</span>
+                      )}
+                    </span>
                     {registration.mobile && (
                       <>
                         <span className="mx-1">•</span>
