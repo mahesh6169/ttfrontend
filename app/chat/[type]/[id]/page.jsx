@@ -355,10 +355,10 @@ useEffect(() => {
         
         {/* View Resource Link */}
         <Link
-          href={`/${resourceType}s/views/${resourceId}`}
+          href={resourceType === 'event' ? `/events/views/${resourceId}` : `/listings/views/${resourceId}`}
           className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-blue-600 hover:text-blue-800 transition-colors"
         >
-          <span className="hidden md:inline">View {resourceType === 'event' ? 'Event' : 'Advert'} Details</span>
+          <span className="hidden md:inline">View {resourceType === 'event' ? 'Event' : 'Listing'} Details</span>
           <span className="md:hidden">View Details</span>
         </Link>
       </div>

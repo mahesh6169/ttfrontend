@@ -14,7 +14,7 @@ import { useRef } from 'react';
 import CategorySelector from '@/components/shared/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import { threadCategoryOptions } from '@/components/threads/categories';
-import ShareToast from '@/components/adverts/ShareToast';
+import SuccessView from '@/components/threads/SuccessView';
 
 const libraries = ['places'];
 
@@ -49,7 +49,7 @@ const EditThreadPage = () => {
   const [errors, setErrors] = useState({});
   const [locationInput, setLocationInput] = useState('');
   const fileInputRef = useRef(null);
-  const [showShareToast, setShowShareToast] = useState(false);
+  const [showSuccessView, setShowSuccessView] = useState(false);
 
   useEffect(() => {
     if (threadId) {
@@ -277,25 +277,25 @@ useEffect(() => {
     );
 
     if (updateThread.fulfilled.match(result)) {
-      toast.success('Thread updated successfully.');
-      
-      // Show share toast
-      setShowShareToast(true);
-      
-      // Redirect after 15 seconds to match toast duration
-      setTimeout(() => {
-        router.push('/users/profile/managethreads');
-      }, 15000);
+      // Show success view
+      setShowSuccessView(true);
     } else {
       toast.error(result.payload || 'Failed to update thread.');
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-6 mt-10 bg-white border rounded-lg shadow-lg">
-      <h1 className="text-2xl font-bold mb-4">Edit Thread</h1>
+    <div className="max-w-2xl mx-auto p-4 sm:p-6 mt-10">
       <RequireVerifiedAccount>
-      <form onSubmit={handleSubmit} className="space-y-4">
+        {showSuccessView && thread ? (
+          <SuccessView
+            thread={thread}
+            mode="edit"
+          />
+        ) : (
+          <div className="bg-white border rounded-lg shadow-lg p-4 sm:p-6">
+            <h1 className="text-2xl font-bold mb-4">Edit Thread</h1>
+            <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <input
             type="text"
@@ -454,17 +454,10 @@ useEffect(() => {
             Cancel
           </button>
         </div>
-      </form>
+            </form>
+          </div>
+        )}
       </RequireVerifiedAccount>
-      
-      {/* Share Toast */}
-      {showShareToast && thread && (
-        <ShareToast
-          title={thread.title}
-          id={thread._id || threadId}
-          onClose={() => setShowShareToast(false)}
-        />
-      )}
     </div>
   );
 };

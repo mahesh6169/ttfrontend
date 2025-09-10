@@ -11,7 +11,7 @@ import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/shared/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import { threadCategoryOptions } from '@/components/threads/categories';
-import ShareToast from '@/components/adverts/ShareToast';
+import SuccessView from '@/components/threads/SuccessView';
 
 const libraries = ['places'];
 
@@ -44,7 +44,7 @@ const CreateThreadPage = () => {
   const [autocomplete, setAutocomplete] = useState(null);
   const [errors, setErrors] = useState({});
   const [locationInput, setLocationInput] = useState('');
-  const [showShareToast, setShowShareToast] = useState(false);
+  const [showSuccessView, setShowSuccessView] = useState(false);
   const [createdThread, setCreatedThread] = useState(null);
 
   const handleChange = (e) => {
@@ -260,19 +260,12 @@ const CreateThreadPage = () => {
     const resultAction = await dispatch(createThread(formPayload));
 
 if (createThread.fulfilled.match(resultAction)) {
-  toast.success('Thread created successfully!');
-  
   // Get the created thread data
   const thread = resultAction.payload.data || resultAction.payload;
   if (thread) {
     setCreatedThread(thread);
-    setShowShareToast(true);
+    setShowSuccessView(true);
   }
-  
-  // Redirect after 15 seconds to match toast duration
-  setTimeout(() => {
-    router.push('/threads');
-  }, 15000);
 } else {
   toast.error(resultAction?.error?.message || 'Failed to create thread.');
 }
@@ -280,11 +273,41 @@ if (createThread.fulfilled.match(resultAction)) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-8 p-4 sm:p-6 border rounded-lg shadow-lg bg-white">
-      <h1 className="text-2xl font-bold mb-4">Create a New Topic</h1>
+    <div className="max-w-2xl mx-auto mt-8 p-4 sm:p-6">
       <RequireVerifiedAccount>
       
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {showSuccessView && createdThread ? (
+          <SuccessView
+            thread={createdThread}
+            mode="add"
+            onAddAnother={() => {
+              setShowSuccessView(false);
+              setCreatedThread(null);
+              // Reset form
+              setFormData({
+                title: '',
+                question: '',
+                category: '',
+                communities: [],
+                images: [],
+                suburb: {
+                  name: '',
+                  state: '',
+                  postalCode: '',
+                  location: {
+                    type: 'Point',
+                    coordinates: [],
+                  },
+                },
+              });
+              setPreview([]);
+              setLocationInput('');
+            }}
+          />
+        ) : (
+          <div className="bg-white border rounded-lg shadow-lg p-4 sm:p-6">
+            <h1 className="text-2xl font-bold mb-4">Create a New Topic</h1>
+            <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <input
               type="text"
@@ -445,17 +468,10 @@ if (createThread.fulfilled.match(resultAction)) {
               Cancel
             </button>
           </div>
-        </form>
-</RequireVerifiedAccount>
-
-      {/* Share Toast */}
-      {showShareToast && createdThread && (
-        <ShareToast
-          title={createdThread.title}
-          id={createdThread._id}
-          onClose={() => setShowShareToast(false)}
-        />
-      )}
+            </form>
+          </div>
+        )}
+      </RequireVerifiedAccount>
     </div>
   );
 };

@@ -7,12 +7,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdvertForm from '@/components/adverts/AdvertForm';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
-import ShareToast from '@/components/adverts/ShareToast';
+import SuccessModal from '@/components/adverts/SuccessModal';
 
 const AddAdvertPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const [showShareToast, setShowShareToast] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   // Update to use createStatus instead of status
   const { createStatus, success, message, errors, advert } = useSelector(state => state.advert);
@@ -83,53 +83,56 @@ const AddAdvertPage = () => {
   // Update to check createStatus instead of status
   useEffect(() => {
     if (success && createStatus === 'succeeded' && advert) {
-      // Show share toast
-      setShowShareToast(true);
-      
-      // Redirect after 15 seconds to match toast duration
-      setTimeout(() => {
-        router.push('/users/profile/manageads');
-        dispatch(clearAdvert());
-      }, 15000);
+      // Show success modal
+      setShowSuccessModal(true);
     }
-  }, [success, createStatus, advert, router, dispatch]);
+  }, [success, createStatus, advert]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-6 sm:py-8 lg:py-10">
       <RequireVerifiedAccount>
       
-      {/* Update to check createStatus instead of status */}
-      {createStatus === 'loading' && (
-        <div className="mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm sm:text-base text-blue-700">Creating your Listing...</p>
-        </div>
-      )}
-
-      {/* Show only API error messages, not validation errors */}
-      {message && success === false && (!errors || errors.length === 0) && (
-        <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm sm:text-base text-red-700">{message}</p>
-        </div>
-      )}
-      
-      {/* Update isLoading prop to use createStatus */}
-      <AdvertForm 
-        onSubmit={handleSubmit} 
-        isLoading={createStatus === 'loading' || (success && createStatus === 'succeeded')} 
-        errors={errors}
-        userRole={user?.role || 'user'}
-        isSuccess={success && createStatus === 'succeeded'}
-      />
-       </RequireVerifiedAccount>
-       
-      {/* Share Toast */}
-      {showShareToast && advert && (
-        <ShareToast
-          title={advert.title}
-          id={advert._id}
-          onClose={() => setShowShareToast(false)}
+      {/* Show success view if listing was created successfully */}
+      {showSuccessModal && advert ? (
+        <SuccessModal
+          mode="add"
+          onAddAnother={() => {
+            setShowSuccessModal(false);
+            dispatch(clearAdvert());
+            // Reset form by clearing success state
+          }}
+          onManageListings={() => {
+            router.push('/users/profile/manageads');
+            dispatch(clearAdvert());
+          }}
         />
+      ) : (
+        <>
+          {/* Update to check createStatus instead of status */}
+          {createStatus === 'loading' && (
+            <div className="mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm sm:text-base text-blue-700">Creating your Listing...</p>
+            </div>
+          )}
+
+          {/* Show only API error messages, not validation errors */}
+          {message && success === false && (!errors || errors.length === 0) && (
+            <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm sm:text-base text-red-700">{message}</p>
+            </div>
+          )}
+          
+          {/* Update isLoading prop to use createStatus */}
+          <AdvertForm 
+            onSubmit={handleSubmit} 
+            isLoading={createStatus === 'loading' || (success && createStatus === 'succeeded')} 
+            errors={errors}
+            userRole={user?.role || 'user'}
+            isSuccess={success && createStatus === 'succeeded'}
+          />
+        </>
       )}
+      </RequireVerifiedAccount>
     </div>
     
   );

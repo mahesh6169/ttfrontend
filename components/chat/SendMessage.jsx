@@ -66,11 +66,15 @@ const SendMessage = ({
       });
     } catch (err) {
       console.error('Error sending message:', err);
+      
+      // Extract error message from Redux rejection
+      const errorMessage = err || 'Failed to send the message. Please try again.';
+      
       toast.update(toastId, {
-        render: err.message || 'Failed to send the message. Please try again.',
+        render: errorMessage,
         type: 'error',
         isLoading: false,
-        autoClose: 3000,
+        autoClose: 5000, // Longer duration for error messages
       });
     } finally {
       setSending(false);

@@ -97,13 +97,13 @@ const ProfilePage = () => {
                 → Listing
               </Link>
               <Link 
-                href="/events/create" 
+                href="/events/add" 
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
                 → Event
               </Link>
               <Link 
-                href="/threads/create" 
+                href="/threads/new" 
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
                 → Topic

@@ -213,11 +213,11 @@ const StepManager = ({
     }
   }, [formStatus, formError]);
 
-  // Show success toast when form submission succeeds
+  // Handle success when form submission succeeds
   useEffect(() => {
     if (formStatus === 'succeeded' && successMessage) {
-      toast.success(successMessage);
-      // Clear the success message immediately after showing toast to prevent duplicates
+      // Success is now shown in the SuccessStep component
+      // Clear the success message to prevent duplicates
       dispatch(clearSuccessMessage());
 
       // Call onComplete callback if provided

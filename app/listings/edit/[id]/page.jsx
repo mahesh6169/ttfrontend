@@ -7,9 +7,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getAdvertById, updateAdvert, clearAdvert, clearErrorsAndStatus } from '@/store/slices/adverts/advertSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import AdvertForm from '@/components/adverts/AdvertForm';
-import { toast } from 'react-toastify';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
-import ShareToast from '@/components/adverts/ShareToast';
+import SuccessModal from '@/components/adverts/SuccessModal';
 
 const EditAdvertPage = () => {
   const dispatch = useDispatch();
@@ -20,7 +19,7 @@ const EditAdvertPage = () => {
 
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [formData, setFormData] = useState(null); // Store the submitted form data
-  const [showShareToast, setShowShareToast] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Fetch advert on load
   useEffect(() => {
@@ -111,17 +110,10 @@ const EditAdvertPage = () => {
   // Handle redirect on success
   useEffect(() => {
     if (hasSubmitted && success && updateStatus === 'succeeded') {
-      toast.success("Advert updated successfully!");
-      // Show share toast
-      setShowShareToast(true);
-      
-      // Redirect after 15 seconds to match toast duration
-      setTimeout(() => {
-        router.push('/users/profile/manageads');
-        dispatch(clearAdvert());
-      }, 15000);
+      // Show success modal
+      setShowSuccessModal(true);
     }
-  }, [hasSubmitted, success, updateStatus, router, dispatch]);
+  }, [hasSubmitted, success, updateStatus]);
 
   // Create a merged data object for display
   // This prioritizes the submitted form data while waiting for the update to complete
@@ -133,55 +125,63 @@ const EditAdvertPage = () => {
     <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-6 sm:py-8 lg:py-10">
       <RequireVerifiedAccount>
 
-      {fetchStatus === 'loading' && (
-        <div className="mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm sm:text-base text-blue-700">Loading Listing...</p>
-        </div>
-      )}
-
-      {updateStatus === 'loading' && (
-        <LoadingSpinner message="Updating Listing..." />
-      )}
-
-      {/* Show only API error messages, not validation errors */}
-      {message && success === false && (!errors || errors.length === 0) && (
-        <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm sm:text-base text-red-700">{message}</p>
-        </div>
-      )}
-      
-      {/* If advert fetch failed but status is success */}
-      {fetchStatus === 'succeeded' && !displayData && (
-        <div className="text-sm sm:text-base text-red-600 mb-4 p-3">
-          Listing not found or you're not authorized to edit it.
-        </div>
-      )}
-
-      {/* Render form if advert is fetched */}
-      {displayData && (
-        <AdvertForm
-          initialData={{
-            ...displayData,
-            existingImages: displayData.images || []
+      {/* Show success view if listing was updated successfully */}
+      {showSuccessModal && displayData ? (
+        <SuccessModal
+          mode="edit"
+          onViewListing={() => {
+            router.push(`/listings/views/${displayData._id || id}`);
+            dispatch(clearAdvert());
           }}
-          onSubmit={handleSubmit}
-          isLoading={fetchStatus === 'loading' || updateStatus === 'loading' || (success && updateStatus === 'succeeded')}
-          errors={errors}
-          userRole={user?.role || 'user'}
-          isSuccess={success && updateStatus === 'succeeded'}
-          key={hasSubmitted ? 'updating' : 'initial'} // Force re-render when submitting
+          onManageListings={() => {
+            router.push('/users/profile/manageads');
+            dispatch(clearAdvert());
+          }}
         />
+      ) : (
+        <>
+          {fetchStatus === 'loading' && (
+            <div className="mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm sm:text-base text-blue-700">Loading Listing...</p>
+            </div>
+          )}
+
+          {updateStatus === 'loading' && (
+            <LoadingSpinner message="Updating Listing..." />
+          )}
+
+          {/* Show only API error messages, not validation errors */}
+          {message && success === false && (!errors || errors.length === 0) && (
+            <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm sm:text-base text-red-700">{message}</p>
+            </div>
+          )}
+          
+          {/* If advert fetch failed but status is success */}
+          {fetchStatus === 'succeeded' && !displayData && (
+            <div className="text-sm sm:text-base text-red-600 mb-4 p-3">
+              Listing not found or you're not authorized to edit it.
+            </div>
+          )}
+
+          {/* Render form if advert is fetched */}
+          {displayData && (
+            <AdvertForm
+              initialData={{
+                ...displayData,
+                existingImages: displayData.images || []
+              }}
+              onSubmit={handleSubmit}
+              isLoading={fetchStatus === 'loading' || updateStatus === 'loading' || (success && updateStatus === 'succeeded')}
+              errors={errors}
+              userRole={user?.role || 'user'}
+              isSuccess={success && updateStatus === 'succeeded'}
+              key={hasSubmitted ? 'updating' : 'initial'} // Force re-render when submitting
+            />
+          )}
+        </>
       )}
-       </RequireVerifiedAccount>
-       
-      {/* Share Toast */}
-      {showShareToast && displayData && (
-        <ShareToast
-          title={displayData.title}
-          id={displayData._id || id}
-          onClose={() => setShowShareToast(false)}
-        />
-      )}
+      </RequireVerifiedAccount>
     </div>
   );
 };
