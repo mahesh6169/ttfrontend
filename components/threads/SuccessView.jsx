@@ -67,15 +67,6 @@ const SuccessView = ({
             {config.subtitle}
           </p>
           
-          {/* Topic Details */}
-          {thread && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-              <h3 className="font-semibold text-gray-800 mb-2">{thread.title}</h3>
-              <p className="text-sm text-gray-600">
-                Category: <span className="font-medium">{thread.category}</span>
-              </p>
-            </div>
-          )}
           
           {/* Share Section */}
           <div className="border-t border-b border-gray-200 py-4 mb-6">

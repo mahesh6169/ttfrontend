@@ -15,29 +15,54 @@ import { FaEdit, FaTrash } from 'react-icons/fa';
 import { MdNotificationsActive, MdNotificationsOff } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const ManageThreads = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { threads, status, error } = useSelector((state) => state.threads);
   const mutedThreads = useSelector((state) => state.user.mutedThreads || []);
+  
+  // State for delete modal
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [threadToDelete, setThreadToDelete] = React.useState(null);
+  const [deleteStatus, setDeleteStatus] = React.useState('idle');
 
   useEffect(() => {
     dispatch(fetchUserThreads());
   }, [dispatch]);
 
-  const handleDelete = async (threadId) => {
-    const confirmDelete = window.confirm(
-      'Are you sure you want to delete this thread?'
-    );
-    if (!confirmDelete) return;
+  const handleDeleteClick = (thread) => {
+    setThreadToDelete(thread);
+    setIsModalOpen(true);
+  };
 
-    const result = await dispatch(deleteThread(threadId));
-    if (deleteThread.fulfilled.match(result)) {
-      toast.success('Thread deleted successfully!');
-      dispatch(fetchUserThreads());
-    } else {
-      toast.error(result.payload || 'Failed to delete thread.');
+  const handleModalCancel = () => {
+    setIsModalOpen(false);
+    setThreadToDelete(null);
+    setDeleteStatus('idle');
+  };
+
+  const handleDelete = async () => {
+    if (deleteStatus === 'loading' || !threadToDelete) return;
+    
+    setDeleteStatus('loading');
+    
+    try {
+      const result = await dispatch(deleteThread(threadToDelete._id));
+      
+      if (deleteThread.fulfilled.match(result)) {
+        toast.success('Thread deleted successfully!');
+        setIsModalOpen(false);
+        setThreadToDelete(null);
+        dispatch(fetchUserThreads());
+      } else {
+        toast.error(result.payload || 'Failed to delete thread.');
+      }
+    } catch (error) {
+      toast.error('Failed to delete thread.');
+    } finally {
+      setDeleteStatus('idle');
     }
   };
 
@@ -132,7 +157,7 @@ const ManageThreads = () => {
                 </button>
 
                 <button
-                  onClick={() => handleDelete(thread._id)}
+                  onClick={() => handleDeleteClick(thread)}
                   className="px-4 py-2 bg-red-500 text-white hover:bg-red-600 rounded"
                 >
                   Delete
@@ -142,6 +167,21 @@ const ManageThreads = () => {
           );
         })}
       </ul>
+      
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isModalOpen}
+        onConfirm={handleDelete}
+        onCancel={handleModalCancel}
+        title="Delete Thread"
+        message={
+          deleteStatus === 'loading' 
+            ? "Deleting thread..." 
+            : "Are you sure you want to delete this thread? This will also remove all associated messages."
+        }
+        confirmText={deleteStatus === 'loading' ? "Deleting..." : "Delete"}
+        isLoading={deleteStatus === 'loading'}
+      />
     </div>
   );
 };

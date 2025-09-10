@@ -57,6 +57,8 @@ export async function generateMetadata({ params }) {
     const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
     if (event.isPaid) {
       description += `Don't wait—get your ticket now at ${siteName}!`;
+    } else if (event.isAdvertiseOnly) {
+      description += `Learn more at ${siteName}!`;
     } else {
       description += `Don't wait—RSVP now at ${siteName}!`;
     }
@@ -68,11 +70,15 @@ export async function generateMetadata({ params }) {
         const eventDate = format(new Date(event.dateTime), 'dd MMM');
         description = event.isPaid 
           ? `${eventDate} - Get your ticket at ${siteName}!`
+          : event.isAdvertiseOnly
+          ? `${eventDate} - Learn more at ${siteName}!`
           : `${eventDate} - RSVP now at ${siteName}!`;
       } else {
         // No date available, just call-to-action
         description = event.isPaid 
           ? `Get your ticket now at ${siteName}!`
+          : event.isAdvertiseOnly
+          ? `Learn more at ${siteName}!`
           : `RSVP now at ${siteName}!`;
       }
     }

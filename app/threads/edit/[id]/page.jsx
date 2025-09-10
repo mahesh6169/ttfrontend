@@ -50,6 +50,7 @@ const EditThreadPage = () => {
   const [locationInput, setLocationInput] = useState('');
   const fileInputRef = useRef(null);
   const [showSuccessView, setShowSuccessView] = useState(false);
+  const [updatedThread, setUpdatedThread] = useState(null);
 
   useEffect(() => {
     if (threadId) {
@@ -277,6 +278,17 @@ useEffect(() => {
     );
 
     if (updateThread.fulfilled.match(result)) {
+      // Get the updated thread from the result
+      // Backend returns { message: '...', thread: {...} }
+      const updated = result.payload?.thread;
+      
+      if (!updated) {
+        console.error('No thread data in update response:', result.payload);
+        toast.error('Thread updated but failed to get updated data');
+        return;
+      }
+      
+      setUpdatedThread(updated);
       // Show success view
       setShowSuccessView(true);
     } else {
@@ -287,9 +299,9 @@ useEffect(() => {
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-6 mt-10">
       <RequireVerifiedAccount>
-        {showSuccessView && thread ? (
+        {showSuccessView && updatedThread ? (
           <SuccessView
-            thread={thread}
+            thread={updatedThread}
             mode="edit"
           />
         ) : (
