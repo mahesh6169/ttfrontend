@@ -245,6 +245,30 @@ const TicketSelectionPage = () => {
     }
   }, [eventId]);
 
+  // Validate required fields when formResponses change
+  useEffect(() => {
+    if (selectedEvent?.registrationFields && userReservation > 0) {
+      const newErrors = {};
+      
+      // Check each required field
+      selectedEvent.registrationFields.forEach(field => {
+        if (field.isRequired && !formResponses[field.fieldName]) {
+          newErrors[field.fieldName] = 'Additional Info Required';
+        }
+      });
+      
+      // Update errors only for registration fields
+      setErrors(prev => {
+        // Keep non-field errors (like selection errors)
+        const otherErrors = Object.entries(prev)
+          .filter(([key]) => !selectedEvent.registrationFields.some(f => f.fieldName === key))
+          .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+        
+        return { ...otherErrors, ...newErrors };
+      });
+    }
+  }, [formResponses, selectedEvent, userReservation]);
+
   // Create or update reservation
   const createOrUpdateReservation = useCallback(async (tickets) => {
     if (!user || !eventId) return;
@@ -517,6 +541,15 @@ const TicketSelectionPage = () => {
   // Handle form response updates
   const handleFormResponseUpdate = (fieldName, value) => {
     setFormResponses(prev => ({ ...prev, [fieldName]: value }));
+    
+    // Clear the error for this specific field if it's now filled
+    if (value && errors[fieldName]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    }
   };
 
   // Format event date/time
@@ -900,7 +933,7 @@ const TicketSelectionPage = () => {
           </div>
 
           {/* Attendee Additional Information */}
-          {userReservation > 0 && (
+          {userReservation > 0 && selectedEvent?.registrationFields?.length > 0 && (
             <AttendeeInfoSection 
               event={selectedEvent} 
               errors={errors}
@@ -931,7 +964,13 @@ const TicketSelectionPage = () => {
                   </>
                 ) : (
                   <>
-                    {hasSeatingLayout ? (
+                    {/* Show different text based on validation state */}
+                    {Object.keys(errors).some(key => selectedEvent?.registrationFields?.some(f => f.fieldName === key)) ? (
+                      <>
+                        <FaExclamationTriangle className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
+                        <span className="text-sm sm:text-base">Fill Required Info</span>
+                      </>
+                    ) : hasSeatingLayout ? (
                       <>
                         <FaChair className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
                         <span className="text-sm sm:text-base">Select Seats</span>

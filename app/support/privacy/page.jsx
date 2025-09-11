@@ -1,25 +1,29 @@
-'use client';
-
 import React from 'react';
+import fs from 'fs/promises';
+import path from 'path';
+import { simpleMarkdownToHtml } from '@/utils/markdownToHtml';
 
-const PrivacyPolicyPage = () => {
+async function getPrivacyContent() {
+  try {
+    const filePath = path.join(process.cwd(), 'public', 'legal', 'privacy.md');
+    const content = await fs.readFile(filePath, 'utf-8');
+    return content;
+  } catch (error) {
+    console.error('Error reading privacy file:', error);
+    return '# Privacy Policy\n\nPrivacy policy content could not be loaded.';
+  }
+}
+
+export default async function PrivacyPolicyPage() {
+  const markdownContent = await getPrivacyContent();
+  const htmlContent = simpleMarkdownToHtml(markdownContent);
+  
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-8">
-      <h1 className="text-2xl font-bold mb-4">Privacy Policy</h1>
-      <p className="mb-4">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed posuere
-        magna ac turpis cursus, in rhoncus nulla luctus. Pellentesque
-        ullamcorper, metus in suscipit convallis, justo justo congue ligula, a
-        cursus purus nulla vel purus.
-      </p>
-      <p className="mb-4">
-        Aenean in velit eu metus dictum fringilla. Suspendisse non nisi nec
-        mauris ullamcorper egestas. Etiam ornare lorem in lectus tincidunt
-        dapibus. Vivamus iaculis erat vel ante viverra, et ultricies nisi
-        placerat.
-      </p>
+      <div 
+        className="prose prose-lg max-w-none"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
     </div>
   );
-};
-
-export default PrivacyPolicyPage;
+}

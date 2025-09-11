@@ -1,24 +1,29 @@
-'use client';
-
 import React from 'react';
+import fs from 'fs/promises';
+import path from 'path';
+import { simpleMarkdownToHtml } from '@/utils/markdownToHtml';
 
-const TermsPage = () => {
+async function getTermsContent() {
+  try {
+    const filePath = path.join(process.cwd(), 'public', 'legal', 'terms.md');
+    const content = await fs.readFile(filePath, 'utf-8');
+    return content;
+  } catch (error) {
+    console.error('Error reading terms file:', error);
+    return '# Terms and Conditions\n\nTerms content could not be loaded.';
+  }
+}
+
+export default async function TermsPage() {
+  const markdownContent = await getTermsContent();
+  const htmlContent = simpleMarkdownToHtml(markdownContent);
+  
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-8">
-      <h1 className="text-2xl font-bold mb-4">Terms and Conditions</h1>
-      <p className="mb-4">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu
-        feugiat nunc. Curabitur tincidunt purus non diam lacinia, ut volutpat
-        libero tincidunt. Sed quis ligula sed erat feugiat euismod non ut
-        libero.
-      </p>
-      <p className="mb-4">
-        Integer eget justo nisi. Phasellus bibendum dignissim risus, in luctus
-        ipsum rutrum nec. Morbi scelerisque, purus a imperdiet dapibus, arcu
-        sem blandit libero, vel ultricies justo enim vel sapien.
-      </p>
+      <div 
+        className="prose prose-lg max-w-none"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
     </div>
   );
-};
-
-export default TermsPage;
+}
