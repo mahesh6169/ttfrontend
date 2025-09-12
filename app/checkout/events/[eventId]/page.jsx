@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 import {
   FaCalendarAlt,
   FaClock,

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import CreateUserModal from '@/components/modals/CreateUserModal';
 import UserEditModal from '@/components/modals/UserEditModal';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Pagination from '@/components/Pagination';
 

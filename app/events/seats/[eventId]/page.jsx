@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SeatMapWithSocket from '@/components/events/seats/SeatMapWithSocket';

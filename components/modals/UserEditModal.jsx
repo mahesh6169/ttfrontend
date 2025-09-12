@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 
 const libraries = ['places'];
 

@@ -1,7 +1,7 @@
 // store/slices/events/eventSlice.js
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 import { utcToZonedTime, format } from 'date-fns-tz';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;

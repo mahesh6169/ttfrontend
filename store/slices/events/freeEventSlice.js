@@ -1,7 +1,7 @@
 // store/slices/events/freeEventSlice.js
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 

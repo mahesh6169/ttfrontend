@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { generateTicketsPDF } from '../../../../utils/paidEventTicketGenerator';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 
 const EnhancedMyTicketsPage = () => {
   const [tickets, setTickets] = useState([]);

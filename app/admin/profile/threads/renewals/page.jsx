@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import ValidateAdmin from '@/components/admin/ValidateAdmin';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 
 const AdminThreadRenewals = () => {
   const [threads, setThreads] = useState([]);

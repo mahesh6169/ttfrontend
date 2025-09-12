@@ -7,7 +7,15 @@ const socket = io(process.env.NEXT_PUBLIC_BACKEND_BASE_URL, {
    autoConnect: false,
    reconnection: true,
    reconnectionAttempts: Infinity,
-   reconnectionDelay: 1000,  
+   reconnectionDelay: 1000,
+   // Add API key to auth
+   auth: {
+     apiKey: process.env.NEXT_PUBLIC_FRONTEND_API_KEY
+   },
+   // Also add to headers as fallback
+   extraHeaders: {
+     'x-api-key': process.env.NEXT_PUBLIC_FRONTEND_API_KEY
+   }
 });
 
 // ✅ Debugging Log: Check if WebSocket connection is being attempted

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 
 const AdminAuthCheck = () => {
   const dispatch = useDispatch();

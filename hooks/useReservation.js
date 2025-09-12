@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 
 const useReservation = (eventId) => {
   const [reservation, setReservation] = useState(null);

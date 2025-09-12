@@ -17,7 +17,7 @@ import { HiOutlineClock } from 'react-icons/hi';
 import { AiOutlineHourglass } from 'react-icons/ai';
 import { FaCheckCircle } from 'react-icons/fa';
 import { MdEventSeat } from 'react-icons/md';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 
 import SeatButton from './SeatButton';
 

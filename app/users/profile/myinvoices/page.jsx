@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatInTimeZone } from 'date-fns-tz';
 import jsPDF from 'jspdf';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 
 const MyInvoicesPage = () => {
   const [invoices, setInvoices] = useState([]);

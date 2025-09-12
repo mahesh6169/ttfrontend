@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ProtectedAdminRoute from '@/components/admin/ProtectedAdminRoute';
+import axios from '@/utils/axiosConfig';
 
 const PlatformFeeManagement = () => {
   const router = useRouter();

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { FaUsers } from 'react-icons/fa';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 
 const EventCapacityDisplay = ({ 
   eventId, 

@@ -5,6 +5,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import EventSelector from '@/components/shared/EventSelector';
 import DateRangeSelector from '@/components/shared/DateRangeSelector';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import axios from '@/utils/axiosConfig';
 
 const MyFreeEventRegistrationsPage = () => {
   // Local state (like paid tickets page)
