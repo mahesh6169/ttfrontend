@@ -26,6 +26,18 @@ const ResetPasswordContent = () => {
   const [timer, setTimer] = useState(30);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPasswordHint, setShowPasswordHint] = useState(false);
+  
+  // Password validation checks
+  const getPasswordStrength = () => {
+    const checks = {
+      length: newPassword.length >= 8,
+      uppercase: /[A-Z]/.test(newPassword),
+      lowercase: /[a-z]/.test(newPassword),
+      number: /[0-9]/.test(newPassword),
+    };
+    return checks;
+  };
 
   const handleSendOtp = async () => {
     setIsSubmitting(true);
@@ -326,6 +338,8 @@ const ResetPasswordContent = () => {
                   setNewPassword(e.target.value);
                   if (errors.newPassword) setErrors({});
                 }}
+                onFocus={() => setShowPasswordHint(true)}
+                onBlur={() => setShowPasswordHint(false)}
               />
               {errors.newPassword && (
                 <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -334,6 +348,34 @@ const ResetPasswordContent = () => {
                   </svg>
                   {errors.newPassword}
                 </p>
+              )}
+              {showPasswordHint && newPassword && (
+                <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-xs">
+                  {(() => {
+                    const checks = getPasswordStrength();
+                    const allValid = Object.values(checks).every(Boolean);
+                    return (
+                      <div className="space-y-0.5">
+                        <div className={`flex items-center ${checks.length ? 'text-green-600' : 'text-gray-500'}`}>
+                          <span className="mr-1">{checks.length ? '✓' : '○'}</span>
+                          <span>8+ characters</span>
+                        </div>
+                        <div className={`flex items-center ${checks.uppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                          <span className="mr-1">{checks.uppercase ? '✓' : '○'}</span>
+                          <span>One uppercase (A-Z)</span>
+                        </div>
+                        <div className={`flex items-center ${checks.lowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                          <span className="mr-1">{checks.lowercase ? '✓' : '○'}</span>
+                          <span>One lowercase (a-z)</span>
+                        </div>
+                        <div className={`flex items-center ${checks.number ? 'text-green-600' : 'text-gray-500'}`}>
+                          <span className="mr-1">{checks.number ? '✓' : '○'}</span>
+                          <span>One number (0-9)</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
               )}
             </div>
 
@@ -353,6 +395,8 @@ const ResetPasswordContent = () => {
                   setConfirmPassword(e.target.value);
                   if (errors.confirmPassword) setErrors({});
                 }}
+                onFocus={() => setShowPasswordHint(true)}
+                onBlur={() => setShowPasswordHint(false)}
               />
               {errors.confirmPassword && (
                 <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -361,6 +405,22 @@ const ResetPasswordContent = () => {
                   </svg>
                   {errors.confirmPassword}
                 </p>
+              )}
+              {/* Real-time password match indicator */}
+              {confirmPassword && newPassword && (
+                <div className="mt-1">
+                  {newPassword === confirmPassword ? (
+                    <p className="text-green-600 text-xs flex items-center">
+                      <span className="mr-1">✓</span>
+                      <span>Passwords match</span>
+                    </p>
+                  ) : (
+                    <p className="text-gray-500 text-xs flex items-center">
+                      <span className="mr-1">○</span>
+                      <span>Passwords do not match</span>
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 
@@ -403,16 +463,6 @@ const ResetPasswordContent = () => {
                   'Update Password'
                 )}
               </button>
-            </div>
-
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-600">
-                🔐 <strong>Password Requirements:</strong><br/>
-                • Minimum 8 characters<br/>
-                • At least 1 uppercase letter<br/>
-                • At least 1 lowercase letter<br/>
-                • At least 1 number
-              </p>
             </div>
           </div>
         )}

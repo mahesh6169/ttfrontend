@@ -26,21 +26,14 @@ const PlatformFeeManagement = () => {
   const fetchPaidEvents = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
+      const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/events/paid-events-list`,
         {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          withCredentials: true,
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = response.data;
       
       if (data.success) {
         setEvents(data.events);
@@ -72,21 +65,14 @@ const PlatformFeeManagement = () => {
   // Fetch current platform fee for selected event
   const fetchEventPlatformFee = async () => {
     try {
-      const response = await fetch(
+      const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/events/${selectedEventId}/platform-fee`,
         {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          withCredentials: true,
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = response.data;
       
       if (data.success) {
         setCurrentFeeInfo(data);
@@ -126,23 +112,15 @@ const PlatformFeeManagement = () => {
       let feeValue = newFee.trim() === '' ? null : parseFloat(newFee);
       let percentageValue = newPercentage.trim() === '' ? null : parseFloat(newPercentage);
 
-      const response = await fetch(
+      const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/events/${selectedEventId}/platform-fee`,
+        { platformFee: feeValue, platformFeePercentage: percentageValue },
         {
-          method: 'PUT',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ platformFee: feeValue, platformFeePercentage: percentageValue }),
+          withCredentials: true,
         }
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-      }
+      const data = response.data;
 
       if (data.success) {
         setMessage({

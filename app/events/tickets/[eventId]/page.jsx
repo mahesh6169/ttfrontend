@@ -59,13 +59,19 @@ const TicketSelectionPage = () => {
   // Use backend values instead of local calculations
   const userReservation = eventCapacity?.userReservation || 0;
   
+  // Check if all required additional info fields are filled
+  const hasRequiredFieldErrors = selectedEvent?.registrationFields?.some(field => 
+    field.isRequired && !formResponses[field.fieldName]
+  ) || false;
+
   // Determine if can proceed based on backend data
   // For both seated and non-seated events, users should be able to proceed
-  // as long as they have tickets selected and no errors
+  // as long as they have tickets selected, no errors, and all required fields filled
   const canProceedToNext = userReservation > 0 && 
     !Object.keys(errors).length && 
     !purchaseError &&
-    reservation;  // Must have valid reservation
+    reservation &&  // Must have valid reservation
+    !hasRequiredFieldErrors;  // All required additional info must be filled
 
   // Check if event has seating layout
   const hasSeatingLayout =
@@ -245,29 +251,7 @@ const TicketSelectionPage = () => {
     }
   }, [eventId]);
 
-  // Validate required fields when formResponses change
-  useEffect(() => {
-    if (selectedEvent?.registrationFields && userReservation > 0) {
-      const newErrors = {};
-      
-      // Check each required field
-      selectedEvent.registrationFields.forEach(field => {
-        if (field.isRequired && !formResponses[field.fieldName]) {
-          newErrors[field.fieldName] = 'Additional Info Required';
-        }
-      });
-      
-      // Update errors only for registration fields
-      setErrors(prev => {
-        // Keep non-field errors (like selection errors)
-        const otherErrors = Object.entries(prev)
-          .filter(([key]) => !selectedEvent.registrationFields.some(f => f.fieldName === key))
-          .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
-        
-        return { ...otherErrors, ...newErrors };
-      });
-    }
-  }, [formResponses, selectedEvent, userReservation]);
+  // Remove the validation effect entirely - we'll just gray out the button
 
   // Create or update reservation
   const createOrUpdateReservation = useCallback(async (tickets) => {
@@ -460,14 +444,7 @@ const TicketSelectionPage = () => {
       return false;
     }
 
-    // Validate required custom fields
-    if (selectedEvent?.registrationFields) {
-      selectedEvent.registrationFields.forEach(field => {
-        if (field.isRequired && !formResponses[field.fieldName]) {
-          newErrors[field.fieldName] = 'Additional Info Required';
-        }
-      });
-    }
+    // Remove field validation from here - just let the button be disabled
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -490,6 +467,11 @@ const TicketSelectionPage = () => {
 
     if (!reservation) {
       setErrors({ general: 'Please select tickets before proceeding.' });
+      return;
+    }
+
+    // Just a safety check - button should already be disabled if required fields are empty
+    if (hasRequiredFieldErrors) {
       return;
     }
 
@@ -541,15 +523,6 @@ const TicketSelectionPage = () => {
   // Handle form response updates
   const handleFormResponseUpdate = (fieldName, value) => {
     setFormResponses(prev => ({ ...prev, [fieldName]: value }));
-    
-    // Clear the error for this specific field if it's now filled
-    if (value && errors[fieldName]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldName];
-        return newErrors;
-      });
-    }
   };
 
   // Format event date/time
@@ -936,7 +909,6 @@ const TicketSelectionPage = () => {
           {userReservation > 0 && selectedEvent?.registrationFields?.length > 0 && (
             <AttendeeInfoSection 
               event={selectedEvent} 
-              errors={errors}
               formResponses={formResponses}
               onFormResponseUpdate={handleFormResponseUpdate}
             />

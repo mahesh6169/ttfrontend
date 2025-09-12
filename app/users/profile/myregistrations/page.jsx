@@ -26,22 +26,14 @@ const MyFreeEventRegistrationsPage = () => {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(
+        const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/free/my-free-registrations`,
           {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            withCredentials: true,
           }
         );
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || `HTTP Error ${response.status}`);
-        }
+        const data = response.data;
 
         if (data.success) {
           setRegistrations(data.registrations);
@@ -136,21 +128,17 @@ const MyFreeEventRegistrationsPage = () => {
     try {
       setActionLoading(true);
       
-      const response = await fetch(
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/free/register`,
         {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            attendees: [{ name: 'Default Attendee' }] // You can enhance this later
-          })
+          attendees: [{ name: 'Default Attendee' }] // You can enhance this later
+        },
+        {
+          withCredentials: true,
         }
       );
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         // Refresh registrations
@@ -169,18 +157,14 @@ const MyFreeEventRegistrationsPage = () => {
     try {
       setActionLoading(true);
       
-      const response = await fetch(
+      const response = await axios.delete(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/free/unregister`,
         {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          }
+          withCredentials: true,
         }
       );
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         // Refresh registrations

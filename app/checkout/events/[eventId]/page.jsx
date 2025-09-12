@@ -257,7 +257,7 @@ const CheckoutPage = () => {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const response = await fetch(
+        const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/views/${params.eventId}`
         );
         
@@ -265,21 +265,7 @@ const CheckoutPage = () => {
         console.log('Event fetch URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/views/${params.eventId}`);
         console.log('Event fetch response status:', response.status);
         
-        if (!response.ok) {
-          throw new Error(`Failed to fetch event: ${response.status}`);
-        }
-        
-        const text = await response.text();
-        console.log('Event response text:', text.substring(0, 100)); // Log first 100 chars
-        
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (parseError) {
-          console.error('Failed to parse event response:', parseError);
-          console.error('Response text:', text);
-          return;
-        }
+        const data = response.data;
         
         if (data.event) {
           console.log('Checkout: Event loaded:', data.event);

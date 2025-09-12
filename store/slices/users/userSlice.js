@@ -8,28 +8,20 @@ export const fetchuserProfile = createAsyncThunk(
   'user/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/fetchuserProfile`, {
-        method: 'GET',
-        credentials: 'include', // Include cookies in the request
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await axios.get(`${API_BASE_URL}/fetchuserProfile`, {
+        withCredentials: true, // Include cookies in the request
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        // Handle 401 specifically
-        if (response.status === 401) {
-          return rejectWithValue('Authentication required. Please log in.');
-        }
-        return rejectWithValue(errorData.message || 'Failed to fetch profile data');
-      }
-
-      const data = await response.json();
-      console.log('UserSlice/fetchProfile user details as response:', data);
-      return data; // Expected: { user: { _id, name, email }, adverts: [...] }
+      console.log('UserSlice/fetchProfile user details as response:', response.data);
+      return response.data; // Expected: { user: { _id, name, email }, adverts: [...] }
     } catch (err) {
-      return rejectWithValue('An unexpected error occurred. Please try again later.');
+      // Handle 401 specifically
+      if (err.response?.status === 401) {
+        return rejectWithValue('Authentication required. Please log in.');
+      }
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred. Please try again later.'
+      );
     }
   }
 );
@@ -41,24 +33,19 @@ export const registerUser = createAsyncThunk(
   'user/registerUser',
   async (formData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData), // ✅ send all fields
-        credentials: 'include',
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/register`,
+        formData, // ✅ send all fields
+        {
+          withCredentials: true,
+        }
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        return rejectWithValue(errorData.message || 'Failed to register user');
-      }
-
-      const data = await response.json();
-      return data;
+      return response.data;
     } catch (err) {
-      return rejectWithValue('An unexpected error occurred during registration. Please try again.');
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred during registration. Please try again.'
+      );
     }
   }
 );
@@ -69,24 +56,20 @@ export const sendVerifyOtp = createAsyncThunk(
   'user/sendVerifyOtp',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sendVerifyOtp`, {
-        method: 'POST',
-        credentials: 'include', // Include cookies in the request
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/sendVerifyOtp`,
+        {},
+        {
+          withCredentials: true, // Include cookies in the request
+        }
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        return rejectWithValue(errorData.message || 'Failed to send OTP');
-      }
-
-      const data = await response.json();
-      console.log('UserSlice/sendVerifyOtp response:', data);
-      return data; // Expected: { success: true, message: 'OTP sent successfully' }
+      console.log('UserSlice/sendVerifyOtp response:', response.data);
+      return response.data; // Expected: { success: true, message: 'OTP sent successfully' }
     } catch (err) {
-      return rejectWithValue('An unexpected error occurred while sending OTP. Please try again.');
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred while sending OTP. Please try again.'
+      );
     }
   }
 );
@@ -97,24 +80,19 @@ export const verifyEmail = createAsyncThunk(
   'user/verifyEmail',
   async ({ otp }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/verifyEmail`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ otp }),
-        credentials: 'include', // Include cookies for authentication
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/verifyEmail`,
+        { otp },
+        {
+          withCredentials: true, // Include cookies for authentication
+        }
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        return rejectWithValue(errorData.message || 'Failed to verify account');
-      }
-
-      const data = await response.json();
-      return data; // Expected: { message: 'Account verified successfully' }
+      return response.data; // Expected: { message: 'Account verified successfully' }
     } catch (err) {
-      return rejectWithValue('An unexpected error occurred. Please try again.');
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred. Please try again.'
+      );
     }
   }
 );
@@ -125,21 +103,19 @@ export const loginUser = createAsyncThunk(
   'user/loginUser',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include', // Include cookies in the request
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/login`,
+        { email, password },
+        {
+          withCredentials: true, // Include cookies in the request
+        }
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        return rejectWithValue(data.message || 'Login failed. Please check your credentials.');
-      }
-      return data.user; // Return only the user data
+      return response.data.user; // Return only the user data
     } catch (err) {
-      return rejectWithValue(err.message || 'An unexpected error occurred. Please try again later.');
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred. Please try again later.'
+      );
     }
   }
 );
@@ -150,20 +126,15 @@ export const validateToken = createAsyncThunk(
   'user/validateToken',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/validate`, {
-        method: 'GET',
-        credentials: 'include', // Include cookies in the request
+      const response = await axios.get(`${API_BASE_URL}/validate`, {
+        withCredentials: true, // Include cookies in the request
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        return rejectWithValue(errorData.message || 'Token validation failed');
-      }
-
-      const data = await response.json();
-      return data; // { isAuthenticated: true, user }
+      return response.data; // { isAuthenticated: true, user }
     } catch (err) {
-      return rejectWithValue('An unexpected error occurred during token validation');
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred during token validation'
+      );
     }
   }
 );
@@ -173,19 +144,19 @@ export const logoutUser = createAsyncThunk(
   'user/logoutUser',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/logout`, {
-        method: 'POST',
-        credentials: 'include', // Include cookies in the request
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        return rejectWithValue(errorData.message || 'Failed to logout');
-      }
+      const response = await axios.post(
+        `${API_BASE_URL}/logout`,
+        {},
+        {
+          withCredentials: true, // Include cookies in the request
+        }
+      );
 
       return true; // Successful logout
     } catch (err) {
-      return rejectWithValue('An unexpected error occurred. Please try again later.');
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred. Please try again later.'
+      );
     }
   }
 );
@@ -294,24 +265,14 @@ export const sendResetOtp = createAsyncThunk(
   'user/sendResetOtp',
   async (email, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sendResetOtp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await axios.post(`${API_BASE_URL}/sendResetOtp`, { email });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        return rejectWithValue(errorData.message || 'Failed to send reset OTP');
-      }
-
-      const data = await response.json();
-      console.log('UserSlice/sendResetOtp response:', data);
-      return data; // Expected: { success: true, message: 'OTP sent successfully' }
+      console.log('UserSlice/sendResetOtp response:', response.data);
+      return response.data; // Expected: { success: true, message: 'OTP sent successfully' }
     } catch (err) {
-      return rejectWithValue('An unexpected error occurred while sending reset OTP. Please try again.');
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred while sending reset OTP. Please try again.'
+      );
     }
   }
 );
@@ -321,23 +282,18 @@ export const resetPassword = createAsyncThunk(
   'user/resetPassword',
   async ({ email, otp, newPassword, confirmPassword }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/resetPassword`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, otp, newPassword, confirmPassword }),
+      const response = await axios.post(`${API_BASE_URL}/resetPassword`, {
+        email,
+        otp,
+        newPassword,
+        confirmPassword,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        return rejectWithValue(data.message || 'Failed to reset password');
-      }
-
-      return data; // { message: 'Password reset successfully' }
+      return response.data; // { message: 'Password reset successfully' }
     } catch (err) {
-      return rejectWithValue('An unexpected error occurred while resetting password.');
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred while resetting password.'
+      );
     }
   }
 );
@@ -347,23 +303,15 @@ export const fetchAccountDetails = createAsyncThunk(
   'user/fetchAccountDetails',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/account/details`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await axios.get(`${API_BASE_URL}/account/details`, {
+        withCredentials: true,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        return rejectWithValue(errorData.message || 'Failed to fetch account info');
-      }
-
-      const data = await response.json();
-      return data.user;
+      return response.data.user;
     } catch (err) {
-      return rejectWithValue('An unexpected error occurred.');
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred.'
+      );
     }
   }
 );
@@ -373,24 +321,19 @@ export const updateAccountDetails = createAsyncThunk(
   'user/updateAccountDetails',
   async (formData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/account/details`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await axios.put(
+        `${API_BASE_URL}/account/details`,
+        formData,
+        {
+          withCredentials: true,
+        }
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        return rejectWithValue(errorData.message || 'Failed to update details');
-      }
-
-      const data = await response.json();
-      return data.message;
+      return response.data.message;
     } catch (err) {
-      return rejectWithValue('Update failed. Please try again.');
+      return rejectWithValue(
+        err.response?.data?.message || 'Update failed. Please try again.'
+      );
     }
   }
 );
@@ -402,24 +345,19 @@ export const deleteUserAccount = createAsyncThunk(
     try {
       console.log('🔸 deleteUserAccount called with userId:', userId); // 👈 logging the incoming value
 
-      const response = await fetch(`${API_BASE_URL}/account/delete`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId }), // Optional: Only if your backend expects body
-      });
+      const response = await axios.delete(
+        `${API_BASE_URL}/account/delete`,
+        {
+          data: { userId }, // Optional: Only if your backend expects body
+          withCredentials: true,
+        }
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        return rejectWithValue(data.message || 'Failed to delete account');
-      }
-
-      return data.message;
+      return response.data.message;
     } catch (error) {
-      return rejectWithValue(error.message || 'Unexpected error');
+      return rejectWithValue(
+        error.response?.data?.message || error.message || 'Unexpected error'
+      );
     }
   }
 );
@@ -429,20 +367,19 @@ export const acceptUpdatedTerms = createAsyncThunk(
   'user/acceptUpdatedTerms',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/accept-terms`, {
-        method: 'PATCH',
-        credentials: 'include',
-      });
+      const res = await axios.patch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/accept-terms`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to accept terms');
-      }
-
-      return data;
+      return res.data;
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue(
+        err.response?.data?.message || err.message || 'Failed to accept terms'
+      );
     }
   }
 );

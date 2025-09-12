@@ -3,7 +3,7 @@
 import React from 'react';
 import { FaInfoCircle, FaAsterisk } from 'react-icons/fa';
 
-const AttendeeInfoSection = ({ event, errors = {}, formResponses = {}, onFormResponseUpdate }) => {
+const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate }) => {
 
   // Check if event has custom registration fields
   if (!event?.registrationFields || event.registrationFields.length === 0) {
@@ -18,7 +18,6 @@ const AttendeeInfoSection = ({ event, errors = {}, formResponses = {}, onFormRes
 
   const renderFormField = (field) => {
     const value = formResponses[field.fieldName] || '';
-    const error = errors[field.fieldName];
 
     switch (field.fieldType) {
       case 'text':
@@ -27,9 +26,7 @@ const AttendeeInfoSection = ({ event, errors = {}, formResponses = {}, onFormRes
             value={value}
             onChange={(e) => handleFieldChange(field.fieldName, e.target.value)}
             rows={2}
-            className={`w-full p-2 sm:p-3 text-xs sm:text-sm border rounded-md sm:rounded-lg focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical ${
-              error ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className="w-full p-2 sm:p-3 text-xs sm:text-sm border border-gray-300 rounded-md sm:rounded-lg focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
             placeholder={`Enter requested details`}
           />
         );
@@ -40,9 +37,7 @@ const AttendeeInfoSection = ({ event, errors = {}, formResponses = {}, onFormRes
             type="number"
             value={value}
             onChange={(e) => handleFieldChange(field.fieldName, e.target.value)}
-            className={`w-full p-2 sm:p-3 text-xs sm:text-sm border rounded-md sm:rounded-lg focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              error ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className="w-full p-2 sm:p-3 text-xs sm:text-sm border border-gray-300 rounded-md sm:rounded-lg focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder={`Enter ${field.fieldName.toLowerCase()}`}
           />
         );
@@ -52,9 +47,7 @@ const AttendeeInfoSection = ({ event, errors = {}, formResponses = {}, onFormRes
           <select
             value={value}
             onChange={(e) => handleFieldChange(field.fieldName, e.target.value)}
-            className={`w-full p-2 sm:p-3 text-xs sm:text-sm border rounded-md sm:rounded-lg focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              error ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className="w-full p-2 sm:p-3 text-xs sm:text-sm border border-gray-300 rounded-md sm:rounded-lg focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">Select {field.fieldName}</option>
             {field.fieldOptions?.map((option, idx) => (
@@ -71,9 +64,7 @@ const AttendeeInfoSection = ({ event, errors = {}, formResponses = {}, onFormRes
             type="date"
             value={value}
             onChange={(e) => handleFieldChange(field.fieldName, e.target.value)}
-            className={`w-full p-2 sm:p-3 text-xs sm:text-sm border rounded-md sm:rounded-lg focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              error ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className="w-full p-2 sm:p-3 text-xs sm:text-sm border border-gray-300 rounded-md sm:rounded-lg focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         );
 
@@ -104,7 +95,7 @@ const AttendeeInfoSection = ({ event, errors = {}, formResponses = {}, onFormRes
   };
 
   return (
-    <div className="border-t pt-3 sm:pt-4 mb-3 sm:mb-6">
+    <div className="border-t pt-3 sm:pt-4 mb-3 sm:mb-6" data-attendee-section>
       <div className="flex items-center mb-2 sm:mb-4">
         <FaInfoCircle className="text-blue-600 mr-1.5 sm:mr-2 text-sm sm:text-lg" />
         <h3 className="text-sm sm:text-lg font-medium sm:font-semibold text-gray-900">
@@ -122,9 +113,6 @@ const AttendeeInfoSection = ({ event, errors = {}, formResponses = {}, onFormRes
               )}
             </label>
             {renderFormField(field)}
-            {errors[field.fieldName] && (
-              <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-sm text-red-600">{errors[field.fieldName]}</p>
-            )}
           </div>
         ))}
       </div>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { generateTicketsPDF } from '../../../../utils/paidEventTicketGenerator';
+import axios from 'axios';
 
 const EnhancedMyTicketsPage = () => {
   const [tickets, setTickets] = useState([]);
@@ -22,22 +23,14 @@ const EnhancedMyTicketsPage = () => {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(
+        const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/paid/my-paid-tickets`,
           {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            withCredentials: true,
           }
         );
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || `HTTP Error ${response.status}`);
-        }
+        const data = response.data;
 
         if (data.success) {
           setTickets(data.tickets);
