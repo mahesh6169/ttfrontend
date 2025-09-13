@@ -16,13 +16,14 @@ import {
   setScrollToMessage,
   clearScrollToMessage,
   deleteThreadMessage,
-  markMessageAsDeleted
+  markMessageAsDeleted,
+  setActiveThreadId
 } from '@/store/slices/threads/threadSlice';
 import {
   muteThreadNotification,
   unmuteThreadNotification,
 } from '@/store/slices/users/userSlice';
-import threadSocket from '@/config/threadSocket';
+// Remove direct socket import - now handled by ThreadSocketListener
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
 import { FaChevronLeft, FaChevronRight, FaReply } from 'react-icons/fa';
@@ -32,6 +33,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
 import ShareIcons from '@/components/shared/ShareIcons';
+import ThreadConnectionStatus from '@/components/threads/ThreadConnectionStatus';
 
 
 // Add this helper function for optimized image URLs
@@ -65,6 +67,7 @@ const ThreadChatPage = () => {
   const threadStatus = useSelector((state) => state.threads.status);
   const replyingTo = useSelector((state) => state.threads.replyingTo);
   const scrollToMessage = useSelector((state) => state.threads.scrollToMessage);
+  const socketConnected = useSelector((state) => state.threads.socketConnected);
 
 
   const [newMessage, setNewMessage] = useState('');
@@ -118,26 +121,17 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     }
   }, [deleteConfirmId]);
 
-  // Fetch messages & join socket room
+  // Set active thread and fetch messages
   useEffect(() => {
+    // Set this thread as active (triggers socket join in ThreadSocketListener)
+    dispatch(setActiveThreadId(threadId));
+    
+    // Fetch thread messages
     dispatch(fetchThreadMessages(threadId));
-    threadSocket.emit('joinThread', threadId);
-  }, [dispatch, threadId]);
-
-  useEffect(() => {
-    threadSocket.on('newThreadMessage', (message) => {
-      dispatch(addNewThreadMessage({ threadId, message }));
-    });
-
-    threadSocket.on('messageDeleted', ({ messageId, threadId: msgThreadId }) => {
-      if (msgThreadId === threadId) {
-        dispatch(markMessageAsDeleted({ threadId, messageId }));
-      }
-    });
-
+    
+    // Cleanup: clear active thread on unmount
     return () => {
-      threadSocket.off('newThreadMessage');
-      threadSocket.off('messageDeleted');
+      dispatch(setActiveThreadId(null));
     };
   }, [dispatch, threadId]);
 
@@ -469,6 +463,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       {thread.title && (
         <div className="my-2 px-2">
           <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words">{thread.title}</h1>
+          <div className="flex justify-center mt-1">
+            <ThreadConnectionStatus />
+          </div>
         </div>
       )}
 
@@ -920,14 +917,19 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (e.key === 'Enter' && !e.shiftKey && socketConnected) {
               e.preventDefault();
               handleSendMessage();
             }
           }}
-          placeholder={replyingTo ? "Type your reply..." : "Join the conversation..."}
+          placeholder={socketConnected 
+            ? (replyingTo ? "Type your reply..." : "Join the conversation...") 
+            : "Connection issue. Please try again in a moment..."}
+          disabled={!socketConnected}
           rows={1}
-          className="flex-1 border rounded-lg outline-none resize-none p-2 text-sm sm:text-base"
+          className={`flex-1 border rounded-lg outline-none resize-none p-2 text-sm sm:text-base ${
+            !socketConnected ? 'bg-gray-100 cursor-not-allowed' : ''
+          }`}
           style={{
             minHeight: '2.5rem',
             maxHeight: '8rem',
@@ -939,8 +941,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         />
         <button
           onClick={handleSendMessage}
-          disabled={!newMessage.trim()}
-          className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 rounded-lg font-semibold disabled:opacity-50 transition-colors"
+          disabled={!newMessage.trim() || !socketConnected}
+          className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          title={!socketConnected ? "Connection issue - please wait" : ""}
         >
           Send
         </button>

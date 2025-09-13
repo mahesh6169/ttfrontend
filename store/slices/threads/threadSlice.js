@@ -242,6 +242,13 @@ const threadSlice = createSlice({
         selectedThread: null,
         replyingTo: null, // Message being replied to
         scrollToMessage: null, // Message ID to scroll to
+        // New socket-related states
+        activeThreadId: null, // Currently viewing thread
+        socketConnected: false, // Thread socket connection status
+        connectionError: null, // Socket connection errors
+        typingUsers: {}, // Users typing in each thread
+        unreadCounts: {}, // Unread message counts per thread
+        lastRead: {}, // Last read timestamp per thread
     },
     reducers: {
         addNewThreadMessage: (state, action) => {
@@ -286,6 +293,52 @@ const threadSlice = createSlice({
                     });
                 }
             }
+        },
+        // New socket-related reducers
+        setActiveThreadId: (state, action) => {
+            state.activeThreadId = action.payload;
+            // Mark thread as read when activated
+            if (action.payload && state.unreadCounts[action.payload]) {
+                state.unreadCounts[action.payload] = 0;
+                state.lastRead[action.payload] = new Date().toISOString();
+            }
+        },
+        setThreadSocketConnected: (state, action) => {
+            state.socketConnected = action.payload;
+            if (!action.payload) {
+                // Clear typing users when disconnected
+                state.typingUsers = {};
+            }
+        },
+        setConnectionError: (state, action) => {
+            state.connectionError = action.payload;
+        },
+        updateThreadInList: (state, action) => {
+            const { threadId, lastMessage, lastActivity } = action.payload;
+            const thread = state.threads.find(t => t._id === threadId);
+            if (thread) {
+                if (lastMessage) thread.lastMessage = lastMessage;
+                if (lastActivity) thread.lastActivity = lastActivity;
+                
+                // Re-sort threads by lastActivity
+                state.threads.sort((a, b) => 
+                    new Date(b.lastActivity) - new Date(a.lastActivity)
+                );
+            }
+            
+            // Update unread count if not active thread
+            if (threadId !== state.activeThreadId && lastMessage) {
+                state.unreadCounts[threadId] = (state.unreadCounts[threadId] || 0) + 1;
+            }
+        },
+        setTypingUsers: (state, action) => {
+            const { threadId, users } = action.payload;
+            state.typingUsers[threadId] = users;
+        },
+        markThreadAsRead: (state, action) => {
+            const threadId = action.payload;
+            state.unreadCounts[threadId] = 0;
+            state.lastRead[threadId] = new Date().toISOString();
         },
     },
     extraReducers: (builder) => {
@@ -490,6 +543,13 @@ export const {
     clearReplyingTo,
     setScrollToMessage,
     clearScrollToMessage,
-    markMessageAsDeleted
+    markMessageAsDeleted,
+    // New socket-related exports
+    setActiveThreadId,
+    setThreadSocketConnected,
+    setConnectionError,
+    updateThreadInList,
+    setTypingUsers,
+    markThreadAsRead
 } = threadSlice.actions;
 export default threadSlice.reducer;

@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Providers } from '@/store/providers';
 import '@/assets/styles/globals.css';
 import { SocketListener } from '@/components/chat/SocketListener';
+import ThreadSocketListener from '@/components/ThreadSocketListener';
 
 
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
@@ -44,6 +45,7 @@ const ParentLayout = ({ children }) => {
       <body>
         <Providers>
          <SocketListener />
+         <ThreadSocketListener />
           <Header />
            {/* <TermsModal /> */} 
           {children}
