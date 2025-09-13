@@ -67,19 +67,34 @@ const SeatSelectionPage = () => {
   // Fetch reservation data
   useEffect(() => {
     const fetchReservation = async () => {
+      console.log('🔍 [SeatSelection] Starting reservation fetch...');
+      console.log('   - Event ID:', selectedEvent?._id);
+      console.log('   - User ID:', user?._id || user?.id);
+      
       if (!selectedEvent?._id || !user) {
+        console.log('❌ [SeatSelection] Missing event or user, skipping reservation fetch');
         setIsLoading(false);
         return;
       }
 
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${selectedEvent._id}/reservation`,
-          { withCredentials: true }
-        );
+        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${selectedEvent._id}/reservation`;
+        console.log('📡 [SeatSelection] Fetching reservation from:', url);
+        
+        const response = await axios.get(url, { withCredentials: true });
+        
+        console.log('✅ [SeatSelection] Reservation response:', response.data);
 
         if (response.data.success && response.data.reservation) {
           const res = response.data.reservation;
+          console.log('📋 [SeatSelection] Reservation found:', {
+            id: res._id,
+            status: res.status,
+            seatIds: res.seatIds,
+            tickets: res.tickets,
+            expiresAt: res.expiresAt
+          });
+          
           setReservation(res);
           
           // Set selected tickets from reservation
@@ -95,9 +110,13 @@ const SeatSelectionPage = () => {
           
           // Set selected seats if any
           if (res.seatIds && res.seatIds.length > 0) {
+            console.log('🪑 [SeatSelection] Setting selected seats:', res.seatIds);
             setSelectedSeats(res.seatIds);
+          } else {
+            console.log('⚠️ [SeatSelection] No seats in reservation');
           }
         } else {
+          console.log('⚠️ [SeatSelection] No reservation found or unsuccessful response');
           // No reservation found
           setError('Please select tickets first');
           setTimeout(() => {
@@ -105,12 +124,23 @@ const SeatSelectionPage = () => {
           }, 2000);
         }
       } catch (error) {
+        console.error('❌ [SeatSelection] Error fetching reservation:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.config?.headers
+        });
+        
         if (error.response?.status === 404) {
+          console.log('🔄 [SeatSelection] 404 - No reservation found, redirecting to tickets page');
           // No reservation found
           setError('Please select tickets first');
           setTimeout(() => {
             router.push(`/events/tickets/${eventId}`);
           }, 2000);
+        } else if (error.response?.status === 401) {
+          console.log('🚫 [SeatSelection] 401 - Unauthorized, possible API key issue');
+          setError('Authentication failed - please refresh the page');
         } else {
           console.error('Error fetching reservation:', error);
           setError('Failed to load reservation data');
@@ -125,14 +155,27 @@ const SeatSelectionPage = () => {
 
   // Handle seat selection updates
   const handleSeatsUpdated = async (newSelectedSeats) => {
-    if (!reservation) return;
+    console.log('🪑 [SeatSelection] Updating seats:', {
+      newSeats: newSelectedSeats,
+      reservationId: reservation?._id
+    });
+    
+    if (!reservation) {
+      console.log('❌ [SeatSelection] No reservation to update');
+      return;
+    }
     
     try {
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/reservation/${reservation._id}/seats`;
+      console.log('📡 [SeatSelection] Updating seats at:', url);
+      
       const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/reservation/${reservation._id}/seats`,
+        url,
         { seatIds: newSelectedSeats },
         { withCredentials: true }
       );
+      
+      console.log('✅ [SeatSelection] Seat update response:', response.data);
       
       if (response.data.success) {
         setSelectedSeats(newSelectedSeats);

@@ -153,6 +153,14 @@ const SeatMapSelectionNoRedux = forwardRef(({
     fetchSeatData();
   }, [fetchSeatData]);
 
+  // Update selected seats when existingReservation changes
+  useEffect(() => {
+    if (existingReservation && existingReservation.seatIds && existingReservation.seatIds.length > 0) {
+      console.log('🔄 [SeatMap] Updating selected seats from reservation:', existingReservation.seatIds);
+      setSelectedSeats(existingReservation.seatIds);
+    }
+  }, [existingReservation]);
+
   // REMOVED - We now notify parent only when all seats are selected or cleared
   // useEffect(() => {
   //   if (onSeatsSelected) {
