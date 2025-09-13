@@ -18,7 +18,7 @@ const categories = [
 const adTypes = ['offered', 'wanted'];
 
 console.log('Testing Category/AdType Combinations\n');
-console.log('Expected behavior: Pricing section should NEVER appear for "wanted" ads\n');
+console.log('Expected behavior: Pricing section should NEVER appear fofdfdr "wanted" ads\n');
 
 categories.forEach(category => {
   console.log(`\n${category.name}:`);
@@ -36,7 +36,7 @@ categories.forEach(category => {
 
 console.log('\n\nKey Points:');
 console.log('1. Pricinggggg section ;should be hidden for ALL "wanted" ads');
-console.log('2. Pricing vfalidation should be skipped for ALL "wanted" ads');
+console.log('2. Pricing vfalidation should be skipped for ALL fg"wanted" ads');
 console.log('3. Pricing bbdata shouldff be empty ([]) when submitting "wanted" ads');
 console.log('4. Whenn switching from "offered" to "wanted", pricing data should be cleared');
 
