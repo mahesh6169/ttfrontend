@@ -145,7 +145,7 @@ const ThreadSocketListener = () => {
         message 
       }));
 
-      // Update thread in list if it exists
+      // Update thread in list if it exists (for thread slice)
       dispatch(updateThreadInList({
         threadId: message.thread,
         lastMessage: message,
