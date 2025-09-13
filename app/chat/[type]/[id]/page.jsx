@@ -606,13 +606,18 @@ useEffect(() => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === 'Enter' && !e.shiftKey && socketConnected) {
                     e.preventDefault();
                     handleSendMessage();
                   }
                 }}
-                placeholder="Type your message..."
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+                placeholder={socketConnected 
+                  ? "Type your message..." 
+                  : "Connection issue. Please try again in a moment..."}
+                disabled={!socketConnected}
+                className={`flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent ${
+                  !socketConnected ? 'bg-gray-100 cursor-not-allowed' : ''
+                }`}
                 rows={1}
                 style={{
                   minHeight: '36px',
@@ -626,8 +631,9 @@ useEffect(() => {
               />
               <button
                 onClick={handleSendMessage}
-                disabled={!newMessage.trim()}
+                disabled={!newMessage.trim() || !socketConnected}
                 className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                title={!socketConnected ? "Connection issue - please wait" : ""}
               >
                 Send
               </button>
