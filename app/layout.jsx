@@ -6,6 +6,7 @@ import { Providers } from '@/store/providers';
 import '@/assets/styles/globals.css';
 import { SocketListener } from '@/components/chat/SocketListener';
 import ThreadSocketListener from '@/components/ThreadSocketListener';
+import StateSelectionWrapper from '@/components/ads/StateSelectionWrapper';
 
 
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
@@ -46,6 +47,7 @@ const ParentLayout = ({ children }) => {
         <Providers>
          <SocketListener />
          <ThreadSocketListener />
+         <StateSelectionWrapper />
           <Header />
            {/* <TermsModal /> */} 
           {children}

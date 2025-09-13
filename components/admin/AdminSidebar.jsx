@@ -14,6 +14,7 @@ const AdminSidebar = ({ onLinkClick }) => {
 
   const menuItems = [
     { label: 'Users', href: '/admin/profile/users', icon: <FaUsers /> },
+    { label: 'Banner Ads', href: '/admin/profile/banner-ads', icon: <RiAdvertisementFill /> },
     { label: 'Renewal Adverts', href: '/admin/profile/adverts/renewals', icon: <FaAd /> },
     { label: 'Renewal Events', href: '/admin/profile/events/renewals', icon: <MdEvent /> },
     { label: 'Platform Fees', href: '/admin/profile/events/platformFee', icon: <FaDollarSign /> },
