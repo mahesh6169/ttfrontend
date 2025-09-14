@@ -10,17 +10,21 @@ const BottomAd = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [layoutType, setLayoutType] = useState('full');
+  const [dimensions, setDimensions] = useState(null);
 
   // Fetch ads from API
   const fetchAds = useCallback(async () => {
     try {
       const response = await axios.get('/bannerAds/serve/H2');
-      if (response.data.success && response.data.ads.length > 0) {
-        setAds(response.data.ads);
+      console.log('BottomAd API Response:', response.data);
+      
+      if (response.data.success) {
+        setAds(response.data.ads || []);
         setLayoutType(response.data.layoutType);
+        setDimensions(response.data.dimensions);
         
         // Track impressions for the first ad
-        if (response.data.ads[0]) {
+        if (response.data.ads && response.data.ads[0]) {
           trackImpression(response.data.ads[0].adId);
         }
       }
@@ -85,9 +89,44 @@ const BottomAd = () => {
     );
   }
 
-  // Show nothing if no ads
-  if (ads.length === 0) {
+  // Define responsive fallback dimensions
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const fallbackWidth = isMobile ? 320 : 728;
+  const fallbackHeight = isMobile ? 50 : 90;
+  const adWidth = dimensions?.width || fallbackWidth;
+  const adHeight = dimensions?.height || fallbackHeight;
+
+  // If no ads and no layout type, return null
+  if (ads.length === 0 && !layoutType) {
     return null;
+  }
+  
+  // If no ads but layout type is known, handle placeholders below
+  if (ads.length === 0 && layoutType) {
+    // Full layout - single placeholder
+    if (layoutType === 'full') {
+      return (
+        <div className="mx-auto rounded-md border border-gray-300 flex items-center justify-center" style={{ width: `${adWidth}px`, height: `${adHeight}px` }}>
+          <span className="text-gray-500">Advertisement</span>
+        </div>
+      );
+    }
+    
+    // Split layout - two placeholders
+    if (layoutType === 'split') {
+      return (
+        <div className="mx-auto flex gap-2" style={{ width: `${adWidth}px`, height: `${adHeight}px` }}>
+          {[0, 1].map((slotIndex) => (
+            <div
+              key={`empty-${slotIndex}`}
+              className="flex-1 h-full rounded-md border border-gray-300 flex items-center justify-center"
+            >
+              <span className="text-gray-500">Advertisement</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
   }
 
   const currentAd = ads[currentIndex] || ads[0];
@@ -96,15 +135,16 @@ const BottomAd = () => {
   if (layoutType === 'full') {
     return (
       <div 
-        className="w-full h-[100px] rounded-md shadow-md overflow-hidden bg-white cursor-pointer transition-all duration-300 hover:shadow-lg"
+        className="w-full overflow-hidden cursor-pointer transition-all duration-300"
+        style={{ height: `${adHeight}px` }}
         onClick={() => handleAdClick(currentAd)}
       >
         <Image
           src={currentAd.imageUrl}
           alt={currentAd.altText || `${currentAd.businessName} Advertisement`}
-          width={1472}
-          height={100}
-          className="w-full h-full object-cover"
+          width={adWidth}
+          height={adHeight}
+          className="mx-auto h-full object-contain"
           priority
         />
       </div>
@@ -113,7 +153,7 @@ const BottomAd = () => {
 
   // Split layout - show two ads side by side
   return (
-    <div className="w-full h-[100px] flex gap-2">
+    <div className="mx-auto flex gap-2" style={{ width: `${adWidth}px`, height: `${adHeight}px` }}>
       {/* Always render two slots for split layout */}
       {[0, 1].map((slotIndex) => {
         const ad = ads[slotIndex];
@@ -123,15 +163,15 @@ const BottomAd = () => {
           return (
             <div
               key={ad.adId}
-              className="flex-1 h-full rounded-md shadow-md overflow-hidden bg-white cursor-pointer transition-all duration-300 hover:shadow-lg"
+              className="flex-1 h-full overflow-hidden cursor-pointer transition-all duration-300"
               onClick={() => handleAdClick(ad)}
             >
               <Image
                 src={ad.imageUrl}
                 alt={ad.altText || `${ad.businessName} Advertisement`}
-                width={736}
-                height={100}
-                className="w-full h-full object-cover"
+                width={layoutType === 'split' ? 360 : adWidth}
+                height={adHeight}
+                className="mx-auto h-full object-contain"
                 priority={slotIndex === 0}
               />
             </div>
@@ -141,9 +181,9 @@ const BottomAd = () => {
           return (
             <div
               key={`empty-${slotIndex}`}
-              className="flex-1 h-full rounded-md bg-gray-100"
+              className="flex-1 h-full rounded-md border border-gray-300 flex items-center justify-center"
             >
-              {/* Empty slot - maintains layout structure */}
+              <span className="text-gray-500">Advertisement</span>
             </div>
           );
         }

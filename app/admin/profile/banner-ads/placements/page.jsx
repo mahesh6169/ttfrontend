@@ -176,11 +176,19 @@ function PlacementCard({ placement, onEdit, onDelete, onToggleStatus }) {
               </div>
             )}
             <div>
-              <span className="text-gray-500">Dimensions:</span>{' '}
+              <span className="text-gray-500">Desktop:</span>{' '}
               <span className="font-medium">
-                {placement.dimensions?.width || '?'} × {placement.dimensions?.height || '?'}
+                {placement.dimensions?.desktop?.width || placement.dimensions?.width || '?'} × {placement.dimensions?.desktop?.height || placement.dimensions?.height || '?'}
               </span>
             </div>
+            {placement.dimensions?.mobile?.width && (
+              <div>
+                <span className="text-gray-500">Mobile:</span>{' '}
+                <span className="font-medium">
+                  {placement.dimensions.mobile.width} × {placement.dimensions.mobile.height}
+                </span>
+              </div>
+            )}
             <div>
               <span className="text-gray-500">Max Ads:</span>{' '}
               <span className="font-medium">{placement.maxAds || 1}</span>
@@ -230,7 +238,10 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
     name: placement.name,
     visibility: placement.visibility,
     layoutType: placement.layoutType || '',
-    dimensions: placement.dimensions || { width: '', height: '' },
+    dimensions: placement.dimensions || { 
+      desktop: { width: '', height: '' },
+      mobile: { width: '', height: '' }
+    },
     status: placement.status,
     maxAds: placement.maxAds || 1,
     defaultWeight: placement.defaultWeight || 10
@@ -314,29 +325,82 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
               </div>
             )}
 
-            {/* Dimensions */}
+            {/* Desktop Dimensions */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Dimensions (pixels)
+                Desktop Dimensions (pixels)
               </label>
               <div className="grid grid-cols-2 gap-2 mt-1">
                 <input
                   type="number"
                   placeholder="Width"
-                  value={formData.dimensions.width}
+                  value={formData.dimensions.desktop?.width || formData.dimensions.width || ''}
                   onChange={(e) => setFormData({ 
                     ...formData, 
-                    dimensions: { ...formData.dimensions, width: parseInt(e.target.value) || '' }
+                    dimensions: { 
+                      ...formData.dimensions, 
+                      desktop: { 
+                        ...formData.dimensions.desktop, 
+                        width: parseInt(e.target.value) || '' 
+                      }
+                    }
                   })}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
                 <input
                   type="number"
                   placeholder="Height"
-                  value={formData.dimensions.height}
+                  value={formData.dimensions.desktop?.height || formData.dimensions.height || ''}
                   onChange={(e) => setFormData({ 
                     ...formData, 
-                    dimensions: { ...formData.dimensions, height: parseInt(e.target.value) || '' }
+                    dimensions: { 
+                      ...formData.dimensions, 
+                      desktop: { 
+                        ...formData.dimensions.desktop, 
+                        height: parseInt(e.target.value) || '' 
+                      }
+                    }
+                  })}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Mobile Dimensions */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Mobile Dimensions (pixels)
+              </label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <input
+                  type="number"
+                  placeholder="Width"
+                  value={formData.dimensions.mobile?.width || ''}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    dimensions: { 
+                      ...formData.dimensions, 
+                      mobile: { 
+                        ...formData.dimensions.mobile, 
+                        width: parseInt(e.target.value) || '' 
+                      }
+                    }
+                  })}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+                <input
+                  type="number"
+                  placeholder="Height"
+                  value={formData.dimensions.mobile?.height || ''}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    dimensions: { 
+                      ...formData.dimensions, 
+                      mobile: { 
+                        ...formData.dimensions.mobile, 
+                        height: parseInt(e.target.value) || '' 
+                      }
+                    }
                   })}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
@@ -419,8 +483,14 @@ function PlacementCreateModal({ onClose, onSuccess }) {
     visibility: 'all',
     layoutType: 'full',
     dimensions: {
-      width: '',
-      height: ''
+      desktop: {
+        width: '',
+        height: ''
+      },
+      mobile: {
+        width: '',
+        height: ''
+      }
     },
     status: 'active',
     maxAds: 5,
@@ -543,19 +613,22 @@ function PlacementCreateModal({ onClose, onSuccess }) {
             </select>
           </div>
 
-          {/* Dimensions */}
+          {/* Desktop Dimensions */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Dimensions (px)
+              Desktop Dimensions (px)
             </label>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <input
                 type="number"
                 placeholder="Width"
-                value={formData.dimensions.width}
+                value={formData.dimensions.desktop.width}
                 onChange={(e) => setFormData({ 
                   ...formData, 
-                  dimensions: { ...formData.dimensions, width: parseInt(e.target.value) || '' }
+                  dimensions: { 
+                    ...formData.dimensions, 
+                    desktop: { ...formData.dimensions.desktop, width: parseInt(e.target.value) || '' }
+                  }
                 })}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 required
@@ -563,18 +636,60 @@ function PlacementCreateModal({ onClose, onSuccess }) {
               <input
                 type="number"
                 placeholder="Height"
-                value={formData.dimensions.height}
+                value={formData.dimensions.desktop.height}
                 onChange={(e) => setFormData({ 
                   ...formData, 
-                  dimensions: { ...formData.dimensions, height: parseInt(e.target.value) || '' }
+                  dimensions: { 
+                    ...formData.dimensions, 
+                    desktop: { ...formData.dimensions.desktop, height: parseInt(e.target.value) || '' }
+                  }
                 })}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 required
               />
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              Horizontal: 1472x100 (desktop), 374x100 (mobile)<br/>
-              Vertical: 160x600
+              Horizontal: 728x90 (full), 720x90 (split parent)<br/>
+              Vertical: 160x600 (full), 160x592 (split parent)
+            </p>
+          </div>
+
+          {/* Mobile Dimensions */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Mobile Dimensions (px)
+            </label>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <input
+                type="number"
+                placeholder="Width"
+                value={formData.dimensions.mobile.width}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  dimensions: { 
+                    ...formData.dimensions, 
+                    mobile: { ...formData.dimensions.mobile, width: parseInt(e.target.value) || '' }
+                  }
+                })}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+              <input
+                type="number"
+                placeholder="Height"
+                value={formData.dimensions.mobile.height}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  dimensions: { 
+                    ...formData.dimensions, 
+                    mobile: { ...formData.dimensions.mobile, height: parseInt(e.target.value) || '' }
+                  }
+                })}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Horizontal: 320x50<br/>
+              Vertical: Not shown on mobile
             </p>
           </div>
 
