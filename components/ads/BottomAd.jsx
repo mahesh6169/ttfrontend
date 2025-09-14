@@ -3,9 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import axios from '@/utils/axiosConfig';
 
-// Fallback images if no ads are available
-const fallbackDesktop = "https://res.cloudinary.com/dtvrbdvkx/image/upload/v1753958831/mockad-d-2_iy7puc.png";
-const fallbackMobile = "https://res.cloudinary.com/dtvrbdvkx/image/upload/v1753958831/mockad-m-2_tvlu43.png";
+// No fallback images - show empty space or nothing
 
 const BottomAd = () => {
   const [ads, setAds] = useState([]);
@@ -78,25 +76,18 @@ const BottomAd = () => {
     }
   }, [currentIndex, ads]);
 
-  // Show fallback while loading
+  // Reserve space while loading to prevent layout shift
   if (loading) {
     return (
-      <div className="w-full h-[100px] animate-pulse bg-gray-200 rounded-md" />
+      <div className="w-full h-[100px]">
+        {/* Empty space reserved for ad */}
+      </div>
     );
   }
 
-  // Show fallback if no ads
+  // Show nothing if no ads
   if (ads.length === 0) {
-    return (
-      <>
-        <div className="hidden sm:flex w-full h-[100px] items-center justify-center rounded-md shadow-md overflow-hidden bg-gray-300 text-gray-600">
-          <span>Advertisement Space</span>
-        </div>
-        <div className="flex sm:hidden w-full h-[100px] items-center justify-center rounded-md shadow-md overflow-hidden bg-gray-300 text-gray-600">
-          <span>Advertisement Space</span>
-        </div>
-      </>
-    );
+    return null;
   }
 
   const currentAd = ads[currentIndex] || ads[0];
@@ -123,22 +114,40 @@ const BottomAd = () => {
   // Split layout - show two ads side by side
   return (
     <div className="w-full h-[100px] flex gap-2">
-      {ads.slice(0, 2).map((ad, index) => (
-        <div
-          key={ad.adId}
-          className="flex-1 h-full rounded-md shadow-md overflow-hidden bg-white cursor-pointer transition-all duration-300 hover:shadow-lg"
-          onClick={() => handleAdClick(ad)}
-        >
-          <Image
-            src={ad.imageUrl}
-            alt={ad.altText || `${ad.businessName} Advertisement`}
-            width={736}
-            height={100}
-            className="w-full h-full object-cover"
-            priority={index === 0}
-          />
-        </div>
-      ))}
+      {/* Always render two slots for split layout */}
+      {[0, 1].map((slotIndex) => {
+        const ad = ads[slotIndex];
+        
+        if (ad) {
+          // Render ad if available
+          return (
+            <div
+              key={ad.adId}
+              className="flex-1 h-full rounded-md shadow-md overflow-hidden bg-white cursor-pointer transition-all duration-300 hover:shadow-lg"
+              onClick={() => handleAdClick(ad)}
+            >
+              <Image
+                src={ad.imageUrl}
+                alt={ad.altText || `${ad.businessName} Advertisement`}
+                width={736}
+                height={100}
+                className="w-full h-full object-cover"
+                priority={slotIndex === 0}
+              />
+            </div>
+          );
+        } else {
+          // Render empty placeholder to maintain layout
+          return (
+            <div
+              key={`empty-${slotIndex}`}
+              className="flex-1 h-full rounded-md bg-gray-100"
+            >
+              {/* Empty slot - maintains layout structure */}
+            </div>
+          );
+        }
+      })}
     </div>
   );
 };

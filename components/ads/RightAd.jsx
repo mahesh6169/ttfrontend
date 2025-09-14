@@ -74,20 +74,18 @@ const RightAd = () => {
     }
   }, [currentIndex, ads]);
 
-  // Show fallback while loading
+  // Reserve space while loading to prevent layout shift
   if (loading) {
     return (
-      <div className="hidden lg:flex w-[160px] h-[600px] animate-pulse bg-gray-200 rounded-md sticky top-16" />
+      <div className="hidden lg:block w-[160px] h-[600px] sticky top-16">
+        {/* Empty space reserved for ad */}
+      </div>
     );
   }
 
-  // Show fallback if no ads
+  // Show nothing if no ads
   if (ads.length === 0) {
-    return (
-      <div className="hidden lg:flex w-[160px] h-[600px] items-center justify-center text-gray-600 bg-gray-200 shadow-md rounded-md sticky top-16">
-        <span className="rotate-90 whitespace-nowrap">Advertisement Space</span>
-      </div>
-    );
+    return null;
   }
 
   const currentAd = ads[currentIndex] || ads[0];
@@ -114,22 +112,40 @@ const RightAd = () => {
   // Split layout - show two ads stacked vertically
   return (
     <div className="hidden lg:flex flex-col w-[160px] h-[600px] gap-2 sticky top-16">
-      {ads.slice(0, 2).map((ad, index) => (
-        <div
-          key={ad.adId}
-          className="flex-1 w-full rounded-md shadow-md overflow-hidden bg-white cursor-pointer transition-all duration-300 hover:shadow-lg"
-          onClick={() => handleAdClick(ad)}
-        >
-          <Image
-            src={ad.imageUrl}
-            alt={ad.altText || `${ad.businessName} Advertisement`}
-            width={160}
-            height={295}
-            className="w-full h-full object-cover"
-            priority={index === 0}
-          />
-        </div>
-      ))}
+      {/* Always render two slots for split layout */}
+      {[0, 1].map((slotIndex) => {
+        const ad = ads[slotIndex];
+        
+        if (ad) {
+          // Render ad if available
+          return (
+            <div
+              key={ad.adId}
+              className="flex-1 w-full rounded-md shadow-md overflow-hidden bg-white cursor-pointer transition-all duration-300 hover:shadow-lg"
+              onClick={() => handleAdClick(ad)}
+            >
+              <Image
+                src={ad.imageUrl}
+                alt={ad.altText || `${ad.businessName} Advertisement`}
+                width={160}
+                height={295}
+                className="w-full h-full object-cover"
+                priority={slotIndex === 0}
+              />
+            </div>
+          );
+        } else {
+          // Render empty placeholder to maintain layout
+          return (
+            <div
+              key={`empty-${slotIndex}`}
+              className="flex-1 w-full rounded-md bg-gray-100"
+            >
+              {/* Empty slot - maintains layout structure */}
+            </div>
+          );
+        }
+      })}
     </div>
   );
 };

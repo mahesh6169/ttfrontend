@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import axios from '@/utils/axiosConfig';
-import { FaPencilAlt, FaSyncAlt, FaPlus } from 'react-icons/fa';
+import { FaPencilAlt, FaSyncAlt, FaPlus, FaTrash } from 'react-icons/fa';
 
 export default function PlacementsPage() {
   const [placements, setPlacements] = useState([]);
@@ -38,6 +38,19 @@ export default function PlacementsPage() {
       fetchPlacements();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update placement');
+    }
+  };
+
+  const handleDelete = async (placement) => {
+    if (!confirm(`Are you sure you want to delete placement ${placement.placementId}?`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/admin/bannerAds/placements/${placement.placementId}`);
+      fetchPlacements();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete placement');
     }
   };
 
@@ -81,6 +94,7 @@ export default function PlacementsPage() {
               key={placement.placementId} 
               placement={placement}
               onEdit={handleEdit}
+              onDelete={handleDelete}
               onToggleStatus={handleToggleStatus}
             />
           ))}
@@ -94,6 +108,7 @@ export default function PlacementsPage() {
               key={placement.placementId} 
               placement={placement}
               onEdit={handleEdit}
+              onDelete={handleDelete}
               onToggleStatus={handleToggleStatus}
             />
           ))}
@@ -127,7 +142,7 @@ export default function PlacementsPage() {
 }
 
 // Placement Card Component
-function PlacementCard({ placement, onEdit, onToggleStatus }) {
+function PlacementCard({ placement, onEdit, onDelete, onToggleStatus }) {
   const isParent = !placement.placementId.includes('-');
   
   return (
@@ -186,6 +201,12 @@ function PlacementCard({ placement, onEdit, onToggleStatus }) {
             className="text-blue-600 hover:text-blue-900"
           >
             <FaPencilAlt className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => onDelete(placement)}
+            className="text-red-600 hover:text-red-900"
+          >
+            <FaTrash className="h-5 w-5" />
           </button>
           <button
             onClick={() => onToggleStatus(placement)}
@@ -418,10 +439,32 @@ function PlacementCreateModal({ onClose, onSuccess }) {
     
     setSaving(true);
     
+    console.log('=== CREATING PLACEMENT ===');
+    console.log('Form data:', formData);
+    console.log('Layout type:', formData.layoutType);
+    
+    // Build the request data
+    const requestData = { ...formData };
+    
+    // If creating a split placement, add children
+    if (formData.layoutType === 'split') {
+      console.log('Creating SPLIT placement, adding children...');
+      requestData.children = [
+        `${formData.placementId}-1`,
+        `${formData.placementId}-2`
+      ];
+      console.log('Added children:', requestData.children);
+    }
+    
+    console.log('Final request data:', requestData);
+    
     try {
-      await axios.post('/admin/bannerAds/placements', formData);
+      const response = await axios.post('/admin/bannerAds/placements', requestData);
+      console.log('Placement created successfully:', response.data);
       onSuccess();
     } catch (error) {
+      console.error('Failed to create placement:', error);
+      console.error('Error response:', error.response?.data);
       alert(error.response?.data?.message || 'Failed to create placement');
     } finally {
       setSaving(false);

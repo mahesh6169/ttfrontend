@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from '@/utils/axiosConfig';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
@@ -16,7 +16,7 @@ const STEPS = [
 
 export default function EditAdPage({ params }) {
   const router = useRouter();
-  const { id } = params;
+  const { id } = use(params);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -27,6 +27,7 @@ export default function EditAdPage({ params }) {
     // Step 1 - Business (read-only)
     businessId: '',
     businessName: '',
+    businessHumanId: '',
     
     // Step 2 - Placement
     placements: [],
@@ -47,7 +48,8 @@ export default function EditAdPage({ params }) {
         full: null,
         half: null
       },
-      images: [] // For new image uploads
+      images: [], // For new image uploads
+      removedExistingImages: [] // Track removed existing images
     },
     
     // Step 5 - Controls
@@ -73,6 +75,7 @@ export default function EditAdPage({ params }) {
       setFormData({
         businessId: adData.businessId._id,
         businessName: adData.businessId.name,
+        businessHumanId: adData.businessId.businessId, // The human-readable BIZ-XXXX ID
         placements: adData.placements,
         layout: adData.layout,
         targetStates: adData.targetStates,
@@ -117,6 +120,11 @@ export default function EditAdPage({ params }) {
   const handleSubmit = async () => {
     setSaving(true);
     try {
+      console.log('=== EDIT FORM SUBMISSION ===');
+      console.log('Form data:', formData);
+      console.log('New images:', formData.creative?.images);
+      console.log('Existing images to keep:', formData.creative?.existingImages);
+      
       // Check if we have new images to upload
       const hasNewImages = formData.creative.images.length > 0;
       
@@ -156,9 +164,23 @@ export default function EditAdPage({ params }) {
         // Add notes
         submitFormData.append('notes', formData.notes);
         
+        // Add existing images that should be kept
+        if (formData.creative.existingImages && formData.creative.existingImages.length > 0) {
+          console.log('\nExisting images to keep:', formData.creative.existingImages);
+          submitFormData.append('existingImages', JSON.stringify(formData.creative.existingImages));
+        } else {
+          console.log('\nNo existing images to keep');
+        }
+        
         // Add image files
+        console.log('\nProcessing new images for upload:');
         formData.creative.images.forEach((image) => {
           if (image.file && image.file instanceof File) {
+            console.log(`Adding ${image.imageType} image:`, {
+              name: image.file.name,
+              size: image.file.size,
+              type: image.file.type
+            });
             submitFormData.append('images', image.file, image.imageType);
           }
         });
@@ -329,7 +351,7 @@ function BusinessStep({ formData }) {
       
       <div className="bg-gray-50 rounded-md p-4">
         <p className="text-sm font-medium text-gray-900">{formData.businessName}</p>
-        <p className="text-xs text-gray-500">Business ID: {formData.businessId}</p>
+        <p className="text-xs text-gray-500">Business ID: {formData.businessHumanId || formData.businessId}</p>
       </div>
     </div>
   );
@@ -369,9 +391,13 @@ function PlacementStep({ formData, setFormData }) {
     return <div className="text-center py-8">Loading placements...</div>;
   }
 
-  // Separate parent and child placements
-  const parentPlacements = placements.filter(p => !p.placementId.includes('-'));
-  const childPlacements = placements.filter(p => p.placementId.includes('-'));
+  // Separate placements based on layout type
+  // Full width: parent placements with layoutType 'full' OR no layoutType
+  const fullPlacements = placements.filter(p => 
+    !p.placementId.includes('-') && p.layoutType !== 'split'
+  );
+  // Half width: child placements (those with '-' in ID)
+  const halfPlacements = placements.filter(p => p.placementId.includes('-'));
 
   return (
     <div className="space-y-4">
@@ -392,7 +418,7 @@ function PlacementStep({ formData, setFormData }) {
           Available Placements ({formData.layout === 'full' ? 'Parent slots only' : 'Child slots only'})
         </label>
         <div className="space-y-2">
-          {(formData.layout === 'full' ? parentPlacements : childPlacements).map(placement => (
+          {(formData.layout === 'full' ? fullPlacements : halfPlacements).map(placement => (
             <label key={placement.placementId} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
               <input
                 type="checkbox"
@@ -520,72 +546,103 @@ function TargetingStep({ formData, setFormData }) {
 // Step 4: Creative Assets
 function CreativeStep({ formData, setFormData, existingAd }) {
   const [images, setImages] = useState(formData.creative?.images || []);
+  const [existingImages, setExistingImages] = useState([]);
   const variant = formData.layout;
 
+  // Initialize existing images on mount or when variant changes
+  useEffect(() => {
+    const existing = [];
+    const existingVariant = existingAd.creative.variants[variant];
+    
+    if (existingVariant?.imageUrl) {
+      existing.push({
+        url: existingVariant.imageUrl,
+        publicId: extractPublicId(existingVariant.imageUrl),
+        imageType: 'desktop',
+        isNew: false,
+        isExisting: true,
+        id: 'existing_desktop',
+        name: 'Current Desktop Image'
+      });
+    }
+    
+    if (existingVariant?.mobile?.imageUrl) {
+      existing.push({
+        url: existingVariant.mobile.imageUrl,
+        publicId: extractPublicId(existingVariant.mobile.imageUrl),
+        imageType: 'mobile',
+        isNew: false,
+        isExisting: true,
+        id: 'existing_mobile',
+        name: 'Current Mobile Image'
+      });
+    }
+    
+    setExistingImages(existing);
+  }, [existingAd, variant]);
+  
+  // Helper to extract Cloudinary public ID
+  function extractPublicId(url) {
+    if (!url) return null;
+    const matches = url.match(/\/v\d+\/(.+)\.\w+$/);
+    return matches ? matches[1] : null;
+  }
+
   const handleImagesChange = (newImages) => {
-    setImages(newImages);
+    console.log('📷 New images changed:', newImages);
+    
+    // Only keep new images (File objects)
+    const onlyNewImages = newImages.filter(img => img.isNew && img.file instanceof File);
+    
+    setImages(onlyNewImages);
+    
     // Store images in formData for later submission
     setFormData({
       ...formData,
       creative: {
         ...formData.creative,
-        images: newImages
+        images: onlyNewImages,
+        existingImages: existingImages // Keep track of existing images
+      }
+    });
+  };
+  
+  const handleExistingImagesChange = (updatedExistingImages) => {
+    console.log('📁 Existing images changed:', updatedExistingImages);
+    setExistingImages(updatedExistingImages);
+    
+    // Update formData
+    setFormData({
+      ...formData,
+      creative: {
+        ...formData.creative,
+        images: images,
+        existingImages: updatedExistingImages
       }
     });
   };
 
-  // Prepare existing images for display
-  const existingImages = [];
-  const existingVariant = existingAd.creative.variants[variant];
   
-  if (existingVariant?.imageUrl) {
-    existingImages.push({
-      url: existingVariant.imageUrl,
-      imageType: 'desktop',
-      isNew: false
-    });
-  }
-  
-  if (existingVariant?.mobile?.imageUrl) {
-    existingImages.push({
-      url: existingVariant.mobile.imageUrl,
-      imageType: 'mobile',
-      isNew: false
-    });
+  // Helper to extract Cloudinary public ID
+  function extractPublicId(url) {
+    if (!url) return null;
+    const matches = url.match(/\/v\d+\/(.+)\.\w+$/);
+    return matches ? matches[1] : null;
   }
 
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-medium text-gray-900">Creative Assets</h2>
       
-      {/* Current Images Display */}
-      <div className="bg-gray-50 rounded-md p-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Current Images</h3>
-        <div className="space-y-2">
-          {existingImages.map((img, idx) => (
-            <div key={idx} className="flex items-center space-x-2">
-              <img 
-                src={img.url} 
-                alt={`${img.imageType} banner`}
-                className="h-16 w-32 object-cover rounded border border-gray-200"
-              />
-              <span className="text-sm text-gray-600 capitalize">{img.imageType}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Image Uploader */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Upload New Images (Optional)</h3>
-        <p className="text-xs text-gray-500 mb-4">Upload new images to replace existing ones</p>
-        <ImageUploader
-          images={images}
-          onImagesChange={handleImagesChange}
-          variant={variant}
-          mode="edit"
-        />
-      </div>
+      {/* Image Uploader with existing images */}
+      <ImageUploader
+        images={images}
+        existingImages={existingImages}
+        onImagesChange={handleImagesChange}
+        onExistingImagesChange={handleExistingImagesChange}
+        variant={variant}
+        mode="edit"
+      />
 
       {/* Creative Details */}
       <div className="space-y-6">
@@ -645,7 +702,7 @@ function CreativeStep({ formData, setFormData, existingAd }) {
         </div>
 
         {/* Mobile Creative (Optional) */}
-        {(existingVariant?.mobile || images.some(img => img.imageType === 'mobile')) && (
+        {(existingImages.some(img => img.imageType === 'mobile') || images.some(img => img.imageType === 'mobile')) && (
           <div className="space-y-4 border-t pt-4">
             <h3 className="text-sm font-medium text-gray-900">Mobile Creative Details (Optional)</h3>
             <p className="text-xs text-gray-500">Leave empty to use desktop values</p>
