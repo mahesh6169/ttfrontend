@@ -165,10 +165,6 @@ function PlacementCard({ placement, onEdit, onDelete, onToggleStatus }) {
           <p className="text-sm text-gray-500 mt-1">{placement.name}</p>
           
           <div className="mt-2 space-y-1 text-sm">
-            <div>
-              <span className="text-gray-500">Visibility:</span>{' '}
-              <span className="font-medium">{placement.visibility}</span>
-            </div>
             {isParent && (
               <div>
                 <span className="text-gray-500">Layout:</span>{' '}
@@ -236,7 +232,6 @@ function PlacementCard({ placement, onEdit, onDelete, onToggleStatus }) {
 function PlacementEditModal({ placement, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: placement.name,
-    visibility: placement.visibility,
     layoutType: placement.layoutType || '',
     dimensions: placement.dimensions || { 
       desktop: { width: '', height: '' },
@@ -289,21 +284,6 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
               />
             </div>
 
-            {/* Visibility */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Visibility
-              </label>
-              <select
-                value={formData.visibility}
-                onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              >
-                <option value="all">All Devices</option>
-                <option value="desktopOnly">Desktop Only</option>
-                <option value="mobileOnly">Mobile Only</option>
-              </select>
-            </div>
 
             {/* Layout Type (only for parent) */}
             {isParent && (
@@ -480,7 +460,6 @@ function PlacementCreateModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     placementId: '',
     name: '',
-    visibility: 'all',
     layoutType: 'full',
     dimensions: {
       desktop: {
@@ -582,21 +561,6 @@ function PlacementCreateModal({ onClose, onSuccess }) {
             />
           </div>
 
-          {/* Visibility */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Visibility
-            </label>
-            <select
-              value={formData.visibility}
-              onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            >
-              <option value="all">All Devices</option>
-              <option value="desktopOnly">Desktop Only</option>
-              <option value="mobileOnly">Mobile Only</option>
-            </select>
-          </div>
 
           {/* Layout Type */}
           <div>
