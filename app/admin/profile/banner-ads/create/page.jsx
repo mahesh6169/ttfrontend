@@ -287,12 +287,10 @@ function BusinessStep({ formData, setFormData }) {
 // Step 2: Placement Selection
 function PlacementStep({ formData, setFormData }) {
   const [placements, setPlacements] = useState([]);
-  const [usedPlacements, setUsedPlacements] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPlacements();
-    fetchUsedPlacements();
   }, []);
 
   const fetchPlacements = async () => {
@@ -306,22 +304,6 @@ function PlacementStep({ formData, setFormData }) {
     }
   };
 
-  const fetchUsedPlacements = async () => {
-    try {
-      // Get all active ads to see which placements are in use
-      const response = await axios.get('/admin/bannerAds/ads', {
-        params: { status: 'active' }
-      });
-      const ads = response.data.ads || [];
-      const used = new Set();
-      ads.forEach(ad => {
-        ad.placements.forEach(p => used.add(p));
-      });
-      setUsedPlacements(Array.from(used));
-    } catch (error) {
-      console.error('Error fetching used placements:', error);
-    }
-  };
 
   const handlePlacementToggle = (placementId) => {
     const newPlacements = formData.placements.includes(placementId)
@@ -412,31 +394,22 @@ function PlacementStep({ formData, setFormData }) {
         </label>
         <div className="space-y-2">
           {(formData.layout === 'full' ? fullPlacements : halfPlacements).map(placement => {
-            const isUsed = usedPlacements.includes(placement.placementId);
             return (
               <label 
                 key={placement.placementId} 
-                className={`flex items-center p-4 border rounded-lg ${
-                  isUsed ? 'bg-gray-50 border-gray-300 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'
-                }`}
+                className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
               >
                 <input
                   type="checkbox"
                   checked={formData.placements.includes(placement.placementId)}
                   onChange={() => handlePlacementToggle(placement.placementId)}
-                  disabled={isUsed}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <div className="ml-3 flex-1">
                   <div className="flex items-center justify-between">
-                    <p className={`text-sm font-medium ${isUsed ? 'text-gray-500' : 'text-gray-900'}`}>
+                    <p className="text-sm font-medium text-gray-900">
                       {placement.placementId} - {placement.name}
                     </p>
-                    {isUsed && (
-                      <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
-                        In Use
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-gray-500">
                     Desktop: {placement.dimensions?.desktop?.width || placement.dimensions?.width} × {placement.dimensions?.desktop?.height || placement.dimensions?.height}

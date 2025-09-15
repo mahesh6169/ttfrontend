@@ -165,7 +165,7 @@ const RightAd = () => {
   if (layoutType === 'full') {
     return (
       <div 
-        className="hidden lg:block overflow-hidden cursor-pointer transition-all duration-300 sticky top-16"
+        className="hidden lg:block overflow-hidden cursor-pointer sticky top-16"
         style={{ width: `${adWidth}px`, height: `${adHeight}px` }}
         onClick={() => handleAdClick(currentAd)}
       >
@@ -196,7 +196,7 @@ const RightAd = () => {
           return (
             <div
               key={ad.adId}
-              className="overflow-hidden cursor-pointer transition-all duration-300"
+              className="overflow-hidden cursor-pointer"
               style={{ 
                 width: `${childWidth}px`,
                 height: `${childHeight}px`

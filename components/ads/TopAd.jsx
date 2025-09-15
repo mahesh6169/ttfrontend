@@ -116,8 +116,11 @@ const TopAd = () => {
 
   // Reserve space while loading to prevent layout shift
   if (loading) {
+    // Use actual expected dimensions to prevent layout shift
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const loadingHeight = isMobile ? '50px' : '90px';
     return (
-      <div className="w-full h-[100px]">
+      <div className="w-full" style={{ height: loadingHeight }}>
         {/* Empty space reserved for ad */}
       </div>
     );
@@ -216,7 +219,7 @@ const TopAd = () => {
   if (layoutType === 'full') {
     return (
       <div 
-        className="mx-auto overflow-hidden cursor-pointer transition-all duration-300"
+        className="mx-auto overflow-hidden cursor-pointer"
         style={{ width: `${adWidth}px`, height: `${adHeight}px` }}
         onClick={() => handleAdClick(currentAd)}
       >
@@ -257,7 +260,7 @@ const TopAd = () => {
           return (
             <div
               key={ad.adId}
-              className="overflow-hidden cursor-pointer transition-all duration-300"
+              className="overflow-hidden cursor-pointer"
               style={{ 
                 width: `${childWidth}px`,
                 height: `${childHeight}px`
