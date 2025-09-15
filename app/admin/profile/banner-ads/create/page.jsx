@@ -297,9 +297,7 @@ function PlacementStep({ formData, setFormData }) {
 
   const fetchPlacements = async () => {
     try {
-      const response = await axios.get('/admin/bannerAds/placements', {
-        params: { status: 'active' }
-      });
+      const response = await axios.get('/admin/bannerAds/placements');
       setPlacements(response.data.placements || []);
     } catch (error) {
       console.error('Error fetching placements:', error);
@@ -338,12 +336,24 @@ function PlacementStep({ formData, setFormData }) {
   }
 
   // Separate placements based on layout type
-  // Full width: parent placements with layoutType 'full' OR no layoutType
+  // Full width: parent placements with layoutType 'full'
   const fullPlacements = placements.filter(p => 
-    !p.placementId.includes('-') && p.layoutType !== 'split'
+    p.layoutType === 'full'
   );
-  // Half width: child placements (those with '-' in ID)
-  const halfPlacements = placements.filter(p => p.placementId.includes('-'));
+  
+  // Half width: extract children from split placements
+  const halfPlacements = [];
+  placements.forEach(p => {
+    if (p.layoutType === 'split' && p.children) {
+      p.children.forEach(child => {
+        halfPlacements.push({
+          ...child,
+          parentId: p.placementId,
+          parentName: p.name
+        });
+      });
+    }
+  });
 
   return (
     <div className="space-y-4">
@@ -429,7 +439,10 @@ function PlacementStep({ formData, setFormData }) {
                     )}
                   </div>
                   <p className="text-xs text-gray-500">
-                    {placement.dimensions?.width} × {placement.dimensions?.height} • {placement.visibility}
+                    Desktop: {placement.dimensions?.desktop?.width || placement.dimensions?.width} × {placement.dimensions?.desktop?.height || placement.dimensions?.height}
+                    {placement.dimensions?.mobile?.width && (
+                      <span> • Mobile: {placement.dimensions.mobile.width} × {placement.dimensions.mobile.height}</span>
+                    )}
                   </p>
                 </div>
               </label>
@@ -601,10 +614,10 @@ function CreativeStep({ formData, setFormData }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Destination URL *</label>
+            <label className="block text-sm font-medium text-gray-700">Destination URL</label>
             <input
               type="url"
-              placeholder="https://example.com"
+              placeholder="https://example.com (optional)"
               value={formData.creative.variants[variant]?.destination?.url || ''}
               onChange={(e) => setFormData({
                 ...formData,
@@ -614,16 +627,15 @@ function CreativeStep({ formData, setFormData }) {
                     ...formData.creative.variants,
                     [variant]: {
                       ...formData.creative.variants[variant],
-                      destination: {
+                      destination: e.target.value ? {
                         type: e.target.value.startsWith('http') ? 'external' : 'internal',
                         url: e.target.value
-                      }
+                      } : null
                     }
                   }
                 }
               })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              required
             />
           </div>
         </div>

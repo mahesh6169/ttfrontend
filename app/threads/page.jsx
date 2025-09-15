@@ -22,6 +22,7 @@ import { format, differenceInDays } from 'date-fns';
 import { toast } from 'react-toastify';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import PostTopicButton from '@/components/buttons/PostTopicButton';
+import BottomAd from '@/components/ads/BottomAd';
 
 const libraries = ['places'];
 
@@ -677,49 +678,56 @@ const ThreadsPage = () => {
           <div className="text-center p-4">Loading threads...</div>
         ) : threads.length > 0 ? (
           <div className="space-y-3 px-3 sm:px-4 mt-4">
-            {threads.map((thread) => (
-              <Link
-                key={thread._id}
-                href={`/threads/views/${thread._id}`}
-                className="block border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
-              >
-                <div className="flex gap-3 p-3">
-                  {/* Left content - Text section */}
-                  <div className="flex-1 min-w-0">
-                    {/* Title */}
-                    <h2 className="text-sm sm:text-base font-bold text-gray-800 mb-1">{thread.title}</h2>
-                    
-                    {/* Question/Description */}
-                    <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-2">{thread.question}</p>
-                    
-                    {/* Metadata */}
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                      <span>{thread.ownerName || 'Former Member'}</span>
-                      <span>•</span>
-                      <span>{getPostedText(thread.createdAt)}</span>
-                      <span>•</span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full ${
-                        thread.commentCount > 0 
-                          ? 'bg-teal-700 text-lime-100' 
-                          : 'bg-gray-300 text-gray-700'
-                      }`}>
-                        {thread.commentCount} {thread.commentCount === 1 ? 'comment' : 'comments'}
-                      </span>
+            {threads.map((thread, index) => (
+              <React.Fragment key={thread._id}>
+                <Link
+                  href={`/threads/views/${thread._id}`}
+                  className="block border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+                >
+                  <div className="flex gap-3 p-3">
+                    {/* Left content - Text section */}
+                    <div className="flex-1 min-w-0">
+                      {/* Title */}
+                      <h2 className="text-sm sm:text-base font-bold text-gray-800 mb-1">{thread.title}</h2>
+                      
+                      {/* Question/Description */}
+                      <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-2">{thread.question}</p>
+                      
+                      {/* Metadata */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                        <span>{thread.ownerName || 'Former Member'}</span>
+                        <span>•</span>
+                        <span>{getPostedText(thread.createdAt)}</span>
+                        <span>•</span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full ${
+                          thread.commentCount > 0 
+                            ? 'bg-teal-700 text-lime-100' 
+                            : 'bg-gray-300 text-gray-700'
+                        }`}>
+                          {thread.commentCount} {thread.commentCount === 1 ? 'comment' : 'comments'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Right image - Optimized for horizontal space */}
-                  {thread.images?.[0]?.url && (
-                    <div className="flex-shrink-0">
-                      <img
-                        src={thread.images[0].url}
-                        alt="Thread"
-                        className="w-20 h-20 sm:w-32 sm:h-24 md:w-40 md:h-28 object-cover rounded"
-                      />
-                    </div>
-                  )}
-                </div>
-              </Link>
+                    {/* Right image - Optimized for horizontal space */}
+                    {thread.images?.[0]?.url && (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={thread.images[0].url}
+                          alt="Thread"
+                          className="w-20 h-20 sm:w-32 sm:h-24 md:w-40 md:h-28 object-cover rounded"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </Link>
+                {/* Insert BottomAd after the 3rd thread, or after the last thread if 2-3 threads */}
+                {((index === 2 && threads.length >= 4) || (index === threads.length - 1 && threads.length >= 2 && threads.length < 4)) && (
+                  <div className="w-full">
+                    <BottomAd />
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
         ) : (

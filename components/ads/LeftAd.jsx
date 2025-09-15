@@ -9,6 +9,7 @@ const LeftAd = () => {
   const [loading, setLoading] = useState(true);
   const [layoutType, setLayoutType] = useState('full');
   const [dimensions, setDimensions] = useState(null);
+  const [childDimensions, setChildDimensions] = useState(null);
 
   // Fetch ads from API
   const fetchAds = useCallback(async () => {
@@ -19,6 +20,7 @@ const LeftAd = () => {
         setAds(response.data.ads || []);
         setLayoutType(response.data.layoutType);
         setDimensions(response.data.dimensions);
+        setChildDimensions(response.data.childDimensions);
         
         // Track impressions for the first ad
         if (response.data.ads && response.data.ads[0]) {
@@ -44,12 +46,18 @@ const LeftAd = () => {
   // Track click
   const handleAdClick = async (ad) => {
     try {
-      // For external links, use the click tracking endpoint
-      if (ad.destinationType === 'external') {
-        window.open(`${process.env.NEXT_PUBLIC_API_BASE_URL}/bannerAds/click/${ad.adId}`, '_blank');
+      // Only redirect if destination exists
+      if (ad.destinationUrl) {
+        // For external links, use the click tracking endpoint
+        if (ad.destinationType === 'external') {
+          window.open(`${process.env.NEXT_PUBLIC_API_BASE_URL}/bannerAds/click/${ad.adId}`, '_blank');
+        } else {
+          // For internal links, use the click tracking endpoint which will redirect
+          window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL}/bannerAds/click/${ad.adId}`;
+        }
       } else {
-        // For internal links, use the click tracking endpoint which will redirect
-        window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL}/bannerAds/click/${ad.adId}`;
+        // No destination - just track the click
+        await axios.post(`/bannerAds/click/${ad.adId}`);
       }
     } catch (error) {
       console.error('Error tracking click:', error);
@@ -89,8 +97,24 @@ const LeftAd = () => {
   // Define fallback dimensions
   const fallbackWidth = 160;
   const fallbackHeight = 600;
-  const adWidth = dimensions?.width || fallbackWidth;
-  const adHeight = dimensions?.height || fallbackHeight;
+  
+  // For split layouts, calculate total container size from children
+  let adWidth, adHeight;
+  if (layoutType === 'split' && childDimensions) {
+    const childDim = childDimensions.desktop;
+    if (childDim?.width && childDim?.height) {
+      // For vertical split: keep width same, double the height
+      adWidth = childDim.width;
+      adHeight = childDim.height * 2 + 8; // +8 for gap
+    } else {
+      adWidth = fallbackWidth;
+      adHeight = fallbackHeight;
+    }
+  } else {
+    // For full layouts, use dimensions or fallback
+    adWidth = dimensions?.width || fallbackWidth;
+    adHeight = dimensions?.height || fallbackHeight;
+  }
 
   // If no ads and no layout type, return null
   if (ads.length === 0 && !layoutType) {
@@ -112,14 +136,24 @@ const LeftAd = () => {
     if (layoutType === 'split') {
       return (
         <div className="hidden lg:flex flex-col gap-2 sticky top-16" style={{ width: `${adWidth}px`, height: `${adHeight}px` }}>
-          {[0, 1].map((slotIndex) => (
-            <div
-              key={`empty-${slotIndex}`}
-              className="flex-1 w-full rounded-md border border-gray-300 flex items-center justify-center"
-            >
-              <span className="text-gray-500">Advertisement</span>
-            </div>
-          ))}
+          {[0, 1].map((slotIndex) => {
+            // Use child dimensions if available, otherwise fallback
+            const childWidth = childDimensions?.desktop?.width || adWidth;
+            const childHeight = childDimensions?.desktop?.height || Math.floor((adHeight - 8) / 2);
+            
+            return (
+              <div
+                key={`empty-${slotIndex}`}
+                className="rounded-md border border-gray-300 flex items-center justify-center"
+                style={{ 
+                  width: `${childWidth}px`,
+                  height: `${childHeight}px`
+                }}
+              >
+                <span className="text-gray-500">Advertisement</span>
+              </div>
+            );
+          })}
         </div>
       );
     }
@@ -153,21 +187,28 @@ const LeftAd = () => {
       {/* Always render two slots for split layout */}
       {[0, 1].map((slotIndex) => {
         const ad = ads[slotIndex];
+        // Use child dimensions if available, otherwise fallback
+        const childWidth = childDimensions?.desktop?.width || adWidth;
+        const childHeight = childDimensions?.desktop?.height || Math.floor((adHeight - 8) / 2);
         
         if (ad) {
           // Render ad if available
           return (
             <div
               key={ad.adId}
-              className="flex-1 w-full overflow-hidden cursor-pointer transition-all duration-300"
+              className="overflow-hidden cursor-pointer transition-all duration-300"
+              style={{ 
+                width: `${childWidth}px`,
+                height: `${childHeight}px`
+              }}
               onClick={() => handleAdClick(ad)}
             >
               <Image
                 src={ad.imageUrl}
                 alt={ad.altText || `${ad.businessName} Advertisement`}
-                width={adWidth}
-                height={Math.floor(adHeight / 2) - 4}
-                className="mx-auto h-full object-contain"
+                width={childWidth}
+                height={childHeight}
+                className="w-full h-full object-fill"
                 priority={slotIndex === 0}
               />
             </div>
@@ -177,7 +218,11 @@ const LeftAd = () => {
           return (
             <div
               key={`empty-${slotIndex}`}
-              className="flex-1 w-full rounded-md border border-gray-300 flex items-center justify-center"
+              className="rounded-md border border-gray-300 flex items-center justify-center"
+              style={{ 
+                width: `${childWidth}px`,
+                height: `${childHeight}px`
+              }}
             >
               <span className="text-gray-500">Advertisement</span>
             </div>

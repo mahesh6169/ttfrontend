@@ -674,10 +674,10 @@ function CreativeStep({ formData, setFormData, existingAd }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Destination URL *</label>
+            <label className="block text-sm font-medium text-gray-700">Destination URL</label>
             <input
               type="url"
-              placeholder="https://example.com"
+              placeholder="https://example.com (optional)"
               value={formData.creative.variants[variant]?.destination?.url || ''}
               onChange={(e) => setFormData({
                 ...formData,
@@ -687,16 +687,15 @@ function CreativeStep({ formData, setFormData, existingAd }) {
                     ...formData.creative.variants,
                     [variant]: {
                       ...formData.creative.variants[variant],
-                      destination: {
+                      destination: e.target.value ? {
                         type: e.target.value.startsWith('http') ? 'external' : 'internal',
                         url: e.target.value
-                      }
+                      } : null
                     }
                   }
                 }
               })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              required
             />
           </div>
         </div>

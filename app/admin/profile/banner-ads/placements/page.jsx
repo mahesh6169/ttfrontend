@@ -30,16 +30,6 @@ export default function PlacementsPage() {
     setShowEditModal(true);
   };
 
-  const handleToggleStatus = async (placement) => {
-    try {
-      await axios.put(`/admin/bannerAds/placements/${placement.placementId}`, {
-        status: placement.status === 'active' ? 'paused' : 'active'
-      });
-      fetchPlacements();
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update placement');
-    }
-  };
 
   const handleDelete = async (placement) => {
     if (!confirm(`Are you sure you want to delete placement ${placement.placementId}?`)) {
@@ -95,7 +85,6 @@ export default function PlacementsPage() {
               placement={placement}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onToggleStatus={handleToggleStatus}
             />
           ))}
         </div>
@@ -109,7 +98,6 @@ export default function PlacementsPage() {
               placement={placement}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onToggleStatus={handleToggleStatus}
             />
           ))}
         </div>
@@ -142,7 +130,7 @@ export default function PlacementsPage() {
 }
 
 // Placement Card Component
-function PlacementCard({ placement, onEdit, onDelete, onToggleStatus }) {
+function PlacementCard({ placement, onEdit, onDelete }) {
   const isParent = !placement.placementId.includes('-');
   
   return (
@@ -153,13 +141,6 @@ function PlacementCard({ placement, onEdit, onDelete, onToggleStatus }) {
             <h3 className="text-lg font-medium text-gray-900">
               {placement.placementId}
             </h3>
-            <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-              placement.status === 'active' 
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}>
-              {placement.status}
-            </span>
           </div>
           
           <p className="text-sm text-gray-500 mt-1">{placement.name}</p>
@@ -185,16 +166,18 @@ function PlacementCard({ placement, onEdit, onDelete, onToggleStatus }) {
                 </span>
               </div>
             )}
-            <div>
-              <span className="text-gray-500">Max Ads:</span>{' '}
-              <span className="font-medium">{placement.maxAds || 1}</span>
-            </div>
           </div>
 
           {placement.children && placement.children.length > 0 && (
-            <div className="mt-2">
-              <span className="text-sm text-gray-500">Children:</span>{' '}
-              <span className="text-sm font-medium">{placement.children.join(', ')}</span>
+            <div className="mt-3 space-y-2">
+              <span className="text-sm font-medium text-gray-700">Children:</span>
+              {placement.children.map(child => (
+                <div key={child.placementId} className="ml-4 text-xs text-gray-600">
+                  <span className="font-medium">{child.placementId}:</span>{' '}
+                  Desktop {child.dimensions?.desktop?.width}×{child.dimensions?.desktop?.height},{' '}
+                  Mobile {child.dimensions?.mobile?.width}×{child.dimensions?.mobile?.height}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -212,16 +195,6 @@ function PlacementCard({ placement, onEdit, onDelete, onToggleStatus }) {
           >
             <FaTrash className="h-5 w-5" />
           </button>
-          <button
-            onClick={() => onToggleStatus(placement)}
-            className={`px-3 py-1 text-xs font-medium rounded-md ${
-              placement.status === 'active'
-                ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                : 'bg-green-100 text-green-700 hover:bg-green-200'
-            }`}
-          >
-            {placement.status === 'active' ? 'Pause' : 'Activate'}
-          </button>
         </div>
       </div>
     </div>
@@ -237,9 +210,8 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
       desktop: { width: '', height: '' },
       mobile: { width: '', height: '' }
     },
-    status: placement.status,
-    maxAds: placement.maxAds || 1,
-    defaultWeight: placement.defaultWeight || 10
+    children: placement.children || [],
+    mobileStackVertical: placement.mobileStackVertical !== undefined ? placement.mobileStackVertical : true
   });
   const [saving, setSaving] = useState(false);
 
@@ -387,50 +359,131 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
               </div>
             </div>
 
-            {/* Max Ads */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Max Rotating Ads
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={formData.maxAds}
-                onChange={(e) => setFormData({ ...formData, maxAds: parseInt(e.target.value) || 1 })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
+            {/* Mobile Stack Direction (only for split layout) */}
+            {isParent && formData.layoutType === 'split' && (
+              <div>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.mobileStackVertical}
+                    onChange={(e) => setFormData({ ...formData, mobileStackVertical: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Stack children vertically on mobile
+                  </span>
+                </label>
+              </div>
+            )}
 
-            {/* Default Weight */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Default Rotation Weight
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="100"
-                value={formData.defaultWeight}
-                onChange={(e) => setFormData({ ...formData, defaultWeight: parseInt(e.target.value) || 10 })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
+            {/* Children Dimensions (only for split layout) */}
+            {isParent && formData.layoutType === 'split' && formData.children && formData.children.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-900">Children Placements</h4>
+                {formData.children.map((child, index) => (
+                  <div key={child.placementId} className="p-4 border border-gray-200 rounded-md space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{child.placementId} - {child.name}</span>
+                    </div>
+                    
+                    {/* Child Desktop Dimensions */}
+                    <div>
+                      <label className="block text-xs text-gray-600">Desktop</label>
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        <input
+                          type="number"
+                          placeholder="Width"
+                          value={child.dimensions?.desktop?.width || ''}
+                          onChange={(e) => {
+                            const newChildren = [...formData.children];
+                            newChildren[index] = {
+                              ...child,
+                              dimensions: {
+                                ...child.dimensions,
+                                desktop: {
+                                  ...child.dimensions?.desktop,
+                                  width: parseInt(e.target.value) || ''
+                                }
+                              }
+                            };
+                            setFormData({ ...formData, children: newChildren });
+                          }}
+                          className="block w-full text-sm rounded-md border-gray-300 shadow-sm"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Height"
+                          value={child.dimensions?.desktop?.height || ''}
+                          onChange={(e) => {
+                            const newChildren = [...formData.children];
+                            newChildren[index] = {
+                              ...child,
+                              dimensions: {
+                                ...child.dimensions,
+                                desktop: {
+                                  ...child.dimensions?.desktop,
+                                  height: parseInt(e.target.value) || ''
+                                }
+                              }
+                            };
+                            setFormData({ ...formData, children: newChildren });
+                          }}
+                          className="block w-full text-sm rounded-md border-gray-300 shadow-sm"
+                        />
+                      </div>
+                    </div>
 
-            {/* Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Status
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              >
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-              </select>
-            </div>
+                    {/* Child Mobile Dimensions */}
+                    <div>
+                      <label className="block text-xs text-gray-600">Mobile</label>
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        <input
+                          type="number"
+                          placeholder="Width"
+                          value={child.dimensions?.mobile?.width || ''}
+                          onChange={(e) => {
+                            const newChildren = [...formData.children];
+                            newChildren[index] = {
+                              ...child,
+                              dimensions: {
+                                ...child.dimensions,
+                                mobile: {
+                                  ...child.dimensions?.mobile,
+                                  width: parseInt(e.target.value) || ''
+                                }
+                              }
+                            };
+                            setFormData({ ...formData, children: newChildren });
+                          }}
+                          className="block w-full text-sm rounded-md border-gray-300 shadow-sm"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Height"
+                          value={child.dimensions?.mobile?.height || ''}
+                          onChange={(e) => {
+                            const newChildren = [...formData.children];
+                            newChildren[index] = {
+                              ...child,
+                              dimensions: {
+                                ...child.dimensions,
+                                mobile: {
+                                  ...child.dimensions?.mobile,
+                                  height: parseInt(e.target.value) || ''
+                                }
+                              }
+                            };
+                            setFormData({ ...formData, children: newChildren });
+                          }}
+                          className="block w-full text-sm rounded-md border-gray-300 shadow-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
           </div>
 
           <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
@@ -471,9 +524,8 @@ function PlacementCreateModal({ onClose, onSuccess }) {
         height: ''
       }
     },
-    status: 'active',
-    maxAds: 5,
-    defaultWeight: 10
+    children: [],
+    mobileStackVertical: true
   });
   const [saving, setSaving] = useState(false);
 
@@ -494,16 +546,6 @@ function PlacementCreateModal({ onClose, onSuccess }) {
     
     // Build the request data
     const requestData = { ...formData };
-    
-    // If creating a split placement, add children
-    if (formData.layoutType === 'split') {
-      console.log('Creating SPLIT placement, adding children...');
-      requestData.children = [
-        `${formData.placementId}-1`,
-        `${formData.placementId}-2`
-      ];
-      console.log('Added children:', requestData.children);
-    }
     
     console.log('Final request data:', requestData);
     
@@ -534,7 +576,10 @@ function PlacementCreateModal({ onClose, onSuccess }) {
             <input
               type="text"
               value={formData.placementId}
-              onChange={(e) => setFormData({ ...formData, placementId: e.target.value.toUpperCase() })}
+              onChange={(e) => {
+                const id = e.target.value.toUpperCase();
+                setFormData({ ...formData, placementId: id });
+              }}
               placeholder="e.g. H3, V3"
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               required
@@ -569,7 +614,9 @@ function PlacementCreateModal({ onClose, onSuccess }) {
             </label>
             <select
               value={formData.layoutType}
-              onChange={(e) => setFormData({ ...formData, layoutType: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, layoutType: e.target.value });
+              }}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="full">Full (single ad)</option>
@@ -578,132 +625,295 @@ function PlacementCreateModal({ onClose, onSuccess }) {
           </div>
 
           {/* Desktop Dimensions */}
-          <div>
+          <div className={formData.layoutType === 'split' ? 'opacity-50' : ''}>
             <label className="block text-sm font-medium text-gray-700">
               Desktop Dimensions (px)
+              {formData.layoutType === 'split' && (
+                <span className="text-xs text-gray-500 ml-2">Not used for split layouts - configure children below</span>
+              )}
             </label>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <input
                 type="number"
                 placeholder="Width"
                 value={formData.dimensions.desktop.width}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  dimensions: { 
-                    ...formData.dimensions, 
-                    desktop: { ...formData.dimensions.desktop, width: parseInt(e.target.value) || '' }
-                  }
-                })}
+                onChange={(e) => {
+                  const newFormData = { 
+                    ...formData, 
+                    dimensions: { 
+                      ...formData.dimensions, 
+                      desktop: { ...formData.dimensions.desktop, width: parseInt(e.target.value) || '' }
+                    }
+                  };
+                  setFormData(newFormData);
+                  
+                }}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                required
+                required={formData.layoutType !== 'split'}
+                disabled={formData.layoutType === 'split'}
               />
               <input
                 type="number"
                 placeholder="Height"
                 value={formData.dimensions.desktop.height}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  dimensions: { 
-                    ...formData.dimensions, 
-                    desktop: { ...formData.dimensions.desktop, height: parseInt(e.target.value) || '' }
-                  }
-                })}
+                onChange={(e) => {
+                  const newFormData = { 
+                    ...formData, 
+                    dimensions: { 
+                      ...formData.dimensions, 
+                      desktop: { ...formData.dimensions.desktop, height: parseInt(e.target.value) || '' }
+                    }
+                  };
+                  setFormData(newFormData);
+                  
+                }}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                required
+                required={formData.layoutType !== 'split'}
+                disabled={formData.layoutType === 'split'}
               />
             </div>
-            <p className="mt-1 text-xs text-gray-500">
-              Horizontal: 728x90 (full), 720x90 (split parent)<br/>
-              Vertical: 160x600 (full), 160x592 (split parent)
-            </p>
           </div>
 
           {/* Mobile Dimensions */}
-          <div>
+          <div className={formData.layoutType === 'split' ? 'opacity-50' : ''}>
             <label className="block text-sm font-medium text-gray-700">
               Mobile Dimensions (px)
+              {formData.layoutType === 'split' && (
+                <span className="text-xs text-gray-500 ml-2">Not used for split layouts - configure children below</span>
+              )}
             </label>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <input
                 type="number"
                 placeholder="Width"
                 value={formData.dimensions.mobile.width}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  dimensions: { 
-                    ...formData.dimensions, 
-                    mobile: { ...formData.dimensions.mobile, width: parseInt(e.target.value) || '' }
-                  }
-                })}
+                onChange={(e) => {
+                  const newFormData = { 
+                    ...formData, 
+                    dimensions: { 
+                      ...formData.dimensions, 
+                      mobile: { ...formData.dimensions.mobile, width: parseInt(e.target.value) || '' }
+                    }
+                  };
+                  setFormData(newFormData);
+                  
+                }}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                disabled={formData.layoutType === 'split'}
               />
               <input
                 type="number"
                 placeholder="Height"
                 value={formData.dimensions.mobile.height}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  dimensions: { 
-                    ...formData.dimensions, 
-                    mobile: { ...formData.dimensions.mobile, height: parseInt(e.target.value) || '' }
-                  }
-                })}
+                onChange={(e) => {
+                  const newFormData = { 
+                    ...formData, 
+                    dimensions: { 
+                      ...formData.dimensions, 
+                      mobile: { ...formData.dimensions.mobile, height: parseInt(e.target.value) || '' }
+                    }
+                  };
+                  setFormData(newFormData);
+                  
+                }}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                disabled={formData.layoutType === 'split'}
               />
             </div>
-            <p className="mt-1 text-xs text-gray-500">
-              Horizontal: 320x50<br/>
-              Vertical: Not shown on mobile
-            </p>
           </div>
 
-          {/* Max Ads */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Max Rotating Ads
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="10"
-              value={formData.maxAds}
-              onChange={(e) => setFormData({ ...formData, maxAds: parseInt(e.target.value) || 1 })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              How many ads can rotate in this placement
-            </p>
-          </div>
 
-          {/* Default Weight */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Default Rotation Weight
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="100"
-              value={formData.defaultWeight}
-              onChange={(e) => setFormData({ ...formData, defaultWeight: parseInt(e.target.value) || 10 })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-          </div>
+          {/* Mobile Stack Direction for Split Layout */}
+          {formData.layoutType === 'split' && (
+            <div>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.mobileStackVertical}
+                  onChange={(e) => setFormData({ ...formData, mobileStackVertical: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">
+                  Stack children vertically on mobile (uncheck for side-by-side)
+                </span>
+              </label>
+            </div>
+          )}
 
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Status
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            >
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-            </select>
-          </div>
+          {/* Editable Children Section for Split Layout */}
+          {formData.layoutType === 'split' && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-gray-900">Children Placements</h3>
+              <p className="text-xs text-gray-600">
+                Expected format: {formData.placementId}-1, {formData.placementId}-2 (used by serving controller)
+              </p>
+              
+              {formData.children.length === 0 && (
+                <div className="text-sm text-gray-500">
+                  No children defined. 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newChildren = [...formData.children, {
+                        placementId: '',
+                        name: '',
+                        dimensions: { desktop: { width: '', height: '' }, mobile: { width: '', height: '' } }
+                      }];
+                      setFormData({ ...formData, children: newChildren });
+                    }}
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    Add child
+                  </button>
+                </div>
+              )}
+              
+              {formData.children.map((child, index) => (
+                <div key={index} className="p-4 border border-gray-200 rounded-md space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-sm font-medium">Child {index + 1}</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newChildren = formData.children.filter((_, i) => i !== index);
+                        setFormData({ ...formData, children: newChildren });
+                      }}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-600">Placement ID</label>
+                      <input
+                        type="text"
+                        value={child.placementId}
+                        onChange={(e) => {
+                          const newChildren = [...formData.children];
+                          newChildren[index] = { ...child, placementId: e.target.value };
+                          setFormData({ ...formData, children: newChildren });
+                        }}
+                        className="mt-1 block w-full text-sm rounded-md border-gray-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600">Name</label>
+                      <input
+                        type="text"
+                        value={child.name}
+                        onChange={(e) => {
+                          const newChildren = [...formData.children];
+                          newChildren[index] = { ...child, name: e.target.value };
+                          setFormData({ ...formData, children: newChildren });
+                        }}
+                        className="mt-1 block w-full text-sm rounded-md border-gray-300"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs text-gray-600">Desktop Dimensions</label>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <input
+                        type="number"
+                        placeholder="Width"
+                        value={child.dimensions?.desktop?.width || ''}
+                        onChange={(e) => {
+                          const newChildren = [...formData.children];
+                          newChildren[index] = {
+                            ...child,
+                            dimensions: {
+                              ...child.dimensions,
+                              desktop: { ...child.dimensions?.desktop, width: parseInt(e.target.value) || '' }
+                            }
+                          };
+                          setFormData({ ...formData, children: newChildren });
+                        }}
+                        className="block w-full text-sm rounded-md border-gray-300"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Height"
+                        value={child.dimensions?.desktop?.height || ''}
+                        onChange={(e) => {
+                          const newChildren = [...formData.children];
+                          newChildren[index] = {
+                            ...child,
+                            dimensions: {
+                              ...child.dimensions,
+                              desktop: { ...child.dimensions?.desktop, height: parseInt(e.target.value) || '' }
+                            }
+                          };
+                          setFormData({ ...formData, children: newChildren });
+                        }}
+                        className="block w-full text-sm rounded-md border-gray-300"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs text-gray-600">Mobile Dimensions</label>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <input
+                        type="number"
+                        placeholder="Width"
+                        value={child.dimensions?.mobile?.width || ''}
+                        onChange={(e) => {
+                          const newChildren = [...formData.children];
+                          newChildren[index] = {
+                            ...child,
+                            dimensions: {
+                              ...child.dimensions,
+                              mobile: { ...child.dimensions?.mobile, width: parseInt(e.target.value) || '' }
+                            }
+                          };
+                          setFormData({ ...formData, children: newChildren });
+                        }}
+                        className="block w-full text-sm rounded-md border-gray-300"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Height"
+                        value={child.dimensions?.mobile?.height || ''}
+                        onChange={(e) => {
+                          const newChildren = [...formData.children];
+                          newChildren[index] = {
+                            ...child,
+                            dimensions: {
+                              ...child.dimensions,
+                              mobile: { ...child.dimensions?.mobile, height: parseInt(e.target.value) || '' }
+                            }
+                          };
+                          setFormData({ ...formData, children: newChildren });
+                        }}
+                        className="block w-full text-sm rounded-md border-gray-300"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {formData.children.length > 0 && formData.children.length < 4 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newChildren = [...formData.children, {
+                      placementId: '',
+                      name: '',
+                      dimensions: { desktop: { width: '', height: '' }, mobile: { width: '', height: '' } }
+                    }];
+                    setFormData({ ...formData, children: newChildren });
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Add another child
+                </button>
+              )}
+            </div>
+          )}
+
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-3 pt-4">
