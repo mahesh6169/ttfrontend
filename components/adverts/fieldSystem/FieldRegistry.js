@@ -8,6 +8,15 @@ const SHARED_FIELDS = {
     options: ['New', 'Used', 'Refurbished'],
     placeholder: 'Select Condition',
     required: true
+  },
+  serviceArea: {
+    type: 'textarea',
+    label: 'Service Areas',
+    placeholder: 'e.g., Perth Metro areas, South of River, Eastern suburbs, Northern suburbs',
+    helpText: 'Describe all the areas where you provide your services',
+    required: false,
+    rows: 3,
+    resize: true
   }
 };
 
@@ -439,6 +448,156 @@ fields: {
         }
       }
     }
+  },
+
+  'Transport & Ride Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Home Repairs & Improvements': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Restaurants & Catering Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Party Hires & Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Cleaning & Maintenance Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Retail Shops & Business': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Legal & Immigration Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Financial & Insurance Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Academic Tutors & Education': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Arts, Dance & Cultural Tutors': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Business & Professional Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Construction & Renovation Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Travel & Tourism Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Marketing & Advertising Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'IT & Software Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
   },
 
 

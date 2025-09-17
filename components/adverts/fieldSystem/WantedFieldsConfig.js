@@ -77,6 +77,97 @@ export const WANTED_FIELDS_CONFIG = {
     hiddenSections: [],
     hiddenFields: [],
     optionalFields: ['deliveryTime']
+  },
+  
+  // Service categories - hide serviceArea for wanted ads
+  'Transport & Ride Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Home Repairs & Improvements': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Restaurants & Catering Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Party Hires & Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Cleaning & Maintenance Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Retail Shops & Business': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Legal & Immigration Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Financial & Insurance Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Academic Tutors & Education': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Arts, Dance & Cultural Tutors': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Business & Professional Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Construction & Renovation Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Travel & Tourism Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Marketing & Advertising Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'IT & Software Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
   }
 };
 

@@ -457,13 +457,15 @@ const handleSubmit = (e) => {
   const cleanedFields = {};
   const structure = FieldSystem.getFormStructure(formData.category);
   
-  if (structure && structure.fields) {
+  if (structure) {
     // Only include fields that are currently visible
     formSections.forEach(section => {
       if (section.fields) {
-        section.fields.forEach(field => {
-          if (formData.fields[field.id] !== undefined) {
-            cleanedFields[field.id] = formData.fields[field.id];
+        section.fields.forEach(fieldOrId => {
+          // Handle both field objects and field ID strings
+          const fieldId = typeof fieldOrId === 'string' ? fieldOrId : fieldOrId.id;
+          if (fieldId && formData.fields[fieldId] !== undefined) {
+            cleanedFields[fieldId] = formData.fields[fieldId];
           }
         });
       }

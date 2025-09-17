@@ -276,20 +276,38 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
       </div>
 
       {/* Dynamic Fields Section */}
-      {advert.fields && Object.keys(advert.fields).length > 0 && (
+      {advert.fields && Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value).length > 0 && (
         <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
           <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
             <h3 className="text-sm sm:text-base font-semibold text-gray-800">Additional Details</h3>
           </div>
           <div className="p-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {Object.entries(advert.fields).map(([key, value]) => (
+              {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value).map(([key, value]) => (
                 <div key={key} className="text-sm sm:text-base">
                   <span className="font-semibold text-gray-700">{formatFieldName(key)}:</span>{' '}
                   <span className="text-gray-600">{value}</span>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Service Areas Section */}
+      {advert.fields?.serviceArea && (
+        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
+          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Service Areas</h3>
+          </div>
+          <div className="p-3 relative">
+            <div className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto max-h-[120px] pr-2">
+              {advert.fields.serviceArea.split('\n').map((para, idx) => (
+                para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
+              ))}
+            </div>
+            {/* Fade overlay at bottom to indicate scrollable content */}
+            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
           </div>
         </div>
       )}

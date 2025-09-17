@@ -1,6 +1,6 @@
 // components/advertsv2/fieldSystem/DependencyResolver.js
 
-import { getFormStructure } from './FieldRegistry';
+import { getFormStructure, getSharedField } from './FieldRegistry';
 import { getAvailablePricingOptions, PRICING_CONFIG } from './PricingConfig';
 import { canAccessCategory } from './CategoryAccess';
 import { isSectionHiddenForWanted, isFieldHiddenForWanted, isFieldOptionalForWanted } from './WantedFieldsConfig';
@@ -99,8 +99,16 @@ export class FormEngine {
     if (!section || !section.fields) return [];
     return section.fields
       .map(fieldId => {
-        const fieldConfig = this.structure?.fields[fieldId];
+        // First check if it's a category-specific field
+        let fieldConfig = this.structure?.fields?.[fieldId];
+        
+        // If not found, check if it's a shared field
+        if (!fieldConfig) {
+          fieldConfig = getSharedField(fieldId);
+        }
+        
         if (!fieldConfig) return null;
+        
         if (this.isFieldVisible(fieldId, fieldConfig)) {
           // Override required status based on context
           const dynamicRequired = this.isFieldRequired(fieldId, fieldConfig);
