@@ -14,6 +14,7 @@ export default function BannerAdsPage() {
     totalClicks: 0
   });
   const [recentAds, setRecentAds] = useState([]);
+  const [unassignedAds, setUnassignedAds] = useState([]);
   const [placements, setPlacements] = useState([]);
   const [placementAds, setPlacementAds] = useState({});
   const [loading, setLoading] = useState(true);
@@ -36,6 +37,7 @@ export default function BannerAdsPage() {
       alert('Failed to delete ad. Please try again.');
     }
   };
+
 
   const fetchDashboardData = async () => {
     try {
@@ -113,6 +115,10 @@ export default function BannerAdsPage() {
       
       // Get 5 most recent ads with transformed placements
       setRecentAds(transformedAds.slice(0, 5));
+      
+      // Identify unassigned ads (ads with no placements)
+      const unassigned = ads.filter(ad => !ad.placements || ad.placements.length === 0);
+      setUnassignedAds(unassigned);
       
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -237,6 +243,9 @@ export default function BannerAdsPage() {
                   Placements
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   AD-ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -248,9 +257,6 @@ export default function BannerAdsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Schedule
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -258,21 +264,28 @@ export default function BannerAdsPage() {
                 const placementInfo = placements.find(p => p.placementId === placementCode);
                 const isSplit = placementInfo?.layoutType === 'split';
                 const ads = placementAds[placementCode] || [];
-                const activeAds = ads.filter(ad => ad.status === 'active');
                 
-                // For split placements, create two rows using actual child IDs
-                if (isSplit && placementInfo.children) {
-                  return placementInfo.children.map((child, index) => {
-                    const ad = activeAds[index];
+                // Show all ads assigned to this placement
+                if (ads.length > 0) {
+                  return ads.map((ad, index) => {
+                    // For split placements, determine which child slot to show
+                    let displayPlacement = placementCode;
+                    if (isSplit && placementInfo.children && placementInfo.children.length > 0) {
+                      // Distribute ads across child slots
+                      const childIndex = index % placementInfo.children.length;
+                      displayPlacement = placementInfo.children[childIndex].placementId;
+                    }
                     
-                    if (ad) {
-                      return (
-                        <tr key={`${child.placementId}-${ad.adId}`}>
+                    return (
+                        <tr key={`${placementCode}-${ad.adId}`}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {ad.businessId?.name || 'Unknown'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {child.placementId}
+                            {displayPlacement}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {ad.name || 'Untitled Ad'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {ad.adId}
@@ -294,97 +307,44 @@ export default function BannerAdsPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {new Date(ad.schedule.startAt).toLocaleDateString()} - {new Date(ad.schedule.endAt).toLocaleDateString()}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <Link
-                              href={`/admin/profile/banner-ads/edit/${ad.adId}`}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              Edit
-                            </Link>
-                          </td>
                         </tr>
-                      );
-                    } else {
-                      return (
-                        <tr key={`${child.placementId}-empty`}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 italic">
-                            No active ad
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {child.placementId}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                            -
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                            -
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                            -
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                            -
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <Link
-                              href="/admin/profile/banner-ads/create"
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              Assign
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    }
+                    );
                   });
                 } else {
-                  // Full placement - single row
-                  const ad = activeAds[0];
-                  
-                  if (ad) {
-                    return (
-                      <tr key={`${placementCode}-${ad.adId}`}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {ad.businessId?.name || 'Unknown'}
+                  // No ads assigned - show empty rows
+                  if (isSplit && placementInfo?.children) {
+                    // For split placements, show empty rows for each child
+                    return placementInfo.children.map(child => (
+                      <tr key={`${child.placementId}-empty`}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 italic">
+                          No ads assigned
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {placementCode}
+                          {child.placementId}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {ad.adId}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                          -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {ad.targetStates?.length > 0 ? ad.targetStates.join(', ') : '-'}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                          -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            ad.status === 'active' 
-                              ? 'bg-green-100 text-green-800'
-                              : ad.status === 'paused'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {ad.status}
-                          </span>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                          -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(ad.schedule.startAt).toLocaleDateString()} - {new Date(ad.schedule.endAt).toLocaleDateString()}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                          -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <Link
-                            href={`/admin/profile/banner-ads/edit/${ad.adId}`}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Edit
-                          </Link>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                          -
                         </td>
                       </tr>
-                    );
+                    ));
                   } else {
+                    // For full placements, show single empty row
                     return (
                       <tr key={`${placementCode}-empty`}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 italic">
-                          No active ad
+                          No ads assigned
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {placementCode}
@@ -401,13 +361,8 @@ export default function BannerAdsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                           -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <Link
-                            href="/admin/profile/banner-ads/create"
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Assign
-                          </Link>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                          -
                         </td>
                       </tr>
                     );
@@ -436,6 +391,9 @@ export default function BannerAdsPage() {
                     Placements
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     AD-ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -460,6 +418,9 @@ export default function BannerAdsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {ad.displayPlacements?.join(', ') || ad.placements.join(', ')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {ad.name || 'Untitled Ad'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {ad.adId}

@@ -6,11 +6,11 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import ImageUploader from '../components/ImageUploader';
 
 const STEPS = [
-  { id: 1, name: 'Business', description: 'Select or create advertiser' },
-  { id: 2, name: 'Placement', description: 'Choose ad locations' },
-  { id: 3, name: 'Targeting', description: 'Set states and schedule' },
-  { id: 4, name: 'Creative', description: 'Upload images and links' },
-  { id: 5, name: 'Controls', description: 'Set caps and limits' },
+  { id: 1, name: 'Business & Name', description: 'Select business and name your ad' },
+  { id: 2, name: 'Target States', description: 'Select target states (required)' },
+  { id: 3, name: 'Creative', description: 'Upload images and links' },
+  { id: 4, name: 'Controls', description: 'Set schedule and limits' },
+  { id: 5, name: 'Placement', description: 'Choose ad locations' },
   { id: 6, name: 'Review', description: 'Review and submit' }
 ];
 
@@ -23,6 +23,7 @@ export default function CreateAdPage() {
   const [formData, setFormData] = useState({
     // Step 1 - Business
     businessId: '',
+    name: '',
     
     // Step 2 - Placement
     placements: [],
@@ -79,6 +80,7 @@ export default function CreateAdPage() {
       
       // Add text fields
       submitFormData.append('businessId', formData.businessId);
+      submitFormData.append('name', formData.name);
       submitFormData.append('layout', formData.layout);
       submitFormData.append('placements', JSON.stringify(formData.placements));
       submitFormData.append('targetStates', JSON.stringify(formData.targetStates));
@@ -179,11 +181,11 @@ export default function CreateAdPage() {
 
       {/* Form Content */}
       <div className="mt-8 bg-white shadow rounded-lg p-6">
-        {currentStep === 1 && <BusinessStep formData={formData} setFormData={setFormData} />}
-        {currentStep === 2 && <PlacementStep formData={formData} setFormData={setFormData} />}
-        {currentStep === 3 && <TargetingStep formData={formData} setFormData={setFormData} />}
-        {currentStep === 4 && <CreativeStep formData={formData} setFormData={setFormData} />}
-        {currentStep === 5 && <ControlsStep formData={formData} setFormData={setFormData} />}
+        {currentStep === 1 && <BusinessNameStep formData={formData} setFormData={setFormData} />}
+        {currentStep === 2 && <TargetingStep formData={formData} setFormData={setFormData} />}
+        {currentStep === 3 && <CreativeStep formData={formData} setFormData={setFormData} />}
+        {currentStep === 4 && <ControlsStep formData={formData} setFormData={setFormData} />}
+        {currentStep === 5 && <PlacementStep formData={formData} setFormData={setFormData} />}
         {currentStep === 6 && <ReviewStep formData={formData} />}
 
         {/* Navigation */}
@@ -198,33 +200,35 @@ export default function CreateAdPage() {
             Back
           </button>
           
-          {currentStep < STEPS.length ? (
-            <button
-              type="button"
-              onClick={handleNext}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Next
-              <FaChevronRight className="h-5 w-5 ml-2" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-            >
-              {loading ? 'Creating...' : 'Create Ad'}
-            </button>
-          )}
+          <div className="flex gap-2">
+            {currentStep < STEPS.length ? (
+              <button
+                type="button"
+                onClick={handleNext}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Next
+                <FaChevronRight className="h-5 w-5 ml-2" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+              >
+                {loading ? 'Creating...' : 'Create Ad'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Step 1: Business Selection
-function BusinessStep({ formData, setFormData }) {
+// Step 1: Business Selection & Ad Name
+function BusinessNameStep({ formData, setFormData }) {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -250,11 +254,13 @@ function BusinessStep({ formData, setFormData }) {
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-medium text-gray-900">Select Business</h2>
-      <p className="text-sm text-gray-500">
-        Choose the business that will be running this ad campaign.
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-medium text-gray-900">Business & Ad Name</h2>
+        <p className="text-sm text-gray-500">
+          Select the business and name your advertisement.
+        </p>
+      </div>
       
       <div className="space-y-2">
         {businesses.map(business => (
@@ -280,6 +286,25 @@ function BusinessStep({ formData, setFormData }) {
           No active businesses found. Please create a business first.
         </div>
       )}
+      
+      {/* Ad Name Input - Always visible */}
+      <div className="mt-6 space-y-2">
+        <label htmlFor="adName" className="block text-sm font-medium text-gray-700">
+          Ad Name <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          id="adName"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="e.g., Summer Sale 2024, New Store Opening"
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          required
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Give your ad a descriptive name for easy identification
+        </p>
+      </div>
     </div>
   );
 }
@@ -340,6 +365,13 @@ function PlacementStep({ formData, setFormData }) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-medium text-gray-900">Select Placement & Layout</h2>
+      
+      {/* Required Note */}
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <p className="text-sm text-yellow-700">
+          Placement selection is required. Choose at least one location where your ad will be displayed.
+        </p>
+      </div>
       
       {/* Layout Selection */}
       <div>
@@ -427,29 +459,54 @@ function PlacementStep({ formData, setFormData }) {
   );
 }
 
-// Step 3: Targeting & Schedule
+// Step 2: Target States (Required)
 function TargetingStep({ formData, setFormData }) {
-  const states = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT', 'ALL'];
+  const states = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 
   const handleStateToggle = (state) => {
-    if (state === 'ALL') {
-      setFormData({ ...formData, targetStates: ['ALL'] });
+    const newStates = formData.targetStates.includes(state)
+      ? formData.targetStates.filter(s => s !== state)
+      : [...formData.targetStates, state];
+    
+    setFormData({ ...formData, targetStates: newStates });
+  };
+
+  const handleAllStatesToggle = () => {
+    if (formData.targetStates.length === states.length) {
+      // If all states are selected, clear them
+      setFormData({ ...formData, targetStates: [] });
     } else {
-      const newStates = formData.targetStates.includes(state)
-        ? formData.targetStates.filter(s => s !== state)
-        : [...formData.targetStates.filter(s => s !== 'ALL'), state];
-      
-      setFormData({ ...formData, targetStates: newStates });
+      // Otherwise, select all states
+      setFormData({ ...formData, targetStates: [...states] });
     }
   };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Targeting & Schedule</h2>
+      <h2 className="text-lg font-medium text-gray-900">Target States</h2>
+      
+      {/* Required Note */}
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <p className="text-sm text-yellow-700">
+          State targeting is required. Select at least one state where your ad will be shown.
+        </p>
+      </div>
       
       {/* State Targeting */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Target States</label>
+        
+        {/* All States checkbox */}
+        <label className="flex items-center mb-3">
+          <input
+            type="checkbox"
+            checked={formData.targetStates.length === states.length}
+            onChange={handleAllStatesToggle}
+            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+          <span className="ml-2 text-sm font-medium text-gray-700">All States</span>
+        </label>
+        
         <div className="grid grid-cols-3 gap-2">
           {states.map(state => (
             <label key={state} className="flex items-center">
@@ -465,64 +522,6 @@ function TargetingStep({ formData, setFormData }) {
         </div>
       </div>
 
-      {/* Schedule */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Start Date</label>
-          <input
-            type="date"
-            value={formData.schedule.startAt}
-            onChange={(e) => setFormData({
-              ...formData,
-              schedule: { ...formData.schedule, startAt: e.target.value }
-            })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">End Date</label>
-          <input
-            type="date"
-            value={formData.schedule.endAt}
-            onChange={(e) => setFormData({
-              ...formData,
-              schedule: { ...formData.schedule, endAt: e.target.value }
-            })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            required
-          />
-        </div>
-      </div>
-
-      {/* Weight */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Rotation Weight (1-100)
-        </label>
-        <input
-          type="number"
-          min="1"
-          max="100"
-          value={formData.weight}
-          onChange={(e) => setFormData({ ...formData, weight: parseInt(e.target.value) || 10 })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-        />
-        <p className="mt-1 text-xs text-gray-500">Higher weight = more frequent display</p>
-      </div>
-
-      {/* Status */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Initial Status</label>
-        <select
-          value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-        >
-          <option value="active">Active (Live immediately)</option>
-          <option value="paused">Paused (Manual activation required)</option>
-        </select>
-      </div>
     </div>
   );
 }
@@ -684,40 +683,107 @@ function CreativeStep({ formData, setFormData }) {
 function ControlsStep({ formData, setFormData }) {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Campaign Controls</h2>
+      <h2 className="text-lg font-medium text-gray-900">Schedule & Controls</h2>
       
+      {/* Schedule */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Maximum Impressions (optional)
-        </label>
-        <input
-          type="number"
-          value={formData.caps.maxImpressions}
-          onChange={(e) => setFormData({
-            ...formData,
-            caps: { ...formData.caps, maxImpressions: e.target.value }
-          })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          placeholder="Leave empty for unlimited"
-        />
-        <p className="mt-1 text-xs text-gray-500">Ad will pause after reaching this many views</p>
+        <h3 className="text-sm font-medium text-gray-700 mb-3">Campaign Schedule</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Start Date</label>
+            <input
+              type="date"
+              value={formData.schedule.startAt}
+              onChange={(e) => setFormData({
+                ...formData,
+                schedule: { ...formData.schedule, startAt: e.target.value }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">End Date</label>
+            <input
+              type="date"
+              value={formData.schedule.endAt}
+              onChange={(e) => setFormData({
+                ...formData,
+                schedule: { ...formData.schedule, endAt: e.target.value }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              required
+            />
+          </div>
+        </div>
       </div>
 
+      {/* Status */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Initial Status</label>
+        <select
+          value={formData.status}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        >
+          <option value="active">Active (Live immediately)</option>
+          <option value="paused">Paused (Manual activation required)</option>
+        </select>
+      </div>
+
+      {/* Weight */}
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Maximum Clicks (optional)
+          Rotation Weight (1-100)
         </label>
         <input
           type="number"
-          value={formData.caps.maxClicks}
-          onChange={(e) => setFormData({
-            ...formData,
-            caps: { ...formData.caps, maxClicks: e.target.value }
-          })}
+          min="1"
+          max="100"
+          value={formData.weight}
+          onChange={(e) => setFormData({ ...formData, weight: parseInt(e.target.value) || 10 })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          placeholder="Leave empty for unlimited"
         />
-        <p className="mt-1 text-xs text-gray-500">Ad will pause after reaching this many clicks</p>
+        <p className="mt-1 text-xs text-gray-500">Higher weight = more frequent display</p>
+      </div>
+
+      {/* Caps */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-700 mb-3">Performance Limits (Optional)</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Maximum Impressions
+            </label>
+            <input
+              type="number"
+              value={formData.caps.maxImpressions}
+              onChange={(e) => setFormData({
+                ...formData,
+                caps: { ...formData.caps, maxImpressions: e.target.value }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Leave empty for unlimited"
+            />
+            <p className="mt-1 text-xs text-gray-500">Ad will pause after reaching this many views</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Maximum Clicks
+            </label>
+            <input
+              type="number"
+              value={formData.caps.maxClicks}
+              onChange={(e) => setFormData({
+                ...formData,
+                caps: { ...formData.caps, maxClicks: e.target.value }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Leave empty for unlimited"
+            />
+            <p className="mt-1 text-xs text-gray-500">Ad will pause after reaching this many clicks</p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -733,6 +799,11 @@ function ReviewStep({ formData }) {
         <div className="py-3">
           <dt className="text-sm font-medium text-gray-500">Business</dt>
           <dd className="mt-1 text-sm text-gray-900">{formData.businessId || 'Not selected'}</dd>
+        </div>
+        
+        <div className="py-3">
+          <dt className="text-sm font-medium text-gray-500">Ad Name</dt>
+          <dd className="mt-1 text-sm text-gray-900">{formData.name || 'Not specified'}</dd>
         </div>
         
         <div className="py-3">

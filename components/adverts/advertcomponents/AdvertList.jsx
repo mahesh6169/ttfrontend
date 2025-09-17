@@ -31,7 +31,7 @@ if ((advertStatus === 'idle' || advertStatus === 'loading') && (!adverts || adve
 
 if (advertStatus === 'success' && (!adverts || adverts.length === 0)) {
   return (
-    <div className="flex justify-center items-center text-center p-8">
+    <div className="flex justify-center items-center text-center p-8 min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
       <p className="text-xs sm:text-sm text-gray-800">No Adverts Listed</p>
     </div>
   );
@@ -69,7 +69,7 @@ if (advertStatus === 'success' && (!adverts || adverts.length === 0)) {
   });
 
   return (
-    <div id="AdvertGrid">
+    <div id="AdvertGrid" className="min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
       <div
         id="AdvertGrids"
         className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-4"

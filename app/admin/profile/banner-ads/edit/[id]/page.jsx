@@ -6,11 +6,11 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import ImageUploader from '../../components/ImageUploader';
 
 const STEPS = [
-  { id: 1, name: 'Business', description: 'View advertiser details' },
-  { id: 2, name: 'Placement', description: 'Manage ad locations' },
-  { id: 3, name: 'Targeting', description: 'Update states and schedule' },
-  { id: 4, name: 'Creative', description: 'Update images and links' },
-  { id: 5, name: 'Controls', description: 'Adjust caps and limits' },
+  { id: 1, name: 'Business & Name', description: 'View business and edit ad name' },
+  { id: 2, name: 'Target States', description: 'Update target states' },
+  { id: 3, name: 'Creative', description: 'Update images and links' },
+  { id: 4, name: 'Controls', description: 'Update schedule and limits' },
+  { id: 5, name: 'Placement', description: 'Manage ad locations' },
   { id: 6, name: 'Review', description: 'Review changes' }
 ];
 
@@ -24,10 +24,11 @@ export default function EditAdPage({ params }) {
   
   // Form data
   const [formData, setFormData] = useState({
-    // Step 1 - Business (read-only)
+    // Step 1 - Business & Name
     businessId: '',
     businessName: '',
     businessHumanId: '',
+    name: '',
     
     // Step 2 - Placement
     placements: [],
@@ -76,6 +77,7 @@ export default function EditAdPage({ params }) {
         businessId: adData.businessId._id,
         businessName: adData.businessId.name,
         businessHumanId: adData.businessId.businessId, // The human-readable BIZ-XXXX ID
+        name: adData.name || '',
         placements: adData.placements,
         layout: adData.layout,
         targetStates: adData.targetStates,
@@ -133,6 +135,7 @@ export default function EditAdPage({ params }) {
         const submitFormData = new FormData();
         
         // Add text fields
+        submitFormData.append('name', formData.name);
         submitFormData.append('layout', formData.layout);
         submitFormData.append('placements', JSON.stringify(formData.placements));
         submitFormData.append('targetStates', JSON.stringify(formData.targetStates));
@@ -194,6 +197,7 @@ export default function EditAdPage({ params }) {
       } else {
         // Regular JSON update without images
         const submitData = {
+          name: formData.name,
           placements: formData.placements,
           targetStates: formData.targetStates,
           schedule: formData.schedule,
@@ -296,11 +300,11 @@ export default function EditAdPage({ params }) {
 
       {/* Form Content */}
       <div className="mt-8 bg-white shadow rounded-lg p-6">
-        {currentStep === 1 && <BusinessStep formData={formData} />}
-        {currentStep === 2 && <PlacementStep formData={formData} setFormData={setFormData} />}
-        {currentStep === 3 && <TargetingStep formData={formData} setFormData={setFormData} />}
-        {currentStep === 4 && <CreativeStep formData={formData} setFormData={setFormData} existingAd={ad} />}
-        {currentStep === 5 && <ControlsStep formData={formData} setFormData={setFormData} />}
+        {currentStep === 1 && <BusinessNameStep formData={formData} setFormData={setFormData} />}
+        {currentStep === 2 && <TargetStatesStep formData={formData} setFormData={setFormData} />}
+        {currentStep === 3 && <CreativeStep formData={formData} setFormData={setFormData} existingAd={ad} />}
+        {currentStep === 4 && <ControlsStep formData={formData} setFormData={setFormData} />}
+        {currentStep === 5 && <PlacementStep formData={formData} setFormData={setFormData} />}
         {currentStep === 6 && <ReviewStep formData={formData} existingAd={ad} />}
 
         {/* Navigation */}
@@ -341,23 +345,46 @@ export default function EditAdPage({ params }) {
 }
 
 // Step 1: Business Information (Read-only)
-function BusinessStep({ formData }) {
+function BusinessNameStep({ formData, setFormData }) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-medium text-gray-900">Business Information</h2>
-      <p className="text-sm text-gray-500">
-        Business information cannot be changed after ad creation.
-      </p>
+    <div className="space-y-6">
+      <h2 className="text-lg font-medium text-gray-900">Business & Ad Name</h2>
       
-      <div className="bg-gray-50 rounded-md p-4">
-        <p className="text-sm font-medium text-gray-900">{formData.businessName}</p>
-        <p className="text-xs text-gray-500">Business ID: {formData.businessHumanId || formData.businessId}</p>
+      {/* Business Info (read-only) */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Business Information</h3>
+        <p className="text-sm text-gray-500 mb-2">
+          Business information cannot be changed after ad creation.
+        </p>
+        <div className="bg-gray-50 rounded-md p-4">
+          <p className="text-sm font-medium text-gray-900">{formData.businessName}</p>
+          <p className="text-xs text-gray-500">Business ID: {formData.businessHumanId || formData.businessId}</p>
+        </div>
+      </div>
+      
+      {/* Ad Name (editable) */}
+      <div>
+        <label htmlFor="adName" className="block text-sm font-medium text-gray-700">
+          Ad Name <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          id="adName"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="e.g., Summer Sale 2024, New Store Opening"
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          required
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Give your ad a descriptive name for easy identification
+        </p>
       </div>
     </div>
   );
 }
 
-// Step 2: Placement Selection
+// Step 5: Placement Selection
 function PlacementStep({ formData, setFormData }) {
   const [placements, setPlacements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -368,9 +395,7 @@ function PlacementStep({ formData, setFormData }) {
 
   const fetchPlacements = async () => {
     try {
-      const response = await axios.get('/admin/bannerAds/placements', {
-        params: { status: 'active' }
-      });
+      const response = await axios.get('/admin/bannerAds/placements');
       setPlacements(response.data.placements || []);
     } catch (error) {
       console.error('Error fetching placements:', error);
@@ -392,16 +417,36 @@ function PlacementStep({ formData, setFormData }) {
   }
 
   // Separate placements based on layout type
-  // Full width: parent placements with layoutType 'full' OR no layoutType
+  // Full width: parent placements with layoutType 'full'
   const fullPlacements = placements.filter(p => 
-    !p.placementId.includes('-') && p.layoutType !== 'split'
+    p.layoutType === 'full'
   );
-  // Half width: child placements (those with '-' in ID)
-  const halfPlacements = placements.filter(p => p.placementId.includes('-'));
+  
+  // Half width: extract children from split placements
+  const halfPlacements = [];
+  placements.forEach(p => {
+    if (p.layoutType === 'split' && p.children) {
+      p.children.forEach(child => {
+        halfPlacements.push({
+          ...child,
+          parentId: p.placementId,
+          parentName: p.name
+        });
+      });
+    }
+  });
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-medium text-gray-900">Select Placements</h2>
+      <h2 className="text-lg font-medium text-gray-900">Select Placement & Layout</h2>
+      
+      {/* Info Note */}
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+        <p className="text-sm text-blue-700">
+          Modify placement assignments to change where your ad appears. 
+          At least one placement is required for the ad to be displayed.
+        </p>
+      </div>
       
       {/* Layout (Read-only) */}
       <div>
@@ -415,56 +460,91 @@ function PlacementStep({ formData, setFormData }) {
       {/* Placement Selection */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Available Placements ({formData.layout === 'full' ? 'Parent slots only' : 'Child slots only'})
+          Select Placements ({formData.layout === 'full' ? 'Parent slots only' : 'Child slots only'})
         </label>
         <div className="space-y-2">
-          {(formData.layout === 'full' ? fullPlacements : halfPlacements).map(placement => (
-            <label key={placement.placementId} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-              <input
-                type="checkbox"
-                checked={formData.placements.includes(placement.placementId)}
-                onChange={() => handlePlacementToggle(placement.placementId)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">
-                  {placement.placementId} - {placement.name}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {placement.dimensions?.width} × {placement.dimensions?.height} • {placement.visibility}
-                </p>
-              </div>
-            </label>
-          ))}
+          {(formData.layout === 'full' ? fullPlacements : halfPlacements).map(placement => {
+            return (
+              <label 
+                key={placement.placementId} 
+                className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.placements.includes(placement.placementId)}
+                  onChange={() => handlePlacementToggle(placement.placementId)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <div className="ml-3 flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-gray-900">
+                      {placement.placementId} - {placement.name}
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Desktop: {placement.dimensions?.desktop?.width || placement.dimensions?.width} × {placement.dimensions?.desktop?.height || placement.dimensions?.height}
+                    {placement.dimensions?.mobile?.width && (
+                      <span> • Mobile: {placement.dimensions.mobile.width} × {placement.dimensions.mobile.height}</span>
+                    )}
+                  </p>
+                </div>
+              </label>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
 
-// Step 3: Targeting & Schedule
-function TargetingStep({ formData, setFormData }) {
-  const states = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT', 'ALL'];
+// Step 2: Target States (Required)
+function TargetStatesStep({ formData, setFormData }) {
+  const states = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 
   const handleStateToggle = (state) => {
-    if (state === 'ALL') {
-      setFormData({ ...formData, targetStates: ['ALL'] });
+    const newStates = formData.targetStates.includes(state)
+      ? formData.targetStates.filter(s => s !== state)
+      : [...formData.targetStates, state];
+    
+    setFormData({ ...formData, targetStates: newStates });
+  };
+
+  const handleAllStatesToggle = () => {
+    if (formData.targetStates.length === states.length) {
+      // If all states are selected, clear them
+      setFormData({ ...formData, targetStates: [] });
     } else {
-      const newStates = formData.targetStates.includes(state)
-        ? formData.targetStates.filter(s => s !== state)
-        : [...formData.targetStates.filter(s => s !== 'ALL'), state];
-      
-      setFormData({ ...formData, targetStates: newStates });
+      // Otherwise, select all states
+      setFormData({ ...formData, targetStates: [...states] });
     }
   };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Targeting & Schedule</h2>
+      <h2 className="text-lg font-medium text-gray-900">Target States</h2>
+      
+      {/* Required Note */}
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <p className="text-sm text-yellow-700">
+          State targeting is required. Select at least one state where your ad will be shown.
+        </p>
+      </div>
       
       {/* State Targeting */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Target States</label>
+        
+        {/* All States checkbox */}
+        <label className="flex items-center mb-3">
+          <input
+            type="checkbox"
+            checked={formData.targetStates.length === states.length}
+            onChange={handleAllStatesToggle}
+            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+          <span className="ml-2 text-sm font-medium text-gray-700">All States</span>
+        </label>
+        
         <div className="grid grid-cols-3 gap-2">
           {states.map(state => (
             <label key={state} className="flex items-center">
@@ -478,66 +558,6 @@ function TargetingStep({ formData, setFormData }) {
             </label>
           ))}
         </div>
-      </div>
-
-      {/* Schedule */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Start Date</label>
-          <input
-            type="date"
-            value={formData.schedule.startAt}
-            onChange={(e) => setFormData({
-              ...formData,
-              schedule: { ...formData.schedule, startAt: e.target.value }
-            })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">End Date</label>
-          <input
-            type="date"
-            value={formData.schedule.endAt}
-            onChange={(e) => setFormData({
-              ...formData,
-              schedule: { ...formData.schedule, endAt: e.target.value }
-            })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            required
-          />
-        </div>
-      </div>
-
-      {/* Weight */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Rotation Weight (1-100)
-        </label>
-        <input
-          type="number"
-          min="1"
-          max="100"
-          value={formData.weight}
-          onChange={(e) => setFormData({ ...formData, weight: parseInt(e.target.value) || 10 })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-        />
-        <p className="mt-1 text-xs text-gray-500">Higher weight = more frequent display</p>
-      </div>
-
-      {/* Status */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Status</label>
-        <select
-          value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-        >
-          <option value="active">Active</option>
-          <option value="paused">Paused</option>
-          <option value="expired">Expired</option>
-        </select>
       </div>
     </div>
   );
@@ -767,57 +787,112 @@ function CreativeStep({ formData, setFormData, existingAd }) {
   );
 }
 
-// Step 5: Controls
+// Step 4: Controls
 function ControlsStep({ formData, setFormData }) {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Campaign Controls</h2>
+      <h2 className="text-lg font-medium text-gray-900">Schedule & Controls</h2>
       
+      {/* Schedule */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-700 mb-3">Campaign Schedule</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Start Date</label>
+            <input
+              type="date"
+              value={formData.schedule.startAt}
+              onChange={(e) => setFormData({
+                ...formData,
+                schedule: { ...formData.schedule, startAt: e.target.value }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">End Date</label>
+            <input
+              type="date"
+              value={formData.schedule.endAt}
+              onChange={(e) => setFormData({
+                ...formData,
+                schedule: { ...formData.schedule, endAt: e.target.value }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              required
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Status */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Initial Status</label>
+        <select
+          value={formData.status}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        >
+          <option value="active">Active (Live immediately)</option>
+          <option value="paused">Paused (Manual activation required)</option>
+          <option value="expired">Expired</option>
+        </select>
+      </div>
+
+      {/* Weight */}
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Maximum Impressions (optional)
+          Rotation Weight (1-100)
         </label>
         <input
           type="number"
-          value={formData.caps.maxImpressions}
-          onChange={(e) => setFormData({
-            ...formData,
-            caps: { ...formData.caps, maxImpressions: e.target.value }
-          })}
+          min="1"
+          max="100"
+          value={formData.weight}
+          onChange={(e) => setFormData({ ...formData, weight: parseInt(e.target.value) || 10 })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          placeholder="Leave empty for unlimited"
         />
-        <p className="mt-1 text-xs text-gray-500">Ad will pause after reaching this many views</p>
+        <p className="mt-1 text-xs text-gray-500">Higher weight = more frequent display</p>
       </div>
 
+      {/* Caps */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Maximum Clicks (optional)
-        </label>
-        <input
-          type="number"
-          value={formData.caps.maxClicks}
-          onChange={(e) => setFormData({
-            ...formData,
-            caps: { ...formData.caps, maxClicks: e.target.value }
-          })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          placeholder="Leave empty for unlimited"
-        />
-        <p className="mt-1 text-xs text-gray-500">Ad will pause after reaching this many clicks</p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Internal Notes
-        </label>
-        <textarea
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          rows={3}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          placeholder="Any notes about this ad campaign..."
-        />
+        <h3 className="text-sm font-medium text-gray-700 mb-3">Performance Limits (Optional)</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Maximum Impressions
+            </label>
+            <input
+              type="number"
+              value={formData.caps.maxImpressions}
+              onChange={(e) => setFormData({
+                ...formData,
+                caps: { ...formData.caps, maxImpressions: e.target.value }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Leave empty for unlimited"
+            />
+            <p className="mt-1 text-xs text-gray-500">Ad will pause after reaching this many views</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Maximum Clicks
+            </label>
+            <input
+              type="number"
+              value={formData.caps.maxClicks}
+              onChange={(e) => setFormData({
+                ...formData,
+                caps: { ...formData.caps, maxClicks: e.target.value }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Leave empty for unlimited"
+            />
+            <p className="mt-1 text-xs text-gray-500">Ad will pause after reaching this many clicks</p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -840,6 +915,11 @@ function ReviewStep({ formData, existingAd }) {
         <div className="py-3">
           <dt className="text-sm font-medium text-gray-500">Business</dt>
           <dd className="mt-1 text-sm text-gray-900">{formData.businessName}</dd>
+        </div>
+        
+        <div className="py-3">
+          <dt className="text-sm font-medium text-gray-500">Ad Name</dt>
+          <dd className="mt-1 text-sm text-gray-900">{formData.name || 'Not specified'}</dd>
         </div>
         
         <div className="py-3">

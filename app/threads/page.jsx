@@ -675,9 +675,9 @@ const ThreadsPage = () => {
 
         {/* Thread Listing with spacing from filters */}
         {status === 'loading' ? (
-          <div className="text-center p-4">Loading threads...</div>
+          <div className="text-center p-4 min-h-[400px] flex items-center justify-center">Loading threads...</div>
         ) : threads.length > 0 ? (
-          <div className="space-y-3 px-3 sm:px-4 mt-4">
+          <div className="space-y-3 px-3 sm:px-4 mt-4 min-h-[400px]">
             {threads.map((thread, index) => (
               <React.Fragment key={thread._id}>
                 <Link
@@ -731,7 +731,7 @@ const ThreadsPage = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center p-8">
+          <div className="text-center p-8 min-h-[400px] flex items-center justify-center">
             <p className="text-xs sm:text-sm text-gray-800">No threads available. Start a new discussion!</p>
           </div>
         )}

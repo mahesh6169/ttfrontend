@@ -254,6 +254,10 @@ const AdvertForm = ({
                                     formData.category === 'Cars & Vehicles' && 
                                     field.id === 'vehicleType';
         
+        // Check if this is a typeField (like propertyType, jobType, etc) during edit
+        const structure = FieldSystem.getFormStructure(formData.category);
+        const isTypeField = structure && structure.typeField === field.id;
+        
         return (
           <div>
             <SimpleDropdown
@@ -261,7 +265,7 @@ const AdvertForm = ({
               onChange={(newValue) => handleFieldChange(field.id, newValue)}
               options={field.options}
               placeholder={`Select ${field.label}`}
-              disabled={isVehicleTypeLocked}
+              disabled={isVehicleTypeLocked || (!!initialData && isTypeField)}
             />
             {fieldErrors[field.id] && (
               <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors[field.id]}</p>
@@ -626,6 +630,7 @@ return (
             <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-2 sm:mb-3 text-gray-700">
               {section.title}
               <span className="text-red-500 ml-1">*</span>
+              {initialData && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
             </h3>
             
             <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 sm:gap-3 mb-4">
@@ -633,12 +638,17 @@ return (
                 <button
                   key={type}
                   type="button"
+                  disabled={!!initialData}
                   className={`px-2 sm:px-4 py-2.5 sm:py-2 border rounded-lg sm:rounded text-sm sm:text-base ${
                     selectedPriceType === type
                       ? 'bg-teal-600 text-white border-teal-600'
                       : 'bg-white text-gray-700 border-gray-300'
-                  } transition-colors`}
-                  onClick={() => handlePricingTypeSelect(type, config)}
+                  } ${initialData ? 'opacity-50 cursor-not-allowed' : ''} transition-colors`}
+                  onClick={() => {
+                    if (!initialData) {
+                      handlePricingTypeSelect(type, config);
+                    }
+                  }}
                 >
                   {config.label}
                 </button>
