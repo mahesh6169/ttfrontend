@@ -39,57 +39,72 @@ const StateSelectionModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-        <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-          Select Your State
-        </h3>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6 w-full max-w-lg">
+        <p className="text-sm sm:text-base font-medium text-gray-900 mb-4 text-center">
+          Select your state to see relevant local deals and content in your area!
+        </p>
         
-        <div className="mt-2">
-          <p className="text-sm text-gray-500 mb-4">
-            Please select your state to see relevant local advertisements and content.
-          </p>
-          
-          <div className="grid grid-cols-2 gap-3">
-            {australianStates.map((state) => (
-              <button
-                key={state.code}
-                onClick={() => setSelectedState(state.code)}
-                className={`p-3 text-sm rounded-lg border-2 transition-all ${
-                  selectedState === state.code
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="font-medium">{state.code}</div>
-                <div className="text-xs text-gray-600 mt-1">{state.name}</div>
-              </button>
-            ))}
-          </div>
+        {/* State buttons - 8 cols on desktop, 4 cols on mobile */}
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-6">
+          {australianStates.map((state) => (
+            <button
+              key={state.code}
+              onClick={() => setSelectedState(state.code)}
+              className={`py-3 px-1 text-sm font-medium rounded-lg border-2 transition-all ${
+                selectedState === state.code
+                  ? 'border-teal-600 bg-teal-600 text-lime-100'
+                  : 'border-gray-200 hover:border-teal-500 hover:bg-teal-50'
+              }`}
+            >
+              {state.code}
+            </button>
+          ))}
         </div>
 
-        <div className="mt-6 flex gap-3">
-          <button
-            type="button"
-            className="flex-1 inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={handleSubmit}
-            disabled={!selectedState || isSubmitting}
-          >
-            {isSubmitting ? 'Saving...' : 'Continue'}
-          </button>
-          
-          <button
-            type="button"
-            className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
-            onClick={onClose}
-          >
-            Skip
-          </button>
+        {/* Continue button */}
+        <button
+          type="button"
+          className="w-full py-2.5 rounded-md bg-teal-700 text-lime-100 font-medium hover:bg-teal-800 hover:text-lime-50 shadow transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={handleSubmit}
+          disabled={!selectedState || isSubmitting}
+        >
+          {isSubmitting ? 'Saving...' : 'Continue'}
+        </button>
+        
+        {/* Skip link */}
+        <button
+          type="button"
+          className="w-full mt-2 text-xs text-teal-600 underline hover:text-teal-800"
+          onClick={onClose}
+        >
+          Skip for now
+        </button>
+        
+        {/* Divider */}
+        <div className="flex items-center my-4">
+          <div className="flex-1 border-t border-gray-300"></div>
+          <span className="px-3 text-xs text-gray-500">or</span>
+          <div className="flex-1 border-t border-gray-300"></div>
         </div>
         
-        <p className="text-xs text-gray-500 mt-4 text-center">
-          You can change this preference anytime in your profile settings.
-        </p>
+        {/* Login/Register buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <a
+            href="/login"
+            onClick={onClose}
+            className="py-2 px-4 text-center text-sm font-medium text-teal-700 bg-white border border-teal-600 rounded-md hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors"
+          >
+            Log in
+          </a>
+          <a
+            href="/register"
+            onClick={onClose}
+            className="py-2 px-4 text-center text-sm font-medium text-teal-700 bg-white border border-teal-600 rounded-md hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors"
+          >
+            Register
+          </a>
+        </div>
       </div>
     </div>
   );

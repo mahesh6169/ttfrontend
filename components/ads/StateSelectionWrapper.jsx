@@ -1,35 +1,45 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { usePathname } from 'next/navigation';
 import StateSelectionModal from './StateSelectionModal';
 
 const StateSelectionWrapper = () => {
   const [showModal, setShowModal] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
+  const pathname = usePathname();
   
   // Get user from Redux store
-  const { user, tokenValidated } = useSelector((state) => state.user);
+  const { user, tokenValidated, status } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user?._id;
   
+  // Only show modal on specific pages where state matters
+  const allowedPaths = ['/listings', '/events', '/threads'];
+  const shouldCheckState = allowedPaths.includes(pathname);
+  
   useEffect(() => {
-    console.log('[StateSelection] Component mounted, tokenValidated:', tokenValidated, 'hasChecked:', hasChecked, 'isAuthenticated:', isAuthenticated);
-    // Run check once we know if user is authenticated or not
-    // For non-logged users, tokenValidated will be false after 401 response
-    if (!hasChecked) {
-      // Wait a bit for auth check to complete
-      const timer = setTimeout(() => {
-        console.log('[StateSelection] Running state check after timeout...');
-        checkStateSelection();
-        setHasChecked(true);
-      }, 1000); // Give auth check 1 second to complete
-      
-      return () => clearTimeout(timer);
+    console.log('[StateSelection] Component mounted, tokenValidated:', tokenValidated, 'hasChecked:', hasChecked, 'isAuthenticated:', isAuthenticated, 'status:', status, 'pathname:', pathname);
+    
+    // Only check on allowed paths
+    if (!shouldCheckState) {
+      console.log('[StateSelection] Not on allowed path, skipping check');
+      return;
     }
-  }, [hasChecked]);
+    
+    // Run check after validation completes (whether success or failure)
+    if (status !== 'loading' && status !== 'idle' && !hasChecked) {
+      console.log('[StateSelection] Validation complete (status:', status, '), checking if modal needed...');
+      checkStateSelection();
+      setHasChecked(true);
+    }
+  }, [status, hasChecked, isAuthenticated, shouldCheckState, pathname]);
   
   const checkStateSelection = async () => {
+    console.log('[StateSelection] Checking state selection, user:', user, 'isAuthenticated:', isAuthenticated);
+    
     // Don't show modal if user is authenticated (they have state from suburb)
     if (isAuthenticated) {
+      console.log('[StateSelection] User is authenticated, skipping modal. User suburb:', user?.suburb);
       return;
     }
     
@@ -54,17 +64,8 @@ const StateSelectionWrapper = () => {
         return;
       }
       
-      // Check if we've shown the modal recently
-      const hasSeenStateModal = localStorage.getItem('hasSeenStateModal');
-      const lastShown = localStorage.getItem('stateModalLastShown');
-      
-      // Don't show if user has already seen it recently (within 30 days)
-      if (hasSeenStateModal && lastShown) {
-        const daysSinceShown = (Date.now() - parseInt(lastShown)) / (1000 * 60 * 60 * 24);
-        if (daysSinceShown < 30) {
-          return;
-        }
-      }
+      // For users without a state, ALWAYS show the modal
+      // No cooldown period - we need them to select a state for revenue
       
       // Show modal after a short delay to not interfere with page load
       setTimeout(() => {
@@ -78,9 +79,8 @@ const StateSelectionWrapper = () => {
   
   const handleModalClose = () => {
     setShowModal(false);
-    // Mark that user has seen the modal
-    localStorage.setItem('hasSeenStateModal', 'true');
-    localStorage.setItem('stateModalLastShown', Date.now().toString());
+    // Don't store anything - we want to keep asking until they select a state
+    // This ensures maximum revenue opportunity from state-based ads
   };
   
   return (

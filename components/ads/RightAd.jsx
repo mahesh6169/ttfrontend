@@ -46,18 +46,27 @@ const RightAd = () => {
   // Track click
   const handleAdClick = async (ad) => {
     try {
-      // Only redirect if destination exists
+      console.log('Ad click:', ad);
+      
+      // Always track click via GET endpoint (it handles all cases)
+      const clickUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/bannerAds/click/${ad.adId}`;
+      
       if (ad.destinationUrl) {
-        // For external links, use the click tracking endpoint
+        // Has destination - let the backend redirect after tracking
         if (ad.destinationType === 'external') {
-          window.open(`${process.env.NEXT_PUBLIC_API_BASE_URL}/bannerAds/click/${ad.adId}`, '_blank');
+          // External link - open in new tab
+          window.open(clickUrl, '_blank');
         } else {
-          // For internal links, use the click tracking endpoint which will redirect
-          window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL}/bannerAds/click/${ad.adId}`;
+          // Internal link - navigate in same tab
+          window.location.href = clickUrl;
         }
       } else {
-        // No destination - just track the click
-        await axios.post(`/bannerAds/click/${ad.adId}`);
+        // No destination - use fetch to track click without navigation
+        await fetch(clickUrl, { 
+          method: 'GET',
+          credentials: 'include' // Include cookies for state tracking
+        });
+        console.log('Click tracked for ad without destination');
       }
     } catch (error) {
       console.error('Error tracking click:', error);
