@@ -1,5 +1,16 @@
 // components/advertsv2/fieldSystem/FieldRegistry.js
 
+// Shared field configurations that multiple categories use
+const SHARED_FIELDS = {
+  condition: {
+    type: 'select',
+    label: 'Condition',
+    options: ['New', 'Used', 'Refurbished'],
+    placeholder: 'Select Condition',
+    required: true
+  }
+};
+
 // Define the form structure with sections and dependencies
 export const FORM_STRUCTURE = {
   'Books, Art & Collectables': {
@@ -7,7 +18,7 @@ export const FORM_STRUCTURE = {
     {
       id: 'pricingSection',
       order: 10,
-      title: 'Pricing Options',
+      title: null,
       specialField: 'pricing'
     },
     {
@@ -35,7 +46,7 @@ export const FORM_STRUCTURE = {
   {
     id: 'pricingSection',
     order: 10,
-    title: 'Pricing Options',
+    title: null,
     specialField: 'pricing'
   },
   {
@@ -70,7 +81,7 @@ fields: {
 
 'Music & Games': {
   sections: [
-    { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
+    { id: 'pricingSection', order: 10, title: null, specialField: 'pricing' },
     { 
       id: 'conditionSection', 
       order: 15, 
@@ -94,7 +105,7 @@ fields: {
     {
       id: 'pricingSection',
       order: 10,
-      title: 'Pricing Options',
+      title: null,
       specialField: 'pricing'
     },
     {
@@ -139,7 +150,10 @@ fields: {
     fuelType: {
       type: 'text',
       label: 'Fuel Type',
-      placeholder: 'e.g., Petrol, Diesel, Electric'
+      placeholder: 'e.g., Petrol, Diesel, Electric',
+      dependencies: {
+        vehicleType: ['Car', 'Motorcycle', 'Truck']  // Hide for Boat
+      }
     },
     mileage: {
       type: 'number',
@@ -149,14 +163,17 @@ fields: {
     transmission: {
       type: 'select',
       label: 'Transmission',
-      options: ['Manual', 'Automatic']
+      options: ['Manual', 'Automatic'],
+      dependencies: {
+        vehicleType: ['Car', 'Motorcycle', 'Truck']  // Hide for Boat
+      }
     }
   }
 },
 
 'Fashion & Accessories': {
   sections: [
-    { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
+    { id: 'pricingSection', order: 10, title: null, specialField: 'pricing' },
     { 
       id: 'conditionSection', 
       order: 15, 
@@ -176,7 +193,7 @@ fields: {
 
 'Health, Sport & Fitness': {
   sections: [
-    { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
+    { id: 'pricingSection', order: 10, title: null, specialField: 'pricing' },
     { 
       id: 'conditionSection', 
       order: 15, 
@@ -196,7 +213,7 @@ fields: {
 
 'Home & Garden': {
   sections: [
-    { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
+    { id: 'pricingSection', order: 10, title: null, specialField: 'pricing' },
     { 
       id: 'conditionSection', 
       order: 15, 
@@ -216,7 +233,7 @@ fields: {
 
 'Pets': {
   sections: [
-    { id: 'pricingSection', order: 10, title: 'Pricing Options', specialField: 'pricing' },
+    { id: 'pricingSection', order: 10, title: null, specialField: 'pricing' },
     { 
       id: 'conditionSection', 
       order: 15, 
@@ -239,7 +256,7 @@ fields: {
   {
     id: 'pricingSection',
     order: 10,
-    title: 'Pricing Options',
+    title: null,
     specialField: 'pricing'
   },
   {
@@ -284,7 +301,7 @@ fields: {
       {
         id: 'pricingSection',
         order: 20,
-        title: 'Pricing Options',
+        title: null,
         specialField: 'pricing',
         requiresSection: 'typeSection'
       },
@@ -358,7 +375,7 @@ fields: {
       {
         id: 'pricingSection',
         order: 10,
-        title: 'Pricing Options',
+        title: null,
         specialField: 'pricing'
       },
       {
@@ -392,7 +409,7 @@ fields: {
       {
         id: 'pricingSection',
         order: 20,
-        title: 'Pricing Options',
+        title: null,
         specialField: 'pricing',
         requiresSection: 'typeSection'
       },
@@ -443,4 +460,9 @@ export const getOrderedFieldsForCategory = (category) => {
 // New function to get form structure
 export const getFormStructure = (category) => {
   return FORM_STRUCTURE[category] || null;
+};
+
+// Function to get shared field configurations
+export const getSharedField = (fieldName) => {
+  return SHARED_FIELDS[fieldName] || null;
 };

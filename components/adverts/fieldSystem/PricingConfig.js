@@ -108,7 +108,7 @@ export const PRICING_CONFIG = {
   options: {
     sell: {
       enabled: true,
-      label: 'Sell Price',
+      label: 'Sell',
       units: null,
       validFor: ['*'] // Valid for all brands - the wildcard means no restrictions
     },

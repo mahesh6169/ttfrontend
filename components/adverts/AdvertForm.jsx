@@ -9,6 +9,7 @@ import CategorySelector from '../shared/CategorySelector';
 import CommunitySelector from '../shared/CommunitySelector';
 import SimpleDropdown from '../shared/SimpleDropdown';
 import FieldSystem from './fieldSystem';
+import { getSharedField } from './fieldSystem/FieldRegistry';
 
 const AdvertForm = ({ 
   initialData = null, 
@@ -226,20 +227,15 @@ const AdvertForm = ({
                 const newValue = e.target.value;
                 const numValue = newValue ? parseFloat(newValue) : '';
                 
-                // Real-time validation for parking field
-                if (field.id === 'parking' && numValue > 4) {
-                  setFieldErrors(prev => ({ ...prev, [field.id]: 'Maximum 4 parking spaces allowed' }));
-                } else {
-                  // Clear field error when user fixes the value
-                  setFieldErrors(prev => ({ ...prev, [field.id]: null }));
-                }
+                // Clear field error when user fixes the value
+                setFieldErrors(prev => ({ ...prev, [field.id]: null }));
                 
                 handleFieldChange(field.id, numValue);
               }} 
               onWheel={(e) => e.target.blur()} 
               min={field.min} 
-              max={field.id === 'parking' ? undefined : field.max} 
-              placeholder={field.placeholder || (field.id === 'parking' ? 'Max 4' : field.placeholder)} 
+              max={field.max} 
+              placeholder={field.placeholder} 
               className={baseClasses} 
               required={field.required} 
             />
@@ -441,11 +437,6 @@ const handleSubmit = (e) => {
             newFieldErrors[field.id] = `Must be at most ${field.max}`;
           }
           
-          // Special validation for parking field
-          if (field.id === 'parking' && val > 4) {
-            newFieldErrors[field.id] = 'Maximum 4 parking spaces allowed';
-          }
-          
           // Ensure whole numbers for bedrooms and parking
           if ((field.id === 'bedrooms' || field.id === 'parking') && !Number.isInteger(val)) {
             newFieldErrors[field.id] = 'Must be a whole number';
@@ -627,11 +618,13 @@ return (
           {/* Special handling for pricing section */}
           {section.specialField === 'pricing' && formData.adType === 'offered' && section.pricingOptions && Object.keys(section.pricingOptions).length > 0 && (
             <>
-            <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-2 sm:mb-3 text-gray-700">
-              {section.title}
-              <span className="text-red-500 ml-1">*</span>
-              {initialData && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
-            </h3>
+            {section.title && (
+              <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-2 sm:mb-3 text-gray-700">
+                {section.title}
+                <span className="text-red-500 ml-1">*</span>
+                {initialData && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
+              </h3>
+            )}
             
             <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 sm:gap-3 mb-4">
               {Object.entries(section.pricingOptions).map(([type, config]) => (
@@ -666,19 +659,25 @@ return (
         
         {/* Special handling for condition section */}
         {section.specialField === 'condition' && formData.adType === 'offered' && 
-         formData.pricing.some(p => p.priceType === 'sell') && (
-          <div className="mb-4">
-            <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
-              Condition <span className="text-red-500 ml-1">*</span>
-            </label>
-            <SimpleDropdown
-              value={formData.condition}
-              onChange={(newValue) => handleChange('condition', newValue)}
-              options={['New', 'Used', 'Refurbished']}
-              placeholder="Select Condition"
-            />
-          </div>
-        )}
+         formData.pricing.some(p => p.priceType === 'sell') && (() => {
+          const conditionField = getSharedField('condition');
+          if (!conditionField) return null;
+          
+          return (
+            <div className="mb-4">
+              <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+                {conditionField.label}
+                {conditionField.required && <span className="text-red-500 ml-1">*</span>}
+              </label>
+              <SimpleDropdown
+                value={formData.condition}
+                onChange={(newValue) => handleChange('condition', newValue)}
+                options={conditionField.options}
+                placeholder={conditionField.placeholder}
+              />
+            </div>
+          );
+        })()}
         
         {/* Regular fields for non-pricing sections */}
         {section.fields && section.fields.map(field => {

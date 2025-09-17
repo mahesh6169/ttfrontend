@@ -102,8 +102,11 @@ const AddAdvertPage = () => {
             // Reset form by clearing success state
           }}
           onManageListings={() => {
+            // Navigate first, then clear state after a small delay
             router.push('/users/profile/manageads');
-            dispatch(clearAdvert());
+            setTimeout(() => {
+              dispatch(clearAdvert());
+            }, 100);
           }}
         />
       ) : (
