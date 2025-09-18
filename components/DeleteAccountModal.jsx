@@ -28,9 +28,9 @@ const DeleteAccountModal = ({ isOpen, onClose, onConfirm, isDeleting }) => {
             </p>
             <ul className="text-sm text-red-700 space-y-1 ml-4 list-disc">
               <li>Your profile and account details</li>
-              <li>All your adverts</li>
-              <li>All your events</li>
-              <li>All your threads and comments</li>
+              <li>All your listed adverts</li>
+              <li>All your listed events</li>
+              <li>All your listed threads</li>
               <li>All your messages and conversations</li>
               <li>Your wishlist items</li>
             </ul>

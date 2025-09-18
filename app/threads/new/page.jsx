@@ -273,7 +273,7 @@ if (createThread.fulfilled.match(resultAction)) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-8 p-4 sm:p-6">
+    <div className="max-w-5xl mx-auto mt-8 p-4 sm:p-6">
       <RequireVerifiedAccount>
       
         {showSuccessView && createdThread ? (

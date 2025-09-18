@@ -22,6 +22,7 @@ import { toast } from 'react-toastify';
 import { format, parse, addMonths } from 'date-fns';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import PostEventButton from '@/components/buttons/PostEventButton';
+import { getCategoryDisplayName } from '@/constants/categories';
 
 const libraries = ['places'];
 
@@ -441,7 +442,12 @@ const EventsPage = () => {
               <h3 className="font-semibold text-gray-700 mb-3">Categories</h3>
               <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
                 <div className="space-y-2 p-2">
-                  {filterOptions.categories && filterOptions.categories.map((category) => (
+                  {!filterOptions.categories || filterOptions.categories.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      No categories available
+                    </p>
+                  ) : (
+                    filterOptions.categories.map((category) => (
                     <label
                       key={category}
                       className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
@@ -458,9 +464,10 @@ const EventsPage = () => {
                         }}
                         className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
                       />
-                      <span className="ml-3 text-gray-700">{category}</span>
+                      <span className="ml-3 text-gray-700">{getCategoryDisplayName(category)}</span>
                     </label>
-                  ))}
+                  )))
+                  }
                 </div>
               </div>
               {tempFilters.categories?.length > 0 && (
@@ -627,7 +634,7 @@ const EventsPage = () => {
                       key={category}
                       className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
                     >
-                      {category}
+                      {getCategoryDisplayName(category)}
                       <button
                         onClick={() => dispatch(toggleCategory(category))}
                         className="hover:text-gray-900 font-bold ml-1"

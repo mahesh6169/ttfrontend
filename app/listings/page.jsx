@@ -19,7 +19,8 @@ import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import PostListingButton from '@/components/buttons/PostListingButton'; 
+import PostListingButton from '@/components/buttons/PostListingButton';
+import { getCategoryDisplayName } from '@/constants/categories';
 
 const libraries = ['places'];
 
@@ -402,7 +403,12 @@ const getCurrentSortLabel = () => {
               <h3 className="font-semibold text-gray-700 mb-3">Categories</h3>
               <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
                 <div className="space-y-1 p-2">
-                  {filterOptions.categories.map((category) => (
+                  {filterOptions.categories.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      No categories available
+                    </p>
+                  ) : (
+                    filterOptions.categories.map((category) => (
                     <label
                       key={category}
                       className="flex items-center cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors"
@@ -419,9 +425,10 @@ const getCurrentSortLabel = () => {
                         }}
                         className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
                       />
-                      <span className="ml-2 text-sm text-gray-700">{category}</span>
+                      <span className="ml-2 text-sm text-gray-700">{getCategoryDisplayName(category)}</span>
                     </label>
-                  ))}
+                  )))
+                  }
                 </div>
               </div>
               {tempFilters.categories?.length > 0 && (
@@ -610,7 +617,7 @@ const getCurrentSortLabel = () => {
                       key={category}
                       className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
                     >
-                      {category}
+                      {getCategoryDisplayName(category)}
                       <button
                         onClick={() => dispatch(toggleCategory(category))}
                         className="hover:text-gray-900 font-bold ml-1"
