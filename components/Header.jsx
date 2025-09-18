@@ -81,7 +81,7 @@ const Header = () => {
 
   return (
     <header className="bg-teal-700 shadow">
-      <div className="container mx-auto py-2 space-y-2 text-lime-100 relative">
+      <div className="container mx-auto py-2 md:space-y-2 text-lime-100 relative">
 
         {/* Top Row */}
         <div className="flex items-center justify-between">
@@ -195,7 +195,7 @@ const Header = () => {
           </div>
         </div>
 
-        <div className="flex md:hidden items-center justify-around  pt-2 text-lime-200">
+        <div className="flex md:hidden items-center justify-around pt-1 text-lime-200">
           <NavLink
             href="/listings"
             icon={<RiAdvertisementFill size={20} />}

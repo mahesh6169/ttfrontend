@@ -23,6 +23,7 @@ import { format, parse, addMonths } from 'date-fns';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import PostEventButton from '@/components/buttons/PostEventButton';
 import { getCategoryDisplayName } from '@/constants/categories';
+import PromoBanner from '@/components/PromoBanner';
 
 const libraries = ['places'];
 
@@ -527,7 +528,7 @@ const EventsPage = () => {
       {/* Main Content */}
       <div className="w-full">
         {/* Hero Banner */}
-        <div className="my-4 px-4">
+        {/* <div className="my-4 px-4">
           <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
               <span className="text-amber-500">Organise</span>
@@ -538,12 +539,17 @@ const EventsPage = () => {
             </h1>
             <p className="text-gray-600 text-center text-sm mt-2">Find events in your community</p>
           </div>
-        </div>
+        </div> */}
 
-        {/* Post Event Button */}
+        {/* Post Event Button and Promo Banner */}
         <div className="my-2 px-4">
-          <div className="flex justify-start">
-            <PostEventButton />
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="shrink-0">
+              <PostEventButton />
+            </div>
+            <div className="flex-1 min-w-0">
+              <PromoBanner page="events" inline={true} showAll={true} />
+            </div>
           </div>
         </div>
 

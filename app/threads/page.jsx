@@ -24,6 +24,7 @@ import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import PostTopicButton from '@/components/buttons/PostTopicButton';
 import BottomAd from '@/components/ads/BottomAd';
 import { getCategoryDisplayName } from '@/constants/categories';
+import PromoBanner from '@/components/PromoBanner';
 
 const libraries = ['places'];
 
@@ -507,7 +508,7 @@ const ThreadsPage = () => {
       {/* Main Content */}
       <div className="w-full">
         {/* Hero Banner */}
-        <div className="my-4 px-4">
+        {/* <div className="my-4 px-4">
           <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
               <span className="text-amber-500">Seek</span>
@@ -518,12 +519,17 @@ const ThreadsPage = () => {
             </h1>
             <p className="text-gray-600 text-center text-sm mt-2">Share knowledge with your community</p>
           </div>
-        </div>
+        </div> */}
 
-        {/* Create New Topic Button */}
+        {/* Create New Topic Button and Promo Banner */}
         <div className="my-2 px-4">
-          <div className="flex justify-start">
-            <PostTopicButton />
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="shrink-0">
+              <PostTopicButton />
+            </div>
+            <div className="flex-1 min-w-0">
+              <PromoBanner page="threads" inline={true} showAll={true} />
+            </div>
           </div>
         </div>
 

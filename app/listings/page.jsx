@@ -21,6 +21,7 @@ import { toast } from 'react-toastify';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import PostListingButton from '@/components/buttons/PostListingButton';
 import { getCategoryDisplayName } from '@/constants/categories';
+import PromoBanner from '@/components/PromoBanner';
 
 const libraries = ['places'];
 
@@ -523,10 +524,15 @@ const getCurrentSortLabel = () => {
           </div>
         </div> */}
 
-        {/* Post Advert Button */}
+        {/* Post Advert Button and Promo Banner */}
         <div className="my-2 px-4">
-          <div className="flex justify-start">
-            <PostListingButton />
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="shrink-0">
+              <PostListingButton />
+            </div>
+            <div className="flex-1 min-w-0">
+              <PromoBanner page="listings" inline={true} showAll={true} />
+            </div>
           </div>
         </div>
 

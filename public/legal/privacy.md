@@ -1,114 +1,133 @@
+Got it — here’s a **complete first draft of your Privacy Policy** in Markdown format, designed to match your `terms.md` style and stay legally consistent with the document you shared:
+
+---
+
 # Privacy Policy
 
-**Last Updated: [Date]**
+*Last Updated: 18 September 2025*
 
 ## 1. Introduction
 
-Welcome to TagTelugu. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights and how the law protects you.
+### 1.1 Purpose of This Policy
+
+This Privacy Policy explains how **NEXO GROUP PTY LTD (ABN 90 649 898 993)** (“Desify”, “we”, “our”, “us”) collects, uses, stores, and protects your personal information when you access or use the Desify platform.
+
+### 1.2 Relationship to Terms and Conditions
+
+This Privacy Policy forms part of our Terms and Conditions. By using Desify, you agree to both this Privacy Policy and our Terms and Conditions.
+
+### 1.3 Changes to This Policy
+
+We may update this Privacy Policy from time to time to reflect changes to our services, operations, or legal obligations. When updates are made, we will update the “Last Updated” date at the top of this page. Your continued use of Desify after updates are published indicates your acceptance of the revised policy.
+
+---
 
 ## 2. Information We Collect
 
-We may collect, use, store and transfer different kinds of personal data about you which we have grouped together as follows:
+### 2.1 Personal Information
 
-### 2.1 Identity Data
-- First name and last name
-- Username or similar identifier
-- Title and gender
+When you register or use Desify, we may collect:
 
-### 2.2 Contact Data
-- Email address
-- Telephone numbers
-- Billing address and delivery address
+* Name
+* Email address
+* Suburb and state (for localisation of adverts and events)
+* Event registration details (including names of attendees)
 
-### 2.3 Financial Data
-- Payment card details (processed securely through our payment provider)
-- Transaction history
+For paid events, payment processing information is collected by Stripe on our behalf. Desify does not store your full payment card details.
 
-### 2.4 Technical Data
-- Internet protocol (IP) address
-- Browser type and version
-- Time zone setting and location
-- Operating system and platform
+### 2.2 Automatically Collected Information
 
-### 2.5 Profile Data
-- Username and password
-- Purchases or orders made by you
-- Your interests, preferences, feedback and survey responses
+We may collect technical data such as:
 
-### 2.6 Usage Data
-- Information about how you use our website and services
-- Event attendance history
+* IP address
+* Browser type and version
+* Device type
+* Usage data (pages visited, actions taken on listings, events, or threads)
+
+This helps us operate and improve the platform.
+
+---
 
 ## 3. How We Use Your Information
 
-We will only use your personal data when the law allows us to. Most commonly, we will use your personal data in the following circumstances:
+We use your information to:
 
-- To register you as a new user
-- To process and deliver your event tickets
-- To manage our relationship with you
-- To enable you to participate in events
-- To improve our website, products/services, marketing or customer relationships
-- To deliver relevant website content and advertisements to you
+* Create and manage your account
+* Display and personalise listings, events, and threads relevant to your location
+* Facilitate event registrations and ticket purchases
+* Send transactional emails (e.g., confirmations, security alerts, policy updates)
+* Maintain platform security and integrity
+* Improve user experience and troubleshoot issues
 
-## 4. Data Security
+If you opt in, we may also send you marketing communications about updates, offers, and promotions. You can withdraw consent at any time (see Section 7.3).
 
-We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used or accessed in an unauthorized way, altered or disclosed. We limit access to your personal data to those employees, agents, contractors and other third parties who have a business need to know.
+---
 
-## 5. Data Retention
+## 4. Data Retention
 
-We will only retain your personal data for as long as reasonably necessary to fulfill the purposes we collected it for, including for the purposes of satisfying any legal, regulatory, tax, accounting or reporting requirements.
+### 4.1 Listings
 
-### 5.1 Retention Periods
-- Account information: Until account deletion
-- Transaction records: 7 years for tax purposes
-- Marketing communications: Until you unsubscribe
-- Event data: 3 years after the event date
+Adverts are deleted automatically after their expiry period if not renewed. When deleted, the advert and associated images, conversations, and wishlist entries are permanently removed.
 
-## 6. Your Legal Rights
+### 4.2 Events
 
-Under certain circumstances, you have rights under data protection laws in relation to your personal data:
+Free/RSVP events are deleted after the organiser deletes them or as otherwise specified in our Terms. Paid event records (tickets, invoices) are retained for a minimum of 2 years for compliance and accounting purposes.
 
-- Request access to your personal data
-- Request correction of your personal data
-- Request erasure of your personal data
-- Object to processing of your personal data
-- Request restriction of processing your personal data
-- Request transfer of your personal data
-- Right to withdraw consent
+### 4.3 Threads
 
-## 7. Third-Party Services
+Threads and related conversations are permanently deleted when removed by the user or by Desify moderators.
 
-Our website may include links to third-party websites, plug-ins and applications. Clicking on those links or enabling those connections may allow third parties to collect or share data about you. We do not control these third-party websites and are not responsible for their privacy statements.
+### 4.4 Account Deletion
 
-### 7.1 Payment Processing
-We use secure third-party payment processors who have their own privacy policies. We do not store credit card details nor do we share customer details with any third parties.
+If you delete your account, we will remove or anonymise your personal information, except where retention is required for legal, tax, or compliance purposes.
 
-### 7.2 Analytics
-We use analytics services to help us understand how our website is used. These services may collect information about your use of our website.
+---
 
-## 8. Cookies
+## 5. Sharing Your Information
 
-Our website uses cookies to distinguish you from other users of our website. This helps us to provide you with a good experience when you browse our website and also allows us to improve our site. You can set your browser to refuse all or some browser cookies, or to alert you when websites set or access cookies.
+We only share your personal information as reasonably necessary to operate the platform, including:
 
-## 9. International Transfers
+* **Stripe** for payment processing
+* **Email or messaging providers** for transactional communications
+* **Authorities or regulators** where required by law
 
-We ensure a similar degree of protection is afforded to your data by ensuring at least one of the following safeguards is implemented:
+We do not sell your personal information to third parties.
 
-- We will only transfer your personal data to countries that have been deemed to provide an adequate level of protection for personal data
-- Where we use certain service providers, we may use specific contracts approved for use
+---
 
-## 10. Updates to This Policy
+## 6. Security Measures
 
-We may update this privacy policy from time to time. We will notify you of any changes by posting the new privacy policy on this page and updating the "Last Updated" date at the top of this policy.
+We take reasonable steps to protect your personal information against loss, misuse, unauthorised access, disclosure, alteration, or destruction. However, no system can be completely secure, and you use Desify at your own risk.
 
-## 11. Contact Us
+---
 
-If you have any questions about this privacy policy or our privacy practices, please contact us:
+## 7. Your Rights
 
-- Email: privacy@tagtelugu.com
-- Address: [Your Address]
-- Phone: [Your Phone Number]
+### 7.1 Access and Correction
 
-## 12. Complaints
+You can access and update your personal information through your account settings. You may also request corrections if your information is inaccurate.
 
-You have the right to make a complaint at any time to the relevant supervisory authority for data protection issues. We would, however, appreciate the chance to deal with your concerns before you approach the supervisory authority so please contact us in the first instance.
+### 7.2 Account Closure and Data Deletion
+
+You can request deletion of your account at any time. Upon confirmation, your personal data will be removed or anonymised as described in Section 4.4.
+
+### 7.3 Marketing Preferences
+
+If you have opted in to marketing emails, you can unsubscribe at any time using the link in the email or through your account settings.
+
+---
+
+## 8. Data Breach Notification
+
+If a data breach occurs that is likely to result in serious harm, we will take appropriate steps as required by Australian law, which may include notifying affected users and relevant authorities.
+
+---
+
+## 9. Contact Us
+
+If you have any questions, requests, or complaints regarding this Privacy Policy or how we handle your information, please contact us at:
+
+**Email:** [support@desify.com.au](mailto:support@desify.com.au)
+**Mail:** NEXO GROUP PTY LTD
+
+---

@@ -14,11 +14,11 @@ const ValidateAdminToken = () => {
 
   useEffect(() => {
     // Only validate admin token if:
-    // 1. We're on an admin route
+    // 1. We're on an admin route (but NOT the login page)
     // 2. No admin is currently logged in
     // 3. Not currently loading
     // 4. No regular user is logged in (to avoid token conflicts)
-    const isAdminRoute = pathname?.startsWith('/admin');
+    const isAdminRoute = pathname?.startsWith('/admin') && pathname !== '/admin/login';
     
     if (isAdminRoute && !adminInfo && status !== 'loading' && !userInfo) {
       console.log('🔄 Dispatching validateAdmin...');
