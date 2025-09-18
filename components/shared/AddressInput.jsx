@@ -21,7 +21,9 @@ const AddressInput = ({
 
   const handlePlaceChanged = () => {
     const place = autocompleteRef.current.getPlace();
-    if (!place.geometry) return;
+    if (!place.geometry) {
+      return;
+    }
 
     const parsed = {
       formattedAddress: place.formatted_address,
@@ -79,6 +81,7 @@ const AddressInput = ({
   // Handle manual input
   const handleInputChange = (e) => {
     const value = e.target.value;
+    console.log('[AddressInput] Input change:', value);
     setFormattedAddress(value);
     setIsUserInput(true);
     
@@ -107,9 +110,24 @@ const AddressInput = ({
       <LoadScriptNext
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
         libraries={libraries}
+        onLoad={() => console.log('[AddressInput] Google Maps script loaded')}
+        onError={(error) => console.error('[AddressInput] Google Maps script error:', error)}
       >
         <Autocomplete
-          onLoad={(auto) => (autocompleteRef.current = auto)}
+          onLoad={(auto) => {
+            autocompleteRef.current = auto;
+            console.log('[AddressInput] Autocomplete loaded:', !!auto);
+            if (auto) {
+              console.log('[AddressInput] Autocomplete instance:', auto);
+              // Log any autocomplete errors
+              try {
+                const service = new google.maps.places.AutocompleteService();
+                console.log('[AddressInput] AutocompleteService available:', !!service);
+              } catch (e) {
+                console.error('[AddressInput] Error checking AutocompleteService:', e);
+              }
+            }
+          }}
           onPlaceChanged={handlePlaceChanged}
           options={{ componentRestrictions: { country: 'AU' } }}
         >
@@ -119,6 +137,8 @@ const AddressInput = ({
             className="w-full p-2 border rounded"
             value={formattedAddress}
             onChange={handleInputChange}
+            onFocus={(e) => console.log('[AddressInput] Input focused')}
+            onBlur={(e) => console.log('[AddressInput] Input blurred')}
             disabled={disabled}
           />
         </Autocomplete>

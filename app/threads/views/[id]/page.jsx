@@ -30,7 +30,6 @@ import { FaChevronLeft, FaChevronRight, FaReply } from 'react-icons/fa';
 import { FaTimes } from 'react-icons/fa';
 import { MdNotificationsActive, MdNotificationsOff, MdDelete } from "react-icons/md";
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
 import ShareIcons from '@/components/shared/ShareIcons';
 import ThreadConnectionStatus from '@/components/threads/ThreadConnectionStatus';
@@ -367,10 +366,10 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       {/* Back to Topics */}
       <button
         onClick={() => router.push('/threads')}
-        className="flex items-center gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
+        className="flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
       >
-        <RiArrowGoBackFill className="text-xs sm:text-base" />
-        <span>Back to Topics</span>
+        <span>&lt;</span>
+        <span>back</span>
       </button>
     
       {/* Report this Topic */}
@@ -539,14 +538,16 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           </div>
           <div className="p-3 relative">
             <div 
-              className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
+              className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto max-h-[200px] sm:max-h-[300px] pr-2"
+              style={{ 
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#cbd5e0 #f7fafc'
+              }}
             >
               {thread.question.split('\n').map((para, idx) => (
                 para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
               ))}
             </div>
-            {/* Fade overlay at bottom to indicate scrollable content */}
-            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
           </div>
         </div>
       )}
@@ -654,7 +655,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             <p className="text-xs text-gray-600 mt-1">Click thumbs up 👍 to mark comments as useful</p>
           </div>
           <div 
-            className="p-2 min-h-[200px] flex items-center justify-center"
+            className="p-2 min-h-[100px] flex items-center justify-center"
             style={{
               background: 'linear-gradient(135deg, #f5f5f5 0%, #f9f9f9 50%, #f5f5f5 100%)',
             }}

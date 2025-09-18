@@ -43,6 +43,7 @@ const ChatPage = () => {
   const messagesContainerRef = useRef(null);
   const messageInputRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const { resource, participants } = activeConversation || {};
   const { owner, participant } = participants || {};
@@ -341,7 +342,7 @@ useEffect(() => {
   if (!resource) return <div className="text-center text-gray-500">No conversation found.</div>;
 
   return (
-    <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
+    <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 pb-20 md:pb-0">
       {/* Navigation Bar */}
       <div className="mt-2 md:mt-4 flex justify-between items-center">
         {/* Back Button */}
@@ -412,7 +413,7 @@ useEffect(() => {
         </div>
 
         {/* Message Area */}
-        <div className="rounded my-6 bg-white shadow flex flex-col h-[500px] md:h-[600px]">
+        <div className="rounded my-6 bg-white shadow flex flex-col h-[60vh] md:h-[600px] relative">
           {/* Jump to Bottom Button */}
           {showJumpToBottom && (
             <div className="relative">
@@ -578,7 +579,7 @@ useEffect(() => {
           </div>
           
           {/* Message Input Box at the Bottom */}
-          <div className="border-t bg-white p-3">
+          <div className="border-t bg-white p-3 relative z-10">
             {/* Reply indicator */}
             {replyingTo && (
               <div className="mb-2 p-2 bg-gray-100 rounded-lg flex items-center justify-between">

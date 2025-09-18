@@ -1,4 +1,5 @@
 import Header from '@/components/Header';
+import BottomNavigation from '@/components/BottomNavigation';
 import TermsModal from '@/components/support/TermsModal';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -50,7 +51,12 @@ const ParentLayout = ({ children }) => {
          <StateSelectionWrapper />
           <Header />
            {/* <TermsModal /> */} 
-          {children}
+          <div className="flex flex-col min-h-screen">
+            <div className="flex-1 pb-16 md:pb-0">
+              {children}
+            </div>
+            <BottomNavigation />
+          </div>
           <ToastContainer 
             position="top-right"
             autoClose={3000}

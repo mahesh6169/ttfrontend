@@ -222,6 +222,31 @@ const ProfilePage = () => {
           </Link>
         </div>
       </div>
+
+      {/* Support Links - Mobile Only */}
+      <div className="md:hidden border border-gray-300 rounded-lg mt-3 p-3">
+        <h3 className="text-sm font-semibold text-gray-800 mb-2">Support</h3>
+        <div className="space-y-2">
+          <Link 
+            href="/support/contact"
+            className="block text-xs text-gray-700 hover:text-teal-600 py-1.5 px-2 rounded hover:bg-gray-50 transition-colors"
+          >
+            → Contact Us
+          </Link>
+          <Link 
+            href="/support/terms"
+            className="block text-xs text-gray-700 hover:text-teal-600 py-1.5 px-2 rounded hover:bg-gray-50 transition-colors"
+          >
+            → Terms and Conditions
+          </Link>
+          <Link 
+            href="/support/privacy"
+            className="block text-xs text-gray-700 hover:text-teal-600 py-1.5 px-2 rounded hover:bg-gray-50 transition-colors"
+          >
+            → Privacy Policy
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };

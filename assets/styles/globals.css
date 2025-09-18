@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* iOS safe area support for bottom navigation */
+.safe-area-inset-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+
 /* Disable scroll wheel on all number inputs */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
@@ -96,4 +102,16 @@ input[type="number"] {
 
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
+}
+
+/* Fix for Google Places Autocomplete dropdown on mobile */
+.pac-container {
+  z-index: 10000 !important;
+}
+
+/* Hide bottom navigation when textarea in thread view is focused on mobile */
+@media (max-width: 768px) {
+  body:has(textarea:focus) .fixed.bottom-0.md\:hidden {
+    display: none;
+  }
 }

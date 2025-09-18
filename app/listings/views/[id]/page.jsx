@@ -6,7 +6,6 @@ import SingleAdvertCard from '@/components/adverts/advertcomponents/SingleAdvert
 import SendMessage from '@/components/chat/SendMessage';
 import { useSelector, useDispatch } from 'react-redux';
 import { getAdvertById } from '@/store/slices/adverts/advertSlice';
-import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdReport } from "react-icons/md";
 import Link from 'next/link';
 import ShareIcons from '@/components/shared/ShareIcons';
@@ -69,10 +68,10 @@ const AdvertDetail = () => {
         {/* Back to Listings */}
         <button
           onClick={() => router.push('/listings')}
-          className="flex items-center gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
+          className="flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
         >
-          <RiArrowGoBackFill className="text-xs sm:text-base" />
-          <span>Back to Listings</span>
+          <span>&lt;</span>
+          <span>back</span>
         </button>
 
         {/* Report this Advert */}
