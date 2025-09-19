@@ -8,13 +8,28 @@ import axios from '@/utils/axiosConfig';
 const fallbackDesktop = "https://res.cloudinary.com/dtvrbdvkx/image/upload/v1753957091/mockad-1_r1nh3w.png";
 const fallbackMobile = "https://res.cloudinary.com/dtvrbdvkx/image/upload/v1753957996/mockad-m-1_anq9id.png";
 
+// CSS classes for ad dimensions
+const adClasses = {
+  full: {
+    container: "w-[320px] h-[50px] md:w-[728px] md:h-[90px]",
+    image: "w-full h-full object-cover"
+  },
+  split: {
+    // Container classes depend on stacking behavior
+    containerHorizontal: "w-[320px] h-[50px] md:w-[728px] md:h-[90px]",
+    containerVertical: "w-[160px] h-[100px] md:w-[728px] md:h-[90px]",
+    // Child ad classes
+    childHorizontal: "w-[160px] h-[50px] md:w-[364px] md:h-[90px]",
+    childVertical: "w-[160px] h-[50px] md:w-[364px] md:h-[90px]",
+    image: "w-full h-full object-cover"
+  }
+};
+
 const TopAd = () => {
   const [ads, setAds] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [layoutType, setLayoutType] = useState('full');
-  const [dimensions, setDimensions] = useState(null);
-  const [childDimensions, setChildDimensions] = useState(null);
   const [mobileStackVertical, setMobileStackVertical] = useState(true);
 
   // Fetch ads from API
@@ -26,11 +41,8 @@ const TopAd = () => {
       if (response.data.success) {
         setAds(response.data.ads || []);
         setLayoutType(response.data.layoutType);
-        setDimensions(response.data.dimensions);
-        setChildDimensions(response.data.childDimensions);
         setMobileStackVertical(response.data.mobileStackVertical !== undefined ? response.data.mobileStackVertical : true);
-        console.log('Using dimensions:', response.data.dimensions || 'No dimensions, using fallback');
-        console.log('Child dimensions:', response.data.childDimensions);
+        console.log('Layout type:', response.data.layoutType);
         console.log('Mobile stack vertical:', response.data.mobileStackVertical);
         
         // Track impressions for the first ad
@@ -125,51 +137,38 @@ const TopAd = () => {
 
   // Reserve space while loading to prevent layout shift
   if (loading) {
-    // Use actual expected dimensions to prevent layout shift
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-    const loadingHeight = isMobile ? '50px' : '90px';
     return (
-      <div className="w-full" style={{ height: loadingHeight }}>
+      <div className="w-full h-[50px] md:h-[90px]">
         {/* Empty space reserved for ad */}
       </div>
     );
   }
 
-  // Define responsive fallback dimensions
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-  const fallbackWidth = isMobile ? 320 : 728;
-  const fallbackHeight = isMobile ? 50 : 90;
-  
-  // For split layouts, calculate total container size from children
-  let adWidth, adHeight;
-  if (layoutType === 'split' && childDimensions) {
-    const childDim = isMobile ? childDimensions.mobile : childDimensions.desktop;
-    if (childDim?.width && childDim?.height) {
-      // Desktop: always side-by-side
-      // Mobile: depends on mobileStackVertical setting
-      if (isMobile && mobileStackVertical) {
-        adWidth = childDim.width;
-        adHeight = childDim.height * 2; // Stack vertically
-      } else {
-        adWidth = childDim.width * 2; // Side by side
-        adHeight = childDim.height;
-      }
-    } else {
-      adWidth = fallbackWidth;
-      adHeight = fallbackHeight;
+  // Generate CSS classes based on dimensions from backend
+  const getAdClasses = () => {
+    if (layoutType === 'full') {
+      // Always use predefined Tailwind classes for full layout
+      return adClasses.full;
     }
-  } else {
-    // For full layouts, use dimensions or fallback
-    adWidth = dimensions?.width || fallbackWidth;
-    adHeight = dimensions?.height || fallbackHeight;
-  }
+    
+    if (layoutType === 'split') {
+      return {
+        container: mobileStackVertical ? adClasses.split.containerVertical : adClasses.split.containerHorizontal,
+        flexDirection: mobileStackVertical ? 'flex-col md:flex-row' : 'flex-row',
+        child: mobileStackVertical ? adClasses.split.childVertical : adClasses.split.childHorizontal,
+        image: adClasses.split.image
+      };
+    }
+    
+    return adClasses.full; // Default fallback
+  };
+
+  const classes = getAdClasses();
   
-  console.log('TopAd dimensions:', { 
-    isMobile, 
-    dimensions, 
-    adWidth, 
-    adHeight,
-    device: isMobile ? 'mobile' : 'desktop'
+  console.log('TopAd render:', { 
+    layoutType,
+    adsCount: ads.length,
+    classes
   });
 
   // If no ads and no layout type, return null
@@ -182,7 +181,7 @@ const TopAd = () => {
     // Full layout - single placeholder
     if (layoutType === 'full') {
       return (
-        <div className="mx-auto rounded-md border border-gray-300 flex items-center justify-center" style={{ width: `${adWidth}px`, height: `${adHeight}px` }}>
+        <div className={`mx-auto rounded-md border border-gray-300 flex items-center justify-center ${classes.container}`}>
           <span className="text-gray-500">Advertisement</span>
         </div>
       );
@@ -191,27 +190,12 @@ const TopAd = () => {
     // Split layout - two placeholders
     if (layoutType === 'split') {
       return (
-        <div 
-          className={`mx-auto flex ${isMobile && mobileStackVertical ? 'flex-col' : 'flex-row'}`} 
-          style={{ width: `${adWidth}px`, height: `${adHeight}px` }}
-        >
+        <div className={`mx-auto flex ${classes.flexDirection} ${classes.container}`}>
           {[0, 1].map((slotIndex) => {
-            // Use child dimensions if available, otherwise fallback
-            const childWidth = isMobile 
-              ? (childDimensions?.mobile?.width || adWidth)
-              : (childDimensions?.desktop?.width || 360);
-            const childHeight = isMobile 
-              ? (childDimensions?.mobile?.height || 50)
-              : (childDimensions?.desktop?.height || adHeight);
-            
             return (
               <div
                 key={`empty-${slotIndex}`}
-                className="rounded-md border border-gray-300 flex items-center justify-center"
-                style={{ 
-                  width: `${childWidth}px`,
-                  height: `${childHeight}px`
-                }}
+                className={`rounded-md border border-gray-300 flex items-center justify-center ${classes.child}`}
               >
                 <span className="text-gray-500">Advertisement</span>
               </div>
@@ -228,17 +212,17 @@ const TopAd = () => {
   if (layoutType === 'full') {
     return (
       <div 
-        className="mx-auto overflow-hidden cursor-pointer"
-        style={{ width: `${adWidth}px`, height: `${adHeight}px` }}
+        className={`mx-auto overflow-hidden cursor-pointer ${classes.container}`}
         onClick={() => handleAdClick(currentAd)}
       >
         <Image
           src={currentAd.imageUrl}
           alt={currentAd.altText || `${currentAd.businessName} Advertisement`}
-          width={adWidth}
-          height={adHeight}
-          className="w-full h-full object-fill"
+          width={728}
+          height={90}
+          className={classes.image}
           priority
+          sizes="(max-width: 640px) 320px, 728px"
         />
       </div>
     );
@@ -246,43 +230,27 @@ const TopAd = () => {
 
   // Split layout - show two ads side by side on desktop, stacked on mobile
   return (
-    <div 
-      className={`mx-auto flex ${isMobile && mobileStackVertical ? 'flex-col' : 'flex-row'}`} 
-      style={{ 
-        width: `${adWidth}px`, 
-        height: `${adHeight}px` 
-      }}
-    >
+    <div className={`mx-auto flex ${classes.flexDirection} ${classes.container}`}>
       {/* Always render two slots for split layout */}
       {[0, 1].map((slotIndex) => {
         const ad = ads[slotIndex];
-        // Use child dimensions if available, otherwise fallback
-        const childWidth = isMobile 
-          ? (childDimensions?.mobile?.width || adWidth)
-          : (childDimensions?.desktop?.width || 360);
-        const childHeight = isMobile 
-          ? (childDimensions?.mobile?.height || 50)
-          : (childDimensions?.desktop?.height || adHeight);
         
         if (ad) {
           // Render ad if available
           return (
             <div
               key={ad.adId}
-              className="overflow-hidden cursor-pointer"
-              style={{ 
-                width: `${childWidth}px`,
-                height: `${childHeight}px`
-              }}
+              className={`overflow-hidden cursor-pointer ${classes.child}`}
               onClick={() => handleAdClick(ad)}
             >
               <Image
                 src={ad.imageUrl}
                 alt={ad.altText || `${ad.businessName} Advertisement`}
-                width={childWidth}
-                height={childHeight}
-                className="w-full h-full object-fill"
+                width={364}
+                height={90}
+                className={classes.image}
                 priority={slotIndex === 0}
+                sizes="(max-width: 640px) 160px, 364px"
               />
             </div>
           );
@@ -291,11 +259,7 @@ const TopAd = () => {
           return (
             <div
               key={`empty-${slotIndex}`}
-              className="rounded-md border border-gray-300 flex items-center justify-center"
-              style={{ 
-                width: `${childWidth}px`,
-                height: `${childHeight}px`
-              }}
+              className={`rounded-md border border-gray-300 flex items-center justify-center ${classes.child}`}
             >
               <span className="text-gray-500">Advertisement</span>
             </div>

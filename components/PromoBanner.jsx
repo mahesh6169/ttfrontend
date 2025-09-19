@@ -5,7 +5,7 @@ import { FaStar, FaMapMarkerAlt, FaComments, FaCalendarAlt, FaUsers, FaLightbulb
 
 const PromoBanner = ({ page = 'listings', inline = false, showAll = false }) => {
   const [currentMessage, setCurrentMessage] = useState(0);
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 640 : true);
+  const [isMobile, setIsMobile] = useState(false); // Start with false to match server rendering
 
   // Check if mobile on mount and window resize
   useEffect(() => {
@@ -78,7 +78,7 @@ const PromoBanner = ({ page = 'listings', inline = false, showAll = false }) => 
     listings: [
       { 
         text: "FREE - list & get discovered!", 
-        link: "/listings",
+        link: "/listings/add",
         icon: FaStar
       },      
       { 

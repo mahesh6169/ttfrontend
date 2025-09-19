@@ -2,6 +2,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   FaAd, FaCalendarAlt, FaEnvelope, FaUser, FaPlus,
   FaCog, FaCheckCircle, FaEye, FaFileInvoice, FaTicketAlt
@@ -13,6 +14,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 
 const ProfilePage = () => {
   const { user, status } = useSelector((state) => state.user);
+  const router = useRouter();
  
   if (status === 'loading') {
     return (
@@ -24,11 +26,18 @@ const ProfilePage = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto px-2 py-3 sm:px-4 sm:py-6">
-      {/* Welcome Header - Compact */}
-      <div className="mb-4">
+      {/* Welcome Header with Back Button */}
+      <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
           Welcome, {user?.name || 'User'}!
         </h1>
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
+        >
+          <span>&lt;</span>
+          <span>back</span>
+        </button>
       </div>
 
       {/* First Container: Account Settings & Check-in */}
