@@ -3,7 +3,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from '@/utils/axiosConfig';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import ImageUploader from '../../components/ImageUploader';
+import BannerImageUploader from '../../components/BannerImageUploader';
 
 const STEPS = [
   { id: 1, name: 'Business & Name', description: 'View business and edit ad name' },
@@ -50,7 +50,8 @@ export default function EditAdPage({ params }) {
         half: null
       },
       images: [], // For new image uploads
-      removedExistingImages: [] // Track removed existing images
+      existingImages: [], // Track existing images to keep
+      removedImages: [] // Track removed existing images for Cloudinary cleanup
     },
     
     // Step 5 - Controls
@@ -89,7 +90,9 @@ export default function EditAdPage({ params }) {
         status: adData.status,
         creative: {
           variants: adData.creative.variants,
-          images: [] // Empty initially for new uploads
+          images: [], // Empty initially for new uploads
+          existingImages: [], // Will be populated by CreativeStep
+          removedImages: [] // Track removed images
         },
         caps: {
           maxImpressions: adData.caps?.maxImpressions || '',
@@ -175,6 +178,12 @@ export default function EditAdPage({ params }) {
           console.log('\nNo existing images to keep');
         }
         
+        // Add removed images for Cloudinary cleanup
+        if (formData.creative.removedImages && formData.creative.removedImages.length > 0) {
+          console.log('\nImages to remove from Cloudinary:', formData.creative.removedImages);
+          submitFormData.append('removedImages', JSON.stringify(formData.creative.removedImages));
+        }
+        
         // Add image files
         console.log('\nProcessing new images for upload:');
         formData.creative.images.forEach((image) => {
@@ -184,7 +193,8 @@ export default function EditAdPage({ params }) {
               size: image.file.size,
               type: image.file.type
             });
-            submitFormData.append('images', image.file, image.imageType);
+            // Append with imageType_index format for backend parsing
+            submitFormData.append('images', image.file, `${image.imageType}_${image.index || 0}`);
           }
         });
         
@@ -497,7 +507,7 @@ function PlacementStep({ formData, setFormData }) {
   );
 }
 
-// Step 2: Target States (Required)
+// Step 2: Target States
 function TargetStatesStep({ formData, setFormData }) {
   const states = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 
@@ -509,40 +519,24 @@ function TargetStatesStep({ formData, setFormData }) {
     setFormData({ ...formData, targetStates: newStates });
   };
 
-  const handleAllStatesToggle = () => {
-    if (formData.targetStates.length === states.length) {
-      // If all states are selected, clear them
-      setFormData({ ...formData, targetStates: [] });
-    } else {
-      // Otherwise, select all states
-      setFormData({ ...formData, targetStates: [...states] });
-    }
-  };
-
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-medium text-gray-900">Target States</h2>
       
-      {/* Required Note */}
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-        <p className="text-sm text-yellow-700">
-          State targeting is required. Select at least one state where your ad will be shown.
+      {/* Info Note */}
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+        <p className="text-sm text-blue-700">
+          Select specific states to target, or leave all unchecked to show ads everywhere.
         </p>
       </div>
       
       {/* State Targeting */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Target States</label>
-        
-        {/* All States checkbox */}
-        <label className="flex items-center mb-3">
-          <input
-            type="checkbox"
-            checked={formData.targetStates.length === states.length}
-            onChange={handleAllStatesToggle}
-            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-          <span className="ml-2 text-sm font-medium text-gray-700">All States</span>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Target States 
+          {formData.targetStates.length === 0 && (
+            <span className="text-sm font-normal text-gray-500 ml-2">(Currently showing in all states)</span>
+          )}
         </label>
         
         <div className="grid grid-cols-3 gap-2">
@@ -567,39 +561,72 @@ function TargetStatesStep({ formData, setFormData }) {
 function CreativeStep({ formData, setFormData, existingAd }) {
   const [images, setImages] = useState(formData.creative?.images || []);
   const [existingImages, setExistingImages] = useState([]);
+  const [removedImages, setRemovedImages] = useState(formData.creative?.removedImages || []);
   const variant = formData.layout;
 
-  // Initialize existing images on mount or when variant changes
+  // Initialize existing images from new carousel structure
   useEffect(() => {
     const existing = [];
     const existingVariant = existingAd.creative.variants[variant];
     
-    if (existingVariant?.imageUrl) {
-      existing.push({
-        url: existingVariant.imageUrl,
-        publicId: extractPublicId(existingVariant.imageUrl),
-        imageType: 'desktop',
-        isNew: false,
-        isExisting: true,
-        id: 'existing_desktop',
-        name: 'Current Desktop Image'
+    // Handle new separate carousel structure
+    if (existingVariant?.desktop?.images && Array.isArray(existingVariant.desktop.images)) {
+      existingVariant.desktop.images.forEach((img, index) => {
+        existing.push({
+          url: img.imageUrl,
+          publicId: extractPublicId(img.imageUrl),
+          imageType: 'desktop',
+          isNew: false,
+          isExisting: true,
+          id: `existing_desktop_${index}`,
+          name: 'Current Desktop Image',
+          index: index,
+          order: img.order || index
+        });
       });
     }
     
-    if (existingVariant?.mobile?.imageUrl) {
-      existing.push({
-        url: existingVariant.mobile.imageUrl,
-        publicId: extractPublicId(existingVariant.mobile.imageUrl),
-        imageType: 'mobile',
-        isNew: false,
-        isExisting: true,
-        id: 'existing_mobile',
-        name: 'Current Mobile Image'
+    if (existingVariant?.mobile?.images && Array.isArray(existingVariant.mobile.images)) {
+      existingVariant.mobile.images.forEach((img, index) => {
+        existing.push({
+          url: img.imageUrl,
+          publicId: extractPublicId(img.imageUrl),
+          imageType: 'mobile',
+          isNew: false,
+          isExisting: true,
+          id: `existing_mobile_${index}`,
+          name: 'Current Mobile Image',
+          index: index,
+          order: img.order || index
+        });
       });
     }
     
     setExistingImages(existing);
-  }, [existingAd, variant]);
+    
+    // Initialize formData with existing destination and alt text data
+    setFormData(prev => ({
+      ...prev,
+      creative: {
+        ...prev.creative,
+        existingImages: existing,
+        variants: {
+          ...prev.creative.variants,
+          [variant]: {
+            ...prev.creative.variants[variant],
+            // Desktop resolution data
+            destination: existingVariant?.desktop?.destination || { type: 'external', url: '' },
+            altText: existingVariant?.desktop?.altText || '',
+            // Mobile resolution data
+            mobile: existingVariant?.mobile ? {
+              altText: existingVariant.mobile.altText || '',
+              destination: existingVariant.mobile.destination || { type: 'external', url: '' }
+            } : null
+          }
+        }
+      }
+    }));
+  }, [existingAd, variant, setFormData]);
   
   // Helper to extract Cloudinary public ID
   function extractPublicId(url) {
@@ -609,53 +636,48 @@ function CreativeStep({ formData, setFormData, existingAd }) {
   }
 
   const handleImagesChange = (newImages) => {
-    console.log('📷 New images changed:', newImages);
-    
-    // Only keep new images (File objects)
-    const onlyNewImages = newImages.filter(img => img.isNew && img.file instanceof File);
-    
-    setImages(onlyNewImages);
-    
+    setImages(newImages);
     // Store images in formData for later submission
     setFormData({
       ...formData,
       creative: {
         ...formData.creative,
-        images: onlyNewImages,
-        existingImages: existingImages // Keep track of existing images
+        images: newImages,
+        useCarousel: newImages.length > 1 || existingImages.length > 1
       }
     });
   };
-  
+
   const handleExistingImagesChange = (updatedExistingImages) => {
-    console.log('📁 Existing images changed:', updatedExistingImages);
+    // Find removed images
+    const newlyRemoved = existingImages.filter(
+      img => !updatedExistingImages.find(updated => updated.id === img.id)
+    );
+    
+    // Update removed images list
+    const updatedRemovedImages = [...removedImages, ...newlyRemoved];
+    setRemovedImages(updatedRemovedImages);
+    
+    // Update existing images
     setExistingImages(updatedExistingImages);
     
-    // Update formData
+    // Update form data
     setFormData({
       ...formData,
       creative: {
         ...formData.creative,
-        images: images,
-        existingImages: updatedExistingImages
+        existingImages: updatedExistingImages,
+        removedImages: updatedRemovedImages
       }
     });
   };
 
-  
-  // Helper to extract Cloudinary public ID
-  function extractPublicId(url) {
-    if (!url) return null;
-    const matches = url.match(/\/v\d+\/(.+)\.\w+$/);
-    return matches ? matches[1] : null;
-  }
-
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Creative Assets</h2>
+      <h2 className="text-lg font-medium text-gray-900">Update Creative Assets</h2>
       
-      {/* Image Uploader with existing images */}
-      <ImageUploader
+      {/* Image Uploader - handles both single and multiple images */}
+      <BannerImageUploader
         images={images}
         existingImages={existingImages}
         onImagesChange={handleImagesChange}
@@ -664,13 +686,13 @@ function CreativeStep({ formData, setFormData, existingAd }) {
         mode="edit"
       />
 
-      {/* Creative Details */}
-      <div className="space-y-6">
+      {/* Creative Details - Always show all fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         {/* Desktop Creative */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-gray-900">Desktop Creative Details</h3>
+        <div className="space-y-4 border border-gray-200 rounded-lg p-4">
+          <h3 className="font-medium text-gray-900">Desktop Creative Details</h3>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Alt Text *</label>
+            <label className="block text-sm font-medium text-gray-700">Desktop Alt Text <span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="Describe the image for accessibility"
@@ -694,10 +716,10 @@ function CreativeStep({ formData, setFormData, existingAd }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Destination URL</label>
+            <label className="block text-sm font-medium text-gray-700">Desktop Destination URL</label>
             <input
               type="url"
-              placeholder="https://example.com (optional)"
+              placeholder="https://example.com"
               value={formData.creative.variants[variant]?.destination?.url || ''}
               onChange={(e) => setFormData({
                 ...formData,
@@ -720,68 +742,64 @@ function CreativeStep({ formData, setFormData, existingAd }) {
           </div>
         </div>
 
-        {/* Mobile Creative (Optional) */}
-        {(existingImages.some(img => img.imageType === 'mobile') || images.some(img => img.imageType === 'mobile')) && (
-          <div className="space-y-4 border-t pt-4">
-            <h3 className="text-sm font-medium text-gray-900">Mobile Creative Details (Optional)</h3>
-            <p className="text-xs text-gray-500">Leave empty to use desktop values</p>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Mobile Alt Text</label>
-              <input
-                type="text"
-                placeholder="Describe the mobile image (optional)"
-                value={formData.creative.variants[variant]?.mobile?.altText || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  creative: {
-                    ...formData.creative,
-                    variants: {
-                      ...formData.creative.variants,
-                      [variant]: {
-                        ...formData.creative.variants[variant],
-                        mobile: {
-                          ...formData.creative.variants[variant]?.mobile,
-                          altText: e.target.value
-                        }
+        {/* Mobile Creative */}
+        <div className="space-y-4 border border-gray-200 rounded-lg p-4">
+          <h3 className="font-medium text-gray-900">Mobile Creative Details</h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Mobile Alt Text</label>
+            <input
+              type="text"
+              placeholder="Leave empty to use desktop alt text"
+              value={formData.creative.variants[variant]?.mobile?.altText || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                creative: {
+                  ...formData.creative,
+                  variants: {
+                    ...formData.creative.variants,
+                    [variant]: {
+                      ...formData.creative.variants[variant],
+                      mobile: {
+                        ...formData.creative.variants[variant]?.mobile,
+                        altText: e.target.value
                       }
                     }
                   }
-                })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Mobile Destination URL</label>
-              <input
-                type="url"
-                placeholder="https://example.com/mobile (optional)"
-                value={formData.creative.variants[variant]?.mobile?.destination?.url || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  creative: {
-                    ...formData.creative,
-                    variants: {
-                      ...formData.creative.variants,
-                      [variant]: {
-                        ...formData.creative.variants[variant],
-                        mobile: {
-                          ...formData.creative.variants[variant]?.mobile,
-                          destination: {
-                            type: e.target.value.startsWith('http') ? 'external' : 'internal',
-                            url: e.target.value
-                          }
-                        }
-                      }
-                    }
-                  }
-                })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
+                }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            />
           </div>
-        )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Mobile Destination URL</label>
+            <input
+              type="url"
+              placeholder="Leave empty to use desktop URL"
+              value={formData.creative.variants[variant]?.mobile?.destination?.url || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                creative: {
+                  ...formData.creative,
+                  variants: {
+                    ...formData.creative.variants,
+                    [variant]: {
+                      ...formData.creative.variants[variant],
+                      mobile: {
+                        ...formData.creative.variants[variant]?.mobile,
+                        destination: {
+                          type: e.target.value.startsWith('http') ? 'external' : 'internal',
+                          url: e.target.value
+                        }
+                      }
+                    }
+                  }
+                }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -931,7 +949,7 @@ function ReviewStep({ formData, existingAd }) {
         
         <div className="py-3">
           <dt className="text-sm font-medium text-gray-500">Target States</dt>
-          <dd className="mt-1 text-sm text-gray-900">{formData.targetStates.join(', ') || 'None selected'}</dd>
+          <dd className="mt-1 text-sm text-gray-900">{formData.targetStates.length === 0 ? 'All states' : formData.targetStates.join(', ')}</dd>
         </div>
         
         <div className="py-3">

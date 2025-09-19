@@ -27,10 +27,12 @@ const adClasses = {
 
 const TopAd = () => {
   const [ads, setAds] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [layoutType, setLayoutType] = useState('full');
   const [mobileStackVertical, setMobileStackVertical] = useState(true);
+  const [impressedAds, setImpressedAds] = useState(new Set()); // Track which ads have been impressed
 
   // Fetch ads from API
   const fetchAds = useCallback(async () => {
@@ -44,11 +46,6 @@ const TopAd = () => {
         setMobileStackVertical(response.data.mobileStackVertical !== undefined ? response.data.mobileStackVertical : true);
         console.log('Layout type:', response.data.layoutType);
         console.log('Mobile stack vertical:', response.data.mobileStackVertical);
-        
-        // Track impressions for the first ad
-        if (response.data.ads && response.data.ads[0]) {
-          trackImpression(response.data.ads[0].adId);
-        }
       }
     } catch (error) {
       console.error('Error fetching banner ads:', error);
@@ -66,7 +63,7 @@ const TopAd = () => {
     }
   };
 
-  // Track click
+  // Track click - counts every click regardless of which carousel image
   const handleAdClick = async (ad) => {
     try {
       console.log('Ad click:', ad);
@@ -100,13 +97,24 @@ const TopAd = () => {
     fetchAds();
   }, [fetchAds]);
 
-  // Preload the first ad image once we have it
+  // Track impression when ad is displayed for the first time
   useEffect(() => {
-    if (ads.length > 0 && ads[0].imageUrl) {
+    if (ads.length > 0 && currentAdIndex < ads.length) {
+      const currentAd = ads[currentAdIndex];
+      if (currentAd && !impressedAds.has(currentAd.adId)) {
+        trackImpression(currentAd.adId);
+        setImpressedAds(prev => new Set(prev).add(currentAd.adId));
+      }
+    }
+  }, [currentAdIndex, ads, impressedAds]);
+
+  // Preload the first ad images once we have them
+  useEffect(() => {
+    if (ads.length > 0 && ads[0].images && ads[0].images.length > 0) {
       const link = document.createElement('link');
       link.rel = 'preload';
       link.as = 'image';
-      link.href = ads[0].imageUrl;
+      link.href = ads[0].images[0].imageUrl;
       link.fetchPriority = 'high';
       document.head.appendChild(link);
       
@@ -118,22 +126,36 @@ const TopAd = () => {
     }
   }, [ads]);
 
-  // Auto-rotate ads if multiple
+  // Auto-rotate carousel and ads
   useEffect(() => {
-    if (ads.length > 1) {
-      const timer = setTimeout(() => {
-        const nextIndex = (currentIndex + 1) % ads.length;
-        setCurrentIndex(nextIndex);
-        
-        // Track impression for the new ad
-        if (ads[nextIndex]) {
-          trackImpression(ads[nextIndex].adId);
-        }
-      }, 5000); // Rotate every 5 seconds
+    if (ads.length === 0) return;
+    
+    const timer = setTimeout(() => {
+      const currentAd = ads[currentAdIndex];
       
-      return () => clearTimeout(timer);
-    }
-  }, [currentIndex, ads]);
+      // First, try to rotate within current ad's images
+      if (currentAd.images && currentAd.images.length > 1) {
+        if (currentImageIndex < currentAd.images.length - 1) {
+          // Move to next image in current ad
+          setCurrentImageIndex(currentImageIndex + 1);
+        } else {
+          // Reset to first image and move to next ad if multiple ads
+          setCurrentImageIndex(0);
+          if (ads.length > 1) {
+            const nextAdIndex = (currentAdIndex + 1) % ads.length;
+            setCurrentAdIndex(nextAdIndex);
+          }
+        }
+      } else if (ads.length > 1) {
+        // Single image ad, just rotate to next ad
+        const nextAdIndex = (currentAdIndex + 1) % ads.length;
+        setCurrentAdIndex(nextAdIndex);
+        setCurrentImageIndex(0);
+      }
+    }, 5000); // Rotate every 5 seconds
+    
+    return () => clearTimeout(timer);
+  }, [currentAdIndex, currentImageIndex, ads]);
 
   // Reserve space while loading to prevent layout shift
   if (loading) {
@@ -206,18 +228,19 @@ const TopAd = () => {
     }
   }
 
-  const currentAd = ads[currentIndex] || ads[0];
+  const currentAd = ads[currentAdIndex];
+  const currentImage = currentAd?.images?.[currentImageIndex] || currentAd?.images?.[0];
 
   // Full layout - single ad
-  if (layoutType === 'full') {
+  if (layoutType === 'full' && currentImage) {
     return (
       <div 
         className={`mx-auto overflow-hidden cursor-pointer ${classes.container}`}
         onClick={() => handleAdClick(currentAd)}
       >
         <Image
-          src={currentAd.imageUrl}
-          alt={currentAd.altText || `${currentAd.businessName} Advertisement`}
+          src={currentImage.imageUrl}
+          alt={currentImage.altText || `${currentAd.businessName} Advertisement`}
           width={728}
           height={90}
           className={classes.image}
@@ -235,8 +258,9 @@ const TopAd = () => {
       {[0, 1].map((slotIndex) => {
         const ad = ads[slotIndex];
         
-        if (ad) {
-          // Render ad if available
+        if (ad && ad.images && ad.images.length > 0) {
+          // For split layout, just show first image of each ad
+          const image = ad.images[0];
           return (
             <div
               key={ad.adId}
@@ -244,8 +268,8 @@ const TopAd = () => {
               onClick={() => handleAdClick(ad)}
             >
               <Image
-                src={ad.imageUrl}
-                alt={ad.altText || `${ad.businessName} Advertisement`}
+                src={image.imageUrl}
+                alt={image.altText || `${ad.businessName} Advertisement`}
                 width={364}
                 height={90}
                 className={classes.image}

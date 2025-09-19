@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from '@/utils/axiosConfig';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import ImageUploader from '../components/ImageUploader';
+import BannerImageUploader from '../components/BannerImageUploader';
 
 const STEPS = [
   { id: 1, name: 'Business & Name', description: 'Select business and name your ad' },
@@ -87,6 +87,7 @@ export default function CreateAdPage() {
       submitFormData.append('schedule', JSON.stringify(formData.schedule));
       submitFormData.append('status', formData.status);
       submitFormData.append('weight', formData.weight);
+      submitFormData.append('useCarousel', formData.creative?.useCarousel || false);
       
       // Add creative details
       const variant = formData.layout;
@@ -112,14 +113,18 @@ export default function CreateAdPage() {
       // Add image files
       const images = formData.creative?.images || [];
       console.log('\nProcessing images for upload:');
+      
+      // Send images with index information
       images.forEach((image) => {
         if (image.file && image.file instanceof File) {
-          console.log(`Adding ${image.imageType} image:`, {
+          const filename = image.index > 0 ? `${image.imageType}_${image.index}` : image.imageType;
+          console.log(`Adding ${image.imageType} image ${image.index}:`, {
             name: image.file.name,
             size: image.file.size,
-            type: image.file.type
+            type: image.file.type,
+            filename: filename
           });
-          submitFormData.append('images', image.file, image.imageType);
+          submitFormData.append('images', image.file, filename);
         }
       });
       
@@ -471,40 +476,25 @@ function TargetingStep({ formData, setFormData }) {
     setFormData({ ...formData, targetStates: newStates });
   };
 
-  const handleAllStatesToggle = () => {
-    if (formData.targetStates.length === states.length) {
-      // If all states are selected, clear them
-      setFormData({ ...formData, targetStates: [] });
-    } else {
-      // Otherwise, select all states
-      setFormData({ ...formData, targetStates: [...states] });
-    }
-  };
 
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-medium text-gray-900">Target States</h2>
       
-      {/* Required Note */}
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-        <p className="text-sm text-yellow-700">
-          State targeting is required. Select at least one state where your ad will be shown.
+      {/* Info Note */}
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+        <p className="text-sm text-blue-700">
+          Select specific states to target, or leave all unchecked to show ads everywhere.
         </p>
       </div>
       
       {/* State Targeting */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Target States</label>
-        
-        {/* All States checkbox */}
-        <label className="flex items-center mb-3">
-          <input
-            type="checkbox"
-            checked={formData.targetStates.length === states.length}
-            onChange={handleAllStatesToggle}
-            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-          <span className="ml-2 text-sm font-medium text-gray-700">All States</span>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Target States 
+          {formData.targetStates.length === 0 && (
+            <span className="text-sm font-normal text-gray-500 ml-2">(Currently showing in all states)</span>
+          )}
         </label>
         
         <div className="grid grid-cols-3 gap-2">
@@ -539,7 +529,8 @@ function CreativeStep({ formData, setFormData }) {
       ...formData,
       creative: {
         ...formData.creative,
-        images: newImages
+        images: newImages,
+        useCarousel: newImages.length > 1 // Auto-detect carousel based on image count
       }
     });
   };
@@ -548,21 +539,21 @@ function CreativeStep({ formData, setFormData }) {
     <div className="space-y-6">
       <h2 className="text-lg font-medium text-gray-900">Upload Creative Assets</h2>
       
-      {/* Image Uploader Component */}
-      <ImageUploader
+      {/* Image Uploader - handles both single and multiple images */}
+      <BannerImageUploader
         images={images}
         onImagesChange={handleImagesChange}
         variant={variant}
         mode="add"
       />
 
-      {/* Creative Details */}
-      <div className="space-y-6">
+      {/* Creative Details - Always show all fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         {/* Desktop Creative */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-gray-900">Desktop Creative Details</h3>
+        <div className="space-y-4 border border-gray-200 rounded-lg p-4">
+          <h3 className="font-medium text-gray-900">Desktop Creative Details</h3>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Alt Text *</label>
+            <label className="block text-sm font-medium text-gray-700">Desktop Alt Text <span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="Describe the image for accessibility"
@@ -586,10 +577,10 @@ function CreativeStep({ formData, setFormData }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Destination URL</label>
+            <label className="block text-sm font-medium text-gray-700">Desktop Destination URL</label>
             <input
               type="url"
-              placeholder="https://example.com (optional)"
+              placeholder="https://example.com"
               value={formData.creative.variants[variant]?.destination?.url || ''}
               onChange={(e) => setFormData({
                 ...formData,
@@ -612,68 +603,64 @@ function CreativeStep({ formData, setFormData }) {
           </div>
         </div>
 
-        {/* Mobile Creative (Optional) - only show if mobile image is uploaded */}
-        {images.some(img => img.imageType === 'mobile') && (
-          <div className="space-y-4 border-t pt-4">
-            <h3 className="text-sm font-medium text-gray-900">Mobile Creative Details (Optional)</h3>
-            <p className="text-xs text-gray-500">Leave empty to use desktop values</p>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Mobile Alt Text</label>
-              <input
-                type="text"
-                placeholder="Describe the mobile image (optional)"
-                value={formData.creative.variants[variant]?.mobile?.altText || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  creative: {
-                    ...formData.creative,
-                    variants: {
-                      ...formData.creative.variants,
-                      [variant]: {
-                        ...formData.creative.variants[variant],
-                        mobile: {
-                          ...formData.creative.variants[variant]?.mobile,
-                          altText: e.target.value
-                        }
+        {/* Mobile Creative */}
+        <div className="space-y-4 border border-gray-200 rounded-lg p-4">
+          <h3 className="font-medium text-gray-900">Mobile Creative Details</h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Mobile Alt Text</label>
+            <input
+              type="text"
+              placeholder="Leave empty to use desktop alt text"
+              value={formData.creative.variants[variant]?.mobile?.altText || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                creative: {
+                  ...formData.creative,
+                  variants: {
+                    ...formData.creative.variants,
+                    [variant]: {
+                      ...formData.creative.variants[variant],
+                      mobile: {
+                        ...formData.creative.variants[variant]?.mobile,
+                        altText: e.target.value
                       }
                     }
                   }
-                })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Mobile Destination URL</label>
-              <input
-                type="url"
-                placeholder="https://example.com/mobile (optional)"
-                value={formData.creative.variants[variant]?.mobile?.destination?.url || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  creative: {
-                    ...formData.creative,
-                    variants: {
-                      ...formData.creative.variants,
-                      [variant]: {
-                        ...formData.creative.variants[variant],
-                        mobile: {
-                          ...formData.creative.variants[variant]?.mobile,
-                          destination: {
-                            type: e.target.value.startsWith('http') ? 'external' : 'internal',
-                            url: e.target.value
-                          }
-                        }
-                      }
-                    }
-                  }
-                })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
+                }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            />
           </div>
-        )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Mobile Destination URL</label>
+            <input
+              type="url"
+              placeholder="Leave empty to use desktop URL"
+              value={formData.creative.variants[variant]?.mobile?.destination?.url || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                creative: {
+                  ...formData.creative,
+                  variants: {
+                    ...formData.creative.variants,
+                    [variant]: {
+                      ...formData.creative.variants[variant],
+                      mobile: {
+                        ...formData.creative.variants[variant]?.mobile,
+                        destination: {
+                          type: e.target.value.startsWith('http') ? 'external' : 'internal',
+                          url: e.target.value
+                        }
+                      }
+                    }
+                  }
+                }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -791,6 +778,26 @@ function ControlsStep({ formData, setFormData }) {
 
 // Step 6: Review
 function ReviewStep({ formData }) {
+  const [businessName, setBusinessName] = useState('');
+  
+  useEffect(() => {
+    // Fetch business name
+    const fetchBusinessName = async () => {
+      if (formData.businessId) {
+        try {
+          const response = await axios.get('/admin/bannerAds/businesses');
+          const business = response.data.businesses?.find(b => b._id === formData.businessId);
+          if (business) {
+            setBusinessName(business.name);
+          }
+        } catch (error) {
+          console.error('Error fetching business:', error);
+        }
+      }
+    };
+    fetchBusinessName();
+  }, [formData.businessId]);
+  
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-medium text-gray-900">Review Ad Campaign</h2>
@@ -798,7 +805,7 @@ function ReviewStep({ formData }) {
       <dl className="divide-y divide-gray-200">
         <div className="py-3">
           <dt className="text-sm font-medium text-gray-500">Business</dt>
-          <dd className="mt-1 text-sm text-gray-900">{formData.businessId || 'Not selected'}</dd>
+          <dd className="mt-1 text-sm text-gray-900">{businessName || formData.businessId || 'Not selected'}</dd>
         </div>
         
         <div className="py-3">
@@ -815,7 +822,7 @@ function ReviewStep({ formData }) {
         
         <div className="py-3">
           <dt className="text-sm font-medium text-gray-500">Target States</dt>
-          <dd className="mt-1 text-sm text-gray-900">{formData.targetStates.join(', ') || 'None selected'}</dd>
+          <dd className="mt-1 text-sm text-gray-900">{formData.targetStates.length === 0 ? 'All states' : formData.targetStates.join(', ')}</dd>
         </div>
         
         <div className="py-3">
@@ -831,10 +838,22 @@ function ReviewStep({ formData }) {
         </div>
         
         <div className="py-3">
+          <dt className="text-sm font-medium text-gray-500">Weight</dt>
+          <dd className="mt-1 text-sm text-gray-900">{formData.weight}</dd>
+        </div>
+        
+        <div className="py-3">
           <dt className="text-sm font-medium text-gray-500">Caps</dt>
           <dd className="mt-1 text-sm text-gray-900">
             Impressions: {formData.caps.maxImpressions || 'Unlimited'}, 
             Clicks: {formData.caps.maxClicks || 'Unlimited'}
+          </dd>
+        </div>
+        
+        <div className="py-3">
+          <dt className="text-sm font-medium text-gray-500">Images</dt>
+          <dd className="mt-1 text-sm text-gray-900">
+            {formData.creative?.images?.length || 0} image(s) uploaded
           </dd>
         </div>
       </dl>
