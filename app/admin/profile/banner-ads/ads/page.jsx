@@ -169,8 +169,6 @@ export default function ManageAdsPage() {
                     </div>
                     
                     <div className="mt-2 flex items-center text-sm text-gray-500">
-                      <span>Weight: {ad.weight}</span>
-                      <span className="mx-2">•</span>
                       <span>Layout: {ad.layout}</span>
                       <span className="mx-2">•</span>
                       <span>States: {ad.targetStates.join(', ')}</span>

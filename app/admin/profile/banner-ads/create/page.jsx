@@ -35,7 +35,6 @@ export default function CreateAdPage() {
       startAt: new Date().toISOString().split('T')[0],
       endAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     },
-    weight: 10,
     status: 'active',
     
     // Step 4 - Creative
@@ -86,7 +85,6 @@ export default function CreateAdPage() {
       submitFormData.append('targetStates', JSON.stringify(formData.targetStates));
       submitFormData.append('schedule', JSON.stringify(formData.schedule));
       submitFormData.append('status', formData.status);
-      submitFormData.append('weight', formData.weight);
       submitFormData.append('useCarousel', formData.creative?.useCarousel || false);
       
       // Add creative details
@@ -268,22 +266,23 @@ function BusinessNameStep({ formData, setFormData }) {
       </div>
       
       <div className="space-y-2">
-        {businesses.map(business => (
-          <label key={business._id} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-            <input
-              type="radio"
-              name="business"
-              value={business._id}
-              checked={formData.businessId === business._id}
-              onChange={(e) => setFormData({ ...formData, businessId: e.target.value })}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-            />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">{business.name}</p>
-              <p className="text-xs text-gray-500">{business.businessId} • {business.contact.email}</p>
-            </div>
-          </label>
-        ))}
+        <label htmlFor="business" className="block text-sm font-medium text-gray-700">
+          Select Business <span className="text-red-500">*</span>
+        </label>
+        <select
+          id="business"
+          value={formData.businessId}
+          onChange={(e) => setFormData({ ...formData, businessId: e.target.value })}
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          required
+        >
+          <option value="">Choose a business...</option>
+          {businesses.map(business => (
+            <option key={business._id} value={business._id}>
+              {business.name} ({business.businessId})
+            </option>
+          ))}
+        </select>
       </div>
       
       {businesses.length === 0 && (
@@ -718,22 +717,6 @@ function ControlsStep({ formData, setFormData }) {
         </select>
       </div>
 
-      {/* Weight */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Rotation Weight (1-100)
-        </label>
-        <input
-          type="number"
-          min="1"
-          max="100"
-          value={formData.weight}
-          onChange={(e) => setFormData({ ...formData, weight: parseInt(e.target.value) || 10 })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-        />
-        <p className="mt-1 text-xs text-gray-500">Higher weight = more frequent display</p>
-      </div>
-
       {/* Caps */}
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">Performance Limits (Optional)</h3>
@@ -835,11 +818,6 @@ function ReviewStep({ formData }) {
         <div className="py-3">
           <dt className="text-sm font-medium text-gray-500">Status</dt>
           <dd className="mt-1 text-sm text-gray-900">{formData.status}</dd>
-        </div>
-        
-        <div className="py-3">
-          <dt className="text-sm font-medium text-gray-500">Weight</dt>
-          <dd className="mt-1 text-sm text-gray-900">{formData.weight}</dd>
         </div>
         
         <div className="py-3">

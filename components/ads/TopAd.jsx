@@ -97,6 +97,8 @@ const TopAd = () => {
     fetchAds();
   }, [fetchAds]);
 
+  // No need for weighted selection - backend sends the right ad
+
   // Track impression when ad is displayed for the first time
   useEffect(() => {
     if (ads.length > 0 && currentAdIndex < ads.length) {
@@ -126,35 +128,23 @@ const TopAd = () => {
     }
   }, [ads]);
 
-  // Auto-rotate carousel and ads
+
+  // Auto-rotate only within current ad's images
   useEffect(() => {
     if (ads.length === 0) return;
     
-    const timer = setTimeout(() => {
-      const currentAd = ads[currentAdIndex];
-      
-      // First, try to rotate within current ad's images
-      if (currentAd.images && currentAd.images.length > 1) {
-        if (currentImageIndex < currentAd.images.length - 1) {
-          // Move to next image in current ad
-          setCurrentImageIndex(currentImageIndex + 1);
-        } else {
-          // Reset to first image and move to next ad if multiple ads
-          setCurrentImageIndex(0);
-          if (ads.length > 1) {
-            const nextAdIndex = (currentAdIndex + 1) % ads.length;
-            setCurrentAdIndex(nextAdIndex);
-          }
-        }
-      } else if (ads.length > 1) {
-        // Single image ad, just rotate to next ad
-        const nextAdIndex = (currentAdIndex + 1) % ads.length;
-        setCurrentAdIndex(nextAdIndex);
-        setCurrentImageIndex(0);
-      }
-    }, 5000); // Rotate every 5 seconds
+    const currentAd = ads[currentAdIndex];
     
-    return () => clearTimeout(timer);
+    // Only set timer if current ad has multiple images
+    if (currentAd?.images && currentAd.images.length > 1) {
+      const timer = setTimeout(() => {
+        // Rotate to next image in current ad
+        setCurrentImageIndex((prevIndex) => (prevIndex + 1) % currentAd.images.length);
+      }, 5000); // Rotate every 5 seconds
+      
+      return () => clearTimeout(timer);
+    }
+    // No rotation for single image ads - they stay static
   }, [currentAdIndex, currentImageIndex, ads]);
 
   // Reserve space while loading to prevent layout shift

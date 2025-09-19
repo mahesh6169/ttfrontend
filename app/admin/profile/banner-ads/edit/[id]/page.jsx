@@ -40,7 +40,6 @@ export default function EditAdPage({ params }) {
       startAt: new Date().toISOString().split('T')[0],
       endAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     },
-    weight: 10,
     status: 'active',
     
     // Step 4 - Creative
@@ -86,7 +85,6 @@ export default function EditAdPage({ params }) {
           startAt: new Date(adData.schedule.startAt).toISOString().split('T')[0],
           endAt: new Date(adData.schedule.endAt).toISOString().split('T')[0]
         },
-        weight: adData.weight,
         status: adData.status,
         creative: {
           variants: adData.creative.variants,
@@ -144,7 +142,6 @@ export default function EditAdPage({ params }) {
         submitFormData.append('targetStates', JSON.stringify(formData.targetStates));
         submitFormData.append('schedule', JSON.stringify(formData.schedule));
         submitFormData.append('status', formData.status);
-        submitFormData.append('weight', formData.weight);
         
         // Add creative details
         const variant = formData.layout;
@@ -212,7 +209,6 @@ export default function EditAdPage({ params }) {
           targetStates: formData.targetStates,
           schedule: formData.schedule,
           status: formData.status,
-          weight: formData.weight,
           caps: {
             maxImpressions: formData.caps.maxImpressions ? parseInt(formData.caps.maxImpressions) : undefined,
             maxClicks: formData.caps.maxClicks ? parseInt(formData.caps.maxClicks) : undefined
@@ -856,22 +852,6 @@ function ControlsStep({ formData, setFormData }) {
           <option value="paused">Paused (Manual activation required)</option>
           <option value="expired">Expired</option>
         </select>
-      </div>
-
-      {/* Weight */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Rotation Weight (1-100)
-        </label>
-        <input
-          type="number"
-          min="1"
-          max="100"
-          value={formData.weight}
-          onChange={(e) => setFormData({ ...formData, weight: parseInt(e.target.value) || 10 })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-        />
-        <p className="mt-1 text-xs text-gray-500">Higher weight = more frequent display</p>
       </div>
 
       {/* Caps */}

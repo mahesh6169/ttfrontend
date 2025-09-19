@@ -1,23 +1,34 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import axios from '@/utils/axiosConfig';
 import { FaCalendarAlt, FaChartBar, FaDownload } from 'react-icons/fa';
 
 export default function MetricsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [metrics, setMetrics] = useState([]);
   const [totals, setTotals] = useState({ impressions: 0, clicks: 0, ctr: 0 });
   const [loading, setLoading] = useState(true);
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [businesses, setBusinesses] = useState([]);
   const [placements, setPlacements] = useState([]);
   
-  // Filters
-  const [filters, setFilters] = useState({
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-    businessId: '',
-    placementId: '',
-    state: ''
-  });
+  // Initialize filters from URL params
+  const getInitialFilters = () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    return {
+      startDate: searchParams.get('startDate') || today,
+      endDate: searchParams.get('endDate') || today,
+      businessId: searchParams.get('businessId') || '',
+      placementId: searchParams.get('placementId') || '',
+      state: searchParams.get('state') || ''
+    };
+  };
+  
+  const [filters, setFilters] = useState(getInitialFilters());
 
   // Aggregated data for charts
   const [chartData, setChartData] = useState({
@@ -26,6 +37,21 @@ export default function MetricsPage() {
     byState: [],
     byBusiness: []
   });
+
+  // Update URL when filters change
+  const updateURL = (newFilters) => {
+    const params = new URLSearchParams();
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+    router.replace(`/admin/profile/banner-ads/metrics?${params.toString()}`);
+  };
+
+  // Custom filter setter that also updates URL
+  const updateFilters = (newFilters) => {
+    setFilters(newFilters);
+    updateURL(newFilters);
+  };
 
   useEffect(() => {
     fetchInitialData();
@@ -57,6 +83,7 @@ export default function MetricsPage() {
 
   const fetchMetrics = async () => {
     try {
+      setLoadingMetrics(true);
       const params = {};
       if (filters.startDate) params.startDate = filters.startDate;
       if (filters.endDate) params.endDate = filters.endDate;
@@ -73,6 +100,8 @@ export default function MetricsPage() {
       processChartData(response.data.metrics || []);
     } catch (error) {
       console.error('Error fetching metrics:', error);
+    } finally {
+      setLoadingMetrics(false);
     }
   };
 
@@ -125,11 +154,12 @@ export default function MetricsPage() {
 
   const handleExport = () => {
     // Convert metrics to CSV
-    const headers = ['Date', 'Ad ID', 'Business ID', 'Placement', 'State', 'Device', 'Impressions', 'Clicks', 'CTR'];
+    const headers = ['Date', 'Ad ID', 'Business ID', 'Business Name', 'Placement', 'State', 'Device', 'Impressions', 'Clicks', 'CTR'];
     const rows = metrics.map(m => [
       m.date,
       m.adId,
       m.businessId || '',
+      businesses.find(b => b._id === m.businessId || b.businessId === m.businessId)?.name || '',
       m.placementId,
       m.state,
       m.device || '',
@@ -172,14 +202,74 @@ export default function MetricsPage() {
 
       {/* Filters */}
       <div className="bg-white shadow rounded-lg p-4">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Filters</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-medium text-gray-900">Filters</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const today = new Date().toISOString().split('T')[0];
+                updateFilters({ ...filters, startDate: today, endDate: today });
+              }}
+              className="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(start.getDate() - 7);
+                updateFilters({ 
+                  ...filters, 
+                  startDate: start.toISOString().split('T')[0],
+                  endDate: end.toISOString().split('T')[0]
+                });
+              }}
+              className="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+            >
+              Last 7 Days
+            </button>
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(start.getDate() - 30);
+                updateFilters({ 
+                  ...filters, 
+                  startDate: start.toISOString().split('T')[0],
+                  endDate: end.toISOString().split('T')[0]
+                });
+              }}
+              className="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+            >
+              Last 30 Days
+            </button>
+            {(filters.businessId || filters.placementId || filters.state) && (
+              <button
+                onClick={() => {
+                  const today = new Date().toISOString().split('T')[0];
+                  updateFilters({
+                    startDate: today,
+                    endDate: today,
+                    businessId: '',
+                    placementId: '',
+                    state: ''
+                  });
+                }}
+                className="text-sm px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Start Date</label>
             <input
               type="date"
               value={filters.startDate}
-              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+              onChange={(e) => updateFilters({ ...filters, startDate: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
@@ -189,21 +279,27 @@ export default function MetricsPage() {
             <input
               type="date"
               value={filters.endDate}
-              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+              onChange={(e) => updateFilters({ ...filters, endDate: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700">Business</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Business {filters.businessId && <span className="text-blue-600 text-xs">(filtered)</span>}
+            </label>
             <select
               value={filters.businessId}
-              onChange={(e) => setFilters({ ...filters, businessId: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              onChange={(e) => updateFilters({ ...filters, businessId: e.target.value })}
+              className={`mt-1 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
+                filters.businessId ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+              }`}
             >
               <option value="">All Businesses</option>
               {businesses.map(b => (
-                <option key={b.businessId} value={b.businessId}>{b.name}</option>
+                <option key={b.businessId} value={b.businessId}>
+                  {b.name} ({b.businessId})
+                </option>
               ))}
             </select>
           </div>
@@ -212,7 +308,7 @@ export default function MetricsPage() {
             <label className="block text-sm font-medium text-gray-700">Placement</label>
             <select
               value={filters.placementId}
-              onChange={(e) => setFilters({ ...filters, placementId: e.target.value })}
+              onChange={(e) => updateFilters({ ...filters, placementId: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">All Placements</option>
@@ -228,7 +324,7 @@ export default function MetricsPage() {
             <label className="block text-sm font-medium text-gray-700">State</label>
             <select
               value={filters.state}
-              onChange={(e) => setFilters({ ...filters, state: e.target.value })}
+              onChange={(e) => updateFilters({ ...filters, state: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">All States</option>
@@ -238,6 +334,106 @@ export default function MetricsPage() {
             </select>
           </div>
         </div>
+      </div>
+
+      {/* Detailed Table - Moved here to be close to filters */}
+      <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900">Detailed Metrics</h3>
+            {filters.businessId && (
+              <span className="text-sm text-gray-500">
+                Filtered by: <span className="font-medium">{businesses.find(b => b.businessId === filters.businessId)?.name}</span>
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="overflow-x-auto relative">
+          {loadingMetrics && (
+            <div className="absolute inset-0 bg-white bg-opacity-75 z-10 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          )}
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ad ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Business
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Placement
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  State
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Device
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Impressions
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Clicks
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  CTR
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {metrics.slice(0, 50).map((metric, idx) => (
+                <tr key={idx}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {new Date(metric.date).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {metric.adId}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {businesses.find(b => b._id === metric.businessId || b.businessId === metric.businessId)?.name || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {metric.placementId}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {metric.state}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {metric.device || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {metric.impressions.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {metric.clicks.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {metric.impressions > 0 
+                      ? ((metric.clicks / metric.impressions) * 100).toFixed(2) + '%'
+                      : '0%'
+                    }
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {metrics.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            No metrics found for the selected filters.
+          </div>
+        )}
+        {metrics.length > 50 && (
+          <div className="px-6 py-4 bg-gray-50 text-sm text-gray-500 text-center">
+            Showing first 50 of {metrics.length} records. Export CSV for full data.
+          </div>
+        )}
       </div>
 
       {/* Summary Stats */}
@@ -358,7 +554,7 @@ export default function MetricsPage() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Performance by Business</h3>
             <div className="space-y-2">
               {chartData.byBusiness.map(item => {
-                const business = businesses.find(b => b.businessId === item.businessId);
+                const business = businesses.find(b => b._id === item.businessId || b.businessId === item.businessId);
                 return (
                   <div key={item.businessId} className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">
@@ -379,88 +575,6 @@ export default function MetricsPage() {
                 );
               })}
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Detailed Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Detailed Metrics</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ad ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Placement
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  State
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Device
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Impressions
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Clicks
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  CTR
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {metrics.slice(0, 50).map((metric, idx) => (
-                <tr key={idx}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(metric.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {metric.adId}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {metric.placementId}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {metric.state}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {metric.device || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                    {metric.impressions.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                    {metric.clicks.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                    {metric.impressions > 0 
-                      ? ((metric.clicks / metric.impressions) * 100).toFixed(2) + '%'
-                      : '0%'
-                    }
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {metrics.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No metrics found for the selected filters.
-          </div>
-        )}
-        {metrics.length > 50 && (
-          <div className="px-6 py-4 bg-gray-50 text-sm text-gray-500 text-center">
-            Showing first 50 of {metrics.length} records. Export CSV for full data.
           </div>
         )}
       </div>
