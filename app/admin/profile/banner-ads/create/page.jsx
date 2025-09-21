@@ -27,7 +27,6 @@ export default function CreateAdPage() {
     
     // Step 2 - Placement
     placements: [],
-    layout: 'full',
     
     // Step 3 - Targeting
     targetStates: [],
@@ -39,13 +38,18 @@ export default function CreateAdPage() {
     
     // Step 4 - Creative
     creative: {
-      variants: {
-        full: null,
-        half: null
+      altText: '',
+      destination: {
+        url: '',
+        type: 'external'
+      },
+      mobile: {
+        altText: '',
+        destination: {
+          url: '',
+          type: 'external'
+        }
       }
-    },
-    destination: {
-      url: ''
     },
     
     // Step 5 - Controls
@@ -80,7 +84,6 @@ export default function CreateAdPage() {
       // Add text fields
       submitFormData.append('businessId', formData.businessId);
       submitFormData.append('name', formData.name);
-      submitFormData.append('layout', formData.layout);
       submitFormData.append('placements', JSON.stringify(formData.placements));
       submitFormData.append('targetStates', JSON.stringify(formData.targetStates));
       submitFormData.append('schedule', JSON.stringify(formData.schedule));
@@ -88,16 +91,15 @@ export default function CreateAdPage() {
       submitFormData.append('useCarousel', formData.creative?.useCarousel || false);
       
       // Add creative details
-      const variant = formData.layout;
-      submitFormData.append('altText', formData.creative.variants[variant]?.altText || '');
-      submitFormData.append('destinationUrl', formData.creative.variants[variant]?.destination?.url || '');
-      submitFormData.append('destinationType', formData.creative.variants[variant]?.destination?.type || 'external');
+      submitFormData.append('altText', formData.creative.altText || '');
+      submitFormData.append('destinationUrl', formData.creative.destination?.url || '');
+      submitFormData.append('destinationType', formData.creative.destination?.type || 'external');
       
       // Add mobile creative details if exists
-      if (formData.creative.variants[variant]?.mobile) {
-        submitFormData.append('mobileAltText', formData.creative.variants[variant].mobile.altText || '');
-        submitFormData.append('mobileDestinationUrl', formData.creative.variants[variant].mobile.destination?.url || '');
-        submitFormData.append('mobileDestinationType', formData.creative.variants[variant].mobile.destination?.type || '');
+      if (formData.creative.mobile) {
+        submitFormData.append('mobileAltText', formData.creative.mobile.altText || '');
+        submitFormData.append('mobileDestinationUrl', formData.creative.mobile.destination?.url || '');
+        submitFormData.append('mobileDestinationType', formData.creative.mobile.destination?.type || 'external');
       }
       
       // Add caps if specified
@@ -333,7 +335,6 @@ function PlacementStep({ formData, setFormData }) {
     }
   };
 
-
   const handlePlacementToggle = (placementId) => {
     const newPlacements = formData.placements.includes(placementId)
       ? formData.placements.filter(p => p !== placementId)
@@ -346,118 +347,72 @@ function PlacementStep({ formData, setFormData }) {
     return <div className="text-center py-8">Loading placements...</div>;
   }
 
-  // Separate placements based on layout type
-  // Full width: parent placements with layoutType 'full'
-  const fullPlacements = placements.filter(p => 
-    p.layoutType === 'full'
-  );
-  
-  // Half width: extract children from split placements
-  const halfPlacements = [];
-  placements.forEach(p => {
-    if (p.layoutType === 'split' && p.children) {
-      p.children.forEach(child => {
-        halfPlacements.push({
-          ...child,
-          parentId: p.placementId,
-          parentName: p.name
-        });
-      });
-    }
-  });
-
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-medium text-gray-900">Select Placement & Layout</h2>
+      <h2 className="text-lg font-medium text-gray-900">Select Placements</h2>
       
       {/* Required Note */}
       <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
         <p className="text-sm text-yellow-700">
-          Placement selection is required. Choose at least one location where your ad will be displayed.
+          Select at least one placement where your ad will be displayed. Check the dimensions to ensure your ad images match.
         </p>
       </div>
       
-      {/* Layout Selection */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Layout Type</label>
-        <div className="grid grid-cols-2 gap-4">
-          <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-            <input
-              type="radio"
-              value="full"
-              checked={formData.layout === 'full'}
-              onChange={(e) => {
-                setFormData({ 
-                  ...formData, 
-                  layout: e.target.value,
-                  placements: [] // Clear selections when changing layout
-                });
-              }}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-            />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">Full Width</p>
-              <p className="text-xs text-gray-500">Single ad takes entire space</p>
-            </div>
-          </label>
-          
-          <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-            <input
-              type="radio"
-              value="half"
-              checked={formData.layout === 'half'}
-              onChange={(e) => {
-                setFormData({ 
-                  ...formData, 
-                  layout: e.target.value,
-                  placements: [] // Clear selections when changing layout
-                });
-              }}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-            />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">Half Width</p>
-              <p className="text-xs text-gray-500">Ad shares space with another</p>
-            </div>
-          </label>
-        </div>
-      </div>
-
       {/* Placement Selection */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Placements ({formData.layout === 'full' ? 'Parent slots only' : 'Child slots only'})
+          Available Placements
         </label>
         <div className="space-y-2">
-          {(formData.layout === 'full' ? fullPlacements : halfPlacements).map(placement => {
+          {placements.map(placement => {
+            const desktopDim = placement.dimensions?.desktop || {};
+            const mobileDim = placement.dimensions?.mobile || {};
+            const hasAds = placement.assignedAds?.length > 0;
+            
             return (
               <label 
                 key={placement.placementId} 
-                className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
+                className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
               >
                 <input
                   type="checkbox"
                   checked={formData.placements.includes(placement.placementId)}
                   onChange={() => handlePlacementToggle(placement.placementId)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 mt-1 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <div className="ml-3 flex-1">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-gray-900">
                       {placement.placementId} - {placement.name}
                     </p>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Desktop: {placement.dimensions?.desktop?.width || placement.dimensions?.width} × {placement.dimensions?.desktop?.height || placement.dimensions?.height}
-                    {placement.dimensions?.mobile?.width && (
-                      <span> • Mobile: {placement.dimensions.mobile.width} × {placement.dimensions.mobile.height}</span>
+                    {hasAds && (
+                      <span className="text-xs text-gray-500">
+                        {placement.assignedAds.length} ad{placement.assignedAds.length > 1 ? 's' : ''} assigned
+                      </span>
                     )}
+                  </div>
+                  <div className="mt-1 space-y-1">
+                    <p className="text-xs text-gray-600">
+                      <span className="font-medium">Desktop:</span> {desktopDim.width || '?'} × {desktopDim.height || '?'} pixels
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      <span className="font-medium">Mobile:</span> {mobileDim.width || '?'} × {mobileDim.height || '?'} pixels
+                    </p>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-1">
+                    ℹ️ Ensure your ad images match these dimensions
                   </p>
                 </div>
               </label>
             );
           })}
         </div>
+        
+        {placements.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            No placements found. Please create placements first.
+          </div>
+        )}
       </div>
     </div>
   );
@@ -519,7 +474,6 @@ function TargetingStep({ formData, setFormData }) {
 function CreativeStep({ formData, setFormData }) {
   // Store images locally, not uploaded yet
   const [images, setImages] = useState(formData.creative?.images || []);
-  const variant = formData.layout;
 
   const handleImagesChange = (newImages) => {
     setImages(newImages);
@@ -542,7 +496,6 @@ function CreativeStep({ formData, setFormData }) {
       <BannerImageUploader
         images={images}
         onImagesChange={handleImagesChange}
-        variant={variant}
         mode="add"
       />
 
@@ -556,18 +509,12 @@ function CreativeStep({ formData, setFormData }) {
             <input
               type="text"
               placeholder="Describe the image for accessibility"
-              value={formData.creative.variants[variant]?.altText || ''}
+              value={formData.creative.altText || ''}
               onChange={(e) => setFormData({
                 ...formData,
                 creative: {
                   ...formData.creative,
-                  variants: {
-                    ...formData.creative.variants,
-                    [variant]: {
-                      ...formData.creative.variants[variant],
-                      altText: e.target.value
-                    }
-                  }
+                  altText: e.target.value
                 }
               })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -580,20 +527,14 @@ function CreativeStep({ formData, setFormData }) {
             <input
               type="url"
               placeholder="https://example.com"
-              value={formData.creative.variants[variant]?.destination?.url || ''}
+              value={formData.creative.destination?.url || ''}
               onChange={(e) => setFormData({
                 ...formData,
                 creative: {
                   ...formData.creative,
-                  variants: {
-                    ...formData.creative.variants,
-                    [variant]: {
-                      ...formData.creative.variants[variant],
-                      destination: e.target.value ? {
-                        type: e.target.value.startsWith('http') ? 'external' : 'internal',
-                        url: e.target.value
-                      } : null
-                    }
+                  destination: {
+                    type: e.target.value.startsWith('http') ? 'external' : 'internal',
+                    url: e.target.value
                   }
                 }
               })}
@@ -610,20 +551,14 @@ function CreativeStep({ formData, setFormData }) {
             <input
               type="text"
               placeholder="Leave empty to use desktop alt text"
-              value={formData.creative.variants[variant]?.mobile?.altText || ''}
+              value={formData.creative.mobile?.altText || ''}
               onChange={(e) => setFormData({
                 ...formData,
                 creative: {
                   ...formData.creative,
-                  variants: {
-                    ...formData.creative.variants,
-                    [variant]: {
-                      ...formData.creative.variants[variant],
-                      mobile: {
-                        ...formData.creative.variants[variant]?.mobile,
-                        altText: e.target.value
-                      }
-                    }
+                  mobile: {
+                    ...formData.creative.mobile,
+                    altText: e.target.value
                   }
                 }
               })}
@@ -636,22 +571,16 @@ function CreativeStep({ formData, setFormData }) {
             <input
               type="url"
               placeholder="Leave empty to use desktop URL"
-              value={formData.creative.variants[variant]?.mobile?.destination?.url || ''}
+              value={formData.creative.mobile?.destination?.url || ''}
               onChange={(e) => setFormData({
                 ...formData,
                 creative: {
                   ...formData.creative,
-                  variants: {
-                    ...formData.creative.variants,
-                    [variant]: {
-                      ...formData.creative.variants[variant],
-                      mobile: {
-                        ...formData.creative.variants[variant]?.mobile,
-                        destination: {
-                          type: e.target.value.startsWith('http') ? 'external' : 'internal',
-                          url: e.target.value
-                        }
-                      }
+                  mobile: {
+                    ...formData.creative.mobile,
+                    destination: {
+                      type: e.target.value.startsWith('http') ? 'external' : 'internal',
+                      url: e.target.value
                     }
                   }
                 }
@@ -799,7 +728,7 @@ function ReviewStep({ formData }) {
         <div className="py-3">
           <dt className="text-sm font-medium text-gray-500">Placements</dt>
           <dd className="mt-1 text-sm text-gray-900">
-            {formData.placements.join(', ') || 'None selected'} ({formData.layout} layout)
+            {formData.placements.join(', ') || 'None selected'}
           </dd>
         </div>
         

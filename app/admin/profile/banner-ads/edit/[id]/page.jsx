@@ -32,7 +32,6 @@ export default function EditAdPage({ params }) {
     
     // Step 2 - Placement
     placements: [],
-    layout: 'full',
     
     // Step 3 - Targeting
     targetStates: [],
@@ -44,9 +43,19 @@ export default function EditAdPage({ params }) {
     
     // Step 4 - Creative
     creative: {
-      variants: {
-        full: null,
-        half: null
+      desktop: {
+        altText: '',
+        destination: {
+          url: '',
+          type: 'external'
+        }
+      },
+      mobile: {
+        altText: '',
+        destination: {
+          url: '',
+          type: 'external'
+        }
       },
       images: [], // For new image uploads
       existingImages: [], // Track existing images to keep
@@ -79,7 +88,6 @@ export default function EditAdPage({ params }) {
         businessHumanId: adData.businessId.businessId, // The human-readable BIZ-XXXX ID
         name: adData.name || '',
         placements: adData.placements,
-        layout: adData.layout,
         targetStates: adData.targetStates,
         schedule: {
           startAt: new Date(adData.schedule.startAt).toISOString().split('T')[0],
@@ -87,7 +95,14 @@ export default function EditAdPage({ params }) {
         },
         status: adData.status,
         creative: {
-          variants: adData.creative.variants,
+          desktop: adData.creative.desktop || {
+            altText: '',
+            destination: { url: '', type: 'external' }
+          },
+          mobile: adData.creative.mobile || {
+            altText: '',
+            destination: { url: '', type: 'external' }
+          },
           images: [], // Empty initially for new uploads
           existingImages: [], // Will be populated by CreativeStep
           removedImages: [] // Track removed images
@@ -125,35 +140,40 @@ export default function EditAdPage({ params }) {
     try {
       console.log('=== EDIT FORM SUBMISSION ===');
       console.log('Form data:', formData);
+      console.log('Schedule being sent:', formData.schedule);
       console.log('New images:', formData.creative?.images);
       console.log('Existing images to keep:', formData.creative?.existingImages);
       
-      // Check if we have new images to upload
+      // Check if we have new images to upload OR images to remove
       const hasNewImages = formData.creative.images.length > 0;
+      const hasRemovedImages = formData.creative.removedImages && formData.creative.removedImages.length > 0;
       
-      if (hasNewImages) {
+      if (hasNewImages || hasRemovedImages) {
         // Create FormData for multipart upload
         const submitFormData = new FormData();
         
         // Add text fields
         submitFormData.append('name', formData.name);
-        submitFormData.append('layout', formData.layout);
         submitFormData.append('placements', JSON.stringify(formData.placements));
         submitFormData.append('targetStates', JSON.stringify(formData.targetStates));
         submitFormData.append('schedule', JSON.stringify(formData.schedule));
         submitFormData.append('status', formData.status);
         
+        // Add notes if present
+        if (formData.notes !== undefined) {
+          submitFormData.append('notes', formData.notes);
+        }
+        
         // Add creative details
-        const variant = formData.layout;
-        submitFormData.append('altText', formData.creative.variants[variant]?.altText || '');
-        submitFormData.append('destinationUrl', formData.creative.variants[variant]?.destination?.url || '');
-        submitFormData.append('destinationType', formData.creative.variants[variant]?.destination?.type || 'external');
+        submitFormData.append('altText', formData.creative.desktop?.altText || '');
+        submitFormData.append('destinationUrl', formData.creative.desktop?.destination?.url || '');
+        submitFormData.append('destinationType', formData.creative.desktop?.destination?.type || 'external');
         
         // Add mobile creative details if exists
-        if (formData.creative.variants[variant]?.mobile) {
-          submitFormData.append('mobileAltText', formData.creative.variants[variant].mobile.altText || '');
-          submitFormData.append('mobileDestinationUrl', formData.creative.variants[variant].mobile.destination?.url || '');
-          submitFormData.append('mobileDestinationType', formData.creative.variants[variant].mobile.destination?.type || '');
+        if (formData.creative.mobile) {
+          submitFormData.append('mobileAltText', formData.creative.mobile.altText || '');
+          submitFormData.append('mobileDestinationUrl', formData.creative.mobile.destination?.url || '');
+          submitFormData.append('mobileDestinationType', formData.creative.mobile.destination?.type || 'external');
         }
         
         // Add caps if specified
@@ -177,8 +197,12 @@ export default function EditAdPage({ params }) {
         
         // Add removed images for Cloudinary cleanup
         if (formData.creative.removedImages && formData.creative.removedImages.length > 0) {
-          console.log('\nImages to remove from Cloudinary:', formData.creative.removedImages);
+          console.log('\n=== SUBMITTING REMOVED IMAGES ===');
+          console.log('Number of images to remove:', formData.creative.removedImages.length);
+          console.log('Removed images details:', JSON.stringify(formData.creative.removedImages, null, 2));
           submitFormData.append('removedImages', JSON.stringify(formData.creative.removedImages));
+        } else {
+          console.log('\nNo images marked for removal');
         }
         
         // Add image files
@@ -202,7 +226,7 @@ export default function EditAdPage({ params }) {
           }
         });
       } else {
-        // Regular JSON update without images
+        // Regular JSON update without new images
         const submitData = {
           name: formData.name,
           placements: formData.placements,
@@ -215,6 +239,12 @@ export default function EditAdPage({ params }) {
           },
           notes: formData.notes
         };
+        
+        // Add removed images if any
+        if (formData.creative.removedImages && formData.creative.removedImages.length > 0) {
+          submitData.removedImages = formData.creative.removedImages;
+          console.log('Adding removed images to JSON update:', submitData.removedImages);
+        }
         
         // Clean up caps
         if (!submitData.caps.maxImpressions) delete submitData.caps.maxImpressions;
@@ -422,26 +452,6 @@ function PlacementStep({ formData, setFormData }) {
     return <div className="text-center py-8">Loading placements...</div>;
   }
 
-  // Separate placements based on layout type
-  // Full width: parent placements with layoutType 'full'
-  const fullPlacements = placements.filter(p => 
-    p.layoutType === 'full'
-  );
-  
-  // Half width: extract children from split placements
-  const halfPlacements = [];
-  placements.forEach(p => {
-    if (p.layoutType === 'split' && p.children) {
-      p.children.forEach(child => {
-        halfPlacements.push({
-          ...child,
-          parentId: p.placementId,
-          parentName: p.name
-        });
-      });
-    }
-  });
-
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-medium text-gray-900">Select Placement & Layout</h2>
@@ -454,22 +464,13 @@ function PlacementStep({ formData, setFormData }) {
         </p>
       </div>
       
-      {/* Layout (Read-only) */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Layout Type</label>
-        <div className="mt-1 p-3 bg-gray-50 rounded-md">
-          <p className="text-sm font-medium text-gray-900 capitalize">{formData.layout} Width</p>
-          <p className="text-xs text-gray-500">Layout cannot be changed after creation</p>
-        </div>
-      </div>
-
       {/* Placement Selection */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Placements ({formData.layout === 'full' ? 'Parent slots only' : 'Child slots only'})
+          Available Placements
         </label>
         <div className="space-y-2">
-          {(formData.layout === 'full' ? fullPlacements : halfPlacements).map(placement => {
+          {placements.map(placement => {
             return (
               <label 
                 key={placement.placementId} 
@@ -558,16 +559,15 @@ function CreativeStep({ formData, setFormData, existingAd }) {
   const [images, setImages] = useState(formData.creative?.images || []);
   const [existingImages, setExistingImages] = useState([]);
   const [removedImages, setRemovedImages] = useState(formData.creative?.removedImages || []);
-  const variant = formData.layout;
 
-  // Initialize existing images from new carousel structure
+  // Initialize existing images from new structure
   useEffect(() => {
     const existing = [];
-    const existingVariant = existingAd.creative.variants[variant];
+    const existingCreative = existingAd.creative;
     
-    // Handle new separate carousel structure
-    if (existingVariant?.desktop?.images && Array.isArray(existingVariant.desktop.images)) {
-      existingVariant.desktop.images.forEach((img, index) => {
+    // Handle desktop images
+    if (existingCreative?.desktop?.images && Array.isArray(existingCreative.desktop.images)) {
+      existingCreative.desktop.images.forEach((img, index) => {
         existing.push({
           url: img.imageUrl,
           publicId: extractPublicId(img.imageUrl),
@@ -582,8 +582,9 @@ function CreativeStep({ formData, setFormData, existingAd }) {
       });
     }
     
-    if (existingVariant?.mobile?.images && Array.isArray(existingVariant.mobile.images)) {
-      existingVariant.mobile.images.forEach((img, index) => {
+    // Handle mobile images
+    if (existingCreative?.mobile?.images && Array.isArray(existingCreative.mobile.images)) {
+      existingCreative.mobile.images.forEach((img, index) => {
         existing.push({
           url: img.imageUrl,
           publicId: extractPublicId(img.imageUrl),
@@ -606,23 +607,17 @@ function CreativeStep({ formData, setFormData, existingAd }) {
       creative: {
         ...prev.creative,
         existingImages: existing,
-        variants: {
-          ...prev.creative.variants,
-          [variant]: {
-            ...prev.creative.variants[variant],
-            // Desktop resolution data
-            destination: existingVariant?.desktop?.destination || { type: 'external', url: '' },
-            altText: existingVariant?.desktop?.altText || '',
-            // Mobile resolution data
-            mobile: existingVariant?.mobile ? {
-              altText: existingVariant.mobile.altText || '',
-              destination: existingVariant.mobile.destination || { type: 'external', url: '' }
-            } : null
-          }
+        desktop: {
+          altText: existingCreative?.desktop?.altText || '',
+          destination: existingCreative?.desktop?.destination || { type: 'external', url: '' }
+        },
+        mobile: {
+          altText: existingCreative?.mobile?.altText || '',
+          destination: existingCreative?.mobile?.destination || { type: 'external', url: '' }
         }
       }
     }));
-  }, [existingAd, variant, setFormData]);
+  }, [existingAd, setFormData]);
   
   // Helper to extract Cloudinary public ID
   function extractPublicId(url) {
@@ -650,9 +645,16 @@ function CreativeStep({ formData, setFormData, existingAd }) {
       img => !updatedExistingImages.find(updated => updated.id === img.id)
     );
     
+    console.log('=== FRONTEND IMAGE REMOVAL ===');
+    console.log('Existing images before:', existingImages);
+    console.log('Updated existing images:', updatedExistingImages);
+    console.log('Newly removed:', newlyRemoved);
+    
     // Update removed images list
     const updatedRemovedImages = [...removedImages, ...newlyRemoved];
     setRemovedImages(updatedRemovedImages);
+    
+    console.log('Total removed images:', updatedRemovedImages);
     
     // Update existing images
     setExistingImages(updatedExistingImages);
@@ -678,7 +680,6 @@ function CreativeStep({ formData, setFormData, existingAd }) {
         existingImages={existingImages}
         onImagesChange={handleImagesChange}
         onExistingImagesChange={handleExistingImagesChange}
-        variant={variant}
         mode="edit"
       />
 
@@ -692,17 +693,14 @@ function CreativeStep({ formData, setFormData, existingAd }) {
             <input
               type="text"
               placeholder="Describe the image for accessibility"
-              value={formData.creative.variants[variant]?.altText || ''}
+              value={formData.creative.desktop?.altText || ''}
               onChange={(e) => setFormData({
                 ...formData,
                 creative: {
                   ...formData.creative,
-                  variants: {
-                    ...formData.creative.variants,
-                    [variant]: {
-                      ...formData.creative.variants[variant],
-                      altText: e.target.value
-                    }
+                  desktop: {
+                    ...formData.creative.desktop,
+                    altText: e.target.value
                   }
                 }
               })}
@@ -716,19 +714,16 @@ function CreativeStep({ formData, setFormData, existingAd }) {
             <input
               type="url"
               placeholder="https://example.com"
-              value={formData.creative.variants[variant]?.destination?.url || ''}
+              value={formData.creative.desktop?.destination?.url || ''}
               onChange={(e) => setFormData({
                 ...formData,
                 creative: {
                   ...formData.creative,
-                  variants: {
-                    ...formData.creative.variants,
-                    [variant]: {
-                      ...formData.creative.variants[variant],
-                      destination: e.target.value ? {
-                        type: e.target.value.startsWith('http') ? 'external' : 'internal',
-                        url: e.target.value
-                      } : null
+                  desktop: {
+                    ...formData.creative.desktop,
+                    destination: {
+                      type: e.target.value.startsWith('http') ? 'external' : 'internal',
+                      url: e.target.value
                     }
                   }
                 }
@@ -746,20 +741,14 @@ function CreativeStep({ formData, setFormData, existingAd }) {
             <input
               type="text"
               placeholder="Leave empty to use desktop alt text"
-              value={formData.creative.variants[variant]?.mobile?.altText || ''}
+              value={formData.creative.mobile?.altText || ''}
               onChange={(e) => setFormData({
                 ...formData,
                 creative: {
                   ...formData.creative,
-                  variants: {
-                    ...formData.creative.variants,
-                    [variant]: {
-                      ...formData.creative.variants[variant],
-                      mobile: {
-                        ...formData.creative.variants[variant]?.mobile,
-                        altText: e.target.value
-                      }
-                    }
+                  mobile: {
+                    ...formData.creative.mobile,
+                    altText: e.target.value
                   }
                 }
               })}
@@ -772,22 +761,16 @@ function CreativeStep({ formData, setFormData, existingAd }) {
             <input
               type="url"
               placeholder="Leave empty to use desktop URL"
-              value={formData.creative.variants[variant]?.mobile?.destination?.url || ''}
+              value={formData.creative.mobile?.destination?.url || ''}
               onChange={(e) => setFormData({
                 ...formData,
                 creative: {
                   ...formData.creative,
-                  variants: {
-                    ...formData.creative.variants,
-                    [variant]: {
-                      ...formData.creative.variants[variant],
-                      mobile: {
-                        ...formData.creative.variants[variant]?.mobile,
-                        destination: {
-                          type: e.target.value.startsWith('http') ? 'external' : 'internal',
-                          url: e.target.value
-                        }
-                      }
+                  mobile: {
+                    ...formData.creative.mobile,
+                    destination: {
+                      type: e.target.value.startsWith('http') ? 'external' : 'internal',
+                      url: e.target.value
                     }
                   }
                 }
@@ -923,7 +906,7 @@ function ReviewStep({ formData, existingAd }) {
         <div className="py-3">
           <dt className="text-sm font-medium text-gray-500">Placements</dt>
           <dd className="mt-1 text-sm text-gray-900">
-            {formData.placements.join(', ') || 'None selected'} ({formData.layout} layout)
+            {formData.placements.join(', ') || 'None selected'}
           </dd>
         </div>
         
