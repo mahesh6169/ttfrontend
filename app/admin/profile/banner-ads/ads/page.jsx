@@ -169,15 +169,15 @@ export default function ManageAdsPage() {
                     </div>
                     
                     <div className="mt-2 flex items-center text-sm text-gray-500">
-                      <span>Layout: {ad.layout}</span>
+                      <span>Placements: {ad.placements.join(', ')}</span>
                       <span className="mx-2">•</span>
-                      <span>States: {ad.targetStates.join(', ')}</span>
+                      <span>States: {ad.targetStates.length > 0 ? ad.targetStates.join(', ') : 'All'}</span>
                     </div>
                     
                     <div className="mt-1 flex items-center text-sm text-gray-500">
                       <span>Schedule: {new Date(ad.schedule.startAt).toLocaleDateString()} - {new Date(ad.schedule.endAt).toLocaleDateString()}</span>
                       <span className="mx-2">•</span>
-                      <span>Images: {ad.creative?.variants?.full?.images?.length || 0}</span>
+                      <span>Images: {(ad.creative?.desktop?.images?.length || 0) + (ad.creative?.mobile?.images?.length || 0)}</span>
                     </div>
                     
                     {ad.counters && (
