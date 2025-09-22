@@ -77,7 +77,12 @@ const Header = () => {
 
           {/* Mobile Auth Button - Show login or logout based on auth state */}
           <div className="md:hidden">
-            {isAuthenticated ? (
+            {(isInitialLoad || (status === 'loading' && !tokenValidated)) ? (
+              // Show loading placeholder during initial load
+              <div className="p-2">
+                <div className="w-6 h-6 bg-lime-200/30 rounded animate-pulse"></div>
+              </div>
+            ) : isAuthenticated ? (
               <button
                 onClick={handleLogout}
                 className="flex items-center justify-center p-2 rounded-lg hover:bg-teal-600 transition-colors"
