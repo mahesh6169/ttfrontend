@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import { RiAdvertisementFill } from "react-icons/ri";
 import { FaCalendarAlt, FaUser } from 'react-icons/fa';
 import { MdOutlineGroups2 } from "react-icons/md";
-import { BsChatDots } from 'react-icons/bs';
+import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
 
 const BottomNavigation = () => {
   const pathname = usePathname();
@@ -75,9 +75,12 @@ const BottomNavigation = () => {
             }`}
           >
             <div className="relative">
-              <BsChatDots size={20} />
-              {showNotification && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              {showNotification ? (
+                <div className="animate-pulse">
+                  <BsChatDotsFill size={20} className="drop-shadow-[0_0_8px_rgba(217,249,157,0.8)]" />
+                </div>
+              ) : (
+                <BsChatDots size={20} />
               )}
             </div>
             <span className="text-xs mt-0.5 font-medium">Chat</span>

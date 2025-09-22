@@ -5,30 +5,22 @@ import axios from '@/utils/axiosConfig';
 
 const RightAd = () => {
   const [ads, setAds] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [layoutType, setLayoutType] = useState('full');
-  const [dimensions, setDimensions] = useState(null);
-  const [childDimensions, setChildDimensions] = useState(null);
+  const [impressedAds, setImpressedAds] = useState(new Set());
 
   // Fetch ads from API
   const fetchAds = useCallback(async () => {
     try {
-      const response = await axios.get('/bannerAds/serve/V2');
+      const response = await axios.get('/bannerAds/serve/RIGHT');
+      console.log('RightAd API Response:', response.data);
       
       if (response.data.success) {
         setAds(response.data.ads || []);
-        setLayoutType(response.data.layoutType);
-        setDimensions(response.data.dimensions);
-        setChildDimensions(response.data.childDimensions);
-        
-        // Track impressions for the first ad
-        if (response.data.ads && response.data.ads[0]) {
-          trackImpression(response.data.ads[0].adId);
-        }
       }
     } catch (error) {
-      console.error('Error fetching banner ads:', error);
+      console.error('Error fetching right banner ads:', error);
     } finally {
       setLoading(false);
     }
@@ -44,16 +36,20 @@ const RightAd = () => {
   };
 
   // Track click
-  const handleAdClick = async (ad) => {
+  const handleAdClick = async (ad, image) => {
     try {
       console.log('Ad click:', ad);
       
-      // Always track click via GET endpoint (it handles all cases)
+      // Always track click via GET endpoint
       const clickUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/bannerAds/click/${ad.adId}`;
       
-      if (ad.destinationUrl) {
+      // Use the image's destination if available, otherwise fallback to ad's destination
+      const destinationUrl = image.destinationUrl;
+      const destinationType = image.destinationType;
+      
+      if (destinationUrl) {
         // Has destination - let the backend redirect after tracking
-        if (ad.destinationType === 'external') {
+        if (destinationType === 'external') {
           // External link - open in new tab
           window.open(clickUrl, '_blank');
         } else {
@@ -64,7 +60,7 @@ const RightAd = () => {
         // No destination - use fetch to track click without navigation
         await fetch(clickUrl, { 
           method: 'GET',
-          credentials: 'include' // Include cookies for state tracking
+          credentials: 'include'
         });
         console.log('Click tracked for ad without destination');
       }
@@ -77,167 +73,79 @@ const RightAd = () => {
     fetchAds();
   }, [fetchAds]);
 
-  // Auto-rotate ads if multiple
+  // Track impression when ad is displayed for the first time
   useEffect(() => {
-    if (ads.length > 1) {
-      const timer = setTimeout(() => {
-        const nextIndex = (currentIndex + 1) % ads.length;
-        setCurrentIndex(nextIndex);
-        
-        // Track impression for the new ad
-        if (ads[nextIndex]) {
-          trackImpression(ads[nextIndex].adId);
+    if (ads.length > 0 && currentAdIndex < ads.length) {
+      const currentAd = ads[currentAdIndex];
+      if (currentAd && !impressedAds.has(currentAd.adId)) {
+        trackImpression(currentAd.adId);
+        setImpressedAds(prev => new Set(prev).add(currentAd.adId));
+      }
+    }
+  }, [currentAdIndex, ads, impressedAds]);
+
+  // Preload the first ad images
+  useEffect(() => {
+    if (ads.length > 0 && ads[0].images && ads[0].images.length > 0) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = ads[0].images[0].imageUrl;
+      link.fetchPriority = 'high';
+      document.head.appendChild(link);
+      
+      return () => {
+        if (document.head.contains(link)) {
+          document.head.removeChild(link);
         }
-      }, 7000); // Rotate every 7 seconds (slower for vertical ads)
+      };
+    }
+  }, [ads]);
+
+  // Auto-rotate carousel images
+  useEffect(() => {
+    if (ads.length === 0) return;
+    
+    const currentAd = ads[currentAdIndex];
+    
+    // Only set timer if current ad has multiple images
+    if (currentAd?.images && currentAd.images.length > 1) {
+      const timer = setTimeout(() => {
+        // Rotate to next image in current ad
+        setCurrentImageIndex((prevIndex) => (prevIndex + 1) % currentAd.images.length);
+      }, 2000); // Rotate every 2 seconds
       
       return () => clearTimeout(timer);
     }
-  }, [currentIndex, ads]);
+  }, [currentAdIndex, currentImageIndex, ads]);
 
-  // Reserve space while loading to prevent layout shift
-  if (loading) {
-    return (
-      <div className="hidden lg:block w-[160px] h-[600px] sticky top-16">
-        {/* Empty space reserved for ad */}
-      </div>
-    );
-  }
-
-  // Define fallback dimensions
-  const fallbackWidth = 160;
-  const fallbackHeight = 600;
-  
-  // For split layouts, calculate total container size from children
-  let adWidth, adHeight;
-  if (layoutType === 'split' && childDimensions) {
-    const childDim = childDimensions.desktop;
-    if (childDim?.width && childDim?.height) {
-      // For vertical split: keep width same, double the height
-      adWidth = childDim.width;
-      adHeight = childDim.height * 2 + 8; // +8 for gap
-    } else {
-      adWidth = fallbackWidth;
-      adHeight = fallbackHeight;
-    }
-  } else {
-    // For full layouts, use dimensions or fallback
-    adWidth = dimensions?.width || fallbackWidth;
-    adHeight = dimensions?.height || fallbackHeight;
-  }
-
-  // If no ads and no layout type, return null
-  if (ads.length === 0 && !layoutType) {
+  // Desktop only - hide on mobile
+  // If loading or no ads, return nothing
+  if (loading || ads.length === 0) {
     return null;
   }
-  
-  // If no ads but layout type is known, handle placeholders below
-  if (ads.length === 0 && layoutType) {
-    // Full layout - single placeholder
-    if (layoutType === 'full') {
-      return (
-        <div className="hidden lg:block rounded-md border border-gray-300 sticky top-16 flex items-center justify-center" style={{ width: `${adWidth}px`, height: `${adHeight}px` }}>
-          <span className="text-gray-500">Advertisement</span>
-        </div>
-      );
-    }
-    
-    // Split layout - two placeholders stacked vertically
-    if (layoutType === 'split') {
-      return (
-        <div className="hidden lg:flex flex-col gap-2 sticky top-16" style={{ width: `${adWidth}px`, height: `${adHeight}px` }}>
-          {[0, 1].map((slotIndex) => {
-            // Use child dimensions if available, otherwise fallback
-            const childWidth = childDimensions?.desktop?.width || adWidth;
-            const childHeight = childDimensions?.desktop?.height || Math.floor((adHeight - 8) / 2);
-            
-            return (
-              <div
-                key={`empty-${slotIndex}`}
-                className="rounded-md border border-gray-300 flex items-center justify-center"
-                style={{ 
-                  width: `${childWidth}px`,
-                  height: `${childHeight}px`
-                }}
-              >
-                <span className="text-gray-500">Advertisement</span>
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
+
+  const currentAd = ads[currentAdIndex];
+  const currentImage = currentAd?.images?.[currentImageIndex] || currentAd?.images?.[0];
+
+  // If no current image, return nothing
+  if (!currentImage) {
+    return null;
   }
 
-  const currentAd = ads[currentIndex] || ads[0];
-
-  // Full layout - single ad
-  if (layoutType === 'full') {
-    return (
-      <div 
-        className="hidden lg:block overflow-hidden cursor-pointer sticky top-16"
-        style={{ width: `${adWidth}px`, height: `${adHeight}px` }}
-        onClick={() => handleAdClick(currentAd)}
-      >
-        <Image
-          src={currentAd.imageUrl}
-          alt={currentAd.altText || `${currentAd.businessName} Advertisement`}
-          width={adWidth}
-          height={adHeight}
-          className="mx-auto h-full object-contain"
-          priority
-        />
-      </div>
-    );
-  }
-
-  // Split layout - show two ads stacked vertically
+  // Show vertical ad - 160x600 (desktop only)
   return (
-    <div className="hidden lg:flex flex-col gap-2 sticky top-16" style={{ width: `${adWidth}px`, height: `${adHeight}px` }}>
-      {/* Always render two slots for split layout */}
-      {[0, 1].map((slotIndex) => {
-        const ad = ads[slotIndex];
-        // Use child dimensions if available, otherwise fallback
-        const childWidth = childDimensions?.desktop?.width || adWidth;
-        const childHeight = childDimensions?.desktop?.height || Math.floor((adHeight - 8) / 2);
-        
-        if (ad) {
-          // Render ad if available
-          return (
-            <div
-              key={ad.adId}
-              className="overflow-hidden cursor-pointer"
-              style={{ 
-                width: `${childWidth}px`,
-                height: `${childHeight}px`
-              }}
-              onClick={() => handleAdClick(ad)}
-            >
-              <Image
-                src={ad.imageUrl}
-                alt={ad.altText || `${ad.businessName} Advertisement`}
-                width={childWidth}
-                height={childHeight}
-                className="w-full h-full object-fill"
-                priority={slotIndex === 0}
-              />
-            </div>
-          );
-        } else {
-          // Render empty placeholder to maintain layout
-          return (
-            <div
-              key={`empty-${slotIndex}`}
-              className="rounded-md border border-gray-300 flex items-center justify-center"
-              style={{ 
-                width: `${childWidth}px`,
-                height: `${childHeight}px`
-              }}
-            >
-              <span className="text-gray-500">Advertisement</span>
-            </div>
-          );
-        }
-      })}
+    <div className="hidden lg:block sticky top-16 w-[160px] h-[600px] overflow-hidden cursor-pointer"
+      onClick={() => handleAdClick(currentAd, currentImage)}
+    >
+      <Image
+        src={currentImage.imageUrl}
+        alt={currentImage.altText || `${currentAd.businessName} Advertisement`}
+        width={160}
+        height={600}
+        className="w-full h-full object-cover"
+        priority
+      />
     </div>
   );
 };

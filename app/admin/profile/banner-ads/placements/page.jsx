@@ -446,9 +446,9 @@ function PlacementCreateModal({ onClose, onSuccess }) {
           {/* Desktop Dimensions */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Desktop Dimensions (px) <span className="text-red-500">*</span>
+              Desktop Dimensions (px)
             </label>
-            <p className="mt-1 text-xs text-gray-500">Recommended: 728 × 90</p>
+            <p className="mt-1 text-xs text-gray-500">Standard: DH-728×90, DV-160×600, DH-Half-364×90</p>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <input
                 type="number"
@@ -466,7 +466,6 @@ function PlacementCreateModal({ onClose, onSuccess }) {
                   
                 }}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                required
               />
               <input
                 type="number"
@@ -484,7 +483,6 @@ function PlacementCreateModal({ onClose, onSuccess }) {
                   
                 }}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                required
               />
             </div>
           </div>
@@ -492,9 +490,9 @@ function PlacementCreateModal({ onClose, onSuccess }) {
           {/* Mobile Dimensions */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Mobile Dimensions (px) <span className="text-red-500">*</span>
+              Mobile Dimensions (px)
             </label>
-            <p className="mt-1 text-xs text-gray-500">Recommended: 320 × 50</p>
+            <p className="mt-1 text-xs text-gray-500">Standard: MH-320×50, MH-Half-160×50</p>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <input
                 type="number"
@@ -512,7 +510,6 @@ function PlacementCreateModal({ onClose, onSuccess }) {
                   
                 }}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                required
               />
               <input
                 type="number"
@@ -530,7 +527,6 @@ function PlacementCreateModal({ onClose, onSuccess }) {
                   
                 }}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                required
               />
             </div>
           </div>

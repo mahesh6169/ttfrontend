@@ -12,7 +12,7 @@ import { MdOutlineGroups2 } from "react-icons/md";
 import { RiAdvertisementFill } from "react-icons/ri";
 import { CgProfile } from 'react-icons/cg';
 import { TbLogout, TbLogin } from 'react-icons/tb';
-import { BsChatDots } from 'react-icons/bs';
+import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { 
@@ -121,8 +121,14 @@ const Header = () => {
                   <NavLink
                     href="/users/profile/conversations"
                     icon={
-                      <div className={`relative ${showNotification ? 'text-red-700 animate-pulse' : ''}`}>
-                        <BsChatDots size={22} />
+                      <div className="relative">
+                        {showNotification ? (
+                          <div className="animate-pulse">
+                            <BsChatDotsFill size={22} className="drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+                          </div>
+                        ) : (
+                          <BsChatDots size={22} />
+                        )}
                       </div>
                     }
                     text={<span className="hidden lg:inline">Messages</span>}

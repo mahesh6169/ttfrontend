@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import axios from '@/utils/axiosConfig';
-import { FaPlusCircle, FaEdit, FaTrash, FaPause, FaPlay, FaEye } from 'react-icons/fa';
+import { FaPlusCircle, FaEdit, FaTrash, FaPause, FaPlay, FaEye, FaClock } from 'react-icons/fa';
 
 export default function ManageAdsPage() {
   const [ads, setAds] = useState([]);
@@ -71,13 +71,31 @@ export default function ManageAdsPage() {
     const newStatus = ad.status === 'active' ? 'paused' : 'active';
     
     try {
-      await axios.patch(`/admin/bannerAds/ads/${ad.adId}`, {
+      await axios.put(`/admin/bannerAds/ads/${ad.adId}`, {
         status: newStatus
       });
       fetchData(); // Refresh the data
     } catch (error) {
       console.error('Error updating ad status:', error);
       alert('Failed to update ad status. Please try again.');
+    }
+  };
+
+  const handleCheckExpired = async () => {
+    try {
+      const response = await axios.post('/admin/bannerAds/check-expired');
+      
+      if (response.data.success) {
+        if (response.data.count > 0) {
+          alert(`${response.data.message}\n\nExpired ads:\n${response.data.expired.map(ad => `- ${ad.name} (${ad.adId})`).join('\n')}`);
+        } else {
+          alert(response.data.message);
+        }
+        fetchData(); // Refresh the data to show updated statuses
+      }
+    } catch (error) {
+      console.error('Error checking expired ads:', error);
+      alert('Failed to check expired ads. Please try again.');
     }
   };
 
@@ -112,13 +130,22 @@ export default function ManageAdsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Manage Banner Ads</h1>
-        <Link
-          href="/admin/profile/banner-ads/create"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <FaPlusCircle className="h-5 w-5 mr-2" />
-          Create New Ad
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={handleCheckExpired}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          >
+            <FaClock className="h-5 w-5 mr-2" />
+            Check Expired Ads
+          </button>
+          <Link
+            href="/admin/profile/banner-ads/create"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <FaPlusCircle className="h-5 w-5 mr-2" />
+            Create New Ad
+          </Link>
+        </div>
       </div>
 
       {/* Filter Tabs */}
