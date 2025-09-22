@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { threadSocket } from '@/config/threadSocket';
+import { usePageVisibility } from '@/hooks/usePageVisibility';
 import { 
   addNewThreadMessage, 
   markMessageAsDeleted,
@@ -20,6 +21,8 @@ const ThreadSocketListener = () => {
   const currentThreadRef = useRef(activeThreadId);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const { isVisible, lastHiddenTime } = usePageVisibility();
+  const reconnectTimeoutRef = useRef(null);
 
   // Keep ref in sync with Redux state
   useEffect(() => {
@@ -233,6 +236,37 @@ const ThreadSocketListener = () => {
       threadSocket.emit('joinThread', activeThreadId);
     }
   }, [activeThreadId]);
+
+  // Handle page visibility changes for thread socket
+  useEffect(() => {
+    if (!isAuthenticated || !isVisible) return;
+
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+
+    if (isVisible && !threadSocket.connected && lastHiddenTime) {
+      const hiddenDuration = Date.now() - lastHiddenTime;
+      console.log(`[ThreadSocket] Page visible after ${hiddenDuration}ms, connected: ${threadSocket.connected}`);
+      
+      if (hiddenDuration > 10000) {
+        console.log('[ThreadSocket] Forcing reconnection after sleep/lock');
+        
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (!threadSocket.connected) {
+            console.log('[ThreadSocket] Reconnecting...');
+            threadSocket.connect();
+          }
+        }, 500);
+      }
+    }
+
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, [isVisible, isAuthenticated, lastHiddenTime]);
 
   return null; // This component doesn't render anything
 };

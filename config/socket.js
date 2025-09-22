@@ -3,11 +3,14 @@ import { io } from 'socket.io-client';
 // Socket.IO client connection: Dialing backend server
 const socket = io(process.env.NEXT_PUBLIC_BACKEND_BASE_URL, {
    withCredentials: true,
-   transports: ['websocket'], 
+   transports: ['websocket', 'polling'], // Add polling fallback for mobile
    autoConnect: false,
    reconnection: true,
    reconnectionAttempts: Infinity,
    reconnectionDelay: 1000,
+   reconnectionDelayMax: 5000,
+   randomizationFactor: 0.5,
+   timeout: 20000, // Increase timeout for mobile networks
    // Add API key to auth
    auth: {
      apiKey: process.env.NEXT_PUBLIC_FRONTEND_API_KEY

@@ -75,6 +75,27 @@ const Header = () => {
             Desify
           </Link>
 
+          {/* Mobile Auth Button - Show login or logout based on auth state */}
+          <div className="md:hidden">
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center p-2 rounded-lg hover:bg-teal-600 transition-colors"
+                title="Logout"
+              >
+                <TbLogout size={24} className="text-lime-100" />
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center justify-center p-2 rounded-lg hover:bg-teal-600 transition-colors"
+                title="Login"
+              >
+                <TbLogin size={24} className="text-lime-100" />
+              </Link>
+            )}
+          </div>
+
           {/* Desktop Nav Container - Hidden on mobile */}
           <div className="hidden md:flex items-center justify-between flex-1 ml-8">
             {/* Center Nav */}

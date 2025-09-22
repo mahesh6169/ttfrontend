@@ -1,19 +1,36 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import socket from '@/config/socket';
 import { setUnreadExists } from '@/store/slices/shared/messageSlice';
+import axios from '@/utils/axiosConfig';
+import { usePageVisibility } from '@/hooks/usePageVisibility';
 
 export const SocketListener = () => {
   const dispatch = useDispatch();
   const { tokenValidated, user } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user?._id;
   const [isSocketReady, setIsSocketReady] = useState(false);
+  const { isVisible, lastHiddenTime } = usePageVisibility();
+  const reconnectTimeoutRef = useRef(null);
 
   //console.log('[SocketListener] mounted');
   //console.log('[SocketListener] User:', user?._id);
   //console.log('[SocketListener] isAuthenticated:', isAuthenticated);
+
+  // Check unread messages count
+  const checkUnreadMessages = async () => {
+    try {
+      const response = await axios.get('/messages/unread-count');
+      if (response.data.success) {
+        dispatch(setUnreadExists(response.data.unreadCount > 0));
+        console.log('[SocketListener] Unread count:', response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error('[SocketListener] Error checking unread count:', error);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -59,6 +76,9 @@ export const SocketListener = () => {
 
     connectSocket();
 
+    // Check unread messages on mount
+    checkUnreadMessages();
+
     // Cleanup function
     return () => {
       setIsSocketReady(false);
@@ -81,6 +101,8 @@ export const SocketListener = () => {
 
     const handleConnect = () => {
       console.log('🔄 [SocketListener] Socket reconnected:', socket.id);
+      // Check for missed messages on reconnection
+      checkUnreadMessages();
     };
 
     const handleDisconnect = (reason) => {
@@ -98,6 +120,43 @@ export const SocketListener = () => {
       socket.off('disconnect', handleDisconnect);
     };
   }, [dispatch, isSocketReady]);
+
+  // Handle page visibility changes (mobile wake-up, tab switching)
+  useEffect(() => {
+    if (!isAuthenticated || !isVisible) return;
+
+    // Clear any existing timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+
+    // If page just became visible and socket is disconnected
+    if (isVisible && !socket.connected && lastHiddenTime) {
+      const hiddenDuration = Date.now() - lastHiddenTime;
+      console.log(`[SocketListener] Page visible after ${hiddenDuration}ms, socket connected: ${socket.connected}`);
+      
+      // If hidden for more than 10 seconds, force reconnect
+      if (hiddenDuration > 10000) {
+        console.log('[SocketListener] Forcing reconnection after sleep/lock');
+        
+        // Small delay to let the device fully wake up
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (!socket.connected) {
+            console.log('[SocketListener] Reconnecting socket...');
+            socket.connect();
+          }
+          // Check for missed messages
+          checkUnreadMessages();
+        }, 500);
+      }
+    }
+
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, [isVisible, isAuthenticated, lastHiddenTime]);
 
   return null;
 };

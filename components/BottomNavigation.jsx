@@ -23,6 +23,14 @@ const BottomNavigation = () => {
   const profilePath = isAdmin ? '/admin/profile' : '/users/profile';
 
   const isActive = (path) => {
+    // Special handling for profile to not match conversations
+    if (path === profilePath) {
+      // Only match exact profile path or profile subpages, but NOT conversations or chat
+      return pathname === path || 
+             (pathname.startsWith(path + '/') && 
+              !pathname.includes('/conversations') && 
+              !pathname.includes('/chat'));
+    }
     return pathname === path || pathname.startsWith(path + '/');
   };
 
@@ -66,38 +74,40 @@ const BottomNavigation = () => {
         </Link>
 
         {isAuthenticated && (
-          <Link
-            href="/users/profile/conversations"
-            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
-              isActive('/users/profile/conversations') || isActive('/chat')
-                ? 'text-amber-400' 
-                : 'text-lime-100 hover:text-lime-200'
-            }`}
-          >
-            <div className="relative">
-              {showNotification ? (
-                <div className="animate-pulse">
-                  <BsChatDotsFill size={20} className="drop-shadow-[0_0_8px_rgba(217,249,157,0.8)]" />
-                </div>
-              ) : (
-                <BsChatDots size={20} />
-              )}
-            </div>
-            <span className="text-xs mt-0.5 font-medium">Chat</span>
-          </Link>
-        )}
+          <>
+            <Link
+              href="/users/profile/conversations"
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
+                isActive('/users/profile/conversations') || isActive('/chat')
+                  ? 'text-amber-400' 
+                  : 'text-lime-100 hover:text-lime-200'
+              }`}
+            >
+              <div className="relative">
+                {showNotification ? (
+                  <div className="animate-pulse">
+                    <BsChatDotsFill size={20} className="drop-shadow-[0_0_8px_rgba(217,249,157,0.8)]" />
+                  </div>
+                ) : (
+                  <BsChatDots size={20} />
+                )}
+              </div>
+              <span className="text-xs mt-0.5 font-medium">Chat</span>
+            </Link>
 
-        <Link
-          href={isAuthenticated ? profilePath : '/login'}
-          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-            isActive(isAuthenticated ? profilePath : '/login')
-              ? 'text-amber-400' 
-              : 'text-lime-100 hover:text-lime-200'
-          }`}
-        >
-          <FaUser size={20} />
-          <span className="text-xs mt-0.5 font-medium">Profile</span>
-        </Link>
+            <Link
+              href={profilePath}
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+                isActive(profilePath)
+                  ? 'text-amber-400' 
+                  : 'text-lime-100 hover:text-lime-200'
+              }`}
+            >
+              <FaUser size={20} />
+              <span className="text-xs mt-0.5 font-medium">Profile</span>
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );
