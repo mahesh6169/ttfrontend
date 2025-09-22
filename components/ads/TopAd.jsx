@@ -55,16 +55,17 @@ const TopAd = () => {
   };
 
   // Track click - counts every click regardless of which carousel image
-  const handleAdClick = async (ad) => {
+  const handleAdClick = async (ad, currentImage) => {
     try {
-      console.log('Ad click:', ad);
+      console.log('Ad click:', ad, 'Image:', currentImage);
       
       // Always track click via GET endpoint (it handles all cases)
       const clickUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/bannerAds/click/${ad.adId}`;
       
-      if (ad.destinationUrl) {
+      // Get destination from current image
+      if (currentImage.destinationUrl) {
         // Has destination - let the backend redirect after tracking
-        if (ad.destinationType === 'external') {
+        if (currentImage.destinationType === 'external') {
           // External link - open in new tab
           window.open(clickUrl, '_blank');
         } else {
@@ -155,7 +156,7 @@ const TopAd = () => {
   return (
     <div 
       className="mx-auto overflow-hidden cursor-pointer w-[320px] h-[50px] md:w-[728px] md:h-[90px]"
-      onClick={() => handleAdClick(currentAd)}
+      onClick={() => handleAdClick(currentAd, currentImage)}
     >
       <Image
         src={currentImage.imageUrl}

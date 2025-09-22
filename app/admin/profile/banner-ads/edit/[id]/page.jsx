@@ -237,8 +237,29 @@ export default function EditAdPage({ params }) {
             maxImpressions: formData.caps.maxImpressions ? parseInt(formData.caps.maxImpressions) : undefined,
             maxClicks: formData.caps.maxClicks ? parseInt(formData.caps.maxClicks) : undefined
           },
-          notes: formData.notes
+          notes: formData.notes,
+          // Include creative structure with destination URLs
+          creative: {
+            desktop: {
+              altText: formData.creative.desktop?.altText || '',
+              destination: {
+                type: formData.creative.desktop?.destination?.type || 'external',
+                url: formData.creative.desktop?.destination?.url || ''
+              }
+            }
+          }
         };
+        
+        // Add mobile creative if it exists
+        if (formData.creative.mobile && (formData.creative.mobile.altText || formData.creative.mobile.destination?.url)) {
+          submitData.creative.mobile = {
+            altText: formData.creative.mobile.altText || '',
+            destination: {
+              type: formData.creative.mobile.destination?.type || 'external',
+              url: formData.creative.mobile.destination?.url || ''
+            }
+          };
+        }
         
         // Add removed images if any
         if (formData.creative.removedImages && formData.creative.removedImages.length > 0) {
