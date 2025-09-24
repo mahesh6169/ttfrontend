@@ -9,61 +9,80 @@ import { SocketListener } from '@/components/chat/SocketListener';
 import ThreadSocketListener from '@/components/ThreadSocketListener';
 import StateSelectionWrapper from '@/components/ads/StateSelectionWrapper';
 import Script from 'next/script';
+import { COMMUNITIES } from '@/utils/constants/communities';
 
 
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
+
+// Generate keywords dynamically
+const generateKeywords = () => {
+  const keywords = [];
+  const keyTerms = ['events', 'ads', 'adverts', 'classifieds', 'marketplace', 'forums', 'discussions', 'community'];
+  const locations = [
+    'australia',
+    // Capital cities
+    'sydney', 'melbourne', 'brisbane', 'perth', 'adelaide', 'hobart', 'darwin', 'canberra',
+    // Major regional cities with large Indian populations
+    'gold coast', 'newcastle', 'wollongong', 'geelong', 'townsville', 'cairns', 'sunshine coast',
+    // Western Australia cities
+    'fremantle', 'mandurah', 'bunbury', 'rockingham', 'joondalup',
+    // State codes for broader searches
+    'nsw', 'vic', 'qld', 'wa', 'sa', 'tas', 'act', 'nt'
+  ];
+  const genericTerms = ['indian', 'desi'];
+  
+  // Add language-specific keywords
+  COMMUNITIES.forEach(community => {
+    const lang = community.label.toLowerCase();
+    
+    // Language + key terms
+    keyTerms.forEach(term => {
+      keywords.push(`${lang} ${term} australia`);
+    });
+    
+    // Language + events + locations
+    locations.forEach(location => {
+      keywords.push(`${lang} events ${location}`);
+    });
+  });
+  
+  // Add generic Indian/Desi keywords
+  genericTerms.forEach(term => {
+    keyTerms.forEach(keyTerm => {
+      keywords.push(`${term} ${keyTerm} australia`);
+    });
+    
+    locations.forEach(location => {
+      keywords.push(`${term} community ${location}`);
+    });
+  });
+  
+  // Add base keywords
+  keywords.push(
+    siteName.toLowerCase(),
+    'indian diaspora australia',
+    'desi community australia',
+    'indian services australia'
+  );
+  
+  return keywords;
+};
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
   
   // GOOGLE SEARCH RESULTS - Primary title shown in search results
   title: {
-    default: `${siteName} - Indian Community Events, Classifieds & Forums in Australia | Telugu, Tamil, Hindi & More`,
-    template: `%s | ${siteName} - Indian Community Australia`,
+    default: `Desify – Classifieds, Events & Forum`,
+    template: `%s | Desify`,
   },
   
   // GOOGLE SEARCH RESULTS - Description shown below title in search results
-  description: `Find Telugu events, Tamil events, Hindi events & more across Sydney, Melbourne, Perth, Brisbane. Connect with Indian diaspora in Australia. Buy, sell, discover cultural events, find Indian services & join community discussions.`,
+  description: `List Ads , Promote Business & Services , Create & Share Events , Join Discussions`,
   
   // SEO KEYWORDS - Helps Google understand what searches should show your site
-  keywords: [
-    // Language + Events combinations
-    'telugu events australia',
-    'telugu events sydney',
-    'telugu events melbourne',
-    'telugu events perth',
-    'telugu events brisbane',
-    'tamil events australia',
-    'tamil events sydney',
-    'tamil events melbourne',
-    'hindi events australia',
-    'punjabi events australia',
-    'gujarati events australia',
-    'malayalam events australia',
-    'bengali events australia',
-    'marathi events australia',
-    'kannada events australia',
-    // Community keywords
-    'indian community australia',
-    'indian diaspora australia',
-    'indian events australia',
-    'indian classifieds australia',
-    'indian services australia',
-    'desi events australia',
-    'indian cultural events',
-    // Location specific
-    'indian community sydney',
-    'indian community melbourne',
-    'indian community perth',
-    'indian community brisbane',
-    'indian community adelaide',
-    // Service keywords
-    'indian marketplace australia',
-    'desi classifieds',
-    'indian forums australia',
-    siteName.toLowerCase()
-  ],
+  keywords: generateKeywords(),
   
   // METADATA - Who created the website
   authors: [{ name: siteName }],
@@ -97,8 +116,8 @@ export const metadata = {
   
   // SOCIAL MEDIA SHARING - WhatsApp, Facebook, LinkedIn previews
   openGraph: {
-    title: `${siteName} - Indian Community Hub | Events, Classifieds & Forums in Australia`, // Title in WhatsApp/FB preview
-    description: `Connect with the Indian diaspora across Australia. Discover cultural events, buy & sell in the marketplace, find trusted services, and join community discussions in Sydney, Melbourne, Perth & more.`, // Description in preview
+    title: `Desify – Classifieds, Events & Forum`, // Title in WhatsApp/FB preview
+    description: `List Ads , Promote Business & Services , Create & Share Events , Join Discussions`, // Description in preview
     url: siteUrl,
     siteName: siteName,
     images: [
@@ -106,7 +125,7 @@ export const metadata = {
         url: `https://res.cloudinary.com/dtvrbdvkx/image/upload/v1758681063/desify-og-default_kfqun1.jpg`, // Image shown in WhatsApp/FB preview
         width: 1200,
         height: 630,
-        alt: `${siteName} - Indian Community Events, Classifieds & Forums in Australia`,
+        alt: `Desify – Classifieds, Events & Forum`,
       }
     ],
     locale: 'en_AU',
@@ -116,8 +135,8 @@ export const metadata = {
   // TWITTER/X SHARING - How your site appears when shared on Twitter/X
   twitter: {
     card: 'summary_large_image',
-    title: `${siteName} - Indian Events & Community in Australia`,
-    description: `Discover Indian cultural events across Sydney, Melbourne, Perth & more. Connect with the diaspora community. Free classifieds & forums.`,
+    title: `Desify – Classifieds, Events & Forum`,
+    description: `List Ads , Promote Business & Services , Create & Share Events , Join Discussions`,
     creator: `@${siteName.toLowerCase()}`,
     images: [`https://res.cloudinary.com/dtvrbdvkx/image/upload/v1758681063/desify-og-default_kfqun1.jpg`],
   },
@@ -138,7 +157,7 @@ const ParentLayout = ({ children }) => {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: siteName,
-    description: 'Indian Community Hub for Telugu, Tamil, Hindi & more events, classifieds and forums in Australia',
+    description: 'List Ads , Promote Business & Services , Create & Share Events , Join Discussions',
     url: siteUrl,
     // Tells Google about your search functionality
     potentialAction: {
@@ -172,7 +191,7 @@ const ParentLayout = ({ children }) => {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: `${siteName} - Indian Community Platform`,
-    description: 'Connect with Indian diaspora across Australia. Find events, classifieds, and community forums.',
+    description: 'List Ads , Promote Business & Services , Create & Share Events , Join Discussions',
     url: siteUrl,
     image: `https://res.cloudinary.com/dtvrbdvkx/image/upload/v1758681063/desify-og-default_kfqun1.jpg`,
     address: {

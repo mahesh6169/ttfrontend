@@ -3,7 +3,6 @@
 export const COMMUNITIES = [
   { value: 'punjabi', label: 'Punjabi' },
   { value: 'hindi', label: 'Hindi' },
-  { value: 'urdu', label: 'Urdu' },
   { value: 'tamil', label: 'Tamil' },
   { value: 'gujarati', label: 'Gujarati' },
   { value: 'malayalam', label: 'Malayalam' },
