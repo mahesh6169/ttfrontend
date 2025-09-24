@@ -148,6 +148,14 @@ export const ALLOWED_EMAIL_DOMAINS = [
       errors.message = 'Message should not exceed 1000 characters';
     }
   
+    // Mobile (optional but validated if provided)
+    if (formData.mobile && formData.mobile.trim()) {
+      const cleanedMobile = formData.mobile.replace(/\s+/g, '');
+      if (!/^(\+61|0)?4\d{8}$/.test(cleanedMobile)) {
+        errors.mobile = 'Please enter a valid Australian mobile number';
+      }
+    }
+
     // Category
     // Category
 if (!formData.category?.trim()) {

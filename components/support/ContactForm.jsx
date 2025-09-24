@@ -18,7 +18,8 @@ const ContactForm = () => {
   const [title, setTitle] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [option, setOption] = useState('Feature Request');
+  const [mobile, setMobile] = useState('');
+  const [option, setOption] = useState('Advertisement Enquiry');
   const [otherOption, setOtherOption] = useState('');
   const [description, setDescription] = useState('');
   const [formLoadTime, setFormLoadTime] = useState(Date.now());
@@ -30,6 +31,50 @@ const ContactForm = () => {
       setEmail(user.email || '');
     }
   }, [user]);
+
+  // Get dynamic placeholders based on selected option
+  const getPlaceholders = () => {
+    switch(option) {
+      case 'Advertisement Enquiry':
+        return {
+          title: 'e.g., Banner Ad Pricing for 3 Months',
+          description: 'Please describe your advertising needs, target audience, and preferred ad placement...',
+          showMobile: true
+        };
+      case 'Technical Support':
+        return {
+          title: 'e.g., Unable to Upload Images in Listings',
+          description: 'Please describe the technical issue you are facing. Include error messages, steps to reproduce, and device/browser info...',
+          showMobile: true
+        };
+      case 'Feature Request':
+        return {
+          title: 'e.g., Add Category for Listings',
+          description: 'Describe the feature you would like to see...',
+          showMobile: false
+        };
+      case 'Report A Bug':
+        return {
+          title: 'e.g., Search Filter Not Working on Mobile',
+          description: 'Please describe the bug, steps to reproduce it, and type your device/browser information...',
+          showMobile: false
+        };
+      case 'Other':
+        return {
+          title: 'Enter the subject of your enquiry',
+          description: 'Please provide detailed information about your enquiry...',
+          showMobile: true
+        };
+      default:
+        return {
+          title: 'Enter the subject / title',
+          description: 'Describe your request or issue...',
+          showMobile: false
+        };
+    }
+  };
+
+  const placeholders = getPlaceholders();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -52,6 +97,7 @@ const ContactForm = () => {
       senderEmail: email,
       category: selectedOption,
       message: description,
+      mobile: placeholders.showMobile ? mobile : undefined,
     });
 
     if (Object.keys(errors).length > 0) {
@@ -72,6 +118,7 @@ const ContactForm = () => {
         senderName: sanitizeInput(name),
         senderEmail: sanitizeInput(email),
         message: sanitizeInput(description),
+        mobile: placeholders.showMobile ? sanitizeInput(mobile) : undefined,
         captchaToken,
       })
     )
@@ -82,7 +129,8 @@ const ContactForm = () => {
         setName('');
         setEmail('');
       }
-      setOption('Feature Request');
+      setMobile('');
+      setOption('Advertisement Enquiry');
       setOtherOption('');
       setDescription('');
       setCaptchaToken(null);
@@ -118,7 +166,7 @@ const ContactForm = () => {
           className="w-full border p-2 rounded mb-2"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter the subject / title"
+          placeholder={placeholders.title}
         />
 
         <input
@@ -137,15 +185,26 @@ const ContactForm = () => {
           placeholder="Your Email"
         />
 
+        {placeholders.showMobile && (
+          <input
+            type="tel"
+            className="w-full border p-2 rounded mb-2"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            placeholder="Your Mobile Number"
+          />
+        )}
+
         <select
           className="w-full border p-2 rounded mb-2"
           value={option}
           onChange={(e) => setOption(e.target.value)}
         >
+          
+          <option>Advertisement Enquiry</option>
           <option>Feature Request</option>
-          <option>Advertisement</option>
+          <option>Report A Bug</option>
           <option>Technical Support</option>
-          <option>Bug Report</option>
           <option>Other</option>
         </select>
 
@@ -164,7 +223,7 @@ const ContactForm = () => {
           rows={5}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe your request or issue..."
+          placeholder={placeholders.description}
         />
 
         <div className="flex justify-center my-2">

@@ -260,7 +260,6 @@ const ParentLayout = ({ children }) => {
       <body>
         <Providers>
          <SocketListener />
-         <ThreadSocketListener />
          <StateSelectionWrapper />
           <Header />
            {/* <TermsModal /> */} 

@@ -6,6 +6,11 @@ import { FaCircle } from 'react-icons/fa';
 const ThreadConnectionStatus = () => {
   const socketConnected = useSelector((state) => state.threads.socketConnected);
   const connectionError = useSelector((state) => state.threads.connectionError);
+  
+  // Only show in development environment
+  if (process.env.NODE_ENV !== 'development') {
+    return null;
+  }
 
   if (!socketConnected && !connectionError) {
     return (

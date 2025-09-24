@@ -33,6 +33,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { MdReport } from "react-icons/md";
 import ShareIcons from '@/components/shared/ShareIcons';
 import ThreadConnectionStatus from '@/components/threads/ThreadConnectionStatus';
+import ThreadSocketListener from '@/components/ThreadSocketListener';
 
 
 // Add this helper function for optimized image URLs
@@ -359,8 +360,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     
 
   return (
-    
-  <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
+    <>
+      <ThreadSocketListener />
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
     {/* Navigation Bar */}
     <div className="mt-4 flex justify-between items-center">
       {/* Back to Topics */}
@@ -974,6 +976,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
       </div>
     </div>
+    </>
   );
 };
 

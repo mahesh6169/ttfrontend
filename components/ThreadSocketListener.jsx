@@ -86,13 +86,20 @@ const ThreadSocketListener = () => {
         }
       } catch (error) {
         console.error('❌ [ThreadSocketListener] Failed to connect thread socket:', error);
-        reconnectAttempts.current++;
         
-        if (reconnectAttempts.current < maxReconnectAttempts) {
-          // Retry connection after a delay
-          setTimeout(connectSocket, 2000);
+        // Only count attempts and show errors if page is visible
+        if (document.visibilityState === 'visible') {
+          reconnectAttempts.current++;
+          
+          if (reconnectAttempts.current < maxReconnectAttempts) {
+            // Retry connection after a delay
+            setTimeout(connectSocket, 2000);
+          } else {
+            toast.error('Unable to connect to server. Please refresh the page.');
+          }
         } else {
-          toast.error('Unable to connect to server. Please refresh the page.');
+          // If page is hidden, just retry silently
+          setTimeout(connectSocket, 5000);
         }
       }
     };
@@ -127,9 +134,16 @@ const ThreadSocketListener = () => {
       console.error('Thread socket connection error:', error);
       reconnectAttempts.current++;
       
-      if (reconnectAttempts.current >= maxReconnectAttempts) {
+      // Only show error after multiple attempts and if page is visible
+      // This prevents errors during mobile sleep/lock
+      if (reconnectAttempts.current >= maxReconnectAttempts && document.visibilityState === 'visible') {
         toast.error('Unable to connect to server. Please refresh the page.');
         threadSocket.disconnect();
+      } else if (reconnectAttempts.current < maxReconnectAttempts && document.visibilityState === 'visible') {
+        // Show softer message for temporary connection issues
+        if (reconnectAttempts.current === 3) {
+          toast.warning('Having connection issues. Retrying...');
+        }
       }
     };
 
@@ -248,6 +262,9 @@ const ThreadSocketListener = () => {
     if (isVisible && !threadSocket.connected && lastHiddenTime) {
       const hiddenDuration = Date.now() - lastHiddenTime;
       console.log(`[ThreadSocket] Page visible after ${hiddenDuration}ms, connected: ${threadSocket.connected}`);
+      
+      // Reset reconnection attempts when page becomes visible after being hidden
+      reconnectAttempts.current = 0;
       
       if (hiddenDuration > 10000) {
         console.log('[ThreadSocket] Forcing reconnection after sleep/lock');
