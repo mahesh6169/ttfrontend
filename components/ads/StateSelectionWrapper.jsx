@@ -13,12 +13,21 @@ const StateSelectionWrapper = () => {
   const { user, tokenValidated, status } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user?._id;
   
+  // Feature flag to control modal display
+  const ENABLE_STATE_SELECTION = process.env.NEXT_PUBLIC_ENABLE_STATE_SELECTION === 'true';
+  
   // Only show modal on specific pages where state matters
   const allowedPaths = ['/listings', '/events', '/threads'];
   const shouldCheckState = allowedPaths.includes(pathname);
   
   useEffect(() => {
     console.log('[StateSelection] Component mounted, tokenValidated:', tokenValidated, 'hasChecked:', hasChecked, 'isAuthenticated:', isAuthenticated, 'status:', status, 'pathname:', pathname);
+    
+    // Check if feature is enabled
+    if (!ENABLE_STATE_SELECTION) {
+      console.log('[StateSelection] State selection is disabled');
+      return;
+    }
     
     // Only check on allowed paths
     if (!shouldCheckState) {
@@ -32,7 +41,7 @@ const StateSelectionWrapper = () => {
       checkStateSelection();
       setHasChecked(true);
     }
-  }, [status, hasChecked, isAuthenticated, shouldCheckState, pathname]);
+  }, [status, hasChecked, isAuthenticated, shouldCheckState, pathname, ENABLE_STATE_SELECTION]);
   
   const checkStateSelection = async () => {
     console.log('[StateSelection] Checking state selection, user:', user, 'isAuthenticated:', isAuthenticated);
