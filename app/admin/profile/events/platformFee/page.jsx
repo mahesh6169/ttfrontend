@@ -185,7 +185,7 @@ const PlatformFeeManagement = () => {
             Platform Fee Management
           </h1>
           <p className="text-gray-600">
-            Configure custom platform fees for individual events. Default fee is $0.70 + 0% per ticket.
+            Configure custom platform fees for individual events. Default fee is 0.30% Total cost + $0.80C per ticket.
           </p>
         </div>
 
@@ -222,7 +222,7 @@ const PlatformFeeManagement = () => {
               {events.map((event) => (
                 <option key={event._id} value={event._id}>
                   {event.title} - {event.eventCode} ({formatDate(event.dateTime)})
-                  {(event.platformFee !== null || event.platformFeePercentage !== null) && ` - Custom Fee: $${(event.platformFee || 0.70).toFixed(2)} + ${(event.platformFeePercentage || 0).toFixed(2)}%`}
+                  {(event.platformFee !== null || event.platformFeePercentage !== null) && ` - Custom Fee: ${(event.platformFeePercentage || 0).toFixed(2)}% + $${(event.platformFee || 0.70).toFixed(2)}C`}
                 </option>
               ))}
             </select>
@@ -262,7 +262,7 @@ const PlatformFeeManagement = () => {
                 {(currentFeeInfo.platformFee !== null || currentFeeInfo.platformFeePercentage !== null) ? (
                   <div>
                     <p className="text-lg font-semibold text-blue-900">
-                      ${(currentFeeInfo.platformFee || currentFeeInfo.defaultFee).toFixed(2)} + {(currentFeeInfo.platformFeePercentage || currentFeeInfo.defaultPercentage).toFixed(2)}% per ticket
+                      {(currentFeeInfo.platformFeePercentage || currentFeeInfo.defaultPercentage).toFixed(2)}% Total cost + ${(currentFeeInfo.platformFee || currentFeeInfo.defaultFee).toFixed(2)}C per ticket
                     </p>
                     <p className="text-sm text-blue-700 mt-1">
                       Effective fee: {currentFeeInfo.effectiveFeeBreakdown}
@@ -274,7 +274,7 @@ const PlatformFeeManagement = () => {
                 ) : (
                   <div>
                     <p className="text-lg font-semibold text-blue-900">
-                      ${currentFeeInfo.defaultFee.toFixed(2)} + {currentFeeInfo.defaultPercentage.toFixed(2)}% per ticket
+                      {currentFeeInfo.defaultPercentage.toFixed(2)}% Total cost + ${currentFeeInfo.defaultFee.toFixed(2)}C per ticket
                     </p>
                     <p className="text-sm text-blue-700 mt-1">
                       Using platform default fees
@@ -315,7 +315,7 @@ const PlatformFeeManagement = () => {
                       min="0"
                       max="20"
                       step="0.01"
-                      placeholder="Leave empty for default ($0.70)"
+                      placeholder="0.80 (default)"
                       className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -349,7 +349,7 @@ const PlatformFeeManagement = () => {
                       min="0"
                       max="10"
                       step="0.01"
-                      placeholder="Leave empty for default (0%)"
+                      placeholder="0.30 (default)"
                       className="w-full pr-8 pl-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
@@ -402,13 +402,30 @@ const PlatformFeeManagement = () => {
         {/* Info Box */}
         <div className="mt-8 bg-amber-50 border border-amber-200 rounded-lg p-4">
           <h3 className="font-medium text-amber-900 mb-2">Important Notes:</h3>
-          <ul className="text-sm text-amber-800 space-y-1 list-disc list-inside">
-            <li>Platform fees consist of a flat fee per ticket + percentage of total amount</li>
-            <li>The total fee is deducted from the ticket price (not added on top)</li>
-            <li>Changes only affect new purchases, not existing tickets</li>
-            <li>Setting both fees to $0 and 0% waives all platform fees for that event</li>
-            <li>Example: $100 order (2 tickets) with $0.70 + 0.30% = $1.40 + $0.30 = $1.70 total fee</li>
-          </ul>
+          <div className="text-sm text-amber-800 space-y-3">
+            <div>
+              <p className="font-semibold">Platform Fee Components:</p>
+              <ul className="mt-1 space-y-1 list-disc list-inside ml-2">
+                <li>Default Fee: $0.80 flat fee + 0.30%</li>
+                <li>Flat Fee: $0.80 per ticket (first ticket effectively $0.50 after absorption)</li>
+                <li>Percentage Fee: 0.30% of order total</li>
+                <li>Absorbed Fee: We absorb Stripe's $0.30 fixed fee once per order</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold">💳 Stripe Fee (GST-Inclusive)</p>
+              <ul className="mt-1 space-y-1 list-disc list-inside ml-2">
+                <li>1.7% of order total + $0.30 per order</li>
+                <li>GST is already included (Stripe just shows it separately for reporting)</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold">📢 Marketed / Default Fee</p>
+              <ul className="mt-1 space-y-1 list-disc list-inside ml-2">
+                <li>2.0% of order total + $0.80 per ticket (includes Stripe + platform fees)</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </ProtectedAdminRoute>

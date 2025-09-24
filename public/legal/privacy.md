@@ -1,7 +1,3 @@
-Got it — here’s a **complete first draft of your Privacy Policy** in Markdown format, designed to match your `terms.md` style and stay legally consistent with the document you shared:
-
----
-
 # Privacy Policy
 
 *Last Updated: 18 September 2025*
@@ -127,7 +123,6 @@ If a data breach occurs that is likely to result in serious harm, we will take a
 
 If you have any questions, requests, or complaints regarding this Privacy Policy or how we handle your information, please contact us at:
 
-**Email:** [support@desify.com.au](mailto:support@desify.com.au)
-**Mail:** NEXO GROUP PTY LTD
+**Email:** support@desify.com.au
 
 ---

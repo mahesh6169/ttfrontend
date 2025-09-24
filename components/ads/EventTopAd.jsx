@@ -134,7 +134,7 @@ const EventTopAd = () => {
   // Show the current ad with its current image
   return (
     <div 
-      className="mx-auto overflow-hidden cursor-pointer w-[320px] h-[50px] md:w-[728px] md:h-[90px]"
+      className="mx-auto overflow-hidden cursor-pointer w-[320px] h-[60px] md:w-[728px] md:h-[90px]"
       onClick={() => handleAdClick(currentAd, currentImage)}
     >
       <Image

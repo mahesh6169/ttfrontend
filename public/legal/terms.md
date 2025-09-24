@@ -1,5 +1,5 @@
 # Terms and Conditions
-_Last Updated: 18 September 2025_
+*Last Updated: 18 September 2025*
 
 ## 1. Introduction
 
