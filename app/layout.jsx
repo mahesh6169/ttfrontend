@@ -16,11 +16,17 @@ const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
+  
+  // GOOGLE SEARCH RESULTS - Primary title shown in search results
   title: {
     default: `${siteName} - Indian Community Events, Classifieds & Forums in Australia | Telugu, Tamil, Hindi & More`,
     template: `%s | ${siteName} - Indian Community Australia`,
   },
+  
+  // GOOGLE SEARCH RESULTS - Description shown below title in search results
   description: `Find Telugu events, Tamil events, Hindi events & more across Sydney, Melbourne, Perth, Brisbane. Connect with Indian diaspora in Australia. Buy, sell, discover cultural events, find Indian services & join community discussions.`,
+  
+  // SEO KEYWORDS - Helps Google understand what searches should show your site
   keywords: [
     // Language + Events combinations
     'telugu events australia',
@@ -58,36 +64,46 @@ export const metadata = {
     'indian forums australia',
     siteName.toLowerCase()
   ],
+  
+  // METADATA - Who created the website
   authors: [{ name: siteName }],
   creator: siteName,
   publisher: siteName,
+  
+  // FORMATTING - Prevents auto-detection of phone numbers, emails
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
+  
+  // GOOGLE CRAWLING - Instructions for Google's search bot
   robots: {
-    index: true,
-    follow: true,
+    index: true,      // Allow Google to index this page
+    follow: true,     // Allow Google to follow links
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      'max-video-preview': -1,     // No limit on video preview length
+      'max-image-preview': 'large', // Show large image previews
+      'max-snippet': -1,           // No limit on text snippet length
     },
   },
+  
+  // CANONICAL URL - Tells Google the main URL for this content
   alternates: {
     canonical: siteUrl,
   },
+  
+  // SOCIAL MEDIA SHARING - WhatsApp, Facebook, LinkedIn previews
   openGraph: {
-    title: `${siteName} - Indian Community Hub | Telugu, Tamil, Hindi Events & Classifieds in Australia`,
-    description: `Connect with Indian diaspora across Australia. Find Telugu events, Tamil events, Hindi cultural programs in Sydney, Melbourne, Perth & more. Buy, sell, discover services & join community discussions.`,
+    title: `${siteName} - Indian Community Hub | Events, Classifieds & Forums in Australia`, // Title in WhatsApp/FB preview
+    description: `Connect with the Indian diaspora across Australia. Discover cultural events, buy & sell in the marketplace, find trusted services, and join community discussions in Sydney, Melbourne, Perth & more.`, // Description in preview
     url: siteUrl,
     siteName: siteName,
     images: [
       {
-        url: `${siteUrl}/desify-og-default.jpg`,
+        url: `https://res.cloudinary.com/dtvrbdvkx/image/upload/v1758681063/desify-og-default_kfqun1.jpg`, // Image shown in WhatsApp/FB preview
         width: 1200,
         height: 630,
         alt: `${siteName} - Indian Community Events, Classifieds & Forums in Australia`,
@@ -96,27 +112,35 @@ export const metadata = {
     locale: 'en_AU',
     type: 'website',
   },
+  
+  // TWITTER/X SHARING - How your site appears when shared on Twitter/X
   twitter: {
     card: 'summary_large_image',
     title: `${siteName} - Indian Events & Community in Australia`,
-    description: `Telugu, Tamil, Hindi & more cultural events across Sydney, Melbourne, Perth. Connect with Indian diaspora. Free classifieds & community forums.`,
+    description: `Discover Indian cultural events across Sydney, Melbourne, Perth & more. Connect with the diaspora community. Free classifieds & forums.`,
     creator: `@${siteName.toLowerCase()}`,
-    images: [`${siteUrl}/desify-og-default.jpg`],
+    images: [`https://res.cloudinary.com/dtvrbdvkx/image/upload/v1758681063/desify-og-default_kfqun1.jpg`],
   },
+  
+  // SEARCH ENGINE VERIFICATION - Prove you own this site
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
-    bing: process.env.NEXT_PUBLIC_BING_VERIFICATION,
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION, // Google Search Console verification
+    bing: process.env.NEXT_PUBLIC_BING_VERIFICATION,     // Bing Webmaster Tools verification
   },
+  
+  // WEBSITE CATEGORY - Helps search engines understand your site type
   category: 'community',
 };
 
 const ParentLayout = ({ children }) => {
+  // STRUCTURED DATA - Helps Google understand your website structure (not visible to users)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: siteName,
     description: 'Indian Community Hub for Telugu, Tamil, Hindi & more events, classifieds and forums in Australia',
     url: siteUrl,
+    // Tells Google about your search functionality
     potentialAction: {
       '@type': 'SearchAction',
       target: {
@@ -143,13 +167,14 @@ const ParentLayout = ({ children }) => {
     ]
   };
 
+  // STRUCTURED DATA - Helps Google show your site for location-based searches
   const localBusinessJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: `${siteName} - Indian Community Platform`,
     description: 'Connect with Indian diaspora across Australia. Find events, classifieds, and community forums.',
     url: siteUrl,
-    image: `${siteUrl}/desify-og-default.jpg`,
+    image: `https://res.cloudinary.com/dtvrbdvkx/image/upload/v1758681063/desify-og-default_kfqun1.jpg`,
     address: {
       '@type': 'PostalAddress',
       addressCountry: 'AU',
