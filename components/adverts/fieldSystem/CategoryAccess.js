@@ -8,31 +8,34 @@ export const CATEGORY_ACCESS = {
   'Restaurants & Catering Services': ['user', 'admin'],
   'Party Hires & Services': ['user', 'admin'],
   'Cleaning & Maintenance Services': ['user', 'admin'],
-  'Home & Garden': ['user', 'admin'],
-  'Electronics & Computers': ['user', 'admin'],
   'Jobs': ['user', 'admin'],
   
-  'Senior Travel Support': ['user', 'admin'],
+  'Academic Tutors': ['user', 'admin'],
+  'Music Tutors': ['user', 'admin'],
+  'Dance Tutors': ['user', 'admin'],
+  'Arts Tutors': ['user', 'admin'],
+  'Sports Tutors': ['user', 'admin'],
+  
+  'Home & Garden': ['user', 'admin'],
+  'Electronics & Computers': ['user', 'admin'],
   'Baby & Children': ['user', 'admin'],
   'Health, Sport & Fitness': ['user', 'admin'],
   'Music & Games': ['user', 'admin'],
   'Fashion & Accessories': ['user', 'admin'],
   'Books, Art & Collectables': ['user', 'admin'],
   'Pets': ['user', 'admin'],
-
-  'Retail Shops & Business': ['user', 'admin'],
-  'Transport & Ride Services': ['user', 'admin'],
+  
+  'Business & Professional Services': ['user', 'admin'],
   'Legal & Immigration Services': ['user', 'admin'],
   'Financial & Insurance Services': ['user', 'admin'],
-  
-
-  'Academic Tutors & Education': ['user', 'admin'],
-  'Arts, Dance & Cultural Tutors': ['user', 'admin'],
-  'Business & Professional Services': ['user', 'admin'],
+  'Transport & Ride Services': ['user', 'admin'],
   'Construction & Renovation Services': ['user', 'admin'],
-  'Travel & Tourism Services': ['user', 'admin'],
   'Marketing & Advertising Services': ['user', 'admin'],
   'IT & Software Services': ['user', 'admin'],
+  'Travel & Tourism Services': ['user', 'admin'],
+  'Retail Shops & Business': ['user', 'admin'],
+    
+  'Senior Travel Support': ['user', 'admin'],
   'Miscellaneous': ['user', 'admin'],
   
   'Overseas Goods': ['admin']

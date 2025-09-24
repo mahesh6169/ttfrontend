@@ -530,7 +530,7 @@ fields: {
     ]
   },
 
-  'Academic Tutors & Education': {
+  'Academic Tutors': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -540,7 +540,37 @@ fields: {
     ]
   },
 
-  'Arts, Dance & Cultural Tutors': {
+  'Music Tutors': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Dance Tutors': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Arts Tutors': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Sports Tutors': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -599,6 +629,16 @@ fields: {
       }
     ]
   },
+
+  'Senior Travel Support': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  }
 
 
 };

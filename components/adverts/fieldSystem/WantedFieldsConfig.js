@@ -128,13 +128,31 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
-  'Academic Tutors & Education': {
+  'Academic Tutors': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
   
-  'Arts, Dance & Cultural Tutors': {
+  'Music Tutors': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Dance Tutors': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Arts Tutors': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Sports Tutors': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -165,6 +183,12 @@ export const WANTED_FIELDS_CONFIG = {
   },
   
   'IT & Software Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+  
+  'Senior Travel Support': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []

@@ -37,10 +37,10 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
 
   const priceLabel = getPriceLabel(advert.pricing);
 
-  // Determine border color based on ad type - using very subtle colors
+  // Determine border color based on ad type
   const borderColorClass = advert.adType === 'wanted' 
-    ? 'border-l-4 border-amber-100' 
-    : 'border-l-4 border-teal-100';
+    ? 'border-l-4 border-amber-400' 
+    : 'border-l-4 border-teal-700';
 
   return (
     <div id="AdvertCard" className="relative border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200">
@@ -74,9 +74,9 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
             {advert.title}
           </h2>
 
-          {/* Price Box */}
+          {/* Price Box - Show "Wanted" for wanted ads */}
           <div className="text-xs font-medium my-1 px-2 text-gray-800 h-4">
-            {advert.adType === 'wanted' ? 'Wanted $$$' : 
+            {advert.adType === 'wanted' ? 'Wanted' : 
              (!PRICING_CONFIG[advert.category] ? 'Request quote' : (priceLabel || '\u00A0'))}
           </div>
 

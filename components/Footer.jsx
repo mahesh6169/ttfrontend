@@ -8,35 +8,34 @@ const Footer = () => {
   
   return (
     <footer id="Footer" className="hidden md:block bg-teal-700 shadow mt-8">
-      <div className="container mx-auto py-2 text-lime-100 text-sm">
-        {/* Row 1 - Links */}
-        <div className="flex justify-center items-center gap-3 px-4">
-          <Link href="/support/terms" className="hover:underline">
-            Terms
-          </Link>
-          <span className="text-lime-300">•</span>
-          <Link href="/support/privacy" className="hover:underline">
-            Privacy
-          </Link>
-          <span className="text-lime-300">•</span>
-          <Link href="/support/contact" className="hover:underline">
-            Contact
-          </Link>
-        </div>
-        
-        {/* Row 2 - Copyright and Social */}
-        <div className="flex justify-between items-center px-4 mt-2">
-          {/* Left - Copyright */}
-          <span>© {currentYear} Telugufy</span>
+      <div className="w-full py-2 text-lime-100 text-sm">
+        {/* All elements in one row */}
+        <div className="relative flex items-center px-4">
+          {/* Center - Links */}
+          <div className="flex items-center gap-3 mx-auto">
+            <Link href="/support/terms" className="hover:underline">
+              Terms
+            </Link>
+            <span className="text-lime-300">•</span>
+            <Link href="/support/privacy" className="hover:underline">
+              Privacy
+            </Link>
+            <span className="text-lime-300">•</span>
+            <Link href="/support/contact" className="hover:underline">
+              Contact
+            </Link>
+          </div>
           
-          {/* Right - Social links */}
-          <ShareIcons 
-            type="share"
-            title="Desify - Your Local Marketplace"
-            compact={true}
-            className="text-lime-100"
-            hoverClassName="hover:text-lime-50"
-          />
+          {/* Far Right - Social links */}
+          <div className="absolute right-4">
+            <ShareIcons 
+              type="share"
+              title="Desify - Your Local Marketplace"
+              compact={true}
+              className="text-lime-100"
+              hoverClassName="hover:text-lime-50"
+            />
+          </div>
         </div>
       </div>
     </footer>

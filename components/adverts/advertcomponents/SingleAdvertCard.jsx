@@ -235,19 +235,21 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
               </div>
             )}
             
-            {/* Price Information */}
-            {!PRICING_CONFIG[advert.category] ? (
-              <div className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">Price:</span>{' '}
-                <span className="text-gray-600">Request quote</span>
-              </div>
-            ) : (
-              priceLabels && priceLabels.map((price, index) => (
-                <div key={index} className="text-sm sm:text-base">
-                  <span className="font-semibold text-gray-700">{price.label}:</span>{' '}
-                  <span className="text-gray-600">{price.value}</span>
+            {/* Price Information - Only show for offered ads */}
+            {advert.adType !== 'wanted' && (
+              !PRICING_CONFIG[advert.category] ? (
+                <div className="text-sm sm:text-base">
+                  <span className="font-semibold text-gray-700">Price:</span>{' '}
+                  <span className="text-gray-600">Request quote</span>
                 </div>
-              ))
+              ) : (
+                priceLabels && priceLabels.map((price, index) => (
+                  <div key={index} className="text-sm sm:text-base">
+                    <span className="font-semibold text-gray-700">{price.label}:</span>{' '}
+                    <span className="text-gray-600">{price.value}</span>
+                  </div>
+                ))
+              )
             )}
             
             {/* Condition */}
