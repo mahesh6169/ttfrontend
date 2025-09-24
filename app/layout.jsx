@@ -10,6 +10,7 @@ import ThreadSocketListener from '@/components/ThreadSocketListener';
 import StateSelectionWrapper from '@/components/ads/StateSelectionWrapper';
 import Script from 'next/script';
 import { COMMUNITIES } from '@/utils/constants/communities';
+import { Analytics } from '@vercel/analytics/next';
 
 
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
@@ -288,6 +289,7 @@ const ParentLayout = ({ children }) => {
             }}
             className="toast-container-mobile"
           />
+          <Analytics />
         </Providers>
       </body>
     </html>
