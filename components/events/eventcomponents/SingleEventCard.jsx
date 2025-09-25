@@ -35,12 +35,17 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
 
 // Add this helper function right after your imports
-const getOptimizedImageUrl = (imageObj) => {
+const getOptimizedImageUrl = (imageObj, size = 'auto') => {
   if (!imageObj) return null;
   if (typeof imageObj === 'string') return imageObj;
   
   // Use pre-optimized URLs from backend
   if (imageObj.optimizedUrls) {
+    if (size === 'fullscreen') return imageObj.optimizedUrls.fullscreen || imageObj.url || null;
+    if (size === 'mobile') return imageObj.optimizedUrls.mobile || imageObj.url || null;
+    if (size === 'desktop') return imageObj.optimizedUrls.desktop || imageObj.url || null;
+    
+    // Auto-detect based on screen size
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     return isMobile ? imageObj.optimizedUrls.mobile : imageObj.optimizedUrls.desktop;
   }
@@ -202,13 +207,7 @@ const SingleEventCard = ({ event, chatProps }) => {
       {isFullscreen && event.images?.length > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
           <img
-            src={getOptimizedImageUrl({
-              ...event.images[currentImageIndex],
-              optimizedUrls: {
-                ...event.images[currentImageIndex].optimizedUrls,
-                desktop: event.images[currentImageIndex].optimizedUrls?.fullscreen || event.images[currentImageIndex].optimizedUrls?.desktop
-              }
-            }) || event.images[currentImageIndex].url}
+            src={getOptimizedImageUrl(event.images[currentImageIndex], 'fullscreen')}
             alt={event.title || 'Event Image'}
             className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
           />

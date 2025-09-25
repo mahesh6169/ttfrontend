@@ -19,6 +19,7 @@ export const CATEGORY_OPTIONS = [
   "Arts Tutors & Classes",
   "Sports Tutors & Classes",
 
+  "Catering Services",
   "Migration & Visa Seminars",
   "Legal Seminars",
   "Personal Finance Seminars",

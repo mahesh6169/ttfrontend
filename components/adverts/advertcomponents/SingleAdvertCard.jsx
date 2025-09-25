@@ -8,12 +8,17 @@ import { formatCurrency } from '@/utils/formatCurrency';
 import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
 
 // Helper function to get optimized image URL
-const getOptimizedImageUrl = (imageObj) => {
+const getOptimizedImageUrl = (imageObj, size = 'auto') => {
   if (!imageObj) return '';
   if (typeof imageObj === 'string') return imageObj;
   
   // Use pre-optimized URLs from backend
   if (imageObj.optimizedUrls) {
+    if (size === 'fullscreen') return imageObj.optimizedUrls.fullscreen || imageObj.url || '';
+    if (size === 'mobile') return imageObj.optimizedUrls.mobile || imageObj.url || '';
+    if (size === 'desktop') return imageObj.optimizedUrls.desktop || imageObj.url || '';
+    
+    // Auto-detect based on screen size
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     return isMobile ? imageObj.optimizedUrls.mobile : imageObj.optimizedUrls.desktop;
   }
@@ -150,17 +155,11 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
       {/* Fullscreen Modal */}
       {isFullscreen && advert.images?.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
           <img
-            src={getOptimizedImageUrl({
-              ...advert.images[currentImageIndex],
-              optimizedUrls: {
-                ...advert.images[currentImageIndex]?.optimizedUrls,
-                desktop: advert.images[currentImageIndex]?.optimizedUrls?.fullscreen || advert.images[currentImageIndex]?.optimizedUrls?.desktop
-              }
-            })}
+            src={getOptimizedImageUrl(advert.images[currentImageIndex], 'fullscreen')}
             alt={advert.title || 'Advert Image'}
-            className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
+            className="object-contain w-full h-full max-w-full max-h-full"
             onError={(e) => {
               console.error('Fullscreen image failed to load:', e.target.src);
               handleCloseFullscreen();
