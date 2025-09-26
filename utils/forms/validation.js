@@ -2,7 +2,8 @@ export const ALLOWED_EMAIL_DOMAINS = [
     'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'aol.com',
     'icloud.com', 'me.com', 'protonmail.com', 'live.com', 'msn.com',
     'bigpond.com', 'optusnet.com.au', 'iinet.net.au', 'internode.on.net',
-    'tpg.com.au', 'aapt.net.au', 'telstra.com', 'dodo.com.au'
+    'tpg.com.au', 'aapt.net.au', 'telstra.com', 'dodo.com.au',
+    'ajithkumarphotography.com'
   ];
   
   const AU_SUFFIXES = ['.com.au', '.net.au', '.org.au', '.edu.au', '.gov.au'];
