@@ -365,7 +365,16 @@ useEffect(() => {
       </div>
       
       <div className="border rounded shadow-md mt-4 w-full">
-        {/* Header Section */}
+        {/* Header Section - Mobile */}
+        <div className="md:hidden border-b border-gray-300 bg-gray-50 p-3">
+          <Link href={`/${resourceType}s/views/${resourceId}`}>
+            <h1 className="text-base font-bold cursor-pointer hover:text-blue-600 text-gray-800 truncate">
+              {resource.eventCode ? `${resource.eventCode} - ${resource.title}` : resource.title}
+            </h1>
+          </Link>
+        </div>
+
+        {/* Header Section - Desktop */}
         <div className="hidden md:block border-b border-gray-300 bg-gray-50 p-4">
           <div className="flex gap-3">
             {/* Image - spans height of title + date/time */}

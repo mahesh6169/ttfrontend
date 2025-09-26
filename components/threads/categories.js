@@ -6,6 +6,8 @@ export const threadCategoryOptions = [
   "Personal Finance",
   "Legal",
   "Education & Academics",
+  "Career & Employment",
+  "Technology",
 
   // Family & community
   "Family & Kids",

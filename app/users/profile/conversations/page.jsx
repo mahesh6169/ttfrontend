@@ -12,6 +12,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import socket from '@/config/socket';
+import { MdRepeat } from 'react-icons/md';
 
 
 const ConversationsPage = () => {
@@ -95,6 +96,15 @@ const [pendingDelete, setPendingDelete] = useState(null);
         {conversations.map((conv) => {
            if (!conv.otherUser) return null;
            
+           // Debug log to check conversation data
+           console.log('Conversation data:', {
+             title: conv.title,
+             resourceType: conv.resourceType,
+             recurrence: conv.recurrence,
+             isRecurringInstance: conv.isRecurringInstance,
+             dateTime: conv.dateTime
+           });
+           
            // Determine if the current user needs to respond
            const isOwner = user._id === conv.ownerId;
            const myRole = isOwner ? 'owner' : 'participant';
@@ -126,27 +136,40 @@ const [pendingDelete, setPendingDelete] = useState(null);
       
       {/* Title and Date/Time container */}
       <div className="flex-1 min-w-0">
-        {/* Title */}
-        <h2 className="text-xs sm:text-sm font-medium text-gray-800 truncate">
-          {conv.eventCode ? `${conv.eventCode} - ${conv.title}` : conv.title}
+        {/* Title with recurring icon */}
+        <h2 className="text-xs sm:text-sm font-medium text-gray-800 truncate flex items-center">
+          <span className="truncate">
+            {conv.eventCode ? `${conv.eventCode} - ${conv.title}` : conv.title}
+          </span>
+          {conv.resourceType === 'event' && conv.recurrence?.isRecurring && (
+            <MdRepeat className="ml-1 text-gray-600 flex-shrink-0" size={14} title="Recurring event" />
+          )}
         </h2>
         
-        {/* Date/Time - only show for events */}
-        {conv.dateTime && (
+        {/* Date/Time for events */}
+        {conv.resourceType === 'event' && conv.dateTime && (
           <div className="text-xs text-gray-500 mt-1">
-            {new Date(conv.dateTime).toLocaleDateString('en-US', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            })}
-            {' at '}
-            {new Date(conv.dateTime).toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
-              hour12: true
-            })}
-            {conv.timeZone && ` (${conv.timeZone})`}
+            {conv.recurrence?.isRecurring && (
+              <span className="block">
+                <span className="text-purple-600 font-semibold">Recurring Event:</span>
+                <span className="text-gray-500"> This chat is for event on</span>
+              </span>
+            )}
+            <span className={conv.recurrence?.isRecurring ? 'font-medium' : ''}>
+              {new Date(conv.dateTime).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+              {' at '}
+              {new Date(conv.dateTime).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              })}
+              {conv.timeZone && ` (${conv.timeZone})`}
+            </span>
           </div>
         )}
       </div>

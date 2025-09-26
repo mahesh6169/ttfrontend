@@ -406,7 +406,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           <img
             src={getOptimizedImageUrl(thread.images[currentImageIndex])}
             alt="Thread Image"
-            className="object-cover w-full h-full cursor-pointer"
+            className="object-contain w-full h-full cursor-pointer bg-gray-100"
             onClick={() => setIsFullscreen(true)}
           />
 
