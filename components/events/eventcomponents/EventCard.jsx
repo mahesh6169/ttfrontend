@@ -77,7 +77,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         }}
       >
         {/* Image */}
-        <div className="relative w-full h-40 sm:h-48 md:h-56">
+        <div className="relative w-full h-40 sm:h-48 md:h-56 bg-white rounded-md">
           {images?.length > 0 ? (
             <img
               src={images[0].url}
@@ -85,7 +85,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
               className="w-full h-full object-cover rounded-md"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 rounded-md">
+            <div className="w-full h-full flex items-center justify-center bg-white text-gray-500 rounded-md">
               No Image Available
             </div>
           )}

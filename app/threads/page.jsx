@@ -723,12 +723,15 @@ const ThreadsPage = () => {
                     </div>
 
                     {/* Right image - Optimized for horizontal space */}
-                    {thread.images?.[0]?.url && (
+                    {thread.images?.[0] && (
                       <div className="flex-shrink-0">
                         <img
-                          src={thread.images[0].url}
+                          src={
+                            thread.images[0].optimizedUrls?.mobile || 
+                            thread.images[0].url
+                          }
                           alt="Thread"
-                          className="w-20 h-20 sm:w-32 sm:h-24 md:w-40 md:h-28 object-cover rounded"
+                          className="w-20 h-20 sm:w-32 sm:h-24 md:w-40 md:h-28 object-cover rounded bg-white"
                         />
                       </div>
                     )}

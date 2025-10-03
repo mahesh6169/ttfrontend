@@ -784,10 +784,13 @@ const CustomRegistrationFields = ({
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-base sm:text-lg font-medium text-gray-900">
-            Attende Information
+            Attendee Information
           </h4>
           <p className="text-xs sm:text-sm text-gray-500">
-            Collect information from attendees when they book (e.g. diet).
+            Collect additional information from attendees when they book (e.g. diet).
+            <span className="block text-xs mt-0.5" style={{ color: '#800000' }}>
+              <strong>Name</strong> and <strong>Mobile</strong> are defaultly collected at registration, don't create fields for them
+            </span>
             {isRecurring && (
               <span className="block text-blue-600 text-xs font-medium mt-0.5">
                 Applied to all recurring instances

@@ -45,7 +45,10 @@ const getOptimizedImageUrl = (imageObj, size = 'desktop') => {
   if (imageObj.optimizedUrls) {
     if (size === 'fullscreen') return imageObj.optimizedUrls.fullscreen;
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    return isMobile ? imageObj.optimizedUrls.mobile : imageObj.optimizedUrls.desktop;
+    // Use detail URLs for single view
+    const mobileUrl = imageObj.optimizedUrls.mobileDetail || imageObj.optimizedUrls.mobile;
+    const desktopUrl = imageObj.optimizedUrls.desktopDetail || imageObj.optimizedUrls.desktop;
+    return isMobile ? mobileUrl : desktopUrl;
   }
   
   // Fallback to original URL
@@ -402,13 +405,22 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
       {/* Image Section */}
       {thread.images?.length > 0 && (
-        <div className="relative w-full mx-auto bg-gray-200 flex overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]">
+        <div className="relative w-full mx-auto bg-white overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]">
           <img
             src={getOptimizedImageUrl(thread.images[currentImageIndex])}
             alt="Thread Image"
-            className="object-contain w-full h-full cursor-pointer bg-gray-100"
+            className="object-contain w-full h-full cursor-pointer"
             onClick={() => setIsFullscreen(true)}
           />
+          {/* Fullscreen hint */}
+          <div 
+            className="absolute bottom-2 left-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs flex items-center gap-1 pointer-events-none"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            <span>Click for full view</span>
+          </div>
 
           {thread.images.length > 1 && (
             <>

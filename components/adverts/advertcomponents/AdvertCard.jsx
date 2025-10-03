@@ -57,11 +57,11 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
 
       <Link href={`/listings/views/${advert._id}`}>
         {/* Image Box (50% height, full width) */}
-        <div className="relative w-full h-40 sm:h-48 md:h-56">
+        <div className="relative w-full h-40 sm:h-48 md:h-56 bg-white rounded-md">
           {advert.images?.length > 0 ? (
             <img src={advert.images[0].url} alt={advert.title} className="w-full h-full object-cover rounded-md" />
           ) : (
-            <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-500">
+            <div className="h-full w-full flex items-center justify-center bg-white text-gray-500 rounded-md">
               No Image Available
             </div>
           )}

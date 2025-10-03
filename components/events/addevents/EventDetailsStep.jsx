@@ -335,7 +335,7 @@ const EventDetailsStep = ({
         <label className="block font-semibold text-sm">
           Event Time Zone <span className="text-red-500">*</span>
         </label>
-        {disabled ? (
+        {disabled || (isEditMode && isRecurringEvent) ? (
           <input
             type="text"
             value={AU_TIMEZONES.find(tz => tz.value === formData.timeZone)?.label || 'No timezone selected'}
@@ -356,6 +356,11 @@ const EventDetailsStep = ({
             {Array.isArray(errors.timeZone) ? errors.timeZone[0] : errors.timeZone}
           </p>
         )}
+        {isEditMode && isRecurringEvent && (
+          <p className="text-amber-600 text-xs sm:text-sm mt-1 italic">
+            Not editable — recreate event to update.
+          </p>
+        )}
       </div>
 
       {/* Date & Time - Enhanced mobile experience */}
@@ -369,13 +374,18 @@ const EventDetailsStep = ({
           value={formatDateTimeLocal(formData.dateTime)}
           onChange={handleChange}
           min={getMinDate()}
-          disabled={disabled}
+          disabled={disabled || (isEditMode && isRecurringEvent)}
           onWheel={(e) => e.target.blur()}
           className={getFieldClasses('dateTime')}
         />
         {errors?.dateTime && (
           <p className="text-red-500 text-xs sm:text-sm">
             {Array.isArray(errors.dateTime) ? errors.dateTime[0] : errors.dateTime}
+          </p>
+        )}
+        {isEditMode && isRecurringEvent && (
+          <p className="text-amber-600 text-xs sm:text-sm mt-1 italic">
+            Not editable — recreate event to update.
           </p>
         )}
       </div>
@@ -403,7 +413,7 @@ const EventDetailsStep = ({
             )}
             {isEditMode && formData.recurrence?.isRecurring && (
               <p className="text-xs text-amber-600 mt-1">
-                ⚠️ Changes to recurring settings will affect all future instances
+                Recurring event type cannot be changed
               </p>
             )}
           </div>
@@ -423,7 +433,12 @@ const EventDetailsStep = ({
               <label className="block text-sm font-medium">
                 Repeat Schedule
               </label>
-              {isEditMode && (
+              {isEditMode && isRecurringEvent && (
+                <p className="text-xs text-amber-600 italic">
+                  Not editable — recreate event to update.
+                </p>
+              )}
+              {isEditMode && !isRecurringEvent && (
                 <p className="text-xs text-gray-500">
                   Existing attendees will see updated schedule
                 </p>
@@ -439,7 +454,7 @@ const EventDetailsStep = ({
                         <select
                           value={schedule?.day || 'Mon'}
                           onChange={(e) => handleUpdateRepeatSchedule(index, 'day', e.target.value)}
-                          disabled={disabled}
+                          disabled={disabled || (isEditMode && isRecurringEvent)}
                           className={`w-full px-3 py-2 border rounded-lg text-sm appearance-none bg-white ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
                         >
                           <option value="Mon">Monday</option>
@@ -464,14 +479,14 @@ const EventDetailsStep = ({
                         type="time"
                         value={schedule?.time || '18:00'}
                         onChange={(e) => handleUpdateRepeatSchedule(index, 'time', e.target.value)}
-                        disabled={disabled}
+                        disabled={disabled || (isEditMode && isRecurringEvent)}
                         onWheel={(e) => e.target.blur()}
                         className={`w-full px-3 py-2 border rounded-lg text-sm ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
                       />
                     </div>
                   </div>
                   
-                  {!disabled && (formData.recurrence?.repeatSchedule || []).length > 1 && (
+                  {!disabled && !(isEditMode && isRecurringEvent) && (formData.recurrence?.repeatSchedule || []).length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveRepeatSchedule(index)}
@@ -487,7 +502,7 @@ const EventDetailsStep = ({
                 </div>
               ))}
               
-              {!disabled && (
+              {!disabled && !(isEditMode && isRecurringEvent) && (
                 <button
                   type="button"
                   onClick={handleAddRepeatSchedule}
@@ -523,7 +538,7 @@ const EventDetailsStep = ({
                   maxDate.setMonth(maxDate.getMonth() + 6);
                   return maxDate.toISOString().split('T')[0];
                 })()}
-                disabled={disabled}
+                disabled={disabled || (isEditMode && isRecurringEvent)}
                 onWheel={(e) => e.target.blur()}
                 className={getFieldClasses('recurrenceEndDate')}
                 required={formData.recurrence?.isRecurring}
@@ -536,6 +551,11 @@ const EventDetailsStep = ({
               {errors?.recurrenceEndDate && (
                 <p className="text-red-500 text-xs sm:text-sm">
                   {Array.isArray(errors.recurrenceEndDate) ? errors.recurrenceEndDate[0] : errors.recurrenceEndDate}
+                </p>
+              )}
+              {isEditMode && isRecurringEvent && (
+                <p className="text-amber-600 text-xs sm:text-sm italic">
+                  Not editable — recreate event to update.
                 </p>
               )}
               <p className="text-xs text-gray-500">
