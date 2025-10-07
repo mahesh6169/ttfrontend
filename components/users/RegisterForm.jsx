@@ -47,6 +47,7 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaTokenTime, setCaptchaTokenTime] = useState(null);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
+  const [suburbValidationError, setSuburbValidationError] = useState('');
   
   // Password validation checks
   const getPasswordStrength = () => {
@@ -106,6 +107,62 @@ const Register = () => {
 
     console.log('🔍 Selected place:', place.formatted_address); // ADD THIS
     console.log('🔍 Address components:', addressComponents);    // ADD THIS
+
+    // Validate against generic locations
+    const formattedAddressLower = (place.formatted_address || '').toLowerCase().trim();
+    const genericLocations = ['australia', 'aus', 'au'];
+    
+    // Check for country-only entries
+    if (genericLocations.includes(formattedAddressLower)) {
+      setSuburbValidationError('Please select a specific suburb.');
+      // Clear the form data
+      setFormData((prev) => ({
+        ...prev,
+        suburb: {
+          name: '',
+          state: '',
+          postalCode: '',
+          location: {
+            type: 'Point',
+            coordinates: [],
+          },
+        },
+      }));
+      return;
+    }
+    
+    // Check for state-only entries
+    const stateOnlyPatterns = [
+      'western australia, australia', 'wa, australia',
+      'new south wales, australia', 'nsw, australia',
+      'victoria, australia', 'vic, australia',
+      'queensland, australia', 'qld, australia',
+      'tasmania, australia', 'tas, australia',
+      'northern territory, australia', 'nt, australia',
+      'south australia, australia', 'sa, australia',
+      'australian capital territory, australia', 'act, australia'
+    ];
+    
+    if (stateOnlyPatterns.includes(formattedAddressLower)) {
+      setSuburbValidationError('Please select a specific suburb, not just the state.');
+      // Clear the form data
+      setFormData((prev) => ({
+        ...prev,
+        suburb: {
+          name: '',
+          state: '',
+          postalCode: '',
+          location: {
+            type: 'Point',
+            coordinates: [],
+          },
+        },
+      }));
+      return;
+    }
+
+    // Clear any previous validation error
+    setSuburbValidationError('');
 
     let suburb = '';
     let state = '';
@@ -435,8 +492,8 @@ const Register = () => {
                     <span>Passwords match</span>
                   </p>
                 ) : (
-                  <p className="text-gray-500 text-xs flex items-center">
-                    <span className="mr-1">○</span>
+                  <p className="text-red-500 text-xs flex items-center">
+                    <span className="mr-1">✗</span>
                     <span>Passwords do not match</span>
                   </p>
                 )}
@@ -466,13 +523,49 @@ const Register = () => {
                   type="text"
                   placeholder="Enter your suburb"
                   className={`w-full p-2 border rounded ${
-                    errors.suburb ? 'border-red-500' : 'border-gray-300'
+                    errors.suburb || suburbValidationError ? 'border-red-500' : 'border-gray-300'
                   }`}
+                  onChange={(e) => {
+                    // Clear validation error when user starts typing
+                    if (suburbValidationError) {
+                      setSuburbValidationError('');
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const value = e.target.value.toLowerCase().trim();
+                    const genericLocations = ['australia', 'aus', 'au'];
+                    
+                    if (genericLocations.includes(value)) {
+                      setSuburbValidationError('Please enter a specific suburb.');
+                      return;
+                    }
+                    
+                    // Check for state-only entries (with or without ", australia")
+                    const states = [
+                      'western australia', 'wa',
+                      'new south wales', 'nsw',
+                      'victoria', 'vic',
+                      'queensland', 'qld',
+                      'tasmania', 'tas',
+                      'northern territory', 'nt',
+                      'south australia', 'sa',
+                      'australian capital territory', 'act'
+                    ];
+                    
+                    // Check if it's just a state (with optional ", australia" suffix)
+                    const valueWithoutAustralia = value.replace(/, australia$/, '').trim();
+                    if (states.includes(valueWithoutAustralia)) {
+                      setSuburbValidationError('Please enter a specific suburb, not just the state.');
+                    }
+                  }}
                 />
               </Autocomplete>
             </LoadScriptNext>
             {errors.suburb && (
               <p className="text-red-500 text-sm mt-1">{errors.suburb}</p>
+            )}
+            {suburbValidationError && !errors.suburb && (
+              <p className="text-red-500 text-sm mt-1">{suburbValidationError}</p>
             )}
           </div>
 

@@ -39,7 +39,8 @@ const AdvertForm = ({
       postalCode: '',
       location: { type: 'Point', coordinates: [0, 0] }
     },
-    images: []
+    images: [],
+    isNationwide: false
   }));
 
   const [formSections, setFormSections] = useState([]);
@@ -59,6 +60,7 @@ const AdvertForm = ({
         pricing: initialData.pricing || [],
         communities: initialData.communities || [],
         images: [],
+        isNationwide: initialData.isNationwide || false
         // REMOVE THIS LINE: existingImages: initialData.existingImages || []
       });
       setExistingImages(initialData.existingImages || []);
@@ -492,6 +494,7 @@ const handleSubmit = (e) => {
     communities: formData.communities,
     images: formData.images,
     existingImages: (formData.existingImages || []).filter(img => img && img.url),
+    isNationwide: formData.isNationwide || false
   };
   
   onSubmit(submitData);
@@ -743,6 +746,22 @@ return (
       {fieldErrors.address && (
         <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.address}</p>
       )}
+    </div>
+
+    {/* Nationwide visibility */}
+    <div className="bg-gray-50 rounded-lg p-4">
+      <label className="flex items-center gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={formData.isNationwide || false}
+          onChange={(e) => handleChange('isNationwide', e.target.checked)}
+          className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+        />
+        <div>
+          <span className="text-sm font-medium text-gray-700">Advertise this Add NationWide</span>
+          <p className="text-xs text-gray-500 mt-1">This will advertise your advert when user filter across all states/suburbs</p>
+        </div>
+      </label>
     </div>
 
     {/* Images */}

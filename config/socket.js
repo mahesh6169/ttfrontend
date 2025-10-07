@@ -34,8 +34,9 @@ socket.on('connect_error', (error) => {
 });
 
 socket.on('disconnect', (reason) => {
-    console.log(`Socket disconnected: ${reason}`); // Logs when the socket disconnectss
+    console.log(`Socket disconnected: ${reason}`); // Logs when the socket disconnects
 });
+
 
 // Additional logs for reconnection events
 socket.on('reconnect_attempt', () => {

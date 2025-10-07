@@ -18,12 +18,40 @@ const AddressInput = ({
   const autocompleteRef = useRef(null);
   const [isUserInput, setIsUserInput] = useState(false);
   const previousFormDataAddress = useRef(formData?.address?.formattedAddress);
+  const [validationError, setValidationError] = useState('');
 
   const handlePlaceChanged = () => {
     const place = autocompleteRef.current.getPlace();
     if (!place.geometry) {
       return;
     }
+
+    // Block generic locations like just "Australia"
+    const formattedAddressLower = (place.formatted_address || '').toLowerCase().trim();
+    const genericLocations = ['australia', 'aus', 'au'];
+    
+    if (genericLocations.includes(formattedAddressLower)) {
+      setValidationError('Please select a more specific location. Enter an address, suburb or city.');
+      // Clear the input
+      setFormattedAddress('');
+      // Reset form data address
+      setFormData((prev) => ({
+        ...prev,
+        address: {
+          formattedAddress: '',
+          streetNumber: '',
+          street: '',
+          suburb: '',
+          state: '',
+          postalCode: '',
+          location: { type: 'Point', coordinates: [0, 0] }
+        }
+      }));
+      return;
+    }
+
+    // Clear any previous validation error
+    setValidationError('');
 
     const parsed = {
       formattedAddress: place.formatted_address,
@@ -85,6 +113,11 @@ const AddressInput = ({
     setFormattedAddress(value);
     setIsUserInput(true);
     
+    // Clear validation error when user starts typing
+    if (validationError) {
+      setValidationError('');
+    }
+    
     // Update formData with the manually typed address
     setFormData((prev) => ({
       ...prev,
@@ -93,6 +126,17 @@ const AddressInput = ({
         formattedAddress: value
       }
     }));
+  };
+
+  // Validate on blur to check if user manually entered generic location
+  const handleInputBlur = () => {
+    const valueLower = formattedAddress.toLowerCase().trim();
+    const genericLocations = ['australia', 'aus', 'au'];
+    
+    if (genericLocations.includes(valueLower)) {
+      setValidationError('Please enter a more specific location. Include an address, suburb or city.');
+      // Don't clear it immediately, let them fix it
+    }
   };
 
   // Reset user input flag when component unmounts
@@ -107,6 +151,10 @@ const AddressInput = ({
       <label className="block font-bold mb-2 text-gray-700">
         Location <span className="text-red-500">*</span>
       </label>
+      <p className="text-xs text-gray-500 mb-2">
+        This helps users to find you by state/suburb.<br className="sm:hidden" />
+        <span className="block sm:inline"> List suburb only if you are not operating from a business address.</span>
+      </p>
       <LoadScriptNext
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
         libraries={libraries}
@@ -134,15 +182,21 @@ const AddressInput = ({
           <input
             type="text"
             placeholder={placeholder}
-            className="w-full p-2 border rounded"
+            className={`w-full p-2 border rounded ${validationError ? 'border-red-500' : ''}`}
             value={formattedAddress}
             onChange={handleInputChange}
             onFocus={(e) => console.log('[AddressInput] Input focused')}
-            onBlur={(e) => console.log('[AddressInput] Input blurred')}
+            onBlur={(e) => {
+              console.log('[AddressInput] Input blurred');
+              handleInputBlur();
+            }}
             disabled={disabled}
           />
         </Autocomplete>
       </LoadScriptNext>
+      {validationError && (
+        <p className="text-red-500 text-xs sm:text-sm mt-1">{validationError}</p>
+      )}
     </div>
   );
 };

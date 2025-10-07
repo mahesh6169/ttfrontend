@@ -46,6 +46,7 @@ const CreateThreadPage = () => {
   const [locationInput, setLocationInput] = useState('');
   const [showSuccessView, setShowSuccessView] = useState(false);
   const [createdThread, setCreatedThread] = useState(null);
+  const [locationValidationError, setLocationValidationError] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -98,9 +99,12 @@ const CreateThreadPage = () => {
   const handleLocationInputChange = (e) => {
     setLocationInput(e.target.value);
     
-    // Clear suburb error if typing
+    // Clear validation errors when user starts typing
     if (errors.suburb) {
       setErrors((prev) => ({ ...prev, suburb: '' }));
+    }
+    if (locationValidationError) {
+      setLocationValidationError('');
     }
   };
 
@@ -115,6 +119,19 @@ const CreateThreadPage = () => {
       return;
     }
     
+    // Validate against "Australia" only
+    const formattedAddressLower = (place.formatted_address || '').toLowerCase().trim();
+    const genericLocations = ['australia', 'aus', 'au'];
+    
+    if (genericLocations.includes(formattedAddressLower)) {
+      setLocationValidationError('Please select a more specific location. Enter suburb or city.');
+      setLocationInput('');
+      return;
+    }
+
+    // Clear any previous validation error
+    setLocationValidationError('');
+
     const addressComponents = place.address_components;
 
     let suburb = '';
@@ -392,15 +409,26 @@ if (createThread.fulfilled.match(resultAction)) {
                   type="text"
                   placeholder="Enter your suburb"
                   className={`w-full p-2 border rounded ${
-                    errors.suburb ? 'border-red-500' : 'border-gray-300'
+                    errors.suburb || locationValidationError ? 'border-red-500' : 'border-gray-300'
                   }`}
                   value={locationInput}
                   onChange={handleLocationInputChange}
+                  onBlur={(e) => {
+                    const value = e.target.value.toLowerCase().trim();
+                    const genericLocations = ['australia', 'aus', 'au'];
+                    
+                    if (genericLocations.includes(value)) {
+                      setLocationValidationError('Please enter a more specific location. Include an address, suburb or city.');
+                    }
+                  }}
                 />
               </Autocomplete>
             </LoadScriptNext>
             {errors.suburb && (
               <p className="text-red-500 text-sm mt-1">{errors.suburb}</p>
+            )}
+            {locationValidationError && !errors.suburb && (
+              <p className="text-red-500 text-sm mt-1">{locationValidationError}</p>
             )}
             
           </div>

@@ -14,6 +14,10 @@ export const SocketListener = () => {
   const [isSocketReady, setIsSocketReady] = useState(false);
   const { isVisible, lastHiddenTime } = usePageVisibility();
   const reconnectTimeoutRef = useRef(null);
+  
+  // Track connection time and disconnections
+  const connectionTimeRef = useRef(null);
+  const disconnectCountRef = useRef(0);
 
   //console.log('[SocketListener] mounted');
   //console.log('[SocketListener] User:', user?._id);
@@ -52,7 +56,9 @@ export const SocketListener = () => {
             
             socket.once('connect', () => {
               clearTimeout(timeout);
+              connectionTimeRef.current = Date.now();
               console.log('✅ [SocketListener] Socket connected successfully:', socket.id);
+              console.log('⏱️ [SocketListener] Connection time:', new Date().toISOString());
               setIsSocketReady(true);
               resolve();
             });
@@ -100,13 +106,30 @@ export const SocketListener = () => {
     };
 
     const handleConnect = () => {
+      connectionTimeRef.current = Date.now();
       console.log('🔄 [SocketListener] Socket reconnected:', socket.id);
+      console.log('⏱️ [SocketListener] Reconnection time:', new Date().toISOString());
       // Check for missed messages on reconnection
       checkUnreadMessages();
     };
 
     const handleDisconnect = (reason) => {
-      console.log('🔌 [SocketListener] Socket disconnected:', reason);
+      disconnectCountRef.current += 1;
+      const disconnectTime = Date.now();
+      const connectionDuration = connectionTimeRef.current ? 
+        Math.round((disconnectTime - connectionTimeRef.current) / 1000) : 'unknown';
+      
+      console.log('🔌💔 [SocketListener] Socket disconnected:', reason);
+      console.log('⏱️ [SocketListener] Disconnect time:', new Date().toISOString());
+      console.log('📊 [SocketListener] Connection lasted:', connectionDuration, 'seconds');
+      console.log('🔢 [SocketListener] Total disconnects this session:', disconnectCountRef.current);
+      console.log('📍 [SocketListener] Disconnect reason details:', {
+        reason,
+        socketId: socket.id,
+        connected: socket.connected,
+        disconnectCount: disconnectCountRef.current
+      });
+      
       setIsSocketReady(false);
     };
 
