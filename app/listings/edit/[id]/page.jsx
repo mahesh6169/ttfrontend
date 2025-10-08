@@ -115,11 +115,8 @@ const EditAdvertPage = () => {
     }
   }, [hasSubmitted, success, updateStatus]);
 
-  // Create a merged data object for display
-  // This prioritizes the submitted form data while waiting for the update to complete
-  const displayData = hasSubmitted && formData && updateStatus === 'loading' 
-    ? { ...advert, ...formData } 
-    : advert;
+  // Simply use the advert data - no complex merging needed
+  const displayData = advert;
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-6 sm:py-8 lg:py-10">
@@ -176,7 +173,6 @@ const EditAdvertPage = () => {
               errors={errors}
               userRole={user?.role || 'user'}
               isSuccess={success && updateStatus === 'succeeded'}
-              key={hasSubmitted ? 'updating' : 'initial'} // Force re-render when submitting
             />
           )}
         </>

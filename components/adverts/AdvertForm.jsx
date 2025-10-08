@@ -50,9 +50,9 @@ const AdvertForm = ({
   const [selectedPriceType, setSelectedPriceType] = useState('');
   const [existingImages, setExistingImages] = useState(initialData?.existingImages || []);
 
-  // Handle initial data
+  // Handle initial data - only on first load
   useEffect(() => {
-    if (initialData) {
+    if (initialData && !formData.title) { // Only set if form is empty
       setFormData({
         ...initialData,
         condition: initialData.condition || '',
@@ -69,7 +69,7 @@ const AdvertForm = ({
       }
       setPreview([]);
     }
-  }, [initialData]);
+  }, []); // Empty dependency - only run once on mount
 
   useEffect(() => {
     setFormData(prev => ({

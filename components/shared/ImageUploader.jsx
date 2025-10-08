@@ -119,12 +119,17 @@ const ImageUploader = ({
     <div key={imgObj.url || idx} className="relative inline-block">
       <img
         src={imgObj.url}
-        alt={`Existing image ${idx + 1}`}
+        alt={imgObj.originalFilename || `Existing image ${idx + 1}`}
         className="w-24 h-24 object-cover border rounded"
         onError={(e) => {
           e.target.src = 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
         }}
       />
+      {imgObj.originalFilename && (
+        <p className="text-xs text-gray-600 mt-1 truncate w-24" title={imgObj.originalFilename}>
+          {imgObj.originalFilename}
+        </p>
+      )}
       <button
         type="button"
         onClick={() => handleRemoveExistingImage(idx)}
@@ -141,18 +146,51 @@ const ImageUploader = ({
         </div>
       )}
 
+      {/* New Images Section (only show if there are new images) */}
+      {preview.length > 0 && (
+        <div className="mb-4">
+          <label className="block font-bold mb-2">New Images</label>
+          <div className="flex gap-4 flex-wrap">
+            {preview.map((src, index) => (
+              <div key={index} className="relative inline-block">
+                <img
+                  src={src}
+                  alt={`Preview ${index + 1}`}
+                  className="w-24 h-24 object-cover border rounded"
+                />
+                {formData.images[index]?.name && (
+                  <p className="text-xs text-gray-600 mt-1 truncate w-24" title={formData.images[index].name}>
+                    {formData.images[index].name}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(index)}
+                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                  title="Remove this image"
+                >
+                  X
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Upload Section */}
       <div>
         <label className="block font-bold mb-2">
-          Upload {mode === 'edit' && existingImages.length > 0 ? 'New ' : ''}Images
+          Upload Images
+          <span className="block text-xs font-normal text-gray-600 mt-1">
+            (JPEG & PNG format only)
+          </span>
           <span className="block text-xs font-normal text-gray-600">
-            (Max {maxImages} {mode === 'edit' && existingImages.length > 0 ? 'total' : ''} — JPEG & PNG format only)
+            Max {maxImages} Total • Images Uploaded: {existingImages.length + preview.length} / {maxImages}
+          </span>
+          <span className="block text-xs font-normal text-gray-600">
+            Images will appear in the order they were uploaded
           </span>
         </label>
-        {/* Show current count */}
-        <div className="text-sm text-gray-600 mb-2">
-          Current images: {existingImages.length + preview.length} / {maxImages}
-        </div>
         <input
           type="file"
           multiple
@@ -170,29 +208,6 @@ const ImageUploader = ({
           <p className="text-sm text-amber-600 mt-1">
             Maximum image limit reached. Remove existing images to add new ones.
           </p>
-        )}
-        
-        {/* New Images Preview */}
-        {preview.length > 0 && (
-          <div className="mt-4 flex gap-4 flex-wrap">
-            {preview.map((src, index) => (
-              <div key={index} className="relative inline-block">
-                <img
-                  src={src}
-                  alt={`Preview ${index + 1}`}
-                  className="w-24 h-24 object-cover border rounded"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(index)}
-                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded hover:bg-red-600"
-                  title="Remove this image"
-                >
-                  X
-                </button>
-              </div>
-            ))}
-          </div>
         )}
       </div>
     </div>
