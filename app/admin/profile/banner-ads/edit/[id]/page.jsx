@@ -187,10 +187,18 @@ export default function EditAdPage({ params }) {
         // Add notes
         submitFormData.append('notes', formData.notes);
         
-        // Add existing images that should be kept
-        if (formData.creative.existingImages && formData.creative.existingImages.length > 0) {
-          console.log('\nExisting images to keep:', formData.creative.existingImages);
-          submitFormData.append('existingImages', JSON.stringify(formData.creative.existingImages));
+        // Add existing images that should be kept (filter out removed ones)
+        const imagesToKeep = formData.creative.existingImages.filter(img => 
+          !formData.creative.removedImages.some(removed => 
+            removed.id === img.id || 
+            (removed.imageType === img.imageType && removed.index === img.index)
+          )
+        );
+        
+        if (imagesToKeep.length > 0) {
+          console.log('\nExisting images to keep:', imagesToKeep.length);
+          console.log('Filtered from:', formData.creative.existingImages.length, 'total existing images');
+          submitFormData.append('existingImages', JSON.stringify(imagesToKeep));
         } else {
           console.log('\nNo existing images to keep');
         }
@@ -661,15 +669,48 @@ function CreativeStep({ formData, setFormData, existingAd }) {
   };
 
   const handleExistingImagesChange = (updatedExistingImages) => {
-    // Find removed images
-    const newlyRemoved = existingImages.filter(
-      img => !updatedExistingImages.find(updated => updated.id === img.id)
-    );
+    // Find removed images - need to track their original position in the backend array
+    const removedImageIds = existingImages
+      .filter(img => !updatedExistingImages.find(updated => updated.id === img.id))
+      .map(img => img.id);
+    
+    // Create properly indexed removed images based on their position in the original creative
+    const newlyRemoved = [];
+    
+    // Check desktop images
+    if (existingAd.creative?.desktop?.images) {
+      existingAd.creative.desktop.images.forEach((img, idx) => {
+        const existingImg = existingImages.find(ei => 
+          ei.url === img.imageUrl && ei.imageType === 'desktop'
+        );
+        if (existingImg && removedImageIds.includes(existingImg.id)) {
+          newlyRemoved.push({
+            ...existingImg,
+            index: idx // Use the actual backend array index
+          });
+        }
+      });
+    }
+    
+    // Check mobile images  
+    if (existingAd.creative?.mobile?.images) {
+      existingAd.creative.mobile.images.forEach((img, idx) => {
+        const existingImg = existingImages.find(ei => 
+          ei.url === img.imageUrl && ei.imageType === 'mobile'
+        );
+        if (existingImg && removedImageIds.includes(existingImg.id)) {
+          newlyRemoved.push({
+            ...existingImg,
+            index: idx // Use the actual backend array index
+          });
+        }
+      });
+    }
     
     console.log('=== FRONTEND IMAGE REMOVAL ===');
     console.log('Existing images before:', existingImages);
     console.log('Updated existing images:', updatedExistingImages);
-    console.log('Newly removed:', newlyRemoved);
+    console.log('Newly removed with correct indices:', newlyRemoved);
     
     // Update removed images list
     const updatedRemovedImages = [...removedImages, ...newlyRemoved];

@@ -115,7 +115,7 @@ const BottomAd = () => {
       const timer = setTimeout(() => {
         // Rotate to next image in current ad
         setCurrentImageIndex((prevIndex) => (prevIndex + 1) % currentAd.images.length);
-      }, 5000); // Rotate every 5 seconds
+      }, 2000); // Rotate every 2 seconds
       
       return () => clearTimeout(timer);
     }
@@ -137,20 +137,39 @@ const BottomAd = () => {
 
   // Show the current ad with its current image
   return (
-    <div 
-      className={`mx-auto overflow-hidden cursor-pointer ${adClasses.container}`}
-      onClick={() => handleAdClick(currentAd)}
-    >
-      <Image
-        src={currentImage.imageUrl}
-        alt={currentImage.altText || `${currentAd.businessName} Advertisement`}
-        width={728}
-        height={90}
-        className={adClasses.image}
-        priority
-        sizes="(max-width: 640px) 320px, 728px"
-      />
-    </div>
+    <>
+      {/* Mobile view - visible only on small screens */}
+      <div 
+        className="mx-auto overflow-hidden cursor-pointer w-[320px] h-[50px] md:hidden"
+        onClick={() => handleAdClick(currentAd)}
+      >
+        <Image
+          src={currentImage.imageUrl}
+          alt={currentImage.altText || `${currentAd.businessName} Advertisement`}
+          width={320}
+          height={50}
+          className="w-full h-full object-cover"
+          priority
+          sizes="320px"
+        />
+      </div>
+      
+      {/* Desktop view - visible only on medium screens and up */}
+      <div 
+        className="hidden mx-auto overflow-hidden cursor-pointer md:block md:w-[728px] md:h-[90px]"
+        onClick={() => handleAdClick(currentAd)}
+      >
+        <Image
+          src={currentImage.imageUrl}
+          alt={currentImage.altText || `${currentAd.businessName} Advertisement`}
+          width={728}
+          height={90}
+          className="w-full h-full object-cover"
+          priority
+          sizes="728px"
+        />
+      </div>
+    </>
   );
 };
 

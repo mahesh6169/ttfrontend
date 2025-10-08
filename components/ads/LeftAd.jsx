@@ -113,7 +113,7 @@ const LeftAd = () => {
       const timer = setTimeout(() => {
         // Rotate to next image in current ad
         setCurrentImageIndex((prevIndex) => (prevIndex + 1) % currentAd.images.length);
-      }, 2000); // Rotate every 5 seconds
+      }, 2000); // Rotate every 2 seconds
       
       return () => clearTimeout(timer);
     }

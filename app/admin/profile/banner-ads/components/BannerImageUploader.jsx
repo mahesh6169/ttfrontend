@@ -63,7 +63,11 @@ const BannerImageUploader = ({
       size: file.size,
       type: file.type,
       imageType: imageType,
-      index: index !== null ? index : images.filter(img => img.imageType === imageType).length
+      index: index !== null ? index : (
+        mode === 'edit' 
+          ? 1000 + images.filter(img => img.imageType === imageType).length // High number for new images in edit mode
+          : images.filter(img => img.imageType === imageType).length
+      )
     };
     
     let updatedImages = [...images];
@@ -139,9 +143,15 @@ const BannerImageUploader = ({
 
   const getImageSrc = (image) => {
     if (!image) return null;
-    if (image.isNew && image.preview) return image.preview;
-    if (image.isExisting && image.url) return image.url;
-    return image.url || image.preview || null;
+    
+    // For new images, use preview
+    if (image.preview) return image.preview;
+    
+    // For existing images, use URL
+    if (image.url) return image.url;
+    
+    // Fallback
+    return null;
   };
 
   const dimensions = {
@@ -154,8 +164,16 @@ const BannerImageUploader = ({
     const newImgs = images.filter(img => img.imageType === type);
     const existingImgs = mode === 'edit' ? existingImages.filter(img => img.imageType === type) : [];
     
-    // Combine and sort by index
-    return [...existingImgs, ...newImgs].sort((a, b) => a.index - b.index);
+    // In edit mode, keep existing images in their positions and add new ones at the end
+    if (mode === 'edit') {
+      // Sort existing images by their index
+      const sortedExisting = [...existingImgs].sort((a, b) => a.index - b.index);
+      // New images go at the end
+      return [...sortedExisting, ...newImgs];
+    }
+    
+    // For create mode, just return new images sorted by index
+    return newImgs.sort((a, b) => a.index - b.index);
   };
   
   const desktopImages = getImagesByType('desktop');
@@ -164,8 +182,8 @@ const BannerImageUploader = ({
   return (
     <div className={className}>
       <div className="space-y-6">
-        {/* Image Containers - Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Image Containers - Full Width */}
+        <div className="space-y-6">
           {/* Desktop Images Container */}
           <div className="border border-gray-200 rounded-lg p-4">
             <div className="mb-4">
@@ -180,26 +198,35 @@ const BannerImageUploader = ({
               </p>
             </div>
 
-            {/* Desktop Image Grid */}
-            <div className="grid grid-cols-3 gap-3">
+            {/* Desktop Image Grid - Full Width */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {desktopImages.map((image, idx) => (
                 <div key={image.id} className="relative group">
-                  <img
-                    src={getImageSrc(image)}
-                    alt={`Desktop ${idx + 1}`}
-                    className="w-full h-20 object-cover border-2 border-gray-200 rounded"
-                  />
+                  <div className="relative">
+                    <img
+                      src={getImageSrc(image)}
+                      alt={`Desktop ${idx + 1}`}
+                      className="w-full h-24 object-cover border-2 border-gray-200 rounded"
+                      onError={(e) => {
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMzIwIDUwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iNTAiIGZpbGw9IiNlMGUwZTAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5Ij5JbWFnZSBMb2FkIEVycm9yPC90ZXh0Pjwvc3ZnPg==';
+                      }}
+                    />
+                    {/* Show filename below image */}
+                    <p className="mt-1 text-xs text-gray-600 truncate" title={image.file?.name || image.url}>
+                      {image.file?.name || (image.isExisting ? `Position ${idx + 1}` : `New Desktop ${idx + 1}`)}
+                    </p>
+                  </div>
                   {/* Cross button to remove */}
                   <button
                     type="button"
                     onClick={() => handleRemoveImage('desktop', idx)}
-                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold"
+                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold z-10"
                   >
                     ×
                   </button>
                   {/* Badge for current/new in edit mode */}
                   {mode === 'edit' && (
-                    <div className="absolute bottom-1 left-1">
+                    <div className="absolute top-1 left-1 z-10">
                       {image.isExisting ? (
                         <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded">Current</span>
                       ) : (
@@ -222,9 +249,10 @@ const BannerImageUploader = ({
                     input.click();
                   }}
                   disabled={disabled}
-                  className="border-2 border-dashed border-gray-300 rounded h-20 flex items-center justify-center hover:border-blue-400 hover:text-blue-600 transition-colors"
+                  className="border-2 border-dashed border-gray-300 rounded h-24 flex flex-col items-center justify-center hover:border-blue-400 hover:text-blue-600 transition-colors"
                 >
                   <FaPlus className="text-xl" />
+                  <span className="text-xs mt-1">Add Image</span>
                 </button>
               )}
             </div>
@@ -244,26 +272,35 @@ const BannerImageUploader = ({
               </p>
             </div>
 
-            {/* Mobile Image Grid */}
-            <div className="grid grid-cols-3 gap-3">
+            {/* Mobile Image Grid - Full Width */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {mobileImages.map((image, idx) => (
                 <div key={image.id} className="relative group">
-                  <img
-                    src={getImageSrc(image)}
-                    alt={`Mobile ${idx + 1}`}
-                    className="w-full h-20 object-cover border-2 border-gray-200 rounded"
-                  />
+                  <div className="relative">
+                    <img
+                      src={getImageSrc(image)}
+                      alt={`Mobile ${idx + 1}`}
+                      className="w-full h-24 object-cover border-2 border-gray-200 rounded"
+                      onError={(e) => {
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMzIwIDUwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iNTAiIGZpbGw9IiNlMGUwZTAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5Ij5JbWFnZSBMb2FkIEVycm9yPC90ZXh0Pjwvc3ZnPg==';
+                      }}
+                    />
+                    {/* Show filename below image */}
+                    <p className="mt-1 text-xs text-gray-600 truncate" title={image.file?.name || image.url}>
+                      {image.file?.name || (image.isExisting ? `Position ${idx + 1}` : `New Mobile ${idx + 1}`)}
+                    </p>
+                  </div>
                   {/* Cross button to remove */}
                   <button
                     type="button"
                     onClick={() => handleRemoveImage('mobile', idx)}
-                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold"
+                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold z-10"
                   >
                     ×
                   </button>
                   {/* Badge for current/new in edit mode */}
                   {mode === 'edit' && (
-                    <div className="absolute bottom-1 left-1">
+                    <div className="absolute top-1 left-1 z-10">
                       {image.isExisting ? (
                         <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded">Current</span>
                       ) : (
@@ -286,9 +323,10 @@ const BannerImageUploader = ({
                     input.click();
                   }}
                   disabled={disabled}
-                  className="border-2 border-dashed border-gray-300 rounded h-20 flex items-center justify-center hover:border-blue-400 hover:text-blue-600 transition-colors"
+                  className="border-2 border-dashed border-gray-300 rounded h-24 flex flex-col items-center justify-center hover:border-blue-400 hover:text-blue-600 transition-colors"
                 >
                   <FaPlus className="text-xl" />
+                  <span className="text-xs mt-1">Add Image</span>
                 </button>
               )}
             </div>
