@@ -114,10 +114,13 @@ export default function CreateAdPage() {
       const images = formData.creative?.images || [];
       console.log('\nProcessing images for upload:');
       
+      // Prepare image metadata
+      const imageMetadata = [];
+      
       // Send images with index information
       images.forEach((image) => {
         if (image.file && image.file instanceof File) {
-          const filename = image.index > 0 ? `${image.imageType}_${image.index}` : image.imageType;
+          const filename = `${image.imageType}_${image.index}`;
           console.log(`Adding ${image.imageType} image ${image.index}:`, {
             name: image.file.name,
             size: image.file.size,
@@ -125,8 +128,20 @@ export default function CreateAdPage() {
             filename: filename
           });
           submitFormData.append('images', image.file, filename);
+          
+          // Store metadata including original filename
+          imageMetadata.push({
+            type: image.imageType,
+            index: image.index,
+            originalFilename: image.file.name
+          });
         }
       });
+      
+      // Send image metadata
+      if (imageMetadata.length > 0) {
+        submitFormData.append('imageMetadata', JSON.stringify(imageMetadata));
+      }
       
       // Send as multipart/form-data
       await axios.post('/admin/bannerAds/ads', submitFormData, {

@@ -215,6 +215,8 @@ export default function EditAdPage({ params }) {
         
         // Add image files
         console.log('\nProcessing new images for upload:');
+        const imageMetadata = [];
+        
         formData.creative.images.forEach((image) => {
           if (image.file && image.file instanceof File) {
             console.log(`Adding ${image.imageType} image:`, {
@@ -224,8 +226,20 @@ export default function EditAdPage({ params }) {
             });
             // Append with imageType_index format for backend parsing
             submitFormData.append('images', image.file, `${image.imageType}_${image.index || 0}`);
+            
+            // Store metadata including original filename
+            imageMetadata.push({
+              type: image.imageType,
+              index: image.index || 0,
+              originalFilename: image.file.name
+            });
           }
         });
+        
+        // Send image metadata
+        if (imageMetadata.length > 0) {
+          submitFormData.append('imageMetadata', JSON.stringify(imageMetadata));
+        }
         
         // Send as multipart/form-data
         await axios.put(`/admin/bannerAds/ads/${id}`, submitFormData, {
@@ -605,6 +619,7 @@ function CreativeStep({ formData, setFormData, existingAd }) {
           isExisting: true,
           id: `existing_desktop_${index}`,
           name: 'Current Desktop Image',
+          originalFilename: img.originalFilename,
           index: index,
           order: img.order || index
         });
@@ -622,6 +637,7 @@ function CreativeStep({ formData, setFormData, existingAd }) {
           isExisting: true,
           id: `existing_mobile_${index}`,
           name: 'Current Mobile Image',
+          originalFilename: img.originalFilename,
           index: index,
           order: img.order || index
         });

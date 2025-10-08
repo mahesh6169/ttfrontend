@@ -212,8 +212,8 @@ const BannerImageUploader = ({
                       }}
                     />
                     {/* Show filename below image */}
-                    <p className="mt-1 text-xs text-gray-600 truncate" title={image.file?.name || image.url}>
-                      {image.file?.name || (image.isExisting ? `Position ${idx + 1}` : `New Desktop ${idx + 1}`)}
+                    <p className="mt-1 text-xs text-gray-600 truncate" title={image.file?.name || image.originalFilename || image.url}>
+                      {image.file?.name || image.originalFilename || (image.isExisting ? `Position ${idx + 1}` : `New Desktop ${idx + 1}`)}
                     </p>
                   </div>
                   {/* Cross button to remove */}
@@ -286,8 +286,8 @@ const BannerImageUploader = ({
                       }}
                     />
                     {/* Show filename below image */}
-                    <p className="mt-1 text-xs text-gray-600 truncate" title={image.file?.name || image.url}>
-                      {image.file?.name || (image.isExisting ? `Position ${idx + 1}` : `New Mobile ${idx + 1}`)}
+                    <p className="mt-1 text-xs text-gray-600 truncate" title={image.file?.name || image.originalFilename || image.url}>
+                      {image.file?.name || image.originalFilename || (image.isExisting ? `Position ${idx + 1}` : `New Mobile ${idx + 1}`)}
                     </p>
                   </div>
                   {/* Cross button to remove */}
