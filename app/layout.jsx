@@ -150,6 +150,16 @@ export const metadata = {
   
   // WEBSITE CATEGORY - Helps search engines understand your site type
   category: 'community',
+  
+  // FAVICON - Icon shown in browser tabs and Google search results
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+    ],
+    shortcut: '/favicon.ico',
+  },
 };
 
 const ParentLayout = ({ children }) => {
