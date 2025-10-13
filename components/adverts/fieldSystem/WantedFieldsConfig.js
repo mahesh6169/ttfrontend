@@ -109,6 +109,12 @@ export const WANTED_FIELDS_CONFIG = {
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
+
+  'Priest & Pooja Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
   
   'Retail Shops & Business': {
     hiddenSections: [],
@@ -128,6 +134,12 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
+  'Driving Instructors': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
   'Academic Tutors': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
@@ -188,7 +200,7 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
-  'Senior Travel Support': {
+  'Parents Travel Assistance': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []

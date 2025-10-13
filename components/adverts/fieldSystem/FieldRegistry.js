@@ -500,6 +500,16 @@ fields: {
     ]
   },
 
+  'Priest & Pooja Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
   'Retail Shops & Business': {
     sections: [
       {
@@ -521,6 +531,16 @@ fields: {
   },
 
   'Financial & Insurance Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Driving Instructors': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -630,12 +650,12 @@ fields: {
     ]
   },
 
-  'Senior Travel Support': {
+  'Parents Travel Assistance': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   }
