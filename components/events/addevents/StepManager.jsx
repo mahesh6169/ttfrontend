@@ -50,6 +50,7 @@ const StepManager = ({
   allowCancel = true,
   customTitle = null,
   customDescription = null,
+  initialFormData = null, // New prop to pre-populate form data
 }) => {
   const dispatch = useDispatch();
   const router = useRouter();
@@ -152,6 +153,23 @@ const StepManager = ({
           // Reset form for new event
           dispatch(resetForm());
           dispatch(clearEditMode());
+          
+          // Apply initial form data if provided
+          if (initialFormData) {
+            console.log('🎯 StepManager: Applying initialFormData:', initialFormData);
+            Object.entries(initialFormData).forEach(([key, value]) => {
+              console.log(`🎯 Setting ${key}:`, value);
+              dispatch(updateField({ field: key, value: value }));
+            });
+            
+            // If isPaid is set, skip to step 2
+            if (initialFormData.isPaid !== undefined) {
+              console.log('🎯 isPaid is defined, setting step to 2');
+              dispatch(setStep(2));
+            }
+          } else {
+            console.log('🎯 StepManager: No initialFormData provided');
+          }
         } else if (isEditingMode && eventId) {
   // Clear any existing success messages when entering edit mode
   dispatch(clearSuccessMessage());

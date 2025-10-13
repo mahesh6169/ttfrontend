@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {  useRouter } from 'next/navigation';
+import {  useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { submitContact } from '@/store/slices/supportSlice';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -11,15 +11,19 @@ import { validateContactForm, sanitizeInput } from '@/utils/forms/validation';
 
 const ContactForm = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
+
+  const enquiryType = searchParams.get('enquiry');
+  const initialOption = enquiryType === 'event' ? 'Hosting Event Enquiry' : 'Advertisement Enquiry';
 
   const [captchaToken, setCaptchaToken] = useState(null);
   const [title, setTitle] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
-  const [option, setOption] = useState('Advertisement Enquiry');
+  const [option, setOption] = useState(initialOption);
   const [otherOption, setOtherOption] = useState('');
   const [description, setDescription] = useState('');
   const [formLoadTime, setFormLoadTime] = useState(Date.now());
@@ -39,6 +43,12 @@ const ContactForm = () => {
         return {
           title: 'e.g., Banner Ad Pricing for 3 Months',
           description: 'Please describe your advertising needs, target audience, and preferred ad placement...',
+          showMobile: true
+        };
+      case 'Hosting Event Enquiry':
+        return {
+          title: 'e.g., Event Ticketing Support or Partnership',
+          description: 'Please describe your event, expected attendees, ticketing needs, and any questions about our platform...',
           showMobile: true
         };
       case 'Technical Support':
@@ -202,6 +212,7 @@ const ContactForm = () => {
         >
           
           <option>Advertisement Enquiry</option>
+          <option>Hosting Event Enquiry</option>
           <option>Feature Request</option>
           <option>Report A Bug</option>
           <option>Technical Support</option>

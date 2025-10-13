@@ -14,6 +14,9 @@ const StepIndicator = ({
   const dispatch = useDispatch();
   const { formData, isEditMode, hasUnsavedChanges, originalEventData, totalSteps: dynamicTotalSteps } = useSelector((state) => state.events);
   
+  console.log('🔍 StepIndicator - formData.isPaid:', formData?.isPaid);
+  console.log('🔍 StepIndicator - currentStep:', currentStep);
+  
   // Use dynamic totalSteps from Redux state instead of prop
   const actualTotalSteps = dynamicTotalSteps || totalSteps;
   
