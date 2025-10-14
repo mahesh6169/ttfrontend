@@ -91,6 +91,42 @@ export const WANTED_FIELDS_CONFIG = {
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
+
+  'Vehicle Repairs & Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Electricians': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Plumbing & Gas Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Landscaping & Gardening Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Computer & Mobile Repairs': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Handyman Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
   
   'Restaurants & Catering Services': {
     hiddenSections: [],
