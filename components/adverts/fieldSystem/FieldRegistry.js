@@ -450,7 +450,17 @@ fields: {
     }
   },
 
-  'Transport & Ride Services': {
+  'Courier & Delivery Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Taxi & Ride Services': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -510,6 +520,16 @@ fields: {
     ]
   },
 
+  'Air Conditioning & Refrigeration Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
   'Computer & Mobile Repairs': {
     sections: [
       {
@@ -521,6 +541,26 @@ fields: {
   },
 
   'Handyman Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Sewing & Alteration Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Removalists & Moving Services': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -560,6 +600,36 @@ fields: {
     ]
   },
 
+  'Cakes, Sweets & Snacks': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'DJ & Audio Visual Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Decoration Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
   'Party Hires & Services': {
     sections: [
       {
@@ -580,12 +650,42 @@ fields: {
     ]
   },
 
+  'Photography & Videography Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Beauty, Hair & Makeup Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
   'Priest & Pooja Services': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
         fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Matrimony': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: []
       }
     ]
   },

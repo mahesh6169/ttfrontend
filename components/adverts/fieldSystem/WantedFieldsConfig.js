@@ -80,7 +80,13 @@ export const WANTED_FIELDS_CONFIG = {
   },
   
   // Service categories - hide serviceArea for wanted ads
-  'Transport & Ride Services': {
+  'Courier & Delivery Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Taxi & Ride Services': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -116,6 +122,12 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
+  'Air Conditioning & Refrigeration Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
   'Computer & Mobile Repairs': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
@@ -123,6 +135,18 @@ export const WANTED_FIELDS_CONFIG = {
   },
 
   'Handyman Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Sewing & Alteration Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Removalists & Moving Services': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -145,6 +169,24 @@ export const WANTED_FIELDS_CONFIG = {
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
+
+  'Cakes, Sweets & Snacks': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'DJ & Audio Visual Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Decoration Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
   
   'Party Hires & Services': {
     hiddenSections: [],
@@ -158,9 +200,27 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
+  'Photography & Videography Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Beauty, Hair & Makeup Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
   'Priest & Pooja Services': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Matrimony': {
+    hiddenSections: [],
+    hiddenFields: [],
     optionalFields: []
   },
   
