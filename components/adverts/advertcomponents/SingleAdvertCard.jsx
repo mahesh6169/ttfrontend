@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FaTimes, FaHeart } from 'react-icons/fa';
 import { format, differenceInDays } from 'date-fns';
 import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
@@ -40,10 +40,50 @@ const formatFieldName = (fieldName) => {
 const SingleAdvertCard = ({ advert, chatProps }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [serviceAreaOverflow, setServiceAreaOverflow] = useState(false);
+  const [descriptionOverflow, setDescriptionOverflow] = useState(false);
+  const serviceAreaRef = useRef(null);
+  const descriptionRef = useRef(null);
   const {
     isInWishlist,
     toggleWishlist,
   } = useAdvertWishlist();
+
+  const checkOverflow = (ref, setter) => {
+    if (ref.current) {
+      const { scrollHeight, clientHeight, scrollTop } = ref.current;
+      const hasOverflow = scrollHeight > clientHeight;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 1;
+      setter(hasOverflow && !isAtBottom);
+    }
+  };
+
+  useEffect(() => {
+    checkOverflow(serviceAreaRef, setServiceAreaOverflow);
+    checkOverflow(descriptionRef, setDescriptionOverflow);
+
+    const serviceAreaEl = serviceAreaRef.current;
+    const descriptionEl = descriptionRef.current;
+
+    const handleServiceAreaScroll = () => checkOverflow(serviceAreaRef, setServiceAreaOverflow);
+    const handleDescriptionScroll = () => checkOverflow(descriptionRef, setDescriptionOverflow);
+
+    if (serviceAreaEl) {
+      serviceAreaEl.addEventListener('scroll', handleServiceAreaScroll);
+    }
+    if (descriptionEl) {
+      descriptionEl.addEventListener('scroll', handleDescriptionScroll);
+    }
+
+    return () => {
+      if (serviceAreaEl) {
+        serviceAreaEl.removeEventListener('scroll', handleServiceAreaScroll);
+      }
+      if (descriptionEl) {
+        descriptionEl.removeEventListener('scroll', handleDescriptionScroll);
+      }
+    };
+  }, [advert.fields?.serviceArea, advert.description]);
 
   const postedDaysAgo = differenceInDays(new Date(), new Date(advert.createdAt));
   const postedText =
@@ -315,13 +355,14 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             <h3 className="text-sm sm:text-base font-semibold text-gray-800">Service Areas</h3>
           </div>
           <div className="p-3 relative">
-            <div className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto max-h-[120px] pr-2">
+            <div ref={serviceAreaRef} className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto max-h-[120px] pr-2">
               {advert.fields.serviceArea.split('\n').map((para, idx) => (
                 para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
               ))}
             </div>
-            {/* Fade overlay at bottom to indicate scrollable content */}
-            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            {serviceAreaOverflow && (
+              <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
           </div>
         </div>
       )}
@@ -334,14 +375,16 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
           </div>
           <div className="p-3 relative">
             <div 
+              ref={descriptionRef}
               className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
             >
               {advert.description.split('\n').map((para, idx) => (
                 para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
               ))}
             </div>
-            {/* Fade overlay at bottom to indicate scrollable content */}
-            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            {descriptionOverflow && (
+              <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
           </div>
         </div>
       )}

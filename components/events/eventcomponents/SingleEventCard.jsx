@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -62,6 +62,8 @@ const SingleEventCard = ({ event, chatProps }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [descriptionOverflow, setDescriptionOverflow] = useState(false);
+  const descriptionRef = useRef(null);
 
   const { isInEventWishlist, toggleEventWishlist, isAuthenticated } = useEventWishlist();
   const isInWishlist = isInEventWishlist(event?._id);
@@ -77,11 +79,37 @@ const SingleEventCard = ({ event, chatProps }) => {
     );
   }
 
+  const checkOverflow = (ref, setter) => {
+    if (ref.current) {
+      const { scrollHeight, clientHeight, scrollTop } = ref.current;
+      const hasOverflow = scrollHeight > clientHeight;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 1;
+      setter(hasOverflow && !isAtBottom);
+    }
+  };
+
   useEffect(() => {
     if (event?._id) {
       dispatch(checkRegistrationStatus(event._id));
     }
   }, [dispatch, event?._id]);
+
+  useEffect(() => {
+    checkOverflow(descriptionRef, setDescriptionOverflow);
+
+    const descriptionEl = descriptionRef.current;
+    const handleDescriptionScroll = () => checkOverflow(descriptionRef, setDescriptionOverflow);
+
+    if (descriptionEl) {
+      descriptionEl.addEventListener('scroll', handleDescriptionScroll);
+    }
+
+    return () => {
+      if (descriptionEl) {
+        descriptionEl.removeEventListener('scroll', handleDescriptionScroll);
+      }
+    };
+  }, [event.description]);
 
   // Check if user just logged in and wanted to register
   useEffect(() => {
@@ -434,14 +462,16 @@ const SingleEventCard = ({ event, chatProps }) => {
           </div>
           <div className="p-3 relative">
             <div 
+              ref={descriptionRef}
               className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
             >
               {event.description.split('\n').map((para, idx) => (
                 para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
               ))}
             </div>
-            {/* Fade overlay at bottom to indicate scrollable content */}
-            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            {descriptionOverflow && (
+              <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
           </div>
         </div>
       )}

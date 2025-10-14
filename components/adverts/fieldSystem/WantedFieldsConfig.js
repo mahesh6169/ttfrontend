@@ -127,6 +127,18 @@ export const WANTED_FIELDS_CONFIG = {
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
+
+  'Accounting & Taxation Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Real Estate & Buyers Agents': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
   
   'Restaurants & Catering Services': {
     hiddenSections: [],
@@ -152,7 +164,7 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
-  'Retail Shops & Business': {
+  'Retail Stores & Shops': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -206,7 +218,7 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
-  'Business & Professional Services': {
+  'Consultation & Professional Services': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []

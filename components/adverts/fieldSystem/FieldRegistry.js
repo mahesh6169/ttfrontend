@@ -530,6 +530,26 @@ fields: {
     ]
   },
 
+  'Accounting & Taxation Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Real Estate & Buyers Agents': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
   'Restaurants & Catering Services': {
     sections: [
       {
@@ -570,12 +590,12 @@ fields: {
     ]
   },
 
-  'Retail Shops & Business': {
+  'Retail Stores & Shops': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
@@ -660,7 +680,7 @@ fields: {
     ]
   },
 
-  'Business & Professional Services': {
+  'Consultation & Professional Services': {
     sections: [
       {
         id: 'serviceDetailsSection',
