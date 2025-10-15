@@ -22,7 +22,7 @@ const SuccessView = ({
       primaryAction: {
         label: 'View Topic',
         icon: FaComments,
-        handler: () => router.push(`/threads/view/${thread?._id || thread?.id}`)
+        handler: () => router.push(`/threads/views/${thread?._id || thread?.id}`)
       },
       secondaryAction: {
         label: 'Create Another Topic',
@@ -37,7 +37,7 @@ const SuccessView = ({
       primaryAction: {
         label: 'View Topic',
         icon: FaEye,
-        handler: () => router.push(`/threads/view/${thread?._id || thread?.id}`)
+        handler: () => router.push(`/threads/views/${thread?._id || thread?.id}`)
       },
       secondaryAction: {
         label: 'Back to Topics',

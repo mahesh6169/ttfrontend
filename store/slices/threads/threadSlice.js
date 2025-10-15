@@ -485,7 +485,8 @@ const threadSlice = createSlice({
 
             /* --------- updateThread--------- */
             .addCase(updateThread.fulfilled, (state, action) => {
-                const updatedThread = action.payload;
+                // Backend returns { message: '...', thread: {...} }
+                const updatedThread = action.payload.thread || action.payload;
                 state.selectedThread = updatedThread;
         
                 const index = state.threads.findIndex(t => t._id === updatedThread._id);

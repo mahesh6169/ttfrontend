@@ -15,6 +15,7 @@ import CategorySelector from '@/components/shared/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import { threadCategoryOptions } from '@/components/threads/categories';
 import SuccessView from '@/components/threads/SuccessView';
+import AuthorDetailsSection from '@/components/threads/AuthorDetailsSection';
 
 const libraries = ['places'];
 
@@ -25,6 +26,7 @@ const EditThreadPage = () => {
   const threadId = params?.id;
 
   const thread = useSelector((state) => state.threads.selectedThread);
+  const currentUser = useSelector((state) => state.user.user);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -41,6 +43,14 @@ const EditThreadPage = () => {
         coordinates: [],
       },
     },
+    author: {
+      name: '',
+      website: '',
+      contact: '',
+      email: '',
+      aboutMyself: '',
+      socialMedia: []
+    },
   });
   
   const [existingImages, setExistingImages] = useState([]);
@@ -49,6 +59,7 @@ const EditThreadPage = () => {
   const [errors, setErrors] = useState({});
   const [locationInput, setLocationInput] = useState('');
   const fileInputRef = useRef(null);
+  const authorSectionRef = useRef(null);
   const [showSuccessView, setShowSuccessView] = useState(false);
   const [updatedThread, setUpdatedThread] = useState(null);
   const [locationValidationError, setLocationValidationError] = useState('');
@@ -61,6 +72,7 @@ const EditThreadPage = () => {
 
   useEffect(() => {
     if (thread) {
+      console.log('🔍 Loading thread author data:', thread.author);
       const updatedFormData = {
         title: thread.title || '',
         question: thread.question || '',
@@ -76,8 +88,17 @@ const EditThreadPage = () => {
             coordinates: [],
           },
         },
+        author: thread.author || {
+          name: currentUser?.name || '',
+          website: '',
+          contact: '',
+          email: '',
+          aboutMyself: '',
+          socialMedia: []
+        },
       };
   
+      console.log('📝 Setting formData with author:', updatedFormData.author);
       setFormData(updatedFormData);
       setExistingImages(thread.images || []);
       setPreview((thread.images || []).map((img) => img.url));
@@ -86,7 +107,7 @@ const EditThreadPage = () => {
         setLocationInput(`${thread.suburb.name}, ${thread.suburb.state} ${thread.suburb.postalCode}`);
       }
     }
-  }, [thread]);
+  }, [thread, currentUser?.name]);
   
 
   // Add this useEffect to update locationInput when formData.suburb changes
@@ -261,6 +282,11 @@ useEffect(() => {
     if (!question.trim()) newErrors.question = 'Question is required';
     if (!category.trim()) newErrors.category = 'Category is required';
 
+    // Validate author fields
+    if (authorSectionRef.current && !authorSectionRef.current.validateFields()) {
+      return;
+    }
+
     const { name, state, postalCode, location } = suburb;
     // Postal code is now optional
     if (!name || !state || location.coordinates.length !== 2) {
@@ -284,6 +310,13 @@ useEffect(() => {
     
     // Append suburb data
     formPayload.append('suburb', JSON.stringify(suburb));
+    
+    // Append author data if any field is filled
+    if (formData.author && (formData.author.name || formData.author.website || 
+        formData.author.contact || formData.author.email || formData.author.aboutMyself || 
+        (formData.author.socialMedia && formData.author.socialMedia.length > 0))) {
+      formPayload.append('author', JSON.stringify(formData.author));
+    }
     
     existingImages.forEach((img) =>
       formPayload.append('existingImages', JSON.stringify(img))
@@ -431,6 +464,14 @@ useEffect(() => {
             <p className="text-red-500 text-sm mt-1">{locationValidationError}</p>
           )}
         </div>
+
+        {/* Author Details Section */}
+        <AuthorDetailsSection
+          ref={authorSectionRef}
+          formData={formData}
+          onChange={setFormData}
+          errors={errors}
+        />
 
         <div>
           <label className="block font-semibold mb-1">Images (max 10)</label>

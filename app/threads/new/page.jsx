@@ -12,6 +12,7 @@ import CategorySelector from '@/components/shared/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import { threadCategoryOptions } from '@/components/threads/categories';
 import SuccessView from '@/components/threads/SuccessView';
+import AuthorDetailsSection from '@/components/threads/AuthorDetailsSection';
 
 const libraries = ['places'];
 
@@ -22,6 +23,7 @@ const CreateThreadPage = () => {
   const isLoggedIn = useSelector((state) => state.user.tokenValidated);
   const { user } = useSelector((state) => state.user) || {};
   const fileInputRef = useRef(null);
+  const authorSectionRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -38,6 +40,14 @@ const CreateThreadPage = () => {
         coordinates: [],
       },
     },
+    author: {
+      name: '',
+      website: '',
+      contact: '',
+      email: '',
+      aboutMyself: '',
+      socialMedia: []
+    },
   });
 
   const [preview, setPreview] = useState([]);
@@ -47,6 +57,19 @@ const CreateThreadPage = () => {
   const [showSuccessView, setShowSuccessView] = useState(false);
   const [createdThread, setCreatedThread] = useState(null);
   const [locationValidationError, setLocationValidationError] = useState('');
+
+  // Auto-populate author name with logged-in user's name
+  useEffect(() => {
+    if (user?.name && !formData.author.name) {
+      setFormData(prev => ({
+        ...prev,
+        author: {
+          ...prev.author,
+          name: user.name
+        }
+      }));
+    }
+  }, [user?.name]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -222,6 +245,11 @@ const CreateThreadPage = () => {
     if (!formData.question.trim()) newErrors.question = 'Question is required';
     if (!formData.category.trim()) newErrors.category = 'Category is required';
 
+    // Validate author fields
+    if (authorSectionRef.current && !authorSectionRef.current.validateFields()) {
+      return;
+    }
+
     const { name, state, postalCode, location } = formData.suburb;
     
     // Debug logging
@@ -271,6 +299,13 @@ const CreateThreadPage = () => {
     // Append suburb data
     formPayload.append('suburb', JSON.stringify(formData.suburb));
     
+    // Append author data if any field is filled
+    if (formData.author && (formData.author.name || formData.author.website || 
+        formData.author.contact || formData.author.email || formData.author.aboutMyself || 
+        (formData.author.socialMedia && formData.author.socialMedia.length > 0))) {
+      formPayload.append('author', JSON.stringify(formData.author));
+    }
+    
     // Append images
     formData.images.forEach((file) => formPayload.append('images', file));
 
@@ -315,6 +350,14 @@ if (createThread.fulfilled.match(resultAction)) {
                     type: 'Point',
                     coordinates: [],
                   },
+                },
+                author: {
+                  name: '',
+                  website: '',
+                  contact: '',
+                  email: '',
+                  aboutMyself: '',
+                  socialMedia: []
                 },
               });
               setPreview([]);
@@ -432,6 +475,14 @@ if (createThread.fulfilled.match(resultAction)) {
             )}
             
           </div>
+
+          {/* Author Details Section */}
+          <AuthorDetailsSection
+            ref={authorSectionRef}
+            formData={formData}
+            onChange={setFormData}
+            errors={errors}
+          />
 
           {/* Image Upload */}
           <div>
