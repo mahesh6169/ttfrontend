@@ -53,11 +53,6 @@ export const metadata = {
     },
   },
   
-  // CANONICAL URL - Tells Google the main URL for this content
-  alternates: {
-    canonical: siteUrl,
-  },
-  
   // SOCIAL MEDIA SHARING - WhatsApp, Facebook, LinkedIn previews
   openGraph: {
     title: `Desify – Classifieds, Events & Community Forum`, // Title in WhatsApp/FB preview

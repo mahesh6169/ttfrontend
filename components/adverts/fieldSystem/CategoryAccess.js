@@ -24,10 +24,10 @@ export const CATEGORY_ACCESS = {
   'DJ & Audio Visual Services': ['user', 'admin'],
   'Party Hires & Services': ['user', 'admin'],
   'Cleaning & Maintenance Services': ['user', 'admin'],
+  'Pest Control Services': ['user', 'admin'],
   'Beauty, Hair & Makeup Services': ['user', 'admin'],
   'Priest & Pooja Services': ['user', 'admin'],
-  'Matrimony': ['user', 'admin'],
-  'Jobs': ['user', 'admin'],
+  'Babysitting & Childcare Services': ['user', 'admin'],
   
   'Driving Instructors': ['user', 'admin'],
   'Academic Tutors': ['user', 'admin'],
@@ -45,6 +45,7 @@ export const CATEGORY_ACCESS = {
   'Books, Art & Collectables': ['user', 'admin'],
   'Pets': ['user', 'admin'],
   
+  'Jobs': ['user', 'admin'],
   'Retail Stores & Shops': ['user', 'admin'],
   'Consultation & Professional Services': ['user', 'admin'],
   'Financial & Insurance Services': ['user', 'admin'],
@@ -54,6 +55,7 @@ export const CATEGORY_ACCESS = {
   'Marketing & Advertising Services': ['user', 'admin'],
   'IT & Software Services': ['user', 'admin'],
   'Travel & Tourism Services': ['user', 'admin'],
+  'Matrimony': ['user', 'admin'],
     
   'Parents Travel Assistance': ['user', 'admin'],
   'Miscellaneous': ['user', 'admin'],

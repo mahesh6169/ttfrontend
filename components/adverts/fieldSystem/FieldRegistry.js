@@ -650,6 +650,16 @@ fields: {
     ]
   },
 
+  'Pest Control Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
   'Photography & Videography Services': {
     sections: [
       {
@@ -671,6 +681,16 @@ fields: {
   },
 
   'Priest & Pooja Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Babysitting & Childcare Services': {
     sections: [
       {
         id: 'serviceDetailsSection',

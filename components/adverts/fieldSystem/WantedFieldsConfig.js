@@ -200,6 +200,12 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
+  'Pest Control Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
   'Photography & Videography Services': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
@@ -213,6 +219,12 @@ export const WANTED_FIELDS_CONFIG = {
   },
 
   'Priest & Pooja Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Babysitting & Childcare Services': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
