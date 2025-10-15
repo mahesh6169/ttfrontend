@@ -25,7 +25,6 @@ import PostTopicButton from '@/components/buttons/PostTopicButton';
 import BottomAd from '@/components/ads/BottomAd';
 import { getCategoryDisplayName } from '@/constants/categories';
 import PromoBanner from '@/components/PromoBanner';
-import { buildSlugUrl } from '@/utils/slugUtils';
 
 const libraries = ['places'];
 
@@ -695,7 +694,7 @@ const ThreadsPage = () => {
             {threads.map((thread, index) => (
               <React.Fragment key={thread._id}>
                 <Link
-                  href={`/threads/${buildSlugUrl('thread', thread.title, thread._id).replace('/threads/', '')}`}
+                  href={`/threads/views/${thread._id}`}
                   className="block border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
                 >
                   <div className="flex gap-3 p-3">

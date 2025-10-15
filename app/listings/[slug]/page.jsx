@@ -11,7 +11,7 @@ if (!API_BASE_URL) {
 
 // Generate Open Graph meta tags for social media previews
 export async function generateMetadata({ params }) {
-  const { slug } = params;
+  const { slug } = await params;
   const listingId = extractIdFromSlug(slug);
   
   if (!listingId || !API_BASE_URL) {
@@ -120,7 +120,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ListingSlugPage({ params }) {
-  const { slug } = params;
+  const { slug } = await params;
   const listingId = extractIdFromSlug(slug);
   
   if (!listingId) {
