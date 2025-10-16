@@ -3,6 +3,13 @@ import LeftAd from '@/components/ads/LeftAd';
 import RightAd from '@/components/ads/RightAd';
 import Footer from '@/components/Footer';
 import StateSelector from '@/components/ads/StateSelector';
+import { META_DEFAULTS } from '@/utils/slugUtils';
+
+export const metadata = {
+  alternates: {
+    canonical: `${META_DEFAULTS.siteUrl}/listings`
+  }
+};
 
 const AdvertsLayout = ({ children }) => {
   return (
