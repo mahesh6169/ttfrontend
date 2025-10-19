@@ -11,7 +11,8 @@ const SOCIAL_MEDIA_PLATFORMS = [
   'Other'
 ];
 
-const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {} }, ref) => {
+const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {}, userName = '' }, ref) => {
+  const [showAuthorDetails, setShowAuthorDetails] = useState(false);
   const [availableFields, setAvailableFields] = useState({
     website: false,
     contact: false,
@@ -32,6 +33,16 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {} 
     aboutMyself: '',
     socialMedia: []
   };
+
+  // Initialize checkbox state based on existing author data (for edit mode)
+  React.useEffect(() => {
+    const hasAnyAuthorData = author.name || author.website || author.contact || 
+                             author.email || author.aboutMyself || 
+                             (author.socialMedia && author.socialMedia.length > 0);
+    if (hasAnyAuthorData && !showAuthorDetails) {
+      setShowAuthorDetails(true);
+    }
+  }, []);
 
   // Initialize availableFields based on existing author data (for edit mode)
   React.useEffect(() => {
@@ -156,8 +167,55 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {} 
     }
   };
 
+  // Handle checkbox toggle
+  const handleCheckboxToggle = (checked) => {
+    setShowAuthorDetails(checked);
+    
+    if (checked) {
+      // Prefill author name with username when checking the box
+      if (userName) {
+        onChange({
+          ...formData,
+          author: {
+            name: userName,
+            website: '',
+            contact: '',
+            email: '',
+            aboutMyself: '',
+            socialMedia: []
+          }
+        });
+      }
+    } else {
+      // Clear all author data when unchecked
+      onChange({
+        ...formData,
+        author: {
+          name: '',
+          website: '',
+          contact: '',
+          email: '',
+          aboutMyself: '',
+          socialMedia: []
+        }
+      });
+      // Reset available fields
+      setAvailableFields({
+        website: false,
+        contact: false,
+        email: false,
+        aboutMyself: false,
+      });
+      // Clear all errors
+      setFieldErrors({});
+    }
+  };
+
   // Validate all fields before form submission
   const validateFields = () => {
+    // If author details not opted in, skip validation
+    if (!showAuthorDetails) return true;
+    
     const newErrors = {};
     
     // Validate visible fields that are empty
@@ -198,9 +256,10 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {} 
     return Object.keys(newErrors).length === 0;
   };
 
-  // Expose validation function to parent via ref
+  // Expose validation function and state to parent via ref
   useImperativeHandle(ref, () => ({
-    validateFields
+    validateFields,
+    isOptedIn: () => showAuthorDetails
   }));
 
   // Check which fields can still be added
@@ -216,17 +275,30 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {} 
   const fieldOptions = getAvailableFieldOptions();
 
   return (
-    <div className="space-y-4 p-4 rounded-lg border border-gray-200">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
-          Author Details <span className="text-sm font-normal text-gray-500">(Optional)</span>
-        </h3>
+    <div className="mb-4">
+      <div className="flex items-start gap-3 mb-2">
+        <input
+          type="checkbox"
+          id="showAuthorDetails"
+          checked={showAuthorDetails}
+          onChange={(e) => handleCheckboxToggle(e.target.checked)}
+          className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+        />
+        <div className="flex-1">
+          <label htmlFor="showAuthorDetails" className="cursor-pointer">
+            <span className="block font-bold text-gray-700">
+              Author Details (Optional)
+            </span>
+            <p className="text-xs text-gray-600 mt-1">
+              I am a blogger or content creator - let people know more about me
+            </p>
+          </label>
+        </div>
       </div>
-      <p className="text-sm text-gray-600">
-        If you are a blogger or content creator, let people know more about you
-      </p>
 
-      {/* Author Name - Always visible, optional */}
+      {showAuthorDetails && (
+        <>
+        <div className="space-y-4 p-4 rounded-lg border border-gray-200">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Author Name <span className="text-xs text-gray-500">(Optional - defaults to your username)</span>
@@ -489,6 +561,9 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {} 
           Add Social Media Link
         </button>
       </div>
+        </div>
+        </>
+      )}
     </div>
   );
 });
