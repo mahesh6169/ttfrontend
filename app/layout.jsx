@@ -19,6 +19,11 @@ const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 export const metadata = {
   metadataBase: new URL(siteUrl),
   
+  // CANONICAL URL - Tells Google this is the official homepage URL
+  alternates: {
+    canonical: siteUrl
+  },
+  
   // GOOGLE SEARCH RESULTS - Primary title shown in search results
   title: {
     default: `Desify – Indian Classifieds, Events & Community Forum in Australia`,
