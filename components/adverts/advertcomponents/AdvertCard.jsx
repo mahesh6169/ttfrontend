@@ -25,11 +25,18 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
     if (!activePricing) return null;
 
     // Map price types to display labels
+    const unitLabels = {
+      'week': 'wk',
+      'day': 'day',
+      'month': 'mth',
+      'year': 'yr'
+    };
+    
     const priceTypeLabels = {
       'sale': formatCurrency(activePricing.amount),
-      'hire': `For Hire - ${formatCurrency(activePricing.amount)} p/${activePricing.unit || 'day'}`,
-      'rent': `For Rent - ${formatCurrency(activePricing.amount)} p/${activePricing.unit || 'week'}`,
-      'share': `For Share - ${formatCurrency(activePricing.amount)} p/${activePricing.unit || 'week'}`
+      'hire': `For Hire - ${formatCurrency(activePricing.amount)} p/${unitLabels[activePricing.unit] || activePricing.unit || 'day'}`,
+      'rent': `For Rent - ${formatCurrency(activePricing.amount)} p/${unitLabels[activePricing.unit] || activePricing.unit || 'wk'}`,
+      'share': `For Share - ${formatCurrency(activePricing.amount)} p/${unitLabels[activePricing.unit] || activePricing.unit || 'wk'}`
     };
 
     return priceTypeLabels[activePricing.priceType] || formatCurrency(activePricing.amount);

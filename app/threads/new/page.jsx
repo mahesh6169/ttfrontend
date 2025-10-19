@@ -58,18 +58,6 @@ const CreateThreadPage = () => {
   const [createdThread, setCreatedThread] = useState(null);
   const [locationValidationError, setLocationValidationError] = useState('');
 
-  // Auto-populate author name with logged-in user's name
-  useEffect(() => {
-    if (user?.name && !formData.author.name) {
-      setFormData(prev => ({
-        ...prev,
-        author: {
-          ...prev.author,
-          name: user.name
-        }
-      }));
-    }
-  }, [user?.name]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -299,10 +287,12 @@ const CreateThreadPage = () => {
     // Append suburb data
     formPayload.append('suburb', JSON.stringify(formData.suburb));
     
-    // Append author data if any field is filled
-    if (formData.author && (formData.author.name || formData.author.website || 
-        formData.author.contact || formData.author.email || formData.author.aboutMyself || 
-        (formData.author.socialMedia && formData.author.socialMedia.length > 0))) {
+    // Append author data only if user opted in
+    if (authorSectionRef.current?.isOptedIn() && formData.author && 
+        (formData.author.name || formData.author.website || 
+         formData.author.contact || formData.author.email || 
+         formData.author.aboutMyself || 
+         (formData.author.socialMedia && formData.author.socialMedia.length > 0))) {
       formPayload.append('author', JSON.stringify(formData.author));
     }
     
@@ -433,7 +423,7 @@ if (createThread.fulfilled.match(resultAction)) {
 
           {/* Location/Suburb Selector - Fixed to allow typing */}
           <div>
-            <label className="block font-medium">
+            <label className="block font-bold mb-2 text-gray-700">
               Location <span className="text-red-500">*</span>
             </label>
             <LoadScriptNext
@@ -482,14 +472,15 @@ if (createThread.fulfilled.match(resultAction)) {
             formData={formData}
             onChange={setFormData}
             errors={errors}
+            userName={user?.name || ''}
           />
 
           {/* Image Upload */}
           <div>
-            <label className="block font-semibold">Upload Images (Max 10)</label>
-            <div className="text-sm text-gray-600 mb-2">
-              Current: {preview.length}/10
-            </div>
+            <label className="block font-bold mb-2 text-gray-700">Upload Images (Optional)</label>
+            <p className="text-xs text-gray-600 mb-2">
+              You can upload up to 10 images. Current: {preview.length}/10
+            </p>
             <input
              ref={fileInputRef}
               type="file"

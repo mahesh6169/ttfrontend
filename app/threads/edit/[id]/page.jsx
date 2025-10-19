@@ -89,7 +89,7 @@ const EditThreadPage = () => {
           },
         },
         author: thread.author || {
-          name: currentUser?.name || '',
+          name: '',
           website: '',
           contact: '',
           email: '',
@@ -311,11 +311,25 @@ useEffect(() => {
     // Append suburb data
     formPayload.append('suburb', JSON.stringify(suburb));
     
-    // Append author data if any field is filled
-    if (formData.author && (formData.author.name || formData.author.website || 
-        formData.author.contact || formData.author.email || formData.author.aboutMyself || 
-        (formData.author.socialMedia && formData.author.socialMedia.length > 0))) {
-      formPayload.append('author', JSON.stringify(formData.author));
+    // Handle author data based on opt-in status
+    if (authorSectionRef.current?.isOptedIn()) {
+      // User opted in - send author data
+      if (formData.author && (formData.author.name || formData.author.website || 
+          formData.author.contact || formData.author.email || 
+          formData.author.aboutMyself || 
+          (formData.author.socialMedia && formData.author.socialMedia.length > 0))) {
+        formPayload.append('author', JSON.stringify(formData.author));
+      }
+    } else {
+      // User opted out - send empty author object to clear existing data
+      formPayload.append('author', JSON.stringify({
+        name: '',
+        website: '',
+        contact: '',
+        email: '',
+        aboutMyself: '',
+        socialMedia: []
+      }));
     }
     
     existingImages.forEach((img) =>
@@ -356,7 +370,7 @@ useEffect(() => {
           />
         ) : (
           <div className="bg-white border rounded-lg shadow-lg p-4 sm:p-6">
-            <h1 className="text-2xl font-bold mb-4">Edit Thread</h1>
+            <h1 className="text-2xl font-bold mb-4">Edit Topic</h1>
             <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <input
@@ -367,7 +381,7 @@ useEffect(() => {
             className={`w-full p-2 border rounded-lg ${
               errors.title ? 'border-red-500' : ''
             }`}
-            placeholder="Thread Title"
+            placeholder="Topic Title"
             required
           />
           {errors.title && (
@@ -423,7 +437,7 @@ useEffect(() => {
 
         {/* Location/Suburb Selector */}
         <div>
-          <label className="block font-medium">
+          <label className="block font-bold mb-2 text-gray-700">
             Location <span className="text-red-500">*</span>
           </label>
           <LoadScriptNext
@@ -471,13 +485,14 @@ useEffect(() => {
           formData={formData}
           onChange={setFormData}
           errors={errors}
+          userName={currentUser?.name || ''}
         />
 
         <div>
-          <label className="block font-semibold mb-1">Images (max 10)</label>
-          <div className="text-sm text-gray-600 mb-2">
-            Current: {preview.length}/10
-          </div>
+          <label className="block font-bold mb-2 text-gray-700">Upload Images (Optional)</label>
+          <p className="text-xs text-gray-600 mb-2">
+            You can upload up to 10 images. Current: {preview.length}/10
+          </p>
           <input
   ref={fileInputRef} // 👈 Add this ref here
   type="file"
