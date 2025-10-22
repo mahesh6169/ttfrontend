@@ -10,6 +10,9 @@ import { MdExpandMore, MdExpandLess } from 'react-icons/md';
 export default function AnalyticsPage() {
   const router = useRouter();
   const [campaigns, setCampaigns] = useState([]);
+  const [allCampaigns, setAllCampaigns] = useState([]);
+  const [stores, setStores] = useState([]);
+  const [selectedStore, setSelectedStore] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [expandedCampaignId, setExpandedCampaignId] = useState(null);
   const [codes, setCodes] = useState({});
@@ -19,10 +22,18 @@ export default function AnalyticsPage() {
     const fetchAnalytics = async () => {
 
       try {
-        const response = await axios.get('/admin/campaigns');
+        const [campaignsResponse, storesResponse] = await Promise.all([
+          axios.get('/admin/campaigns'),
+          axios.get('/admin/stores')
+        ]);
         
-        if (response.data.success) {
-          setCampaigns(response.data.campaigns);
+        if (campaignsResponse.data.success) {
+          setAllCampaigns(campaignsResponse.data.campaigns);
+          setCampaigns(campaignsResponse.data.campaigns);
+        }
+        
+        if (storesResponse.data.success) {
+          setStores(storesResponse.data.stores);
         }
       } catch (error) {
         toast.error(error.response?.data?.message || 'Failed to fetch analytics');
@@ -33,6 +44,16 @@ export default function AnalyticsPage() {
 
     fetchAnalytics();
   }, []);
+
+  const handleStoreFilter = (storeId) => {
+    setSelectedStore(storeId);
+    if (storeId === 'all') {
+      setCampaigns(allCampaigns);
+    } else {
+      const filtered = allCampaigns.filter(c => c.storeId?._id === storeId);
+      setCampaigns(filtered);
+    }
+  };
 
   const toggleExpand = async (campaignId) => {
     if (expandedCampaignId === campaignId) {
@@ -81,6 +102,30 @@ export default function AnalyticsPage() {
           </p>
         </div>
 
+        {stores.length > 0 && (
+          <div className="mb-6 flex items-center gap-4">
+            <label htmlFor="storeFilter" className="text-sm font-medium text-gray-700">
+              Filter by Store:
+            </label>
+            <select
+              id="storeFilter"
+              value={selectedStore}
+              onChange={(e) => handleStoreFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            >
+              <option value="all">All Stores ({allCampaigns.length} campaigns)</option>
+              {stores.map((store) => {
+                const storeCount = allCampaigns.filter(c => c.storeId?._id === store._id).length;
+                return (
+                  <option key={store._id} value={store._id}>
+                    {store.storeName} ({storeCount} campaigns)
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        )}
+
         {campaigns.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <h2 className="text-xl font-semibold text-gray-700 mb-2">No campaigns yet</h2>
@@ -111,7 +156,7 @@ export default function AnalyticsPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {campaign.discount}
+                            {campaign.campaignName}
                           </h3>
                           
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -129,8 +174,8 @@ export default function AnalyticsPage() {
                           )}
                         </div>
 
-                        <p className="text-sm text-gray-600 mb-3">
-                          {campaign.discountProduct}
+                        <p className="text-sm text-gray-600 mb-1">
+                          <strong>Discount:</strong> {campaign.discount} on {campaign.discountProduct}
                         </p>
 
                         <div className="flex items-center gap-2 mb-3">

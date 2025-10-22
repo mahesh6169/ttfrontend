@@ -10,25 +10,36 @@ import { format } from 'date-fns';
 export default function AllCampaignsPage() {
   const router = useRouter();
   const [campaigns, setCampaigns] = useState([]);
+  const [allCampaigns, setAllCampaigns] = useState([]);
+  const [stores, setStores] = useState([]);
+  const [selectedStore, setSelectedStore] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, active, inactive, expired
 
   useEffect(() => {
-    const fetchCampaigns = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get('/admin/campaigns');
+        const [campaignsResponse, storesResponse] = await Promise.all([
+          axios.get('/admin/campaigns'),
+          axios.get('/admin/stores')
+        ]);
         
-        if (response.data.success) {
-          setCampaigns(response.data.campaigns);
+        if (campaignsResponse.data.success) {
+          setAllCampaigns(campaignsResponse.data.campaigns);
+          setCampaigns(campaignsResponse.data.campaigns);
+        }
+        
+        if (storesResponse.data.success) {
+          setStores(storesResponse.data.stores);
         }
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to fetch campaigns');
+        toast.error(error.response?.data?.message || 'Failed to fetch data');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCampaigns();
+    fetchData();
   }, []);
 
   const handleDelete = async (campaignId, discount) => {
@@ -45,6 +56,16 @@ export default function AllCampaignsPage() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete campaign');
+    }
+  };
+
+  const handleStoreFilter = (storeId) => {
+    setSelectedStore(storeId);
+    if (storeId === 'all') {
+      setCampaigns(allCampaigns);
+    } else {
+      const filtered = allCampaigns.filter(c => c.storeId?._id === storeId);
+      setCampaigns(filtered);
     }
   };
 
@@ -84,6 +105,31 @@ export default function AllCampaignsPage() {
           <h1 className="text-3xl font-bold text-gray-800">All Campaigns</h1>
           <p className="text-gray-600 mt-2">Manage all discount campaigns across all stores</p>
         </div>
+
+        {/* Store Filter */}
+        {stores.length > 0 && (
+          <div className="mb-6 flex items-center gap-4">
+            <label htmlFor="storeFilter" className="text-sm font-medium text-gray-700">
+              Filter by Store:
+            </label>
+            <select
+              id="storeFilter"
+              value={selectedStore}
+              onChange={(e) => handleStoreFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            >
+              <option value="all">All Stores ({allCampaigns.length} campaigns)</option>
+              {stores.map((store) => {
+                const storeCount = allCampaigns.filter(c => c.storeId?._id === store._id).length;
+                return (
+                  <option key={store._id} value={store._id}>
+                    {store.storeName} ({storeCount} campaigns)
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        )}
 
         {/* Filter Tabs */}
         <div className="mb-6 flex gap-2 border-b">
@@ -238,7 +284,7 @@ export default function AllCampaignsPage() {
                           {format(new Date(campaign.expiryDate), 'MMM dd, yyyy')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {campaign.currentRedemptions || 0}
+                          {campaign.totalGenerated || 0}
                           {campaign.maxRedemptions > 0 && ` / ${campaign.maxRedemptions}`}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

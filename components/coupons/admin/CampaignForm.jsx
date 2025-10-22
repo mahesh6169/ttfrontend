@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 export default function CampaignForm({ initialData = null, onSubmit, onCancel, isEditing = false }) {
   const [formData, setFormData] = useState({
+    campaignName: initialData?.campaignName || '',
     discount: initialData?.discount || '',
     discountProduct: initialData?.discountProduct || '',
     termsConditions: initialData?.termsConditions || '',
@@ -28,6 +29,10 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
 
   const validate = () => {
     const newErrors = {};
+
+    if (!formData.campaignName.trim()) {
+      newErrors.campaignName = 'Campaign name is required';
+    }
 
     if (!formData.discount.trim()) {
       newErrors.discount = 'Discount is required';
@@ -58,10 +63,10 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
     }
 
     // Validate maxRedemptions if editing
-    if (isEditing && initialData?.currentRedemptions) {
+    if (isEditing && initialData?.totalGenerated) {
       const newMax = parseInt(formData.maxRedemptions) || 0;
-      if (newMax > 0 && newMax < initialData.currentRedemptions) {
-        newErrors.maxRedemptions = `Cannot set below current redemptions (${initialData.currentRedemptions})`;
+      if (newMax > 0 && newMax < initialData.totalGenerated) {
+        newErrors.maxRedemptions = `Cannot set below current redemptions (${initialData.totalGenerated})`;
       }
     }
 
@@ -91,10 +96,32 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
       {isEditing && (
         <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
           <p className="text-yellow-800 text-sm font-medium">
-            Note: Discount and product fields are locked once a campaign is created.
+            Note: Campaign name, discount and product fields are locked once a campaign is created.
           </p>
         </div>
       )}
+
+      {/* Campaign Name */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Campaign Name *
+        </label>
+        <input
+          type="text"
+          name="campaignName"
+          value={formData.campaignName}
+          onChange={handleChange}
+          disabled={isEditing}
+          maxLength={100}
+          className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+            isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+          }`}
+          placeholder="e.g., Summer Special, Grand Opening"
+        />
+        {errors.campaignName && (
+          <p className="text-red-500 text-sm mt-1">{errors.campaignName}</p>
+        )}
+      </div>
 
       {/* Discount */}
       <div>
@@ -175,9 +202,9 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Max Redemptions
-          {isEditing && initialData?.currentRedemptions > 0 && (
+          {isEditing && initialData?.totalGenerated > 0 && (
             <span className="text-sm text-gray-500 ml-2">
-              (current: {initialData.currentRedemptions})
+              (current: {initialData.totalGenerated})
             </span>
           )}
         </label>
@@ -186,7 +213,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           name="maxRedemptions"
           value={formData.maxRedemptions}
           onChange={handleChange}
-          min={isEditing ? initialData?.currentRedemptions || 0 : 0}
+          min={isEditing ? initialData?.totalGenerated || 0 : 0}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="0 = unlimited"
         />

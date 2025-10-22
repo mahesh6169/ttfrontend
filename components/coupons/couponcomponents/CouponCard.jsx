@@ -18,7 +18,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
   const isExpired = new Date(campaign.expiryDate) < new Date();
   const isLimitReached = campaign.maxRedemptions > 0 && 
-                        campaign.currentRedemptions >= campaign.maxRedemptions;
+                        campaign.totalGenerated >= campaign.maxRedemptions;
   
   const userHasCode = campaign.userHasCode || false;
 
@@ -163,7 +163,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
         {/* Redemption Count */}
         {campaign.maxRedemptions > 0 && (
           <div className="text-xs text-gray-500">
-            {campaign.currentRedemptions}/{campaign.maxRedemptions} claimed
+            {campaign.totalGenerated}/{campaign.maxRedemptions} claimed
           </div>
         )}
 

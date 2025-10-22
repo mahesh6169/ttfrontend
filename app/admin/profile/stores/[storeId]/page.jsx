@@ -130,7 +130,7 @@ export default function EditStorePage() {
                     </span>
                     
                     <span className="text-sm text-gray-500">
-                      {campaign.currentRedemptions || 0} / {campaign.maxRedemptions || '∞'}
+                      {campaign.totalGenerated || 0} / {campaign.maxRedemptions || '∞'}
                     </span>
                   </div>
                 </div>

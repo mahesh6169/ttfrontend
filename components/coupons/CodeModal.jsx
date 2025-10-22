@@ -43,7 +43,7 @@ export default function CodeModal({ code, campaign, store, onClose }) {
           {/* QR Code */}
           <div className="flex justify-center bg-gray-50 p-6 rounded-lg">
             <QRCodeSVG
-              value={code.fullCode}
+              value={userCode}
               size={200}
               level="H"
               includeMargin={true}

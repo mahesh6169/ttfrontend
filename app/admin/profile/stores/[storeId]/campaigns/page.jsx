@@ -188,7 +188,7 @@ export default function CampaignManagementPage() {
                           {format(new Date(campaign.expiryDate), 'MMM dd, yyyy')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {campaign.currentRedemptions || 0}
+                          {campaign.totalGenerated || 0}
                           {campaign.maxRedemptions > 0 && ` / ${campaign.maxRedemptions}`}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
