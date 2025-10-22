@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   FaAd, FaCalendarAlt, FaEnvelope, FaUser, FaPlus,
-  FaCog, FaCheckCircle, FaEye, FaFileInvoice, FaTicketAlt
+  FaCog, FaCheckCircle, FaEye, FaFileInvoice, FaTicketAlt, FaTag
 } from 'react-icons/fa';
 import { MdFavorite } from 'react-icons/md';
 import { BsChatText, BsChatDots } from 'react-icons/bs';
@@ -199,6 +199,12 @@ const ProfilePage = () => {
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
                 → My Invoices
+              </Link>
+              <Link 
+                href="/users/profile/my-codes" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → My Discount Codes
               </Link>
             </div>
           </div>

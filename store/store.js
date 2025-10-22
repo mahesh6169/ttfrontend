@@ -16,6 +16,7 @@ import refundReducer from './slices/events/refundSlice';
 import eventCapacityReducer from './slices/events/eventCapacitySlice';
 import checkInFreeReducer from './slices/events/checkInFreeSlice';
 import checkInPaidReducer from './slices/events/checkInPaidSlice';
+import searchCouponsReducer from './slices/coupons/searchCouponsSlice';
 
 const store = configureStore({
     reducer: {
@@ -35,6 +36,7 @@ const store = configureStore({
         eventCapacity: eventCapacityReducer,
         checkInFree: checkInFreeReducer,
         checkInPaid: checkInPaidReducer,
+        searchCoupons: searchCouponsReducer,
     },
 });
 

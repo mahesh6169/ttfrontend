@@ -14,6 +14,7 @@ import { CgProfile } from 'react-icons/cg';
 import { TbLogout, TbLogin } from 'react-icons/tb';
 import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
 import { FaCalendarAlt } from 'react-icons/fa';
+import { MdLocalOffer } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import { 
   setInActiveChat, 
@@ -24,6 +25,7 @@ const Header = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const pathname = usePathname();
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   const { tokenValidated, user, status } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user?._id;
@@ -76,20 +78,37 @@ const Header = () => {
           </Link>
 
           {/* Mobile Auth Button - Show login or logout based on auth state */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-2">
             {(isInitialLoad || (status === 'loading' && !tokenValidated)) ? (
               // Show loading placeholder during initial load
               <div className="p-2">
                 <div className="w-6 h-6 bg-lime-200/30 rounded animate-pulse"></div>
               </div>
             ) : isAuthenticated ? (
-              <button
-                onClick={handleLogout}
-                className="flex items-center justify-center p-2 rounded-lg hover:bg-teal-600 transition-colors"
-                title="Logout"
-              >
-                <TbLogout size={24} className="text-lime-100" />
-              </button>
+              <>
+                <Link
+                  href="/users/profile/conversations"
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-teal-600 transition-colors relative"
+                  title="Messages"
+                >
+                  <div className="relative">
+                    {showNotification ? (
+                      <div className="animate-pulse">
+                        <BsChatDotsFill size={22} className="text-lime-100 drop-shadow-[0_0_8px_rgba(217,249,157,0.8)]" />
+                      </div>
+                    ) : (
+                      <BsChatDots size={22} className="text-lime-100" />
+                    )}
+                  </div>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-teal-600 transition-colors"
+                  title="Logout"
+                >
+                  <TbLogout size={24} className="text-lime-100" />
+                </button>
+              </>
             ) : (
               <Link
                 href="/login"
@@ -116,6 +135,16 @@ const Header = () => {
                 icon={<FaCalendarAlt size={20} />}
                 text="Events"
                 pathname={pathname}
+              />
+              <DropdownNavLink
+                href="/promotions"
+                icon={<MdLocalOffer size={20} />}
+                text="Deals"
+                pathname={pathname}
+                items={[
+                  { href: '/promotions/discountcode', text: 'Discount Codes' },
+                  { href: '/promotions', text: 'Discounts', disabled: true }
+                ]}
               />
               <NavLink
                 href="/threads"
@@ -194,6 +223,55 @@ const Header = () => {
 };
 
 export default Header;
+
+const DropdownNavLink = ({ href, icon, text, pathname, items }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const isActive = pathname === href || pathname?.startsWith(href + '/');
+
+  return (
+    <div 
+      className="relative"
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
+      <Link
+        href={href}
+        className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded 
+          ${
+            isActive
+              ? 'bg-lime-100 text-teal-700'
+              : 'hover:bg-lime-50 hover:text-teal-700'
+          }`}
+      >
+        {icon && <span>{icon}</span>}
+        <span>{text}</span>
+        <FaChevronRight 
+          size={12} 
+          className={`transform transition-transform ${isOpen ? 'rotate-90' : 'rotate-0'}`}
+        />
+      </Link>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] py-2 z-50">
+          {items.map((item, index) => (
+            <Link
+              key={index}
+              href={item.disabled ? '#' : item.href}
+              className={`block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors
+                ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={(e) => {
+                if (item.disabled) e.preventDefault();
+                setIsOpen(false);
+              }}
+            >
+              {item.text}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const NavLink = ({ href, icon, text, pathname, mobile = false, onClick, showIconOnly }) => {
   // Check if the current path includes the href (for nested routes)

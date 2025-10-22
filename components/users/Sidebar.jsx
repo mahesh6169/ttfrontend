@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { FaUser, FaAd, FaEnvelope, FaCalendarAlt, FaMoneyCheckAlt, FaChevronDown, FaChevronRight, FaFileInvoice } from 'react-icons/fa';
+import { FaUser, FaAd, FaEnvelope, FaCalendarAlt, FaMoneyCheckAlt, FaChevronDown, FaChevronRight, FaFileInvoice, FaTag } from 'react-icons/fa';
 import { MdFavorite } from 'react-icons/md';
 import { BsChatText } from 'react-icons/bs';
 
@@ -19,6 +19,7 @@ const Sidebar = ({ onLinkClick }) => {
     { label: 'My RSVPs', href: '/users/profile/myregistrations', icon: <FaCalendarAlt /> },
     { label: 'My Tickets', href: '/users/profile/mytickets', icon: <FaMoneyCheckAlt /> },
     { label: 'My Invoices', href: '/users/profile/myinvoices', icon: <FaFileInvoice /> },
+    { label: 'My Discount Codes', href: '/users/profile/my-codes', icon: <FaTag /> },
     
     // Divider
     { type: 'divider' },

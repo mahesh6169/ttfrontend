@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RiAdvertisementFill } from "react-icons/ri";
 import { FaCalendarAlt, FaUser } from 'react-icons/fa';
-import { MdOutlineGroups2 } from "react-icons/md";
+import { MdOutlineGroups2, MdLocalOffer } from "react-icons/md";
 import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
 
 const BottomNavigation = () => {
@@ -73,40 +73,30 @@ const BottomNavigation = () => {
           <span className="text-xs mt-0.5 font-medium">Forum</span>
         </Link>
 
-        {isAuthenticated && (
-          <>
-            <Link
-              href="/users/profile/conversations"
-              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
-                isActive('/users/profile/conversations') || isActive('/chat')
-                  ? 'text-amber-400' 
-                  : 'text-lime-100 hover:text-lime-200'
-              }`}
-            >
-              <div className="relative">
-                {showNotification ? (
-                  <div className="animate-pulse">
-                    <BsChatDotsFill size={20} className="drop-shadow-[0_0_8px_rgba(217,249,157,0.8)]" />
-                  </div>
-                ) : (
-                  <BsChatDots size={20} />
-                )}
-              </div>
-              <span className="text-xs mt-0.5 font-medium">Chat</span>
-            </Link>
+        <Link
+          href="/promotions"
+          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+            isActive('/promotions') 
+              ? 'text-amber-400' 
+              : 'text-lime-100 hover:text-lime-200'
+          }`}
+        >
+          <MdLocalOffer size={20} />
+          <span className="text-xs mt-0.5 font-medium">Deals</span>
+        </Link>
 
-            <Link
-              href={profilePath}
-              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-                isActive(profilePath)
-                  ? 'text-amber-400' 
-                  : 'text-lime-100 hover:text-lime-200'
-              }`}
-            >
-              <FaUser size={20} />
-              <span className="text-xs mt-0.5 font-medium">Profile</span>
-            </Link>
-          </>
+        {isAuthenticated && (
+          <Link
+            href={profilePath}
+            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+              isActive(profilePath)
+                ? 'text-amber-400' 
+                : 'text-lime-100 hover:text-lime-200'
+            }`}
+          >
+            <FaUser size={20} />
+            <span className="text-xs mt-0.5 font-medium">Profile</span>
+          </Link>
         )}
       </div>
     </div>
