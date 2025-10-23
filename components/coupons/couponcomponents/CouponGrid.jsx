@@ -22,27 +22,14 @@ const CouponGrid = ({ campaigns, campaignStatus, onGenerateCode }) => {
     );
   }
 
-  const mobileAdPosition = 4;
-  const tabletAdPosition = 6;
-  const desktopAdPosition = 8;
+  const adPosition = 4;
 
   const itemsWithAd = [];
-  let adInserted = false;
-
   campaigns.forEach((campaign, index) => {
     itemsWithAd.push({ type: 'campaign', data: campaign });
     
-    if (!adInserted) {
-      if (index === mobileAdPosition - 1 && campaigns.length > mobileAdPosition) {
-        itemsWithAd.push({ type: 'ad-mobile', data: null });
-      }
-      if (index === tabletAdPosition - 1 && campaigns.length > tabletAdPosition) {
-        itemsWithAd.push({ type: 'ad-tablet', data: null });
-      }
-      if (index === desktopAdPosition - 1 && campaigns.length > desktopAdPosition) {
-        itemsWithAd.push({ type: 'ad-desktop', data: null });
-        adInserted = true;
-      }
+    if (index === adPosition - 1 && campaigns.length > adPosition) {
+      itemsWithAd.push({ type: 'ad', data: null });
     }
   });
 
@@ -50,7 +37,7 @@ const CouponGrid = ({ campaigns, campaignStatus, onGenerateCode }) => {
     <div id="CouponGrid" className="min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
       <div
         id="CouponGrids"
-        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 items-stretch"
       >
         {itemsWithAd.map((item, index) => {
           if (item.type === 'campaign') {
@@ -61,21 +48,9 @@ const CouponGrid = ({ campaigns, campaignStatus, onGenerateCode }) => {
                 onGenerateCode={onGenerateCode}
               />
             );
-          } else if (item.type === 'ad-mobile') {
+          } else if (item.type === 'ad') {
             return (
-              <div key="ad-mobile" className="col-span-2 block md:hidden">
-                <PromotionBottomAd />
-              </div>
-            );
-          } else if (item.type === 'ad-tablet') {
-            return (
-              <div key="ad-tablet" className="col-span-3 hidden md:block lg:hidden">
-                <PromotionBottomAd />
-              </div>
-            );
-          } else if (item.type === 'ad-desktop') {
-            return (
-              <div key="ad-desktop" className="col-span-4 hidden lg:block">
+              <div key="ad" className="col-span-1 md:col-span-2">
                 <PromotionBottomAd />
               </div>
             );

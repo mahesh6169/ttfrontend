@@ -1,7 +1,7 @@
 'use client';
 
 import { MdLocationOn, MdStore } from 'react-icons/md';
-import { FaTag, FaClock } from 'react-icons/fa';
+import { FaTag, FaClock, FaTicketAlt } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -105,76 +105,89 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
     : 'border-l-4 border-teal-700';
 
   return (
-    <div className={`relative border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200 transition-colors ${borderColorClass}`}>
-      {/* Store Logo */}
-      <div className="relative w-full h-32 sm:h-36 md:h-40 bg-white rounded-md overflow-hidden">
-        {campaign.store?.logo ? (
-          <img 
-            src={campaign.store.logo} 
-            alt={campaign.store.storeName}
-            className="w-full h-full object-contain p-2"
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center">
-            <MdStore className="text-6xl text-gray-400" />
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="p-4 space-y-2">
-        {/* Store Name */}
-        <h2 className="text-xs sm:text-sm text-center font-semibold my-1 px-2 truncate text-gray-800">
-          {campaign.store?.storeName}
-        </h2>
-
-        {/* Discount */}
-        <div className="flex items-start gap-2">
-          <FaTag className="text-teal-600 mt-1 flex-shrink-0" />
-          <div>
-            <p className="text-lg font-bold text-teal-700">
+    <div className={`relative h-full flex flex-col border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200 transition-colors ${borderColorClass}`}>
+      {/* Top Section: Store Name + Discount | Logo */}
+      <div className="flex gap-3 p-3 pb-2">
+        {/* Column 1: Store Name + Discount */}
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xs sm:text-sm font-bold text-gray-800 mb-2 truncate">
+            {campaign.store?.storeName}
+          </h2>
+          <div className="flex items-start gap-2">
+            <FaTag className="text-teal-600 mt-1 flex-shrink-0 text-sm" />
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-teal-700">
               {campaign.discount}
             </p>
-            <p className="text-xs text-gray-600">
-              on {campaign.discountProduct}
-            </p>
           </div>
         </div>
 
-        {/* Expiry Date */}
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <FaClock className="flex-shrink-0" />
-          <span>
-            Valid until {format(new Date(campaign.expiryDate), 'dd MMM yyyy')}
-          </span>
+        {/* Column 2: Logo */}
+        <div className="flex-1 flex-shrink-0">
+          <div className="relative w-full h-24 bg-white rounded-md overflow-hidden flex items-center justify-center">
+            {campaign.store?.logo ? (
+              <img 
+                src={campaign.store.logo} 
+                alt={campaign.store.storeName}
+                className="w-full h-full object-contain p-2"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center">
+                <MdStore className="text-4xl text-gray-300" />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Column 3: Full Width Details */}
+      <div className="flex flex-col flex-1 px-3 pb-3">
+        {/* Product */}
+        <div className="text-sm font-bold text-gray-700 my-1">
+          {campaign.discountProduct}
         </div>
 
-        {/* Location */}
-        {campaign.store?.address?.formattedAddress && (
-          <div className="flex items-center gap-2 text-xs text-gray-600 truncate">
-            <MdLocationOn className="flex-shrink-0" />
-            <span className="truncate">
-              {campaign.store.address.suburb || campaign.store.address.state || 
-               campaign.store.address.formattedAddress}
+        {/* Spacer to push button to bottom */}
+        <div className="flex-1"></div>
+
+        {/* Bottom Details */}
+        <div className="space-y-1">
+          {/* Expiry Date and Redemption Count */}
+          <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
+            <FaClock className="flex-shrink-0" />
+            <span>
+              Valid until {format(new Date(campaign.expiryDate), 'dd MMM yyyy')}
             </span>
+            {campaign.maxRedemptions > 0 && campaign.maxRedemptions !== Infinity && (
+              <>
+                <FaTicketAlt className="flex-shrink-0 ml-2" />
+                <span>
+                  {campaign.maxRedemptions - campaign.totalGenerated} left
+                </span>
+              </>
+            )}
           </div>
-        )}
 
-        {/* Redemption Count */}
-        {campaign.maxRedemptions > 0 && (
-          <div className="text-xs text-gray-500">
-            {campaign.totalGenerated}/{campaign.maxRedemptions} claimed
-          </div>
-        )}
+          {/* Location */}
+          {campaign.store?.address?.formattedAddress && (
+            <div className="flex items-center gap-1 text-xs font-medium text-gray-600 truncate">
+              <MdLocationOn className="flex-shrink-0" />
+              <span className="truncate">
+                {campaign.store.address.suburb || campaign.store.address.state ? 
+                  [campaign.store.address.suburb, campaign.store.address.state].filter(Boolean).join(', ') :
+                  campaign.store.address.formattedAddress}
+              </span>
+            </div>
+          )}
 
-        {/* Action Button */}
-        <button
-          onClick={handleButtonClick}
-          disabled={buttonConfig.disabled}
-          className={`w-full py-2 px-4 rounded-lg font-medium text-sm transition-colors ${buttonConfig.className}`}
-        >
-          {buttonConfig.text}
-        </button>
+          {/* Action Button */}
+          <button
+            onClick={handleButtonClick}
+            disabled={buttonConfig.disabled}
+            className={`w-full py-2 px-4 rounded-lg font-medium text-sm transition-colors mt-2 ${buttonConfig.className}`}
+          >
+            {buttonConfig.text}
+          </button>
+        </div>
       </div>
 
       {showModal && userCode && (

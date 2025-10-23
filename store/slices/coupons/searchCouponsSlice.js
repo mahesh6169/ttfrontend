@@ -38,12 +38,12 @@ export const searchCoupons = createAsyncThunk(
       );
       
       const campaignsResponses = await Promise.all(campaignsPromises);
-      const allCampaigns = campaignsResponses.flatMap((res, index) => 
-        (res.data.campaigns || []).map(campaign => ({
+      const allCampaigns = campaignsResponses.flatMap((res, index) => {
+        return (res.data.campaigns || []).map(campaign => ({
           ...campaign,
           store: stores[index]
-        }))
-      );
+        }));
+      });
 
       return {
         campaigns: allCampaigns,

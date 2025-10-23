@@ -92,14 +92,6 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
-      {/* Locked Fields Notice (if editing) */}
-      {isEditing && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-          <p className="text-yellow-800 text-sm font-medium">
-            Note: Campaign name, discount and product fields are locked once a campaign is created.
-          </p>
-        </div>
-      )}
 
       {/* Campaign Name */}
       <div>
@@ -111,11 +103,8 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           name="campaignName"
           value={formData.campaignName}
           onChange={handleChange}
-          disabled={isEditing}
           maxLength={100}
-          className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-            isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
-          }`}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="e.g., Summer Special, Grand Opening"
         />
         {errors.campaignName && (
@@ -133,10 +122,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           name="discount"
           value={formData.discount}
           onChange={handleChange}
-          disabled={isEditing}
-          className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-            isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
-          }`}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="e.g., 20% off, $10 off"
         />
         {errors.discount && (
@@ -154,10 +140,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           name="discountProduct"
           value={formData.discountProduct}
           onChange={handleChange}
-          disabled={isEditing}
-          className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-            isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
-          }`}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="e.g., all items, dinner menu"
         />
         {errors.discountProduct && (
