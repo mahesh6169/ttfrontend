@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import StoreAddressInput from '../StoreAddressInput';
 import { STORE_CATEGORIES } from '../storeCategories';
+import StoreImageUploader from './StoreImageUploader';
 
 export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
@@ -24,10 +25,11 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
     description: initialData?.description || '',
     isNationwide: initialData?.isNationwide || false,
     logo: null,
-    keepExistingLogo: initialData?.logo ? true : false
+    keepExistingLogo: false
   });
 
-  const [logoPreview, setLogoPreview] = useState(initialData?.logo || null);
+  const [existingLogo, setExistingLogo] = useState(initialData?.logo || null);
+  const [logoPreview, setLogoPreview] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -52,46 +54,6 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
   };
 
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setErrors(prev => ({ ...prev, logo: 'Please select an image file' }));
-        return;
-      }
-
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, logo: 'Logo must be under 2MB' }));
-        return;
-      }
-
-      setFormData(prev => ({ 
-        ...prev, 
-        logo: file,
-        keepExistingLogo: false
-      }));
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-
-      setErrors(prev => ({ ...prev, logo: null }));
-    }
-  };
-
-  const handleRemoveLogo = () => {
-    setFormData(prev => ({ 
-      ...prev, 
-      logo: null,
-      keepExistingLogo: false
-    }));
-    setLogoPreview(null);
-  };
 
   const validate = () => {
     const newErrors = {};
@@ -131,13 +93,15 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
       submitData.append('description', formData.description);
       submitData.append('isNationwide', formData.isNationwide);
       
+      // Handle logo
       if (formData.logo) {
+        // New logo being uploaded
         submitData.append('logo', formData.logo);
-      }
-
-      if (initialData && formData.keepExistingLogo) {
+      } else if (initialData && existingLogo) {
+        // Keep existing logo
         submitData.append('keepExistingLogo', 'true');
       }
+      // If neither, logo will be null (removed or never had one)
 
       await onSubmit(submitData);
     } catch (error) {
@@ -258,41 +222,15 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
       </div>
 
       {/* Logo Upload */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Store Logo
-        </label>
-        
-        {logoPreview && (
-          <div className="mb-3">
-            <img 
-              src={logoPreview} 
-              alt="Logo preview" 
-              className="w-32 h-32 object-contain border rounded"
-            />
-            <button
-              type="button"
-              onClick={handleRemoveLogo}
-              className="text-sm text-red-500 mt-2"
-            >
-              Remove logo
-            </button>
-          </div>
-        )}
-
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleLogoChange}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          Max 2MB. JPEG, PNG, or WebP
-        </p>
-        {errors.logo && (
-          <p className="text-red-500 text-sm mt-1">{errors.logo}</p>
-        )}
-      </div>
+      <StoreImageUploader
+        mode={initialData ? 'edit' : 'create'}
+        existingLogo={existingLogo}
+        setExistingLogo={setExistingLogo}
+        preview={logoPreview}
+        setPreview={setLogoPreview}
+        formData={formData}
+        setFormData={setFormData}
+      />
 
       {/* Submit Error */}
       {errors.submit && (

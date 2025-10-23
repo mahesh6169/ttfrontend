@@ -73,7 +73,7 @@ const BottomNavigation = () => {
           <span className="text-xs mt-0.5 font-medium">Forum</span>
         </Link>
 
-        <Link
+        {/* <Link
           href="/promotions"
           className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
             isActive('/promotions') 
@@ -83,7 +83,7 @@ const BottomNavigation = () => {
         >
           <MdLocalOffer size={20} />
           <span className="text-xs mt-0.5 font-medium">Deals</span>
-        </Link>
+        </Link> */}
 
         {isAuthenticated && (
           <Link

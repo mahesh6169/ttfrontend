@@ -105,34 +105,34 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
     : 'border-l-4 border-teal-700';
 
   return (
-    <div className={`relative h-full flex flex-col border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200 transition-colors ${borderColorClass}`}>
+    <div className={`relative h-full flex flex-col border rounded-lg shadow-md bg-gradient-to-br from-teal-50 to-lime-50 hover:from-teal-100 hover:to-lime-100 transition-all ${borderColorClass}`}>
       {/* Top Section: Store Name + Discount | Logo */}
       <div className="flex gap-3 p-3 pb-2">
         {/* Column 1: Store Name + Discount */}
-        <div className="flex-1 min-w-0">
-          <h2 className="text-xs sm:text-sm font-bold text-gray-800 mb-2 truncate">
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-teal-800 mb-1 truncate uppercase tracking-tight">
             {campaign.store?.storeName}
           </h2>
-          <div className="flex items-start gap-2">
-            <FaTag className="text-teal-600 mt-1 flex-shrink-0 text-sm" />
-            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-teal-700">
+          <div className="flex items-baseline gap-2 bg-teal-700 rounded-lg px-3 py-2 shadow-md">
+            <FaTag className="text-lime-100 flex-shrink-0 text-lg" />
+            <p className="text-2xl sm:text-3xl md:text-4xl font-black text-lime-100">
               {campaign.discount}
             </p>
           </div>
         </div>
 
         {/* Column 2: Logo */}
-        <div className="flex-1 flex-shrink-0">
-          <div className="relative w-full h-24 bg-white rounded-md overflow-hidden flex items-center justify-center">
-            {campaign.store?.logo ? (
+        <div className="flex-1 md:max-w-[192px] flex-shrink-0">
+          <div className="relative w-full h-24 bg-white rounded-lg overflow-hidden flex items-center justify-center shadow-sm border border-teal-200">
+            {campaign.store?.logo?.url ? (
               <img 
-                src={campaign.store.logo} 
+                src={campaign.store.logo.url} 
                 alt={campaign.store.storeName}
                 className="w-full h-full object-contain p-2"
               />
             ) : (
               <div className="h-full w-full flex items-center justify-center">
-                <MdStore className="text-4xl text-gray-300" />
+                <MdStore className="text-4xl text-teal-300" />
               </div>
             )}
           </div>
@@ -142,7 +142,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
       {/* Column 3: Full Width Details */}
       <div className="flex flex-col flex-1 px-3 pb-3">
         {/* Product */}
-        <div className="text-sm font-bold text-gray-700 my-1">
+        <div className="text-sm sm:text-base font-bold text-teal-800 my-1.5 bg-white/60 rounded px-2 py-1">
           {campaign.discountProduct}
         </div>
 
@@ -180,13 +180,15 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
           )}
 
           {/* Action Button */}
-          <button
-            onClick={handleButtonClick}
-            disabled={buttonConfig.disabled}
-            className={`w-full py-2 px-4 rounded-lg font-medium text-sm transition-colors mt-2 ${buttonConfig.className}`}
-          >
-            {buttonConfig.text}
-          </button>
+          <div className="text-center">
+            <button
+              onClick={handleButtonClick}
+              disabled={buttonConfig.disabled}
+              className={`inline-block py-2 px-4 rounded-lg font-medium text-sm transition-colors mt-2 ${buttonConfig.className}`}
+            >
+              {buttonConfig.text}
+            </button>
+          </div>
         </div>
       </div>
 

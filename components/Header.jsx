@@ -136,7 +136,7 @@ const Header = () => {
                 text="Events"
                 pathname={pathname}
               />
-              <DropdownNavLink
+              {/* <DropdownNavLink
                 href="/promotions"
                 icon={<MdLocalOffer size={20} />}
                 text="Deals"
@@ -145,7 +145,7 @@ const Header = () => {
                   { href: '/promotions/discountcode', text: 'Discount Codes' },
                   { href: '/promotions', text: 'Discounts', disabled: true }
                 ]}
-              />
+              /> */}
               <NavLink
                 href="/threads"
                 icon={<MdOutlineGroups2 size={30} />}
