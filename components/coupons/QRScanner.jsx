@@ -18,7 +18,6 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0,
         supportedScanTypes: [0],  // 0 = camera only, no file upload
-        showTorchButtonIfSupported: true,
         useBarCodeDetectorIfSupported: true,
         rememberLastUsedCamera: true,
         formatsToSupport: [0]  // QR_CODE only

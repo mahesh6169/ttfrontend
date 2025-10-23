@@ -61,7 +61,11 @@ export default function ValidationPage() {
     } catch (error) {
       console.error('❌ Store lookup error:', error);
       console.error('Response:', error.response?.data);
-      toast.error(error.response?.data?.message || 'Invalid Store ID');
+      if (error.response?.status === 404) {
+        toast.error('Store ID incorrect - not found');
+      } else {
+        toast.error(error.response?.data?.message || 'Store ID incorrect');
+      }
       setStoreInfo(null);
     }
   };
@@ -92,15 +96,16 @@ export default function ValidationPage() {
       
       if (response.data.success) {
         setValidationResult(response.data.validation);
-        toast.success('Code validated successfully');
       }
     } catch (error) {
       console.error('❌ Validation error:', error);
       console.error('Response:', error.response?.data);
-      toast.error(error.response?.data?.message || 'Validation failed');
+      const errorMessage = error.response?.data?.message || 
+                          (error.response?.status === 404 ? 'Code not found' : 'Invalid code');
+      toast.error(errorMessage);
       setValidationResult({
         isValid: false,
-        message: error.response?.data?.message || 'Invalid code'
+        message: errorMessage
       });
     } finally {
       setIsValidating(false);
@@ -320,14 +325,10 @@ export default function ValidationPage() {
                     </div>
                   ) : (
                     <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4 sm:p-6">
-                      <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                      <div className="flex items-center gap-2 mb-4 sm:mb-6">
                         <MdCancel className="text-red-600 w-6 h-6 sm:w-8 sm:h-8" />
-                        <h3 className="text-lg sm:text-xl font-bold text-red-900">Invalid Code</h3>
+                        <h3 className="text-lg sm:text-xl font-bold text-red-900">{validationResult.message || 'Invalid code'}</h3>
                       </div>
-
-                      <p className="text-sm sm:text-base text-red-700 mb-4 sm:mb-6">
-                        {validationResult.message || 'This code is not valid'}
-                      </p>
 
                       <button
                         onClick={() => {
