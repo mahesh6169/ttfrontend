@@ -1,12 +1,13 @@
 'use client';
 
-import { MdLocationOn, MdStore } from 'react-icons/md';
-import { FaTag, FaClock, FaTicketAlt } from 'react-icons/fa';
+import { MdLocationOn, MdStore, MdContentCopy } from 'react-icons/md';
+import { FaTag, FaClock, FaTicketAlt, FaWhatsapp, FaFacebook } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import axios from '@/utils/axiosConfig';
 import { toast } from 'react-toastify';
+import Link from 'next/link';
 import CodeModal from '../CodeModal';
 
 export default function CampaignCard({ campaign, onGenerateCode }) {
@@ -104,21 +105,64 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
     ? 'border-l-4 border-amber-400' 
     : 'border-l-4 border-teal-700';
 
+  const handleCopyLink = () => {
+    if (!campaign.slug) {
+      toast.error('Share link not available');
+      return;
+    }
+    const url = `${window.location.origin}/discountcode/${campaign.slug}`;
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard!');
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast.success('Link copied to clipboard!');
+      } catch (err) {
+        toast.error('Failed to copy link');
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const handleWhatsAppShare = () => {
+    if (!campaign.slug) {
+      toast.error('Share link not available');
+      return;
+    }
+    const url = `${window.location.origin}/discountcode/${campaign.slug}`;
+    const text = `Check out this discount: ${campaign.discount} on ${campaign.discountProduct} at ${campaign.store?.storeName}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
+  };
+
+  const handleFacebookShare = () => {
+    if (!campaign.slug) {
+      toast.error('Share link not available');
+      return;
+    }
+    const url = `${window.location.origin}/discountcode/${campaign.slug}`;
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+  };
+
   return (
     <div className={`relative h-full flex flex-col border rounded-lg shadow-md bg-gradient-to-br from-teal-50 to-lime-50 hover:from-teal-100 hover:to-lime-100 transition-all ${borderColorClass}`}>
       {/* Top Section: Store Name + Discount | Logo */}
       <div className="flex gap-3 p-3 pb-2">
         {/* Column 1: Store Name + Discount */}
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-teal-800 mb-1 truncate uppercase tracking-tight">
+          <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-teal-800 mb-1 line-clamp-2 uppercase tracking-tight">
             {campaign.store?.storeName}
           </h2>
-          <div className="flex items-baseline gap-2 bg-teal-700 rounded-lg px-3 py-2 shadow-md">
-            <FaTag className="text-lime-100 flex-shrink-0 text-lg" />
-            <p className="text-2xl sm:text-3xl md:text-4xl font-black text-lime-100">
-              {campaign.discount}
-            </p>
-          </div>
+          <p className="text-sm sm:text-base font-bold text-teal-800 line-clamp-2 leading-snug">
+            {campaign.discount} {campaign.discountProduct}
+          </p>
         </div>
 
         {/* Column 2: Logo */}
@@ -141,11 +185,6 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
       {/* Column 3: Full Width Details */}
       <div className="flex flex-col flex-1 px-3 pb-3">
-        {/* Product */}
-        <div className="text-sm sm:text-base font-bold text-teal-800 my-1.5 bg-white/60 rounded px-2 py-1">
-          {campaign.discountProduct}
-        </div>
-
         {/* Spacer to push button to bottom */}
         <div className="flex-1"></div>
 
@@ -179,15 +218,52 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
             </div>
           )}
 
-          {/* Action Button */}
-          <div className="text-center">
-            <button
-              onClick={handleButtonClick}
-              disabled={buttonConfig.disabled}
-              className={`inline-block py-2 px-4 rounded-lg font-medium text-sm transition-colors mt-2 ${buttonConfig.className}`}
-            >
-              {buttonConfig.text}
-            </button>
+          {/* Action Button and Share Icons */}
+          <div className="flex items-center justify-between gap-2 mt-2">
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={handleButtonClick}
+                disabled={buttonConfig.disabled}
+                className={`py-2 px-4 rounded-lg font-medium text-sm transition-colors ${buttonConfig.className}`}
+              >
+                {buttonConfig.text}
+              </button>
+              {campaign._id && (
+                <Link
+                  href={`/discountcode/views/${campaign._id}`}
+                  className="text-xs text-teal-600 hover:text-teal-700 underline"
+                >
+                  More details & terms
+                </Link>
+              )}
+            </div>
+
+            {/* Share Icons */}
+            {campaign.slug && (
+              <div className="flex gap-1.5">
+                <button
+                  onClick={handleCopyLink}
+                  className="flex items-center justify-center w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+                  title="Copy Link"
+                >
+                  <MdContentCopy className="text-base" />
+                </button>
+                <button
+                  onClick={handleWhatsAppShare}
+                  className="flex items-center justify-center w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded transition-colors"
+                  title="Share on WhatsApp"
+                >
+                  <FaWhatsapp className="text-base" />
+                </button>
+                <button
+                  onClick={handleFacebookShare}
+                  className="flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                  title="Share on Facebook"
+                >
+                  <FaFacebook className="text-base" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

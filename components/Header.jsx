@@ -142,7 +142,7 @@ const Header = () => {
                 text="Deals"
                 pathname={pathname}
                 items={[
-                  { href: '/promotions/discountcode', text: 'Discount Codes' },
+                  { href: '/discountcode', text: 'Discount Codes' },
                   { href: '/promotions', text: 'Discounts', disabled: true }
                 ]}
               /> */}
