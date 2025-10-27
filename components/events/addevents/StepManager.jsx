@@ -27,6 +27,7 @@ import {
   clearSuccessMessage,
   originalEventData,
   updateField,
+  toggleIsPaid,
 } from '@/store/slices/events/eventSlice';
 import { markCapacityStale } from '@/store/slices/events/eventCapacitySlice';
 
@@ -159,7 +160,14 @@ const StepManager = ({
             console.log('🎯 StepManager: Applying initialFormData:', initialFormData);
             Object.entries(initialFormData).forEach(([key, value]) => {
               console.log(`🎯 Setting ${key}:`, value);
-              dispatch(updateField({ field: key, value: value }));
+              
+              // Use toggleIsPaid for isPaid field to ensure totalSteps is updated
+              if (key === 'isPaid') {
+                console.log('🎯 Using toggleIsPaid to update both isPaid and totalSteps');
+                dispatch(toggleIsPaid(value));
+              } else {
+                dispatch(updateField({ field: key, value: value }));
+              }
             });
             
             // If isPaid is set, skip to step 2

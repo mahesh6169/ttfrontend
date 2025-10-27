@@ -1,40 +1,23 @@
 import { createSlugUrl } from '@/utils/slugUtils';
+import axios from '@/utils/axiosConfig';
 
 export async function GET() {
   const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
-  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-  if (!apiUrl) {
-    return new Response('API URL not configured', { status: 500 });
-  }
 
   try {
-    // Fetch all threads from API (only those with slugs for SEO)
-    const response = await fetch(`${apiUrl}/threads/sitemap`, {
-      next: { revalidate: 3600 } // Cache for 1 hour
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch threads');
-    }
-
-    const threads = await response.json();
+    const response = await axios.get('/threads/sitemap');
+    const threads = response.data;
     const threadsArray = Array.isArray(threads) ? threads : threads.data || [];
-
-    // Only include threads that have slugs
-    const threadsWithSlugs = threadsArray.filter(thread => thread.slug);
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${threadsWithSlugs.map(thread => {
+${threadsArray.map(thread => {
   const slug = createSlugUrl(thread.title, thread._id);
   const lastmod = thread.updatedAt ? new Date(thread.updatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
   
   return `  <url>
     <loc>${siteUrl}/threads/${slug}</loc>
     <lastmod>${lastmod}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
   </url>`;
 }).join('\n')}
 </urlset>`;

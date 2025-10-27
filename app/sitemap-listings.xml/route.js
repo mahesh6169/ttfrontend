@@ -1,24 +1,13 @@
 import { createSlugUrl } from '@/utils/slugUtils';
+import axios from '@/utils/axiosConfig';
 
 export async function GET() {
+  console.log('🚀 LISTINGS SITEMAP CALLED');
   const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
-  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-  if (!apiUrl) {
-    return new Response('API URL not configured', { status: 500 });
-  }
 
   try {
-    // Fetch all listings from API
-    const response = await fetch(`${apiUrl}/adverts/sitemap`, {
-      next: { revalidate: 3600 } // Cache for 1 hour
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch listings');
-    }
-
-    const listings = await response.json();
+    const response = await axios.get('/adverts/sitemap');
+    const listings = response.data;
     const listingsArray = Array.isArray(listings) ? listings : listings.data || [];
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -30,8 +19,6 @@ ${listingsArray.map(listing => {
   return `  <url>
     <loc>${siteUrl}/listings/${slug}</loc>
     <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
   </url>`;
 }).join('\n')}
 </urlset>`;
@@ -47,3 +34,4 @@ ${listingsArray.map(listing => {
     return new Response('Error generating sitemap', { status: 500 });
   }
 }
+

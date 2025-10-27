@@ -2,13 +2,14 @@ export async function GET() {
   const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
   
   const staticPages = [
-    { url: '', priority: '1.0', changefreq: 'daily' },
-    { url: '/listings', priority: '0.9', changefreq: 'daily' },
-    { url: '/events', priority: '0.8', changefreq: 'weekly' },
-    { url: '/threads', priority: '0.8', changefreq: 'daily' },
-    { url: '/support/contact', priority: '0.5', changefreq: 'monthly' },
-    { url: '/support/terms', priority: '0.3', changefreq: 'yearly' },
-    { url: '/support/privacy', priority: '0.3', changefreq: 'yearly' },
+    { url: '' },
+    { url: '/listings' },
+    { url: '/events' },
+    { url: '/threads' },
+    { url: '/discountcode' },
+    { url: '/support/contact' },
+    { url: '/support/terms' },
+    { url: '/support/privacy' },
   ];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -16,8 +17,6 @@ export async function GET() {
 ${staticPages.map(page => `  <url>
     <loc>${siteUrl}${page.url}</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>${page.changefreq}</changefreq>
-    <priority>${page.priority}</priority>
   </url>`).join('\n')}
 </urlset>`;
 

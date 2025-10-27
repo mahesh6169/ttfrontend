@@ -1,24 +1,12 @@
 import { createSlugUrl } from '@/utils/slugUtils';
+import axios from '@/utils/axiosConfig';
 
 export async function GET() {
   const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
-  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-  if (!apiUrl) {
-    return new Response('API URL not configured', { status: 500 });
-  }
 
   try {
-    // Fetch all events from API
-    const response = await fetch(`${apiUrl}/events/sitemap`, {
-      next: { revalidate: 3600 } // Cache for 1 hour
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch events');
-    }
-
-    const events = await response.json();
+    const response = await axios.get('/events/sitemap');
+    const events = response.data;
     const eventsArray = Array.isArray(events) ? events : events.data || [];
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -30,8 +18,6 @@ ${eventsArray.map(event => {
   return `  <url>
     <loc>${siteUrl}/events/${slug}</loc>
     <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
   </url>`;
 }).join('\n')}
 </urlset>`;
