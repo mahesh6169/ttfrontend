@@ -218,7 +218,7 @@ const SeatSelectionPage = () => {
     }
 
     // Navigate to checkout
-    router.push(`/checkout/events/${eventId}`);
+    router.push(`/events/checkout/${eventId}`);
   };
 
   // Handle back navigation

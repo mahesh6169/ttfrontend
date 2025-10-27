@@ -492,7 +492,7 @@ const TicketSelectionPage = () => {
         router.push(`/events/seats/${eventId}`);
       } else {
         // Navigate directly to checkout
-        router.push(`/checkout/events/${eventId}`);
+        router.push(`/events/checkout/${eventId}`);
       }
     } catch (error) {
       console.error('Error proceeding to checkout:', error);

@@ -24,7 +24,7 @@ import {
   FaDownload,
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
-import { generateTicketsPDF } from '../../../../utils/paidEventTicketGenerator';
+import { generateTicketsPDF } from '@/utils/paidEventTicketGenerator';
 import RequireLogin from '@/components/Auth/RequireLogin';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import StripePaymentForm from '@/components/payments/StripePaymentForm';
