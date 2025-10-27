@@ -4,7 +4,14 @@ import RightAd from '@/components/ads/RightAd';
 import Footer from '@/components/Footer';
 import StateSelector from '@/components/ads/StateSelector';
 
-const EventsLayout = ({ children }) => {
+export const metadata = {
+  title: {
+    template: '%s | Desify',
+    default: 'Events'
+  }
+};
+
+const EventsWithAdsLayout = ({ children }) => {
   return (
     <main id="Parent" className="container bg-white my-2 mx-auto">
       <StateSelector />
@@ -21,4 +28,4 @@ const EventsLayout = ({ children }) => {
   );
 };
 
-export default EventsLayout;
+export default EventsWithAdsLayout;
