@@ -137,13 +137,13 @@ const Header = () => {
                 pathname={pathname}
               />
               {/* <DropdownNavLink
-                href="/promotions"
+                href="/deals"
                 icon={<MdLocalOffer size={20} />}
                 text="Deals"
                 pathname={pathname}
                 items={[
                   { href: '/discountcode', text: 'Discount Codes' },
-                  { href: '/promotions', text: 'Discounts', disabled: true }
+                  { href: '/deals', text: 'Discounts', disabled: true }
                 ]}
               /> */}
               <NavLink

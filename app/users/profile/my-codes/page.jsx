@@ -108,7 +108,7 @@ export default function MyCodesPage() {
               Browse promotions to get your first discount code
             </p>
             <button
-              onClick={() => router.push('/promotions')}
+              onClick={() => router.push('/deals')}
               className="bg-teal-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-teal-700 transition-colors"
             >
               Browse Promotions

@@ -7,7 +7,7 @@ import { META_DEFAULTS } from '@/utils/slugUtils';
 
 export const metadata = {
   alternates: {
-    canonical: `${META_DEFAULTS.siteUrl}/promotions`
+    canonical: `${META_DEFAULTS.siteUrl}/deals`
   }
 };
 
