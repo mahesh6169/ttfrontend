@@ -38,7 +38,7 @@ const AdvertDetail = () => {
       <div className="text-center text-red-500 mt-8">
         <p>{error}</p>
         <button 
-          onClick={() => router.push('/listings')}
+          onClick={() => router.back()}
           className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
         >
           Go Back
@@ -52,7 +52,7 @@ const AdvertDetail = () => {
       <div className="text-center text-gray-500 mt-8">
         <p>Listing not found.</p>
         <button 
-          onClick={() => router.push('/listings')}
+          onClick={() => router.back()}
           className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
         >
           Go Back
@@ -67,7 +67,7 @@ const AdvertDetail = () => {
       <div className="mt-4 flex justify-between items-center">
         {/* Back to Listings */}
         <button
-          onClick={() => router.push('/listings')}
+          onClick={() => router.back()}
           className="flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
         >
           <span>&lt;</span>

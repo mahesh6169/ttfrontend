@@ -1,746 +1,81 @@
-'use client';
+import ListingsSection from '@/components/home/ListingsSection';
+import EventsSection from '@/components/home/EventsSection';
+import ThreadsSection from '@/components/home/ThreadsSection';
 
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { 
-  searchAdverts, 
-  fetchFilterOptions,
-  toggleCategory,
-  toggleCommunity,
-  setLocation,
-  updateFilter,
-  clearAllFilters,
-  updatePagination
-} from '@/store/slices/adverts/searchAdvertsSlice';
-import { COMMUNITIES } from '@/utils/constants/communities';
-import AdvertList from '@/components/adverts/advertcomponents/AdvertList';
-import Pagination from '@/components/Pagination';
-import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
-import Link from 'next/link';
-import { toast } from 'react-toastify';
-import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import PostListingButton from '@/components/buttons/PostListingButton';
-import { getCategoryDisplayName } from '@/constants/categories';
-import PromoBanner from '@/components/PromoBanner';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
 
-// Layout components
-import StateSelector from '@/components/ads/StateSelector';
-import TopAd from '@/components/ads/TopAd';
-import LeftAd from '@/components/ads/LeftAd';
-import RightAd from '@/components/ads/RightAd';
-import Footer from '@/components/Footer';
-
-const libraries = ['places'];
-
-export default function Home() {
-  const dispatch = useDispatch();
-  const { filters, pagination, adverts, meta, status, error, filterOptions } = useSelector((state) => state.searchAdverts);
+async function fetchHomeData() {
+  console.log('🏠 Fetching homepage data...');
   
-  // Local state for UI
-  const [locationInput, setLocationInput] = useState('');
-  const [autocomplete, setAutocomplete] = useState(null);
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [searchText, setSearchText] = useState(filters.searchText || '');
-  
-  // Modal filter states
-  const [tempFilters, setTempFilters] = useState({});
+  try {
+    const [listingsRes, eventsRes, threadsRes] = await Promise.all([
+      fetch(`${API_BASE_URL}/home/listings`, {
+        headers: { 'x-api-key': API_KEY },
+        next: { revalidate: 300 },
+      }),
+      fetch(`${API_BASE_URL}/home/events`, {
+        headers: { 'x-api-key': API_KEY },
+        next: { revalidate: 300 },
+      }),
+      fetch(`${API_BASE_URL}/home/threads`, {
+        headers: { 'x-api-key': API_KEY },
+        next: { revalidate: 300 },
+      }),
+    ]);
 
-  //Add state for sort menu
-const [showSortMenu, setShowSortMenu] = useState(false);
+    if (!listingsRes.ok || !eventsRes.ok || !threadsRes.ok) {
+      console.error('❌ API call failed:', {
+        listings: listingsRes.status,
+        events: eventsRes.status,
+        threads: threadsRes.status,
+      });
+      throw new Error('Failed to fetch homepage data');
+    }
 
-const sortOptions = [
-  { value: 'newest', label: 'Newest first' },
-  { value: 'oldest', label: 'Oldest first' },
-  // Add more options in the future
-  // { value: 'price_low', label: 'Price: low to high' },
-  // { value: 'price_high', label: 'Price: high to low' },
-  // { value: 'distance', label: 'Distance' },
-];
+    const [listingsData, eventsData, threadsData] = await Promise.all([
+      listingsRes.json(),
+      eventsRes.json(),
+      threadsRes.json(),
+    ]);
 
-  // Initialize temporary filters
-  useEffect(() => {
-    setTempFilters({
-      categories: [...filters.categories],
-      communities: [...filters.communities],
-      location: filters.location,
-      state: filters.state || '',
-      adType: filters.adType,
-      sortBy: filters.sortBy,
+    console.log('✅ Homepage data fetched successfully:', {
+      listings: listingsData.data?.listings?.length || 0,
+      events: eventsData.data?.events?.length || 0,
+      threads: threadsData.data?.threads?.length || 0,
     });
-    // Set location input when filter modal opens
-    if (filters.location) {
-      setLocationInput(filters.location.name || '');
-    }
-  }, [showFilters, filters]);
 
-  // Initial load - fetch filter options
-  useEffect(() => {
-    dispatch(fetchFilterOptions())
-      .unwrap()
-      .catch((error) => {
-        toast.error('Failed to load filter options');
-      });
-  }, [dispatch]);
+    return {
+      listings: listingsData.data?.listings || [],
+      events: eventsData.data?.events || [],
+      threads: threadsData.data?.threads || [],
+    };
+  } catch (error) {
+    console.error('❌ Error fetching homepage data:', error);
+    return {
+      listings: [],
+      events: [],
+      threads: [],
+    };
+  }
+}
 
-  // Search whenever filters change
-  useEffect(() => {
-    dispatch(searchAdverts());
-  }, [filters, pagination.page, dispatch]);
-
-  // Sync local searchText with Redux state when filters are cleared
-  useEffect(() => {
-    if (filters.searchText === '' && searchText !== '') {
-      setSearchText('');
-    }
-  }, [filters.searchText]);
-
-  const handlePlaceChanged = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
-      if (place.geometry) {
-        const coordinates = [
-          place.geometry.location.lng(),
-          place.geometry.location.lat()
-        ];
-        dispatch(setLocation({ 
-          coordinates, 
-          radius: 10,
-          name: place.formatted_address || 'Selected Location'
-        }));
-        setLocationInput(place.formatted_address);
-      }
-    }
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
-  };
-
-  const handleClearLocation = () => {
-    dispatch(updateFilter({ filterType: 'location', value: null }));
-    setLocationInput('');
-  };
-
-  const handleClearSearch = () => {
-    dispatch(updateFilter({ filterType: 'searchText', value: '' }));
-    setSearchText('');
-  };
-
-  // Modal functions
-  const handleClearAllTempFilters = () => {
-    // Clear all temporary filters
-    setTempFilters({
-      categories: [],
-      communities: [],
-      location: null,
-      state: '',
-      adType: null,
-      sortBy: 'newest',
-    });
-    setLocationInput('');
-    // Clear the search text
-    setSearchText('');
-    
-    // Apply the clear action immediately to Redux
-    dispatch(clearAllFilters());
-  };
-
-//  function to handle sort changes
-const handleSortChange = (sortValue) => {
-  dispatch(updateFilter({ filterType: 'sortBy', value: sortValue }));
-  setShowSortMenu(false);
-};
-
-//current sort label for display
-const getCurrentSortLabel = () => {
-  const option = sortOptions.find(opt => opt.value === filters.sortBy);
-  return option?.label || 'Newest first';
-};
-
-  const applyFilters = () => {
-    // Apply all temporary filters to the store
-    if (JSON.stringify(tempFilters.categories) !== JSON.stringify(filters.categories)) {
-      filters.categories.forEach(cat => {
-        if (!tempFilters.categories.includes(cat)) {
-          dispatch(toggleCategory(cat));
-        }
-      });
-      tempFilters.categories.forEach(cat => {
-        if (!filters.categories.includes(cat)) {
-          dispatch(toggleCategory(cat));
-        }
-      });
-    }
-    
-    // Apply communities filter
-    if (JSON.stringify(tempFilters.communities) !== JSON.stringify(filters.communities)) {
-      filters.communities.forEach(comm => {
-        if (!tempFilters.communities.includes(comm)) {
-          dispatch(toggleCommunity(comm));
-        }
-      });
-      tempFilters.communities.forEach(comm => {
-        if (!filters.communities.includes(comm)) {
-          dispatch(toggleCommunity(comm));
-        }
-      });
-    }
-    
-    // Apply location filter
-    if (tempFilters.location) {
-      dispatch(setLocation(tempFilters.location));
-    } else if (filters.location && !tempFilters.location) {
-      dispatch(updateFilter({ filterType: 'location', value: null }));
-    }
-    
-    // Apply state filter
-    if (tempFilters.state !== filters.state) {
-      dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
-    }
-    
-    // Apply ad type and sort
-    dispatch(updateFilter({ filterType: 'adType', value: tempFilters.adType }));
-    dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
-    
-    setShowFilters(false);
-  };
-
-  useEffect(() => {
-    setSearchText(filters.searchText || '');
-  }, [filters.searchText]);
-
-  useEffect(() => {
-    if (status === 'failed' && error) {
-      toast.error(error.message || error || 'An error occurred');
-    }
-  }, [status, error]);
-
-  const getActiveFilterCount = () => {
-    let count = 0;
-    if (filters.categories.length > 0) count++;
-    if (filters.communities.length > 0) count++;
-    if (filters.location) count++;
-    if (filters.state) count++;
-    if (filters.searchText) count++;
-    if (filters.adType) count++;
-    return count;
-  };
-
-  const getTotalResults = () => {
-    return meta.totalRecords || adverts.length;
-  };
+export default async function HomePage() {
+  const { listings, events, threads } = await fetchHomeData();
 
   return (
-    <main id="Parent" className="container my-2 mx-auto">
-      <StateSelector />
-      <TopAd />
-      <div className="flex gap-2">
-        <LeftAd />
-        <div id="Main" className="flex-1 overflow-hidden">
-          <div className="flex flex-col relative">
-            {/* Modal Overlay */}
-            {showFilters && (
-              <div 
-                className="fixed inset-0 bg-black bg-opacity-50 z-40"
-                onClick={() => setShowFilters(false)}
-              ></div>
-            )}
-
-            {/* Filter Modal - Mobile and Desktop Overlay */}
-            <div className={`fixed z-50 bg-white rounded-lg shadow-xl overflow-hidden
-              w-full max-w-xl 
-              inset-y-0 right-0 sm:inset-y-auto sm:top-10 sm:bottom-10 sm:left-1/2 sm:right-auto sm:-translate-x-1/2
-              transition-all duration-300 ease-in-out
-              ${showFilters 
-                ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto' 
-                : 'translate-x-full sm:translate-x-0 sm:opacity-0 sm:scale-95 sm:pointer-events-none'}`}>
-
-              <div className="h-full overflow-y-auto">
-                {/* Modal Header */}
-                <div className="sticky top-0 flex items-center justify-between px-4 py-3 bg-white border-b z-10">
-                  <h2 className="text-lg font-semibold">Filters</h2>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={handleClearAllTempFilters}
-                      className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      onClick={() => setShowFilters(false)}
-                      className="text-xl text-gray-600 hover:text-gray-800 transition-colors"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-
-                {/* Filter Content */}
-                <div className="flex-1 overflow-y-auto p-3 pb-20 sm:pb-3">
-                  {/* State Filter */}
-                  <div className="mb-4">
-                    <h3 className="font-semibold text-gray-700 mb-3">State</h3>
-                    <div className="grid grid-cols-4 gap-2">
-                      {AUSTRALIAN_STATES.map(state => (
-                        <button
-                          key={state.code}
-                          onClick={() => {
-                            if (tempFilters.state === state.code) {
-                              setTempFilters({ ...tempFilters, state: '' });
-                            } else {
-                              setTempFilters({ ...tempFilters, state: state.code, location: null });
-                              setLocationInput('');
-                            }
-                          }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            tempFilters.state === state.code
-                              ? 'bg-teal-500 text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          } ${tempFilters.location ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          disabled={!!tempFilters.location}
-                          title={state.name}
-                        >
-                          {state.code}
-                        </button>
-                      ))}
-                    </div>
-                    {tempFilters.location && (
-                      <p className="text-xs text-gray-500 mt-2">Clear location to use state filter</p>
-                    )}
-                  </div>
-
-                  {/* Location with Radius */}
-                  <div className={`mb-4 ${tempFilters.state ? 'opacity-50' : ''}`}>
-                    <h3 className="font-semibold text-gray-700 mb-3">Location</h3>
-                    {tempFilters.state && (
-                      <p className="text-xs text-gray-500 mb-2">Clear state selection to use location filter</p>
-                    )}
-                    <LoadScriptNext
-                      googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-                      libraries={libraries}
-                      onLoad={() => setIsScriptLoaded(true)}
-                    >
-                      <div className="relative">
-                        <Autocomplete
-                          onLoad={(autocompleteInstance) => setAutocomplete(autocompleteInstance)}
-                          onPlaceChanged={() => {
-                            if (autocomplete && !tempFilters.state) {
-                              const place = autocomplete.getPlace();
-                              if (place.geometry) {
-                                const coordinates = [
-                                  place.geometry.location.lng(),
-                                  place.geometry.location.lat()
-                                ];
-                                const location = {
-                                  coordinates,
-                                  radius: tempFilters.location?.radius || 10,
-                                  name: place.formatted_address || 'Selected Location'
-                                };
-                                setTempFilters({ ...tempFilters, location, state: '' });
-                                setLocationInput(place.formatted_address);
-                              }
-                            }
-                          }}
-                          options={{
-                            componentRestrictions: { country: 'au' },
-                            types: ['geocode']
-                          }}
-                        >
-                          <input
-                            type="text"
-                            placeholder="Enter Suburb & Radius of search..."
-                            value={locationInput}
-                            onChange={(e) => setLocationInput(e.target.value)}
-                            className="w-full p-3 pr-10 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            disabled={!!tempFilters.state}
-                          />
-                        </Autocomplete>
-                        {tempFilters.location && (
-                          <button
-                            onClick={() => {
-                              setTempFilters({ ...tempFilters, location: null });
-                              setLocationInput('');
-                            }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                            title="Clear location"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </LoadScriptNext>
-                    
-                    {tempFilters.location && (
-                      <div className="mt-3">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-sm text-gray-600">
-                            Search within:
-                          </label>
-                          <span className="text-sm font-medium text-gray-700">
-                            {tempFilters.location.radius} km
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="200"
-                          value={tempFilters.location.radius || 10}
-                          onChange={(e) => {
-                            const radius = parseInt(e.target.value);
-                            setTempFilters({
-                              ...tempFilters,
-                              location: { ...tempFilters.location, radius }
-                            });
-                          }}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer 
-                            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 
-                            [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                            [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:bg-teal-700
-                            [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600 
-                            [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0
-                            [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:bg-teal-700"
-                        />
-                        <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                          <span>1 km</span>
-                          <span>200 km</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Categories */}
-                  <div className="mb-4">
-                    <h3 className="font-semibold text-gray-700 mb-3">Categories</h3>
-                    <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
-                      <div className="space-y-1 p-2">
-                        {filterOptions.categories.length === 0 ? (
-                          <p className="text-sm text-gray-500 text-center py-4">
-                            No categories available
-                          </p>
-                        ) : (
-                          filterOptions.categories.map((category) => (
-                          <label
-                            key={category}
-                            className="flex items-center cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={tempFilters.categories?.includes(category) || false}
-                              onChange={() => {
-                                const currentCategories = tempFilters.categories || [];
-                                const newCategories = currentCategories.includes(category)
-                                  ? currentCategories.filter(c => c !== category)
-                                  : [...currentCategories, category];
-                                setTempFilters({ ...tempFilters, categories: newCategories });
-                              }}
-                              className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{getCategoryDisplayName(category)}</span>
-                          </label>
-                        )))
-                        }
-                      </div>
-                    </div>
-                    {tempFilters.categories?.length > 0 && (
-                      <p className="text-xs text-gray-600 mt-1">
-                        {tempFilters.categories.length} selected
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Communities */}
-                  <div className="mb-4">
-                    <h3 className="font-semibold text-gray-700 mb-3">Community/Language</h3>
-                    <div className="max-h-[7.5rem] overflow-y-auto border border-gray-200 rounded-md p-2">
-                      <div className="grid grid-cols-2 gap-1">
-                        {COMMUNITIES.map((community) => (
-                          <label
-                            key={community.value}
-                            className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={tempFilters.communities?.includes(community.value) || false}
-                              onChange={() => {
-                                const currentCommunities = tempFilters.communities || [];
-                                const newCommunities = currentCommunities.includes(community.value)
-                                  ? currentCommunities.filter(c => c !== community.value)
-                                  : [...currentCommunities, community.value];
-                                setTempFilters({ ...tempFilters, communities: newCommunities });
-                              }}
-                              className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{community.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    {tempFilters.communities?.length > 0 && (
-                      <p className="text-xs text-gray-600 mt-1">
-                        {tempFilters.communities.length} selected
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Ad Type */}
-                  <div className="mb-4">
-                    <h3 className="font-semibold text-gray-700 mb-3">Ad Type</h3>
-                    <div className="flex gap-2">
-                      {['All', 'Offered', 'Wanted'].map((type) => (
-                        <label key={type} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors flex-1">
-                          <input
-                            type="radio"
-                            name="adType"
-                            checked={type === 'All' ? !tempFilters.adType : tempFilters.adType === type.toLowerCase()}
-                            onChange={() => {
-                              const value = type === 'All' ? null : type.toLowerCase();
-                              setTempFilters({ ...tempFilters, adType: value });
-                            }}
-                            className="w-4 h-4 text-teal-600 focus:ring-teal-500 focus:ring-2"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">{type}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Apply Button */}
-                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t sm:sticky">
-                  <button
-                    onClick={applyFilters}
-                    className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-3 rounded shadow font-semibold transition-colors"
-                  >
-                    Show results
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Main Content */}
-            <div className="w-full">
-              {/* Hero Banner */}
-              {/* <div className="my-4 px-4">
-                <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
-                  <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
-                    <span className="text-amber-500">Find</span>
-                    <span className="text-teal-700 mx-2">•</span>
-                    <span className="text-teal-700">Offer</span>
-                    <span className="text-teal-700 mx-2">•</span>
-                    <span className="text-amber-500">Reach</span>
-                  </h1>
-                  <p className="text-gray-600 text-center text-sm mt-2">Connect with your community</p>
-                </div>
-              </div> */}
-
-              {/* Post Advert Button and Promo Banner */}
-              <div className="my-2 px-4">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div className="shrink-0">
-                    <PostListingButton />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <PromoBanner page="listings" inline={true} showAll={true} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Search Bar with Sort/Filter buttons */}
-              <div className="px-3 mb-3 sm:px-4 sm:mb-4">
-                <form onSubmit={handleSearchSubmit} className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    placeholder="Search adverts..."
-                    className="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                  />
-                  <button
-                    type="submit"
-                    className="bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 px-4 py-2 rounded shadow transition-colors text-sm font-medium"
-                  >
-                    Search
-                  </button>
-                </form>
-
-                {/* Page Controls - Sort and Filter */}
-                <div className="flex gap-2 md:gap-3 justify-center">
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
-                  >
-                    <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                    </svg>
-                    <span className="font-medium">Filter</span>
-                    {getActiveFilterCount() > 0 && (
-                      <span className="bg-teal-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                        {getActiveFilterCount()}
-                      </span>
-                    )}
-                  </button>
-                  
-                  <div className="relative">
-    <button 
-      className="flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
-      onClick={() => setShowSortMenu(!showSortMenu)}
-    >
-      <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-      </svg>
-      <span className="font-medium">Sort: {getCurrentSortLabel()}</span>
-    </button>
-    
-    {/* Sort dropdown menu */}
-    {showSortMenu && (
-      <>
-        <div 
-          className="fixed inset-0 z-20" 
-          onClick={() => setShowSortMenu(false)}
-        ></div>
-        <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-30 border border-gray-200 py-1">
-          {sortOptions.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => handleSortChange(option.value)}
-              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
-                filters.sortBy === option.value ? 'bg-gray-50 font-medium' : ''
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </>
-    )}
-  </div>
-                </div>
-              </div>
-
-              {/* Active Filters Display */}
-              {getActiveFilterCount() > 0 && (
-                <div className="bg-gray-50 border-y">
-                  <div className="px-3 py-3 sm:px-4 flex items-center gap-3 max-w-full">
-                    <span className="text-sm text-gray-600 font-medium whitespace-nowrap flex-shrink-0">
-                      Active filters:
-                    </span>
-                    
-                    <div className="flex-1 overflow-x-auto">
-                      <div className="flex gap-2 pb-1">
-                        {filters.categories.map((category) => (
-                          <span
-                            key={category}
-                            className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
-                          >
-                            {getCategoryDisplayName(category)}
-                            <button
-                              onClick={() => dispatch(toggleCategory(category))}
-                              className="hover:text-gray-900 font-bold ml-1"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-
-                        {filters.communities.map((community) => {
-                          const communityLabel = COMMUNITIES.find(c => c.value === community)?.label || community;
-                          return (
-                            <span
-                              key={community}
-                              className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
-                            >
-                              {communityLabel}
-                              <button
-                                onClick={() => dispatch(toggleCommunity(community))}
-                                className="hover:text-gray-900 font-bold ml-1"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          );
-                        })}
-                        
-                        {filters.state && (
-                          <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
-                            State: {filters.state}
-                            <button
-                              onClick={() => dispatch(updateFilter({ filterType: 'state', value: '' }))}
-                              className="hover:text-gray-900 font-bold ml-1"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        )}
-                        
-                        {filters.location && (
-                          <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                            </svg>
-                            {filters.location.radius}km from {filters.location.name.split(',')[0]}
-                            <button
-                              onClick={handleClearLocation}
-                              className="hover:text-gray-900 font-bold ml-1"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        )}
-
-                        {filters.searchText && (
-                          <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
-                            Search: "{filters.searchText}"
-                            <button
-                              onClick={handleClearSearch}
-                              className="hover:text-gray-900 font-bold ml-1"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        )}
-
-                        {filters.adType && (
-                          <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
-                            Type: {filters.adType}
-                            <button
-                              onClick={() => dispatch(updateFilter({ filterType: 'adType', value: null }))}
-                              className="hover:text-gray-900 font-bold ml-1"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Advert Listing */}
-              <div className="px-3 sm:px-4 mt-4">
-                <AdvertList adverts={adverts} advertStatus={status} />
-              </div>
-
-              {/* Pagination */}
-              <div className="mt-4 mb-3 sm:mt-6 sm:mb-4">
-                <Pagination
-                  currentPage={meta.currentPage}
-                  totalPages={meta.totalPages}
-                  onPageChange={(pageNum) => 
-                    dispatch(updatePagination({ page: pageNum }))
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <RightAd />
+    <main className="container mx-auto py-4 bg-white">
+      <div className="text-center mb-6 px-4">
+        <h1 className="text-base sm:text-xl font-bold text-teal-700">
+          <span className="block sm:inline">Browse Community</span>
+          <span className="hidden sm:inline"> - </span>
+          <span className="block sm:inline">Listings, Events and Discussions</span>
+        </h1>
       </div>
-      <Footer />
+
+      <ListingsSection listings={listings} />
+      <EventsSection events={events} />
+      <ThreadsSection threads={threads} />
     </main>
   );
 }

@@ -369,7 +369,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     <div className="mt-4 flex justify-between items-center">
       {/* Back to Topics */}
       <button
-        onClick={() => router.push('/threads')}
+        onClick={() => router.back()}
         className="flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
       >
         <span>&lt;</span>

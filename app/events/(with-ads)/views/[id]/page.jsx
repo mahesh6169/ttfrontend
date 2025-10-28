@@ -57,7 +57,7 @@ const EventDetail = () => {
               router.push(returnUrl);
               localStorage.removeItem('eventViewReturnUrl');
             } else {
-              router.push('/events');
+              router.back();
             }
           }}
           className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
@@ -79,7 +79,7 @@ const EventDetail = () => {
               router.push(returnUrl);
               localStorage.removeItem('eventViewReturnUrl');
             } else {
-              router.push('/events');
+              router.back();
             }
           }}
           className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
@@ -105,7 +105,7 @@ const EventDetail = () => {
               localStorage.removeItem('eventViewReturnUrl');
             } else {
               // Default to events page
-              router.push('/events');
+              router.back();
             }
           }}
           className="flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
