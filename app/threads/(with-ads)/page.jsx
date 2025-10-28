@@ -19,7 +19,7 @@ import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
-import { toast } from 'react-toastify';
+import { FaFrown } from 'react-icons/fa';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import PostTopicButton from '@/components/buttons/PostTopicButton';
 import BottomAd from '@/components/ads/BottomAd';
@@ -83,7 +83,7 @@ const ThreadsPage = () => {
     dispatch(fetchFilterOptions())
       .unwrap()
       .catch((error) => {
-        toast.error('Failed to load filter options');
+        console.error('Failed to load filter options:', error);
       });
     
     // Also fetch recent activity
@@ -209,7 +209,7 @@ const ThreadsPage = () => {
 
   useEffect(() => {
     if (status === 'failed' && error) {
-      toast.error(error.message || error || 'An error occurred');
+      console.error('Search failed:', error.message || error || 'An error occurred');
     }
   }, [status, error]);
 
@@ -689,6 +689,12 @@ const ThreadsPage = () => {
         {/* Thread Listing with spacing from filters */}
         {status === 'loading' ? (
           <div className="text-center p-4 min-h-[400px] flex items-center justify-center">Loading threads...</div>
+        ) : status === 'failed' ? (
+          <div className="flex flex-col justify-center items-center text-center p-8 min-h-[400px]">
+            <FaFrown className="text-gray-400 text-4xl sm:text-5xl mb-4" />
+            <p className="text-gray-600 text-sm sm:text-base mb-2">Something went wrong</p>
+            <p className="text-gray-500 text-xs sm:text-sm">Please try again later</p>
+          </div>
         ) : threads.length > 0 ? (
           <div className="space-y-3 px-3 sm:px-4 mt-4 min-h-[400px]">
             {threads.map((thread, index) => (

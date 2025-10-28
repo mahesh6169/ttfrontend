@@ -72,7 +72,7 @@ const sortOptions = [
     dispatch(fetchFilterOptions())
       .unwrap()
       .catch((error) => {
-        toast.error('Failed to load filter options');
+        console.error('Failed to load filter options:', error);
       });
   }, [dispatch]);
 
@@ -206,7 +206,7 @@ const getCurrentSortLabel = () => {
 
   useEffect(() => {
     if (status === 'failed' && error) {
-      toast.error(error.message || error || 'An error occurred');
+      console.error('Search failed:', error.message || error || 'An error occurred');
     }
   }, [status, error]);
 

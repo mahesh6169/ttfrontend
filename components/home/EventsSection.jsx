@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
+import { FaFrown } from 'react-icons/fa';
 import HomeCard from './HomeCard';
 import PromoBanner from '../PromoBanner';
 
@@ -115,15 +116,37 @@ const EventsSection = ({ events }) => {
 
   if (!events || events.length === 0) {
     return (
-      <section className="py-3 px-2 sm:py-6 sm:px-4">
+      <section className="py-2 px-2 sm:py-3 sm:px-4">
         <div className="bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg sm:text-2xl font-bold text-teal-700">Upcoming Events</h2>
-            <Link href="/events" className="text-xs sm:text-base text-teal-600 hover:text-teal-700 font-medium">
-              View All →
-            </Link>
+          <div className="mb-3 sm:mb-5">
+            <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
+              <h2 className="text-lg sm:text-2xl font-bold text-teal-700 flex-shrink-0">Upcoming Events</h2>
+              <div className="flex gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
+                <Link 
+                  href="/events/add" 
+                  onClick={handleCreateClick}
+                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
+                >
+                  Create
+                </Link>
+                <Link 
+                  href="/events" 
+                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 border border-teal-600 text-teal-600 hover:bg-teal-50 text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
+                >
+                  View All →
+                </Link>
+              </div>
+            </div>
+            
+            <div>
+              <PromoBanner page="events" inline={true} showAll={true} />
+            </div>
           </div>
-          <p className="text-center text-gray-500 py-8">No events available</p>
+          <div className="text-center py-8">
+            <FaFrown className="text-gray-400 text-4xl sm:text-5xl mx-auto mb-3" />
+            <p className="text-gray-600 text-sm sm:text-base mb-2">Something went wrong</p>
+            <p className="text-gray-500 text-xs sm:text-sm">Please try again later</p>
+          </div>
         </div>
       </section>
     );

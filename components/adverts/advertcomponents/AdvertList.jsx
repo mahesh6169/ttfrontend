@@ -7,6 +7,7 @@ import SkeletonLoader from '../../SkeletonLoader';
 import { useSelector } from 'react-redux';
 import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
 import BottomAd from '@/components/ads/BottomAd';
+import { FaFrown } from 'react-icons/fa';
 
 const AdvertList = ({ adverts, advertStatus }) => {
   const {
@@ -20,7 +21,7 @@ const AdvertList = ({ adverts, advertStatus }) => {
     toggleWishlist,
   } = useAdvertWishlist();
 
- // No adverts
+ // Loading state
 if ((advertStatus === 'idle' || advertStatus === 'loading') && (!adverts || adverts.length === 0)) {
   return (
     <div className="flex justify-center items-center min-h-[300px]">
@@ -29,6 +30,18 @@ if ((advertStatus === 'idle' || advertStatus === 'loading') && (!adverts || adve
   );
 }
 
+// Failed state
+if (advertStatus === 'failed') {
+  return (
+    <div className="flex flex-col justify-center items-center text-center p-8 min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
+      <FaFrown className="text-gray-400 text-4xl sm:text-5xl mb-4" />
+      <p className="text-gray-600 text-sm sm:text-base mb-2">Something went wrong</p>
+      <p className="text-gray-500 text-xs sm:text-sm">Please try again later</p>
+    </div>
+  );
+}
+
+// No results state
 if (advertStatus === 'success' && (!adverts || adverts.length === 0)) {
   return (
     <div className="flex justify-center items-center text-center p-8 min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">

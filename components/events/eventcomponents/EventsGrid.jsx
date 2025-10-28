@@ -6,6 +6,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import SkeletonLoader from '../../SkeletonLoader'; 
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 import BottomAd from '@/components/ads/BottomAd';
+import { FaFrown } from 'react-icons/fa';
 
 const EventGrid = ({ events, eventStatus }) => {
   const {
@@ -15,7 +16,7 @@ const EventGrid = ({ events, eventStatus }) => {
     toggleEventWishlist,
   } = useEventWishlist();
 
- // 👉 Loading State (use Skeleton if still initializing or actively loading)
+ // Loading State
  if (
   (eventStatus === 'idle' || eventStatus === 'loading' || eventWishlistStatus === 'loading') &&
   (!events || events.length === 0)
@@ -27,7 +28,18 @@ const EventGrid = ({ events, eventStatus }) => {
   );
 }
 
-// 👉 Empty State
+// Failed State
+if (eventStatus === 'failed') {
+  return (
+    <div className="flex flex-col justify-center items-center text-center p-8 min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
+      <FaFrown className="text-gray-400 text-4xl sm:text-5xl mb-4" />
+      <p className="text-gray-600 text-sm sm:text-base mb-2">Something went wrong</p>
+      <p className="text-gray-500 text-xs sm:text-sm">Please try again later</p>
+    </div>
+  );
+}
+
+// No results state
 if (eventStatus === 'success' && (!events || events.length === 0)) {
   return (
     <div className="flex justify-center items-center text-center p-8 min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
+import { FaFrown } from 'react-icons/fa';
 import HomeCard from './HomeCard';
 import BrowseAllCard from './BrowseAllCard';
 import PromoBanner from '../PromoBanner';
@@ -116,14 +117,38 @@ const ListingsSection = ({ listings }) => {
 
   if (!listings || listings.length === 0) {
     return (
-      <section className="py-6">
-        <div className="flex items-center justify-between mb-4 px-4">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Latest Listings</h2>
-          <Link href="/listings" className="text-sm sm:text-base text-teal-600 hover:text-teal-700 font-medium">
-            View All →
-          </Link>
+      <section className="py-2 px-2 sm:py-3 sm:px-4">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 shadow-sm">
+          <div className="mb-3 sm:mb-5">
+            <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
+              <h2 className="text-lg sm:text-2xl font-bold text-teal-700 flex-shrink-0">Latest Listings</h2>
+              <div className="flex gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
+                <Link 
+                  href="/listings/add" 
+                  onClick={handleCreateClick}
+                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
+                >
+                  Create
+                </Link>
+                <Link 
+                  href="/listings" 
+                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 border border-teal-600 text-teal-600 hover:bg-teal-50 text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
+                >
+                  View All →
+                </Link>
+              </div>
+            </div>
+            
+            <div>
+              <PromoBanner page="listings" inline={true} showAll={true} />
+            </div>
+          </div>
+          <div className="text-center py-8">
+            <FaFrown className="text-gray-400 text-4xl sm:text-5xl mx-auto mb-3" />
+            <p className="text-gray-600 text-sm sm:text-base mb-2">Something went wrong</p>
+            <p className="text-gray-500 text-xs sm:text-sm">Please try again later</p>
+          </div>
         </div>
-        <p className="text-center text-gray-500 py-8">No listings available</p>
       </section>
     );
   }
