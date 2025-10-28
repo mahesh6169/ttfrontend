@@ -10,6 +10,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Link from 'next/link';
 
 const ManageEventsPage = () => {
+  const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
   const dispatch = useDispatch();
   const router = useRouter();
 
@@ -121,13 +122,11 @@ const handleModalCancel = () => {
           timeZone: event.timeZone,
         })}
       </p>
-      {event.images?.[0]?.url && (
-        <img
-          src={event.images[0].url}
-          alt={event.title}
-          className="w-full h-40 object-cover rounded mb-2"
-        />
-      )}
+      <img
+        src={event.images?.[0]?.url || FALLBACK_IMAGE}
+        alt={event.title}
+        className="w-full h-40 object-cover rounded mb-2"
+      />
 <div className="flex flex-wrap items-center mt-4">
   <button
     onClick={() => !isExpired && handleEdit(event)}

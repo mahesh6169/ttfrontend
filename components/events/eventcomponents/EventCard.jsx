@@ -10,6 +10,7 @@ import { FaMoneyBillWave } from 'react-icons/fa';
 import { FaClipboardList } from 'react-icons/fa';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
+  const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
   const { title, dateTime, venue, address, images, createdAt, timeZone, isPaid, isAdvertiseOnly } = event;
 
   const getStateFromTimezone = (timezone) => {
@@ -78,17 +79,11 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
       >
         {/* Image */}
         <div className="relative w-full h-40 sm:h-48 md:h-56 bg-white rounded-md">
-          {images?.length > 0 ? (
-            <img
-              src={images[0].url}
-              alt={title}
-              className="w-full h-full object-cover rounded-md"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-white text-gray-500 rounded-md">
-              No Image Available
-            </div>
-          )}
+          <img
+            src={images?.[0]?.url || FALLBACK_IMAGE}
+            alt={title}
+            className="w-full h-full object-cover rounded-md"
+          />
         </div>
 
         {/* Title */}
