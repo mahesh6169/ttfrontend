@@ -6,6 +6,9 @@ import { format } from 'date-fns';
 
 const HomeCard = ({ type, data }) => {
   if (!data) return null;
+  
+  const FALLBACK_LISTING_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_ADVERT_IMAGE_URL;
+  const FALLBACK_EVENT_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
 
   const renderContent = () => {
     switch (type) {
@@ -13,17 +16,11 @@ const HomeCard = ({ type, data }) => {
         return (
           <>
             <div className="relative w-full h-40 sm:h-48 md:h-56 bg-white rounded-md">
-              {data.image ? (
-                <img 
-                  src={data.image} 
-                  alt={data.title} 
-                  className="w-full h-full object-cover rounded-md" 
-                />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-500 rounded-md">
-                  No Image
-                </div>
-              )}
+              <img 
+                src={data.image || FALLBACK_LISTING_IMAGE} 
+                alt={data.title} 
+                className="w-full h-full object-cover rounded-md" 
+              />
             </div>
             
             <h2 className="text-xs sm:text-sm text-center font-medium my-1 px-2 truncate text-gray-800">
@@ -43,17 +40,11 @@ const HomeCard = ({ type, data }) => {
         return (
           <>
             <div className="relative w-full h-40 sm:h-48 md:h-56 bg-white rounded-md">
-              {data.image ? (
-                <img 
-                  src={data.image} 
-                  alt={data.title} 
-                  className="w-full h-full object-cover rounded-md" 
-                />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-500 rounded-md">
-                  No Image
-                </div>
-              )}
+              <img 
+                src={data.image || FALLBACK_EVENT_IMAGE} 
+                alt={data.title} 
+                className="w-full h-full object-cover rounded-md" 
+              />
             </div>
             
             <h2 className="text-xs sm:text-sm text-center font-medium my-1 px-2 truncate text-gray-800">

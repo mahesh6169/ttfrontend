@@ -8,6 +8,7 @@ import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
 
 const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
   const postedByName = advert.user?.name || 'Guest';
+  const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_ADVERT_IMAGE_URL;
 
   const postedDaysAgo = differenceInDays(new Date(), new Date(advert.createdAt));
   const postedText = postedDaysAgo <= 15
@@ -65,13 +66,11 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
       <Link href={`/listings/views/${advert._id}`}>
         {/* Image Box (50% height, full width) */}
         <div className="relative w-full h-40 sm:h-48 md:h-56 bg-white rounded-md">
-          {advert.images?.length > 0 ? (
-            <img src={advert.images[0].url} alt={advert.title} className="w-full h-full object-cover rounded-md" />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center bg-white text-gray-500 rounded-md">
-              No Image Available
-            </div>
-          )}
+          <img 
+            src={advert.images?.[0]?.url || FALLBACK_IMAGE} 
+            alt={advert.title} 
+            className="w-full h-full object-cover rounded-md" 
+          />
         </div>
 
         {/* Content wrapper with subtle left border */}

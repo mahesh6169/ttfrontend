@@ -13,6 +13,7 @@ import Link from 'next/link';
 export default function ProfilePage() {
   const dispatch = useDispatch();
   const router = useRouter();
+  const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_ADVERT_IMAGE_URL;
 
   // Extract required state fields
   const { 
@@ -142,15 +143,13 @@ export default function ProfilePage() {
         </span>
       </div>
 
-      {advert.images?.length > 0 && (
-        <div className="mt-2">
-          <img
-            src={advert.images[0].url}
-            alt={advert.title}
-            className="w-full h-48 object-cover rounded"
-          />
-        </div>
-      )}
+      <div className="mt-2">
+        <img
+          src={advert.images?.[0]?.url || FALLBACK_IMAGE}
+          alt={advert.title}
+          className="w-full h-48 object-cover rounded"
+        />
+      </div>
 
       <div className="flex justify-between items-center mt-4 gap-2">
         <button

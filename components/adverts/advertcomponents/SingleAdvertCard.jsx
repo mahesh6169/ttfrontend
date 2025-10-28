@@ -38,6 +38,7 @@ const formatFieldName = (fieldName) => {
 };
 
 const SingleAdvertCard = ({ advert, chatProps }) => {
+  const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_ADVERT_IMAGE_URL;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [serviceAreaOverflow, setServiceAreaOverflow] = useState(false);
@@ -143,31 +144,25 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
     <div id="SingleAdvertCard" className="border rounded shadow-md mx-auto">
       {/* Image Section */}
       <div className="relative w-full mx-auto bg-white rounded h-[200px] sm:h-[300px] md:h-[400px]">
-        {advert.images?.length > 0 && getOptimizedImageUrl(advert.images[currentImageIndex]) ? (
-          <>
-            <img
-              src={getOptimizedImageUrl(advert.images[currentImageIndex])}
-              alt={advert.title || 'Advert Image'}
-              className="object-contain w-full h-full cursor-pointer"
-              onClick={handleImageClick}
-              onError={(e) => {
-                console.error('Image failed to load:', e.target.src);
-                e.target.style.display = 'none';
-              }}
-            />
-            {/* Fullscreen hint */}
-            <div 
-              className="absolute bottom-2 left-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs flex items-center gap-1 pointer-events-none"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-              </svg>
-              <span>Click for full view</span>
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <span className="text-gray-500 text-sm">No image available</span>
+        <img
+          src={advert.images?.length > 0 ? getOptimizedImageUrl(advert.images[currentImageIndex]) : FALLBACK_IMAGE}
+          alt={advert.title || 'Advert Image'}
+          className="object-contain w-full h-full cursor-pointer"
+          onClick={handleImageClick}
+          onError={(e) => {
+            console.error('Image failed to load:', e.target.src);
+            e.target.src = FALLBACK_IMAGE;
+          }}
+        />
+        {/* Fullscreen hint */}
+        {advert.images?.length > 0 && (
+          <div 
+            className="absolute bottom-2 left-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs flex items-center gap-1 pointer-events-none"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            <span>Click for full view</span>
           </div>
         )}
 
