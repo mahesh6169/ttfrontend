@@ -40,7 +40,6 @@ export default function StripeSetupPage() {
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [accountStatus, setAccountStatus] = useState(null);
-  const [stripeTabOpen, setStripeTabOpen] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const returnTo = searchParams.get('returnTo');
@@ -49,12 +48,14 @@ export default function StripeSetupPage() {
     checkAccountStatus();
   }, []);
   
-  // Reset stripeTabOpen when account becomes active
+  // Auto-redirect when account becomes active
   useEffect(() => {
-    if (accountStatus?.computedStatus === 'fully_active') {
-      setStripeTabOpen(false);
+    if (accountStatus?.computedStatus === 'fully_active' && returnTo) {
+      setTimeout(() => {
+        router.push(returnTo);
+      }, 2000);
     }
-  }, [accountStatus?.computedStatus]);
+  }, [accountStatus?.computedStatus, returnTo, router]);
 
   // Auto-refresh when pending verification
   useEffect(() => {
@@ -85,7 +86,7 @@ export default function StripeSetupPage() {
   };
 
   const handleAction = async () => {
-    // For fully active accounts, open dashboard
+    // For fully active accounts, open dashboard in new tab
     if (accountStatus?.computedStatus === 'fully_active') {
       window.open('https://dashboard.stripe.com', '_blank');
       return;
@@ -101,22 +102,12 @@ export default function StripeSetupPage() {
       );
 
       if (data.url) {
-        window.open(data.url, '_blank');
-        setLoading(false);
-        setStripeTabOpen(true);
-        
-        // Start checking status more frequently when Stripe tab is open
-        const intervalId = setInterval(() => {
-          checkAccountStatus();
-        }, 5000); // Check every 5 seconds
-        
-        // Clean up interval after 5 minutes
-        setTimeout(() => clearInterval(intervalId), 300000);
+        // Redirect to Stripe onboarding (will come back via returnTo)
+        window.location.href = data.url;
       }
     } catch (err) {
       console.error('Stripe onboarding error:', err);
       setLoading(false);
-      // Error will be shown in UI through button state
     }
   };
 
@@ -218,26 +209,6 @@ export default function StripeSetupPage() {
           Setup Stripe account to receive payments for your paid events
         </p>
 
-        {/* Stripe Tab Open Notification */}
-        {stripeTabOpen && status !== 'fully_active' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 animate-pulse">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-blue-700">
-                  Stripe setup opened in a new tab. Complete the form there.
-                </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  This page will automatically update when you're done.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Action Required Section */}
         {hasActionRequired && (
@@ -282,6 +253,11 @@ export default function StripeSetupPage() {
             <p className="text-green-800 font-medium">
               ✅ Your Stripe setup is complete. You can now receive payments for your events.
             </p>
+            {returnTo && (
+              <p className="text-sm text-green-700 mt-2">
+                Redirecting you back in 2 seconds...
+              </p>
+            )}
           </div>
         )}
 

@@ -13,7 +13,7 @@ const PostPaidEventButton = ({ className = '' }) => {
   const handleClick = (e) => {
     if (!isLoggedIn) {
       e.preventDefault();
-      localStorage.setItem('redirectAfterLogin', '/events/add-paid');
+      localStorage.setItem('redirectAfterLogin', '/events/sell/onboard');
       router.push('/login?preserveRedirect=true');
     } else {
       localStorage.setItem('cancelRedirectUrl', '/events');
@@ -22,7 +22,7 @@ const PostPaidEventButton = ({ className = '' }) => {
 
   return (
     <Link
-      href="/events/add-paid"
+      href="/events/sell/onboard"
       onClick={handleClick}
       className={className || "bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 text-sm md:text-base rounded shadow font-semibold transition duration-200"}
     >
