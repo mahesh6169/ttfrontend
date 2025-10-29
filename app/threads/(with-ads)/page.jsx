@@ -29,6 +29,7 @@ import PromoBanner from '@/components/PromoBanner';
 const libraries = ['places'];
 
 const ThreadsPage = () => {
+  const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL;
   const dispatch = useDispatch();
   const router = useRouter();
   const { filters, pagination, threads, meta, status, error, filterOptions } = useSelector((state) => state.searchThreads);
@@ -729,18 +730,17 @@ const ThreadsPage = () => {
                     </div>
 
                     {/* Right image - Optimized for horizontal space */}
-                    {thread.images?.[0] && (
-                      <div className="flex-shrink-0">
-                        <img
-                          src={
-                            thread.images[0].optimizedUrls?.mobile || 
-                            thread.images[0].url
-                          }
-                          alt="Thread"
-                          className="w-20 h-20 sm:w-32 sm:h-24 md:w-40 md:h-28 object-cover rounded bg-white"
-                        />
-                      </div>
-                    )}
+                    <div className="flex-shrink-0">
+                      <img
+                        src={
+                          thread.images?.[0] 
+                            ? (thread.images[0].optimizedUrls?.mobile || thread.images[0].url)
+                            : FALLBACK_IMAGE
+                        }
+                        alt="Thread"
+                        className="w-20 h-20 sm:w-32 sm:h-24 md:w-40 md:h-28 object-cover rounded bg-white"
+                      />
+                    </div>
                   </div>
                 </Link>
                 {/* Insert BottomAd after the 3rd thread, or after the last thread if 2-3 threads */}

@@ -55,6 +55,7 @@ const getOptimizedImageUrl = (imageObj, size = 'desktop') => {
 };
 
 const ThreadChatPage = () => {
+  const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL;
   const { id: threadId } = useParams();
   const dispatch = useDispatch();
   const router = useRouter();
@@ -403,15 +404,15 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     <div className="border rounded shadow-md mt-4 w-full"> 
 
       {/* Image Section */}
-      {thread.images?.length > 0 && (
-        <div className="relative w-full mx-auto bg-white overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]">
-          <img
-            src={getOptimizedImageUrl(thread.images[currentImageIndex])}
-            alt="Thread Image"
-            className="object-contain w-full h-full cursor-pointer"
-            onClick={() => setIsFullscreen(true)}
-          />
-          {/* Fullscreen hint */}
+      <div className="relative w-full mx-auto bg-white overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]">
+        <img
+          src={thread.images?.length > 0 ? getOptimizedImageUrl(thread.images[currentImageIndex]) : FALLBACK_IMAGE}
+          alt="Thread Image"
+          className="object-contain w-full h-full cursor-pointer"
+          onClick={() => setIsFullscreen(true)}
+        />
+        {/* Fullscreen hint */}
+        {thread.images?.length > 0 && (
           <div 
             className="absolute bottom-2 left-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs flex items-center gap-1 pointer-events-none"
           >
@@ -420,6 +421,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             </svg>
             <span>Click for full view</span>
           </div>
+        )}
 
           {thread.images.length > 1 && (
             <>
