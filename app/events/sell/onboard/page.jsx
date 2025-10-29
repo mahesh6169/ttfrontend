@@ -219,20 +219,10 @@ export default function OnboardPage() {
             {/* Action Required Section */}
             {hasActionRequired && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-                <h3 className="font-semibold text-orange-800 mb-2 text-sm">Action Required</h3>
-                <div className="space-y-1">
-                  {[...new Set(currentlyDue.map(getRequirementLabel))].slice(0, 3).map((label, idx) => (
-                    <div key={idx} className="flex items-start">
-                      <span className="text-orange-500 mr-2 text-xs">•</span>
-                      <span className="text-xs text-gray-700">{label}</span>
-                    </div>
-                  ))}
-                  {currentlyDue.length > 3 && (
-                    <p className="text-xs text-orange-600 italic">
-                      +{currentlyDue.length - 3} more items
-                    </p>
-                  )}
-                </div>
+                <h3 className="font-semibold text-orange-800 mb-2 text-sm">⚠️ Action Required</h3>
+                <p className="text-xs text-orange-700">
+                  {currentlyDue.length} {currentlyDue.length === 1 ? 'item needs' : 'items need'} your attention to complete setup.
+                </p>
               </div>
             )}
 
@@ -243,21 +233,9 @@ export default function OnboardPage() {
                   <span className="animate-pulse w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
                   Verification in Progress
                 </h3>
-                <div className="space-y-1">
-                  {pendingVerification.slice(0, 3).map((req, idx) => (
-                    <div key={idx} className="flex items-start">
-                      <span className="text-yellow-500 mr-2 text-xs">•</span>
-                      <span className="text-xs text-gray-700">{getRequirementLabel(req)}</span>
-                    </div>
-                  ))}
-                  {pendingVerification.length > 3 && (
-                    <p className="text-xs text-yellow-600 italic">
-                      +{pendingVerification.length - 3} more items
-                    </p>
-                  )}
-                </div>
-                <p className="text-xs text-yellow-700 mt-2">
-                  Verification typically completes within a few minutes to hours
+                <p className="text-xs text-yellow-700">
+                  {pendingVerification.length} {pendingVerification.length === 1 ? 'item' : 'items'} pending verification. 
+                  Verification typically completes within a few minutes to hours.
                 </p>
               </div>
             )}
