@@ -423,7 +423,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           </div>
         )}
 
-          {thread.images.length > 1 && (
+          {thread.images?.length > 1 && (
             <>
               <button
                 onClick={handlePrevImage}
@@ -440,7 +440,6 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             </>
           )}
         </div>
-      )}
 
       {/* Fullscreen Modal */}
       {isFullscreen && (
