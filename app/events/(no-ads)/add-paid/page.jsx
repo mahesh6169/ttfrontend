@@ -14,7 +14,7 @@ const AddPaidEventPage = () => {
     const stripeAccountStatus = user?.stripeAccountStatus || 'no_account';
 
     if (stripeAccountStatus !== 'fully_active') {
-      router.push('/users/profile/settings/stripeSetup?returnTo=/events/sell/onboard');
+      router.push('/users/profile/settings/stripeSetup?returnTo=/users/profile/onboard');
     } else {
       setIsChecking(false);
     }

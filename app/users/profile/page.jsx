@@ -57,10 +57,10 @@ const ProfilePage = () => {
                 → User Settings
               </Link>
               <Link 
-                href="/users/profile/settings/stripeSetup" 
+                href="/users/profile/onboard" 
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
-                → Stripe Setup
+                → Onboarding
               </Link>
             </div>
           </div>
@@ -161,10 +161,10 @@ const ProfilePage = () => {
             </h3>
             <div className="space-y-1.5">
               <Link 
-                href="/users/profile/settings/stripeSetup" 
+                href="/users/profile/onboard" 
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
-                → Stripe Setup
+                → Onboarding
               </Link>
               <Link 
                 href="/users/profile/refunds" 

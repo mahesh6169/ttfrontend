@@ -37,7 +37,7 @@ const Sidebar = ({ onLinkClick }) => {
       label: 'Event Organiser',
       icon: <FaCalendarAlt />,
       children: [
-        { label: 'Stripe', href: '/users/profile/settings/stripeSetup', icon: <FaMoneyCheckAlt /> },
+        { label: 'Onboarding', href: '/users/profile/onboard', icon: <FaMoneyCheckAlt /> },
         { label: 'Manage Refunds', href: '/users/profile/refunds', icon: <FaMoneyCheckAlt /> },
         
       ]

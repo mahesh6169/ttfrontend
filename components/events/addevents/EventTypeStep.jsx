@@ -104,10 +104,9 @@ const EventTypeStep = ({ formData = {}, errors = {}, mode = 'add' }) => {
     }
   };
 
-  // Handle Stripe setup - always redirect to setup page
+  // Handle Stripe setup - redirect to onboard page
   const handleStripeSetup = () => {
-    // Always redirect to setup page for any status
-    router.push('/users/profile/settings/stripeSetup');
+    router.push('/users/profile/onboard');
   };
 
   const setupInfo = getStripeSetupInfo();
