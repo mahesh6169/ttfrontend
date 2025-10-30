@@ -216,27 +216,21 @@ export default function OnboardPage() {
               {statusConfig.message}
             </p>
 
-            {/* Action Required Section */}
-            {hasActionRequired && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-                <h3 className="font-semibold text-orange-800 mb-2 text-sm">⚠️ Action Required</h3>
-                <p className="text-xs text-orange-700">
-                  {currentlyDue.length} {currentlyDue.length === 1 ? 'item needs' : 'items need'} your attention to complete setup.
+            {/* Info note for pending verification */}
+            {(stripeAccountStatus === 'under_review' || stripeAccountStatus === 'capabilities_pending') && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-xs text-blue-800 mb-2">
+                  <span className="font-semibold">ℹ️ Note:</span> Stripe verification typically takes a few hours to 3 days. 
+                  If you've already submitted your details, please check back later.
                 </p>
-              </div>
-            )}
-
-            {/* Verification in Progress Section */}
-            {hasPendingOnly && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <h3 className="font-semibold text-yellow-800 mb-2 text-sm flex items-center">
-                  <span className="animate-pulse w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
-                  Verification in Progress
-                </h3>
-                <p className="text-xs text-yellow-700">
-                  {pendingVerification.length} {pendingVerification.length === 1 ? 'item' : 'items'} pending verification. 
-                  Verification typically completes within a few minutes to hours.
-                </p>
+                <a
+                  href="https://dashboard.stripe.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-700 hover:text-blue-900 underline font-medium"
+                >
+                  Login to Stripe Dashboard for more in-depth information →
+                </a>
               </div>
             )}
 
@@ -255,7 +249,7 @@ export default function OnboardPage() {
                   className="w-full flex items-center justify-between text-sm text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   <span className="font-medium">
-                    {showDetails ? '▼' : '▶'} View All Details
+                    {showDetails ? '▼' : '▶'} View Details of Pending / Review
                   </span>
                   <span className="text-xs">
                     {currentlyDue.length + pendingVerification.length} items
