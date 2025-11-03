@@ -192,7 +192,7 @@ export default function CampaignManagementPage() {
                           {campaign.maxRedemptions > 0 && ` / ${campaign.maxRedemptions}`}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          -
+                          {campaign.totalRedeemed || 0}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">

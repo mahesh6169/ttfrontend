@@ -94,7 +94,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
     if (isLimitReached) {
       return {
-        text: 'LIMIT REACHED',
+        text: 'SOLD OUT',
         className: 'bg-gray-300 text-gray-600 cursor-not-allowed',
         disabled: true
       };
