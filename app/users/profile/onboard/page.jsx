@@ -123,7 +123,7 @@ export default function OnboardPage() {
           borderColor: 'border-green-200',
           textColor: 'text-green-800',
           buttonColor: 'bg-green-600 hover:bg-green-700',
-          buttonText: 'Stripe Setup Successful',
+          buttonText: 'Go to Stripe Dashboard',
           status: 'Fully Active',
           message: 'Your account successfully setup. Create events!',
           showDetailsLink: false,
@@ -187,31 +187,31 @@ export default function OnboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-3 md:px-4 py-6 md:py-8">
+    <div className="min-h-screen bg-gray-50 px-3 md:px-4 py-4 md:py-6">
       <div className="max-w-2xl mx-auto">
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-lg md:text-2xl font-bold text-gray-900 mb-1">
             Welcome to Organiser Onboarding
           </h1>
-          <p className="text-sm md:text-base text-gray-600">
+          <p className="text-xs md:text-sm text-gray-600">
             Follow these steps to create your first paid event
           </p>
         </div>
 
-        <div className="space-y-4 md:space-y-6">
-          <div className={`border-2 ${statusConfig.borderColor} ${statusConfig.bgColor} rounded-lg p-4 md:p-6`}>
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border-2 border-gray-200">
-                  <span className="text-base md:text-lg font-bold text-gray-700">1</span>
+        <div className="space-y-3 md:space-y-4">
+          <div className={`border-2 ${statusConfig.borderColor} ${statusConfig.bgColor} rounded-lg p-3 md:p-4`}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-white border-2 border-gray-200">
+                  <span className="text-sm md:text-base font-bold text-gray-700">1</span>
                 </div>
                 <div>
-                  <h2 className="text-lg md:text-xl font-semibold text-gray-900">
+                  <h2 className="text-base md:text-lg font-semibold text-gray-900">
                     Stripe Account Setup
                   </h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xl md:text-2xl">{statusConfig.icon}</span>
-                    <span className={`text-xs md:text-sm font-medium ${statusConfig.textColor}`}>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-lg md:text-xl">{statusConfig.icon}</span>
+                    <span className={`text-xs font-medium ${statusConfig.textColor}`}>
                       {statusConfig.status}
                     </span>
                   </div>
@@ -228,13 +228,13 @@ export default function OnboardPage() {
               </button>
             </div>
 
-            <p className={`text-sm ${statusConfig.textColor} mb-4`}>
+            <p className={`text-xs md:text-sm ${statusConfig.textColor} mb-3`}>
               {statusConfig.message}
             </p>
 
             {/* Info note for pending verification */}
             {(stripeAccountStatus === 'under_review' || stripeAccountStatus === 'capabilities_pending') && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 md:p-3 mb-3">
                 <p className="text-xs text-blue-800">
                   <span className="font-semibold">ℹ️ Note:</span> If you've already submitted your details, please check back here later or alternatively check{' '}
                   <a
@@ -251,40 +251,40 @@ export default function OnboardPage() {
 
             <button
               onClick={handleStripeSetup}
-              className={`w-full py-3 px-4 text-white font-medium rounded-lg transition-colors ${statusConfig.buttonColor}`}
+              className={`w-full py-2.5 md:py-3 px-4 text-sm md:text-base text-white font-medium rounded-lg transition-colors ${statusConfig.buttonColor}`}
             >
               {statusConfig.buttonText}
             </button>
 
             {!isStripeFullyActive && (
-              <div className="text-center mt-3 mb-4">
+              <div className="text-center mt-2">
                 <p className="text-xs text-gray-500">
-                  Auto-checking Stripe status every 30 seconds...
+                  Auto-checking every 30 seconds...
                 </p>
               </div>
             )}
 
             {/* Expandable Details Section */}
             {hasRequirements && (
-              <div className="border-t border-gray-200 pt-4 mt-4">
+              <div className="border-t border-gray-200 pt-3 mt-3">
                 <button
                   onClick={() => setShowDetails(!showDetails)}
-                  className="w-full flex items-center justify-between text-xs md:text-sm text-gray-600 hover:text-gray-800 transition-colors py-2"
+                  className="w-full flex items-center justify-between text-xs text-gray-600 hover:text-gray-800 transition-colors py-1"
                 >
                   <span className="font-medium">
-                    {showDetails ? '▼' : '▶'} View Details of Pending Verification / Action Required
+                    {showDetails ? '▼' : '▶'} View Details
                   </span>
-                  <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
+                  <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full">
                     {currentlyDue.length + pendingVerification.length}
                   </span>
                 </button>
 
                 <div 
                   className={`transition-all duration-300 ease-in-out ${
-                    showDetails ? 'max-h-[500px] mt-4' : 'max-h-0 overflow-hidden'
+                    showDetails ? 'max-h-[500px] mt-3' : 'max-h-0 overflow-hidden'
                   }`}
                 >
-                  <div className="bg-gray-50 rounded-lg p-3 md:p-4 max-h-64 md:max-h-80 overflow-y-auto border border-gray-200">
+                  <div className="bg-gray-50 rounded-lg p-2.5 md:p-3 max-h-60 md:max-h-72 overflow-y-auto border border-gray-200">
                     <div className="space-y-4">
                       {/* Action Required Section */}
                       {currentlyDue.length > 0 && (
@@ -327,24 +327,71 @@ export default function OnboardPage() {
                 </div>
               </div>
             )}
+
+            {/* Success Note - Only show when fully_active */}
+            {isStripeFullyActive && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4 mt-4">
+                <h4 className="text-xs md:text-sm font-semibold text-blue-900 mb-2 md:mb-3">Note:</h4>
+                <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-blue-800 mb-3 md:mb-4">
+                  <li className="flex items-start">
+                    <span className="mr-2">•</span>
+                    <span>Desify does not process your sales transactions; all sales are handled directly by Stripe.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">•</span>
+                    <span>The Desify Platform Fee is automatically deducted from each transaction.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">•</span>
+                    <span>You can view your sales transactions in your Stripe Dashboard.</span>
+                  </li>
+                </ul>
+                
+                <h4 className="text-xs md:text-sm font-semibold text-blue-900 mb-2">Useful Links:</h4>
+                <div className="flex flex-wrap gap-2 text-xs md:text-sm">
+                  <a
+                    href="/users/profile/checkInPaid"
+                    className="text-blue-700 hover:text-blue-900 underline"
+                  >
+                    Check-in Page
+                  </a>
+                  <span className="text-blue-300">|</span>
+                  <a
+                    href="/users/profile/refunds"
+                    className="text-blue-700 hover:text-blue-900 underline"
+                  >
+                    Refund Page
+                  </a>
+                  <span className="text-blue-300">|</span>
+                  <a
+                    href="https://dashboard.stripe.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-700 hover:text-blue-900 underline"
+                  >
+                    Stripe Dashboard
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className={`border-2 rounded-lg p-4 md:p-6 ${
+          <div className={`border-2 rounded-lg p-3 md:p-4 ${
             isStripeFullyActive 
               ? 'border-blue-200 bg-blue-50' 
               : 'border-gray-200 bg-gray-100 opacity-60'
           }`}>
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border-2 border-gray-200">
-                  <span className="text-base md:text-lg font-bold text-gray-700">2</span>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-white border-2 border-gray-200">
+                  <span className="text-sm md:text-base font-bold text-gray-700">2</span>
                 </div>
                 <div>
-                  <h2 className="text-lg md:text-xl font-semibold text-gray-900">
+                  <h2 className="text-base md:text-lg font-semibold text-gray-900">
                     Add Event
                   </h2>
                   {!isStripeFullyActive && (
-                    <span className="inline-block mt-1 text-xs font-medium px-2 py-1 bg-gray-200 text-gray-600 rounded-full">
+                    <span className="inline-block mt-0.5 text-xs font-medium px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full">
                       Complete Step 1 First
                     </span>
                   )}
@@ -352,7 +399,7 @@ export default function OnboardPage() {
               </div>
             </div>
 
-            <p className="text-xs md:text-sm text-gray-700 mb-4">
+            <p className="text-xs md:text-sm text-gray-700 mb-3">
               {isStripeFullyActive 
                 ? 'Create your paid event and start selling tickets.'
                 : 'Complete your Stripe account setup to enable paid event creation.'}
@@ -361,7 +408,7 @@ export default function OnboardPage() {
             <button
               onClick={handleAddEvent}
               disabled={!isStripeFullyActive}
-              className={`w-full py-2 md:py-3 px-4 text-sm md:text-base text-white font-medium rounded-lg transition-colors ${
+              className={`w-full py-2.5 md:py-3 px-4 text-sm md:text-base text-white font-medium rounded-lg transition-colors ${
                 isStripeFullyActive
                   ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
                   : 'bg-gray-400 cursor-not-allowed'
