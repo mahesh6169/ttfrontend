@@ -23,18 +23,9 @@ export default function PromotionsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-2 sm:py-4 md:py-8">
-      <div className="container mx-auto px-2 sm:px-3 md:px-4 max-w-4xl">
-        <div className="mb-4 sm:mb-6 md:mb-8 text-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-1 sm:mb-2">
-            Deals
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Explore discount codes, deals, and special offers
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-2 sm:gap-3 md:gap-6">
+    <div className="flex flex-col relative min-h-[calc(100vh-200px)]">
+      <div className="w-full">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-2 sm:gap-3 md:gap-6 mt-4">
           {menuItems.map((item, index) => (
             <Link
               key={index}

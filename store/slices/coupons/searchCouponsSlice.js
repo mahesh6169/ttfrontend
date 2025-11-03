@@ -28,6 +28,9 @@ export const searchCoupons = createAsyncThunk(
         params.lng = filters.location.coordinates[0];
         params.radius = filters.location.radius || 10;
       }
+      if (filters.searchText) {
+        params.searchText = filters.searchText;
+      }
       
       const response = await axios.get(`${API_BASE_URL}/stores`, { params });
       

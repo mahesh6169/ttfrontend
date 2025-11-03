@@ -5,6 +5,7 @@ import { FaTag, FaClock, FaTicketAlt, FaWhatsapp, FaFacebook } from 'react-icons
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import axios from '@/utils/axiosConfig';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
@@ -12,6 +13,8 @@ import CodeModal from '../CodeModal';
 
 export default function CampaignCard({ campaign, onGenerateCode }) {
   const router = useRouter();
+  const { user, tokenValidated } = useSelector((state) => state.user);
+  const isLoggedIn = tokenValidated && !!user?._id;
   const [isGenerating, setIsGenerating] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [userCode, setUserCode] = useState(null);
@@ -46,6 +49,12 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
   };
 
   const handleButtonClick = async () => {
+    if (!isLoggedIn) {
+      localStorage.setItem('redirectAfterLogin', '/discountcode');
+      router.push('/login?preserveRedirect=true');
+      return;
+    }
+
     if (userHasCode) {
       fetchUserCode();
       return;
@@ -58,7 +67,8 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
       await onGenerateCode(campaign._id);
     } catch (error) {
       if (error?.response?.status === 401) {
-        router.push('/users/login');
+        localStorage.setItem('redirectAfterLogin', '/discountcode');
+        router.push('/login?preserveRedirect=true');
       }
     } finally {
       setIsGenerating(false);
