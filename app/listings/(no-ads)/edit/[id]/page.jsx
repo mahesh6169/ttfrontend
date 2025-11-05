@@ -110,10 +110,28 @@ const EditAdvertPage = () => {
   // Handle redirect on success
   useEffect(() => {
     if (hasSubmitted && success && updateStatus === 'succeeded') {
+      // Revalidate metadata cache
+      const revalidateMetadata = async () => {
+        try {
+          await fetch('/api/revalidate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tag: `listing-${id}`,
+              secret: process.env.NEXT_PUBLIC_REVALIDATION_SECRET
+            })
+          });
+        } catch (error) {
+          console.error('Failed to revalidate metadata:', error);
+        }
+      };
+      
+      revalidateMetadata();
+      
       // Show success modal
       setShowSuccessModal(true);
     }
-  }, [hasSubmitted, success, updateStatus]);
+  }, [hasSubmitted, success, updateStatus, id]);
 
   // Simply use the advert data - no complex merging needed
   const displayData = advert;

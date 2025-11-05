@@ -27,7 +27,10 @@ export async function generateMetadata({ params }) {
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
     
     const response = await fetch(`${API_BASE_URL}/adverts/byid/${listingId}`, {
-      next: { revalidate: 3600 }, // Cache for 1 hour
+      next: { 
+        revalidate: 3600,
+        tags: [`listing-${listingId}`]
+      },
       signal: controller.signal
     });
     
