@@ -13,7 +13,7 @@ export async function POST(request) {
       );
     }
 
-    if (secret !== process.env.REVALIDATION_SECRET) {
+    if (secret !== process.env.NEXT_PUBLIC_REVALIDATION_SECRET) {
       return NextResponse.json(
         { success: false, message: 'Invalid secret' },
         { status: 401 }

@@ -39,3 +39,4 @@ dist/
 
 # 🚀 Ignore Public Uploads (Optional)
 public/uploads/
+.aider*
