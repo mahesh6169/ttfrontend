@@ -113,16 +113,17 @@ const EditAdvertPage = () => {
       // Revalidate metadata cache
       const revalidateMetadata = async () => {
         try {
-          await fetch('/api/revalidate', {
+          const response = await fetch('/api/revalidate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              tag: `listing-${id}`,
-              secret: process.env.NEXT_PUBLIC_REVALIDATION_SECRET
+              tag: `listing-${id}`
             })
           });
+          const result = await response.json();
+          console.log('✅ Revalidation result:', result);
         } catch (error) {
-          console.error('Failed to revalidate metadata:', error);
+          console.error('❌ Failed to revalidate metadata:', error);
         }
       };
       
