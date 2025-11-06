@@ -132,7 +132,12 @@ const handleModalCancel = () => {
       className="p-4 border rounded shadow hover:shadow-md transition"
     >
       <div className="flex items-center justify-between gap-2 mb-2">
-  <h2 className="text-lg font-bold">{event.title}</h2>
+  <h2 
+    className="text-lg font-bold cursor-pointer hover:underline"
+    onClick={() => router.push(`/events/views/${event._id}`)}
+  >
+    {event.title}
+  </h2>
   {isExpired && (
     <span className="text-sm font-semibold text-red-600">Expired</span>
   )}

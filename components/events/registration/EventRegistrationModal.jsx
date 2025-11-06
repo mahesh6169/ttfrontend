@@ -229,7 +229,7 @@ const formatEventDate = (dateTime, timeZone) => {
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors resize-vertical ${
                 error ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder={`Enter ${field.fieldName.toLowerCase()}`}
+              placeholder="Please provide your response"
             />
             {error && <p className="text-red-500 text-xs sm:text-sm mt-1">{error}</p>}
           </div>
@@ -250,7 +250,7 @@ const formatEventDate = (dateTime, timeZone) => {
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                 error ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder={`Enter ${field.fieldName.toLowerCase()}`}
+              placeholder="Please provide your response"
             />
             {error && <p className="text-red-500 text-xs sm:text-sm mt-1">{error}</p>}
           </div>
@@ -270,7 +270,7 @@ const formatEventDate = (dateTime, timeZone) => {
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                 error ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder={`Enter ${field.fieldName.toLowerCase()}`}
+              placeholder="Please provide your response"
             />
             {error && <p className="text-red-500 text-xs sm:text-sm mt-1">{error}</p>}
           </div>

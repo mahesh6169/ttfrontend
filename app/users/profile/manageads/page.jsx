@@ -133,7 +133,12 @@ export default function ProfilePage() {
 
     >
       <div className="flex items-center justify-between gap-2 mb-2">
-        <h3 className="text-xs font-bold truncate max-w-[60%]">{advert.title}</h3>
+        <h3 
+          className="text-xs font-bold truncate max-w-[60%] cursor-pointer hover:underline"
+          onClick={() => router.push(`/listings/views/${advert._id}`)}
+        >
+          {advert.title}
+        </h3>
         <span
           className={`text-xs font-semibold whitespace-nowrap ${
             isExpired ? 'text-red-600' : 'text-gray-600'

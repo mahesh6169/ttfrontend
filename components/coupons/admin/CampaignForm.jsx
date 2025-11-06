@@ -66,7 +66,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
     if (isEditing && initialData?.totalGenerated) {
       const newMax = parseInt(formData.maxRedemptions) || 0;
       if (newMax > 0 && newMax < initialData.totalGenerated) {
-        newErrors.maxRedemptions = `Cannot set below current redemptions (${initialData.totalGenerated})`;
+        newErrors.maxRedemptions = `Cannot set below current generated codes (${initialData.totalGenerated})`;
       }
     }
 
@@ -181,10 +181,10 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
         )}
       </div>
 
-      {/* Max Redemptions */}
+      {/* Max Codes Generated */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Max Redemptions
+          Max Codes Generated
           {isEditing && initialData?.totalGenerated > 0 && (
             <span className="text-sm text-gray-500 ml-2">
               (current: {initialData.totalGenerated})
@@ -201,7 +201,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           placeholder="0 = unlimited"
         />
         <p className="text-xs text-gray-500 mt-1">
-          Set to 0 for unlimited redemptions
+          Set to 0 for unlimited codes
         </p>
         {errors.maxRedemptions && (
           <p className="text-red-500 text-sm mt-1">{errors.maxRedemptions}</p>

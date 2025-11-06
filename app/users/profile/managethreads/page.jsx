@@ -110,11 +110,11 @@ const ManageThreads = () => {
               className="border rounded-lg p-4 shadow-md hover:bg-gray-50 transition-all duration-200"
             >
               {/* Thread Info */}
-              <div
-                onClick={() => router.push(`/threads/views/${thread._id}`)}
-                className="cursor-pointer"
-              >
-                <h2 className="text-lg font-semibold ">
+              <div>
+                <h2 
+                  className="text-lg font-semibold cursor-pointer hover:underline"
+                  onClick={() => router.push(`/threads/views/${thread._id}`)}
+                >
                   {thread.title}
                 </h2>
                 <p className="text-sm text-gray-700 italic line-clamp-2">
