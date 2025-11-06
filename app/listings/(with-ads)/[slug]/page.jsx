@@ -79,6 +79,13 @@ export async function generateMetadata({ params }) {
       image = image.startsWith('/') ? `${siteUrl}${image}` : `${siteUrl}/${image}`;
     }
     
+    // Add cache-busting parameter using updatedAt timestamp to force WhatsApp to refresh
+    if (image && listing.updatedAt) {
+      const timestamp = new Date(listing.updatedAt).getTime();
+      const separator = image.includes('?') ? '&' : '?';
+      image = `${image}${separator}v=${timestamp}`;
+    }
+    
     // Build the canonical URL
     const url = `${META_DEFAULTS.siteUrl}/listings/${slug}`;
     
