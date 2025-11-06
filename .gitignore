@@ -29,6 +29,9 @@ pnpm-lock.yaml
 *.swp
 *.swo
 
+# 🚀 Ignore Aider AI Files
+.aider*
+
 # 🚀 Ignore Output Files
 out/
 dist/

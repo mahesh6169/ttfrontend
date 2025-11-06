@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { fetchMyEvents, deleteMyEvent } from '@/store/slices/events/eventSlice';
+import axios from '@/utils/axiosConfig';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import Link from 'next/link';
@@ -27,6 +28,27 @@ const ManageEventsPage = () => {
     // Save where we came from for Cancel button
     localStorage.setItem('cancelRedirectUrl', '/users/profile/manageevents');
     router.push(`/events/edit/${event._id}`);
+  };
+
+  const handleToggleGoLive = async (event) => {
+    try {
+      const newGoLiveStatus = !event.goLive;
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      
+      const response = await axios.patch(
+        `${API_BASE_URL}/events/${event._id}/toggle-golive`,
+        { goLive: newGoLiveStatus },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        // Refetch events to update UI
+        dispatch(fetchMyEvents());
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update status');
+    }
   };
 
   const confirmDelete = (event) => {
@@ -127,7 +149,7 @@ const handleModalCancel = () => {
         alt={event.title}
         className="w-full h-40 object-cover rounded mb-2"
       />
-<div className="flex flex-wrap items-center mt-4">
+<div className="flex flex-wrap items-center gap-2 mt-4">
   <button
     onClick={() => !isExpired && handleEdit(event)}
     className={`px-4 py-1 rounded flex items-center gap-1 ${
@@ -145,11 +167,25 @@ const handleModalCancel = () => {
   <button
     onClick={() => confirmDelete(event)}
     disabled={deleteStatus === 'loading'}
-    className={`bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 ml-4 ${
+    className={`bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 ${
       deleteStatus === 'loading' ? 'opacity-50 cursor-not-allowed' : ''
     }`}
   >
     Delete
+  </button>
+  <button
+    onClick={() => handleToggleGoLive(event)}
+    disabled={status === 'loading'}
+    className={`px-4 py-1 rounded font-medium transition-colors ${
+      event.goLive !== false
+        ? 'bg-green-500 text-white hover:bg-green-600'
+        : 'bg-gray-400 text-gray-700 hover:bg-gray-500'
+    } ${
+      status === 'loading' ? 'opacity-50 cursor-not-allowed' : ''
+    }`}
+    title={event.goLive !== false ? 'Click to take offline' : 'Click to go live'}
+  >
+    {event.goLive !== false ? '● LIVE' : '○ OFFLINE'}
   </button>
 </div>
 {/* Add note for recurring events */}
