@@ -20,6 +20,10 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
     fullUrl = typeof window !== 'undefined' 
       ? `${window.location.origin}${slugUrl}`
       : slugUrl;
+    
+    // Always add timestamp to bust WhatsApp cache
+    const timestamp = Date.now();
+    fullUrl = `${fullUrl}?v=${timestamp}`;
   }
   
   const handleCopyLink = async () => {
