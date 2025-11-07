@@ -17,7 +17,8 @@ const MyFreeEventRegistrationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showFormResponses, setShowFormResponses] = useState(new Set());
+  const [expandedRegistrations, setExpandedRegistrations] = useState(new Set());
+  const [activeTab, setActiveTab] = useState({}); // { registrationId: 'attendees' | 'attendeeInfo' }
   const [dateFilter, setDateFilter] = useState('3months'); // Default to 3 months
 
   // Fetch all user registrations on mount
@@ -204,6 +205,28 @@ const MyFreeEventRegistrationsPage = () => {
     registrationMap[reg.event] = reg;
   });
 
+  // Handle tab click
+  const handleTabClick = (registrationId, tab) => {
+    const isCurrentlyExpanded = expandedRegistrations.has(registrationId);
+    const currentTab = activeTab[registrationId] || 'attendees';
+    
+    if (!isCurrentlyExpanded) {
+      // If not expanded, expand and set the tab
+      const newExpanded = new Set(expandedRegistrations);
+      newExpanded.add(registrationId);
+      setExpandedRegistrations(newExpanded);
+      setActiveTab({ ...activeTab, [registrationId]: tab });
+    } else if (currentTab === tab) {
+      // If clicking the same tab, collapse
+      const newExpanded = new Set(expandedRegistrations);
+      newExpanded.delete(registrationId);
+      setExpandedRegistrations(newExpanded);
+    } else {
+      // If clicking different tab, just switch tabs
+      setActiveTab({ ...activeTab, [registrationId]: tab });
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -246,49 +269,71 @@ const MyFreeEventRegistrationsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Free Event Registrations</h2>
-        <span className="text-xs sm:text-sm text-gray-500">
-          {registrations.length} registration{registrations.length !== 1 ? 's' : ''} across {events.length} event{events.length !== 1 ? 's' : ''}
-        </span>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900">Free Events - My RSVPs</h2>
       </div>
 
       {/* Event Selector with Date Filter */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
-        <div className="space-y-4">
-          {/* Date Filter */}
-          <div>
-            <label htmlFor="dateFilter" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-              Filter by Date Range
-            </label>
-            <DateRangeSelector
-              value={dateFilter}
-              onChange={setDateFilter}
-            />
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="space-y-3">
+          {/* Combined Date Filter and Event Selector */}
+          <div className="flex flex-col sm:flex-row sm:gap-4">
+            {/* Date Filter - Compact */}
+            <div className="sm:w-1/3">
+              <label htmlFor="dateFilter" className="block text-xs font-medium text-gray-600 mb-1">
+                Date Range
+              </label>
+              <select
+                id="dateFilter"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white"
+              >
+                <option value="3months">Last 3 months</option>
+                <option value="6months">Last 6 months</option>
+                <option value="1year">Last year</option>
+                <option value="all">Show all</option>
+              </select>
+            </div>
+
+            {/* Event Selector - Compact */}
+            <div className="flex-1 mt-3 sm:mt-0">
+              <label htmlFor="eventSelect" className="block text-xs font-medium text-gray-600 mb-1">
+                Select Event
+              </label>
+              <select
+                id="eventSelect"
+                value={selectedEventId}
+                onChange={(e) => setSelectedEventId(e.target.value)}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white truncate"
+              >
+                <option value="">Choose an event</option>
+                {filteredEvents.length === 0 ? (
+                  <option disabled>No events found</option>
+                ) : (
+                  filteredEvents.map((event) => {
+                    const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+                    return (
+                      <option key={event.id} value={event.id}>
+                        {event.eventCode} - {event.title} - {eventDateTime.date} - {eventDateTime.time}
+                      </option>
+                    );
+                  })
+                )}
+              </select>
+
+              {filteredEvents.length === 0 && events.length > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  No events in selected range. Try a different date filter.
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Event Selector */}
-          <div>
-            <label htmlFor="eventSelect" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-              Select Event to View Registration Details
-            </label>
-            <EventSelector
-              value={selectedEventId}
-              onChange={setSelectedEventId}
-              events={filteredEvents}
-              placeholder="-- Choose an event --"
-            />
-            {filteredEvents.length === 0 && events.length > 0 && (
-              <p className="text-xs sm:text-sm text-gray-500 mt-2">
-                No events found in the selected date range. Try selecting a different range.
-              </p>
-            )}
-          </div>
-
-          {/* Data Retention Warning */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs sm:text-sm text-amber-800">
-              <strong>Note:</strong> Please save your RSVPs. Events older than 2 years will be deleted by admin.
+          {/* Data Retention Warning - More compact */}
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
+            <p className="text-xs text-amber-800">
+              <strong>Note:</strong> Please save your RSVPs. Events older than 2 years will be deleted.
             </p>
           </div>
         </div>
@@ -306,91 +351,68 @@ const MyFreeEventRegistrationsPage = () => {
             const eventDateTime = formatEventDateTime(eventInfo.dateTime, timeZone);
             
             return (
-              <div className="bg-gray-50 border-b">
-                <div className="px-4 py-4 sm:px-6 sm:py-5">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Event Details Container - 2 columns on desktop */}
-                    <div className="md:col-span-2 bg-white rounded-lg p-4">
-                      {/* Event Title and ID in one line */}
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-                        {eventInfo.title} ({eventInfo.eventCode})
-                      </h3>
+              <div className="bg-gray-50 border-b border-gray-200 rounded-lg p-3 sm:p-4">
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  {/* Event Title */}
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                    {eventInfo.title}
+                  </h3>
+                  
+                  {/* Event Code */}
+                  <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
+                    {eventInfo.eventCode || selectedEvent?.eventCode}
+                  </span>
+                  
+                  {/* Date & Time */}
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>{eventDateTime.combined}</span>
+                  </div>
+                  
+                  {/* Venue */}
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{eventInfo.venue}</span>
+                  </div>
 
-                      {/* Event Details */}
-                      <div className="space-y-3">
-                        {/* Date & Time */}
-                        <div className="flex items-center gap-3">
-                          <div className="text-gray-500">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                          <span className="text-sm sm:text-base text-gray-700">
-                            {eventDateTime.date} {eventDateTime.time} {timeZone}
-                          </span>
-                        </div>
-
-                        {/* Venue */}
-                        <div className="flex items-center gap-3">
-                          <div className="text-gray-500">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                          </div>
-                          <span className="text-sm sm:text-base text-gray-700">
-                            {eventInfo.venue}
-                          </span>
-                        </div>
-
-                        {/* Address */}
-                        {eventInfo.address && (
-                          <div className="flex items-start gap-3">
-                            <div className="text-gray-500 mt-0.5">
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                            </div>
-                            <span className="text-sm sm:text-base text-gray-700">
-                              {typeof eventInfo.address === 'string' 
-                                ? eventInfo.address 
-                                : eventInfo.address.formattedAddress || 
-                                  `${eventInfo.address.street || ''} ${eventInfo.address.suburb || ''} ${eventInfo.address.state || ''} ${eventInfo.address.postalCode || ''}`.trim()
-                              }
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                  {/* Address - Full width on new line if exists */}
+                  {eventInfo.address && (
+                    <div className="w-full flex items-start gap-1 text-gray-600 text-xs sm:text-sm">
+                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>
+                        {typeof eventInfo.address === 'string' 
+                          ? eventInfo.address 
+                          : eventInfo.address.formattedAddress || 
+                            `${eventInfo.address.street || ''} ${eventInfo.address.suburb || ''} ${eventInfo.address.state || ''} ${eventInfo.address.postalCode || ''}`.trim()
+                        }
+                      </span>
                     </div>
+                  )}
 
-                    {/* Organized By Container - 1 column on desktop */}
-                    <div className="md:col-span-1 bg-white rounded-lg p-4">
-                      <div className="space-y-2">
-                        <div>
-                          <span className="text-sm text-gray-600">Organizer:</span>
-                          <p className="text-sm sm:text-base font-semibold text-gray-900">
-                            {eventInfo.organizer?.name || 'Event Organizer'}
-                          </p>
-                        </div>
-                        
-                        {eventInfo.organizer?.phone && (
-                          <div>
-                            <span className="text-sm text-gray-600">Mobile:</span>
-                            <p className="text-sm text-gray-900">
-                              {eventInfo.organizer.phone}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {eventInfo.organizer?.email && (
-                          <div>
-                            <span className="text-sm text-gray-600">Email-id:</span>
-                            <p className="text-sm text-gray-900 break-all">
-                              {eventInfo.organizer.email}
-                            </p>
-                          </div>
-                        )}
+                  {/* Organizer Info - Full width on new line */}
+                  <div className="w-full border-t border-gray-200 pt-3 mt-2">
+                    <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
+                      <div>
+                        <span className="font-medium text-gray-700">Organizer:</span> {eventInfo.organizer?.name || 'Event Organizer'}
                       </div>
+                      {eventInfo.organizer?.phone && (
+                        <div>
+                          <span className="font-medium text-gray-700">Mobile:</span> {eventInfo.organizer.phone}
+                        </div>
+                      )}
+                      {eventInfo.organizer?.email && (
+                        <div className="break-all">
+                          <span className="font-medium text-gray-700">Email:</span> {eventInfo.organizer.email}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -403,79 +425,150 @@ const MyFreeEventRegistrationsPage = () => {
             <h4 className="text-base sm:text-lg font-semibold text-gray-900">Your Registration Details</h4>
             
             {selectedEventRegistrations.map((registration, index) => {
+              const isExpanded = expandedRegistrations.has(registration._id);
+              const hasFormResponses = registration.formResponses && registration.formResponses.length > 0;
+              
               return (
-                <div key={registration._id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                    <div className="flex-1">
-                      {/* Registration Header */}
-                      <div className="mb-2 sm:mb-3">
-                        <h5 className="text-sm sm:text-base font-semibold text-gray-900">
-                          {registration.registrationNumber}
-                        </h5>
+                <div key={registration._id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  {/* Registration Header */}
+                  <div className="border-b border-gray-200">
+                    {/* Mobile Layout */}
+                    <div className="block sm:hidden p-4 space-y-3">
+                      {/* Row 1: Unregister Button (full width) */}
+                      <div className="w-full">
+                        <button
+                          onClick={() => handleUnregister(registration.event)}
+                          disabled={actionLoading}
+                          className="w-full px-4 py-2 rounded-md text-sm font-medium transition-colors bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {actionLoading ? 'Processing...' : '🗑️ Unregister'}
+                        </button>
                       </div>
 
-                    {/* Registration Details Grid */}
-                    <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0 text-xs sm:text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Attendees:</span>
-                        <span className="ml-1 text-gray-900">
-                          {registration.attendees.length} attendee{registration.attendees.length !== 1 ? 's' : ''}
+                      {/* Row 2: Registration Number */}
+                      <div className="font-bold text-gray-900 text-base">
+                        {registration.registrationNumber}
+                      </div>
+
+                      {/* Row 3: Attendee Count and Registration Date */}
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="font-medium text-gray-700">
+                          {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-600">
+                          Registered: {new Date(registration.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      
-                      <div>
-                        <span className="font-medium text-gray-700">Registered:</span>
-                        <span className="ml-1 text-gray-900">{new Date(registration.createdAt).toLocaleDateString()}</span>
-                      </div>
                     </div>
-
-                    {/* Attendee Details Section - Two Column Layout */}
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Attendees Column */}
-                        <div>
-                          <h6 className="text-xs sm:text-sm font-medium text-gray-700 mb-2">Attendee Details</h6>
+                    
+                    {/* Desktop Layout */}
+                    <div className="hidden sm:flex items-start justify-between gap-4 p-4">
+                      <div className="flex-1">
+                        {/* Registration Number */}
+                        <div className="font-semibold text-gray-900 text-sm sm:text-base mb-2">
+                          {registration.registrationNumber}
+                        </div>
+                        
+                        {/* Registration Details */}
+                        <div className="flex items-center gap-2 text-xs sm:text-sm">
+                          <span className="font-medium text-gray-700">
+                            {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
+                          </span>
+                          <span className="text-gray-500">•</span>
+                          <span className="text-gray-600">
+                            Registered: {new Date(registration.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Unregister Button */}
+                      <button
+                        onClick={() => handleUnregister(registration.event)}
+                        disabled={actionLoading}
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {actionLoading ? 'Processing...' : '🗑️ Unregister'}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Tab Buttons */}
+                  <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
+                    <div className="flex gap-1 sm:gap-2">
+                      <button
+                        onClick={() => handleTabClick(registration._id, 'attendees')}
+                        className={`
+                          px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                          ${isExpanded && (activeTab[registration._id] || 'attendees') === 'attendees'
+                            ? 'bg-teal-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }
+                        `}
+                      >
+                        <span className="sm:hidden">Attendees</span>
+                        <span className="hidden sm:inline">View Attendees</span>
+                      </button>
+                      {hasFormResponses && (
+                        <button
+                          onClick={() => handleTabClick(registration._id, 'attendeeInfo')}
+                          className={`
+                            px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                            ${isExpanded && activeTab[registration._id] === 'attendeeInfo'
+                              ? 'bg-teal-600 text-white'
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            }
+                          `}
+                        >
+                          <span className="sm:hidden">Attendee Info</span>
+                          <span className="hidden sm:inline">View Attendee Information</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Tab Content */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-200">
+                      {/* Attendees Tab */}
+                      {(activeTab[registration._id] || 'attendees') === 'attendees' && (
+                        <div className="p-3 sm:p-4 bg-white">
                           <div className="space-y-2">
                             {registration.attendees.map((attendee, idx) => (
-                              <div key={idx} className="text-xs sm:text-sm">
-                                <span className="font-medium text-gray-900">{attendee.name}</span>
-                                {attendee.age && <span className="ml-2 text-gray-600">• Age: {attendee.age}</span>}
+                              <div key={idx} className="border-b last:border-0 pb-2 last:pb-0">
+                                <div className="text-sm sm:text-base font-medium text-gray-900">
+                                  {attendee.name}
+                                </div>
+                                {attendee.age && (
+                                  <div className="text-xs sm:text-sm text-gray-600">
+                                    Age: {attendee.age}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
                         </div>
-
-                        {/* Form Responses Column */}
-                        <div>
-                          <h6 className="text-xs sm:text-sm font-medium text-gray-700 mb-2">Attendee Registration Information</h6>
-                          <div className="space-y-2 text-xs sm:text-sm">
-                            {registration.formResponses && registration.formResponses.length > 0 ? (
-                              registration.formResponses.map((response, idx) => (
-                                <div key={idx} className="mb-2">
-                                  <div className="font-medium text-gray-700">{response.fieldName}:</div>
-                                  <div className="text-gray-900 pl-4 mt-1 whitespace-pre-line break-words">{response.response}</div>
+                      )}
+                      
+                      {/* Attendee Information Tab */}
+                      {activeTab[registration._id] === 'attendeeInfo' && hasFormResponses && (
+                        <div className="p-3 sm:p-4 bg-white">
+                          <div className="space-y-3">
+                            {registration.formResponses.map((response, idx) => (
+                              <div key={idx} className="border-b last:border-0 pb-3 last:pb-0">
+                                <div className="font-medium text-gray-700 text-sm mb-1">
+                                  {response.fieldName}:
                                 </div>
-                              ))
-                            ) : (
-                              <p className="text-gray-500 italic">No additional information provided</p>
-                            )}
+                                <div className="text-gray-600 text-sm whitespace-pre-line break-words pl-4">
+                                  {response.response}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  </div>
-
-                  {/* Action Button */}
-                  <div className="sm:ml-4">
-                    <button
-                      onClick={() => handleUnregister(registration.event)}
-                      disabled={actionLoading}
-                      className="w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50"
-                    >
-                      {actionLoading ? 'Processing...' : '🗑️ Unregister'}
-                    </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               );
             })}

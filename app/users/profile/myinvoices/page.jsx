@@ -251,63 +251,71 @@ const MyInvoicesPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Invoices</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900">Paid Events - My Invoices</h2>
       </div>
 
       {/* Event Selector with Date Filter */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
-        <div className="space-y-4">
-          {/* Date Filter */}
-          <div>
-            <label htmlFor="dateFilter" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-              Filter by Date Range
-            </label>
-            <select
-              id="dateFilter"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="3months">Last 3 months</option>
-              <option value="6months">Last 6 months</option>
-              <option value="1year">Last year</option>
-              <option value="all">Show all</option>
-            </select>
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="space-y-3">
+          {/* Combined Date Filter and Event Selector */}
+          <div className="flex flex-col sm:flex-row sm:gap-4">
+            {/* Date Filter - Compact */}
+            <div className="sm:w-1/3">
+              <label htmlFor="dateFilter" className="block text-xs font-medium text-gray-600 mb-1">
+                Date Range
+              </label>
+              <select
+                id="dateFilter"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white"
+              >
+                <option value="3months">Last 3 months</option>
+                <option value="6months">Last 6 months</option>
+                <option value="1year">Last year</option>
+                <option value="all">Show all</option>
+              </select>
+            </div>
+
+            {/* Event Selector - Compact */}
+            <div className="flex-1 mt-3 sm:mt-0">
+              <label htmlFor="eventSelect" className="block text-xs font-medium text-gray-600 mb-1">
+                Select Event
+              </label>
+              <select
+                id="eventSelect"
+                value={selectedEventId}
+                onChange={(e) => setSelectedEventId(e.target.value)}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white truncate"
+              >
+                <option value="">Choose an event</option>
+                {filteredEvents.length === 0 ? (
+                  <option disabled>No events found</option>
+                ) : (
+                  filteredEvents.map((event) => {
+                    const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+                    return (
+                      <option key={event.id} value={event.id}>
+                        {event.eventCode} - {event.title} - {eventDateTime.date} - {eventDateTime.time}
+                      </option>
+                    );
+                  })
+                )}
+              </select>
+
+              {filteredEvents.length === 0 && events.length > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  No events in selected range. Try a different date filter.
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Event Selector */}
-          <div>
-            <label htmlFor="eventSelect" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-              Select Event to View Invoices
-            </label>
-            <select
-              id="eventSelect"
-              value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
-              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">-- Choose an event --</option>
-              {filteredEvents.map((event) => {
-                const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
-                return (
-                  <option key={event.id} value={event.id}>
-                    {event.title} - {eventDateTime.combined} at {event.venue}
-                  </option>
-                );
-              })}
-            </select>
-            {filteredEvents.length === 0 && events.length > 0 && (
-              <p className="text-xs sm:text-sm text-gray-500 mt-2">
-                No events found in the selected date range. Try selecting a different range.
-              </p>
-            )}
-          </div>
-
-          {/* Data Retention Warning */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs sm:text-sm text-amber-800">
-              <strong>Note:</strong> Please save your invoices. Events older than 2 years will be deleted by admin.
+          {/* Data Retention Warning - More compact */}
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
+            <p className="text-xs text-amber-800">
+              <strong>Note:</strong> Please save your invoices. Events older than 2 years will be deleted.
             </p>
           </div>
         </div>
@@ -323,107 +331,72 @@ const MyInvoicesPage = () => {
             const eventDateTime = formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone);
             
             return (
-              <div className="bg-gray-50 border-b">
-                <div className="px-4 py-4 sm:px-6 sm:py-5">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Event Details Container - 2 columns on desktop */}
-                    <div className="md:col-span-2 bg-white rounded-lg p-4">
-                      {/* Event Title and ID in one line */}
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-                        {selectedEvent.title} ({selectedEvent.eventCode})
-                      </h3>
+              <div className="bg-gray-50 border-b border-gray-200 rounded-lg p-3 sm:p-4">
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  {/* Event Title */}
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                    {selectedEvent.title}
+                  </h3>
+                  
+                  {/* Event Code */}
+                  <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
+                    {selectedEvent.eventCode}
+                  </span>
+                  
+                  {/* Date & Time */}
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>{eventDateTime.combined}</span>
+                  </div>
+                  
+                  {/* Venue */}
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{selectedEvent.venue}</span>
+                  </div>
 
-                      {/* Event Details */}
-                      <div className="space-y-3">
-                        {/* Date & Time */}
-                        <div className="flex items-center gap-3">
-                          <div className="text-gray-500">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                          <span className="text-sm sm:text-base text-gray-700">
-                            {eventDateTime.date} {eventDateTime.time} {selectedEvent.timeZone}
-                          </span>
-                        </div>
-
-                        {/* Venue */}
-                        <div className="flex items-center gap-3">
-                          <div className="text-gray-500">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                          </div>
-                          <span className="text-sm sm:text-base text-gray-700">
-                            {selectedEvent.venue}
-                          </span>
-                        </div>
-
-                        {/* Address */}
-                        {selectedEvent.address && (
-                          <div className="flex items-start gap-3">
-                            <div className="text-gray-500 mt-0.5">
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                            </div>
-                            <span className="text-sm sm:text-base text-gray-700">
-                              {selectedEvent.address}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                  {/* Address - Full width on new line if exists */}
+                  {selectedEvent.address && (
+                    <div className="w-full flex items-start gap-1 text-gray-600 text-xs sm:text-sm">
+                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>{selectedEvent.address}</span>
                     </div>
+                  )}
 
-                    {/* Organized By Container - 1 column on desktop */}
-                    <div className="md:col-span-1 bg-white rounded-lg p-4">
-                      <div className="space-y-2">
-                        <div>
-                          <span className="text-sm text-gray-600">From:</span>
-                          <p className="text-sm sm:text-base font-semibold text-gray-900">
-                            {selectedEvent.organizer?.name || 'Event Organizer'}
-                          </p>
-                        </div>
-                        
-                        {selectedEvent.organizer?.abn && (
-                          <div>
-                            <span className="text-sm text-gray-600">ABN:</span>
-                            <p className="text-sm text-gray-900">
-                              {selectedEvent.organizer.abn}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {(selectedEvent.organizer?.contact || selectedEvent.organizer?.phone) && (
-                          <div>
-                            <span className="text-sm text-gray-600">Contact:</span>
-                            <p className="text-sm text-gray-900">
-                              {selectedEvent.organizer.contact || selectedEvent.organizer.phone}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {selectedEvent.organizer?.email && selectedEvent.organizer.email.trim() && (
-                          <div>
-                            <span className="text-sm text-gray-600">Email-id:</span>
-                            <p className="text-sm text-gray-900 break-all">
-                              {selectedEvent.organizer.email}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {selectedEvent.organizer?.website && selectedEvent.organizer.website.trim() && (
-                          <div>
-                            <span className="text-sm text-gray-600">Website:</span>
-                            <p className="text-sm text-gray-900 break-all">
-                              <a href={selectedEvent.organizer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                {selectedEvent.organizer.website}
-                              </a>
-                            </p>
-                          </div>
-                        )}
+                  {/* Organizer Info - Full width on new line */}
+                  <div className="w-full border-t border-gray-200 pt-3 mt-2">
+                    <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
+                      <div>
+                        <span className="font-medium text-gray-700">Organizer:</span> {selectedEvent.organizer?.name || 'Event Organizer'}
                       </div>
+                      {(selectedEvent.organizer?.contact || selectedEvent.organizer?.phone) && (
+                        <div>
+                          <span className="font-medium text-gray-700">Contact:</span> {selectedEvent.organizer.contact || selectedEvent.organizer.phone}
+                        </div>
+                      )}
+                      {selectedEvent.organizer?.email && selectedEvent.organizer.email.trim() && (
+                        <div className="break-all">
+                          <span className="font-medium text-gray-700">Email:</span> {selectedEvent.organizer.email}
+                        </div>
+                      )}
+                      {selectedEvent.organizer?.abn && (
+                        <div>
+                          <span className="font-medium text-gray-700">ABN:</span> {selectedEvent.organizer.abn}
+                        </div>
+                      )}
+                      {selectedEvent.organizer?.website && selectedEvent.organizer.website.trim() && (
+                        <div className="break-all">
+                          <span className="font-medium text-gray-700">Website:</span> <a href={selectedEvent.organizer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{selectedEvent.organizer.website}</a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -436,20 +409,65 @@ const MyInvoicesPage = () => {
             <h4 className="text-base sm:text-lg font-semibold text-gray-900">Your Invoices</h4>
             
             {selectedEventInvoices.map((invoice) => (
-                <div key={invoice.invoiceNumber} 
-                  className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+              <div key={invoice.invoiceNumber} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                {/* Invoice Card - Simple Layout (No Tabs) */}
+                <div className="p-4">
+                  {/* Mobile Layout */}
+                  <div className="block sm:hidden space-y-3">
+                    {/* Row 1: View Invoice Button (full width) */}
+                    <div className="w-full">
+                      <button
+                        onClick={() => handleViewInvoice(invoice)}
+                        className="w-full px-4 py-2 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        📄 View Invoice
+                      </button>
+                    </div>
+
+                    {/* Row 2: Invoice Number + Status */}
+                    <div className="flex items-center gap-2">
+                      <div className="font-bold text-gray-900 text-base">
+                        Invoice: {invoice.invoiceNumber}
+                      </div>
+                      {getStatusBadge(invoice.status)}
+                    </div>
+
+                    {/* Row 3: Invoice Details */}
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Tickets:</span>
+                        <span className="text-gray-900">{invoice.ticketCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Total Amount:</span>
+                        <span className="text-gray-900 font-semibold">${invoice.amounts.total.toFixed(2)}</span>
+                      </div>
+                      {invoice.hasRefunds && (
+                        <div className="flex justify-between">
+                          <span className="font-medium text-gray-700">Refunded:</span>
+                          <span className="text-red-600 font-semibold">${invoice.amounts.totalRefunded.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Purchase Date:</span>
+                        <span className="text-gray-900">{formatDate(invoice.invoiceDate)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Desktop Layout */}
+                  <div className="hidden sm:flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      {/* Invoice Header */}
-                      <div className="flex items-center gap-3 mb-2 sm:mb-3">
-                        <h5 className="text-sm sm:text-base font-semibold text-gray-900">
+                      {/* Invoice Number + Status */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="font-semibold text-gray-900 text-sm sm:text-base">
                           Invoice: {invoice.invoiceNumber}
-                        </h5>
+                        </div>
                         {getStatusBadge(invoice.status)}
                       </div>
-
-                      {/* Invoice Details Grid */}
-                      <div className="space-y-2 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-3 sm:space-y-0 text-xs sm:text-sm">
+                      
+                      {/* Invoice Details */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm">
                         <div>
                           <span className="font-medium text-gray-700">Tickets:</span>
                           <div className="text-gray-900">{invoice.ticketCount}</div>
@@ -457,13 +475,13 @@ const MyInvoicesPage = () => {
                         
                         <div>
                           <span className="font-medium text-gray-700">Total Amount:</span>
-                          <div className="text-gray-900">${invoice.amounts.total.toFixed(2)}</div>
+                          <div className="text-gray-900 font-semibold">${invoice.amounts.total.toFixed(2)}</div>
                         </div>
                         
                         {invoice.hasRefunds && (
                           <div>
                             <span className="font-medium text-gray-700">Refunded:</span>
-                            <div className="text-red-600">${invoice.amounts.totalRefunded.toFixed(2)}</div>
+                            <div className="text-red-600 font-semibold">${invoice.amounts.totalRefunded.toFixed(2)}</div>
                           </div>
                         )}
                         
@@ -472,21 +490,19 @@ const MyInvoicesPage = () => {
                           <div className="text-gray-900">{formatDate(invoice.invoiceDate)}</div>
                         </div>
                       </div>
-
                     </div>
-
-                    {/* Action Button */}
-                    <div className="sm:ml-4">
-                      <button
-                        onClick={() => handleViewInvoice(invoice)}
-                        className="w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium"
-                      >
-                        View Invoice
-                      </button>
-                    </div>
+                    
+                    {/* View Invoice Button */}
+                    <button
+                      onClick={() => handleViewInvoice(invoice)}
+                      className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      📄 View Invoice
+                    </button>
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
           </div>
         </div>
       )}

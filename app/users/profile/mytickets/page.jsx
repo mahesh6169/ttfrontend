@@ -15,6 +15,8 @@ const EnhancedMyTicketsPage = () => {
   const [selectedTicketGroup, setSelectedTicketGroup] = useState(null);
   const [showTicketsModal, setShowTicketsModal] = useState(false);
   const [dateFilter, setDateFilter] = useState('3months'); // Default to 3 months
+  const [expandedPurchases, setExpandedPurchases] = useState(new Set());
+  const [activeTab, setActiveTab] = useState({}); // { invoiceNumber: 'tickets' | 'details' }
 
   // Fetch all user tickets
   useEffect(() => {
@@ -248,6 +250,25 @@ const EnhancedMyTicketsPage = () => {
     }
   };
 
+  // Handle tab click for purchases
+  const handleTabClick = (invoiceNumber, tab) => {
+    const isCurrentlyExpanded = expandedPurchases.has(invoiceNumber);
+    const currentTab = activeTab[invoiceNumber] || 'tickets';
+    
+    if (!isCurrentlyExpanded) {
+      const newExpanded = new Set(expandedPurchases);
+      newExpanded.add(invoiceNumber);
+      setExpandedPurchases(newExpanded);
+      setActiveTab({ ...activeTab, [invoiceNumber]: tab });
+    } else if (currentTab === tab) {
+      const newExpanded = new Set(expandedPurchases);
+      newExpanded.delete(invoiceNumber);
+      setExpandedPurchases(newExpanded);
+    } else {
+      setActiveTab({ ...activeTab, [invoiceNumber]: tab });
+    }
+  };
+
 
   if (loading) {
     return (
@@ -287,63 +308,71 @@ const EnhancedMyTicketsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Tickets</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900">Paid Events - My Tickets</h2>
       </div>
 
       {/* Event Selector with Date Filter */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
-        <div className="space-y-4">
-          {/* Date Filter */}
-          <div>
-            <label htmlFor="dateFilter" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-              Filter by Date Range
-            </label>
-            <select
-              id="dateFilter"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="3months">Last 3 months</option>
-              <option value="6months">Last 6 months</option>
-              <option value="1year">Last year</option>
-              <option value="all">Show all</option>
-            </select>
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="space-y-3">
+          {/* Combined Date Filter and Event Selector */}
+          <div className="flex flex-col sm:flex-row sm:gap-4">
+            {/* Date Filter - Compact */}
+            <div className="sm:w-1/3">
+              <label htmlFor="dateFilter" className="block text-xs font-medium text-gray-600 mb-1">
+                Date Range
+              </label>
+              <select
+                id="dateFilter"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white"
+              >
+                <option value="3months">Last 3 months</option>
+                <option value="6months">Last 6 months</option>
+                <option value="1year">Last year</option>
+                <option value="all">Show all</option>
+              </select>
+            </div>
+
+            {/* Event Selector - Compact */}
+            <div className="flex-1 mt-3 sm:mt-0">
+              <label htmlFor="eventSelect" className="block text-xs font-medium text-gray-600 mb-1">
+                Select Event
+              </label>
+              <select
+                id="eventSelect"
+                value={selectedEventId}
+                onChange={(e) => setSelectedEventId(e.target.value)}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white truncate"
+              >
+                <option value="">Choose an event</option>
+                {filteredEvents.length === 0 ? (
+                  <option disabled>No events found</option>
+                ) : (
+                  filteredEvents.map((event) => {
+                    const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+                    return (
+                      <option key={event.id} value={event.id}>
+                        {event.eventCode} - {event.title} - {eventDateTime.date} - {eventDateTime.time}
+                      </option>
+                    );
+                  })
+                )}
+              </select>
+
+              {filteredEvents.length === 0 && events.length > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  No events in selected range. Try a different date filter.
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Event Selector */}
-          <div>
-            <label htmlFor="eventSelect" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-              Select Event to View Tickets
-            </label>
-            <select
-              id="eventSelect"
-              value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
-              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">-- Choose an event --</option>
-              {filteredEvents.map((event) => {
-                const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
-                return (
-                  <option key={event.id} value={event.id}>
-                    {event.title} - {eventDateTime.combined}
-                  </option>
-                );
-              })}
-            </select>
-            {filteredEvents.length === 0 && events.length > 0 && (
-              <p className="text-xs sm:text-sm text-gray-500 mt-2">
-                No events found in the selected date range. Try selecting a different range.
-              </p>
-            )}
-          </div>
-
-          {/* Data Retention Warning */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs sm:text-sm text-amber-800">
-              <strong>Note:</strong> Please save your tickets. Events older than 2 years will be deleted by admin.
+          {/* Data Retention Warning - More compact */}
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
+            <p className="text-xs text-amber-800">
+              <strong>Note:</strong> Please save your tickets. Events older than 2 years will be deleted.
             </p>
           </div>
         </div>
@@ -369,107 +398,72 @@ const EnhancedMyTicketsPage = () => {
             const eventDateTime = formatEventDateTime(eventInfo.dateTime, timeZone);
             
             return (
-              <div className="bg-gray-50 border-b">
-                <div className="px-4 py-4 sm:px-6 sm:py-5">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Event Details Container - 2 columns on desktop */}
-                    <div className="md:col-span-2 bg-white rounded-lg p-4">
-                      {/* Event Title and ID in one line */}
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-                        {eventInfo.title} ({eventInfo.eventCode})
-                      </h3>
+              <div className="bg-gray-50 border-b border-gray-200 rounded-lg p-3 sm:p-4">
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  {/* Event Title */}
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                    {eventInfo.title}
+                  </h3>
+                  
+                  {/* Event Code */}
+                  <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
+                    {eventInfo.eventCode}
+                  </span>
+                  
+                  {/* Date & Time */}
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>{eventDateTime.combined}</span>
+                  </div>
+                  
+                  {/* Venue */}
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{eventInfo.venue}</span>
+                  </div>
 
-                      {/* Event Details */}
-                      <div className="space-y-3">
-                        {/* Date & Time */}
-                        <div className="flex items-center gap-3">
-                          <div className="text-gray-500">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                          <span className="text-sm sm:text-base text-gray-700">
-                            {eventDateTime.date} {eventDateTime.time} {timeZone}
-                          </span>
-                        </div>
-
-                        {/* Venue */}
-                        <div className="flex items-center gap-3">
-                          <div className="text-gray-500">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                          </div>
-                          <span className="text-sm sm:text-base text-gray-700">
-                            {eventInfo.venue}
-                          </span>
-                        </div>
-
-                        {/* Address */}
-                        {eventInfo.address && (
-                          <div className="flex items-start gap-3">
-                            <div className="text-gray-500 mt-0.5">
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                            </div>
-                            <span className="text-sm sm:text-base text-gray-700">
-                              {eventInfo.address}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                  {/* Address - Full width on new line if exists */}
+                  {eventInfo.address && (
+                    <div className="w-full flex items-start gap-1 text-gray-600 text-xs sm:text-sm">
+                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>{eventInfo.address}</span>
                     </div>
+                  )}
 
-                    {/* Organized By Container - 1 column on desktop */}
-                    <div className="md:col-span-1 bg-white rounded-lg p-4">
-                      <div className="space-y-2">
-                        <div>
-                          <span className="text-sm text-gray-600">Organizer:</span>
-                          <p className="text-sm sm:text-base font-semibold text-gray-900">
-                            {eventInfo.organizer?.name || 'Event Organizer'}
-                          </p>
-                        </div>
-                        
-                        {(eventInfo.organizer?.contact || eventInfo.organizer?.phone) && (
-                          <div>
-                            <span className="text-sm text-gray-600">Contact:</span>
-                            <p className="text-sm text-gray-900">
-                              {eventInfo.organizer.contact || eventInfo.organizer.phone}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {eventInfo.organizer?.email && eventInfo.organizer.email.trim() && (
-                          <div>
-                            <span className="text-sm text-gray-600">Email-id:</span>
-                            <p className="text-sm text-gray-900 break-all">
-                              {eventInfo.organizer.email}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {eventInfo.organizer?.abn && (
-                          <div>
-                            <span className="text-sm text-gray-600">ABN:</span>
-                            <p className="text-sm text-gray-900">
-                              {eventInfo.organizer.abn}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {eventInfo.organizer?.website && eventInfo.organizer.website.trim() && (
-                          <div>
-                            <span className="text-sm text-gray-600">Website:</span>
-                            <p className="text-sm text-gray-900 break-all">
-                              <a href={eventInfo.organizer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                {eventInfo.organizer.website}
-                              </a>
-                            </p>
-                          </div>
-                        )}
+                  {/* Organizer Info - Full width on new line */}
+                  <div className="w-full border-t border-gray-200 pt-3 mt-2">
+                    <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
+                      <div>
+                        <span className="font-medium text-gray-700">Organizer:</span> {eventInfo.organizer?.name || 'Event Organizer'}
                       </div>
+                      {(eventInfo.organizer?.contact || eventInfo.organizer?.phone) && (
+                        <div>
+                          <span className="font-medium text-gray-700">Contact:</span> {eventInfo.organizer.contact || eventInfo.organizer.phone}
+                        </div>
+                      )}
+                      {eventInfo.organizer?.email && eventInfo.organizer.email.trim() && (
+                        <div className="break-all">
+                          <span className="font-medium text-gray-700">Email:</span> {eventInfo.organizer.email}
+                        </div>
+                      )}
+                      {eventInfo.organizer?.abn && (
+                        <div>
+                          <span className="font-medium text-gray-700">ABN:</span> {eventInfo.organizer.abn}
+                        </div>
+                      )}
+                      {eventInfo.organizer?.website && eventInfo.organizer.website.trim() && (
+                        <div className="break-all">
+                          <span className="font-medium text-gray-700">Website:</span> <a href={eventInfo.organizer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{eventInfo.organizer.website}</a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -483,19 +477,37 @@ const EnhancedMyTicketsPage = () => {
             
             {selectedEventTickets.map((ticketGroup, index) => {
               const representative = ticketGroup[0];
+              const invoiceNumber = representative.invoiceNumber;
+              const isExpanded = expandedPurchases.has(invoiceNumber);
               const totalAmount = calculateGroupTotal(ticketGroup);
               const seatInfo = formatSeats(ticketGroup);
               const refundStatus = getRefundStatus(ticketGroup);
+              const typeGroups = groupTicketsByType(ticketGroup);
               
               return (
-                <div key={`${representative.invoiceNumber}-${index}`} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                    <div className="flex-1">
-                      {/* Purchase Header */}
-                      <div className="flex items-center gap-3 mb-2 sm:mb-3">
-                        <h5 className="text-sm sm:text-base font-semibold text-gray-900">
-                          Invoice: {representative.invoiceNumber}
-                        </h5>
+                <div key={`${invoiceNumber}-${index}`} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  {/* Purchase Header */}
+                  <div className="border-b border-gray-200">
+                    {/* Mobile Layout */}
+                    <div className="block sm:hidden p-4 space-y-3">
+                      {/* Row 1: View Tickets Button (full width) */}
+                      <div className="w-full">
+                        <button
+                          onClick={() => {
+                            setSelectedTicketGroup(ticketGroup);
+                            setShowTicketsModal(true);
+                          }}
+                          className="w-full px-4 py-2 rounded-md text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
+                        >
+                          🎫 View/Download Tickets
+                        </button>
+                      </div>
+
+                      {/* Row 2: Invoice Number + Refund Status */}
+                      <div className="flex items-center gap-2">
+                        <div className="font-bold text-gray-900 text-base">
+                          Invoice: {invoiceNumber}
+                        </div>
                         {refundStatus && (
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${refundStatus.type === 'full' ? 'text-red-600 bg-red-100' : 'text-orange-600 bg-orange-100'}`}>
                             {refundStatus.text}
@@ -503,48 +515,153 @@ const EnhancedMyTicketsPage = () => {
                         )}
                       </div>
 
-                      {/* Purchase Details Grid */}
-                      <div className="space-y-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-3 sm:space-y-0 text-xs sm:text-sm">
-                        <div>
-                          <span className="font-medium text-gray-700">Tickets:</span>
-                          <span className="ml-1 text-gray-900">
-                            {(() => {
-                              const typeGroups = groupTicketsByType(ticketGroup);
-                              return typeGroups.map((group, index) => (
-                                <span key={group.name}>
-                                  {group.count} x {group.name}
-                                  {index < typeGroups.length - 1 ? ', ' : ''}
-                                </span>
-                              ));
-                            })()}
-                          </span>
-                        </div>
-                        
-                        <div>
-                          <span className="font-medium text-gray-700">Seats:</span>
-                          <span className="ml-1 text-gray-900">{seatInfo}</span>
-                        </div>
-                        
-                        <div>
-                          <span className="font-medium text-gray-700">Purchase Date:</span>
-                          <span className="ml-1 text-gray-900">{new Date(representative.createdAt).toLocaleDateString()}</span>
-                        </div>
+                      {/* Row 3: Ticket Summary */}
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="font-medium text-gray-700">
+                          {ticketGroup.length} Ticket{ticketGroup.length !== 1 ? 's' : ''}
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-600">
+                          {new Date(representative.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
-
-                    {/* Action Button */}
-                    <div className="sm:ml-4">
+                    
+                    {/* Desktop Layout */}
+                    <div className="hidden sm:flex items-start justify-between gap-4 p-4">
+                      <div className="flex-1">
+                        {/* Invoice Number + Refund Status */}
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="font-semibold text-gray-900 text-sm sm:text-base">
+                            Invoice: {invoiceNumber}
+                          </div>
+                          {refundStatus && (
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${refundStatus.type === 'full' ? 'text-red-600 bg-red-100' : 'text-orange-600 bg-orange-100'}`}>
+                              {refundStatus.text}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Purchase Summary */}
+                        <div className="flex items-center gap-2 text-xs sm:text-sm">
+                          <span className="font-medium text-gray-700">
+                            {ticketGroup.length} Ticket{ticketGroup.length !== 1 ? 's' : ''}
+                          </span>
+                          <span className="text-gray-500">•</span>
+                          <span className="text-gray-600">
+                            {new Date(representative.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* View Tickets Button */}
                       <button
                         onClick={() => {
                           setSelectedTicketGroup(ticketGroup);
                           setShowTicketsModal(true);
                         }}
-                        className="w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs sm:text-sm font-medium"
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap bg-green-600 text-white hover:bg-green-700"
                       >
-                        🎫 View Tickets
+                        🎫 View/Download Tickets
                       </button>
                     </div>
                   </div>
+                  
+                  {/* Tab Buttons */}
+                  <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
+                    <div className="flex gap-1 sm:gap-2">
+                      <button
+                        onClick={() => handleTabClick(invoiceNumber, 'tickets')}
+                        className={`
+                          px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                          ${isExpanded && (activeTab[invoiceNumber] || 'tickets') === 'tickets'
+                            ? 'bg-teal-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }
+                        `}
+                      >
+                        <span className="sm:hidden">Tickets</span>
+                        <span className="hidden sm:inline">View Ticket Details</span>
+                      </button>
+                      <button
+                        onClick={() => handleTabClick(invoiceNumber, 'summary')}
+                        className={`
+                          px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                          ${isExpanded && activeTab[invoiceNumber] === 'summary'
+                            ? 'bg-teal-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }
+                        `}
+                      >
+                        <span className="sm:hidden">Summary</span>
+                        <span className="hidden sm:inline">Purchase Summary</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Tab Content */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-200">
+                      {/* Ticket Details Tab */}
+                      {(activeTab[invoiceNumber] || 'tickets') === 'tickets' && (
+                        <div className="p-3 sm:p-4 bg-white">
+                          <div className="space-y-2">
+                            {ticketGroup.map((ticket, idx) => (
+                              <div key={ticket._id} className="border-b last:border-0 pb-2 last:pb-0">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="text-sm sm:text-base font-mono font-medium text-gray-900">
+                                      {ticket.ticketNumber}
+                                    </div>
+                                    <div className="text-xs sm:text-sm text-gray-600">
+                                      {ticket.ticketType.name}
+                                    </div>
+                                  </div>
+                                  {ticket.seats?.[0] && (
+                                    <div className="text-xs sm:text-sm text-gray-600">
+                                      Seat: {ticket.seats[0].row}-{ticket.seats[0].seatNumber}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Purchase Summary Tab */}
+                      {activeTab[invoiceNumber] === 'summary' && (
+                        <div className="p-3 sm:p-4 bg-white">
+                          <div className="space-y-3">
+                            <div className="border-b pb-2">
+                              <div className="font-medium text-gray-700 text-sm mb-1">Ticket Types:</div>
+                              <div className="text-gray-600 text-sm pl-4">
+                                {typeGroups.map((group, idx) => (
+                                  <div key={group.name}>
+                                    {group.count} x {group.name}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="border-b pb-2">
+                              <div className="font-medium text-gray-700 text-sm mb-1">Seats:</div>
+                              <div className="text-gray-600 text-sm pl-4">{seatInfo}</div>
+                            </div>
+                            <div className="border-b pb-2">
+                              <div className="font-medium text-gray-700 text-sm mb-1">Total Amount:</div>
+                              <div className="text-gray-900 font-semibold text-sm pl-4">${totalAmount.toFixed(2)}</div>
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-700 text-sm mb-1">Purchase Date:</div>
+                              <div className="text-gray-600 text-sm pl-4">
+                                {new Date(representative.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
