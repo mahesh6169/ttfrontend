@@ -15,14 +15,18 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualTicketNumber, setManualTicketNumber] = useState('');
   const [successData, setSuccessData] = useState(null);
+  const [errorData, setErrorData] = useState(null);
   const [autoCloseTimer, setAutoCloseTimer] = useState(null);
   
   const scannerRef = useRef(null);
   const qrReaderRef = useRef(null);
   const audioRef = useRef(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (!qrReaderRef.current) return;
+    if (!qrReaderRef.current || initializedRef.current) return;
+    
+    initializedRef.current = true;
 
     if (audioRef.current === null) {
       audioRef.current = new Audio();
@@ -38,9 +42,12 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
           aspectRatio: 1.0,
           supportedScanTypes: [0],
           useBarCodeDetectorIfSupported: true,
-          rememberLastUsedCamera: false,
+          rememberLastUsedCamera: true,
           showTorchButtonIfSupported: true,
-          formatsToSupport: [0]
+          formatsToSupport: [0],
+          videoConstraints: {
+            facingMode: "environment"
+          }
         },
         false
       );
@@ -169,16 +176,16 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
       return;
     }
 
-    try {
-      const result = await dispatch(checkInByQR({
-        eventId: selectedEvent._id,
-        ticketNumber: ticketNumber.trim().toUpperCase()
-      })).unwrap();
+    const result = await dispatch(checkInByQR({
+      eventId: selectedEvent._id,
+      ticketNumber: ticketNumber.trim().toUpperCase()
+    }));
 
+    if (result.type.endsWith('/fulfilled')) {
+      const ticketData = result.payload.ticket || result.payload;
+      
       playSuccessSound();
       triggerVibration();
-
-      const ticketData = result.ticket || result;
       
       dispatch(updateLocalQRCheckIn({
         ticketNumber: ticketData.ticketNumber,
@@ -193,9 +200,8 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
         resetScanner();
       }, 2500);
       setAutoCloseTimer(timer);
-
-    } catch (error) {
-      handleError(error);
+    } else {
+      handleError(result.payload);
       setTimeout(() => {
         resetScanner();
       }, 1000);
@@ -205,28 +211,40 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
   const handleError = (error) => {
     const errorCode = error?.errorCode || 'SERVER_ERROR';
     
+    let errorTitle = '';
+    let errorMessage = '';
+    
     switch (errorCode) {
       case 'ALREADY_CHECKED_IN':
-        toast.error(`Already checked in: ${error.buyerName || ''} at ${error.checkInTime ? new Date(error.checkInTime).toLocaleTimeString() : ''}`);
+        errorTitle = 'Already Checked In';
+        errorMessage = `${error.buyerName || 'This ticket'} was checked in at ${error.checkInTime ? new Date(error.checkInTime).toLocaleTimeString() : ''}`;
         break;
       case 'WRONG_EVENT':
-        toast.error(`Wrong event! This ticket is for "${error.eventTitle || 'another event'}"`);
+        errorTitle = 'Wrong Event';
+        errorMessage = `This ticket is for "${error.eventTitle || 'another event'}"`;
         break;
       case 'TICKET_CANCELLED':
-        toast.error(`Ticket cancelled: ${error.buyerName || ''}`);
+        errorTitle = 'Ticket Cancelled';
+        errorMessage = `Ticket for ${error.buyerName || 'this attendee'} has been cancelled`;
         break;
       case 'TICKET_NOT_FOUND':
-        toast.error('Ticket not found');
+        errorTitle = 'Ticket Not Found';
+        errorMessage = 'This ticket number does not exist';
         break;
       case 'CONCURRENT_CHECKIN':
-        toast.error('Ticket just checked in on another device');
+        errorTitle = 'Already Checked In';
+        errorMessage = 'This ticket was just checked in on another device';
         break;
       case 'NOT_AUTHORIZED':
-        toast.error('Not authorized for this event');
+        errorTitle = 'Not Authorized';
+        errorMessage = 'You are not authorized to check in for this event';
         break;
       default:
-        toast.error(error?.message || 'Check-in failed');
+        errorTitle = 'Check-In Failed';
+        errorMessage = error?.message || 'Something went wrong';
     }
+    
+    setErrorData({ title: errorTitle, message: errorMessage, ticketNumber: error.ticketNumber });
   };
 
   const playSuccessSound = () => {
@@ -244,6 +262,7 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
   const resetScanner = () => {
     setIsScanning(false);
     setSuccessData(null);
+    setErrorData(null);
     setLastScannedTicket(null);
     if (autoCloseTimer) {
       clearTimeout(autoCloseTimer);
@@ -367,6 +386,29 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
               <button
                 onClick={resetScanner}
                 className="mt-4 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+              >
+                Scan Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {errorData && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <div className="text-center">
+              <div className="text-6xl mb-4">❌</div>
+              <h3 className="text-xl font-bold text-red-600 mb-2">{errorData.title}</h3>
+              <div className="text-gray-700 space-y-2">
+                <p className="text-sm">{errorData.message}</p>
+                {errorData.ticketNumber && (
+                  <p className="text-xs text-gray-500 font-mono">{String(errorData.ticketNumber)}</p>
+                )}
+              </div>
+              <button
+                onClick={resetScanner}
+                className="mt-4 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Scan Next
               </button>

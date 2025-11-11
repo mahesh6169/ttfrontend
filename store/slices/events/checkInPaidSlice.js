@@ -320,7 +320,7 @@ const checkInPaidSlice = createSlice({
       })
       .addCase(checkInByQR.rejected, (state, action) => {
         state.actionLoading = false;
-        state.error = action.payload;
+        // Don't set state.error - QR errors are handled locally in scanner component
       });
   },
 });

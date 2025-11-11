@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { formatInTimeZone } from 'date-fns-tz';
+import { BsQrCodeScan } from 'react-icons/bs';
 
 // Components
 import CheckInPaid_EventSelector from '@/components/events/checkin/checkInPaid_EventSelector';
@@ -148,7 +149,7 @@ const CheckInPaidPage = () => {
           className="fixed bottom-20 right-6 w-16 h-16 bg-teal-600 rounded-full shadow-lg flex flex-col items-center justify-center text-white z-30 hover:bg-teal-700 transition-colors"
           aria-label="Scan QR Code"
         >
-          <span className="text-2xl">📷</span>
+          <BsQrCodeScan className="text-2xl" />
           <span className="text-xs mt-0.5">Scan QR</span>
         </button>
       )}
