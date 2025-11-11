@@ -102,9 +102,10 @@ const CheckInPaid_EventSelector = () => {
   }
 
   if (error) {
+    const errorMessage = typeof error === 'string' ? error : error?.message || 'Failed to load events';
     return (
       <div className="text-red-600 text-sm">
-        Error loading events: {error}
+        Error loading events: {errorMessage}
       </div>
     );
   }

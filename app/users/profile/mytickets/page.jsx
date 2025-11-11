@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { generateTicketsPDF } from '../../../../utils/paidEventTicketGenerator';
 import axios from '@/utils/axiosConfig';
+import { QRCodeSVG } from 'qrcode.react';
 
 const EnhancedMyTicketsPage = () => {
   const [tickets, setTickets] = useState([]);
@@ -748,19 +749,28 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
           {/* Dotted Line Separator */}
           <div className="border-b-2 border-dotted border-gray-400 mb-6"></div>
 
-          {/* Ticket List - Simple format */}
-          <div className="space-y-2">
+          {/* Ticket List - With QR codes */}
+          <div className="space-y-4">
             {ticketGroup.map((ticket) => (
-              <div key={ticket._id} className="flex justify-between items-center py-1">
-                <span className="font-mono text-sm font-medium">{ticket.ticketNumber}</span>
-                <span className="text-sm text-gray-700">
+              <div key={ticket._id} className="flex flex-col items-center py-3 border-b last:border-0">
+                <div className="font-mono text-sm font-medium mb-1">{ticket.ticketNumber}</div>
+                <div className="text-sm text-gray-600 mb-2">
                   {ticket.ticketType.name}
                   {ticket.seats?.[0] && (
-                    <span className="ml-2 text-gray-600">
+                    <span className="ml-2">
                       (Seat: {ticket.seats[0].row}-{ticket.seats[0].seatNumber})
                     </span>
                   )}
-                </span>
+                </div>
+                <div className="bg-white p-2 rounded border border-gray-200">
+                  <QRCodeSVG 
+                    value={ticket.ticketNumber}
+                    size={150}
+                    level="H"
+                    includeMargin={true}
+                  />
+                </div>
+                <div className="text-xs text-gray-500 mt-2">Scan at entrance</div>
               </div>
             ))}
           </div>

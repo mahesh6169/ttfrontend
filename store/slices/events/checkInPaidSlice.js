@@ -110,6 +110,27 @@ export const bulkCheckInPaidTicket = createAsyncThunk(
   }
 );
 
+// Check in by QR code
+export const checkInByQR = createAsyncThunk(
+  'checkInPaid/checkInByQR',
+  async ({ eventId, ticketNumber }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/events/${eventId}/paid/checkin-by-qr`,
+        { ticketNumber },
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue({
+        message: error.response?.data?.message || 'Failed to check in by QR code',
+        errorCode: error.response?.data?.errorCode || 'SERVER_ERROR',
+        ...error.response?.data
+      });
+    }
+  }
+);
+
 const initialState = {
   managedEvents: [],
   selectedEvent: null,
@@ -197,6 +218,20 @@ const checkInPaidSlice = createSlice({
         state.stats = calculateStats(state.attendees);
       }
     },
+    updateLocalQRCheckIn: (state, action) => {
+      const { ticketNumber, checkInTime } = action.payload;
+      
+      // Find the ticket by ticket number
+      const ticket = state.attendees.find(t => t.ticketNumber === ticketNumber);
+      if (ticket && ticket.attendees[0]) {
+        ticket.attendees[0].checkedIn = true;
+        ticket.attendees[0].checkInTime = checkInTime;
+        ticket.checkInStatus = 'checked-in';
+        
+        // Update stats
+        state.stats = calculateStats(state.attendees);
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -273,6 +308,19 @@ const checkInPaidSlice = createSlice({
       .addCase(bulkCheckInPaidTicket.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
+      })
+      
+      // QR code check-in
+      .addCase(checkInByQR.pending, (state) => {
+        state.actionLoading = true;
+      })
+      .addCase(checkInByQR.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        // Update will be handled by updateLocalQRCheckIn
+      })
+      .addCase(checkInByQR.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
       });
   },
 });
@@ -318,6 +366,7 @@ export const {
   clearCheckInData,
   updateLocalCheckIn,
   updateLocalBulkCheckIn,
+  updateLocalQRCheckIn,
   setCurrentPage,
 } = checkInPaidSlice.actions;
 

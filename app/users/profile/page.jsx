@@ -40,7 +40,7 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* First Container: Account Settings & Check-in */}
+      {/* First Container: Account Settings & View */}
       <div className="border border-gray-300 rounded-lg mb-3 p-3 sm:p-4">
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {/* Account Settings Column */}
@@ -65,24 +65,36 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Check-in Column */}
+          {/* View Column */}
           <div>
             <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
-              <FaCheckCircle className="text-gray-600" />
-              Check-in...
+              <FaEye className="text-gray-600" />
+              View...
             </h3>
             <div className="space-y-1.5">
               <Link 
-                href="/users/profile/checkInFree" 
+                href="/users/profile/myregistrations" 
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
-                → RSVPs
+                → My RSVPs
               </Link>
               <Link 
-                href="/users/profile/checkInPaid" 
+                href="/users/profile/mytickets" 
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
-                → Paid Events
+                → My Tickets
+              </Link>
+              <Link 
+                href="/users/profile/myinvoices" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → My Invoices
+              </Link>
+              <Link 
+                href="/users/profile/my-codes" 
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → My Discount Codes
               </Link>
             </div>
           </div>
@@ -150,7 +162,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Third Container: Event Organizer & View */}
+      {/* Third Container: Event Organizer & Check-in */}
       <div className="border border-gray-300 rounded-lg mb-3 p-3 sm:p-4">
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {/* Event Organizer Column */}
@@ -175,36 +187,24 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* View Column */}
+          {/* Check-in Column */}
           <div>
             <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
-              <FaEye className="text-gray-600" />
-              View...
+              <FaCheckCircle className="text-gray-600" />
+              Check-in...
             </h3>
             <div className="space-y-1.5">
               <Link 
-                href="/users/profile/myregistrations" 
+                href="/users/profile/checkInFree" 
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
-                → My RSVPs
+                → RSVPs
               </Link>
               <Link 
-                href="/users/profile/mytickets" 
+                href="/users/profile/checkInPaid" 
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
-                → My Tickets
-              </Link>
-              <Link 
-                href="/users/profile/myinvoices" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → My Invoices
-              </Link>
-              <Link 
-                href="/users/profile/my-codes" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → My Discount Codes
+                → Paid Events
               </Link>
             </div>
           </div>

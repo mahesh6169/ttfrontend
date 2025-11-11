@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -14,6 +14,7 @@ import CheckInPaid_SearchBar from '@/components/events/checkin/checkInPaid_Searc
 import CheckInPaid_CheckInStats from '@/components/events/checkin/checkInPaid_CheckInStats';
 import CheckInPaid_GroupedAttendeeList from '@/components/events/checkin/checkInPaid_GroupedAttendeeList';
 import CheckInPaid_VirtualizedAttendeeList from '@/components/events/checkin/checkInPaid_VirtualizedAttendeeList';
+import CheckInPaid_QRScanner from '@/components/events/checkin/CheckInPaid_QRScanner';
 
 // Redux
 import { clearCheckInData } from '@/store/slices/events/checkInPaidSlice';
@@ -21,6 +22,7 @@ import { clearCheckInData } from '@/store/slices/events/checkInPaidSlice';
 const CheckInPaidPage = () => {
   const dispatch = useDispatch();
   const { selectedEvent, attendees, pagination } = useSelector((state) => state.checkInPaid);
+  const [showScanner, setShowScanner] = useState(false);
   
   // Use virtualized list for large datasets
   const useVirtualized = pagination.totalCount > 50;
@@ -138,6 +140,23 @@ const CheckInPaidPage = () => {
           </div>
         )}
       </div>
+
+      {/* FAB Button for QR Scanner */}
+      {selectedEvent && !showScanner && (
+        <button
+          onClick={() => setShowScanner(true)}
+          className="fixed bottom-20 right-6 w-16 h-16 bg-teal-600 rounded-full shadow-lg flex flex-col items-center justify-center text-white z-30 hover:bg-teal-700 transition-colors"
+          aria-label="Scan QR Code"
+        >
+          <span className="text-2xl">📷</span>
+          <span className="text-xs mt-0.5">Scan QR</span>
+        </button>
+      )}
+
+      {/* QR Scanner Modal */}
+      {showScanner && selectedEvent && (
+        <CheckInPaid_QRScanner onClose={() => setShowScanner(false)} />
+      )}
 
       {/* Toast Container */}
       <ToastContainer

@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { formatInTimeZone } from 'date-fns-tz';
+import QRCode from 'qrcode';
 
 /**
  * Generate a PDF for event tickets
@@ -8,7 +9,7 @@ import { formatInTimeZone } from 'date-fns-tz';
  * @param {String} eventId - Event ID (fallback if eventCode not available)
  * @returns {void} - Downloads the PDF
  */
-export const generateTicketsPDF = (tickets, eventInfo, eventId = '') => {
+export const generateTicketsPDF = async (tickets, eventInfo, eventId = '') => {
   const doc = new jsPDF();
   const pageHeight = doc.internal.pageSize.height;
   const pageWidth = doc.internal.pageSize.width;
@@ -107,25 +108,62 @@ export const generateTicketsPDF = (tickets, eventInfo, eventId = '') => {
   // Process each ticket [Small font]
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
-  tickets.forEach((ticket, index) => {
+  
+  for (let index = 0; index < tickets.length; index++) {
+    const ticket = tickets[index];
+    
     // Check if we need a new page
-    if (currentY > pageHeight - 30) {
+    if (currentY > pageHeight - 70) {
       doc.addPage();
       currentY = 20;
     }
     
-    // Ticket number on left
+    // Ticket number (centered above QR)
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
     doc.text(ticket.ticketNumber || `TICKET-${index + 1}`, leftMargin, currentY);
-    
-    // Ticket type and seat on right (right-aligned)
-    let rightText = ticket.ticketType?.name || 'Standard';
-    if (ticket.seats && ticket.seats.length > 0) {
-      rightText += ` (Seat: ${ticket.seats[0].row}-${ticket.seats[0].seatNumber})`;
-    }
-    doc.text(rightText, pageWidth - rightMargin, currentY, { align: 'right' });
-    
     currentY += 8;
-  });
+    
+    // Ticket type and seat
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    let ticketInfo = ticket.ticketType?.name || 'Standard';
+    if (ticket.seats && ticket.seats.length > 0) {
+      ticketInfo += ` (Seat: ${ticket.seats[0].row}-${ticket.seats[0].seatNumber})`;
+    }
+    doc.text(ticketInfo, leftMargin, currentY);
+    currentY += 10;
+    
+    // Generate QR code
+    try {
+      const qrDataURL = await QRCode.toDataURL(ticket.ticketNumber, {
+        width: 150,
+        margin: 1,
+        errorCorrectionLevel: 'H'
+      });
+      
+      // Add QR code to PDF (30x30mm ≈ 150px at 72dpi)
+      doc.addImage(qrDataURL, 'PNG', leftMargin, currentY, 30, 30);
+      
+      // Add "Scan at entrance" text below QR
+      doc.setFontSize(8);
+      doc.setTextColor(100);
+      doc.text('Scan at entrance', leftMargin + 15, currentY + 35, { align: 'center' });
+      doc.setTextColor(0);
+      
+      currentY += 45;
+    } catch (error) {
+      console.error('QR code generation error:', error);
+      currentY += 10;
+    }
+    
+    // Separator between tickets
+    if (index < tickets.length - 1) {
+      doc.setDrawColor(200);
+      doc.line(leftMargin, currentY, pageWidth - rightMargin, currentY);
+      currentY += 10;
+    }
+  }
   
   // Footer
   currentY = pageHeight - 20;
