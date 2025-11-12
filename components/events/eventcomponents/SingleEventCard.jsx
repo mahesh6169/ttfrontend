@@ -535,6 +535,32 @@ const SingleEventCard = ({ event, chatProps }) => {
         </div>
       )}
 
+      {/* Refund Policy Section (for paid events) */}
+      {event.isPaid && event.refundPolicy && (
+        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
+          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Refund Policy</h3>
+          </div>
+          <div className="p-3">
+            <div className="text-sm text-gray-700 space-y-2">
+              {/* Processing Fee Policy */}
+              <p>
+                Processing fees are {event.refundPolicy.processingFeePolicy === 'refunded' 
+                  ? 'refundable' 
+                  : 'non-refundable'}.
+              </p>
+              
+              {/* Custom Policy Text */}
+              {event.refundPolicy.policyText && event.refundPolicy.policyText.trim() && (
+                <p className="whitespace-pre-line leading-relaxed">
+                  {event.refundPolicy.policyText}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Registration/Purchase Button Section */}
       {!event.isAdvertiseOnly && (
       <div className="px-2 py-4">

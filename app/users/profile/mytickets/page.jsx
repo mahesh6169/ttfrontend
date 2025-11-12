@@ -4,6 +4,8 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { generateTicketsPDF } from '../../../../utils/paidEventTicketGenerator';
 import axios from '@/utils/axiosConfig';
 import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'react-toastify';
+import { FaQrcode, FaDownload } from 'react-icons/fa';
 
 const EnhancedMyTicketsPage = () => {
   const [tickets, setTickets] = useState([]);
@@ -473,8 +475,7 @@ const EnhancedMyTicketsPage = () => {
           })()}
 
           {/* Ticket Purchase Groups */}
-          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-            <h4 className="text-base sm:text-lg font-semibold text-gray-900">Your Purchases</h4>
+          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4 max-w-4xl mx-auto">
             
             {selectedEventTickets.map((ticketGroup, index) => {
               const representative = ticketGroup[0];
@@ -488,134 +489,66 @@ const EnhancedMyTicketsPage = () => {
               return (
                 <div key={`${invoiceNumber}-${index}`} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                   {/* Purchase Header */}
-                  <div className="border-b border-gray-200">
-                    {/* Mobile Layout */}
-                    <div className="block sm:hidden p-4 space-y-3">
-                      {/* Row 1: View Tickets Button (full width) */}
-                      <div className="w-full">
-                        <button
-                          onClick={() => {
-                            setSelectedTicketGroup(ticketGroup);
-                            setShowTicketsModal(true);
-                          }}
-                          className="w-full px-4 py-2 rounded-md text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
-                        >
-                          🎫 View/Download Tickets
-                        </button>
-                      </div>
-
-                      {/* Row 2: Invoice Number + Refund Status */}
+                  <div className="p-3 sm:p-4 bg-gray-50">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <div className="font-bold text-gray-900 text-base">
-                          Invoice: {invoiceNumber}
-                        </div>
+                        <span className="text-sm text-gray-700">
+                          Purchased on {new Date(representative.createdAt).toLocaleDateString()}
+                        </span>
                         {refundStatus && (
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${refundStatus.type === 'full' ? 'text-red-600 bg-red-100' : 'text-orange-600 bg-orange-100'}`}>
                             {refundStatus.text}
                           </span>
                         )}
                       </div>
-
-                      {/* Row 3: Ticket Summary */}
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="font-medium text-gray-700">
-                          {ticketGroup.length} Ticket{ticketGroup.length !== 1 ? 's' : ''}
-                        </span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-600">
-                          {new Date(representative.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {/* Desktop Layout */}
-                    <div className="hidden sm:flex items-start justify-between gap-4 p-4">
-                      <div className="flex-1">
-                        {/* Invoice Number + Refund Status */}
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="font-semibold text-gray-900 text-sm sm:text-base">
-                            Invoice: {invoiceNumber}
-                          </div>
-                          {refundStatus && (
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${refundStatus.type === 'full' ? 'text-red-600 bg-red-100' : 'text-orange-600 bg-orange-100'}`}>
-                              {refundStatus.text}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* Purchase Summary */}
-                        <div className="flex items-center gap-2 text-xs sm:text-sm">
-                          <span className="font-medium text-gray-700">
-                            {ticketGroup.length} Ticket{ticketGroup.length !== 1 ? 's' : ''}
-                          </span>
-                          <span className="text-gray-500">•</span>
-                          <span className="text-gray-600">
-                            {new Date(representative.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* View Tickets Button */}
-                      <button
-                        onClick={() => {
-                          setSelectedTicketGroup(ticketGroup);
-                          setShowTicketsModal(true);
-                        }}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap bg-green-600 text-white hover:bg-green-700"
-                      >
-                        🎫 View/Download Tickets
-                      </button>
                     </div>
                   </div>
-                  
-                  {/* Tab Buttons */}
-                  <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
-                    <div className="flex gap-1 sm:gap-2">
-                      <button
-                        onClick={() => handleTabClick(invoiceNumber, 'tickets')}
-                        className={`
-                          px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
-                          ${isExpanded && (activeTab[invoiceNumber] || 'tickets') === 'tickets'
-                            ? 'bg-teal-600 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                          }
-                        `}
-                      >
-                        <span className="sm:hidden">Tickets</span>
-                        <span className="hidden sm:inline">View Ticket Details</span>
-                      </button>
-                      <button
-                        onClick={() => handleTabClick(invoiceNumber, 'summary')}
-                        className={`
-                          px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
-                          ${isExpanded && activeTab[invoiceNumber] === 'summary'
-                            ? 'bg-teal-600 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                          }
-                        `}
-                      >
-                        <span className="sm:hidden">Summary</span>
-                        <span className="hidden sm:inline">Purchase Summary</span>
-                      </button>
-                    </div>
+
+                  {/* Action Buttons */}
+                  <div className="p-3 sm:p-4 flex gap-2 border-t border-gray-200">
+                    <button
+                      onClick={() => handleTabClick(invoiceNumber, 'tickets')}
+                      className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isExpanded && (activeTab[invoiceNumber] || 'tickets') === 'tickets'
+                          ? 'bg-gray-200 text-gray-700'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      View Ticket Details
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedTicketGroup(ticketGroup);
+                        setShowTicketsModal(true);
+                      }}
+                      className="flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    >
+                      <FaQrcode className="inline mr-2" />
+                      View QR Codes
+                    </button>
                   </div>
                   
                   {/* Tab Content */}
                   {isExpanded && (
                     <div className="border-t border-gray-200">
                       {/* Ticket Details Tab */}
-                      {(activeTab[invoiceNumber] || 'tickets') === 'tickets' && (
-                        <div className="p-3 sm:p-4 bg-white">
-                          <div className="space-y-2">
-                            {ticketGroup.map((ticket, idx) => (
-                              <div key={ticket._id} className="border-b last:border-0 pb-2 last:pb-0">
+                      <div className="p-3 sm:p-4 bg-white">
+                        <div className="space-y-2">
+                          {ticketGroup.map((ticket, idx) => {
+                            const isRefunded = ticket.refundStatus === 'full' || ticket.checkInStatus === 'cancelled';
+                            return (
+                              <div key={ticket._id} className={`border-b last:border-0 pb-2 last:pb-0 ${isRefunded ? 'opacity-60' : ''}`}>
                                 <div className="flex justify-between items-start">
-                                  <div>
-                                    <div className="text-sm sm:text-base font-mono font-medium text-gray-900">
-                                      {ticket.ticketNumber}
-                                    </div>
-                                    <div className="text-xs sm:text-sm text-gray-600">
-                                      {ticket.ticketType.name}
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-lg">{isRefunded ? '✗' : '✓'}</span>
+                                    <div>
+                                      <div className="text-sm sm:text-base font-mono font-medium text-gray-900">
+                                        {ticket.ticketNumber}
+                                        {isRefunded && <span className="ml-2 text-xs font-bold text-red-600">[REFUNDED]</span>}
+                                      </div>
+                                      <div className="text-xs sm:text-sm text-gray-600">
+                                        {ticket.ticketType.name}
+                                      </div>
                                     </div>
                                   </div>
                                   {ticket.seats?.[0] && (
@@ -625,42 +558,10 @@ const EnhancedMyTicketsPage = () => {
                                   )}
                                 </div>
                               </div>
-                            ))}
-                          </div>
+                            );
+                          })}
                         </div>
-                      )}
-                      
-                      {/* Purchase Summary Tab */}
-                      {activeTab[invoiceNumber] === 'summary' && (
-                        <div className="p-3 sm:p-4 bg-white">
-                          <div className="space-y-3">
-                            <div className="border-b pb-2">
-                              <div className="font-medium text-gray-700 text-sm mb-1">Ticket Types:</div>
-                              <div className="text-gray-600 text-sm pl-4">
-                                {typeGroups.map((group, idx) => (
-                                  <div key={group.name}>
-                                    {group.count} x {group.name}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="border-b pb-2">
-                              <div className="font-medium text-gray-700 text-sm mb-1">Seats:</div>
-                              <div className="text-gray-600 text-sm pl-4">{seatInfo}</div>
-                            </div>
-                            <div className="border-b pb-2">
-                              <div className="font-medium text-gray-700 text-sm mb-1">Total Amount:</div>
-                              <div className="text-gray-900 font-semibold text-sm pl-4">${totalAmount.toFixed(2)}</div>
-                            </div>
-                            <div>
-                              <div className="font-medium text-gray-700 text-sm mb-1">Purchase Date:</div>
-                              <div className="text-gray-600 text-sm pl-4">
-                                {new Date(representative.createdAt).toLocaleDateString()}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -710,14 +611,15 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
 
   // PDF Download function for tickets
   const downloadTicketsPDF = () => {
+    toast.info('Downloading tickets...');
     generateTicketsPDF(ticketGroup, eventInfo);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-lg w-full">
-        {/* Close button */}
-        <div className="flex justify-end p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] flex flex-col">
+        {/* Close button - Fixed at top */}
+        <div className="flex-shrink-0 flex justify-end p-3 sm:p-4 border-b border-gray-200">
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-xl"
@@ -726,8 +628,8 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
           </button>
         </div>
 
-        {/* Ticket Content - Designed like a movie ticket */}
-        <div className="px-8 pb-8">
+        {/* Ticket Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6">
           {/* Event Details - Centered */}
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-1">{eventInfo.title}</h2>
@@ -751,39 +653,58 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
 
           {/* Ticket List - With QR codes */}
           <div className="space-y-4">
-            {ticketGroup.map((ticket) => (
-              <div key={ticket._id} className="flex flex-col items-center py-3 border-b last:border-0">
-                <div className="font-mono text-sm font-medium mb-1">{ticket.ticketNumber}</div>
-                <div className="text-sm text-gray-600 mb-2">
-                  {ticket.ticketType.name}
-                  {ticket.seats?.[0] && (
-                    <span className="ml-2">
-                      (Seat: {ticket.seats[0].row}-{ticket.seats[0].seatNumber})
-                    </span>
+            {ticketGroup.map((ticket) => {
+              const isRefunded = ticket.refundStatus === 'full' || ticket.checkInStatus === 'cancelled';
+              return (
+                <div key={ticket._id} className={`flex flex-col items-center py-3 border-b last:border-0 ${isRefunded ? 'bg-red-50' : ''}`}>
+                  {isRefunded && (
+                    <div className="bg-red-600 text-white px-3 py-1 rounded mb-2 text-sm font-bold">
+                      ⚠️ REFUNDED - NOT VALID FOR ENTRY
+                    </div>
                   )}
+                  <div className="font-mono text-sm font-medium mb-1">{ticket.ticketNumber}</div>
+                  <div className="text-sm text-gray-600 mb-2">
+                    {ticket.ticketType.name}
+                    {ticket.seats?.[0] && (
+                      <span className="ml-2">
+                        (Seat: {ticket.seats[0].row}-{ticket.seats[0].seatNumber})
+                      </span>
+                    )}
+                  </div>
+                  <div className={`bg-white p-2 rounded border relative ${isRefunded ? 'border-red-300 opacity-40' : 'border-gray-200'}`}>
+                    <QRCodeSVG 
+                      value={ticket.ticketNumber}
+                      size={150}
+                      level="H"
+                      includeMargin={true}
+                    />
+                    {isRefunded && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-red-600 text-white font-bold text-4xl rounded-full w-16 h-16 flex items-center justify-center transform rotate-12 shadow-lg">
+                          ✗
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className={`text-xs mt-2 ${isRefunded ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                    {isRefunded ? 'Not valid for entry' : 'Scan at entrance'}
+                  </div>
                 </div>
-                <div className="bg-white p-2 rounded border border-gray-200">
-                  <QRCodeSVG 
-                    value={ticket.ticketNumber}
-                    size={150}
-                    level="H"
-                    includeMargin={true}
-                  />
-                </div>
-                <div className="text-xs text-gray-500 mt-2">Scan at entrance</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Download Button */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <button
-              onClick={downloadTicketsPDF}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              📥 Download Tickets as PDF
-            </button>
-          </div>
+        </div>
+
+        {/* Download Button - Fixed at bottom */}
+        <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200">
+          <button
+            onClick={downloadTicketsPDF}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            <FaDownload className="inline mr-2" />
+            Download QR Codes as PDF
+          </button>
         </div>
       </div>
     </div>

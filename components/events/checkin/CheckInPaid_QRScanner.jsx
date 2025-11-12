@@ -198,13 +198,14 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
 
       const timer = setTimeout(() => {
         resetScanner();
-      }, 2500);
+      }, 6000);
       setAutoCloseTimer(timer);
     } else {
       handleError(result.payload);
-      setTimeout(() => {
+      const errorTimer = setTimeout(() => {
         resetScanner();
-      }, 1000);
+      }, 6000);
+      setAutoCloseTimer(errorTimer);
     }
   };
 
