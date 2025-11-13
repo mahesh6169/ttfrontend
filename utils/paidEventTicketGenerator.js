@@ -61,7 +61,7 @@ export const generateTicketsPDF = async (tickets, eventInfo, eventId = '') => {
   let leftColY = currentY + 8;
   doc.text(`Date: ${date}`, leftMargin + 15, leftColY);
   leftColY += 6;
-  doc.text(`Time/TimeZone: ${time} ${eventInfo.timeZone ? formatInTimeZone(eventInfo.dateTime, eventInfo.timeZone, 'zzz') : ''}`, leftMargin + 15, leftColY);
+  doc.text(`Time/TimeZone: ${time} ${eventInfo.timeZone || ''}`, leftMargin + 15, leftColY);
   leftColY += 6;
   doc.text(`Venue: ${eventInfo.venue || 'TBA'}`, leftMargin + 15, leftColY);
   if (eventInfo.address) {

@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { formatInTimeZone } from 'date-fns-tz';
 import jsPDF from 'jspdf';
 import axios from '@/utils/axiosConfig';
+import { FaDownload } from 'react-icons/fa';
+import Pagination from '@/components/Pagination';
 
 const MyInvoicesPage = () => {
   const [invoices, setInvoices] = useState([]);
@@ -21,6 +23,8 @@ const MyInvoicesPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [dateFilter, setDateFilter] = useState('3months'); // Default to 3 months
+  const [eventInvoicePage, setEventInvoicePage] = useState(1);
+  const itemsPerPage = 10;
 
   // Fetch all user invoices
   useEffect(() => {
@@ -329,6 +333,7 @@ const MyInvoicesPage = () => {
             const selectedEvent = events.find(e => e.id === selectedEventId);
             if (!selectedEvent) return null;
             const eventDateTime = formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone);
+            const timeZone = selectedEvent.timeZone;
             
             return (
               <div className="bg-gray-50 border-b border-gray-200 rounded-lg p-3 sm:p-4">
@@ -348,7 +353,7 @@ const MyInvoicesPage = () => {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span>{eventDateTime.combined}</span>
+                    <span>{eventDateTime.combined} ({timeZone})</span>
                   </div>
                   
                   {/* Venue */}
@@ -408,7 +413,14 @@ const MyInvoicesPage = () => {
           <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
             <h4 className="text-base sm:text-lg font-semibold text-gray-900">Your Invoices</h4>
             
-            {selectedEventInvoices.map((invoice) => (
+            {(() => {
+              const totalInvoicePages = Math.ceil(selectedEventInvoices.length / itemsPerPage);
+              const paginatedInvoices = selectedEventInvoices.slice(
+                (eventInvoicePage - 1) * itemsPerPage,
+                eventInvoicePage * itemsPerPage
+              );
+              return paginatedInvoices;
+            })().map((invoice) => (
               <div key={invoice.invoiceNumber} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 {/* Invoice Card - Simple Layout (No Tabs) */}
                 <div className="p-4">
@@ -504,41 +516,26 @@ const MyInvoicesPage = () => {
               </div>
             ))}
           </div>
+
+          {/* Pagination - Only show when event selected and has multiple pages */}
+          {selectedEventId && (() => {
+            const totalInvoicePages = Math.ceil(selectedEventInvoices.length / itemsPerPage);
+            return totalInvoicePages > 1 ? (
+              <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                <div className="text-sm text-gray-600 text-center mb-2">
+                  Showing {((eventInvoicePage - 1) * itemsPerPage) + 1} - {Math.min(eventInvoicePage * itemsPerPage, selectedEventInvoices.length)} of {selectedEventInvoices.length} invoices
+                </div>
+                <Pagination 
+                  currentPage={eventInvoicePage}
+                  totalPages={totalInvoicePages}
+                  onPageChange={(page) => setEventInvoicePage(page)}
+                />
+              </div>
+            ) : null;
+          })()}
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-6">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className={`px-4 py-2 rounded ${
-              currentPage === 1 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            Previous
-          </button>
-          
-          <span className="text-sm text-gray-700">
-            Page {currentPage} of {totalPages}
-          </span>
-          
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={!hasMore}
-            className={`px-4 py-2 rounded ${
-              !hasMore 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            Next
-          </button>
-        </div>
-      )}
 
       {/* Invoice Modal */}
       {showInvoiceModal && selectedInvoice && (
@@ -561,6 +558,16 @@ const MyInvoicesPage = () => {
 
 // Enhanced Invoice Modal Component with timestamps
 const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onClose }) => {
+  const [isDownloading, setIsDownloading] = React.useState(false);
+  
+  // Prevent body scroll when modal is open
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+  
   // Helper function to format dates consistently
   const formatDate = (dateString) => {
     try {
@@ -575,8 +582,13 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
   };
 
   // PDF Download function
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     if (!invoiceData) return;
+
+    setIsDownloading(true);
+    
+    // Small delay to show the loading state
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     const doc = new jsPDF();
     let yPosition = 20;
@@ -913,8 +925,12 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     
     
     // Save the PDF
-    const fileName = `Invoice_${invoiceData.invoiceNumber}_${new Date().getFullYear()}.pdf`;
+    const fileName = `Invoice_${invoiceData.invoiceNumber}_${new Date().getTime()}.pdf`;
     doc.save(fileName);
+    
+    // Small delay before removing loading state
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setIsDownloading(false);
   };
 
   // Helper function to format date with time
@@ -985,8 +1001,8 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-[9999] overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[85vh] sm:max-h-[90vh] my-auto flex flex-col">
         {/* Header - Fixed at top */}
         <div className="flex-shrink-0 flex justify-between items-center p-4 sm:p-6 border-b">
           <h3 className="text-lg sm:text-xl font-semibold">Invoice Details</h3>
@@ -1133,8 +1149,8 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                       
                       {/* Total Row */}
                       <tr className="bg-gray-50 border-t border-gray-300">
-                        <td className="px-4 py-3 text-sm font-medium" colSpan="3"></td>
-                        <td className="px-4 py-3 text-sm text-right font-bold">
+                        <td className="px-4 py-3 text-sm font-medium" colSpan="2"></td>
+                        <td className="px-4 py-3 text-sm text-right font-bold" colSpan="2">
                           Total Paid: ${invoiceData.amounts.total.toFixed(2)}
                           {invoiceData.gstIncluded && ' (incl. GST)'}
                         </td>
@@ -1233,18 +1249,30 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
               )}
 
               {/* Actions */}
-              <div className="flex gap-4 mt-8 pt-6 border-t">
+              <div className="mt-8 pt-6 border-t">
                 <button 
                   onClick={downloadPDF}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={isDownloading}
+                  className={`w-full px-4 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
+                    isDownloading 
+                      ? 'bg-blue-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  } text-white`}
                 >
-                  Download PDF
-                </button>
-                <button 
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                  disabled
-                >
-                  Email Invoice (Coming Soon)
+                  {isDownloading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaDownload />
+                      <span>Download Invoice</span>
+                    </>
+                  )}
                 </button>
               </div>
             </>

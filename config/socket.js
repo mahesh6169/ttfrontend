@@ -21,12 +21,8 @@ const socket = io(process.env.NEXT_PUBLIC_BACKEND_BASE_URL, {
    }
 });
 
-// ✅ Debugging Log: Check if WebSocket connection is being attempted
-console.log("Attempting WebSocket connection to:", socket.io.uri);
-
-// Debugging logs for connection lifecycle events
 socket.on('connect', () => {
-    console.log(`Events Socket Listener connected: ${socket.id}`); // Logs when the socket successfully connects
+    // Connection successful
 });
 
 socket.on('connect_error', (error) => {
@@ -34,24 +30,19 @@ socket.on('connect_error', (error) => {
 });
 
 socket.on('disconnect', (reason) => {
-    console.log(`Socket disconnected: ${reason}`); // Logs when the socket disconnects
+    // Socket disconnected
 });
 
-
-// Additional logs for reconnection events
 socket.on('reconnect_attempt', () => {
-    console.log('Socket attempting to reconnect...');
+    // Attempting to reconnect
 });
 
 socket.on('reconnect', (attemptNumber) => {
-    console.log(`Socket reconnected after ${attemptNumber} attempt(s)`);
+    // Reconnected
 });
 
 socket.on('reconnect_failed', () => {
     console.error('Socket failed to reconnect');
 });
-
-// Log connection status every 5 seconds
-setInterval(() => console.log('FrontEnd Socket Client alive:', socket.connected), 5000);
 
 export default socket;

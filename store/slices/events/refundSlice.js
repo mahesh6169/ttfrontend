@@ -10,19 +10,11 @@ export const fetchOrganizerEvents = createAsyncThunk(
   'refunds/fetchOrganizerEvents',
   async (_, { rejectWithValue }) => {
     try {
-      console.log('🔄 Making API call to:', `${API_BASE_URL}/events/refunds/my-events`);
       const response = await axios.get(`${API_BASE_URL}/events/refunds/my-events`, {
         withCredentials: true,
       });
-      console.log('📡 Raw API response:', response);
-      console.log('📡 Response data:', response.data);
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Events in response:', response.data?.events);
-      console.log('📡 Events count:', response.data?.events?.length || 0);
       return response.data;
     } catch (error) {
-      console.error('❌ API Error:', error);
-      console.error('❌ Error response:', error.response);
       return rejectWithValue(
         error.response?.data?.message || 'Failed to fetch events'
       );

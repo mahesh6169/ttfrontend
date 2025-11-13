@@ -271,42 +271,38 @@ const SeatSelectionPage = () => {
             />
           )}
           
-          {/* Venue Seating Layout - Only display if images available */}
+          {/* Venue Seating Layout - Small Thumbnail with Click to Enlarge */}
           {selectedEvent?.seatingLayoutImage && selectedEvent.seatingLayoutImage.length > 0 && (
             <div className="mb-3 sm:mb-6">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
-                Venue Seating Layout
-              </h2>
-              
-              {/* Thumbnail Grid */}
-              <div className={`grid gap-2 ${
-                selectedEvent.seatingLayoutImage.length === 1 ? 'grid-cols-1' : 
-                selectedEvent.seatingLayoutImage.length === 2 ? 'grid-cols-2' : 
-                selectedEvent.seatingLayoutImage.length === 3 ? 'grid-cols-3' : 
-                'grid-cols-2 sm:grid-cols-4'
-              }`}>
-                {selectedEvent.seatingLayoutImage.map((image, index) => (
-                  <div 
-                    key={index} 
-                    className="relative group cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-all"
-                    onClick={() => {
-                      setCurrentImageIndex(index);
-                      setIsFullscreen(true);
-                    }}
-                  >
-                    <img
-                      src={getOptimizedImageUrl(image)}
-                      alt={`Venue Seating Layout ${index + 1}`}
-                      className="w-full h-24 sm:h-32 object-cover group-hover:scale-105 transition-transform duration-200"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity duration-200 flex items-center justify-center">
-                      <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-sm">
-                        Click to view
-                      </span>
-                    </div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-medium text-gray-700">
+                  Venue Layout:
+                </h2>
+                <div 
+                  className="relative group cursor-pointer rounded overflow-hidden border border-gray-300 hover:border-blue-500 transition-all"
+                  onClick={() => {
+                    setCurrentImageIndex(0);
+                    setIsFullscreen(true);
+                  }}
+                >
+                  <img
+                    src={getOptimizedImageUrl(selectedEvent.seatingLayoutImage[0])}
+                    alt="Venue Seating Layout"
+                    className="w-16 h-12 sm:w-20 sm:h-14 object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity duration-200 flex items-center justify-center">
+                    <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs">
+                      🔍
+                    </span>
                   </div>
-                ))}
+                </div>
+                <span className="text-xs text-gray-500">Click to enlarge</span>
+                {selectedEvent.seatingLayoutImage.length > 1 && (
+                  <span className="text-xs text-gray-500">
+                    ({selectedEvent.seatingLayoutImage.length} images)
+                  </span>
+                )}
               </div>
             </div>
           )}

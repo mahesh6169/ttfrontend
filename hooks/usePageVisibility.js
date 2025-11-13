@@ -13,11 +13,8 @@ export const usePageVisibility = () => {
         setLastHiddenTime(Date.now());
         wasHiddenRef.current = true;
         setIsVisible(false);
-        console.log('[Visibility] Page hidden at:', new Date().toISOString());
       } else {
         // Page is now visible
-        const hiddenDuration = lastHiddenTime ? Date.now() - lastHiddenTime : 0;
-        console.log(`[Visibility] Page visible after ${hiddenDuration}ms`);
         setIsVisible(true);
       }
     };
@@ -25,14 +22,13 @@ export const usePageVisibility = () => {
     // Also handle focus events for better mobile support
     const handleFocus = () => {
       if (wasHiddenRef.current) {
-        console.log('[Visibility] Page focused, was previously hidden');
         setIsVisible(true);
         wasHiddenRef.current = false;
       }
     };
 
     const handleBlur = () => {
-      console.log('[Visibility] Page blurred');
+      // Page blurred
     };
 
     // Check if we're in the browser

@@ -361,7 +361,10 @@ const CheckInFree_AttendeeList = () => {
       
       {/* Pagination - Outside of registration list container */}
       {pagination.totalPages > 1 && (
-        <div className="mt-2 px-2 sm:px-0">
+        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+          <div className="text-sm text-gray-600 text-center mb-2">
+            Showing {((pagination.currentPage - 1) * pagination.limit) + 1} - {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} registrations
+          </div>
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}

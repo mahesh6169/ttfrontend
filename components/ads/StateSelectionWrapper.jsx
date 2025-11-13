@@ -21,41 +21,32 @@ const StateSelectionWrapper = () => {
   const shouldCheckState = allowedPaths.includes(pathname);
   
   useEffect(() => {
-    console.log('[StateSelection] Component mounted, tokenValidated:', tokenValidated, 'hasChecked:', hasChecked, 'isAuthenticated:', isAuthenticated, 'status:', status, 'pathname:', pathname);
-    
     // Check if feature is enabled
     if (!ENABLE_STATE_SELECTION) {
-      console.log('[StateSelection] State selection is disabled');
       return;
     }
     
     // Only check on allowed paths
     if (!shouldCheckState) {
-      console.log('[StateSelection] Not on allowed path, skipping check');
       return;
     }
     
     // Run check after validation completes (whether success or failure)
     if (status !== 'loading' && status !== 'idle' && !hasChecked) {
-      console.log('[StateSelection] Validation complete (status:', status, '), checking if modal needed...');
       checkStateSelection();
       setHasChecked(true);
     }
   }, [status, hasChecked, isAuthenticated, shouldCheckState, pathname, ENABLE_STATE_SELECTION]);
   
   const checkStateSelection = async () => {
-    console.log('[StateSelection] Checking state selection, user:', user, 'isAuthenticated:', isAuthenticated);
-    
     // Don't show modal if user is authenticated (they have state from suburb)
     if (isAuthenticated) {
-      console.log('[StateSelection] User is authenticated, skipping modal. User suburb:', user?.suburb);
       return;
     }
     
     try {
       // Check if user already has a state selected via cookie
       const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/bannerAds/getState`;
-      console.log('[StateSelection] Checking state at:', apiUrl);
       const response = await fetch(apiUrl, {
         credentials: 'include', // Include cookies
         headers: {
@@ -66,7 +57,6 @@ const StateSelectionWrapper = () => {
         }
       });
       const data = await response.json();
-      console.log('[StateSelection] State check response:', data);
       
       // If user already has a state, don't show modal
       if (data.success && data.hasState) {

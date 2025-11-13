@@ -158,16 +158,6 @@ const CheckInPaid_GroupedAttendeeList = () => {
 
   return (
     <>
-      {/* Stats summary */}
-      <div className="px-4 pb-2 text-sm text-gray-600">
-        {(() => {
-          const start = (pagination.currentPage - 1) * pagination.limit + 1;
-          const end = Math.min(start + attendees.length - 1, pagination.totalCount);
-          return `Showing ${start}-${end} of ${pagination.totalCount} tickets`;
-        })()}
-        {searchTerm && ` matching "${searchTerm}"`}
-      </div>
-      
       {/* Invoice List Container */}
       <div className="space-y-3 sm:space-y-4 px-2 sm:px-0">
         {Object.entries(groupedByInvoice).map(([invoiceNumber, tickets]) => {
@@ -373,7 +363,10 @@ const CheckInPaid_GroupedAttendeeList = () => {
       
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="mt-4">
+        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+          <div className="text-sm text-gray-600 text-center mb-2">
+            Showing {((pagination.currentPage - 1) * pagination.limit) + 1} - {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} tickets
+          </div>
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}

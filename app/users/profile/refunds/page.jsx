@@ -203,7 +203,6 @@ export default function RefundsPage() {
         limit: 100
       }));
     } catch (error) {
-      console.error('Refund processing error:', error);
       // Error is already shown in the UI via processing.error
     }
   };
@@ -223,7 +222,6 @@ export default function RefundsPage() {
       const time = formatInTimeZone(dateTime, timeZone, 'h:mm a');
       return { date, time, combined: `${date} at ${time}` };
     } catch (error) {
-      console.error('Error formatting date:', error);
       const fallbackDate = new Date(dateTime);
       return {
         date: fallbackDate.toLocaleDateString(),
@@ -423,7 +421,7 @@ export default function RefundsPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span>{formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone).combined}</span>
+                  <span>{formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone).combined} ({selectedEvent.timeZone})</span>
                 </div>
               )}
               
@@ -451,7 +449,7 @@ export default function RefundsPage() {
         {/* Statistics - Compact spacing */}
         {selectedEvent && ticketsState.list.length > 0 && (
           <div className="bg-white rounded-lg border border-gray-200 p-2 sm:p-4">
-            <div className="flex items-center justify-around sm:justify-start sm:space-x-8">
+            <div className="flex items-center justify-around sm:justify-start sm:space-x-6 lg:space-x-8">
               {/* Total Invoices */}
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <svg className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -464,18 +462,28 @@ export default function RefundsPage() {
                 </div>
               </div>
               
-              {/* Refunded */}
+              {/* Total Tickets */}
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                </svg>
+                <div className="text-xs sm:text-base">
+                  <span className="font-bold text-green-600">{ticketsState.list.length}</span>
+                  <span className="hidden sm:inline text-gray-600 ml-1">Total Tickets</span>
+                  <span className="sm:hidden text-gray-600 block text-xs">Tickets</span>
+                </div>
+              </div>
+
+              {/* Refunded Tickets */}
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <svg className="w-4 h-4 sm:w-6 sm:h-6 text-red-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                 </svg>
                 <div className="text-xs sm:text-base">
                   <span className="font-bold text-red-600">
-                    {Object.entries(ticketsByInvoice).filter(([_, tickets]) => 
-                      tickets.some(t => t.totalRefundedAmount > 0)
-                    ).length}
+                    {ticketsState.list.filter(t => t.totalRefundedAmount > 0).length}
                   </span>
-                  <span className="hidden sm:inline text-gray-600 ml-1">Refunded</span>
+                  <span className="hidden sm:inline text-gray-600 ml-1">Refunded Tickets</span>
                   <span className="sm:hidden text-gray-600 block text-xs">Refunded</span>
                 </div>
               </div>

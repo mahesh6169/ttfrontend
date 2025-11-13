@@ -29,7 +29,6 @@ export const SocketListener = () => {
       const response = await axios.get('/messages/unread-count');
       if (response.data.success) {
         dispatch(setUnreadExists(response.data.unreadCount > 0));
-        console.log('[SocketListener] Unread count:', response.data.unreadCount);
       }
     } catch (error) {
       console.error('[SocketListener] Error checking unread count:', error);
@@ -38,14 +37,12 @@ export const SocketListener = () => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log('[SocketListener] Not authenticated, skipping socket connection');
       return;
     }
 
     const connectSocket = async () => {
       try {
         if (!socket.connected) {
-          console.log('🔌 [SocketListener] Connecting socket for user:', user._id);
           socket.connect();
           
           // Wait for connection to be established
@@ -57,8 +54,6 @@ export const SocketListener = () => {
             socket.once('connect', () => {
               clearTimeout(timeout);
               connectionTimeRef.current = Date.now();
-              console.log('✅ [SocketListener] Socket connected successfully:', socket.id);
-              console.log('⏱️ [SocketListener] Connection time:', new Date().toISOString());
               setIsSocketReady(true);
               resolve();
             });
@@ -70,7 +65,6 @@ export const SocketListener = () => {
             });
           });
         } else {
-          console.log('✅ [SocketListener] Socket already connected:', socket.id);
           setIsSocketReady(true);
         }
       } catch (error) {
@@ -94,22 +88,15 @@ export const SocketListener = () => {
   // Set up message handlers only after socket is ready
   useEffect(() => {
     if (!isSocketReady) {
-      console.log('[SocketListener] Socket not ready, skipping event handlers');
       return;
     }
-
-    console.log('🎧 [SocketListener] Setting up message handlers');
     
     const handleNewMessage = (msg) => {
-      console.log('📨 [SocketListener] New message received:', msg);
       dispatch(setUnreadExists(true));
     };
 
     const handleConnect = () => {
       connectionTimeRef.current = Date.now();
-      console.log('🔄 [SocketListener] Socket reconnected:', socket.id);
-      console.log('⏱️ [SocketListener] Reconnection time:', new Date().toISOString());
-      // Check for missed messages on reconnection
       checkUnreadMessages();
     };
 
@@ -118,17 +105,6 @@ export const SocketListener = () => {
       const disconnectTime = Date.now();
       const connectionDuration = connectionTimeRef.current ? 
         Math.round((disconnectTime - connectionTimeRef.current) / 1000) : 'unknown';
-      
-      console.log('🔌💔 [SocketListener] Socket disconnected:', reason);
-      console.log('⏱️ [SocketListener] Disconnect time:', new Date().toISOString());
-      console.log('📊 [SocketListener] Connection lasted:', connectionDuration, 'seconds');
-      console.log('🔢 [SocketListener] Total disconnects this session:', disconnectCountRef.current);
-      console.log('📍 [SocketListener] Disconnect reason details:', {
-        reason,
-        socketId: socket.id,
-        connected: socket.connected,
-        disconnectCount: disconnectCountRef.current
-      });
       
       setIsSocketReady(false);
     };
@@ -156,16 +132,12 @@ export const SocketListener = () => {
     // If page just became visible and socket is disconnected
     if (isVisible && !socket.connected && lastHiddenTime) {
       const hiddenDuration = Date.now() - lastHiddenTime;
-      console.log(`[SocketListener] Page visible after ${hiddenDuration}ms, socket connected: ${socket.connected}`);
       
       // If hidden for more than 10 seconds, force reconnect
       if (hiddenDuration > 10000) {
-        console.log('[SocketListener] Forcing reconnection after sleep/lock');
-        
         // Small delay to let the device fully wake up
         reconnectTimeoutRef.current = setTimeout(() => {
           if (!socket.connected) {
-            console.log('[SocketListener] Reconnecting socket...');
             socket.connect();
           }
           // Check for missed messages

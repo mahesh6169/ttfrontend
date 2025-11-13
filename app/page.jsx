@@ -6,8 +6,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
 
 async function fetchHomeData() {
-  console.log('🏠 Fetching homepage data...');
-  
   try {
     const [listingsRes, eventsRes, threadsRes] = await Promise.all([
       fetch(`${API_BASE_URL}/home/listings`, {
@@ -38,12 +36,6 @@ async function fetchHomeData() {
       eventsRes.json(),
       threadsRes.json(),
     ]);
-
-    console.log('✅ Homepage data fetched successfully:', {
-      listings: listingsData.data?.listings?.length || 0,
-      events: eventsData.data?.events?.length || 0,
-      threads: threadsData.data?.threads?.length || 0,
-    });
 
     return {
       listings: listingsData.data?.listings || [],

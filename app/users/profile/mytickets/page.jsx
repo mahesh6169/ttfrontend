@@ -418,7 +418,7 @@ const EnhancedMyTicketsPage = () => {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span>{eventDateTime.combined}</span>
+                    <span>{eventDateTime.combined} ({timeZone})</span>
                   </div>
                   
                   {/* Venue */}
@@ -505,26 +505,26 @@ const EnhancedMyTicketsPage = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="p-3 sm:p-4 flex gap-2 border-t border-gray-200">
+                  <div className="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 border-t border-gray-200">
                     <button
                       onClick={() => handleTabClick(invoiceNumber, 'tickets')}
-                      className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                         isExpanded && (activeTab[invoiceNumber] || 'tickets') === 'tickets'
                           ? 'bg-gray-200 text-gray-700'
                           : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                       }`}
                     >
-                      View Ticket Details
+                      View Tickets
                     </button>
                     <button
                       onClick={() => {
                         setSelectedTicketGroup(ticketGroup);
                         setShowTicketsModal(true);
                       }}
-                      className="flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                      className="flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 whitespace-nowrap flex items-center justify-center gap-1"
                     >
-                      <FaQrcode className="inline mr-2" />
-                      View QR Codes
+                      <FaQrcode className="text-sm" />
+                      <span>View QR Codes</span>
                     </button>
                   </div>
                   
@@ -588,6 +588,8 @@ const EnhancedMyTicketsPage = () => {
 
 // Tickets Modal Component - Simple ticket style
 const TicketsModal = ({ ticketGroup, onClose }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  
   // Get event information from the first ticket
   const firstTicket = ticketGroup[0];
   const eventInfo = firstTicket.eventSnapshot;
@@ -610,9 +612,25 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
   const { date, time } = formatEventDateTime();
 
   // PDF Download function for tickets
-  const downloadTicketsPDF = () => {
-    toast.info('Downloading tickets...');
-    generateTicketsPDF(ticketGroup, eventInfo);
+  const downloadTicketsPDF = async () => {
+    setIsDownloading(true);
+    
+    try {
+      // Small delay to show the loading state
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Generate and download PDF
+      generateTicketsPDF(ticketGroup, eventInfo);
+      
+      // Keep loading state for a bit longer so user sees it
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      toast.success('PDF download started');
+    } catch (error) {
+      toast.error('Failed to generate PDF');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -700,10 +718,27 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
         <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200">
           <button
             onClick={downloadTicketsPDF}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            disabled={isDownloading}
+            className={`w-full px-4 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
+              isDownloading 
+                ? 'bg-blue-400 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            } text-white`}
           >
-            <FaDownload className="inline mr-2" />
-            Download QR Codes as PDF
+            {isDownloading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Generating...</span>
+              </>
+            ) : (
+              <>
+                <FaDownload />
+                <span>Download QR Codes as PDF</span>
+              </>
+            )}
           </button>
         </div>
       </div>

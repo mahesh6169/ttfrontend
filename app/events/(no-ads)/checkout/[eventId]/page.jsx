@@ -25,6 +25,7 @@ import {
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import { generateTicketsPDF } from '@/utils/paidEventTicketGenerator';
+import { toast } from 'react-toastify';
 import RequireLogin from '@/components/Auth/RequireLogin';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import StripePaymentForm from '@/components/payments/StripePaymentForm';
@@ -570,21 +571,31 @@ const CheckoutPage = () => {
     setDownloadError(null);
     
     try {
+      // Small delay to show the loading state
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('📥 Fetching tickets... Invoice:', purchaseInvoiceNumber);
+      
       // Fetch user's tickets using the same API as MyTickets page
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/paid/my-paid-tickets`,
         { withCredentials: true }
       );
       
+      console.log('📥 Received tickets:', response.data.tickets?.length || 0);
+      
       if (response.data.success) {
         let ticketsToDownload = [];
         
         // If we have the invoice number from the purchase, use it
         if (purchaseInvoiceNumber) {
+          console.log('📥 Filtering by invoice:', purchaseInvoiceNumber);
           ticketsToDownload = response.data.tickets.filter(ticket => 
             ticket.invoiceNumber === purchaseInvoiceNumber
           );
+          console.log('📥 Found tickets for invoice:', ticketsToDownload.length);
         } else {
+          console.log('📥 No invoice number, using fallback method');
           // Fallback: Filter by event and recent time (shouldn't happen with updated backend)
           const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
           
@@ -624,6 +635,7 @@ const CheckoutPage = () => {
         
         if (ticketsToDownload.length === 0) {
           setDownloadError('Tickets not found. They may still be processing. Please try again in a moment.');
+          setIsDownloadingTickets(false);
           return;
         }
         
@@ -632,11 +644,20 @@ const CheckoutPage = () => {
         
         // Generate PDF using common utility with filtered tickets
         generateTicketsPDF(ticketsToDownload, eventInfo, params.eventId);
+        
+        // Keep loading state for a bit longer so user sees it
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        toast.success('PDF download started');
+        setIsDownloadingTickets(false);
+      } else {
+        setDownloadError('Failed to download tickets. Please try again later.');
+        setIsDownloadingTickets(false);
       }
     } catch (error) {
       console.error('Error downloading tickets:', error);
       setDownloadError('Failed to download tickets. Please try again later.');
-    } finally {
+      toast.error('Failed to generate PDF');
       setIsDownloadingTickets(false);
     }
   };
@@ -695,7 +716,8 @@ const CheckoutPage = () => {
   if (currentStep === 'complete' || (paymentStatus?.status === 'succeeded' && isPaymentSuccessful)) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
-        <div className="max-w-lg lg:max-w-2xl mx-auto px-3 sm:px-4">
+        <div className="max-w-lg lg:max-w-2xl mx-auto px-3 sm:px-4 space-y-3 sm:space-y-4">
+          {/* Success Modal */}
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8 text-center">
             <FaCheckCircle className="mx-auto text-4xl sm:text-5xl lg:text-6xl text-green-600 mb-3 sm:mb-4 lg:mb-6" />
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-3 lg:mb-4">
@@ -729,44 +751,30 @@ const CheckoutPage = () => {
               </ul>
             </div>
 
-            <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-              <button
-                onClick={downloadTickets}
-                disabled={isDownloadingTickets}
-                className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-emerald-600 text-white rounded-md sm:rounded-lg hover:bg-emerald-700 disabled:bg-emerald-400 disabled:cursor-not-allowed transition-colors text-sm sm:text-base font-medium flex items-center justify-center"
-              >
-                {isDownloadingTickets ? (
-                  <>
-                    <FaSpinner className="animate-spin mr-2" />
-                    Generating PDF...
-                  </>
-                ) : (
-                  <>
-                    <FaDownload className="mr-2" />
-                    Download Tickets
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={() => {
-                  // Navigate to events listing
-                  router.push('/events');
-                  
-                  // Reset state after navigation starts
-                  setTimeout(() => {
-                    setReservation(null);
-                    setSelectedTickets([]);
-                    setCurrentStep('details');
-                    setIsPaymentSuccessful(false);
-                    setPaymentStatus({ status: null, clientSecret: null, amount: 0 });
-                  }, 100);
-                }}
-                className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-gray-200 text-gray-800 rounded-md sm:rounded-lg hover:bg-gray-300 transition-colors text-sm sm:text-base font-medium"
-              >
-                Back to Events
-              </button>
-            </div>
+            <button
+              onClick={downloadTickets}
+              disabled={isDownloadingTickets}
+              className={`w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 rounded-md sm:rounded-lg transition-colors text-sm sm:text-base font-medium flex items-center justify-center gap-2 ${
+                isDownloadingTickets 
+                  ? 'bg-emerald-400 cursor-not-allowed' 
+                  : 'bg-emerald-600 hover:bg-emerald-700'
+              } text-white`}
+            >
+              {isDownloadingTickets ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 016-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <FaDownload />
+                  <span>Download Tickets</span>
+                </>
+              )}
+            </button>
             
             {/* Download error message */}
             {downloadError && (
@@ -777,6 +785,21 @@ const CheckoutPage = () => {
               </div>
             )}
           </div>
+
+          {/* Back to Events Button - OUTSIDE modal */}
+          <button
+            onClick={() => {
+              setIsPaymentSuccessful(false);
+              setReservation(null);
+              setSelectedTickets([]);
+              setCurrentStep('details');
+              setPaymentStatus({ status: null, clientSecret: null, amount: 0 });
+              router.replace('/events');
+            }}
+            className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-gray-200 text-gray-800 rounded-md sm:rounded-lg hover:bg-gray-300 transition-colors text-sm sm:text-base font-medium"
+          >
+            Back to Events
+          </button>
         </div>
       </div>
     );
@@ -937,7 +960,7 @@ const CheckoutPage = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
                         {/* First Name */}
                         <div>
-                          <label className="block text-[11px] sm:text-xs lg:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
+                          <label className="block text-xs sm:text-sm lg:text-base font-medium text-gray-700 mb-1 sm:mb-1.5">
                             First Name *
                           </label>
                           <input
@@ -945,7 +968,7 @@ const CheckoutPage = () => {
                             name="firstName"
                             value={buyerInfo.firstName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                            className={`w-full px-3 py-2 sm:px-3 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
                               errors.firstName ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="First name"
@@ -957,7 +980,7 @@ const CheckoutPage = () => {
                         
                         {/* Last Name */}
                         <div>
-                          <label className="block text-[11px] sm:text-xs lg:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
+                          <label className="block text-xs sm:text-sm lg:text-base font-medium text-gray-700 mb-1 sm:mb-1.5">
                             Last Name *
                           </label>
                           <input
@@ -965,7 +988,7 @@ const CheckoutPage = () => {
                             name="lastName"
                             value={buyerInfo.lastName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                            className={`w-full px-3 py-2 sm:px-3 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
                               errors.lastName ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="Last name"
@@ -978,17 +1001,17 @@ const CheckoutPage = () => {
 
                       {/* Email */}
                       <div>
-                        <label className="block text-[11px] sm:text-xs lg:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
+                        <label className="block text-xs sm:text-sm lg:text-base font-medium text-gray-700 mb-1 sm:mb-1.5">
                           Email Address *
                         </label>
                         <div className="relative">
-                          <FaEnvelope className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
+                          <FaEnvelope className="absolute left-3 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           <input
                             type="email"
                             name="email"
                             value={buyerInfo.email || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-7 sm:pl-10 pr-2 sm:pr-3 py-1 sm:py-2 text-xs sm:text-sm lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                            className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-3 py-2 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
                               errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="Email address"
@@ -1001,17 +1024,17 @@ const CheckoutPage = () => {
 
                       {/* Phone */}
                       <div>
-                        <label className="block text-[11px] sm:text-xs lg:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1">
+                        <label className="block text-xs sm:text-sm lg:text-base font-medium text-gray-700 mb-1 sm:mb-1.5">
                           Phone Number *
                         </label>
                         <div className="relative">
-                          <FaPhone className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
+                          <FaPhone className="absolute left-3 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           <input
                             type="tel"
                             name="phone"
                             value={buyerInfo.phone || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-7 sm:pl-10 pr-2 sm:pr-3 py-1 sm:py-2 text-xs sm:text-sm lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                            className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-3 py-2 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
                               errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'
                             }`}
                             placeholder="Phone number"
@@ -1029,9 +1052,9 @@ const CheckoutPage = () => {
                           name="agreeToTerms"
                           checked={buyerInfo.agreeToTerms || false}
                           onChange={handleInputChange}
-                          className="mt-0.5 sm:mt-1 w-3 h-3 sm:w-4 sm:h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                          className="mt-1 sm:mt-1 w-4 h-4 sm:w-4 sm:h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                         />
-                        <label className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs lg:text-sm text-gray-600">
+                        <label className="ml-2 sm:ml-2 text-xs sm:text-sm lg:text-sm text-gray-600">
                           I agree to the{' '}
                           <a
                             href="/support/terms"
@@ -1065,9 +1088,9 @@ const CheckoutPage = () => {
                               name="refundPolicyAccepted"
                               checked={refundPolicyAccepted || false}
                               onChange={(e) => setRefundPolicyAccepted(e.target.checked)}
-                              className="mt-0.5 sm:mt-1 w-3 h-3 sm:w-4 sm:h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                              className="mt-1 sm:mt-1 w-4 h-4 sm:w-4 sm:h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                             />
-                            <label className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs lg:text-sm text-gray-600">
+                            <label className="ml-2 sm:ml-2 text-xs sm:text-sm lg:text-sm text-gray-600">
                               I accept the organiser refund policy below *
                             </label>
                           </div>

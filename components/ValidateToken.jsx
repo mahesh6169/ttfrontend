@@ -11,11 +11,10 @@ const ValidateToken = () => {
   useEffect(() => {
     // Only dispatch validateToken if token hasn't been validated yet
     if (!tokenValidated) {
-      console.log('🔄 Dispatching validateToken...');
       dispatch(validateToken())
         .unwrap()
-        .then(() => console.log('✅ Token validated successfully'))
-        .catch((error) => console.log('❌ Token validation failed:', error));
+        .then(() => {})
+        .catch((error) => console.error('❌ Token validation failed:', error));
     }
   }, [dispatch, tokenValidated]);
 
