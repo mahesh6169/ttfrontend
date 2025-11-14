@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { formatInTimeZone } from 'date-fns-tz';
+import { toast } from 'react-toastify';
 import { 
   fetchOrganizerEvents,
   fetchRefundableTickets,
@@ -13,6 +14,7 @@ import {
   setRefundReason,
   clearSelectedTickets,
   clearRefundForm,
+  clearProcessingState,
   selectEvents,
   selectSelectedEvent,
   selectTicketsState,
@@ -119,24 +121,32 @@ export default function RefundsPage() {
     
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount < 0) {
-      return; // Don't update if invalid
+      return;
+    }
+    
+    // Check for more than 2 decimal places
+    const decimalPlaces = (amount.toString().split('.')[1] || '').length;
+    if (decimalPlaces > 2) {
+      const roundedAmount = Math.round(numAmount * 100) / 100;
+      setAmountWarnings(prev => ({
+        ...prev,
+        [ticketNumber]: `⚠️ Amount will be rounded to ${formatCurrency(roundedAmount)} (max 2 decimal places)`
+      }));
+      return;
     }
     
     // Check if amount exceeds max
     if (numAmount > maxAmount) {
-      // Set warning
       setAmountWarnings(prev => ({
         ...prev,
         [ticketNumber]: `Amount capped at maximum refundable: ${formatCurrency(maxAmount)}`
       }));
-      // Cap at max refundable amount
       dispatch(setCustomRefundAmount({ ticketNumber, amount: maxAmount }));
       setLocalAmounts(prev => ({
         ...prev,
         [ticketNumber]: maxAmount.toFixed(2)
       }));
     } else {
-      // Clear warning if amount is valid
       setAmountWarnings(prev => {
         const newWarnings = { ...prev };
         delete newWarnings[ticketNumber];
@@ -166,6 +176,7 @@ export default function RefundsPage() {
 
   const handleProcessRefund = async () => {
     if (!refundReason.trim() || selectedTickets.length === 0) {
+      toast.warning('Please select at least one ticket and provide a reason');
       return;
     }
 
@@ -183,11 +194,20 @@ export default function RefundsPage() {
         };
       });
 
-      await dispatch(processRefund({
+      const result = await dispatch(processRefund({
         eventId: selectedEvent._id,
         tickets,
         reason: refundReason.trim()
       })).unwrap();
+
+      // Show success toast
+      toast.success(
+        `✅ Refund processed successfully! ${formatCurrency(result.refund?.refundAmount || result.totalAmount)} refunded${result.refund?.seatsReleased > 0 ? ` • ${result.refund.seatsReleased} seat${result.refund.seatsReleased > 1 ? 's' : ''} released` : ''}`,
+        {
+          autoClose: 5000,
+          position: 'top-right'
+        }
+      );
 
       // Reset after success
       dispatch(clearSelectedTickets());
@@ -196,6 +216,11 @@ export default function RefundsPage() {
       setLocalAmounts({});
       setAmountWarnings({});
       
+      // Clear processing state after 3 seconds
+      setTimeout(() => {
+        dispatch(clearProcessingState());
+      }, 3000);
+      
       // Re-fetch tickets to get updated refund amounts
       dispatch(fetchRefundableTickets({ 
         eventId: selectedEvent._id,
@@ -203,7 +228,19 @@ export default function RefundsPage() {
         limit: 100
       }));
     } catch (error) {
-      // Error is already shown in the UI via processing.error
+      // Show error toast
+      toast.error(
+        `❌ Refund failed: ${error || 'Unknown error occurred'}`,
+        {
+          autoClose: 7000,
+          position: 'top-right'
+        }
+      );
+      
+      // Clear processing state after 5 seconds
+      setTimeout(() => {
+        dispatch(clearProcessingState());
+      }, 5000);
     }
   };
 

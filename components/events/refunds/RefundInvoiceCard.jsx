@@ -236,6 +236,14 @@ const RefundInvoiceCard = ({
                               step="0.01"
                               value={customAmount !== undefined ? customAmount : ''}
                               onChange={(e) => onAmountChange(ticket.ticketNumber, e.target.value, maxRefundable)}
+                              onBlur={(e) => {
+                                const value = parseFloat(e.target.value);
+                                if (!isNaN(value) && value > 0) {
+                                  const rounded = Math.round(value * 100) / 100;
+                                  e.target.value = rounded.toFixed(2);
+                                  onAmountChange(ticket.ticketNumber, rounded.toFixed(2), maxRefundable);
+                                }
+                              }}
                               onWheel={(e) => e.target.blur()}
                               placeholder="Leave empty for full refund"
                               className="flex-1 sm:flex-none sm:w-48 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 placeholder:text-xs"

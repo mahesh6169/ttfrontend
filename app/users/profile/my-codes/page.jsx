@@ -79,7 +79,7 @@ export default function MyCodesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen py-8">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
@@ -91,7 +91,7 @@ export default function MyCodesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+    <div className="min-h-screen py-4 sm:py-8">
       <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">My Discount Codes</h1>
@@ -245,7 +245,7 @@ function CodeCard({ code, status, onViewCode }) {
   const config = statusConfig[status];
 
   return (
-    <div className={`relative h-full flex flex-col border rounded-lg shadow-md bg-gradient-to-br from-teal-50 to-lime-50 hover:from-teal-100 hover:to-lime-100 transition-all ${config.borderClass}`}>
+    <div className={`relative h-full flex flex-col border rounded-lg shadow-md bg-white transition-all ${config.borderClass}`}>
       {/* Status Badge */}
       <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 z-10">
         <span className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${config.badgeClass}`}>
