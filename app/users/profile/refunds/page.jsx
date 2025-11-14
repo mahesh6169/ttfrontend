@@ -102,35 +102,82 @@ export default function RefundsPage() {
   };
 
   const handleAmountChange = (ticketNumber, amount, maxAmount) => {
+    // Special case: onInput detected invalid input (letters, e, E, etc.)
+    if (amount === 'INVALID') {
+      setAmountWarnings(prev => ({
+        ...prev,
+        [ticketNumber]: '⚠️ Please enter a valid number'
+      }));
+      dispatch(setCustomRefundAmount({ ticketNumber, amount: null }));
+      return;
+    }
+    
+    // Check previous value BEFORE updating
+    const hadPreviousValue = localAmounts[ticketNumber] && localAmounts[ticketNumber] !== '';
+    
     // Update local state for immediate display
     setLocalAmounts(prev => ({
       ...prev,
       [ticketNumber]: amount
     }));
 
-    // Clear warning if clearing the field
-    if (amount === '' || amount === null) {
-      dispatch(setCustomRefundAmount({ ticketNumber, amount: null }));
-      setAmountWarnings(prev => {
-        const newWarnings = { ...prev };
-        delete newWarnings[ticketNumber];
-        return newWarnings;
-      });
-      return;
+    // If empty, check if field had focus (intentional clear) or invalid input
+    if (amount === '' || amount === null || amount === undefined) {
+      // If there was previously a value, user typed invalid input that browser blocked
+      if (hadPreviousValue) {
+        setAmountWarnings(prev => ({
+          ...prev,
+          [ticketNumber]: '⚠️ Please enter a valid number'
+        }));
+        dispatch(setCustomRefundAmount({ ticketNumber, amount: null }));
+        return;
+      } else {
+        // Otherwise, allow empty (will use max refundable)
+        dispatch(setCustomRefundAmount({ ticketNumber, amount: null }));
+        setAmountWarnings(prev => {
+          const newWarnings = { ...prev };
+          delete newWarnings[ticketNumber];
+          return newWarnings;
+        });
+        return;
+      }
     }
     
     const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount < 0) {
+    
+    // Block invalid input (NaN from letters/special chars)
+    if (isNaN(numAmount)) {
+      setAmountWarnings(prev => ({
+        ...prev,
+        [ticketNumber]: '⚠️ Please enter a valid number'
+      }));
+      // Clear from Redux so it doesn't get used
+      dispatch(setCustomRefundAmount({ ticketNumber, amount: null }));
       return;
     }
     
-    // Check for more than 2 decimal places
+    if (numAmount <= 0) {
+      setAmountWarnings(prev => ({
+        ...prev,
+        [ticketNumber]: '⚠️ Amount must be greater than $0'
+      }));
+      // Clear from Redux so it doesn't get used
+      dispatch(setCustomRefundAmount({ ticketNumber, amount: null }));
+      return;
+    }
+    
+    // Check for more than 2 decimal places - auto-round and save
     const decimalPlaces = (amount.toString().split('.')[1] || '').length;
     if (decimalPlaces > 2) {
       const roundedAmount = Math.round(numAmount * 100) / 100;
       setAmountWarnings(prev => ({
         ...prev,
-        [ticketNumber]: `⚠️ Amount will be rounded to ${formatCurrency(roundedAmount)} (max 2 decimal places)`
+        [ticketNumber]: `⚠️ Rounded to ${formatCurrency(roundedAmount)}`
+      }));
+      dispatch(setCustomRefundAmount({ ticketNumber, amount: roundedAmount }));
+      setLocalAmounts(prev => ({
+        ...prev,
+        [ticketNumber]: roundedAmount.toFixed(2)
       }));
       return;
     }
@@ -139,7 +186,7 @@ export default function RefundsPage() {
     if (numAmount > maxAmount) {
       setAmountWarnings(prev => ({
         ...prev,
-        [ticketNumber]: `Amount capped at maximum refundable: ${formatCurrency(maxAmount)}`
+        [ticketNumber]: `⚠️ Maximum refundable: ${formatCurrency(maxAmount)}`
       }));
       dispatch(setCustomRefundAmount({ ticketNumber, amount: maxAmount }));
       setLocalAmounts(prev => ({
@@ -163,15 +210,46 @@ export default function RefundsPage() {
 
   const calculateRefundTotal = () => {
     return selectedTickets.reduce((total, ticket) => {
+      // Check if there's a warning for this ticket (invalid amount)
+      if (amountWarnings[ticket.ticketNumber]) {
+        return total + 0; // Don't count tickets with invalid amounts
+      }
+      
       const customAmount = refundForm.customAmounts[ticket.ticketNumber];
-      if (customAmount !== undefined) {
+      if (customAmount !== undefined && customAmount > 0) {
         return total + customAmount;
       } else {
-        // Use the actual ticket refund amount - needs to be fixed in backend
+        // Use the actual ticket refund amount
         const maxRefundable = ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0);
         return total + maxRefundable;
       }
     }, 0);
+  };
+
+  const validateRefundAmounts = () => {
+    if (selectedTickets.length === 0) {
+      return { valid: false, hasWarnings: false };
+    }
+
+    // Check if any warnings exist
+    const hasWarnings = Object.keys(amountWarnings).length > 0;
+    if (hasWarnings) {
+      return { valid: false, hasWarnings: true };
+    }
+
+    // Check if any selected ticket has invalid amount
+    for (const ticket of selectedTickets) {
+      const customAmount = refundForm.customAmounts[ticket.ticketNumber];
+      const amount = customAmount !== undefined ? 
+        customAmount : 
+        (ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0));
+      
+      if (amount <= 0) {
+        return { valid: false, hasWarnings: false };
+      }
+    }
+
+    return { valid: true, hasWarnings: false };
   };
 
   const handleProcessRefund = async () => {
@@ -672,14 +750,27 @@ export default function RefundsPage() {
                     <h4 className="text-xs font-medium text-gray-700 mb-2">Selected tickets:</h4>
                     <div className="space-y-1">
                       {selectedTickets.map(ticket => {
+                        // Check if there's a warning for this ticket (invalid amount)
+                        const hasWarning = amountWarnings[ticket.ticketNumber];
                         const customAmount = refundForm.customAmounts[ticket.ticketNumber];
-                        const refundAmount = customAmount !== undefined ? customAmount : 
-                          (ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0));
+                        
+                        // If warning exists, show $0, otherwise use custom or max
+                        let refundAmount;
+                        if (hasWarning) {
+                          refundAmount = 0;
+                        } else if (customAmount !== undefined && customAmount > 0) {
+                          refundAmount = customAmount;
+                        } else {
+                          refundAmount = ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0);
+                        }
                         
                         return (
                           <div key={ticket.ticketNumber} className="text-xs text-gray-600 flex justify-between">
                             <span className="truncate">{ticket.ticketNumber}</span>
-                            <span className="font-medium">{formatCurrency(refundAmount)}</span>
+                            <span className={`font-medium ${hasWarning ? 'text-red-600' : ''}`}>
+                              {formatCurrency(refundAmount)}
+                              {hasWarning && ' ⚠️'}
+                            </span>
                           </div>
                         );
                       })}
@@ -715,7 +806,7 @@ export default function RefundsPage() {
 
                   <button
                     onClick={handleProcessRefund}
-                    disabled={!refundReason.trim() || processing.loading}
+                    disabled={!refundReason.trim() || processing.loading || !validateRefundAmounts().valid}
                     className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 sm:px-4 text-xs sm:text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {processing.loading ? (
@@ -724,18 +815,6 @@ export default function RefundsPage() {
                       `Process Refund (${formatCurrency(calculateRefundTotal())})`
                     )}
                   </button>
-
-                  {processing.error && (
-                    <div className="mt-2 text-xs sm:text-sm text-red-600">
-                      Error: {processing.error}
-                    </div>
-                  )}
-
-                  {processing.success && (
-                    <div className="mt-2 text-xs sm:text-sm text-green-600">
-                      Refund processed successfully!
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -820,14 +899,27 @@ export default function RefundsPage() {
                           <h4 className="text-xs font-medium text-gray-700 mb-2">Selected tickets:</h4>
                           <div className="space-y-1">
                             {selectedTickets.map(ticket => {
+                              // Check if there's a warning for this ticket (invalid amount)
+                              const hasWarning = amountWarnings[ticket.ticketNumber];
                               const customAmount = refundForm.customAmounts[ticket.ticketNumber];
-                              const refundAmount = customAmount !== undefined ? customAmount : 
-                                (ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0));
+                              
+                              // If warning exists, show $0, otherwise use custom or max
+                              let refundAmount;
+                              if (hasWarning) {
+                                refundAmount = 0;
+                              } else if (customAmount !== undefined && customAmount > 0) {
+                                refundAmount = customAmount;
+                              } else {
+                                refundAmount = ticket.priceDetails.totalPrice - (ticket.totalRefundedAmount || 0);
+                              }
                               
                               return (
                                 <div key={ticket.ticketNumber} className="text-xs text-gray-600 flex justify-between">
                                   <span className="truncate">{ticket.ticketNumber}</span>
-                                  <span className="font-medium">{formatCurrency(refundAmount)}</span>
+                                  <span className={`font-medium ${hasWarning ? 'text-red-600' : ''}`}>
+                                    {formatCurrency(refundAmount)}
+                                    {hasWarning && ' ⚠️'}
+                                  </span>
                                 </div>
                               );
                             })}
@@ -863,7 +955,7 @@ export default function RefundsPage() {
 
                         <button
                           onClick={handleProcessRefund}
-                          disabled={!refundReason.trim() || processing.loading}
+                          disabled={!refundReason.trim() || processing.loading || !validateRefundAmounts().valid}
                           className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 sm:px-4 text-xs sm:text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {processing.loading ? (
@@ -872,18 +964,6 @@ export default function RefundsPage() {
                             `Process Refund (${formatCurrency(calculateRefundTotal())})`
                           )}
                         </button>
-
-                        {processing.error && (
-                          <div className="mt-3 text-sm text-red-600">
-                            Error: {processing.error}
-                          </div>
-                        )}
-
-                        {processing.success && (
-                          <div className="mt-3 text-sm text-green-600">
-                            Refund processed successfully!
-                          </div>
-                        )}
                       </>
                     )}
                   </div>

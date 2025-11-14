@@ -231,10 +231,16 @@ const RefundInvoiceCard = ({
                             <label className="text-xs text-gray-700 whitespace-nowrap">Amount:</label>
                             <input
                               type="number"
-                              min="0"
+                              min="0.01"
                               max={maxRefundable}
                               step="0.01"
                               value={customAmount !== undefined ? customAmount : ''}
+                              onInput={(e) => {
+                                // Detect when browser blocks invalid input (e, E, +, -, letters)
+                                if (e.target.validity.badInput) {
+                                  onAmountChange(ticket.ticketNumber, 'INVALID', maxRefundable);
+                                }
+                              }}
                               onChange={(e) => onAmountChange(ticket.ticketNumber, e.target.value, maxRefundable)}
                               onBlur={(e) => {
                                 const value = parseFloat(e.target.value);
