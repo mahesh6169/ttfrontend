@@ -352,6 +352,17 @@ useEffect(() => {
         return;
       }
       
+      // Revalidate metadata cache for WhatsApp sharing
+      try {
+        await fetch('/api/revalidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tag: `thread-${threadId}` })
+        });
+      } catch (error) {
+        console.error('Failed to revalidate metadata:', error);
+      }
+      
       setUpdatedThread(updated);
       // Show success view
       setShowSuccessView(true);

@@ -26,7 +26,10 @@ export async function generateMetadata({ params }) {
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
     
     const response = await fetch(`${API_BASE_URL}/threads/public/${threadId}`, {
-      next: { revalidate: 3600 }, // Cache for 1 hour
+      next: { 
+        revalidate: 3600,
+        tags: [`thread-${threadId}`]
+      },
       signal: controller.signal
     });
     
@@ -48,11 +51,6 @@ export async function generateMetadata({ params }) {
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
     let image = thread.ogImageUrl || thread.images?.[0]?.url || process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL;
-    
-    // Check if it's the "No_image" placeholder and replace with branded image
-    if (!image || image.includes('No_image')) {
-      image = process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL || `${siteUrl}${META_DEFAULTS.defaultImage}`;
-    }
     
     // Ensure image URL is absolute
     if (image && !image.startsWith('http')) {

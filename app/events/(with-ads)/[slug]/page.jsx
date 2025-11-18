@@ -90,11 +90,6 @@ export async function generateMetadata({ params }) {
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
     let image = event.ogImageUrl || event.images?.[0]?.url || process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
     
-    // Check if it's the "No_image" placeholder and replace with branded image
-    if (!image || image.includes('No_image')) {
-      image = process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL || `${siteUrl}${META_DEFAULTS.defaultImage}`;
-    }
-    
     // Ensure image URL is absolute
     if (image && !image.startsWith('http')) {
       image = image.startsWith('/') ? `${siteUrl}${image}` : `${siteUrl}/${image}`;
