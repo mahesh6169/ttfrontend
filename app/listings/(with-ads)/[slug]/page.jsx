@@ -72,7 +72,8 @@ export async function generateMetadata({ params }) {
     
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    let image = listing.images?.[0]?.url || process.env.NEXT_PUBLIC_FALLBACK_ADVERT_IMAGE_URL;
+    // Use ogImageUrl (optimized for WhatsApp <300KB) if available, otherwise fall back to original
+    let image = listing.ogImageUrl || listing.images?.[0]?.url || process.env.NEXT_PUBLIC_FALLBACK_ADVERT_IMAGE_URL;
     
     // Ensure image URL is absolute
     if (image && !image.startsWith('http')) {
