@@ -24,7 +24,10 @@ export async function generateMetadata({ params }) {
   try {
     // Fetch event data from API
     const response = await fetch(`${API_BASE_URL}/events/views/${eventId}`, {
-      next: { revalidate: 3600 } // Cache for 1 hour
+      next: { 
+        revalidate: 3600,
+        tags: [`event-${eventId}`]
+      }
     });
     
     if (!response.ok) {

@@ -1249,6 +1249,16 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
           ).unwrap();
           // Mark capacity as stale so it refreshes
           dispatch(markCapacityStale(editingEventId));
+          // Revalidate metadata cache for WhatsApp sharing
+          try {
+            await fetch('/api/revalidate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tag: `event-${editingEventId}` })
+            });
+          } catch (error) {
+            console.error('Failed to revalidate metadata:', error);
+          }
         } else {
           await dispatch(
             updateFreeEvent({
@@ -1258,6 +1268,16 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
           ).unwrap();
           // Mark capacity as stale so it refreshes
           dispatch(markCapacityStale(editingEventId));
+          // Revalidate metadata cache for WhatsApp sharing
+          try {
+            await fetch('/api/revalidate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tag: `event-${editingEventId}` })
+            });
+          } catch (error) {
+            console.error('Failed to revalidate metadata:', error);
+          }
         }
       } else {
         // Create new event - choose the appropriate thunk based on event type
