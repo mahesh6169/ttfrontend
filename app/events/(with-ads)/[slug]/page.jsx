@@ -85,7 +85,7 @@ export async function generateMetadata({ params }) {
     
     // Get first image or use default
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    let image = event.images?.[0]?.url || process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
+    let image = event.ogImageUrl || event.images?.[0]?.url || process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
     
     // Check if it's the "No_image" placeholder and replace with branded image
     if (!image || image.includes('No_image')) {
