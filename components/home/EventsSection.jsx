@@ -117,7 +117,7 @@ const EventsSection = ({ events }) => {
   if (!events || events.length === 0) {
     return (
       <section className="py-2 px-2 sm:py-3 sm:px-4">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 shadow-sm">
+        <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
           <div className="mb-3 sm:mb-5">
             <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
               <h2 className="text-lg sm:text-2xl font-bold text-teal-700 flex-shrink-0">Upcoming Events</h2>
@@ -168,7 +168,7 @@ const EventsSection = ({ events }) => {
 
   return (
     <section className="py-2 px-2 sm:py-3 sm:px-4">
-      <div className="bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 shadow-sm">
+      <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
         <div className="mb-3 sm:mb-5">
           <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
             <h2 className="text-lg sm:text-2xl font-bold text-teal-700 flex-shrink-0">Upcoming Events</h2>

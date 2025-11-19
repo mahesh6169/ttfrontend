@@ -51,7 +51,7 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
     : 'border-l-4 border-teal-700';
 
   return (
-    <div id="AdvertCard" className="relative border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200">
+    <div id="AdvertCard" className="relative rounded-lg shadow-md">
       {/* Wishlist Button - Top Right */}
       <button
         onClick={onWishlistToggle}
@@ -65,7 +65,7 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
 
       <Link href={`/listings/views/${advert._id}`}>
         {/* Image Box (50% height, full width) */}
-        <div className="relative w-full h-40 sm:h-48 md:h-56 bg-white rounded-md">
+        <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-md">
           <img 
             src={advert.images?.[0]?.url || FALLBACK_IMAGE} 
             alt={advert.title} 

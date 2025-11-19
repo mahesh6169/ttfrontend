@@ -109,11 +109,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
   const buttonConfig = getButtonConfig();
 
-  const borderColorClass = isExpired 
-    ? 'border-l-4 border-gray-400' 
-    : isLimitReached 
-    ? 'border-l-4 border-amber-400' 
-    : 'border-l-4 border-teal-700';
+  // Border class removed
 
   const handleCopyLink = () => {
     if (!campaign.slug) {
@@ -162,7 +158,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
   };
 
   return (
-    <div className={`relative h-full flex flex-col border rounded-lg shadow-md bg-gradient-to-br from-teal-50 to-lime-50 hover:from-teal-100 hover:to-lime-100 transition-all ${borderColorClass}`}>
+    <div className={`relative h-full flex flex-col rounded-lg shadow-md bg-white hover:bg-gray-50 transition-all`}>
       {/* Top Section: Store Name + Discount | Logo */}
       <div className="flex gap-3 p-3 pb-2">
         {/* Column 1: Store Name + Discount */}
@@ -177,7 +173,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
         {/* Column 2: Logo */}
         <div className="flex-1 md:max-w-[192px] flex-shrink-0">
-          <div className="relative w-full h-24 bg-white rounded-lg overflow-hidden flex items-center justify-center shadow-sm border border-teal-200">
+          <div className="relative w-full h-24 bg-white rounded-lg overflow-hidden flex items-center justify-center shadow-sm">
             {campaign.store?.logo?.url ? (
               <img 
                 src={campaign.store.logo.url} 

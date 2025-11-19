@@ -48,6 +48,16 @@ export default function EditCampaignPage() {
       const response = await axios.put(`/admin/campaigns/${campaignId}`, formData);
 
       if (response.data.success) {
+        try {
+          await fetch('/api/revalidate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tag: `campaign-${campaign.slug}` })
+          });
+        } catch (error) {
+          console.error('Failed to revalidate metadata:', error);
+        }
+        
         toast.success('Campaign updated successfully!');
         router.push(`/admin/profile/stores/${storeId}/campaigns`);
       }

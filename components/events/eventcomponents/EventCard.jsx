@@ -47,7 +47,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   return (
     <div
       id="EventCard"
-      className="relative border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200"
+      className="relative rounded-lg shadow-md"
     >
       {/* Wishlist Button */}
       <button
@@ -78,7 +78,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         }}
       >
         {/* Image */}
-        <div className="relative w-full h-40 sm:h-48 md:h-56 bg-white rounded-md">
+        <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-md">
           <img
             src={images?.[0]?.url || FALLBACK_IMAGE}
             alt={title}
