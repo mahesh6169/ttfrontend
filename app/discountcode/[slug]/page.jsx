@@ -22,7 +22,10 @@ export async function generateMetadata({ params }) {
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     
     const response = await fetch(`${API_BASE_URL}/coupons/campaigns/slug/${slug}`, {
-      next: { revalidate: 3600 },
+      next: { 
+        revalidate: 3600,
+        tags: [`campaign-${slug}`]
+      },
       signal: controller.signal,
       headers: {
         'x-api-key': process.env.NEXT_PUBLIC_FRONTEND_API_KEY || ''
@@ -42,11 +45,7 @@ export async function generateMetadata({ params }) {
     const description = campaign.storeId?.storeName || 'Discount offer available';
     
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    let image = campaign.storeId?.logo?.url;
-    
-    if (!image || image.includes('No_image')) {
-      image = `${siteUrl}${META_DEFAULTS.defaultImage}`;
-    }
+    let image = campaign.ogImageUrl || campaign.storeId?.logo?.url || `${siteUrl}${META_DEFAULTS.defaultImage}`;
     
     if (image && !image.startsWith('http')) {
       image = image.startsWith('/') ? `${siteUrl}${image}` : `${siteUrl}/${image}`;

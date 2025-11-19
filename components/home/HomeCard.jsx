@@ -15,7 +15,7 @@ const HomeCard = ({ type, data }) => {
       case 'listing':
         return (
           <>
-            <div className="relative w-full h-40 sm:h-48 md:h-56 bg-white rounded-md">
+            <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-md">
               <img 
                 src={data.image || FALLBACK_LISTING_IMAGE} 
                 alt={data.title} 
@@ -39,7 +39,7 @@ const HomeCard = ({ type, data }) => {
       case 'event':
         return (
           <>
-            <div className="relative w-full h-40 sm:h-48 md:h-56 bg-white rounded-md">
+            <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-md">
               <img 
                 src={data.image || FALLBACK_EVENT_IMAGE} 
                 alt={data.title} 
@@ -101,7 +101,7 @@ const HomeCard = ({ type, data }) => {
 
   return (
     <Link href={linkHref}>
-      <div className="relative border rounded-lg shadow-md bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors h-full">
+      <div className="relative rounded-lg shadow-md cursor-pointer transition-colors h-full">
         {renderContent()}
       </div>
     </Link>

@@ -195,7 +195,7 @@ export default function CampaignViewPage() {
   const buttonConfig = getButtonConfig();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-2 sm:py-4 px-2 sm:px-3">
+    <div className="min-h-screen py-2 sm:py-4 px-2 sm:px-3">
       <div className="max-w-2xl mx-auto">
         {/* Back Button */}
         <div className="mb-3">
@@ -209,10 +209,10 @@ export default function CampaignViewPage() {
         </div>
 
         {/* Main Campaign Card */}
-        <div className="bg-gradient-to-br from-teal-50 to-lime-50 rounded-lg shadow-lg border-l-4 border-teal-700 p-3 sm:p-4 mb-3">
+        <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4 mb-3">
           {/* Store Logo and Name */}
           <div className="flex gap-2.5 sm:gap-4 mb-3">
-            <div className="flex-1 max-w-[192px] h-24 bg-white rounded-lg overflow-hidden flex items-center justify-center shadow-sm border border-teal-200 flex-shrink-0">
+            <div className="flex-1 max-w-[192px] h-24 bg-white rounded-lg overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0">
               {campaign.storeId?.logo?.url ? (
                 <img 
                   src={campaign.storeId.logo.url} 

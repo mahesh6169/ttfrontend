@@ -251,7 +251,7 @@ const DiscountCodePage = () => {
                     }}
                     className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       tempFilters.state === state.code
-                        ? 'bg-teal-500 text-white'
+                        ? 'bg-white text-gray-900 ring-2 ring-gray-900'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     } ${tempFilters.location ? 'opacity-50 cursor-not-allowed' : ''}`}
                     disabled={!!tempFilters.location}
@@ -308,7 +308,7 @@ const DiscountCodePage = () => {
                       placeholder="Enter Suburb & Radius of search..."
                       value={locationInput}
                       onChange={(e) => setLocationInput(e.target.value)}
-                      className="w-full p-3 pr-10 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className="w-full p-3 pr-10 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       disabled={!!tempFilters.state}
                     />
                   </Autocomplete>
@@ -353,11 +353,11 @@ const DiscountCodePage = () => {
                     }}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer 
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 
-                      [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                      [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:bg-teal-700
-                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600 
+                      [&::-webkit-slider-thumb]:bg-gray-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                      [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:bg-gray-700
+                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-gray-600 
                       [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0
-                      [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:bg-teal-700"
+                      [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:bg-gray-700"
                   />
                   <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
                     <span>1 km</span>
@@ -387,7 +387,7 @@ const DiscountCodePage = () => {
                             : [...currentCategories, category];
                           setTempFilters({ ...tempFilters, categories: newCategories });
                         }}
-                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
+                        className="w-4 h-4 text-gray-600 rounded focus:ring-gray-500 focus:ring-2 transition-all"
                       />
                       <span className="ml-2 text-sm text-gray-700">{category}</span>
                     </label>
@@ -406,7 +406,7 @@ const DiscountCodePage = () => {
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t sm:sticky">
             <button
               onClick={applyFilters}
-              className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-3 rounded shadow font-semibold transition-colors"
+              className="w-full bg-white text-gray-900 hover:bg-gray-100 py-3 rounded shadow font-semibold transition-colors ring-2 ring-gray-900"
             >
               Show results
             </button>
@@ -425,13 +425,13 @@ const DiscountCodePage = () => {
             <input
               type="text"
               placeholder="Search promotions..."
-              className="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
             <button
               type="submit"
-              className="bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 px-4 py-2 rounded shadow transition-colors text-sm font-medium"
+              className="bg-white text-gray-900 hover:bg-gray-100 px-4 py-2 rounded shadow transition-colors text-sm font-medium ring-2 ring-gray-900"
             >
               Search
             </button>
@@ -448,7 +448,7 @@ const DiscountCodePage = () => {
               </svg>
               <span className="font-medium">Filter</span>
               {getActiveFilterCount() > 0 && (
-                <span className="bg-teal-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
+                <span className="bg-gray-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
                   {getActiveFilterCount()}
                 </span>
               )}
@@ -564,7 +564,7 @@ const DiscountCodePage = () => {
         <div className="px-3 sm:px-4 mt-4">
           {status === 'loading' ? (
             <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
               <p className="mt-4 text-gray-600">Loading promotions...</p>
             </div>
           ) : error ? (
