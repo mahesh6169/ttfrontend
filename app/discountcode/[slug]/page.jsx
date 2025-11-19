@@ -45,10 +45,20 @@ export async function generateMetadata({ params }) {
     const description = campaign.storeId?.storeName || 'Discount offer available';
     
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    let image = campaign.ogImageUrl || campaign.storeId?.logo?.url || `${siteUrl}${META_DEFAULTS.defaultImage}`;
+    let image = campaign.ogImageUrl || campaign.storeId?.logo?.url || process.env.NEXT_PUBLIC_FALLBACK_CAMPAIGN_IMAGE_URL;
     
     if (image && !image.startsWith('http')) {
       image = image.startsWith('/') ? `${siteUrl}${image}` : `${siteUrl}/${image}`;
+    }
+    
+    if (image) {
+      const storeTime = campaign.storeId?.updatedAt ? new Date(campaign.storeId.updatedAt).getTime() : 0;
+      const campaignTime = campaign.updatedAt ? new Date(campaign.updatedAt).getTime() : 0;
+      const timestamp = Math.max(storeTime, campaignTime);
+      if (timestamp > 0) {
+        const separator = image.includes('?') ? '&' : '?';
+        image = `${image}${separator}v=${timestamp}`;
+      }
     }
     
     const url = `${siteUrl}/discountcode/${slug}`;

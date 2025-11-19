@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import axios from '@/utils/axiosConfig';
 import { toast } from 'react-toastify';
-import { MdLocationOn, MdStore, MdShare, MdContentCopy } from 'react-icons/md';
-import { FaTag, FaClock, FaTicketAlt, FaWhatsapp, FaFacebook } from 'react-icons/fa';
+import { MdLocationOn, MdStore, MdShare } from 'react-icons/md';
+import { FaClock, FaTicketAlt } from 'react-icons/fa';
 import { format } from 'date-fns';
 import CodeModal from '@/components/coupons/CodeModal';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import ShareIconsCampaign from '@/components/shared/ShareIconsCampaign';
 
 export default function CampaignViewPage() {
   const router = useRouter();
@@ -86,51 +87,6 @@ export default function CampaignViewPage() {
     }
   };
 
-  const handleCopyLink = () => {
-    if (!campaign.slug) {
-      toast.error('Share link not available');
-      return;
-    }
-    const url = `${window.location.origin}/discountcode/${campaign.slug}`;
-    
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url);
-      toast.success('Link copied to clipboard!');
-    } else {
-      const textArea = document.createElement('textarea');
-      textArea.value = url;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        toast.success('Link copied to clipboard!');
-      } catch (err) {
-        toast.error('Failed to copy link');
-      }
-      document.body.removeChild(textArea);
-    }
-  };
-
-  const handleWhatsAppShare = () => {
-    if (!campaign.slug) {
-      toast.error('Share link not available');
-      return;
-    }
-    const url = `${window.location.origin}/discountcode/${campaign.slug}`;
-    const text = `Check out this discount: ${campaign.discount} ${campaign.discountProduct} at ${campaign.storeId?.storeName}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
-  };
-
-  const handleFacebookShare = () => {
-    if (!campaign.slug) {
-      toast.error('Share link not available');
-      return;
-    }
-    const url = `${window.location.origin}/discountcode/${campaign.slug}`;
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-  };
 
   if (loading) {
     return (
@@ -301,28 +257,12 @@ export default function CampaignViewPage() {
               <MdShare className="text-teal-600 text-lg sm:text-xl" />
               <h3 className="text-sm sm:text-base font-bold text-gray-800">Share this discount</h3>
             </div>
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-              <button
-                onClick={handleCopyLink}
-                className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg font-medium text-xs sm:text-sm transition-colors"
-              >
-                <MdContentCopy className="text-base sm:text-lg" />
-                <span>Copy</span>
-              </button>
-              <button
-                onClick={handleWhatsAppShare}
-                className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 bg-green-500 hover:bg-green-600 text-white px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg font-medium text-xs sm:text-sm transition-colors"
-              >
-                <FaWhatsapp className="text-base sm:text-lg" />
-                <span>WhatsApp</span>
-              </button>
-              <button
-                onClick={handleFacebookShare}
-                className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 bg-blue-600 hover:bg-blue-700 text-white px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg font-medium text-xs sm:text-sm transition-colors"
-              >
-                <FaFacebook className="text-base sm:text-lg" />
-                <span>Facebook</span>
-              </button>
+            <div className="flex justify-center">
+              <ShareIconsCampaign 
+                slug={campaign.slug}
+                title={`${campaign.discount} ${campaign.discountProduct}`}
+                storeName={campaign.storeId?.storeName}
+              />
             </div>
           </div>
         )}

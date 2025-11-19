@@ -1,7 +1,7 @@
 'use client';
 
-import { MdLocationOn, MdStore, MdContentCopy } from 'react-icons/md';
-import { FaTag, FaClock, FaTicketAlt, FaWhatsapp, FaFacebook } from 'react-icons/fa';
+import { MdLocationOn, MdStore } from 'react-icons/md';
+import { FaClock, FaTicketAlt } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -10,6 +10,7 @@ import axios from '@/utils/axiosConfig';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import CodeModal from '../CodeModal';
+import ShareIconsCampaign from '@/components/shared/ShareIconsCampaign';
 
 export default function CampaignCard({ campaign, onGenerateCode }) {
   const router = useRouter();
@@ -111,51 +112,6 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
   // Border class removed
 
-  const handleCopyLink = () => {
-    if (!campaign.slug) {
-      toast.error('Share link not available');
-      return;
-    }
-    const url = `${window.location.origin}/discountcode/${campaign.slug}`;
-    
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url);
-      toast.success('Link copied to clipboard!');
-    } else {
-      const textArea = document.createElement('textarea');
-      textArea.value = url;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        toast.success('Link copied to clipboard!');
-      } catch (err) {
-        toast.error('Failed to copy link');
-      }
-      document.body.removeChild(textArea);
-    }
-  };
-
-  const handleWhatsAppShare = () => {
-    if (!campaign.slug) {
-      toast.error('Share link not available');
-      return;
-    }
-    const url = `${window.location.origin}/discountcode/${campaign.slug}`;
-    const text = `Check out this discount: ${campaign.discount} on ${campaign.discountProduct} at ${campaign.store?.storeName}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
-  };
-
-  const handleFacebookShare = () => {
-    if (!campaign.slug) {
-      toast.error('Share link not available');
-      return;
-    }
-    const url = `${window.location.origin}/discountcode/${campaign.slug}`;
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-  };
 
   return (
     <div className={`relative h-full flex flex-col rounded-lg shadow-md bg-white hover:bg-gray-50 transition-all`}>
@@ -246,29 +202,11 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
             {/* Share Icons */}
             {campaign.slug && (
-              <div className="flex gap-1.5">
-                <button
-                  onClick={handleCopyLink}
-                  className="flex items-center justify-center w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-                  title="Copy Link"
-                >
-                  <MdContentCopy className="text-base" />
-                </button>
-                <button
-                  onClick={handleWhatsAppShare}
-                  className="flex items-center justify-center w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded transition-colors"
-                  title="Share on WhatsApp"
-                >
-                  <FaWhatsapp className="text-base" />
-                </button>
-                <button
-                  onClick={handleFacebookShare}
-                  className="flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-                  title="Share on Facebook"
-                >
-                  <FaFacebook className="text-base" />
-                </button>
-              </div>
+              <ShareIconsCampaign 
+                slug={campaign.slug}
+                title={`${campaign.discount} on ${campaign.discountProduct}`}
+                storeName={campaign.store?.storeName}
+              />
             )}
           </div>
         </div>
