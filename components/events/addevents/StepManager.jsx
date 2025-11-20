@@ -1115,12 +1115,27 @@ console.log("🔍 Debug organizerReservedSeats:", {
 
     // Recurring event fields
 if (formData.recurrence && formData.recurrence.isRecurring) {
+  console.log('🔄 BEFORE calculateRecurringUtcDateTimes:', JSON.stringify(formData.recurrence));
+  
   // Calculate utcDateTime for each schedule before sending
   const processedRecurrence = calculateRecurringUtcDateTimes(
     formData.recurrence, 
     formData.dateTime, 
     formData.timeZone
   );
+  
+  console.log('✅ AFTER calculateRecurringUtcDateTimes:', JSON.stringify(processedRecurrence));
+  
+  // Verify utcDateTime is present in all schedules
+  const allHaveUtc = processedRecurrence.repeatSchedule.every(s => s.utcDateTime);
+  if (!allHaveUtc) {
+    console.error('❌ CRITICAL: Some schedules missing utcDateTime!');
+    processedRecurrence.repeatSchedule.forEach((s, i) => {
+      console.log(`Schedule ${i}:`, JSON.stringify(s));
+    });
+  } else {
+    console.log('✅ All schedules have utcDateTime');
+  }
   
   submitFormData.append('recurrence', JSON.stringify(processedRecurrence));
 }

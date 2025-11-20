@@ -56,8 +56,9 @@ export default function EditStorePage() {
         // Revalidate all campaigns for this store (for WhatsApp sharing metadata)
         if (campaigns.length > 0) {
           try {
+            const frontendUrl = window.location.origin;
             const revalidatePromises = campaigns.map(campaign => 
-              fetch('/api/revalidate', {
+              fetch(`${frontendUrl}/api/revalidate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tag: `campaign-${campaign.slug}` })
