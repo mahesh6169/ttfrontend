@@ -102,8 +102,8 @@ const handleModalCancel = () => {
   }
 
   return (
-    <div className="m-2">
-      <h1 className="text-2xl font-bold text-center mb-6 text-teal-700" >Manage Events</h1>
+    <div className="p-2 sm:p-4">
+      <h1 className="text-xl sm:text-2xl font-bold text-center mb-3 sm:mb-6 text-teal-700">Manage Events</h1>
       <Link
         href="/events/add"
         onClick={() =>
@@ -112,39 +112,39 @@ const handleModalCancel = () => {
             '/users/profile/manageevents'
           )
         }
-        className="block my-2 p-2 bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 font-semibold lg:w-1/4 text-center rounded"
+        className="block mb-3 sm:mb-4 p-2 sm:p-3 bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100 font-semibold sm:w-auto md:w-1/3 lg:w-1/4 text-center rounded text-sm sm:text-base"
       >
         + Post New Event
       </Link>
 
       {myEvents.length === 0 ? (
-        <p className="text-center text-gray-600">
-          You haven’t posted any events yet.
+        <p className="text-center text-gray-600 text-sm sm:text-base">
+          You haven't posted any events yet.
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
           {myEvents.map((event) => {
   const isExpired = new Date() > new Date(event.willExpire);
 
   return (
     <div
       key={event._id}
-      className="p-4 border rounded shadow hover:shadow-md transition"
+      className="p-2 sm:p-4 border rounded shadow hover:shadow-md transition"
     >
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex items-center justify-between gap-1 sm:gap-2 mb-1 sm:mb-2">
   <h2 
-    className="text-lg font-bold cursor-pointer hover:underline"
+    className="text-sm sm:text-lg font-bold cursor-pointer hover:underline line-clamp-2"
     onClick={() => router.push(`/events/views/${event._id}`)}
   >
     {event.title}
   </h2>
   {isExpired && (
-    <span className="text-sm font-semibold text-red-600">Expired</span>
+    <span className="text-xs sm:text-sm font-semibold text-red-600 whitespace-nowrap">Expired</span>
   )}
 </div>
 
 
-      <p className="text-sm text-gray-500 mb-2">
+      <p className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">
         {new Date(event.dateTime).toLocaleString('en-AU', {
           timeZone: event.timeZone,
         })}
@@ -152,12 +152,12 @@ const handleModalCancel = () => {
       <img
         src={event.images?.[0]?.url || FALLBACK_IMAGE}
         alt={event.title}
-        className="w-full h-40 object-cover rounded mb-2"
+        className="w-full h-auto rounded mb-2"
       />
-<div className="flex flex-wrap items-center gap-2 mt-4">
+<div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-2 sm:mt-4">
   <button
     onClick={() => !isExpired && handleEdit(event)}
-    className={`px-4 py-1 rounded flex items-center gap-1 ${
+    className={`px-2 sm:px-4 py-1 rounded flex items-center gap-1 text-xs sm:text-sm ${
       isExpired || formStatus === 'loading'
         ? 'bg-gray-400 text-white cursor-not-allowed'
         : 'bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100'
@@ -172,7 +172,7 @@ const handleModalCancel = () => {
   <button
     onClick={() => confirmDelete(event)}
     disabled={deleteStatus === 'loading'}
-    className={`bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 ${
+    className={`bg-red-500 text-white px-2 sm:px-4 py-1 rounded hover:bg-red-600 text-xs sm:text-sm ${
       deleteStatus === 'loading' ? 'opacity-50 cursor-not-allowed' : ''
     }`}
   >
@@ -181,7 +181,7 @@ const handleModalCancel = () => {
   <button
     onClick={() => handleToggleGoLive(event)}
     disabled={status === 'loading'}
-    className={`px-4 py-1 rounded font-medium transition-colors ${
+    className={`px-2 sm:px-4 py-1 rounded font-medium transition-colors text-xs sm:text-sm ${
       event.goLive !== false
         ? 'bg-green-500 text-white hover:bg-green-600'
         : 'bg-gray-400 text-gray-700 hover:bg-gray-500'
@@ -193,10 +193,9 @@ const handleModalCancel = () => {
     {event.goLive !== false ? '● LIVE' : '○ OFFLINE'}
   </button>
 </div>
-{/* Add note for recurring events */}
 {event.recurrence?.isRecurring && (
-  <p className="text-xs text-orange-600 mt-2 italic">
-    ⚠️ This is a recurring event. Changes will apply to all occurrences.
+  <p className="text-xs text-orange-600 mt-1 sm:mt-2 italic">
+    ⚠️ Recurring event. Changes apply to all occurrences.
   </p>
 )}
 

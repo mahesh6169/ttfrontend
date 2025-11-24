@@ -106,8 +106,6 @@ const StepManager = ({
   // Regenerate blob URLs when returning to step 2
   useEffect(() => {
     if (isReturningToImageStep && currentStep === 2 && formData.images && formData.images.length > 0 && localImageFiles.length > 0) {
-      console.log('🔄 Returning to step 2 - regenerating blob URLs');
-      
       // Create file map for quick lookup
       const fileMap = new Map();
       localImageFiles.forEach(localFile => {
@@ -121,7 +119,6 @@ const StepManager = ({
           if (localFile.file instanceof File) {
             // Always create fresh blob URL when returning to step
             const newPreview = URL.createObjectURL(localFile.file);
-            console.log('✅ Regenerated blob URL for:', img.name || img.id);
             return { ...img, preview: newPreview };
           }
         }
@@ -157,13 +154,9 @@ const StepManager = ({
           
           // Apply initial form data if provided
           if (initialFormData) {
-            console.log('🎯 StepManager: Applying initialFormData:', initialFormData);
             Object.entries(initialFormData).forEach(([key, value]) => {
-              console.log(`🎯 Setting ${key}:`, value);
-              
               // Use toggleIsPaid for isPaid field to ensure totalSteps is updated
               if (key === 'isPaid') {
-                console.log('🎯 Using toggleIsPaid to update both isPaid and totalSteps');
                 dispatch(toggleIsPaid(value));
               } else {
                 dispatch(updateField({ field: key, value: value }));
@@ -172,11 +165,8 @@ const StepManager = ({
             
             // If isPaid is set, skip to step 2
             if (initialFormData.isPaid !== undefined) {
-              console.log('🎯 isPaid is defined, setting step to 2');
               dispatch(setStep(2));
             }
-          } else {
-            console.log('🎯 StepManager: No initialFormData provided');
           }
         } else if (isEditingMode && eventId) {
   // Clear any existing success messages when entering edit mode
@@ -258,12 +248,8 @@ const StepManager = ({
   // Handle images change (strip files for Redux, keep locally)
   const handleImagesChange = useCallback(
     (images) => {
-      console.log('📸 handleImagesChange called with:', images.length, 'images');
-      
       // --- A. Update local File objects first ---
       setLocalImageFiles(prevFiles => {
-        console.log('📸 Updating local files. Previous count:', prevFiles.length);
-        
         const existingFileMap = new Map();
         prevFiles.forEach(localFile => {
           existingFileMap.set(localFile.id, localFile);
@@ -278,7 +264,6 @@ const StepManager = ({
             // Preserve existing File object
             const existingFile = existingFileMap.get(img.id);
             updatedFiles.push(existingFile);
-            console.log('📸 Preserved existing file for:', img.id);
           } else if (img.isNew && img.file && img.file instanceof File) {
             // Add new File object
             const localFile = {
@@ -289,11 +274,9 @@ const StepManager = ({
             };
             
             updatedFiles.push(localFile);
-            console.log('📸 Added new file for:', img.id);
           }
         });
         
-        console.log('📸 Final local files count:', updatedFiles.length);
         return updatedFiles;
       });
 
@@ -307,7 +290,6 @@ const StepManager = ({
           // Only create blob URL if we don't have a valid one
           if (!preview || !preview.startsWith('blob:')) {
             preview = URL.createObjectURL(img.file);
-            console.log('📸 Created blob URL for new image:', img.id);
           }
         }
 
@@ -324,7 +306,6 @@ const StepManager = ({
         };
       });
       
-      console.log('📸 Dispatching to Redux:', safeImages.length, 'safe images');
       dispatch(setImages(safeImages));
     },
     [dispatch]
@@ -333,12 +314,8 @@ const StepManager = ({
   // Handle seating images change (following the same pattern as handleImagesChange)
   const handleSeatingImagesChange = useCallback(
     (images) => {
-      console.log('🪑 handleSeatingImagesChange called with:', images.length, 'images');
-      
       // Update local File objects first
       setLocalSeatingImageFiles(prevFiles => {
-        console.log('🪑 Updating local seating files. Previous count:', prevFiles.length);
-        
         const existingFileMap = new Map();
         prevFiles.forEach(localFile => {
           existingFileMap.set(localFile.id, localFile);
@@ -360,7 +337,6 @@ const StepManager = ({
           }
         });
         
-        console.log('🪑 Updated local seating files:', updatedFiles.length);
         return updatedFiles;
       });
       
@@ -379,8 +355,6 @@ const StepManager = ({
         };
       });
       
-      console.log('🪑 Dispatching to Redux:', safeImages.length, 'safe seating images');
-      console.log('🪑 Safe seating images details:', safeImages);
       dispatch(updateField({
         field: 'seatingLayoutImage',
         value: safeImages
@@ -682,6 +656,32 @@ const validateCurrentStep = useCallback(() => {
       if (!formData.timeZone?.trim()) errors.timeZone = ['Event timezone is required'];
       if (!formData.address?.formattedAddress)
         errors.address = ['Event address is required'];
+      
+      // Recurring event validation
+      if (formData.recurrence?.isRecurring) {
+        if (!formData.recurrence.repeatSchedule || formData.recurrence.repeatSchedule.length === 0) {
+          errors.recurrence = ['At least one repeat schedule is required for recurring events'];
+        } else {
+          const recurringErrors = [];
+          formData.recurrence.repeatSchedule.forEach((schedule, index) => {
+            if (!schedule.day || !schedule.time) {
+              recurringErrors.push(`Repeat schedule ${index + 1} day and time are required`);
+            }
+          });
+          if (recurringErrors.length > 0) errors.recurrence = recurringErrors;
+        }
+        
+        // End date validation for recurring events
+        if (formData.recurrence.endDate) {
+          const endDate = new Date(formData.recurrence.endDate);
+          const startDate = new Date(formData.dateTime);
+          if (endDate <= startDate) {
+            errors.recurrence = (errors.recurrence || []).concat([
+              'Recurring end date must be after the event start date',
+            ]);
+          }
+        }
+      }
       break;
 
     case 3: // Organiser Details (moved from step 2)
