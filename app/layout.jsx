@@ -14,6 +14,7 @@ import { Analytics } from '@vercel/analytics/next';
 
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
+const defaultOgImage = process.env.NEXT_PUBLIC_DEFAULT_OG_IMAGE_URL || 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1764066113/ogshare_v4_psldb7.jpg';
 
 
 export const metadata = {
@@ -66,7 +67,7 @@ export const metadata = {
     siteName: siteName,
     images: [
       {
-        url: `https://res.cloudinary.com/dtvrbdvkx/image/upload/v1758681063/desify-og-default_kfqun1.jpg`, // Image shown in WhatsApp/FB preview
+        url: defaultOgImage,
         width: 1200,
         height: 630,
         alt: `Desify – Classifieds, Events & Community Forum`,
@@ -81,7 +82,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: `Desify – Classifieds, Events & Community Forum`,
     description: `List ads, promote business & services, create events, join discussions`,
-    images: [`https://res.cloudinary.com/dtvrbdvkx/image/upload/v1758681063/desify-og-default_kfqun1.jpg`],
+    images: [defaultOgImage],
   },
   
   // SEARCH ENGINE VERIFICATION - Prove you own this site
@@ -140,7 +141,7 @@ const ParentLayout = ({ children }) => {
       width: 512,
       height: 512
     },
-    image: `https://res.cloudinary.com/dtvrbdvkx/image/upload/v1758681063/desify-og-default_kfqun1.jpg`,
+    image: defaultOgImage,
     areaServed: {
       '@type': 'Country',
       name: 'Australia'
