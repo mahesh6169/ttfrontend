@@ -1,3 +1,4 @@
+import HeroSection from '@/components/home/HeroSection';
 import ListingsSection from '@/components/home/ListingsSection';
 import EventsSection from '@/components/home/EventsSection';
 import ThreadsSection from '@/components/home/ThreadsSection';
@@ -56,18 +57,14 @@ export default async function HomePage() {
   const { listings, events, threads } = await fetchHomeData();
 
   return (
-    <main className="container mx-auto py-4 bg-white">
-      <div className="text-center mb-6 px-4">
-        <h1 className="text-base sm:text-xl font-bold text-teal-700">
-          <span className="block sm:inline">Browse Community</span>
-          <span className="hidden sm:inline"> - </span>
-          <span className="block sm:inline">Listings, Events and Discussions</span>
-        </h1>
+    <main className="bg-white">
+      <HeroSection />
+      
+      <div id="content" className="container mx-auto py-4">
+        <ListingsSection listings={listings} />
+        <EventsSection events={events} />
+        <ThreadsSection threads={threads} />
       </div>
-
-      <ListingsSection listings={listings} />
-      <EventsSection events={events} />
-      <ThreadsSection threads={threads} />
     </main>
   );
 }

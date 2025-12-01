@@ -154,44 +154,44 @@ const PromoBanner = ({ page = 'listings', inline = false, showAll = false }) => 
       return (
         <>
           {/* Desktop version - show all */}
-          <div className="hidden sm:flex bg-teal-700 text-amber-400 rounded py-2 px-4 items-center justify-around gap-4">
+          <div className="hidden sm:flex bg-white border border-teal-200 border-l-4 border-l-teal-600 rounded-lg py-3 px-5 items-center justify-around gap-6 shadow-sm">
             {messages.map((message, index) => (
-              <div key={index} className="flex items-center gap-2">
-                {message.icon && <message.icon className="text-amber-300 flex-shrink-0" />}
+              <div key={index} className="flex items-center gap-3">
+                {message.icon && <message.icon className="text-teal-600 text-lg flex-shrink-0" />}
                 {message.link ? (
                   <Link 
                     href={message.link}
-                    className="text-sm font-bold hover:underline"
+                    className="text-sm font-medium text-gray-700 hover:text-teal-600 transition-colors"
                   >
                     {message.text}
                   </Link>
                 ) : (
-                  <span className="text-sm font-bold">{message.text}</span>
+                  <span className="text-sm font-medium text-gray-700">{message.text}</span>
                 )}
                 {index < messages.length - 1 && (
-                  <span className="mx-3 text-amber-300/50">|</span>
+                  <div className="h-6 w-px bg-gray-200 mx-2"></div>
                 )}
               </div>
             ))}
           </div>
           
           {/* Mobile version - rotating */}
-          <div className="flex sm:hidden bg-teal-700 text-amber-400 rounded h-10 overflow-hidden">
-            <div className="h-full flex items-center justify-center px-3 w-full">
+          <div className="flex sm:hidden bg-white border border-teal-200 border-l-4 border-l-teal-600 rounded-lg h-12 overflow-hidden shadow-sm">
+            <div className="h-full flex items-center justify-center px-4 w-full">
               {current.link ? (
                 <Link 
                   href={current.link}
-                  className="flex items-center justify-center hover:scale-105 transition-all duration-300 w-full h-full"
+                  className="flex items-center justify-center transition-all duration-300 w-full h-full"
                 >
-                  <span className="text-sm font-bold animate-fade-in truncate flex items-center gap-2">
-                    {current.icon && <current.icon className="text-amber-300 flex-shrink-0" />}
+                  <span className="text-sm font-medium text-gray-700 animate-fade-in truncate flex items-center gap-2">
+                    {current.icon && <current.icon className="text-teal-600 flex-shrink-0" />}
                     <span>{current.text}</span>
                   </span>
                 </Link>
               ) : (
                 <div className="flex items-center justify-center w-full h-full">
-                  <span className="text-sm font-bold animate-fade-in truncate flex items-center gap-2">
-                    {current.icon && <current.icon className="text-amber-300 flex-shrink-0" />}
+                  <span className="text-sm font-medium text-gray-700 animate-fade-in truncate flex items-center gap-2">
+                    {current.icon && <current.icon className="text-teal-600 flex-shrink-0" />}
                     <span>{current.text}</span>
                   </span>
                 </div>

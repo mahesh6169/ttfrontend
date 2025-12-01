@@ -7,13 +7,27 @@ export default function TicketsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Banner */}
-      <section className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-800 text-white">
-        <div className="container mx-auto px-3 py-10 md:px-4 md:py-16">
+      <section className="relative min-h-[50vh] md:min-h-[60vh] flex items-center justify-center text-white overflow-hidden mt-2 md:mt-1">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          poster="https://res.cloudinary.com/dtvrbdvkx/video/upload/so_5,f_jpg,q_auto/v1764576671/event_hd_1280_720_30fps_vqb9am.jpg"
+          className="absolute inset-0 w-full h-full object-cover z-0 blur-[2px] md:blur-sm"
+        >
+          <source src="https://res.cloudinary.com/dtvrbdvkx/video/upload/f_auto,q_auto:good/v1764576671/event_hd_1280_720_30fps_vqb9am.mp4" type="video/mp4" />
+        </video>
+        
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/30 md:from-black/50 md:to-black/40 z-10" />
+        
+        <div className="relative z-20 container mx-auto px-3 py-10 md:px-4 md:py-16">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-2xl md:text-5xl font-bold mb-3 md:mb-6">
               Sell Event Tickets with Desify
             </h1>
-            <p className="text-sm md:text-xl mb-6 md:mb-8 text-teal-50">
+            <p className="text-sm md:text-xl mb-6 md:mb-8 text-white/90">
               The all-in-one ticketing platform for event organizers
             </p>
             <PostPaidEventButton
@@ -298,16 +312,16 @@ export default function TicketsPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-10 md:py-16 bg-gradient-to-r from-teal-600 to-teal-800 text-white">
+      <section className="py-10 md:py-16 bg-gray-50">
         <div className="container mx-auto px-3 md:px-4 text-center">
-          <h2 className="text-xl md:text-4xl font-bold mb-6 md:mb-8">Ready to Start Selling Tickets?</h2>
+          <h2 className="text-xl md:text-4xl font-bold mb-6 md:mb-8 text-gray-900">Ready to Start Selling Tickets?</h2>
           <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-center max-w-2xl mx-auto">
             <PostPaidEventButton
               className="inline-block w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 md:py-4 md:px-10 rounded-lg text-base md:text-lg transition-colors shadow-lg"
             />
             <Link
               href="/support/contact?enquiry=event"
-              className="inline-block w-full md:w-auto bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-bold py-3 px-6 md:py-4 md:px-10 rounded-lg text-base md:text-lg transition-colors border border-white border-opacity-40"
+              className="inline-block w-full md:w-auto bg-white hover:bg-gray-100 text-teal-700 font-bold py-3 px-6 md:py-4 md:px-10 rounded-lg text-base md:text-lg transition-colors border-2 border-teal-600 shadow-md"
             >
               Contact Us
             </Link>

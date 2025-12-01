@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
-import { FaFrown } from 'react-icons/fa';
+import { FaFrown, FaPlus, FaArrowRight, FaFire } from 'react-icons/fa';
 import HomeCard from './HomeCard';
 import BrowseAllCard from './BrowseAllCard';
 import PromoBanner from '../PromoBanner';
@@ -15,6 +15,7 @@ const ListingsSection = ({ listings }) => {
   const isLoggedIn = tokenValidated && !!user?._id;
   
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [mobileScrollIndex, setMobileScrollIndex] = useState(0);
   const [mobileIsPaused, setMobileIsPaused] = useState(false);
@@ -36,10 +37,14 @@ const ListingsSection = ({ listings }) => {
     if (!listings || listings.length <= 4 || isPaused) return;
 
     const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => {
-        const nextIndex = prevIndex + 4;
-        return nextIndex >= listings.length ? 0 : nextIndex;
-      });
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentIndex((prevIndex) => {
+          const nextIndex = prevIndex + 4;
+          return nextIndex >= listings.length ? 0 : nextIndex;
+        });
+        setTimeout(() => setIsTransitioning(false), 50);
+      }, 300);
     }, 4000);
 
     return () => clearInterval(timer);
@@ -121,20 +126,25 @@ const ListingsSection = ({ listings }) => {
         <div className="bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 shadow-sm">
           <div className="mb-3 sm:mb-5">
             <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
-              <h2 className="text-lg sm:text-2xl font-bold text-teal-700 flex-shrink-0">Latest Listings</h2>
+              <h2 className="text-lg sm:text-2xl font-extrabold text-teal-700 flex-shrink-0 flex items-center gap-2">
+                <FaFire className="text-orange-500" />
+                Latest Listings
+              </h2>
               <div className="flex gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
                 <Link 
                   href="/listings/add" 
                   onClick={handleCreateClick}
-                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
+                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white text-xs sm:text-sm font-semibold rounded-md transition-all shadow-md hover:shadow-lg text-center flex items-center gap-1.5"
                 >
+                  <FaPlus className="text-xs" />
                   Create
                 </Link>
                 <Link 
                   href="/listings" 
-                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 border border-teal-600 text-teal-600 hover:bg-teal-50 text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
+                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 border-2 border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white text-xs sm:text-sm font-semibold rounded-md transition-all text-center flex items-center gap-1.5 group"
                 >
-                  View All →
+                  View All
+                  <FaArrowRight className="text-xs group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
             </div>
@@ -172,20 +182,25 @@ const ListingsSection = ({ listings }) => {
       <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
         <div className="mb-3 sm:mb-5">
           <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
-            <h2 className="text-lg sm:text-2xl font-bold text-teal-700 flex-shrink-0">Latest Listings</h2>
+            <h2 className="text-lg sm:text-2xl font-extrabold text-teal-700 flex-shrink-0 flex items-center gap-2">
+              <FaFire className="text-orange-500" />
+              Latest Listings
+            </h2>
             <div className="flex gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
               <Link 
                 href="/listings/add" 
                 onClick={handleCreateClick}
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
+                className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white text-xs sm:text-sm font-semibold rounded-md transition-all shadow-md hover:shadow-lg text-center flex items-center gap-1.5"
               >
+                <FaPlus className="text-xs" />
                 Create
               </Link>
               <Link 
                 href="/listings" 
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 border border-teal-600 text-teal-600 hover:bg-teal-50 text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
+                className="px-2.5 py-1.5 sm:px-4 sm:py-2 border-2 border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white text-xs sm:text-sm font-semibold rounded-md transition-all text-center flex items-center gap-1.5 group"
               >
-                View All →
+                View All
+                <FaArrowRight className="text-xs group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
           </div>
@@ -197,7 +212,9 @@ const ListingsSection = ({ listings }) => {
 
         {/* Desktop: 4 rotating cards */}
         <div 
-          className="hidden md:grid md:grid-cols-4 gap-4"
+          className={`hidden md:grid md:grid-cols-4 gap-4 transition-opacity duration-300 ${
+            isTransitioning ? 'opacity-0' : 'opacity-100'
+          }`}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >

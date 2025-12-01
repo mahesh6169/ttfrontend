@@ -64,15 +64,15 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-teal-700 shadow">
-      <div className="container mx-auto py-2 md:space-y-2 text-lime-100 relative">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-teal-700/85 md:backdrop-blur-md md:border-b md:border-white/10 shadow-md transition-all duration-300">
+      <div className="container mx-auto py-2 md:py-2.5 text-lime-100 relative">
 
         {/* Top Row */}
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 text-3xl font-extrabold"
+            className="flex items-center gap-2 text-xl md:text-2xl font-extrabold hover:text-lime-50 transition-colors"
           >
             Desify
           </Link>
@@ -242,23 +242,23 @@ const DropdownNavLink = ({ href, icon, text, pathname, items }) => {
     >
       <Link
         href={href}
-        className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded 
+        className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 
           ${
             isActive
-              ? 'bg-lime-100 text-teal-700'
-              : 'hover:bg-lime-50 hover:text-teal-700'
+              ? 'bg-lime-100/20 text-lime-100'
+              : 'hover:bg-lime-100/10 hover:text-lime-50'
           }`}
       >
         {icon && <span>{icon}</span>}
         <span>{text}</span>
         <FaChevronRight 
           size={12} 
-          className={`transform transition-transform ${isOpen ? 'rotate-90' : 'rotate-0'}`}
+          className={`transform transition-transform duration-300 ${isOpen ? 'rotate-90' : 'rotate-0'}`}
         />
       </Link>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] py-2 z-50">
+        <div className="absolute top-full left-0 mt-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-xl min-w-[200px] py-2 z-50">
           {items.map((item, index) => (
             <Link
               key={index}
@@ -292,11 +292,11 @@ const NavLink = ({ href, icon, text, pathname, mobile = false, onClick, showIcon
     <Link
       href={href}
       onClick={onClick}
-      className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded 
+      className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 relative
         ${
           isActive
-            ? 'bg-lime-100 text-teal-700'
-            : 'hover:bg-lime-50 hover:text-teal-700'
+            ? 'bg-lime-100/20 text-lime-100'
+            : 'hover:bg-lime-100/10 hover:text-lime-50'
         } 
         ${mobile ? 'text-sm' : ''}`}
       title={typeof text === 'string' ? text : undefined}
@@ -307,6 +307,7 @@ const NavLink = ({ href, icon, text, pathname, mobile = false, onClick, showIcon
       ) : (
         <span>{text}</span>
       )}
+      {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4/5 h-0.5 bg-lime-100 hidden md:block"></span>}
     </Link>
   );
 };
