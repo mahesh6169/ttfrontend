@@ -64,15 +64,15 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-teal-700/85 md:backdrop-blur-md md:border-b md:border-white/10 shadow-md transition-all duration-300">
-      <div className="container mx-auto py-2 md:py-2.5 text-lime-100 relative">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300">
+      <div className="container mx-auto py-2 md:py-2.5 text-teal-700 relative">
 
         {/* Top Row */}
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 text-xl md:text-2xl font-extrabold hover:text-lime-50 transition-colors"
+            className="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-teal-700 hover:text-teal-600 transition-colors"
           >
             Desify
           </Link>
@@ -82,40 +82,40 @@ const Header = () => {
             {(isInitialLoad || (status === 'loading' && !tokenValidated)) ? (
               // Show loading placeholder during initial load
               <div className="p-2">
-                <div className="w-6 h-6 bg-lime-200/30 rounded animate-pulse"></div>
+                <div className="w-6 h-6 bg-teal-200/30 rounded animate-pulse"></div>
               </div>
             ) : isAuthenticated ? (
               <>
                 <Link
                   href="/users/profile/conversations"
-                  className="flex items-center justify-center p-2 rounded-lg hover:bg-teal-600 transition-colors relative"
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors relative"
                   title="Messages"
                 >
                   <div className="relative">
                     {showNotification ? (
                       <div className="animate-pulse">
-                        <BsChatDotsFill size={22} className="text-lime-100 drop-shadow-[0_0_8px_rgba(217,249,157,0.8)]" />
+                        <BsChatDotsFill size={22} className="text-teal-600 drop-shadow-[0_0_8px_rgba(13,148,136,0.6)]" />
                       </div>
                     ) : (
-                      <BsChatDots size={22} className="text-lime-100" />
+                      <BsChatDots size={22} className="text-teal-700" />
                     )}
                   </div>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center justify-center p-2 rounded-lg hover:bg-teal-600 transition-colors"
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
                   title="Logout"
                 >
-                  <TbLogout size={24} className="text-lime-100" />
+                  <TbLogout size={24} className="text-teal-700" />
                 </button>
               </>
             ) : (
               <Link
                 href="/login"
-                className="flex items-center justify-center p-2 rounded-lg hover:bg-teal-600 transition-colors"
+                className="flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 title="Login"
               >
-                <TbLogin size={24} className="text-lime-100" />
+                <TbLogin size={24} className="text-teal-700" />
               </Link>
             )}
           </div>
@@ -165,9 +165,9 @@ const Header = () => {
               {(isInitialLoad || (status === 'loading' && !tokenValidated)) ? (
                 // Show loading placeholder during initial load or token validation
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-lime-200/30 rounded animate-pulse">
-                    <CgProfile size={20} className="text-lime-200/50" />
-                    <div className="w-16 h-4 bg-lime-200/30 rounded"></div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-200/30 rounded animate-pulse">
+                    <CgProfile size={20} className="text-teal-400/50" />
+                    <div className="w-16 h-4 bg-teal-200/30 rounded"></div>
                   </div>
                 </div>
               ) : isAuthenticated ? (
@@ -185,7 +185,7 @@ const Header = () => {
                       <div className="relative">
                         {showNotification ? (
                           <div className="animate-pulse">
-                            <BsChatDotsFill size={22} className="drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+                            <BsChatDotsFill size={22} className="drop-shadow-[0_0_8px_rgba(13,148,136,0.6)]" />
                           </div>
                         ) : (
                           <BsChatDots size={22} />
@@ -198,7 +198,7 @@ const Header = () => {
                   />
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 hover:underline"
+                    className="flex items-center gap-2 text-teal-700 hover:text-teal-600 transition-colors"
                     title="Logout"
                   >
                     <TbLogout size={20} />
@@ -245,8 +245,8 @@ const DropdownNavLink = ({ href, icon, text, pathname, items }) => {
         className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 
           ${
             isActive
-              ? 'bg-lime-100/20 text-lime-100'
-              : 'hover:bg-lime-100/10 hover:text-lime-50'
+              ? 'text-teal-700 font-semibold'
+              : 'text-teal-700 hover:bg-gray-50 hover:text-teal-600'
           }`}
       >
         {icon && <span>{icon}</span>}
@@ -295,8 +295,8 @@ const NavLink = ({ href, icon, text, pathname, mobile = false, onClick, showIcon
       className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 relative
         ${
           isActive
-            ? 'bg-lime-100/20 text-lime-100'
-            : 'hover:bg-lime-100/10 hover:text-lime-50'
+            ? 'text-teal-700 font-semibold'
+            : 'text-teal-700 hover:bg-gray-50 hover:text-teal-600'
         } 
         ${mobile ? 'text-sm' : ''}`}
       title={typeof text === 'string' ? text : undefined}
@@ -307,7 +307,7 @@ const NavLink = ({ href, icon, text, pathname, mobile = false, onClick, showIcon
       ) : (
         <span>{text}</span>
       )}
-      {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4/5 h-0.5 bg-lime-100 hidden md:block"></span>}
+      {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4/5 h-0.5 bg-lime-500 hidden md:block"></span>}
     </Link>
   );
 };

@@ -27,7 +27,7 @@ const PostTopicButton = ({ className = '' }) => {
     <Link
       href="/threads/new"
       onClick={handleClick}
-      className={className || "bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 text-sm md:text-base rounded shadow font-semibold transition duration-200"}
+      className={className || "bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white px-4 py-2 text-sm md:text-base rounded-md shadow-md hover:shadow-lg font-semibold transition-all"}
     >
       Create Topic
     </Link>

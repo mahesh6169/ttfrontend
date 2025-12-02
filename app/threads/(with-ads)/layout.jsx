@@ -13,7 +13,7 @@ export const metadata = {
 
 const ThreadsWithAdsLayout = ({ children }) => {
   return (
-    <main id="Parent" className="container bg-white my-2 mx-auto">
+    <main id="Parent" className="container bg-white mt-4 mb-2 mx-auto">
       <StateSelector />
       <ThreadTopAd />
       <div className="flex gap-2">

@@ -13,7 +13,7 @@ export const metadata = {
 
 const ListingsWithAdsLayout = ({ children }) => {
   return (
-    <main id="Parent" className="container my-2 mx-auto">
+    <main id="Parent" className="container mt-4 mb-2 mx-auto">
       <StateSelector />
       <TopAd />
       <div className="flex gap-2">

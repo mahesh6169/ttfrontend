@@ -35,56 +35,68 @@ const BottomNavigation = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-teal-700 border-t border-teal-600 md:hidden z-40 safe-area-inset-pb">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-b border-gray-200 md:hidden z-40 safe-area-inset-pb shadow-lg">
       <div className="flex items-center justify-around h-16">
         <Link
           href="/"
-          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
             pathname === '/' 
-              ? 'text-amber-400' 
-              : 'text-lime-100 hover:text-lime-200'
+              ? 'text-teal-700 font-semibold' 
+              : 'text-teal-700 hover:text-teal-600'
           }`}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
-          <span className="text-xs mt-0.5 font-medium">Home</span>
+          <span className="text-xs mt-0.5 relative">
+            Home
+            {pathname === '/' && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
+          </span>
         </Link>
 
         <Link
           href="/listings"
-          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
             isActive('/listings') 
-              ? 'text-amber-400' 
-              : 'text-lime-100 hover:text-lime-200'
+              ? 'text-teal-700 font-semibold' 
+              : 'text-teal-700 hover:text-teal-600'
           }`}
         >
-          <RiAdvertisementFill size={20} />
-          <span className="text-xs mt-0.5 font-medium">Listings</span>
+          <RiAdvertisementFill size={22} />
+          <span className="text-xs mt-0.5 relative">
+            Listings
+            {isActive('/listings') && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
+          </span>
         </Link>
 
         <Link
           href="/events"
-          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
             isActive('/events') 
-              ? 'text-amber-400' 
-              : 'text-lime-100 hover:text-lime-200'
+              ? 'text-teal-700 font-semibold' 
+              : 'text-teal-700 hover:text-teal-600'
           }`}
         >
-          <FaCalendarAlt size={18} />
-          <span className="text-xs mt-0.5 font-medium">Events</span>
+          <FaCalendarAlt size={20} />
+          <span className="text-xs mt-0.5 relative">
+            Events
+            {isActive('/events') && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
+          </span>
         </Link>
 
         <Link
           href="/threads"
-          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
             isActive('/threads') 
-              ? 'text-amber-400' 
-              : 'text-lime-100 hover:text-lime-200'
+              ? 'text-teal-700 font-semibold' 
+              : 'text-teal-700 hover:text-teal-600'
           }`}
         >
-          <MdOutlineGroups2 size={22} />
-          <span className="text-xs mt-0.5 font-medium">Forum</span>
+          <MdOutlineGroups2 size={24} />
+          <span className="text-xs mt-0.5 relative">
+            Forum
+            {isActive('/threads') && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
+          </span>
         </Link>
 
         {/* <Link
@@ -102,14 +114,17 @@ const BottomNavigation = () => {
         {isAuthenticated && (
           <Link
             href={profilePath}
-            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
               isActive(profilePath)
-                ? 'text-amber-400' 
-                : 'text-lime-100 hover:text-lime-200'
+                ? 'text-teal-700 font-semibold' 
+                : 'text-teal-700 hover:text-teal-600'
             }`}
           >
-            <FaUser size={20} />
-            <span className="text-xs mt-0.5 font-medium">Profile</span>
+            <FaUser size={22} />
+            <span className="text-xs mt-0.5 relative">
+              Profile
+              {isActive(profilePath) && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
+            </span>
           </Link>
         )}
       </div>

@@ -525,7 +525,7 @@ const getCurrentSortLabel = () => {
         </div> */}
 
         {/* Post Advert Button and Promo Banner */}
-        <div className="my-2 px-4">
+        <div className="mt-2 md:mt-4 mb-2 px-4">
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="shrink-0">
               <PostListingButton />
