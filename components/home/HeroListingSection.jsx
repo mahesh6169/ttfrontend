@@ -22,20 +22,20 @@ const HeroListingSection = ({ messages = [] }) => {
   }, [displayMessages.length]);
 
   return (
-    <div className="w-full bg-transparent border-0 rounded-none overflow-hidden">
+    <div className="w-full bg-yellow-50 border-0 rounded-none overflow-hidden">
       <div className="relative flex flex-row items-center min-h-[120px] md:min-h-[160px]">
         {/* Particles moving across entire container */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
           {/* Floating particles/sparkles across entire width */}
           <g className="particles">
-            <circle className="particle particle-1" cx="100" cy="50" r="2" fill="#14B8A6"/>
-            <circle className="particle particle-2" cx="850" cy="80" r="2.5" fill="#FDE047"/>
-            <circle className="particle particle-3" cx="300" cy="150" r="1.5" fill="#8B5CF6"/>
-            <circle className="particle particle-4" cx="700" cy="120" r="2" fill="#14B8A6"/>
-            <circle className="particle particle-5" cx="450" cy="40" r="1.5" fill="#FDE047"/>
-            <circle className="particle particle-6" cx="950" cy="160" r="2" fill="#0D9488"/>
-            <circle className="particle particle-7" cx="200" cy="100" r="1.5" fill="#FF6B35"/>
-            <circle className="particle particle-8" cx="600" cy="170" r="2" fill="#EC4899"/>
+            <circle className="particle particle-1" cx="100" cy="50" r="3" fill="#14B8A6"/>
+            <circle className="particle particle-2" cx="850" cy="80" r="3.5" fill="#FDE047"/>
+            <circle className="particle particle-3" cx="300" cy="150" r="2.5" fill="#8B5CF6"/>
+            <circle className="particle particle-4" cx="700" cy="120" r="3" fill="#14B8A6"/>
+            <circle className="particle particle-5" cx="450" cy="40" r="2.5" fill="#FDE047"/>
+            <circle className="particle particle-6" cx="950" cy="160" r="3" fill="#0D9488"/>
+            <circle className="particle particle-7" cx="200" cy="100" r="2.5" fill="#FF6B35"/>
+            <circle className="particle particle-8" cx="600" cy="170" r="3" fill="#EC4899"/>
           </g>
         </svg>
 
@@ -100,7 +100,7 @@ const HeroListingSection = ({ messages = [] }) => {
 
         {/* Text on left */}
         <div className="flex-1 p-2 md:p-5 flex items-center justify-center relative z-10">
-          <p key={currentMessage} className="text-sm md:text-xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+          <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
             {displayMessages[currentMessage]}
           </p>
         </div>
@@ -163,12 +163,12 @@ const HeroListingSection = ({ messages = [] }) => {
               
               <defs>
                 <linearGradient id="coneGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#FEF08A"/>
-                  <stop offset="100%" stopColor="#FDE047"/>
+                  <stop offset="0%" stopColor="#FCD34D"/>
+                  <stop offset="100%" stopColor="#F59E0B"/>
                 </linearGradient>
                 <linearGradient id="speakerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#FDE68A"/>
-                  <stop offset="100%" stopColor="#FEF3C7"/>
+                  <stop offset="0%" stopColor="#FBBF24"/>
+                  <stop offset="100%" stopColor="#F59E0B"/>
                 </linearGradient>
               </defs>
             </svg>

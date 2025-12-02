@@ -7,6 +7,7 @@ import { useSelector } from 'react-redux';
 import { FaFrown } from 'react-icons/fa';
 import HomeCard from './HomeCard';
 import PromoBanner from '../PromoBanner';
+import HeroEventsSection from './HeroEventsSection';
 
 const EventsSection = ({ events }) => {
   const router = useRouter();
@@ -118,6 +119,10 @@ const EventsSection = ({ events }) => {
     return (
       <section className="py-2 px-2 sm:py-3 sm:px-4">
         <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
+          <div className="mb-2 sm:mb-3 -mx-3 sm:mx-0">
+            <HeroEventsSection />
+          </div>
+
           <div className="mb-3 sm:mb-5">
             <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
               <h2 className="text-lg sm:text-2xl font-bold text-teal-700 flex-shrink-0">Upcoming Events</h2>
@@ -136,10 +141,6 @@ const EventsSection = ({ events }) => {
                   View All →
                 </Link>
               </div>
-            </div>
-            
-            <div>
-              <PromoBanner page="events" inline={true} showAll={true} />
             </div>
           </div>
           <div className="text-center py-8">
@@ -169,6 +170,10 @@ const EventsSection = ({ events }) => {
   return (
     <section className="py-2 px-2 sm:py-3 sm:px-4">
       <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
+        <div className="mb-2 sm:mb-3 -mx-3 sm:mx-0">
+          <HeroEventsSection />
+        </div>
+
         <div className="mb-3 sm:mb-5">
           <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
             <h2 className="text-lg sm:text-2xl font-bold text-teal-700 flex-shrink-0">Upcoming Events</h2>
@@ -187,10 +192,6 @@ const EventsSection = ({ events }) => {
                 View All →
               </Link>
             </div>
-          </div>
-          
-          <div>
-            <PromoBanner page="events" inline={true} showAll={true} />
           </div>
         </div>
 

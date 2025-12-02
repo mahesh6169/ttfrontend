@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { FaFrown } from 'react-icons/fa';
 import PromoBanner from '../PromoBanner';
+import HeroThreadsSection from './HeroThreadsSection';
 
 const ThreadsSection = ({ threads }) => {
   const router = useRouter();
@@ -25,6 +26,10 @@ const ThreadsSection = ({ threads }) => {
     return (
       <section className="py-2 px-2 sm:py-3 sm:px-4">
         <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
+          <div className="mb-2 sm:mb-3 -mx-3 sm:mx-0">
+            <HeroThreadsSection />
+          </div>
+
           <div className="mb-3 sm:mb-5">
             <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
               <h2 className="text-lg sm:text-2xl font-bold text-teal-700 min-w-0 truncate">Recent Discussions</h2>
@@ -44,10 +49,6 @@ const ThreadsSection = ({ threads }) => {
                 </Link>
               </div>
             </div>
-            
-            <div>
-              <PromoBanner page="threads" inline={true} showAll={true} />
-            </div>
           </div>
           <div className="text-center py-8">
             <FaFrown className="text-gray-400 text-4xl sm:text-5xl mx-auto mb-3" />
@@ -64,6 +65,10 @@ const ThreadsSection = ({ threads }) => {
   return (
     <section className="py-2 px-2 sm:py-3 sm:px-4">
       <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
+        <div className="mb-2 sm:mb-3 -mx-3 sm:mx-0">
+          <HeroThreadsSection />
+        </div>
+
         <div className="mb-3 sm:mb-5">
           <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
             <h2 className="text-lg sm:text-2xl font-bold text-teal-700 min-w-0 truncate">Recent Discussions</h2>
@@ -82,10 +87,6 @@ const ThreadsSection = ({ threads }) => {
                 View All →
               </Link>
             </div>
-          </div>
-          
-          <div>
-            <PromoBanner page="threads" inline={true} showAll={true} />
           </div>
         </div>
 
