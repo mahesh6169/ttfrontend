@@ -8,6 +8,7 @@ import { FaFrown, FaPlus, FaArrowRight, FaFire } from 'react-icons/fa';
 import HomeCard from './HomeCard';
 import BrowseAllCard from './BrowseAllCard';
 import PromoBanner from '../PromoBanner';
+import HeroListingSection from './HeroListingSection';
 
 const ListingsSection = ({ listings }) => {
   const router = useRouter();
@@ -148,10 +149,6 @@ const ListingsSection = ({ listings }) => {
                 </Link>
               </div>
             </div>
-            
-            <div>
-              <PromoBanner page="listings" inline={true} showAll={true} />
-            </div>
           </div>
           <div className="text-center py-8">
             <FaFrown className="text-gray-400 text-4xl sm:text-5xl mx-auto mb-3" />
@@ -180,6 +177,10 @@ const ListingsSection = ({ listings }) => {
   return (
     <section className="py-2 px-2 sm:py-3 sm:px-4">
       <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
+        <div className="mb-2 sm:mb-3 -mx-3 sm:mx-0">
+          <HeroListingSection />
+        </div>
+
         <div className="mb-3 sm:mb-5">
           <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
             <h2 className="text-lg sm:text-2xl font-extrabold text-teal-700 flex-shrink-0 flex items-center gap-2">
@@ -203,10 +204,6 @@ const ListingsSection = ({ listings }) => {
                 <FaArrowRight className="text-xs group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
-          </div>
-          
-          <div>
-            <PromoBanner page="listings" inline={true} showAll={true} />
           </div>
         </div>
 
