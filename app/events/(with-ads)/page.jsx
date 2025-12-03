@@ -541,16 +541,9 @@ const EventsPage = () => {
           </div>
         </div> */}
 
-        {/* Post Event Button and Promo Banner */}
+        {/* Post Event Button */}
         <div className="my-2 px-4">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="shrink-0">
-              <PostEventButton />
-            </div>
-            <div className="flex-1 min-w-0">
-              <PromoBanner page="events" inline={true} showAll={true} />
-            </div>
-          </div>
+          <PostEventButton />
         </div>
 
         {/* Search Bar with Sort/Filter buttons */}

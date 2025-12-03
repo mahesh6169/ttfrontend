@@ -33,13 +33,13 @@ const RequireVerifiedAccount = ({ children }) => {
     if (isInitializing) return;
 
     if (!tokenValidated || !user) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
     
     // Check if account is verified
     if (user && (user.isAccountVerified === false || user.isAccountVerified === null)) {
-      router.push('/users/emailverify');
+      router.replace('/users/emailverify');
     }
   }, [tokenValidated, user, router, isInitializing]);
 

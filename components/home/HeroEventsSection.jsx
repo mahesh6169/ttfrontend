@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { FaTheaterMasks, FaMicrophone, FaMusic, FaPalette, FaGuitar, FaFilm, FaTicketAlt, FaCalendarAlt } from 'react-icons/fa';
 
 const HeroEventsSection = ({ messages = [] }) => {
@@ -24,7 +25,7 @@ const HeroEventsSection = ({ messages = [] }) => {
 
   return (
     <div className="w-full bg-yellow-50 border-0 rounded-none overflow-hidden">
-      <div className="relative flex flex-row items-center min-h-[120px] md:min-h-[160px]">
+      <div className="relative flex flex-row items-center min-h-[160px] md:min-h-[200px] pb-6 md:pb-8">
         {/* Falling party decorations - only above masks area */}
         <div className="absolute right-0 md:right-0 w-[100px] md:w-[220px] h-full pointer-events-none overflow-hidden">
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 220 200" preserveAspectRatio="xMaxYMid meet" xmlns="http://www.w3.org/2000/svg">
@@ -70,70 +71,47 @@ const HeroEventsSection = ({ messages = [] }) => {
           </svg>
         </div>
 
-        {/* Event icons distributed across entire container */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Stage - far left top */}
-          <div className="category-icon absolute" style={{ left: '5%', top: '20%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-purple-600 flex items-center justify-center">
-              <FaTheaterMasks className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Microphone - far left bottom */}
-          <div className="category-icon absolute" style={{ left: '5%', bottom: '20%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-pink-500 flex items-center justify-center">
-              <FaMicrophone className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Music/Dancer - center left top */}
-          <div className="category-icon absolute" style={{ left: '22%', top: '12%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-red-500 flex items-center justify-center">
-              <FaMusic className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Artist/Palette - center left bottom */}
-          <div className="category-icon absolute" style={{ left: '22%', bottom: '12%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-orange-500 flex items-center justify-center">
-              <FaPalette className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Guitar - top center */}
-          <div className="category-icon absolute" style={{ left: '42%', top: '8%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-amber-500 flex items-center justify-center">
-              <FaGuitar className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Film - far right top */}
-          <div className="category-icon absolute" style={{ right: '22%', top: '12%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-indigo-600 flex items-center justify-center">
-              <FaFilm className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Ticket - far right bottom */}
-          <div className="category-icon absolute" style={{ right: '22%', bottom: '12%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-teal-500 flex items-center justify-center">
-              <FaTicketAlt className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Calendar - center right bottom */}
-          <div className="category-icon absolute" style={{ right: '5%', bottom: '20%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-emerald-600 flex items-center justify-center">
-              <FaCalendarAlt className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Text on left */}
+        {/* Text in center with Events heading and icons row */}
         <div className="flex-1 p-2 md:p-5 flex items-center justify-center relative z-10">
-          <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
-            {displayMessages[currentMessage]}
-          </p>
+          <div className="flex flex-col items-center gap-1 md:gap-2">
+            {/* Events heading above icons */}
+            <h2 className="text-lg md:text-2xl font-extrabold text-teal-700">Events</h2>
+            
+            {/* Event icons and text */}
+            <div className="flex flex-col items-center gap-2 md:gap-3">
+            {/* Event icons in horizontal row */}
+            <div className="flex items-center gap-1.5 md:gap-3 category-icon">
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-purple-600 flex items-center justify-center">
+                <FaTheaterMasks className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-pink-500 flex items-center justify-center">
+                <FaMicrophone className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-red-500 flex items-center justify-center">
+                <FaMusic className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-orange-500 flex items-center justify-center">
+                <FaPalette className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-amber-500 flex items-center justify-center">
+                <FaGuitar className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-indigo-600 flex items-center justify-center">
+                <FaFilm className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-teal-500 flex items-center justify-center">
+                <FaTicketAlt className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-emerald-600 flex items-center justify-center">
+                <FaCalendarAlt className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+            </div>
+
+              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+                {displayMessages[currentMessage]}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Theatre masks on right */}
@@ -175,6 +153,22 @@ const HeroEventsSection = ({ messages = [] }) => {
               </g>
             </svg>
           </div>
+        </div>
+        
+        {/* Create and View All buttons - bottom right */}
+        <div className="absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10">
+          <Link
+            href="/events/add"
+            className="bg-teal-600 hover:bg-teal-700 text-white text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+          >
+            + Create
+          </Link>
+          <Link
+            href="/events"
+            className="bg-white hover:bg-gray-50 text-teal-700 border border-teal-600 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+          >
+            View All
+          </Link>
         </div>
       </div>
 

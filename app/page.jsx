@@ -2,6 +2,7 @@ import HeroSection from '@/components/home/HeroSection';
 import ListingsSection from '@/components/home/ListingsSection';
 import EventsSection from '@/components/home/EventsSection';
 import ThreadsSection from '@/components/home/ThreadsSection';
+import Footer from '@/components/Footer';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
@@ -65,6 +66,8 @@ export default async function HomePage() {
         <EventsSection events={events} />
         <ThreadsSection threads={threads} />
       </div>
+      
+      <Footer />
     </main>
   );
 }

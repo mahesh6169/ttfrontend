@@ -125,31 +125,6 @@ const ListingsSection = ({ listings }) => {
     return (
       <section className="py-2 px-2 sm:py-3 sm:px-4">
         <div className="bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6 shadow-sm">
-          <div className="mb-3 sm:mb-5">
-            <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
-              <h2 className="text-lg sm:text-2xl font-extrabold text-teal-700 flex-shrink-0 flex items-center gap-2">
-                <FaFire className="text-orange-500" />
-                Latest Listings
-              </h2>
-              <div className="flex gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
-                <Link 
-                  href="/listings/add" 
-                  onClick={handleCreateClick}
-                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white text-xs sm:text-sm font-semibold rounded-md transition-all shadow-md hover:shadow-lg text-center flex items-center gap-1.5"
-                >
-                  <FaPlus className="text-xs" />
-                  Create
-                </Link>
-                <Link 
-                  href="/listings" 
-                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 border-2 border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white text-xs sm:text-sm font-semibold rounded-md transition-all text-center flex items-center gap-1.5 group"
-                >
-                  View All
-                  <FaArrowRight className="text-xs group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-              </div>
-            </div>
-          </div>
           <div className="text-center py-8">
             <FaFrown className="text-gray-400 text-4xl sm:text-5xl mx-auto mb-3" />
             <p className="text-gray-600 text-sm sm:text-base mb-2">Something went wrong</p>
@@ -177,34 +152,8 @@ const ListingsSection = ({ listings }) => {
   return (
     <section className="py-2 px-2 sm:py-3 sm:px-4">
       <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
-        <div className="mb-2 sm:mb-3 -mx-3 sm:mx-0">
+        <div className="mb-2 -mx-3 sm:mx-0">
           <HeroListingSection />
-        </div>
-
-        <div className="mb-3 sm:mb-5">
-          <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
-            <h2 className="text-lg sm:text-2xl font-extrabold text-teal-700 flex-shrink-0 flex items-center gap-2">
-              <FaFire className="text-orange-500" />
-              Latest Listings
-            </h2>
-            <div className="flex gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
-              <Link 
-                href="/listings/add" 
-                onClick={handleCreateClick}
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white text-xs sm:text-sm font-semibold rounded-md transition-all shadow-md hover:shadow-lg text-center flex items-center gap-1.5"
-              >
-                <FaPlus className="text-xs" />
-                Create
-              </Link>
-              <Link 
-                href="/listings" 
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 border-2 border-teal-600 text-teal-700 hover:bg-teal-600 hover:text-white text-xs sm:text-sm font-semibold rounded-md transition-all text-center flex items-center gap-1.5 group"
-              >
-                View All
-                <FaArrowRight className="text-xs group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            </div>
-          </div>
         </div>
 
         {/* Desktop: 4 rotating cards */}

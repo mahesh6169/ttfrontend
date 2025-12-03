@@ -57,14 +57,13 @@ const Header = () => {
     try {
       await dispatch(logoutUser()).unwrap();
       router.push('/login');
-      toast.success('Logout successful');
     } catch (error) {
       toast.error(error || 'Logout failed. Please try again.');
     }
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-md transition-all duration-300">
       <div className="container mx-auto py-2 md:py-2.5 text-teal-700 relative">
 
         {/* Top Row */}
@@ -142,20 +141,16 @@ const Header = () => {
                 text="Events"
                 pathname={pathname}
               />
-              {/* <DropdownNavLink
-                href="/deals"
-                icon={<MdLocalOffer size={20} />}
-                text="Deals"
-                pathname={pathname}
-                items={[
-                  { href: '/discountcode', text: 'Discount Codes' },
-                  { href: '/deals', text: 'Discounts', disabled: true }
-                ]}
-              /> */}
               <NavLink
                 href="/threads"
                 icon={<MdOutlineGroups2 size={30} />}
                 text="Forum"
+                pathname={pathname}
+              />
+              <NavLink
+                href="/deals"
+                icon={<MdLocalOffer size={20} />}
+                text="Deals"
                 pathname={pathname}
               />
             </div>

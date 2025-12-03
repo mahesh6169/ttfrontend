@@ -119,29 +119,8 @@ const EventsSection = ({ events }) => {
     return (
       <section className="py-2 px-2 sm:py-3 sm:px-4">
         <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
-          <div className="mb-2 sm:mb-3 -mx-3 sm:mx-0">
+          <div className="mb-2 -mx-3 sm:mx-0">
             <HeroEventsSection />
-          </div>
-
-          <div className="mb-3 sm:mb-5">
-            <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
-              <h2 className="text-lg sm:text-2xl font-bold text-teal-700 flex-shrink-0">Upcoming Events</h2>
-              <div className="flex gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
-                <Link 
-                  href="/events/add" 
-                  onClick={handleCreateClick}
-                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
-                >
-                  Create
-                </Link>
-                <Link 
-                  href="/events" 
-                  className="px-2.5 py-1.5 sm:px-4 sm:py-2 border border-teal-600 text-teal-600 hover:bg-teal-50 text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
-                >
-                  View All →
-                </Link>
-              </div>
-            </div>
           </div>
           <div className="text-center py-8">
             <FaFrown className="text-gray-400 text-4xl sm:text-5xl mx-auto mb-3" />
@@ -170,29 +149,8 @@ const EventsSection = ({ events }) => {
   return (
     <section className="py-2 px-2 sm:py-3 sm:px-4">
       <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
-        <div className="mb-2 sm:mb-3 -mx-3 sm:mx-0">
+        <div className="mb-2 -mx-3 sm:mx-0">
           <HeroEventsSection />
-        </div>
-
-        <div className="mb-3 sm:mb-5">
-          <div className="flex items-center gap-1.5 sm:gap-3 mb-2">
-            <h2 className="text-lg sm:text-2xl font-bold text-teal-700 flex-shrink-0">Upcoming Events</h2>
-            <div className="flex gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
-              <Link 
-                href="/events/add" 
-                onClick={handleCreateClick}
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
-              >
-                Create
-              </Link>
-              <Link 
-                href="/events" 
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 border border-teal-600 text-teal-600 hover:bg-teal-50 text-xs sm:text-sm font-medium rounded-md transition-colors text-center"
-              >
-                View All →
-              </Link>
-            </div>
-          </div>
         </div>
 
         {/* Desktop: 4 rotating cards */}

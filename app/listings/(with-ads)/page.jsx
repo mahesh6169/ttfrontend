@@ -524,16 +524,9 @@ const getCurrentSortLabel = () => {
           </div>
         </div> */}
 
-        {/* Post Advert Button and Promo Banner */}
+        {/* Post Advert Button */}
         <div className="mt-2 md:mt-4 mb-2 px-4">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="shrink-0">
-              <PostListingButton />
-            </div>
-            <div className="flex-1 min-w-0">
-              <PromoBanner page="listings" inline={true} showAll={true} />
-            </div>
-          </div>
+          <PostListingButton />
         </div>
 
         {/* Search Bar with Sort/Filter buttons */}

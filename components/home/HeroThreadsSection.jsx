@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { FaNewspaper, FaQuestionCircle, FaSearch, FaThumbsUp, FaGlobe, FaMapMarkerAlt, FaBell } from 'react-icons/fa';
 
 const HeroThreadsSection = ({ messages = [] }) => {
@@ -23,69 +24,50 @@ const HeroThreadsSection = ({ messages = [] }) => {
   }, [displayMessages.length]);
 
   return (
-    <div className="w-full bg-yellow-50 border-0 rounded-none overflow-hidden">
-      <div className="relative flex flex-row items-center min-h-[120px] md:min-h-[160px]">
-        {/* Thread icons distributed across container - avoiding right side */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Newspaper - far left top */}
-          <div className="category-icon absolute" style={{ left: '5%', top: '20%' }}>
-            <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-blue-500 flex items-center justify-center">
-              <FaNewspaper className="w-4 h-4 md:w-5 md:h-5 text-white" />
-            </div>
-          </div>
-
-          {/* Question - far left bottom */}
-          <div className="category-icon absolute" style={{ left: '5%', bottom: '20%' }}>
-            <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-orange-500 flex items-center justify-center">
-              <FaQuestionCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
-            </div>
-          </div>
-
-          {/* Search - center left top */}
-          <div className="category-icon absolute" style={{ left: '25%', top: '15%' }}>
-            <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-purple-500 flex items-center justify-center">
-              <FaSearch className="w-4 h-4 md:w-5 md:h-5 text-white" />
-            </div>
-          </div>
-
-          {/* Thumbs up - center left bottom */}
-          <div className="category-icon absolute" style={{ left: '25%', bottom: '15%' }}>
-            <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-green-500 flex items-center justify-center">
-              <FaThumbsUp className="w-4 h-4 md:w-5 md:h-5 text-white" />
-            </div>
-          </div>
-
-          {/* Globe - center top */}
-          <div className="category-icon absolute" style={{ left: '45%', top: '10%' }}>
-            <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-teal-600 flex items-center justify-center">
-              <FaGlobe className="w-4 h-4 md:w-5 md:h-5 text-white" />
-            </div>
-          </div>
-
-          {/* Map Pin - center bottom */}
-          <div className="category-icon absolute" style={{ left: '45%', bottom: '10%' }}>
-            <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-red-500 flex items-center justify-center">
-              <FaMapMarkerAlt className="w-4 h-4 md:w-5 md:h-5 text-white" />
-            </div>
-          </div>
-
-          {/* Bell - top center-right (avoiding right side illustration) */}
-          <div className="category-icon absolute" style={{ left: '60%', top: '8%' }}>
-            <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-amber-500 flex items-center justify-center">
-              <FaBell className="w-4 h-4 md:w-5 md:h-5 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Text on left */}
+    <div className="w-full bg-yellow-50 border-0 rounded-none overflow-visible">
+      <div className="relative flex flex-row items-center min-h-[160px] md:min-h-[200px] pb-8 md:pb-12">
+        {/* Text in center with Forum heading and icons row */}
         <div className="flex-1 p-2 md:p-5 flex items-center justify-center relative z-10">
-          <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
-            {displayMessages[currentMessage]}
-          </p>
+          <div className="flex flex-col items-center gap-1 md:gap-2">
+            {/* Forum heading above icons */}
+            <h2 className="text-lg md:text-2xl font-extrabold text-teal-700">Forum</h2>
+            
+            {/* Thread icons and text */}
+            <div className="flex flex-col items-center gap-2 md:gap-3">
+            {/* Thread icons in horizontal row */}
+            <div className="flex items-center gap-1.5 md:gap-3 category-icon">
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                <FaNewspaper className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-orange-500 flex items-center justify-center">
+                <FaQuestionCircle className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-purple-500 flex items-center justify-center">
+                <FaSearch className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-green-500 flex items-center justify-center">
+                <FaThumbsUp className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-teal-600 flex items-center justify-center">
+                <FaGlobe className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-red-500 flex items-center justify-center">
+                <FaMapMarkerAlt className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-amber-500 flex items-center justify-center">
+                <FaBell className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+            </div>
+
+              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+                {displayMessages[currentMessage]}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Community chat illustration on right */}
-        <div className="flex-shrink-0 w-auto md:w-[200px] lg:w-[220px] p-2 md:p-4 flex flex-col items-center justify-center relative z-10">
+        <div className="flex-shrink-0 w-auto md:w-[200px] lg:w-[220px] p-2 md:p-4 pb-10 md:pb-4 flex flex-col items-center justify-center relative z-10">
           <div className="relative w-[80px] md:w-full md:max-w-[180px]">
             <div className="absolute inset-0 bg-teal-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
             <svg className="community-icon w-full h-auto" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
@@ -135,6 +117,22 @@ const HeroThreadsSection = ({ messages = [] }) => {
               {["Where can I find...", "Does anyone know...", "Migration Update...", "Looking for advice...", "Need recommendations...", "Community help..."][currentMessage % 6]}
             </span>
           </div>
+        </div>
+        
+        {/* Create and View All buttons - bottom right */}
+        <div className="absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10">
+          <Link
+            href="/threads/new"
+            className="bg-teal-600 hover:bg-teal-700 text-white text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+          >
+            + Create
+          </Link>
+          <Link
+            href="/threads"
+            className="bg-white hover:bg-gray-50 text-teal-700 border border-teal-600 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+          >
+            View All
+          </Link>
         </div>
       </div>
 

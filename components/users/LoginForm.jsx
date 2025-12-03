@@ -113,7 +113,7 @@ const Login = () => {
     }
   
     try {
-      const result = await dispatch(
+      await dispatch(
         loginUser({
           ...credentials,
           captchaToken,
@@ -121,10 +121,6 @@ const Login = () => {
           timeElapsed,
         })
       ).unwrap();
-  
-      if (result) {
-        toast.success('Login successful! Redirecting...');
-      }
     } catch (err) {
       toast.error(err || 'Authentication failed. Please check your credentials.');
     }
@@ -237,6 +233,32 @@ const Login = () => {
               Register here
             </Link>
           </p>
+        </div>
+
+        {/* Support Links - Mobile Only */}
+        <div className="md:hidden border-t border-gray-300 mt-6 pt-4">
+          <div className="flex items-center justify-center gap-3 text-xs text-gray-700">
+            <Link 
+              href="/support/contact"
+              className="hover:text-teal-600 transition-colors"
+            >
+              Contact
+            </Link>
+            <span className="text-gray-400">•</span>
+            <Link 
+              href="/support/terms"
+              className="hover:text-teal-600 transition-colors"
+            >
+              Terms
+            </Link>
+            <span className="text-gray-400">•</span>
+            <Link 
+              href="/support/privacy"
+              className="hover:text-teal-600 transition-colors"
+            >
+              Privacy
+            </Link>
+          </div>
         </div>
       </div>
     </div>

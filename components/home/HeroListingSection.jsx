@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { FaTshirt, FaCar, FaStore, FaCouch, FaMobileAlt, FaHome, FaBroom, FaTools } from 'react-icons/fa';
 
 const HeroListingSection = ({ messages = [] }) => {
@@ -23,7 +24,7 @@ const HeroListingSection = ({ messages = [] }) => {
 
   return (
     <div className="w-full bg-yellow-50 border-0 rounded-none overflow-hidden">
-      <div className="relative flex flex-row items-center min-h-[120px] md:min-h-[160px]">
+      <div className="relative flex flex-row items-center min-h-[160px] md:min-h-[200px] pb-6 md:pb-8">
         {/* Particles moving across entire container */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
           {/* Floating particles/sparkles across entire width */}
@@ -39,105 +40,66 @@ const HeroListingSection = ({ messages = [] }) => {
           </g>
         </svg>
 
-        {/* Category icons distributed across entire container */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Clothing - far left top */}
-          <div className="category-icon absolute" style={{ left: '5%', top: '20%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-pink-500 flex items-center justify-center">
-              <FaTshirt className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Sofa - far left bottom */}
-          <div className="category-icon absolute" style={{ left: '5%', bottom: '20%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-teal-500 flex items-center justify-center">
-              <FaCouch className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Car - center left top */}
-          <div className="category-icon absolute" style={{ left: '22%', top: '12%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-yellow-300 flex items-center justify-center">
-              <FaCar className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Phone - center left bottom */}
-          <div className="category-icon absolute" style={{ left: '22%', bottom: '12%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-orange-500 flex items-center justify-center">
-              <FaMobileAlt className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Store - top center */}
-          <div className="category-icon absolute" style={{ left: '42%', top: '8%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-purple-500 flex items-center justify-center">
-              <FaStore className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Home - far right top */}
-          <div className="category-icon absolute" style={{ right: '22%', top: '12%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-teal-700 flex items-center justify-center">
-              <FaHome className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Cleaning - far right bottom */}
-          <div className="category-icon absolute" style={{ right: '22%', bottom: '12%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-cyan-500 flex items-center justify-center">
-              <FaBroom className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-
-          {/* Handyman - center right bottom */}
-          <div className="category-icon absolute" style={{ right: '5%', bottom: '20%' }}>
-            <div className="w-6 h-6 md:w-12 md:h-12 rounded-full bg-orange-600 flex items-center justify-center">
-              <FaTools className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Text on left */}
+        {/* Text in center with Listings heading and icons row */}
         <div className="flex-1 p-2 md:p-5 flex items-center justify-center relative z-10">
-          <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
-            {displayMessages[currentMessage]}
-          </p>
+          <div className="flex flex-col items-center gap-1 md:gap-2">
+            {/* Listings heading above icons */}
+            <h2 className="text-lg md:text-2xl font-extrabold text-teal-700">Listings</h2>
+            
+            {/* Category icons in horizontal row */}
+            <div className="flex flex-col items-center gap-2 md:gap-3">
+            {/* Category icons in horizontal row */}
+            <div className="flex items-center gap-1.5 md:gap-3 category-icon">
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-pink-500 flex items-center justify-center">
+                <FaTshirt className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-yellow-300 flex items-center justify-center">
+                <FaCar className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-purple-500 flex items-center justify-center">
+                <FaStore className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-teal-700 flex items-center justify-center">
+                <FaHome className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-cyan-500 flex items-center justify-center">
+                <FaBroom className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-orange-600 flex items-center justify-center">
+                <FaTools className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-orange-500 flex items-center justify-center">
+                <FaMobileAlt className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-teal-500 flex items-center justify-center">
+                <FaCouch className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              </div>
+            </div>
+
+              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+                {displayMessages[currentMessage]}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Megaphone on right */}
-        <div className="flex-shrink-0 w-auto md:w-[200px] lg:w-[220px] p-2 md:p-4 flex items-center justify-center relative z-10">
+        <div className="flex-shrink-0 w-auto md:w-[200px] lg:w-[220px] p-2 md:p-4 pb-10 md:pb-4 flex items-center justify-center relative z-10">
           <div className="relative w-[80px] md:w-full md:max-w-[180px]">
             <div className="absolute inset-0 bg-teal-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
             <svg className="megaphone-icon w-full h-auto" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
               <g transform="rotate(-20 256 256)">
-                {/* Megaphone body (main cone) */}
                 <polygon points="155,175 330,110 330,330 155,265" fill="url(#coneGradient)"/>
-                
-                {/* Top edge of grip */}
                 <rect x="115" y="170" width="45" height="10" rx="3" fill="#0F766E"/>
-                
-                {/* Red grip section (top) - changed to teal */}
                 <rect x="120" y="175" width="40" height="45" fill="#14B8A6"/>
-                
-                {/* White grip section (bottom) - changed to golden yellow */}
                 <rect x="120" y="220" width="40" height="45" fill="#FDE047"/>
-                
-                {/* Handle connector */}
                 <polygon points="135,265 155,265 160,300 125,300" fill="#14B8A6"/>
-                
-                {/* Handle (rounded) */}
                 <rect x="120" y="300" width="45" height="60" rx="10" ry="10" fill="#0F766E"/>
-                
-                {/* Speaker end (ellipse) */}
                 <ellipse cx="345" cy="220" rx="18" ry="45" fill="url(#speakerGradient)"/>
-                
-                {/* Vertical bar */}
                 <rect x="320" y="100" width="16" height="245" rx="4" fill="#0F766E"/>
               </g>
               
-              {/* Animated sound waves */}
-              <g transform="translate(360, 220) rotate(-20)">
+              <g transform="translate(360, 190) rotate(-20)">
                 <path className="sound-wave sound-wave-1" 
                       d="M0 -30 Q15 -26 15 0 Q15 26 0 30" 
                       stroke="#14B8A6" 
@@ -159,6 +121,27 @@ const HeroListingSection = ({ messages = [] }) => {
                       fill="none" 
                       strokeLinecap="round"
                       opacity="0"/>
+                <path className="sound-wave sound-wave-4" 
+                      d="M32 -14 Q42 -11 42 0 Q42 11 32 14" 
+                      stroke="#14B8A6" 
+                      strokeWidth="3" 
+                      fill="none" 
+                      strokeLinecap="round"
+                      opacity="0"/>
+                <path className="sound-wave sound-wave-5" 
+                      d="M42 -10 Q52 -8 52 0 Q52 8 42 10" 
+                      stroke="#0D9488" 
+                      strokeWidth="2.5" 
+                      fill="none" 
+                      strokeLinecap="round"
+                      opacity="0"/>
+                <path className="sound-wave sound-wave-6" 
+                      d="M52 -8 Q60 -6 60 0 Q60 6 52 8" 
+                      stroke="#0F766E" 
+                      strokeWidth="2" 
+                      fill="none" 
+                      strokeLinecap="round"
+                      opacity="0"/>
               </g>
               
               <defs>
@@ -173,6 +156,22 @@ const HeroListingSection = ({ messages = [] }) => {
               </defs>
             </svg>
           </div>
+        </div>
+        
+        {/* Create and View All buttons - bottom right */}
+        <div className="absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10">
+          <Link
+            href="/listings/add"
+            className="bg-teal-600 hover:bg-teal-700 text-white text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+          >
+            + Create
+          </Link>
+          <Link
+            href="/listings"
+            className="bg-white hover:bg-gray-50 text-teal-700 border border-teal-600 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+          >
+            View All
+          </Link>
         </div>
       </div>
 
@@ -230,6 +229,18 @@ const HeroListingSection = ({ messages = [] }) => {
 
         .sound-wave-3 {
           animation-delay: 0.6s;
+        }
+
+        .sound-wave-4 {
+          animation-delay: 0.9s;
+        }
+
+        .sound-wave-5 {
+          animation-delay: 1.2s;
+        }
+
+        .sound-wave-6 {
+          animation-delay: 1.5s;
         }
 
         @keyframes sound-pulse {

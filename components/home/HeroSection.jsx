@@ -27,7 +27,7 @@ const HeroSection = () => {
       <div className="relative z-20 max-w-2xl space-y-6 md:space-y-8 pt-4 md:pt-0">
         <div className="space-y-4 md:space-y-6 max-w-5xl mx-auto">
           {/* Mobile & Desktop: Grid */}
-          <div className="grid grid-cols-3 gap-2 md:gap-6 px-2 md:px-4">
+          <div className="grid grid-cols-3 gap-3 md:gap-6 px-2 md:px-4">
             <div className="bg-teal-500/20 backdrop-blur-sm p-2 md:p-6 rounded-lg md:rounded-2xl shadow-2xl border border-teal-400/30 hover:bg-teal-500/30 hover:shadow-3xl transition-all duration-300">
               <div className="h-8 md:h-12 flex items-center justify-center mb-1 md:mb-3">
                 <RiAdvertisementFill className="text-2xl md:text-4xl text-white" />
@@ -35,15 +35,15 @@ const HeroSection = () => {
               <h3 className="text-xs md:text-lg font-bold text-white mb-2 md:mb-4 text-center">Listings</h3>
               <Link
                 href="/listings"
-                className="block w-full bg-white/90 hover:bg-white text-teal-700 py-1 md:py-2.5 px-2 md:px-4 rounded md:rounded-lg font-semibold text-center mb-1 md:mb-2 transition-colors text-xs md:text-base"
+                className="block w-full bg-white/90 hover:bg-white text-teal-700 py-1 md:py-2.5 px-2 md:px-4 rounded md:rounded-lg font-semibold text-center mb-2 md:mb-2 transition-all text-xs md:text-base group"
               >
-                Browse
+                <span className="inline-block hover:border-b hover:border-teal-700 hover:border-opacity-100 pb-0.5 border-b border-transparent transition-all" style={{ borderBottomWidth: '1px', width: '80%' }}>Browse</span>
               </Link>
               <Link
                 href="/listings/add"
-                className="block w-full text-white hover:text-lime-200 py-1 md:py-2 text-center text-xs md:text-sm font-medium transition-colors"
+                className="block w-full text-white hover:text-lime-200 py-1 md:py-2 mt-3 md:mt-0 text-center text-xs md:text-sm font-medium transition-all whitespace-nowrap"
               >
-                + Post Ad
+                <span className="inline-block hover:border-b hover:border-white pb-0.5 border-b border-transparent transition-all" style={{ borderBottomWidth: '1px', width: '70%' }}>+ Post Ad</span>
               </Link>
             </div>
 
@@ -54,15 +54,15 @@ const HeroSection = () => {
               <h3 className="text-xs md:text-lg font-bold text-white mb-2 md:mb-4 text-center">Events</h3>
               <Link
                 href="/events"
-                className="block w-full bg-white/90 hover:bg-white text-purple-700 py-1 md:py-2.5 px-2 md:px-4 rounded md:rounded-lg font-semibold text-center mb-1 md:mb-2 transition-colors text-xs md:text-base"
+                className="block w-full bg-white/90 hover:bg-white text-purple-700 py-1 md:py-2.5 px-2 md:px-4 rounded md:rounded-lg font-semibold text-center mb-2 md:mb-2 transition-all text-xs md:text-base"
               >
-                Find
+                <span className="inline-block hover:border-b hover:border-purple-700 pb-0.5 border-b border-transparent transition-all" style={{ borderBottomWidth: '1px', width: '70%' }}>Find</span>
               </Link>
               <Link
                 href="/events/add"
-                className="block w-full text-white hover:text-lime-200 py-1 md:py-2 text-center text-xs md:text-sm font-medium transition-colors"
+                className="block w-full text-white hover:text-lime-200 py-1 md:py-2 mt-3 md:mt-0 text-center text-xs md:text-sm font-medium transition-all whitespace-nowrap"
               >
-                + Create Event
+                <span className="inline-block hover:border-b hover:border-white pb-0.5 border-b border-transparent transition-all" style={{ borderBottomWidth: '1px', width: '80%' }}>+ Create Event</span>
               </Link>
             </div>
 
@@ -70,18 +70,19 @@ const HeroSection = () => {
               <div className="h-8 md:h-12 flex items-center justify-center mb-1 md:mb-3">
                 <MdOutlineGroups2 className="text-2xl md:text-4xl text-white" />
               </div>
-              <h3 className="text-xs md:text-lg font-bold text-white mb-2 md:mb-4 text-center">Discussions</h3>
+              <h3 className="text-xs md:text-lg font-bold text-white mb-2 md:mb-4 text-center">Forum</h3>
               <Link
                 href="/threads"
-                className="block w-full bg-white/90 hover:bg-white text-orange-700 py-1 md:py-2.5 px-2 md:px-4 rounded md:rounded-lg font-semibold text-center mb-1 md:mb-2 transition-colors text-xs md:text-base"
+                className="block w-full bg-white/90 hover:bg-white text-orange-700 py-1 md:py-2.5 px-2 md:px-4 rounded md:rounded-lg font-semibold text-center mb-2 md:mb-2 transition-all text-xs md:text-base"
               >
-                Join
+                <span className="inline-block hover:border-b hover:border-orange-700 pb-0.5 border-b border-transparent transition-all" style={{ borderBottomWidth: '1px', width: '70%' }}>Join</span>
               </Link>
               <Link
                 href="/threads/new"
-                className="block w-full text-white hover:text-lime-200 py-1 md:py-2 text-center text-xs md:text-sm font-medium transition-colors"
+                className="block w-full text-white hover:text-lime-200 py-1 md:py-2 mt-3 md:mt-0 text-center text-xs md:text-sm font-medium transition-all whitespace-nowrap"
               >
-                + Start Discussion
+                <span className="hidden md:inline-block md:hover:border-b md:hover:border-white pb-0.5 border-b border-transparent transition-all" style={{ borderBottomWidth: '1px', width: '90%' }}>+ Start Discussion</span>
+                <span className="md:hidden inline-block hover:border-b hover:border-white pb-0.5 border-b border-transparent transition-all" style={{ borderBottomWidth: '1px', width: '85%' }}>+ Start Discuss</span>
               </Link>
             </div>
           </div>
@@ -89,7 +90,7 @@ const HeroSection = () => {
           {/* Bottom Row: Side-by-side on all screens */}
           <div className="grid grid-cols-2 gap-2 md:gap-6 max-w-2xl mx-auto px-2 md:px-4">
             <div className="bg-white/20 backdrop-blur-sm p-2 md:p-5 rounded-lg md:rounded-xl shadow-lg border border-white/30 opacity-70 cursor-not-allowed">
-              <div className="text-xl md:text-3xl mb-1 md:mb-2 mx-auto text-white text-center">🏷️</div>
+              <div className="text-3xl md:text-5xl mb-1 md:mb-2 mx-auto text-white text-center">🏷️</div>
               <h3 className="text-xs md:text-base font-bold text-white mb-1 md:mb-2 text-center">Find Deals</h3>
               <div className="bg-white/30 text-white py-1 md:py-2 px-2 md:px-4 rounded md:rounded-lg font-medium text-center text-xs md:text-sm">
                 Coming Soon
@@ -100,7 +101,7 @@ const HeroSection = () => {
               href="/tickets"
               className="bg-amber-500/20 backdrop-blur-sm p-2 md:p-5 rounded-lg md:rounded-xl shadow-lg border border-amber-400/30 hover:bg-amber-500/30 transition-all duration-300"
             >
-              <div className="text-xl md:text-3xl mb-1 md:mb-2 mx-auto text-white text-center">🎟️</div>
+              <div className="text-3xl md:text-5xl mb-1 md:mb-2 mx-auto text-white text-center">🎟️</div>
               <h3 className="text-xs md:text-base font-bold text-white mb-1 md:mb-2 text-center">Sell Tickets</h3>
               <div className="bg-white/90 hover:bg-white text-amber-700 py-1 md:py-2 px-2 md:px-4 rounded md:rounded-lg font-semibold text-center text-xs md:text-sm transition-colors">
                 Click here for more info

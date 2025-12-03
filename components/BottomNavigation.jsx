@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RiAdvertisementFill } from "react-icons/ri";
-import { FaCalendarAlt, FaUser } from 'react-icons/fa';
+import { FaCalendarAlt, FaUser, FaTag } from 'react-icons/fa';
 import { MdOutlineGroups2, MdLocalOffer } from "react-icons/md";
 import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
 
@@ -45,9 +45,11 @@ const BottomNavigation = () => {
               : 'text-teal-700 hover:text-teal-600'
           }`}
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
+          <div className="h-6 flex items-center justify-center">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </div>
           <span className="text-xs mt-0.5 relative">
             Home
             {pathname === '/' && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
@@ -62,7 +64,9 @@ const BottomNavigation = () => {
               : 'text-teal-700 hover:text-teal-600'
           }`}
         >
-          <RiAdvertisementFill size={22} />
+          <div className="h-6 flex items-center justify-center">
+            <RiAdvertisementFill size={22} />
+          </div>
           <span className="text-xs mt-0.5 relative">
             Listings
             {isActive('/listings') && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
@@ -77,7 +81,9 @@ const BottomNavigation = () => {
               : 'text-teal-700 hover:text-teal-600'
           }`}
         >
-          <FaCalendarAlt size={20} />
+          <div className="h-6 flex items-center justify-center">
+            <FaCalendarAlt size={20} />
+          </div>
           <span className="text-xs mt-0.5 relative">
             Events
             {isActive('/events') && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
@@ -92,41 +98,49 @@ const BottomNavigation = () => {
               : 'text-teal-700 hover:text-teal-600'
           }`}
         >
-          <MdOutlineGroups2 size={24} />
+          <div className="h-6 flex items-center justify-center">
+            <MdOutlineGroups2 size={24} />
+          </div>
           <span className="text-xs mt-0.5 relative">
             Forum
             {isActive('/threads') && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
           </span>
         </Link>
 
-        {/* <Link
-          href="/promotions"
-          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-            isActive('/promotions') 
-              ? 'text-amber-400' 
-              : 'text-lime-100 hover:text-lime-200'
+        <Link
+          href="/deals"
+          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
+            isActive('/deals') 
+              ? 'text-teal-700 font-semibold' 
+              : 'text-teal-700 hover:text-teal-600'
           }`}
         >
-          <MdLocalOffer size={20} />
-          <span className="text-xs mt-0.5 font-medium">Deals</span>
-        </Link> */}
+          <div className="h-6 flex items-center justify-center">
+            <FaTag size={20} />
+          </div>
+          <span className="text-xs mt-0.5 relative">
+            Deals
+            {isActive('/deals') && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
+          </span>
+        </Link>
 
-        {isAuthenticated && (
-          <Link
-            href={profilePath}
-            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
-              isActive(profilePath)
-                ? 'text-teal-700 font-semibold' 
-                : 'text-teal-700 hover:text-teal-600'
-            }`}
-          >
-            <FaUser size={22} />
-            <span className="text-xs mt-0.5 relative">
-              Profile
-              {isActive(profilePath) && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
-            </span>
-          </Link>
-        )}
+        <Link
+          href={isAuthenticated ? profilePath : '/login'}
+          className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
+            isAuthenticated 
+              ? (isActive(profilePath) ? 'text-teal-700 font-semibold' : 'text-teal-700 hover:text-teal-600')
+              : (isActive('/login') ? 'text-teal-700 font-semibold' : 'text-teal-700 hover:text-teal-600')
+          }`}
+        >
+          <div className="h-6 flex items-center justify-center">
+            <FaUser size={20} />
+          </div>
+          <span className="text-xs mt-0.5 relative">
+            Profile
+            {(isAuthenticated && isActive(profilePath)) && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
+            {(!isAuthenticated && isActive('/login')) && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
+          </span>
+        </Link>
       </div>
     </div>
   );
