@@ -51,10 +51,15 @@ export default function CodeModal({ code, campaign, store, onClose }) {
 
           {/* User Code (5-digit only) */}
           <div className="text-center">
-            <div className="bg-teal-50 border-2 border-teal-600 rounded-lg p-3">
-              <p className="text-3xl font-bold text-teal-700 font-mono tracking-widest">
+            <div className={`border-2 rounded-lg p-3 ${isRedeemed ? 'bg-gray-100 border-gray-400' : 'bg-teal-50 border-teal-600'}`}>
+              <p className={`text-3xl font-bold font-mono tracking-widest ${isRedeemed ? 'text-gray-500' : 'text-teal-700'}`}>
                 {userCode}
               </p>
+              {isRedeemed && (
+                <p className="text-xs text-gray-600 mt-2">
+                  Redeemed on {format(new Date(code.redeemedAt), 'dd MMM yyyy')}
+                </p>
+              )}
             </div>
           </div>
 

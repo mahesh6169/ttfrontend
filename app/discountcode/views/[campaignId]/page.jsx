@@ -118,9 +118,10 @@ export default function CampaignViewPage() {
 
   const getButtonConfig = () => {
     if (campaign.userHasCode) {
+      const isRedeemed = campaign.userCodeRedeemed || false;
       return {
-        text: loadingCode ? 'LOADING...' : 'VIEW YOUR CODE',
-        className: 'bg-teal-600 hover:bg-teal-700 text-white',
+        text: loadingCode ? 'LOADING...' : (isRedeemed ? 'REDEEMED' : 'VIEW YOUR CODE'),
+        className: isRedeemed ? 'bg-gray-500 hover:bg-gray-600 text-white' : 'bg-teal-600 hover:bg-teal-700 text-white',
         disabled: loadingCode
       };
     }
