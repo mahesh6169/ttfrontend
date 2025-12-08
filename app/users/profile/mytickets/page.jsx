@@ -239,17 +239,21 @@ const EnhancedMyTicketsPage = () => {
 
 
   // Get refund status
+  // A ticket is "refunded" if it's cancelled or has any refund (partial or full)
+  // Money amount doesn't matter - once refunded, ticket is released
   const getRefundStatus = (ticketGroup) => {
-    const fullyRefundedTickets = ticketGroup.filter(t => t.refundStatus === 'full');
-    const partiallyRefundedTickets = ticketGroup.filter(t => t.refundStatus === 'partial');
-    
-    if (fullyRefundedTickets.length === 0 && partiallyRefundedTickets.length === 0) return null;
-    
-    if (fullyRefundedTickets.length === ticketGroup.length) {
-      return { type: 'full', text: 'Fully Refunded' };
-    } else if (partiallyRefundedTickets.length > 0 || fullyRefundedTickets.length > 0) {
-      const refundedCount = fullyRefundedTickets.length + partiallyRefundedTickets.length;
-      return { type: 'partial', text: `${refundedCount}/${ticketGroup.length} Refunded` };
+    const refundedTickets = ticketGroup.filter(t =>
+      t.checkInStatus === 'cancelled' || t.refundStatus === 'partial' || t.refundStatus === 'full'
+    );
+
+    if (refundedTickets.length === 0) return null;
+
+    if (refundedTickets.length === ticketGroup.length) {
+      // All tickets refunded - show red
+      return { type: 'full', text: 'Refunded' };
+    } else {
+      // Some tickets refunded - show orange
+      return { type: 'partial', text: `${refundedTickets.length}/${ticketGroup.length} Refunded` };
     }
   };
 
