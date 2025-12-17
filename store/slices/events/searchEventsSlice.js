@@ -43,6 +43,33 @@ export const fetchFilterOptions = createAsyncThunk(
   }
 );
 
+// Thunk for searching demo events only
+export const searchDemoEvents = createAsyncThunk(
+  'search/searchDemoEvents',
+  async (_, { getState, rejectWithValue }) => {
+    const { filters, pagination } = getState().searchEvents;
+
+    try {
+      const params = {
+        filters: JSON.stringify(filters),
+        pagination: JSON.stringify(pagination)
+      };
+
+      const response = await axios.get(`${API_BASE_URL}/demo`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('Demo Search Error:', error.response?.data || error.message);
+
+      const errorMessage = error.response?.data?.message ||
+                          error.response?.data?.error ||
+                          error.message ||
+                          'Failed to search demo events';
+
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 const initialState = {
   // Filter state
   filters: {
@@ -182,6 +209,22 @@ const searchEventsSlice = createSlice({
       })
       .addCase(fetchFilterOptions.rejected, (state, action) => {
         state.error = action.payload || 'Failed to load filter options';
+      })
+
+      // Search demo events
+      .addCase(searchDemoEvents.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(searchDemoEvents.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.error = null;
+        state.events = action.payload.events;
+        state.meta = action.payload.meta;
+      })
+      .addCase(searchDemoEvents.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Demo search failed';
       });
   }
 });
