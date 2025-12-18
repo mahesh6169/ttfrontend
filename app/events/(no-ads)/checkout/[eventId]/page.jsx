@@ -1192,6 +1192,75 @@ const CheckoutPage = () => {
                           disabled={isProcessing}
                         />
                       </>
+                    ) : errors.payment ? (
+                      // Error state when payment initialization failed
+                      <div className="text-center py-6 sm:py-8 lg:py-12">
+                        <FaExclamationTriangle className="mx-auto text-4xl sm:text-5xl text-red-500 mb-3 sm:mb-4" />
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
+                          Payment Processing Error
+                        </h3>
+                        <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6 max-w-md mx-auto">
+                          {errors.payment}
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                          <button
+                            onClick={async () => {
+                              // Clear reservation and redirect to ticket selection
+                              try {
+                                if (reservation?._id) {
+                                  await axios.delete(
+                                    `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation/${reservation._id}`,
+                                    { withCredentials: true }
+                                  );
+                                }
+                                // Trigger cleanup
+                                await axios.post(
+                                  `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation/cleanup`,
+                                  {},
+                                  { withCredentials: true }
+                                ).catch(() => {}); // Ignore cleanup errors
+                              } catch (err) {
+                                console.log('Reservation cleanup note:', err.message);
+                              }
+
+                              // Clear session storage
+                              sessionStorage.removeItem(`reservation_${params.eventId}`);
+                              sessionStorage.removeItem(`selectedTickets_${params.eventId}`);
+
+                              // Always go to tickets page to start fresh
+                              router.push(`/events/tickets/${params.eventId}`);
+                            }}
+                            className="px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm sm:text-base"
+                          >
+                            Try Again
+                          </button>
+
+                          <a
+                            href="/support/contact"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              // Clear reservation before navigating to support
+                              try {
+                                if (reservation?._id) {
+                                  await axios.delete(
+                                    `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation/${reservation._id}`,
+                                    { withCredentials: true }
+                                  );
+                                }
+                              } catch (err) {
+                                console.log('Reservation cleanup note:', err.message);
+                              }
+                              sessionStorage.removeItem(`reservation_${params.eventId}`);
+                              sessionStorage.removeItem(`selectedTickets_${params.eventId}`);
+                              router.push('/support/contact');
+                            }}
+                            className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm sm:text-base"
+                          >
+                            Contact Support
+                          </a>
+                        </div>
+                      </div>
                     ) : (
                       // Loading state while payment intent is being created
                       <div className="text-center py-6 sm:py-8 lg:py-12">
