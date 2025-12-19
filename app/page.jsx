@@ -69,9 +69,10 @@ export default async function HomePage() {
     <main className="bg-white">
       <HeroSection />
 
-      <div id="content" className="container mx-auto py-4">
+      <div id="content" className="w-full md:container md:mx-auto py-0">
         <ListingsSection listings={listings} />
         <EventsSection events={events} />
+
         <DemoEventsSection events={demoEvents} />
         <ThreadsSection threads={threads} />
       </div>

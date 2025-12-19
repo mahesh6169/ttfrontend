@@ -6,7 +6,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import SkeletonLoader from '../../SkeletonLoader'; 
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 import BottomAd from '@/components/ads/BottomAd';
-import { FaFrown } from 'react-icons/fa';
+import { FaCalendarAlt } from 'react-icons/fa';
 
 const EventGrid = ({ events, eventStatus }) => {
   const {
@@ -31,10 +31,9 @@ const EventGrid = ({ events, eventStatus }) => {
 // Failed State
 if (eventStatus === 'failed') {
   return (
-    <div className="flex flex-col justify-center items-center text-center p-8 min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-      <FaFrown className="text-gray-400 text-4xl sm:text-5xl mb-4" />
-      <p className="text-gray-600 text-sm sm:text-base mb-2">Something went wrong</p>
-      <p className="text-gray-500 text-xs sm:text-sm">Please try again later</p>
+    <div className="flex items-center justify-center gap-2 text-gray-500 py-6">
+      <FaCalendarAlt className="text-lg" />
+      <span className="text-sm">Unable to load events. Please try again later.</span>
     </div>
   );
 }
@@ -42,8 +41,9 @@ if (eventStatus === 'failed') {
 // No results state
 if (eventStatus === 'success' && (!events || events.length === 0)) {
   return (
-    <div className="flex justify-center items-center text-center p-8 min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-      <p className="text-xs sm:text-sm text-gray-800">No Events Listed</p>
+    <div className="flex items-center justify-center gap-2 text-gray-500 py-6">
+      <FaCalendarAlt className="text-lg" />
+      <span className="text-sm">No events displayed at the moment</span>
     </div>
   );
 }
@@ -79,7 +79,7 @@ if (eventStatus === 'success' && (!events || events.length === 0)) {
   });
 
   return (
-    <div id="EventGrid" className="min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
+    <div id="EventGrid">
       <div id="EventGrids" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-4">
         {itemsWithAd.map((item, index) => {
           if (item.type === 'event') {

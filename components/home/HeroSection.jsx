@@ -9,7 +9,7 @@ import { MdOutlineGroups2 } from "react-icons/md";
 const HeroSection = () => {
 
   return (
-    <section className="relative min-h-[60vh] md:min-h-[70vh] flex flex-col items-center justify-center text-white text-center px-4 overflow-hidden mt-2 md:mt-1">
+    <section className="relative min-h-[60vh] md:min-h-[70vh] flex flex-col items-center justify-center text-white text-center px-4 overflow-hidden">
       <video
         autoPlay
         loop

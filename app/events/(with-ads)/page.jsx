@@ -24,8 +24,11 @@ import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import PostEventButton from '@/components/buttons/PostEventButton';
 import { getCategoryDisplayName } from '@/constants/categories';
 import PromoBanner from '@/components/PromoBanner';
+import DemoEventsSection from '@/components/home/DemoEventsSection';
 
 const libraries = ['places'];
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
 
 // Generate month options for the dropdown
 const generateMonthOptions = () => {
@@ -62,6 +65,9 @@ const EventsPage = () => {
   // Add state for sort menu
   const [showSortMenu, setShowSortMenu] = useState(false);
 
+  // Demo events state
+  const [demoEvents, setDemoEvents] = useState([]);
+
   const sortOptions = [
     { value: 'date', label: 'Date (soonest first)' },
     { value: 'distance', label: 'Distance (nearest first)' },
@@ -96,6 +102,22 @@ const EventsPage = () => {
   useEffect(() => {
     dispatch(searchEvents());
   }, [filters, pagination.page, dispatch]);
+
+  // Fetch demo events on mount (always show for marketing)
+  useEffect(() => {
+    if (demoEvents.length === 0) {
+      fetch(`${API_BASE_URL}/home/demo-events`, {
+        headers: { 'x-api-key': API_KEY },
+      })
+        .then(res => res.json())
+        .then(data => {
+          setDemoEvents(data.data?.events || []);
+        })
+        .catch(err => {
+          console.error('Failed to fetch demo events:', err);
+        });
+    }
+  }, []);
 
   const handlePlaceChanged = () => {
     if (autocomplete) {
@@ -735,16 +757,23 @@ const EventsPage = () => {
           <EventsGrid events={events} eventStatus={status} />
         </div>
 
-        {/* Pagination */}
-        <div className="mt-4 mb-3 sm:mt-6 sm:mb-4">
-          <Pagination
-            currentPage={meta.currentPage}
-            totalPages={meta.totalPages || 1}
-            onPageChange={(pageNum) => 
-              dispatch(updatePagination({ page: pageNum }))
-            }
-          />
-        </div>
+        {/* Pagination - only show when there are events */}
+        {events.length > 0 && (
+          <div className="mt-4 mb-3 sm:mt-6 sm:mb-4">
+            <Pagination
+              currentPage={meta.currentPage}
+              totalPages={meta.totalPages || 1}
+              onPageChange={(pageNum) =>
+                dispatch(updatePagination({ page: pageNum }))
+              }
+            />
+          </div>
+        )}
+
+        {/* Demo Events - always show for marketing/showcase */}
+        {demoEvents.length > 0 && (
+          <DemoEventsSection events={demoEvents} />
+        )}
       </div>
     </div>
   );

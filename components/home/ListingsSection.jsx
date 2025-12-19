@@ -150,14 +150,43 @@ const ListingsSection = ({ listings }) => {
   const visibleListings = getVisibleListings();
 
   return (
-    <section className="py-2 px-2 sm:py-3 sm:px-4">
-      <div className="rounded-lg sm:rounded-xl p-3 sm:p-6">
-        <div className="mb-2 -mx-3 sm:mx-0">
+    <section
+      className="relative mt-20 md:mt-20 pt-0 pb-4 px-0 sm:pb-6 sm:px-4 rounded-none md:rounded-xl overflow-hidden"
+      style={{ background: 'rgb(180, 210, 130)' }}
+    >
+      {/* Curved two-tone background - responsive */}
+      {/* Mobile: shallower wave */}
+      <svg
+        className="absolute top-0 left-0 w-full h-full pointer-events-none md:hidden"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="none"
+        viewBox="0 0 1440 600"
+      >
+        <path
+          d="M0,200 C360,160 720,240 1080,180 S1440,220 1440,200 L1440,600 L0,600 Z"
+          fill="rgb(235, 245, 193)"
+        />
+      </svg>
+      {/* Desktop: deeper wave */}
+      <svg
+        className="absolute top-0 left-0 w-full h-full pointer-events-none hidden md:block"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="none"
+        viewBox="0 0 1440 600"
+      >
+        <path
+          d="M0,180 C360,80 720,280 1080,130 S1440,230 1440,180 L1440,600 L0,600 Z"
+          fill="rgb(235, 245, 193)"
+        />
+      </svg>
+
+      <div className="relative p-0 sm:pt-0 sm:pb-6 sm:px-6">
+        <div className="mb-4 sm:mx-0">
           <HeroListingSection />
         </div>
 
         {/* Desktop: 4 rotating cards */}
-        <div 
+        <div
           className={`hidden md:grid md:grid-cols-4 gap-4 transition-opacity duration-300 ${
             isTransitioning ? 'opacity-0' : 'opacity-100'
           }`}
@@ -165,12 +194,12 @@ const ListingsSection = ({ listings }) => {
           onMouseLeave={() => setIsPaused(false)}
         >
           {visibleListings.map((listing) => (
-            <HomeCard key={`${listing._id}-${currentIndex}`} type="listing" data={listing} />
+            <HomeCard key={`${listing._id}-${currentIndex}`} type="listing" data={listing} borderColor="border-[rgb(180,210,130)]" textBgColor="bg-[rgb(248,252,230)]" textColor="text-teal-900" />
           ))}
         </div>
 
         {/* Mobile: Horizontal scroll carousel */}
-        <div className="md:hidden -mx-3">
+        <div className="md:hidden">
           <div 
             ref={mobileScrollRef}
             className="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-3 pb-1"
@@ -179,11 +208,11 @@ const ListingsSection = ({ listings }) => {
             onTouchEnd={handleMobileTouchEnd}
           >
             {listings.map((listing) => (
-              <div 
-                key={listing._id} 
+              <div
+                key={listing._id}
                 className="flex-shrink-0 w-[90vw] snap-center"
               >
-                <HomeCard type="listing" data={listing} />
+                <HomeCard type="listing" data={listing} borderColor="border-[rgb(180,210,130)]" textBgColor="bg-[rgb(248,252,230)]" textColor="text-teal-900" />
               </div>
             ))}
           </div>
@@ -193,9 +222,9 @@ const ListingsSection = ({ listings }) => {
               <div
                 key={idx}
                 className={`h-1.5 rounded-full transition-all ${
-                  idx === mobileScrollIndex 
-                    ? 'w-6 bg-teal-600' 
-                    : 'w-1.5 bg-gray-300'
+                  idx === mobileScrollIndex
+                    ? 'w-6 bg-lime-600'
+                    : 'w-1.5 bg-gray-400'
                 }`}
               />
             ))}
@@ -210,9 +239,9 @@ const ListingsSection = ({ listings }) => {
                 key={idx}
                 onClick={() => setCurrentIndex(idx * 4)}
                 className={`rounded-full transition-all ${
-                  Math.floor(currentIndex / 4) === idx 
-                    ? 'w-7 h-2 bg-teal-600' 
-                    : 'w-2 h-2 bg-gray-300'
+                  Math.floor(currentIndex / 4) === idx
+                    ? 'w-7 h-2 bg-lime-600'
+                    : 'w-2 h-2 bg-gray-400'
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               />

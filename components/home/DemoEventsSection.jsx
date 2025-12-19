@@ -105,26 +105,49 @@ const DemoEventsSection = ({ events }) => {
   const visibleEvents = getVisibleEvents();
 
   return (
-    <section className="py-2 px-2 sm:py-3 sm:px-4">
-      <div className="rounded-lg sm:rounded-xl p-3 sm:p-6 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+    <section
+      id="demo-events-section"
+      className="relative mt-20 pt-0 pb-4 px-0 sm:pb-6 sm:px-4 rounded-none md:rounded-xl overflow-hidden"
+      style={{ background: 'rgb(215, 190, 215)' }}
+    >
+      {/* Mobile: wave just under description */}
+      <svg
+        className="absolute top-0 left-0 w-full h-full pointer-events-none md:hidden"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="none"
+        viewBox="0 0 1440 600"
+      >
+        <path
+          d="M0,130 C360,80 720,180 1080,100 S1440,160 1440,130 L1440,600 L0,600 Z"
+          fill="rgb(230, 210, 230)"
+        />
+      </svg>
+      {/* Desktop: wave just under description */}
+      <svg
+        className="absolute top-0 left-0 w-full h-full pointer-events-none hidden md:block"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="none"
+        viewBox="0 0 1440 600"
+      >
+        <path
+          d="M0,120 C360,50 720,180 1080,80 S1440,150 1440,120 L1440,600 L0,600 Z"
+          fill="rgb(230, 210, 230)"
+        />
+      </svg>
+
+      <div className="relative p-4 sm:pt-6 sm:pb-6 sm:px-6">
         {/* Demo Header */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-1 bg-amber-400 text-amber-900 text-xs font-bold rounded">DEMO</span>
-            <h2 className="text-lg md:text-xl font-bold text-gray-800">Demo Events</h2>
-          </div>
+          <h2 className="text-2xl md:text-4xl font-black tracking-wide text-purple-700 drop-shadow-sm">Demo Events</h2>
           <Link
             href="/events/demo"
-            className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+            className="bg-[#f5eef5] hover:bg-[#efe5ef] text-purple-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
           >
             View All
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
           </Link>
         </div>
 
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-purple-700 mb-4">
           See it in action - explore events and experience the booking flow as your clients would
         </p>
 
@@ -135,12 +158,12 @@ const DemoEventsSection = ({ events }) => {
           onMouseLeave={() => setIsPaused(false)}
         >
           {visibleEvents.map((event) => (
-            <HomeCard key={`${event._id}-${currentIndex}`} type="event" data={event} />
+            <HomeCard key={`${event._id}-${currentIndex}`} type="event" data={event} isDemo={true} borderColor="border-[rgb(180,130,180)]" textBgColor="bg-[rgb(248,238,248)]" textColor="text-purple-700" />
           ))}
         </div>
 
         {/* Mobile: Horizontal scroll carousel */}
-        <div className="md:hidden -mx-3">
+        <div className="md:hidden">
           <div
             ref={mobileScrollRef}
             className="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-3 pb-1"
@@ -150,7 +173,7 @@ const DemoEventsSection = ({ events }) => {
           >
             {events.map((event) => (
               <div key={event._id} className="flex-shrink-0 w-[90vw] snap-center">
-                <HomeCard type="event" data={event} />
+                <HomeCard type="event" data={event} isDemo={true} borderColor="border-[rgb(180,130,180)]" textBgColor="bg-[rgb(248,238,248)]" textColor="text-purple-700" />
               </div>
             ))}
           </div>
@@ -160,7 +183,7 @@ const DemoEventsSection = ({ events }) => {
               <div
                 key={idx}
                 className={`h-1.5 rounded-full transition-all ${
-                  idx === mobileScrollIndex ? 'w-6 bg-amber-500' : 'w-1.5 bg-gray-300'
+                  idx === mobileScrollIndex ? 'w-6 bg-purple-600' : 'w-1.5 bg-gray-400'
                 }`}
               />
             ))}
@@ -176,8 +199,8 @@ const DemoEventsSection = ({ events }) => {
                 onClick={() => setCurrentIndex(idx * 4)}
                 className={`rounded-full transition-all ${
                   Math.floor(currentIndex / 4) === idx
-                    ? 'w-7 h-2 bg-amber-500'
-                    : 'w-2 h-2 bg-gray-300'
+                    ? 'w-7 h-2 bg-purple-600'
+                    : 'w-2 h-2 bg-gray-400'
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               />

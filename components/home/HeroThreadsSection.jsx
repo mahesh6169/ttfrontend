@@ -24,13 +24,13 @@ const HeroThreadsSection = ({ messages = [] }) => {
   }, [displayMessages.length]);
 
   return (
-    <div className="w-full bg-yellow-50 border-0 rounded-none overflow-visible">
+    <div className="w-full overflow-hidden">
       <div className="relative flex flex-row items-center min-h-[160px] md:min-h-[200px] pb-8 md:pb-12">
         {/* Text in center with Forum heading and icons row */}
         <div className="flex-1 p-2 md:p-5 flex items-center justify-center relative z-10">
           <div className="flex flex-col items-center gap-1 md:gap-2">
             {/* Forum heading above icons */}
-            <h2 className="text-lg md:text-2xl font-extrabold text-teal-700">Forum</h2>
+            <h2 className="text-2xl md:text-4xl font-black tracking-wide text-gray-700 drop-shadow-sm">Forum</h2>
             
             {/* Thread icons and text */}
             <div className="flex flex-col items-center gap-2 md:gap-3">
@@ -48,7 +48,7 @@ const HeroThreadsSection = ({ messages = [] }) => {
               <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-green-500 flex items-center justify-center">
                 <FaThumbsUp className="w-3 h-3 md:w-5 md:h-5 text-white" />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-teal-600 flex items-center justify-center">
+              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-gray-600 flex items-center justify-center">
                 <FaGlobe className="w-3 h-3 md:w-5 md:h-5 text-white" />
               </div>
               <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-red-500 flex items-center justify-center">
@@ -59,7 +59,7 @@ const HeroThreadsSection = ({ messages = [] }) => {
               </div>
             </div>
 
-              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-gray-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
                 {displayMessages[currentMessage]}
               </p>
             </div>
@@ -69,7 +69,7 @@ const HeroThreadsSection = ({ messages = [] }) => {
         {/* Community chat illustration on right */}
         <div className="flex-shrink-0 w-auto md:w-[200px] lg:w-[220px] p-2 md:p-4 pb-10 md:pb-4 flex flex-col items-center justify-center relative z-10">
           <div className="relative w-[80px] md:w-full md:max-w-[180px]">
-            <div className="absolute inset-0 bg-teal-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
+            <div className="absolute inset-0 bg-gray-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
             <svg className="community-icon w-full h-auto" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
               {/* Yellow chat bubble (behind) */}
               <rect x="190" y="45" width="95" height="65" rx="8" ry="8" fill="#f9d56e"/>
@@ -113,7 +113,7 @@ const HeroThreadsSection = ({ messages = [] }) => {
           
           {/* Moving text below icon */}
           <div className="w-[120px] md:w-[220px] overflow-hidden mt-2 h-4 relative">
-            <span key={currentMessage} className="moving-text-below absolute inset-0 flex items-center justify-center text-[10px] md:text-xs font-medium text-teal-700 whitespace-nowrap italic">
+            <span key={currentMessage} className="moving-text-below absolute inset-0 flex items-center justify-center text-[10px] md:text-xs font-medium text-gray-700 whitespace-nowrap italic">
               {["Where can I find...", "Does anyone know...", "Migration Update...", "Looking for advice...", "Need recommendations...", "Community help..."][currentMessage % 6]}
             </span>
           </div>
@@ -123,13 +123,13 @@ const HeroThreadsSection = ({ messages = [] }) => {
         <div className="absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10">
           <Link
             href="/threads/new"
-            className="bg-teal-600 hover:bg-teal-700 text-white text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+            className="bg-[#f0f0f0] hover:bg-[#e5e5e5] text-gray-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
           >
             + Create
           </Link>
           <Link
             href="/threads"
-            className="bg-white hover:bg-gray-50 text-teal-700 border border-teal-600 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+            className="bg-[#f0f0f0] hover:bg-[#e5e5e5] text-gray-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
           >
             View All
           </Link>

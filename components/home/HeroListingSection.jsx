@@ -23,7 +23,7 @@ const HeroListingSection = ({ messages = [] }) => {
   }, [displayMessages.length]);
 
   return (
-    <div className="w-full bg-yellow-50 border-0 rounded-none overflow-hidden">
+    <div className="w-full overflow-hidden">
       <div className="relative flex flex-row items-center min-h-[160px] md:min-h-[200px] pb-6 md:pb-8">
         {/* Particles moving across entire container */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -44,7 +44,7 @@ const HeroListingSection = ({ messages = [] }) => {
         <div className="flex-1 p-2 md:p-5 flex items-center justify-center relative z-10">
           <div className="flex flex-col items-center gap-1 md:gap-2">
             {/* Listings heading above icons */}
-            <h2 className="text-lg md:text-2xl font-extrabold text-teal-700">Listings</h2>
+            <h2 className="text-2xl md:text-4xl font-black tracking-wide text-teal-900 drop-shadow-sm">Listings</h2>
             
             {/* Category icons in horizontal row */}
             <div className="flex flex-col items-center gap-2 md:gap-3">
@@ -76,7 +76,7 @@ const HeroListingSection = ({ messages = [] }) => {
               </div>
             </div>
 
-              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-900 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
                 {displayMessages[currentMessage]}
               </p>
             </div>
@@ -162,13 +162,13 @@ const HeroListingSection = ({ messages = [] }) => {
         <div className="absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10">
           <Link
             href="/listings/add"
-            className="bg-teal-600 hover:bg-teal-700 text-white text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+            className="bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
           >
             + Create
           </Link>
           <Link
             href="/listings"
-            className="bg-white hover:bg-gray-50 text-teal-700 border border-teal-600 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+            className="bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
           >
             View All
           </Link>

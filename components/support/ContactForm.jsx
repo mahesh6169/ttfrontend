@@ -16,7 +16,7 @@ const ContactForm = () => {
   const { user } = useSelector((state) => state.user);
 
   const enquiryType = searchParams.get('enquiry');
-  const initialOption = enquiryType === 'event' ? 'Hosting Event Enquiry' : 'Advertisement Enquiry';
+  const initialOption = enquiryType === 'event' ? 'Hosting Event Enquiry' : enquiryType === 'ad' ? 'Advertisement Enquiry' : '';
 
   const [captchaToken, setCaptchaToken] = useState(null);
   const [title, setTitle] = useState('');
@@ -140,7 +140,7 @@ const ContactForm = () => {
         setEmail('');
       }
       setMobile('');
-      setOption('Advertisement Enquiry');
+      setOption('');
       setOtherOption('');
       setDescription('');
       setCaptchaToken(null);
@@ -210,13 +210,13 @@ const ContactForm = () => {
           value={option}
           onChange={(e) => setOption(e.target.value)}
         >
-          
-          <option>Advertisement Enquiry</option>
-          <option>Hosting Event Enquiry</option>
-          <option>Feature Request</option>
-          <option>Report A Bug</option>
-          <option>Technical Support</option>
-          <option>Other</option>
+          <option value="" disabled>Select enquiry type</option>
+          <option value="Advertisement Enquiry">Advertisement Enquiry</option>
+          <option value="Hosting Event Enquiry">Hosting Event Enquiry</option>
+          <option value="Feature Request">Feature Request</option>
+          <option value="Report A Bug">Report A Bug</option>
+          <option value="Technical Support">Technical Support</option>
+          <option value="Other">Other</option>
         </select>
 
         {option === 'Other' && (

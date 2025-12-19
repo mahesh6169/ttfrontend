@@ -24,7 +24,7 @@ const HeroEventsSection = ({ messages = [] }) => {
   }, [displayMessages.length]);
 
   return (
-    <div className="w-full bg-yellow-50 border-0 rounded-none overflow-hidden">
+    <div className="w-full overflow-hidden">
       <div className="relative flex flex-row items-center min-h-[160px] md:min-h-[200px] pb-6 md:pb-8">
         {/* Falling party decorations - only above masks area */}
         <div className="absolute right-0 md:right-0 w-[100px] md:w-[220px] h-full pointer-events-none overflow-hidden">
@@ -75,7 +75,7 @@ const HeroEventsSection = ({ messages = [] }) => {
         <div className="flex-1 p-2 md:p-5 flex items-center justify-center relative z-10">
           <div className="flex flex-col items-center gap-1 md:gap-2">
             {/* Events heading above icons */}
-            <h2 className="text-lg md:text-2xl font-extrabold text-teal-700">Events</h2>
+            <h2 className="text-2xl md:text-4xl font-black tracking-wide text-purple-700 drop-shadow-sm">Events</h2>
             
             {/* Event icons and text */}
             <div className="flex flex-col items-center gap-2 md:gap-3">
@@ -107,7 +107,7 @@ const HeroEventsSection = ({ messages = [] }) => {
               </div>
             </div>
 
-              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-purple-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
                 {displayMessages[currentMessage]}
               </p>
             </div>
@@ -159,13 +159,13 @@ const HeroEventsSection = ({ messages = [] }) => {
         <div className="absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10">
           <Link
             href="/events/add"
-            className="bg-teal-600 hover:bg-teal-700 text-white text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+            className="bg-[#f5eef5] hover:bg-[#efe5ef] text-purple-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
           >
             + Create
           </Link>
           <Link
             href="/events"
-            className="bg-white hover:bg-gray-50 text-teal-700 border border-teal-600 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg transition-colors"
+            className="bg-[#f5eef5] hover:bg-[#efe5ef] text-purple-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
           >
             View All
           </Link>
