@@ -21,11 +21,11 @@ const HomeCard = ({ type, data, isDemo = false, borderColor = '', textBgColor = 
       case 'listing':
         return (
           <>
-            <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-md">
+            <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-md bg-[rgb(235,245,193)]">
               <img
                 src={data.image || FALLBACK_LISTING_IMAGE}
                 alt={data.title}
-                className="w-full h-full object-cover rounded-md"
+                className="w-full h-full object-contain md:object-cover rounded-md"
               />
             </div>
 
@@ -47,12 +47,12 @@ const HomeCard = ({ type, data, isDemo = false, borderColor = '', textBgColor = 
       case 'event':
         return (
           <>
-            <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-md">
+            <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-md bg-[rgb(230,210,230)]">
               {showDemoBadge && <DemoBadge />}
               <img
                 src={data.image || FALLBACK_EVENT_IMAGE}
                 alt={data.title}
-                className="w-full h-full object-cover rounded-md"
+                className="w-full h-full object-contain md:object-cover rounded-md"
               />
             </div>
 
