@@ -14,6 +14,7 @@ const SendMessage = ({
   participantId,
   owner,
   preserveRedirectUrl,
+  isPostedBySupport = false,
 }) => {
   const dispatch = useDispatch();
   const router = useRouter();
@@ -87,6 +88,18 @@ const SendMessage = ({
     }
     router.push('/login?preserveRedirect=true');
   };
+
+  // Show different content for listings/events posted by support on behalf of users
+  if (isPostedBySupport) {
+    return (
+      <div className="border p-2 rounded shadow-md w-full">
+        <h2 className="text-lg font-semibold mb-2">Get in touch</h2>
+        <div className="w-full border rounded p-3 bg-gray-50 text-sm text-gray-600">
+          This listing was posted on behalf of the owner. Please use the contact details provided in the listing to reach them directly.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border p-2 rounded shadow-md w-full">

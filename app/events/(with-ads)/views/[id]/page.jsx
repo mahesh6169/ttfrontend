@@ -90,6 +90,9 @@ const EventDetail = () => {
     );
   }
 
+  // Check if posted by support account (events added on behalf of users)
+  const isPostedBySupport = selectedEvent.postedBy?.email?.toLowerCase() === 'support@desify.com.au';
+
   return (
     <div className="flex flex-col gap-2 px-2">
       {/* Navigation Bar */}
@@ -150,6 +153,7 @@ const EventDetail = () => {
               participantId: selectedEvent.postedBy?._id,
               owner: selectedEvent.postedBy?.name,
               preserveRedirectUrl: `/events/views/${id}`,
+              isPostedBySupport,
             }}
              
           />
@@ -165,6 +169,7 @@ const EventDetail = () => {
             participantId={selectedEvent.postedBy?._id}
             owner={selectedEvent.postedBy?.name}
             preserveRedirectUrl={`/events/views/${id}`}
+            isPostedBySupport={isPostedBySupport}
           />
         </div>
       </div>
