@@ -1,11 +1,18 @@
-import React, { useState } from 'react';
-import { FaCopy, FaWhatsapp, FaFacebookF } from 'react-icons/fa';
-import { FaXTwitter } from 'react-icons/fa6';
+import React, { useState, useEffect } from 'react';
+import { FaCopy, FaWhatsapp, FaShareAlt } from 'react-icons/fa';
 import { buildSlugUrl } from '@/utils/slugUtils';
 import { toast } from 'react-toastify';
 
 const ShareIcons = ({ type, title, id, className = '', compact = false, hoverClassName = '' }) => {
   const [copied, setCopied] = useState(false);
+  const [canNativeShare, setCanNativeShare] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if native share is available and if on mobile
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== 'undefined' && !!navigator.share);
+    setIsMobile(typeof window !== 'undefined' && window.innerWidth < 768);
+  }, []);
   
   // Generate the full URL
   let fullUrl;
@@ -67,16 +74,29 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
   
   const handleShare = (platform) => {
     const encodedUrl = encodeURIComponent(fullUrl);
-    const encodedTitle = encodeURIComponent(title);
-    
+
     const shareUrls = {
-      whatsapp: `https://wa.me/?text=${encodedUrl}`, // Encode URL for WhatsApp
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-      twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`
+      whatsapp: `https://wa.me/?text=${encodedUrl}`
     };
-    
+
     if (shareUrls[platform]) {
       window.open(shareUrls[platform], '_blank', 'width=600,height=400');
+    }
+  };
+
+  // Native share for mobile devices
+  const handleNativeShare = async () => {
+    try {
+      await navigator.share({
+        title: title || 'Check this out',
+        text: title || 'Check this out',
+        url: fullUrl
+      });
+    } catch (err) {
+      // User cancelled or share failed - silently ignore
+      if (err.name !== 'AbortError') {
+        console.error('Share failed:', err);
+      }
     }
   };
   
@@ -86,15 +106,28 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
   
   const iconSize = compact ? "w-4 h-4" : "w-4 h-4";
   
+  const greyButtonClass = `${iconClass} bg-gray-200 hover:bg-gray-300 text-gray-700`;
+
   return (
     <div className={`flex items-center gap-2 ${className}`}>
+      {/* Native Share - mobile only */}
+      {canNativeShare && isMobile && !compact && (
+        <button
+          onClick={handleNativeShare}
+          className={greyButtonClass}
+          title="Share"
+        >
+          <FaShareAlt className={iconSize} />
+        </button>
+      )}
+
       {/* Copy Link - hide in compact mode */}
       {!compact && (
         <button
           onClick={handleCopyLink}
           className={`${iconClass} ${
-            copied 
-              ? 'bg-green-500 text-white' 
+            copied
+              ? 'bg-green-500 text-white'
               : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
           }`}
           title="Copy link"
@@ -102,32 +135,14 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
           <FaCopy className={iconSize} />
         </button>
       )}
-      
+
       {/* WhatsApp */}
       <button
         onClick={() => handleShare('whatsapp')}
-        className={compact ? hoverClassName : `${iconClass} bg-green-500 hover:bg-green-600 text-white`}
+        className={compact ? hoverClassName : greyButtonClass}
         title="Share on WhatsApp"
       >
         <FaWhatsapp className={compact ? "text-base" : iconSize} />
-      </button>
-      
-      {/* Facebook */}
-      <button
-        onClick={() => handleShare('facebook')}
-        className={compact ? hoverClassName : `${iconClass} bg-blue-600 hover:bg-blue-700 text-white`}
-        title="Share on Facebook"
-      >
-        <FaFacebookF className={compact ? "text-base" : iconSize} />
-      </button>
-      
-      {/* Twitter/X */}
-      <button
-        onClick={() => handleShare('twitter')}
-        className={compact ? hoverClassName : `${iconClass} bg-black hover:bg-gray-800 text-white`}
-        title="Share on X"
-      >
-        <FaXTwitter className={compact ? "text-base" : iconSize} />
       </button>
     </div>
   );

@@ -10,6 +10,7 @@ import CommunitySelector from '../shared/CommunitySelector';
 import SimpleDropdown from '../shared/SimpleDropdown';
 import FieldSystem from './fieldSystem';
 import { getSharedField } from './fieldSystem/FieldRegistry';
+import ContactInfoInput from './ContactInfoInput';
 
 const AdvertForm = ({ 
   initialData = null, 
@@ -40,7 +41,13 @@ const AdvertForm = ({
       location: { type: 'Point', coordinates: [0, 0] }
     },
     images: [],
-    isNationwide: false
+    isNationwide: false,
+    contactInfo: {
+      mobile: '',
+      email: '',
+      website: '',
+      socialMedia: []
+    }
   }));
 
   const [formSections, setFormSections] = useState([]);
@@ -60,8 +67,13 @@ const AdvertForm = ({
         pricing: initialData.pricing || [],
         communities: initialData.communities || [],
         images: [],
-        isNationwide: initialData.isNationwide || false
-        // REMOVE THIS LINE: existingImages: initialData.existingImages || []
+        isNationwide: initialData.isNationwide || false,
+        contactInfo: initialData.contactInfo || {
+          mobile: '',
+          email: '',
+          website: '',
+          socialMedia: []
+        }
       });
       setExistingImages(initialData.existingImages || []);
       if (initialData.pricing && initialData.pricing.length > 0) {
@@ -494,7 +506,8 @@ const handleSubmit = (e) => {
     communities: formData.communities,
     images: formData.images,
     existingImages: (formData.existingImages || []).filter(img => img && img.url),
-    isNationwide: formData.isNationwide || false
+    isNationwide: formData.isNationwide || false,
+    contactInfo: formData.contactInfo
   };
   
   onSubmit(submitData);
@@ -739,6 +752,12 @@ return (
         </span>
       </div>
     </div>
+
+    {/* Contact Information */}
+    <ContactInfoInput
+      value={formData.contactInfo}
+      onChange={(contactInfo) => handleChange('contactInfo', contactInfo)}
+    />
 
     {/* Address */}
     <div>

@@ -392,8 +392,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     </div>
 
     {/* Share Icons Row */}
-    <div className="flex items-center justify-center py-3 px-4 bg-gray-50 rounded-lg mt-4">
-      <span className="text-sm text-gray-600 mr-3">Share this topic:</span>
+    <div className="flex items-center justify-center py-3 px-4 mt-4">
+      <span className="text-sm sm:text-base font-bold text-sky-500 mr-3">Share</span>
       <ShareIcons 
         type="thread"
         title={thread.title}

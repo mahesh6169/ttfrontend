@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaTimes, FaHeart } from 'react-icons/fa';
+import { useSelector } from 'react-redux';
+import { FaTimes, FaHeart, FaMobileAlt, FaEnvelope, FaGlobe, FaFacebook, FaInstagram, FaLock } from 'react-icons/fa';
+import { FaXTwitter } from 'react-icons/fa6';
 import { format, differenceInDays } from 'date-fns';
 import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
 import SendMessage from '@/components/chat/SendMessage';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
+import { useRouter } from 'next/navigation';
 
 // Helper function to get optimized image URL
 const getOptimizedImageUrl = (imageObj, size = 'auto') => {
@@ -37,7 +40,42 @@ const formatFieldName = (fieldName) => {
     .trim();
 };
 
+// Helper function to mask mobile number (0412****** format)
+const maskMobile = (mobile) => {
+  if (!mobile || mobile.length < 4) return mobile;
+  return mobile.slice(0, 4) + '******';
+};
+
+// Helper function to mask email (j***@gmail.com format)
+const maskEmail = (email) => {
+  if (!email || !email.includes('@')) return email;
+  const [localPart, domain] = email.split('@');
+  if (localPart.length <= 1) return email;
+  return localPart.charAt(0) + '***@' + domain;
+};
+
+// Social media icon mapping
+const getSocialIcon = (platform) => {
+  switch (platform) {
+    case 'Facebook': return FaFacebook;
+    case 'Instagram': return FaInstagram;
+    case 'X': return FaXTwitter;
+    default: return FaGlobe;
+  }
+};
+
 const SingleAdvertCard = ({ advert, chatProps }) => {
+  const router = useRouter();
+  const user = useSelector((state) => state.user.user);
+
+  // Handle login redirect for revealing masked contact info
+  const handleLoginToReveal = () => {
+    // Store current URL for redirect after login
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('redirectAfterLogin', window.location.href);
+    }
+    router.push('/login?preserveRedirect=true');
+  };
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_ADVERT_IMAGE_URL;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -369,7 +407,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             <h3 className="text-sm sm:text-base font-semibold text-gray-800">Description</h3>
           </div>
           <div className="p-3 relative">
-            <div 
+            <div
               ref={descriptionRef}
               className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
             >
@@ -379,6 +417,98 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             </div>
             {descriptionOverflow && (
               <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Contact Info Section */}
+      {advert.contactInfo && (advert.contactInfo.mobile || advert.contactInfo.email || advert.contactInfo.website || (advert.contactInfo.socialMedia && advert.contactInfo.socialMedia.length > 0)) && (
+        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
+          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Contact Information</h3>
+          </div>
+          <div className="p-3 space-y-3">
+            {/* Mobile */}
+            {advert.contactInfo.mobile && (
+              <div className="flex items-center gap-3 text-sm sm:text-base">
+                <FaMobileAlt className="text-gray-500 flex-shrink-0" />
+                {user ? (
+                  <a href={`tel:${advert.contactInfo.mobile}`} className="text-teal-600 hover:underline">
+                    {advert.contactInfo.mobile}
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">{maskMobile(advert.contactInfo.mobile)}</span>
+                    <button
+                      onClick={handleLoginToReveal}
+                      className="flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800"
+                    >
+                      <FaLock className="text-xs" />
+                      Login to reveal
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Email */}
+            {advert.contactInfo.email && (
+              <div className="flex items-center gap-3 text-sm sm:text-base">
+                <FaEnvelope className="text-gray-500 flex-shrink-0" />
+                {user ? (
+                  <a href={`mailto:${advert.contactInfo.email}`} className="text-teal-600 hover:underline">
+                    {advert.contactInfo.email}
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">{maskEmail(advert.contactInfo.email)}</span>
+                    <button
+                      onClick={handleLoginToReveal}
+                      className="flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800"
+                    >
+                      <FaLock className="text-xs" />
+                      Login to reveal
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Website - always visible */}
+            {advert.contactInfo.website && (
+              <div className="flex items-center gap-3 text-sm sm:text-base">
+                <FaGlobe className="text-gray-500 flex-shrink-0" />
+                <a
+                  href={advert.contactInfo.website.startsWith('http') ? advert.contactInfo.website : `https://${advert.contactInfo.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-teal-600 hover:underline truncate"
+                >
+                  {advert.contactInfo.website}
+                </a>
+              </div>
+            )}
+
+            {/* Social Media - always visible */}
+            {advert.contactInfo.socialMedia && advert.contactInfo.socialMedia.length > 0 && (
+              <div className="flex flex-wrap gap-3 pt-1">
+                {advert.contactInfo.socialMedia.map((social, index) => {
+                  const Icon = getSocialIcon(social.platform);
+                  return (
+                    <a
+                      key={index}
+                      href={social.url.startsWith('http') ? social.url : `https://${social.url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-200 transition-colors"
+                    >
+                      <Icon className="text-sm" />
+                      <span>{social.platform}</span>
+                    </a>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
