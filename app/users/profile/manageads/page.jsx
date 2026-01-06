@@ -124,7 +124,7 @@ export default function ProfilePage() {
   const expiryTime = new Date(advert.expiresAt).getTime();
   const daysLeft = Math.floor((expiryTime - Date.now()) / (1000 * 60 * 60 * 24));
   const isExpired = daysLeft < 0;
-  const canRenew = daysLeft <= 14 && daysLeft >= -7; // Allow renewal 14 days before to 7 days after expiry
+  const canRenew = daysLeft <= 14; // Allow renewal 14 days before expiry or anytime after expired
 
   return (
     <div
@@ -159,12 +159,7 @@ export default function ProfilePage() {
       <div className="flex justify-between items-center mt-4 gap-2">
         <button
           onClick={() => handleEdit(advert)}
-          disabled={isExpired}
-          className={`flex-1 py-1 px-4 rounded transition ${
-            isExpired
-              ? 'bg-gray-400 text-white cursor-not-allowed'
-              : 'bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100'
-          }`}
+          className="flex-1 py-1 px-4 rounded transition bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100"
         >
           Edit
         </button>
