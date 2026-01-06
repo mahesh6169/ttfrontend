@@ -21,6 +21,7 @@ const ManageAdvertsPage = () => {
   });
   const [sendingReminders, setSendingReminders] = useState({});
   const [deletingAdverts, setDeletingAdverts] = useState({});
+  const [renewingAdverts, setRenewingAdverts] = useState({});
   
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
   console.log('[RENEWALS] BASE_URL:', BASE_URL);
@@ -141,6 +142,33 @@ const ManageAdvertsPage = () => {
     }
   };
 
+  // Renew advert (admin override - no time restrictions)
+  const handleRenew = async (advertId) => {
+    if (!confirm('Are you sure you want to renew this advert?')) {
+      return;
+    }
+
+    setRenewingAdverts(prev => ({ ...prev, [advertId]: true }));
+
+    try {
+      const { data } = await axios.put(
+        `${BASE_URL}/admin/adverts/${advertId}/renew`,
+        {},
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        toast.success(data.message || 'Advert renewed successfully');
+        fetchAdverts(page);
+      }
+    } catch (error) {
+      console.error('Error renewing advert:', error);
+      toast.error(error.response?.data?.message || 'Failed to renew advert');
+    } finally {
+      setRenewingAdverts(prev => ({ ...prev, [advertId]: false }));
+    }
+  };
+
   // Helper function to get status text
   const getStatusText = (renewalStatus) => {
     switch (renewalStatus) {
@@ -237,13 +265,22 @@ const ManageAdvertsPage = () => {
                         )}
                         
                         {ad.renewalStatus === 'expired' && (
-                          <button
-                            className="ml-2 px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={() => handleDelete(ad._id)}
-                            disabled={deletingAdverts[ad._id]}
-                          >
-                            {deletingAdverts[ad._id] ? 'Deleting...' : 'Delete'}
-                          </button>
+                          <div className="flex gap-1">
+                            <button
+                              className="px-2 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={() => handleRenew(ad._id)}
+                              disabled={renewingAdverts[ad._id]}
+                            >
+                              {renewingAdverts[ad._id] ? 'Renewing...' : 'Renew'}
+                            </button>
+                            <button
+                              className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={() => handleDelete(ad._id)}
+                              disabled={deletingAdverts[ad._id]}
+                            >
+                              {deletingAdverts[ad._id] ? 'Deleting...' : 'Delete'}
+                            </button>
+                          </div>
                         )}
                         
                         {ad.renewalStatus === 'valid' && (
