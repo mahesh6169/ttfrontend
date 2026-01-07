@@ -322,8 +322,8 @@ const SingleEventCard = ({ event, chatProps }) => {
               </div>
             )}
             
-            {/* Organized By */}
-            {event.postedBy?.name && (
+            {/* Organized By - hide when posted by support on behalf of users */}
+            {event.postedBy?.name && !chatProps?.isPostedBySupport && (
               <div className="text-sm sm:text-base">
                 <span className="font-semibold text-gray-700">Organized By:</span>{' '}
                 <span className="text-gray-600">{event.postedBy.name}</span>
