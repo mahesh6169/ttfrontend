@@ -500,6 +500,16 @@ fields: {
     ]
   },
 
+  'Painters': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
   'Plumbing & Gas Services': {
     sections: [
       {
@@ -611,6 +621,16 @@ fields: {
   },
 
   'DJ & Audio Visual Services': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Entertainers & Performers': {
     sections: [
       {
         id: 'serviceDetailsSection',

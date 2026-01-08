@@ -110,6 +110,12 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
+  'Painters': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
   'Plumbing & Gas Services': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
@@ -177,6 +183,12 @@ export const WANTED_FIELDS_CONFIG = {
   },
 
   'DJ & Audio Visual Services': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Entertainers & Performers': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
