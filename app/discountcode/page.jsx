@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
+import {
   searchCoupons,
+  fetchFilterOptions,
   toggleCategory,
   setLocation,
   updateFilter,
@@ -15,14 +16,13 @@ import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import { STORE_CATEGORIES } from '@/components/coupons/storeCategories';
 import axios from '@/utils/axiosConfig';
 
 const libraries = ['places'];
 
 const DiscountCodePage = () => {
   const dispatch = useDispatch();
-  const { filters, pagination, campaigns, meta, status, error } = useSelector((state) => state.searchCoupons);
+  const { filters, pagination, campaigns, meta, status, error, filterOptions } = useSelector((state) => state.searchCoupons);
   
   // Local state for UI
   const [locationInput, setLocationInput] = useState('');
@@ -54,6 +54,11 @@ const DiscountCodePage = () => {
       setLocationInput(filters.location.name || '');
     }
   }, [showFilters, filters]);
+
+  // Fetch filter options on mount
+  useEffect(() => {
+    dispatch(fetchFilterOptions());
+  }, [dispatch]);
 
   // Search whenever filters change
   useEffect(() => {
@@ -372,26 +377,32 @@ const DiscountCodePage = () => {
               <h3 className="font-semibold text-gray-700 mb-3">Categories</h3>
               <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
                 <div className="space-y-1 p-2">
-                  {STORE_CATEGORIES.map((category) => (
-                    <label
-                      key={category}
-                      className="flex items-center cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={tempFilters.categories?.includes(category) || false}
-                        onChange={() => {
-                          const currentCategories = tempFilters.categories || [];
-                          const newCategories = currentCategories.includes(category)
-                            ? currentCategories.filter(c => c !== category)
-                            : [...currentCategories, category];
-                          setTempFilters({ ...tempFilters, categories: newCategories });
-                        }}
-                        className="w-4 h-4 text-gray-600 rounded focus:ring-gray-500 focus:ring-2 transition-all"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{category}</span>
-                    </label>
-                  ))}
+                  {filterOptions.categories.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      No categories available
+                    </p>
+                  ) : (
+                    filterOptions.categories.map((category) => (
+                      <label
+                        key={category}
+                        className="flex items-center cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={tempFilters.categories?.includes(category) || false}
+                          onChange={() => {
+                            const currentCategories = tempFilters.categories || [];
+                            const newCategories = currentCategories.includes(category)
+                              ? currentCategories.filter(c => c !== category)
+                              : [...currentCategories, category];
+                            setTempFilters({ ...tempFilters, categories: newCategories });
+                          }}
+                          className="w-4 h-4 text-gray-600 rounded focus:ring-gray-500 focus:ring-2 transition-all"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{category}</span>
+                      </label>
+                    ))
+                  )}
                 </div>
               </div>
               {tempFilters.categories?.length > 0 && (

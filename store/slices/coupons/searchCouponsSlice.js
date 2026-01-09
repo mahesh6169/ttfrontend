@@ -4,6 +4,19 @@ import axios from '@/utils/axiosConfig';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/coupons`;
 
+// Thunk for fetching filter options (categories from active stores)
+export const fetchFilterOptions = createAsyncThunk(
+  'searchCoupons/fetchFilterOptions',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/filter-options`);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to fetch filter options');
+    }
+  }
+);
+
 // Thunk for fetching campaigns (coupons)
 export const searchCoupons = createAsyncThunk(
   'searchCoupons/searchCoupons',
@@ -93,7 +106,12 @@ const initialState = {
   
   // UI state
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
-  error: null
+  error: null,
+
+  // Filter options (fetched from backend)
+  filterOptions: {
+    categories: []
+  }
 };
 
 const searchCouponsSlice = createSlice({
@@ -163,6 +181,10 @@ const searchCouponsSlice = createSlice({
       .addCase(searchCoupons.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
+      })
+      // Fetch filter options
+      .addCase(fetchFilterOptions.fulfilled, (state, action) => {
+        state.filterOptions = action.payload;
       });
   }
 });
