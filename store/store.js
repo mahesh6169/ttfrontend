@@ -17,6 +17,8 @@ import eventCapacityReducer from './slices/events/eventCapacitySlice';
 import checkInFreeReducer from './slices/events/checkInFreeSlice';
 import checkInPaidReducer from './slices/events/checkInPaidSlice';
 import searchCouponsReducer from './slices/coupons/searchCouponsSlice';
+import searchDealsReducer from './slices/dailydeals/searchDealsSlice';
+import dealReducer from './slices/dailydeals/dealSlice';
 
 const store = configureStore({
     reducer: {
@@ -37,6 +39,8 @@ const store = configureStore({
         checkInFree: checkInFreeReducer,
         checkInPaid: checkInPaidReducer,
         searchCoupons: searchCouponsReducer,
+        searchDeals: searchDealsReducer,
+        deal: dealReducer,
     },
 });
 

@@ -105,6 +105,9 @@ export const buildSlugUrl = (type, title, id) => {
     case 'thread':
     case 'threads':
       return `/threads/${slugPart}`;
+    case 'deal':
+    case 'dailydeals':
+      return `/dailydeals/${slugPart}`;
     default:
       return `/${type}/${slugPart}`;
   }
@@ -139,6 +142,9 @@ export const buildRegularUrl = (type, id) => {
     case 'thread':
     case 'threads':
       return `/threads/views/${id}`;
+    case 'deal':
+    case 'dailydeals':
+      return `/dailydeals/views/${id}`;
     default:
       return `/${type}/views/${id}`;
   }
