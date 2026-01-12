@@ -81,16 +81,19 @@ export default function PromotionsPage() {
                 </Link>
               )}
 
-              <div className="relative overflow-hidden bg-gradient-to-br from-[#D97706] to-[#F59E0B] p-4 md:p-7 rounded-[20px] shadow-[0_10px_30px_rgba(217,119,6,0.3)] opacity-70 cursor-not-allowed">
+              <Link
+                href="/dailydeals"
+                className="relative overflow-hidden bg-gradient-to-br from-[#D97706] to-[#F59E0B] p-4 md:p-7 rounded-[20px] shadow-[0_10px_30px_rgba(217,119,6,0.3)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300"
+              >
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
                 <div className="relative w-[55px] h-[55px] mx-auto mb-4 bg-white/20 backdrop-blur-md rounded-[14px] flex items-center justify-center">
                   <FaGift className="text-[30px] text-white" />
                 </div>
-                <h3 className="relative text-xl md:text-2xl font-bold text-white mb-4 text-center drop-shadow-md">More Deals</h3>
-                <div className="relative z-30 inline-block w-full bg-white/25 backdrop-blur-md text-white py-3 px-8 rounded-xl font-semibold text-sm md:text-base text-center">
-                  Coming Soon
+                <h3 className="relative text-xl md:text-2xl font-bold text-white mb-4 text-center drop-shadow-md">Daily Deals</h3>
+                <div className="relative z-30 inline-block w-full bg-white text-[#D97706] py-3 px-8 rounded-xl font-semibold text-sm md:text-base hover:bg-[#FFFBEB] hover:scale-105 shadow-[0_4px_15px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.25)] transition-all text-center">
+                  Browse Now
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
         </div>

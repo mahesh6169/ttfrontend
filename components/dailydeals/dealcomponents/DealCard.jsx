@@ -15,7 +15,7 @@ const DAYS_SHORT = {
 };
 
 const DealCard = ({ deal }) => {
-  const FALLBACK_IMAGE = '/images/deal-placeholder.jpg';
+  const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL;
 
   const daysUntilEnd = differenceInDays(new Date(deal.endDate), new Date());
   const isEndingSoon = daysUntilEnd <= 3 && daysUntilEnd >= 0;
@@ -49,6 +49,9 @@ const DealCard = ({ deal }) => {
             src={deal.images?.[0]?.url || FALLBACK_IMAGE}
             alt={deal.dealTitle}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = FALLBACK_IMAGE;
+            }}
           />
           {/* Featured Badge */}
           {isFeatured && (

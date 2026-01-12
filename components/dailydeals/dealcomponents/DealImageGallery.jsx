@@ -5,7 +5,7 @@ import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 
 const DealImageGallery = ({ images = [] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const FALLBACK_IMAGE = '/images/deal-placeholder.jpg';
+  const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL;
 
   const displayImages = images.length > 0 ? images : [{ url: FALLBACK_IMAGE }];
 
@@ -29,6 +29,9 @@ const DealImageGallery = ({ images = [] }) => {
           src={displayImages[currentIndex]?.url || FALLBACK_IMAGE}
           alt={`Deal image ${currentIndex + 1}`}
           className="w-full h-full object-contain"
+          onError={(e) => {
+            e.target.src = FALLBACK_IMAGE;
+          }}
         />
 
         {/* Navigation Arrows */}
@@ -74,6 +77,9 @@ const DealImageGallery = ({ images = [] }) => {
                 src={image.url}
                 alt={`Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = FALLBACK_IMAGE;
+                }}
               />
             </button>
           ))}
