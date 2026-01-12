@@ -13,6 +13,7 @@ const AdminSidebar = ({ onLinkClick }) => {
   const router = useRouter();
   const [bannerAdsOpen, setBannerAdsOpen] = useState(false);
   const [couponsOpen, setCouponsOpen] = useState(false);
+  const [dailyDealsOpen, setDailyDealsOpen] = useState(false);
 
   const menuItems = [
     { label: 'Users', href: '/admin/profile/users', icon: <FaUsers /> },
@@ -31,9 +32,9 @@ const AdminSidebar = ({ onLinkClick }) => {
         { label: 'View Metrics', href: '/admin/profile/banner-ads/metrics', icon: <FaChartBar /> },
       ]
     },
-    { 
-      label: 'Coupons', 
-      href: '/admin/profile/stores', 
+    {
+      label: 'Coupons',
+      href: '/admin/profile/stores',
       icon: <MdLocalOffer />,
       hasDropdown: true,
       isOpen: couponsOpen,
@@ -42,6 +43,18 @@ const AdminSidebar = ({ onLinkClick }) => {
         { label: 'Manage Stores', href: '/admin/profile/stores', icon: <FaBuilding /> },
         { label: 'Manage Campaigns', href: '/admin/profile/campaigns', icon: <MdCategory /> },
         { label: 'Analytics', href: '/admin/profile/stores/analytics', icon: <FaChartBar /> },
+      ]
+    },
+    {
+      label: 'Daily Deals',
+      href: '/admin/profile/dailydeals',
+      icon: <MdLocalOffer />,
+      hasDropdown: true,
+      isOpen: dailyDealsOpen,
+      setIsOpen: setDailyDealsOpen,
+      subItems: [
+        { label: 'Partner Stores', href: '/admin/profile/dailydeals/partners', icon: <FaBuilding /> },
+        { label: 'Manage Deals', href: '/admin/profile/dailydeals', icon: <MdCategory /> },
       ]
     },
     { label: 'Renewal Adverts', href: '/admin/profile/adverts/renewals', icon: <FaAd /> },
@@ -56,8 +69,11 @@ const AdminSidebar = ({ onLinkClick }) => {
     if (pathname.startsWith('/admin/profile/banner-ads')) {
       setBannerAdsOpen(true);
     }
-    if (pathname.startsWith('/admin/profile/stores')) {
+    if (pathname.startsWith('/admin/profile/stores') || pathname.startsWith('/admin/profile/campaigns')) {
       setCouponsOpen(true);
+    }
+    if (pathname.startsWith('/admin/profile/dailydeals')) {
+      setDailyDealsOpen(true);
     }
   }, [pathname]);
 
