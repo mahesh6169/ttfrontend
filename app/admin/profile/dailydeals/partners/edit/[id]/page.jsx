@@ -76,19 +76,13 @@ export default function EditPartnerStorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-3xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Edit Partner Store</h1>
-          <p className="text-gray-600 mt-2">Update partner store details</p>
-        </div>
-
-        <PartnerStoreForm
-          initialData={partnerStore}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-        />
-      </div>
+    <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto py-6 sm:py-8">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Edit Business</h1>
+      <PartnerStoreForm
+        initialData={partnerStore}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }

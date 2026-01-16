@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { getDealById, clearDeal } from '@/store/slices/dailydeals/dealSlice';
 import SingleDealCard from '@/components/dailydeals/dealcomponents/SingleDealCard';
+import SendMessage from '@/components/chat/SendMessage';
 import ShareIcons from '@/components/shared/ShareIcons';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Link from 'next/link';
@@ -63,8 +64,13 @@ const DealDetailPage = () => {
     );
   }
 
+  // Get the partner store owner for messaging
+  const partner = deal.partnerstoreId;
+  const ownerId = partner?.createdBy?._id || partner?.createdBy;
+  const ownerName = partner?.businessName || 'Business';
+
   return (
-    <div id="viewsmain" className="flex flex-col gap-2 px-2">
+    <div id="viewsmain" className="flex flex-col gap-2 px-2 min-h-screen pb-8">
       {/* Navigation Bar */}
       <div className="mt-4 flex justify-between items-center">
         <button
@@ -98,9 +104,32 @@ const DealDetailPage = () => {
         />
       </div>
 
-      {/* Deal Content */}
-      <div className="bg-white w-full">
-        <SingleDealCard deal={deal} />
+      {/* Main Content Grid */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* Primary Content */}
+        <div className="flex-[7] bg-white w-full">
+          <SingleDealCard
+            deal={deal}
+            chatProps={{
+              resourceId: id,
+              resourceType: 'deal',
+              participantId: ownerId,
+              owner: ownerName,
+              preserveRedirectUrl: `/dailydeals/views/${id}`,
+            }}
+          />
+        </div>
+
+        {/* Secondary Content - Desktop Only */}
+        <div className="hidden lg:block flex-[3] bg-white border rounded shadow-md p-2 self-start">
+          <SendMessage
+            resourceId={id}
+            resourceType="deal"
+            participantId={ownerId}
+            owner={ownerName}
+            preserveRedirectUrl={`/dailydeals/views/${id}`}
+          />
+        </div>
       </div>
 
       {/* Browse More Button */}

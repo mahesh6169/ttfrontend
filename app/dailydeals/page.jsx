@@ -16,7 +16,6 @@ import DealsGrid from '@/components/dailydeals/dealcomponents/DealsGrid';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import { FaGift } from 'react-icons/fa';
 
 const libraries = ['places'];
@@ -176,7 +175,7 @@ const DailyDealsPage = () => {
   };
 
   return (
-    <div className="flex flex-col relative">
+    <div className="flex flex-col relative min-h-screen pb-8">
       {/* Modal Overlay */}
       {showFilters && (
         <div
@@ -600,13 +599,7 @@ const DailyDealsPage = () => {
 
         {/* Results */}
         <div className="px-3 sm:px-4 mt-4">
-          {status === 'loading' ? (
-            <div className="flex justify-center py-12">
-              <LoadingSpinner />
-            </div>
-          ) : (
-            <DealsGrid deals={deals} />
-          )}
+          <DealsGrid deals={deals} dealStatus={status} />
         </div>
 
         {/* Pagination */}

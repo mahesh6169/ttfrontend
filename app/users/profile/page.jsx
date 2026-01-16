@@ -3,7 +3,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
+import {
   FaAd, FaCalendarAlt, FaEnvelope, FaUser, FaPlus,
   FaCog, FaCheckCircle, FaEye, FaFileInvoice, FaTicketAlt, FaTag
 } from 'react-icons/fa';
@@ -111,23 +111,29 @@ const ProfilePage = () => {
               Add a...
             </h3>
             <div className="space-y-1.5">
-              <Link 
-                href="/listings/add" 
+              <Link
+                href="/listings/add"
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
                 → Listing
               </Link>
-              <Link 
-                href="/events/add" 
+              <Link
+                href="/events/add"
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
                 → Event
               </Link>
-              <Link 
-                href="/threads/new" 
+              <Link
+                href="/threads/new"
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
                 → Topic
+              </Link>
+              <Link
+                href="/users/profile/dailydeals"
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Daily Deal
               </Link>
             </div>
           </div>
@@ -139,23 +145,29 @@ const ProfilePage = () => {
               Manage...
             </h3>
             <div className="space-y-1.5">
-              <Link 
-                href="/users/profile/manageads" 
+              <Link
+                href="/users/profile/manageads"
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
                 → Listings
               </Link>
-              <Link 
-                href="/users/profile/manageevents" 
+              <Link
+                href="/users/profile/manageevents"
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
                 → Events
               </Link>
-              <Link 
-                href="/users/profile/managethreads" 
+              <Link
+                href="/users/profile/managethreads"
                 className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
               >
                 → Topics
+              </Link>
+              <Link
+                href="/users/profile/dailydeals"
+                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
+              >
+                → Daily Deals
               </Link>
             </div>
           </div>

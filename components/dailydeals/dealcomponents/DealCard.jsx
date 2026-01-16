@@ -22,8 +22,8 @@ const DealCard = ({ deal }) => {
   const isEndsToday = daysUntilEnd === 0;
 
   const formatValidDays = (validDays) => {
-    if (!validDays || validDays.length === 0) return 'Every Day';
-    if (validDays.length === 7) return 'Every Day';
+    if (!validDays || validDays.length === 0) return 'Everyday';
+    if (validDays.length === 7) return 'Everyday';
     return validDays.map(d => DAYS_SHORT[d] || d).join(', ');
   };
 
@@ -44,11 +44,11 @@ const DealCard = ({ deal }) => {
     <Link href={`/dailydeals/views/${deal._id}`}>
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
         {/* Image */}
-        <div className="relative h-40 bg-gray-100">
+        <div className="relative w-full h-40 sm:h-48 md:h-56 bg-gray-100 rounded-md">
           <img
             src={deal.images?.[0]?.url || FALLBACK_IMAGE}
             alt={deal.dealTitle}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-md"
             onError={(e) => {
               e.target.src = FALLBACK_IMAGE;
             }}
@@ -87,7 +87,7 @@ const DealCard = ({ deal }) => {
                 {partner?.businessName?.charAt(0) || '?'}
               </div>
             )}
-            <span className="text-sm font-medium text-gray-700 truncate">
+            <span className="text-xs font-bold text-gray-900 truncate">
               {partner?.businessName || 'Unknown Partner'}
             </span>
           </div>
@@ -97,9 +97,9 @@ const DealCard = ({ deal }) => {
             {deal.dealTitle}
           </h3>
 
-          {/* Valid Days */}
-          <div className="text-xs text-teal-700 font-medium mb-2">
-            {formatValidDays(deal.validDays)}
+          {/* Valid Days & End Date */}
+          <div className="text-xs text-gray-500 mb-1">
+            Valid: {formatValidDays(deal.validDays)} until {format(new Date(deal.endDate), 'dd MMM')}
           </div>
 
           {/* Location */}
@@ -109,11 +109,6 @@ const DealCard = ({ deal }) => {
               <span className="truncate">{location}</span>
             </div>
           )}
-
-          {/* End Date */}
-          <div className="text-xs text-gray-400 mt-1">
-            Valid until {format(new Date(deal.endDate), 'dd MMM yyyy')}
-          </div>
         </div>
       </div>
     </Link>

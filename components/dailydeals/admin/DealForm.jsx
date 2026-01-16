@@ -14,15 +14,18 @@ const DAYS = [
   { value: 'sunday', label: 'Sun' }
 ];
 
-export default function DealForm({ initialData = null, onSubmit, onCancel }) {
+export default function DealForm({ initialData = null, onSubmit, onCancel, partnersEndpoint = '/admin/dailydeals/partners-dropdown', isAdmin = true }) {
   const [partners, setPartners] = useState([]);
   const [formData, setFormData] = useState({
     partnerstoreId: initialData?.partnerstoreId?._id || initialData?.partnerstoreId || '',
     dealTitle: initialData?.dealTitle || '',
     description: initialData?.description || '',
     terms: initialData?.terms || '',
+    dealLink: initialData?.dealLink || '',
+    whatsappOrders: initialData?.whatsappOrders || false,
+    whatsappNumber: initialData?.whatsappNumber || '',
     validDays: initialData?.validDays || [],
-    startDate: initialData?.startDate ? initialData.startDate.split('T')[0] : '',
+    startDate: initialData?.startDate ? initialData.startDate.split('T')[0] : new Date().toISOString().split('T')[0],
     endDate: initialData?.endDate ? initialData.endDate.split('T')[0] : '',
     featured: {
       isActive: initialData?.featured?.isActive || false,
@@ -43,9 +46,10 @@ export default function DealForm({ initialData = null, onSubmit, onCancel }) {
 
   const fetchPartners = async () => {
     try {
-      const response = await axios.get('/admin/dailydeals/partners-dropdown');
+      const response = await axios.get(partnersEndpoint);
       if (response.data.success) {
-        setPartners(response.data.partners);
+        // Support both 'partners' (admin) and 'stores' (user) response formats
+        setPartners(response.data.partners || response.data.stores || []);
       }
     } catch (error) {
       console.error('Failed to fetch partners:', error);
@@ -85,11 +89,15 @@ export default function DealForm({ initialData = null, onSubmit, onCancel }) {
     const newErrors = {};
 
     if (!formData.partnerstoreId) {
-      newErrors.partnerstoreId = 'Partner store is required';
+      newErrors.partnerstoreId = 'Business is required';
     }
 
     if (!formData.dealTitle.trim()) {
       newErrors.dealTitle = 'Deal title is required';
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
     }
 
     if (!formData.startDate) {
@@ -113,6 +121,26 @@ export default function DealForm({ initialData = null, onSubmit, onCancel }) {
       }
     }
 
+    // Deal link validation (optional, but must be valid HTTPS if provided)
+    if (formData.dealLink) {
+      const urlPattern = /^https:\/\/[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}(\/.*)?$/;
+      if (!urlPattern.test(formData.dealLink.trim())) {
+        newErrors.dealLink = 'Enter a valid URL (e.g., https://example.com/deal)';
+      }
+    }
+
+    // WhatsApp number validation (required if whatsappOrders is enabled)
+    if (formData.whatsappOrders && !formData.whatsappNumber.trim()) {
+      newErrors.whatsappNumber = 'WhatsApp number is required';
+    } else if (formData.whatsappOrders && formData.whatsappNumber) {
+      // Validate Australian mobile format (04xx xxx xxx or variations)
+      const phonePattern = /^04\d{8}$/;
+      const cleanNumber = formData.whatsappNumber.replace(/\s/g, '');
+      if (!phonePattern.test(cleanNumber)) {
+        newErrors.whatsappNumber = 'Enter a valid Australian mobile number (e.g., 0412345678)';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -130,6 +158,9 @@ export default function DealForm({ initialData = null, onSubmit, onCancel }) {
       submitData.append('dealTitle', formData.dealTitle);
       submitData.append('description', formData.description);
       submitData.append('terms', formData.terms);
+      submitData.append('dealLink', formData.dealLink);
+      submitData.append('whatsappOrders', formData.whatsappOrders);
+      submitData.append('whatsappNumber', formData.whatsappNumber.replace(/\s/g, ''));
       submitData.append('validDays', JSON.stringify(formData.validDays));
       submitData.append('startDate', formData.startDate);
       submitData.append('endDate', formData.endDate);
@@ -157,90 +188,139 @@ export default function DealForm({ initialData = null, onSubmit, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
-      {/* Partner Store */}
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+      {/* Business Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Partner Store *
+        <label className="block font-semibold sm:font-bold mb-1 text-gray-700 text-sm sm:text-base">
+          Select Business <span className="text-red-500">*</span>
         </label>
+        <p className="text-xs text-gray-500 mb-2">Select Business/Store you want to create the Deal for</p>
         <select
           name="partnerstoreId"
           value={formData.partnerstoreId}
           onChange={handleChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
         >
-          <option value="">Select partner store</option>
+          <option value="">Select</option>
           {partners.map(partner => (
             <option key={partner._id} value={partner._id}>
-              {partner.businessName} ({partner.category})
+              {partner.businessName}{partner.location ? ` (${partner.location})` : ''}
             </option>
           ))}
         </select>
         {errors.partnerstoreId && (
-          <p className="text-red-500 text-sm mt-1">{errors.partnerstoreId}</p>
+          <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.partnerstoreId}</p>
         )}
       </div>
 
       {/* Deal Title */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Deal Title *
+        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+          Deal Title <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
           name="dealTitle"
           value={formData.dealTitle}
           onChange={handleChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="e.g., 20% Off All Pizzas"
         />
         {errors.dealTitle && (
-          <p className="text-red-500 text-sm mt-1">{errors.dealTitle}</p>
+          <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.dealTitle}</p>
         )}
       </div>
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Description
+        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+          Description <span className="text-red-500">*</span>
         </label>
         <textarea
           name="description"
           value={formData.description}
           onChange={handleChange}
           rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          maxLength={15000}
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="Describe the deal..."
         />
+        <div className="flex justify-between mt-1">
+          {errors.description && (
+            <p className="text-red-500 text-xs sm:text-sm">{errors.description}</p>
+          )}
+          <p className="text-xs text-gray-400 ml-auto">{formData.description.length}/15000</p>
+        </div>
       </div>
 
-      {/* Terms */}
+      {/* Deal Link */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Terms & Conditions
+        <label className="block font-semibold sm:font-bold mb-1 text-gray-700 text-sm sm:text-base">
+          Offer URL <span className="text-xs font-normal text-gray-500">(optional)</span>
         </label>
-        <textarea
-          name="terms"
-          value={formData.terms}
+        <p className="text-xs text-gray-500 mb-2">Link to social media, offer details, or redemption page</p>
+        <input
+          type="url"
+          name="dealLink"
+          value={formData.dealLink}
           onChange={handleChange}
-          rows={3}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-          placeholder="e.g., Not valid with other offers. Dine-in only."
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          placeholder="https://example.com/summer-sale"
         />
+        {errors.dealLink && (
+          <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.dealLink}</p>
+        )}
       </div>
 
-      {/* Valid Days */}
+      {/* WhatsApp Orders */}
+      <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            name="whatsappOrders"
+            checked={formData.whatsappOrders}
+            onChange={handleChange}
+            className="mr-2 w-5 h-5 sm:w-4 sm:h-4"
+          />
+          <label className="text-sm sm:text-base font-medium text-gray-700">
+            I will take orders via WhatsApp
+          </label>
+        </div>
+
+        {formData.whatsappOrders && (
+          <div className="mt-3">
+            <label className="block font-semibold sm:font-bold mb-1 text-gray-700 text-sm sm:text-base">
+              WhatsApp Number <span className="text-red-500">*</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-2">Enter your Australian mobile number</p>
+            <input
+              type="tel"
+              name="whatsappNumber"
+              value={formData.whatsappNumber}
+              onChange={handleChange}
+              className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+              placeholder="0412 345 678"
+            />
+            {errors.whatsappNumber && (
+              <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.whatsappNumber}</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Deal Valid On */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Valid Days (leave empty for every day)
+        <label className="block font-semibold sm:font-bold mb-1 text-gray-700 text-sm sm:text-base">
+          Deal Valid On <span className="text-xs font-normal text-gray-500">(optional)</span>
         </label>
+        <p className="text-xs text-gray-500 mb-2">Leave empty if valid every day</p>
         <div className="flex flex-wrap gap-2">
           {DAYS.map(day => (
             <button
               key={day.value}
               type="button"
               onClick={() => handleDayToggle(day.value)}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 sm:px-3 sm:py-1 rounded-full text-sm font-medium transition-colors ${
                 formData.validDays.includes(day.value)
                   ? 'bg-teal-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -253,102 +333,123 @@ export default function DealForm({ initialData = null, onSubmit, onCancel }) {
       </div>
 
       {/* Date Range */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Start Date *
+          <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+            Start Date <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
             name="startDate"
             value={formData.startDate}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
           {errors.startDate && (
-            <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>
+            <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.startDate}</p>
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            End Date *
+          <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+            End Date <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
             name="endDate"
             value={formData.endDate}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
           {errors.endDate && (
-            <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>
+            <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.endDate}</p>
           )}
         </div>
       </div>
 
-      {/* Featured Section */}
-      <div className="border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center mb-4">
+      {/* Featured Section - Admin Only */}
+      {isAdmin && (
+        <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
+          <div className="flex items-center mb-4">
+            <input
+              type="checkbox"
+              name="featured.isActive"
+              checked={formData.featured.isActive}
+              onChange={handleChange}
+              className="mr-2 w-5 h-5 sm:w-4 sm:h-4"
+            />
+            <label className="text-sm sm:text-base font-medium text-gray-700">
+              Feature this deal (show at top of list)
+            </label>
+          </div>
+
+          {formData.featured.isActive && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+                  Featured Start Date
+                </label>
+                <input
+                  type="date"
+                  name="featured.startDate"
+                  value={formData.featured.startDate}
+                  onChange={handleChange}
+                  className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                {errors.featuredStartDate && (
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.featuredStartDate}</p>
+                )}
+              </div>
+              <div>
+                <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+                  Featured End Date
+                </label>
+                <input
+                  type="date"
+                  name="featured.endDate"
+                  value={formData.featured.endDate}
+                  onChange={handleChange}
+                  className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                {errors.featuredEndDate && (
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.featuredEndDate}</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Active Status - Admin Only */}
+      {isAdmin && (
+        <div className="flex items-center">
           <input
             type="checkbox"
-            name="featured.isActive"
-            checked={formData.featured.isActive}
+            name="isActive"
+            checked={formData.isActive}
             onChange={handleChange}
-            className="mr-2"
+            className="mr-2 w-5 h-5 sm:w-4 sm:h-4"
           />
-          <label className="text-sm font-medium text-gray-700">
-            Feature this deal (show at top of list)
+          <label className="text-sm sm:text-base text-gray-700">
+            Deal is active
           </label>
         </div>
+      )}
 
-        {formData.featured.isActive && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Featured Start Date
-              </label>
-              <input
-                type="date"
-                name="featured.startDate"
-                value={formData.featured.startDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-              {errors.featuredStartDate && (
-                <p className="text-red-500 text-sm mt-1">{errors.featuredStartDate}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Featured End Date
-              </label>
-              <input
-                type="date"
-                name="featured.endDate"
-                value={formData.featured.endDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-              {errors.featuredEndDate && (
-                <p className="text-red-500 text-sm mt-1">{errors.featuredEndDate}</p>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Active Status */}
-      <div className="flex items-center">
-        <input
-          type="checkbox"
-          name="isActive"
-          checked={formData.isActive}
-          onChange={handleChange}
-          className="mr-2"
-        />
-        <label className="text-sm text-gray-700">
-          Deal is active
+      {/* Terms */}
+      <div>
+        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+          Terms & Conditions
         </label>
+        <textarea
+          name="terms"
+          value={formData.terms}
+          onChange={handleChange}
+          rows={3}
+          maxLength={1000}
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          placeholder="e.g., Not valid with other offers. Dine-in only."
+        />
+        <p className="text-xs text-gray-400 text-right mt-1">{formData.terms.length}/1000</p>
       </div>
 
       {/* Image Upload */}
@@ -368,24 +469,23 @@ export default function DealForm({ initialData = null, onSubmit, onCancel }) {
       )}
 
       {/* Actions */}
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="flex-1 bg-teal-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? 'Saving...' : (initialData ? 'Update Deal' : 'Create Deal')}
-        </button>
-
+      <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="w-full sm:w-auto px-6 py-3 sm:py-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded hover:bg-gray-50"
           >
             Cancel
           </button>
         )}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full sm:flex-1 bg-teal-600 text-white py-3 sm:py-2 px-4 text-base sm:text-sm rounded-lg sm:rounded font-medium hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? 'Saving...' : (initialData ? 'Update Deal' : 'Add Deal')}
+        </button>
       </div>
     </form>
   );

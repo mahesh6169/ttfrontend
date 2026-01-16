@@ -26,26 +26,33 @@ const handleLinkClick = () => {
   return (
     <ProtectedAdminRoute>
       <div className="flex">
-        {/* Sidebar (Replaces LeftAd) */}
-        <div className="w-[250px] lg:w-[200px]">
-          <button
-            className="md:hidden fixed top-15 left-0 z-50 p-2 bg-gray-100 rounded-md shadow"
-            onClick={() => setSidebarOpen(!isSidebarOpen)}
-          >
-            {isSidebarOpen ? <IoClose size={24} /> : <IoMenu size={24} />}
-          </button>
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden fixed top-16 left-2 z-50 p-2 bg-white rounded-md shadow-md"
+          onClick={() => setSidebarOpen(!isSidebarOpen)}
+        >
+          {isSidebarOpen ? <IoClose size={24} /> : <IoMenu size={24} />}
+        </button>
 
+        {/* Mobile Overlay */}
+        {isSidebarOpen && (
           <div
-            className={`fixed h-screen bg-white shadow-md z-40 transform ${
-              isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            } transition-transform duration-300 ease-in-out md:relative md:translate-x-0`}
-          >
-           <AdminSidebar onLinkClick={handleLinkClick} />
-          </div>
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <div
+          className={`fixed md:sticky top-0 h-screen w-[250px] md:w-[200px] bg-white shadow-md z-40 transform ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } transition-transform duration-300 ease-in-out md:translate-x-0`}
+        >
+          <AdminSidebar onLinkClick={handleLinkClick} />
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 w-full mx-auto">{children}</div>
+        <div className="flex-1 min-w-0">{children}</div>
       </div>
     </ProtectedAdminRoute>
   );

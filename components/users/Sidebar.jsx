@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { FaUser, FaAd, FaEnvelope, FaCalendarAlt, FaMoneyCheckAlt, FaChevronDown, FaChevronRight, FaFileInvoice, FaTag } from 'react-icons/fa';
+import { FaUser, FaAd, FaEnvelope, FaCalendarAlt, FaMoneyCheckAlt, FaChevronDown, FaChevronRight, FaFileInvoice, FaTag, FaPercent } from 'react-icons/fa';
 import { MdFavorite } from 'react-icons/md';
 import { BsChatText } from 'react-icons/bs';
 
@@ -28,10 +28,11 @@ const Sidebar = ({ onLinkClick }) => {
     { label: 'Manage Listings', href: '/users/profile/manageads', icon: <FaAd /> },
     { label: 'Manage Events', href: '/users/profile/manageevents', icon: <FaCalendarAlt /> },
     { label: 'Manage Topics', href: '/users/profile/managethreads', icon: <BsChatText /> },
-    
+    { label: 'Manage Daily Deals', href: '/users/profile/dailydeals', icon: <FaPercent /> },
+
     // Divider
     { type: 'divider' },
-    
+
     // Event Organiser dropdown
     {
       label: 'Event Organiser',

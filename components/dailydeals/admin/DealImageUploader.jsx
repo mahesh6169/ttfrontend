@@ -2,6 +2,9 @@
 
 import { useRef } from 'react';
 import { MdDelete, MdCloudUpload } from 'react-icons/md';
+import { toast } from 'react-toastify';
+
+const MAX_DEAL_IMAGES = 5;
 
 export default function DealImageUploader({
   mode = 'create',
@@ -11,16 +14,62 @@ export default function DealImageUploader({
   setImages
 }) {
   const fileInputRef = useRef(null);
+  const totalImages = existingImages.length + images.length;
+  const canAddMore = totalImages < MAX_DEAL_IMAGES;
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
-    const validFiles = files.filter(file => {
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      return validTypes.includes(file.type) && file.size <= maxSize;
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const remainingSlots = MAX_DEAL_IMAGES - totalImages;
+
+    if (remainingSlots <= 0) {
+      toast.error(`Maximum ${MAX_DEAL_IMAGES} images allowed`, {
+        position: 'top-right',
+        autoClose: 4000
+      });
+      e.target.value = '';
+      return;
+    }
+
+    const validFiles = [];
+    let hasInvalidType = false;
+    let hasInvalidSize = false;
+
+    files.forEach(file => {
+      if (!validTypes.includes(file.type)) {
+        hasInvalidType = true;
+      } else if (file.size > maxSize) {
+        hasInvalidSize = true;
+      } else {
+        validFiles.push(file);
+      }
     });
 
-    const newImages = validFiles.map(file => ({
+    if (hasInvalidType) {
+      toast.error('Some files skipped: Only JPEG, PNG, and WebP are allowed', {
+        position: 'top-right',
+        autoClose: 4000
+      });
+    }
+
+    if (hasInvalidSize) {
+      toast.error('Some files skipped: Maximum file size is 5MB', {
+        position: 'top-right',
+        autoClose: 4000
+      });
+    }
+
+    // Limit to remaining slots
+    const filesToAdd = validFiles.slice(0, remainingSlots);
+    if (validFiles.length > remainingSlots) {
+      toast.warning(`Only ${remainingSlots} more image(s) allowed. Some files were not added.`, {
+        position: 'top-right',
+        autoClose: 4000
+      });
+    }
+
+    const newImages = filesToAdd.map(file => ({
       file,
       preview: URL.createObjectURL(file),
       id: `new-${Date.now()}-${Math.random()}`
@@ -44,8 +93,6 @@ export default function DealImageUploader({
     });
   };
 
-  const totalImages = existingImages.length + images.length;
-
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -54,11 +101,17 @@ export default function DealImageUploader({
 
       {/* Upload Button */}
       <div
-        onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-colors"
+        onClick={() => canAddMore && fileInputRef.current?.click()}
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+          canAddMore
+            ? 'border-gray-300 cursor-pointer hover:border-teal-500 hover:bg-teal-50'
+            : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+        }`}
       >
-        <MdCloudUpload className="mx-auto text-4xl text-gray-400 mb-2" />
-        <p className="text-gray-600">Click to upload images</p>
+        <MdCloudUpload className={`mx-auto text-4xl mb-2 ${canAddMore ? 'text-gray-400' : 'text-gray-300'}`} />
+        <p className={canAddMore ? 'text-gray-600' : 'text-gray-400'}>
+          {canAddMore ? 'Click to upload images' : 'Maximum images reached'}
+        </p>
         <p className="text-xs text-gray-400 mt-1">JPEG, PNG, WebP (max 5MB each)</p>
       </div>
 
@@ -90,7 +143,7 @@ export default function DealImageUploader({
                 <MdDelete size={16} />
               </button>
               <span className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1 rounded">
-                Saved
+                Current
               </span>
             </div>
           ))}
@@ -119,7 +172,7 @@ export default function DealImageUploader({
       )}
 
       <p className="text-xs text-gray-500 mt-2">
-        {totalImages} image{totalImages !== 1 ? 's' : ''} selected
+        {totalImages}/{MAX_DEAL_IMAGES} images
       </p>
     </div>
   );
