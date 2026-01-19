@@ -19,9 +19,9 @@ import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import PostListingButton from '@/components/buttons/PostListingButton';
 import { getCategoryDisplayName } from '@/constants/categories';
 import PromoBanner from '@/components/PromoBanner';
+import HeroListingSection from '@/components/home/HeroListingSection';
 
 const libraries = ['places'];
 
@@ -524,42 +524,78 @@ const getCurrentSortLabel = () => {
           </div>
         </div> */}
 
-        {/* Post Advert Button */}
-        <div className="mt-2 md:mt-4 mb-2 px-4">
-          <PostListingButton />
-        </div>
+        {/* Hero Section with two-tone curved container */}
+        <section
+          className="relative mt-2 md:mt-4 mb-4 mx-0 sm:mx-4 pt-0 pb-4 px-0 sm:pb-6 rounded-none sm:rounded-xl overflow-hidden"
+          style={{ background: 'rgb(180, 210, 130)' }}
+        >
+          {/* Curved two-tone background - Mobile */}
+          <svg
+            className="absolute top-0 left-0 w-full h-full pointer-events-none md:hidden"
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="none"
+            viewBox="0 0 1440 600"
+          >
+            <path
+              d="M0,200 C360,160 720,240 1080,180 S1440,220 1440,200 L1440,600 L0,600 Z"
+              fill="rgb(235, 245, 193)"
+            />
+          </svg>
+          {/* Curved two-tone background - Desktop */}
+          <svg
+            className="absolute top-0 left-0 w-full h-full pointer-events-none hidden md:block"
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="none"
+            viewBox="0 0 1440 600"
+          >
+            <path
+              d="M0,180 C360,80 720,280 1080,130 S1440,230 1440,180 L1440,600 L0,600 Z"
+              fill="rgb(235, 245, 193)"
+            />
+          </svg>
 
-        {/* Search Bar with Sort/Filter buttons */}
-        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
-          <form onSubmit={handleSearchSubmit} className="mb-3 md:max-w-md md:mx-auto">
-            <div className="relative flex items-center">
-              <svg
-                className="absolute left-4 w-5 h-5 text-gray-400 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search adverts..."
-                className="w-full pl-12 pr-14 py-3 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="absolute right-1.5 bg-teal-600 text-white hover:bg-teal-700 p-2.5 rounded-full shadow-sm transition-colors"
-                aria-label="Search"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
+          <div className="relative p-0 sm:pt-0 sm:pb-2 sm:px-4">
+            <HeroListingSection showViewAll={false} showCreate={false} compact={true} />
+          </div>
+
+          {/* Search Bar inside the curved container */}
+          <div className="relative px-3 sm:px-6 -mt-2 md:mt-0 pb-4">
+            <div className="md:max-w-2xl md:mx-auto">
+              {/* Post Listing: left on desktop, right on mobile */}
+              <div className="flex items-center gap-2 md:gap-3">
+                <Link
+                  href="/listings/add"
+                  className="order-2 md:order-1 bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-sm font-bold py-2 px-4 md:py-2.5 md:px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                >
+                  + Post Listing
+                </Link>
+                <form onSubmit={handleSearchSubmit} className="flex-1 order-1 md:order-2">
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      placeholder="E.g. Room, Painter, Electrician etc"
+                      className="w-full pl-4 pr-11 py-2 bg-white border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-1.5 bg-teal-600 text-white hover:bg-teal-700 p-2 rounded-full shadow-sm transition-colors"
+                      aria-label="Search"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </form>
+          </div>
+        </section>
 
+        {/* Page Controls - Sort and Filter */}
+        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
           {/* Page Controls - Sort and Filter */}
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
@@ -576,9 +612,9 @@ const getCurrentSortLabel = () => {
                 </span>
               )}
             </button>
-            
+
             <div className="relative">
-  <button 
+  <button
     className="flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
     onClick={() => setShowSortMenu(!showSortMenu)}
   >
@@ -587,12 +623,12 @@ const getCurrentSortLabel = () => {
     </svg>
     <span className="font-medium">Sort: {getCurrentSortLabel()}</span>
   </button>
-  
+
   {/* Sort dropdown menu */}
   {showSortMenu && (
     <>
-      <div 
-        className="fixed inset-0 z-20" 
+      <div
+        className="fixed inset-0 z-20"
         onClick={() => setShowSortMenu(false)}
       ></div>
       <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-30 border border-gray-200 py-1">
@@ -621,7 +657,7 @@ const getCurrentSortLabel = () => {
               <span className="text-sm text-gray-600 font-medium whitespace-nowrap flex-shrink-0">
                 Active filters:
               </span>
-              
+
               <div className="flex-1 overflow-x-auto">
                 <div className="flex gap-2 pb-1">
                   {filters.categories.map((category) => (
@@ -656,7 +692,7 @@ const getCurrentSortLabel = () => {
                       </span>
                     );
                   })}
-                  
+
                   {filters.state && (
                     <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
                       State: {filters.state}
@@ -668,7 +704,7 @@ const getCurrentSortLabel = () => {
                       </button>
                     </span>
                   )}
-                  
+
                   {filters.location && (
                     <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -723,7 +759,7 @@ const getCurrentSortLabel = () => {
           <Pagination
             currentPage={meta.currentPage}
             totalPages={meta.totalPages}
-            onPageChange={(pageNum) => 
+            onPageChange={(pageNum) =>
               dispatch(updatePagination({ page: pageNum }))
             }
           />

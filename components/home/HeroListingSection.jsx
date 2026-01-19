@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FaTshirt, FaCar, FaStore, FaCouch, FaMobileAlt, FaHome, FaBroom, FaTools } from 'react-icons/fa';
 
-const HeroListingSection = ({ messages = [] }) => {
+const HeroListingSection = ({ messages = [], showViewAll = true, showCreate = true, compact = false }) => {
   const [currentMessage, setCurrentMessage] = useState(0);
 
   const defaultMessages = [
@@ -24,7 +24,7 @@ const HeroListingSection = ({ messages = [] }) => {
 
   return (
     <div className="w-full overflow-hidden">
-      <div className="relative flex flex-row items-center min-h-[160px] md:min-h-[200px] pb-6 md:pb-8">
+      <div className={`relative flex flex-row items-center ${compact ? 'min-h-[120px] md:min-h-[110px] pb-2 md:pb-1' : 'min-h-[160px] md:min-h-[200px] pb-6 md:pb-8'}`}>
         {/* Particles moving across entire container */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
           {/* Floating particles/sparkles across entire width */}
@@ -41,42 +41,42 @@ const HeroListingSection = ({ messages = [] }) => {
         </svg>
 
         {/* Text in center with Listings heading and icons row */}
-        <div className="flex-1 p-2 md:p-5 flex items-center justify-center relative z-10">
-          <div className="flex flex-col items-center gap-1 md:gap-2">
+        <div className={`flex-1 p-2 ${compact ? 'md:p-3' : 'md:p-5'} flex items-center justify-center relative z-10`}>
+          <div className={`flex flex-col items-center ${compact ? 'gap-1' : 'gap-1 md:gap-2'}`}>
             {/* Listings heading above icons */}
-            <h2 className="text-2xl md:text-4xl font-black tracking-wide text-teal-900 drop-shadow-sm">Listings</h2>
-            
+            <h2 className={`${compact ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'} font-black tracking-wide text-teal-900 drop-shadow-sm`}>Listings</h2>
+
             {/* Category icons in horizontal row */}
-            <div className="flex flex-col items-center gap-2 md:gap-3">
+            <div className={`flex flex-col items-center ${compact ? 'gap-1 md:gap-2' : 'gap-2 md:gap-3'}`}>
             {/* Category icons in horizontal row */}
-            <div className="flex items-center gap-1.5 md:gap-3 category-icon">
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-pink-500 flex items-center justify-center">
-                <FaTshirt className="w-3 h-3 md:w-5 md:h-5 text-white" />
+            <div className={`flex items-center ${compact ? 'gap-1 md:gap-2' : 'gap-1.5 md:gap-3'} category-icon`}>
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-pink-500 flex items-center justify-center`}>
+                <FaTshirt className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-yellow-300 flex items-center justify-center">
-                <FaCar className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-yellow-300 flex items-center justify-center`}>
+                <FaCar className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-purple-500 flex items-center justify-center">
-                <FaStore className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-purple-500 flex items-center justify-center`}>
+                <FaStore className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-teal-700 flex items-center justify-center">
-                <FaHome className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-teal-700 flex items-center justify-center`}>
+                <FaHome className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-cyan-500 flex items-center justify-center">
-                <FaBroom className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-cyan-500 flex items-center justify-center`}>
+                <FaBroom className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-orange-600 flex items-center justify-center">
-                <FaTools className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-orange-600 flex items-center justify-center`}>
+                <FaTools className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-orange-500 flex items-center justify-center">
-                <FaMobileAlt className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-orange-500 flex items-center justify-center`}>
+                <FaMobileAlt className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-teal-500 flex items-center justify-center">
-                <FaCouch className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-teal-500 flex items-center justify-center`}>
+                <FaCouch className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
             </div>
 
-              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-teal-900 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+              <p key={currentMessage} className={`${compact ? 'text-xs md:text-lg' : 'text-sm md:text-2xl'} font-extrabold text-teal-900 text-center animate-fade-in leading-tight tracking-tight`} style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
                 {displayMessages[currentMessage]}
               </p>
             </div>
@@ -84,7 +84,7 @@ const HeroListingSection = ({ messages = [] }) => {
         </div>
 
         {/* Megaphone on right */}
-        <div className="flex-shrink-0 w-auto md:w-[200px] lg:w-[220px] p-2 md:p-4 pb-10 md:pb-4 flex items-center justify-center relative z-10">
+        <div className={`flex-shrink-0 w-auto ${compact ? 'md:w-[120px] lg:w-[140px]' : 'md:w-[200px] lg:w-[220px]'} p-2 ${compact ? 'md:p-1 pb-6 md:pb-1' : 'md:p-4 pb-10 md:pb-4'} flex items-center justify-center relative z-10`}>
           <div className="relative w-[80px] md:w-full md:max-w-[180px]">
             <div className="absolute inset-0 bg-teal-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
             <svg className="megaphone-icon w-full h-auto" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
@@ -159,20 +159,26 @@ const HeroListingSection = ({ messages = [] }) => {
         </div>
         
         {/* Create and View All buttons - bottom right */}
-        <div className="absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10">
-          <Link
-            href="/listings/add"
-            className="bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
-          >
-            + Create
-          </Link>
-          <Link
-            href="/listings"
-            className="bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
-          >
-            View All
-          </Link>
-        </div>
+        {(showCreate || showViewAll) && (
+          <div className={`absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10 ${compact && showCreate ? 'md:hidden' : ''}`}>
+            {showCreate && (
+              <Link
+                href="/listings/add"
+                className="bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
+              >
+                + Create
+              </Link>
+            )}
+            {showViewAll && (
+              <Link
+                href="/listings"
+                className="bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
+              >
+                View All
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       <style jsx>{`
