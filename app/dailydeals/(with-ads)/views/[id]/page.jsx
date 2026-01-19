@@ -64,10 +64,10 @@ const DealDetailPage = () => {
     );
   }
 
-  // Get the partner store owner for messaging
+  // Get the deal poster for messaging
   const partner = deal.partnerstoreId;
-  const ownerId = partner?.createdBy?._id || partner?.createdBy;
-  const ownerName = partner?.businessName || 'Business';
+  const ownerId = deal.postedBy?._id || deal.postedBy;
+  const ownerName = partner?.businessName || deal.postedBy?.name || 'Business';
 
   return (
     <div id="viewsmain" className="flex flex-col gap-2 px-2 min-h-screen pb-8">

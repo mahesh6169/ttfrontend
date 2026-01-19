@@ -11,7 +11,7 @@ import {
 import { MdOutlineGroups2 } from "react-icons/md";
 import { RiAdvertisementFill } from "react-icons/ri";
 import { CgProfile } from 'react-icons/cg';
-import { TbLogout, TbLogin } from 'react-icons/tb';
+import { LiaSignInAltSolid, LiaSignOutAltSolid } from 'react-icons/lia';
 import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { MdLocalOffer } from 'react-icons/md';
@@ -87,7 +87,7 @@ const Header = () => {
               <>
                 <Link
                   href="/users/profile/conversations"
-                  className="flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors relative"
+                  className="flex flex-col items-center p-1.5 rounded-lg hover:bg-gray-50 transition-colors relative"
                   title="Messages"
                 >
                   <div className="relative">
@@ -99,22 +99,25 @@ const Header = () => {
                       <BsChatDots size={22} className="text-teal-700" />
                     )}
                   </div>
+                  <span className="text-[10px] text-teal-700">Chat</span>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                  title="Logout"
+                  className="flex flex-col items-center p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                  title="Signout"
                 >
-                  <TbLogout size={24} className="text-teal-700" />
+                  <LiaSignOutAltSolid size={22} className="text-teal-700" />
+                  <span className="text-[10px] text-teal-700">Signout</span>
                 </button>
               </>
             ) : (
               <Link
                 href="/login"
-                className="flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                title="Login"
+                className="flex flex-col items-center p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                title="Signin"
               >
-                <TbLogin size={24} className="text-teal-700" />
+                <LiaSignInAltSolid size={22} className="text-teal-700 scale-x-[-1]" />
+                <span className="text-[10px] text-teal-700">Signin</span>
               </Link>
             )}
           </div>
@@ -142,15 +145,15 @@ const Header = () => {
                 pathname={pathname}
               />
               <NavLink
-                href="/threads"
-                icon={<MdOutlineGroups2 size={30} />}
-                text="Forum"
+                href="/dailydeals"
+                icon={<MdLocalOffer size={20} />}
+                text="Deals"
                 pathname={pathname}
               />
               <NavLink
-                href="/deals"
-                icon={<MdLocalOffer size={20} />}
-                text="Deals"
+                href="/threads"
+                icon={<MdOutlineGroups2 size={30} />}
+                text="Forum"
                 pathname={pathname}
               />
             </div>
@@ -194,18 +197,18 @@ const Header = () => {
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-2 text-teal-700 hover:text-teal-600 transition-colors"
-                    title="Logout"
+                    title="Signout"
                   >
-                    <TbLogout size={20} />
-                    <span className="hidden lg:inline">Logout</span>
+                    <LiaSignOutAltSolid size={22} />
+                    <span className="hidden lg:inline">Signout</span>
                   </button>
                 </>
               ) : (
                 <>
                   <NavLink
                     href="/login"
-                    icon={<TbLogin size={20} />}
-                    text="Login"
+                    icon={<LiaSignInAltSolid size={22} className="scale-x-[-1]" />}
+                    text="Signin"
                     pathname={pathname}
                   />
                   <NavLink

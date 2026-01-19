@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import axios from '@/utils/axiosConfig';
-import PartnerStoreForm from '@/components/dailydeals/admin/PartnerStoreForm';
+import PartnerStoreForm from '@/components/dailydeals/forms/PartnerStoreForm';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function EditPartnerStorePage() {

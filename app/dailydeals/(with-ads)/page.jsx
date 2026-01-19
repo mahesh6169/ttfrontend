@@ -16,7 +16,7 @@ import DealsGrid from '@/components/dailydeals/dealcomponents/DealsGrid';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import { FaGift } from 'react-icons/fa';
+import PostDealButton from '@/components/buttons/PostDealButton';
 
 const libraries = ['places'];
 
@@ -421,15 +421,9 @@ const DailyDealsPage = () => {
 
       {/* Main Content */}
       <div className="w-full">
-        {/* Header */}
-        <div className="mt-4 mb-6 mx-3 sm:mx-4 rounded-xl bg-gradient-to-r from-[#D97706] to-[#F59E0B] py-4 px-3 sm:px-4 shadow-[0_4px_15px_rgba(217,119,6,0.3)]">
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
-              <FaGift className="text-xl text-white" />
-            </div>
-            <h1 className="text-xl md:text-2xl font-bold text-white drop-shadow-md">Daily Deals</h1>
-          </div>
-          <p className="text-white/90 mt-1 text-sm text-center">Local deals and special offers</p>
+        {/* Post Deal Button */}
+        <div className="mt-2 md:mt-4 mb-2 px-4">
+          <PostDealButton />
         </div>
 
         {/* Search Bar with Sort/Filter buttons */}

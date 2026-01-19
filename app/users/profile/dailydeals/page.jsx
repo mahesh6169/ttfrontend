@@ -114,7 +114,10 @@ export default function ManageDailyDealsPage() {
             <p className="text-xs text-gray-500 mt-0.5">Add Business/Store here and create a deal in the My Deals section</p>
           </div>
           <button
-            onClick={() => router.push('/users/profile/dailydeals/businesses/add')}
+            onClick={() => {
+              localStorage.setItem('cancelRedirectUrl', '/users/profile/dailydeals');
+              router.push('/dailydeals/businesses/add');
+            }}
             className="flex items-center justify-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 text-sm w-full sm:w-auto"
           >
             <MdAdd size={18} />
@@ -160,7 +163,10 @@ export default function ManageDailyDealsPage() {
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
                   <button
-                    onClick={() => router.push(`/users/profile/dailydeals/businesses/edit/${business._id}`)}
+                    onClick={() => {
+                      localStorage.setItem('cancelRedirectUrl', '/users/profile/dailydeals');
+                      router.push(`/dailydeals/businesses/edit/${business._id}`);
+                    }}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded"
                     title="Edit"
                   >
@@ -200,7 +206,10 @@ export default function ManageDailyDealsPage() {
             <p className="text-xs text-gray-500 mt-0.5">Create promotional deals for your businesses listed above</p>
           </div>
           <button
-            onClick={() => router.push('/users/profile/dailydeals/add')}
+            onClick={() => {
+              localStorage.setItem('cancelRedirectUrl', '/users/profile/dailydeals');
+              router.push('/dailydeals/dealform/add');
+            }}
             disabled={businesses.length === 0}
             className="flex items-center justify-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 text-sm w-full sm:w-auto disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
@@ -260,7 +269,10 @@ export default function ManageDailyDealsPage() {
                   </div>
                   <div className="flex gap-1 flex-shrink-0">
                     <button
-                      onClick={() => router.push(`/users/profile/dailydeals/edit/${deal._id}`)}
+                      onClick={() => {
+                        localStorage.setItem('cancelRedirectUrl', '/users/profile/dailydeals');
+                        router.push(`/dailydeals/dealform/edit/${deal._id}`);
+                      }}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded"
                       title="Edit"
                     >

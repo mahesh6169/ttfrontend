@@ -1,25 +1,34 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchConversations } from '@/store/slices/shared/messageSlice';
 import { useRouter } from 'next/navigation';
+import { FaUserCircle } from 'react-icons/fa';
 
 const ConversationsList = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const [failedImages, setFailedImages] = useState({});
 
   const { conversations, loading, error } = useSelector(
     (state) => state.messages
   );
 
   useEffect(() => {
-    // Fetch conversations when the component mounts
     dispatch(fetchConversations());
   }, [dispatch]);
 
-  const handleConversationClick = (advertId) => {
-    router.push(`/chat/${advertId}`);
+  const handleConversationClick = (resourceType, resourceId, otherUserId) => {
+    router.push(`/chat/${resourceType}/${resourceId}?otherUser=${otherUserId}`);
+  };
+
+  const handleImageError = (key) => {
+    setFailedImages(prev => ({ ...prev, [key]: true }));
+  };
+
+  const hasValidImage = (image) => {
+    return image && image.startsWith('http');
   };
 
   if (loading) {
@@ -40,28 +49,39 @@ const ConversationsList = () => {
       <div className="space-y-4">
         {conversations.map((conversation, index) => (
           <div
-            key={`${conversation.advert.id}-${index}`}
+            key={`${conversation.resourceType}-${conversation.resourceId}-${index}`}
             className="flex items-center justify-between p-4 border rounded shadow hover:shadow-md transition cursor-pointer"
-            onClick={() => handleConversationClick(conversation.advert.id)}
+            onClick={() => handleConversationClick(
+              conversation.resourceType,
+              conversation.resourceId,
+              conversation.otherUser?.id
+            )}
           >
             <div className="flex items-center space-x-4">
-              <img
-                src={conversation.advert.image || '/default-advert.jpg'}
-                alt={conversation.advert.title || 'Advert'}
-                className="w-16 h-16 object-cover rounded"
-              />
+              {hasValidImage(conversation.image) && !failedImages[`${conversation.resourceType}-${conversation.resourceId}`] ? (
+                <img
+                  src={conversation.image}
+                  alt={conversation.title || 'Resource'}
+                  className="w-16 h-16 object-cover rounded"
+                  onError={() => handleImageError(`${conversation.resourceType}-${conversation.resourceId}`)}
+                />
+              ) : (
+                <FaUserCircle className="w-16 h-16 text-gray-400" />
+              )}
               <div>
-                <h3 className="font-bold">{conversation.advert.title}</h3>
+                <h3 className="font-bold">{conversation.title}</h3>
                 <p className="text-gray-600 truncate w-64">
-                  Last Message: {conversation.lastMessage.message}
+                  Last Message: {conversation.lastMessage?.text}
                 </p>
                 <p className="text-gray-500">
-                  Participant: {conversation.participant.name}
+                  {conversation.otherUser?.name || 'Unknown'}
                 </p>
               </div>
             </div>
             <div className="text-sm text-gray-500">
-              {new Date(conversation.lastMessage.createdAt).toLocaleString()}
+              {conversation.lastMessage?.createdAt
+                ? new Date(conversation.lastMessage.createdAt).toLocaleString()
+                : ''}
             </div>
           </div>
         ))}

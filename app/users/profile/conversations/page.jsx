@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import socket from '@/config/socket';
 import { MdRepeat } from 'react-icons/md';
+import { FaUserCircle } from 'react-icons/fa';
 
 
 const ConversationsPage = () => {
@@ -128,11 +129,15 @@ const [pendingDelete, setPendingDelete] = useState(null);
     {/* Row 1: Image and Title/Date */}
     <div className="flex gap-3">
       {/* Image - spans height of title + date/time */}
-      <img
-        src={conv.image || '/default.jpg'}
-        alt={conv.title}
-        className="w-12 h-12 sm:w-14 sm:h-14 rounded-md object-cover shrink-0"
-      />
+      {conv.image ? (
+        <img
+          src={conv.image}
+          alt={conv.title}
+          className="w-12 h-12 sm:w-14 sm:h-14 rounded-md object-cover shrink-0"
+        />
+      ) : (
+        <FaUserCircle className="w-12 h-12 sm:w-14 sm:h-14 text-gray-400 shrink-0" />
+      )}
       
       {/* Title and Date/Time container */}
       <div className="flex-1 min-w-0">
@@ -186,7 +191,7 @@ const [pendingDelete, setPendingDelete] = useState(null);
     <div className="flex justify-between items-center">
       <div className="flex items-center gap-2">
         <p className="text-xs sm:text-sm text-teal-700">
-          Chat with {conv.otherUser.name}
+          Chat with {conv.resourceType === 'deal' && conv.businessName ? conv.businessName : conv.otherUser.name}
         </p>
         {needsResponse && (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">

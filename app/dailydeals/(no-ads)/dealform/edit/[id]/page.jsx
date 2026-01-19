@@ -4,14 +4,23 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import axios from '@/utils/axiosConfig';
-import DealForm from '@/components/dailydeals/admin/DealForm';
+import DealForm from '@/components/dailydeals/forms/DealForm';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 
 export default function EditDealPage() {
   const router = useRouter();
   const { id } = useParams();
   const [deal, setDeal] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [cancelUrl, setCancelUrl] = useState('/dailydeals/manage');
+
+  useEffect(() => {
+    const savedCancelUrl = localStorage.getItem('cancelRedirectUrl');
+    if (savedCancelUrl) {
+      setCancelUrl(savedCancelUrl);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchDeal = async () => {
@@ -22,7 +31,7 @@ export default function EditDealPage() {
         }
       } catch (error) {
         toast.error(error.response?.data?.message || 'Failed to fetch deal');
-        router.push('/users/profile/dailydeals');
+        router.push('/dailydeals/manage');
       } finally {
         setIsLoading(false);
       }
@@ -43,7 +52,8 @@ export default function EditDealPage() {
 
       if (response.data.success) {
         toast.success('Deal updated successfully!');
-        router.push('/users/profile/dailydeals');
+        localStorage.removeItem('cancelRedirectUrl');
+        router.push('/dailydeals/manage');
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update deal');
@@ -52,7 +62,8 @@ export default function EditDealPage() {
   };
 
   const handleCancel = () => {
-    router.push('/users/profile/dailydeals');
+    localStorage.removeItem('cancelRedirectUrl');
+    router.push(cancelUrl);
   };
 
   if (isLoading) {
@@ -76,15 +87,17 @@ export default function EditDealPage() {
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto py-6 sm:py-8">
-      <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Edit Daily Deal</h1>
-      <DealForm
-        initialData={deal}
-        onSubmit={handleSubmit}
-        onCancel={handleCancel}
-        partnersEndpoint="/user/dailydeals/mystores-dropdown"
-        isAdmin={false}
-      />
-    </div>
+    <RequireVerifiedAccount>
+      <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto py-6 sm:py-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Edit Daily Deal</h1>
+        <DealForm
+          initialData={deal}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          partnersEndpoint="/user/dailydeals/mystores-dropdown"
+          isAdmin={false}
+        />
+      </div>
+    </RequireVerifiedAccount>
   );
 }

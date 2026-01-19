@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import axios from '@/utils/axiosConfig';
-import DealForm from '@/components/dailydeals/admin/DealForm';
+import DealForm from '@/components/dailydeals/forms/DealForm';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function EditDealPage() {
