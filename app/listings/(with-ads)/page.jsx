@@ -21,7 +21,7 @@ import { toast } from 'react-toastify';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import { getCategoryDisplayName } from '@/constants/categories';
 import PromoBanner from '@/components/PromoBanner';
-import HeroListingSection from '@/components/home/HeroListingSection';
+import HeroListingSection from '@/components/adverts/HeroListingSection';
 
 const libraries = ['places'];
 

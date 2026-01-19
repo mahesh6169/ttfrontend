@@ -24,6 +24,7 @@ import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import PostEventButton from '@/components/buttons/PostEventButton';
 import { getCategoryDisplayName } from '@/constants/categories';
 import PromoBanner from '@/components/PromoBanner';
+import HeroEventsSection from '@/components/events/HeroEventsSection';
 
 const libraries = ['places'];
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -529,56 +530,78 @@ const EventsPage = () => {
 
       {/* Main Content */}
       <div className="w-full">
-        {/* Hero Banner */}
-        {/* <div className="my-4 px-4">
-          <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
-              <span className="text-amber-500">Organise</span>
-              <span className="text-teal-700 mx-2">•</span>
-              <span className="text-teal-700">Attend</span>
-              <span className="text-teal-700 mx-2">•</span>
-              <span className="text-amber-500">Connect</span>
-            </h1>
-            <p className="text-gray-600 text-center text-sm mt-2">Find events in your community</p>
+        {/* Hero Section with two-tone curved container */}
+        <section
+          className="relative mt-2 md:mt-4 mb-4 mx-0 sm:mx-4 pt-0 pb-4 px-0 sm:pb-6 rounded-none sm:rounded-xl overflow-hidden"
+          style={{ background: 'rgb(180, 130, 180)' }}
+        >
+          {/* Curved two-tone background - Mobile */}
+          <svg
+            className="absolute top-0 left-0 w-full h-full pointer-events-none md:hidden"
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="none"
+            viewBox="0 0 1440 600"
+          >
+            <path
+              d="M0,200 C360,160 720,240 1080,180 S1440,220 1440,200 L1440,600 L0,600 Z"
+              fill="rgb(230, 210, 230)"
+            />
+          </svg>
+          {/* Curved two-tone background - Desktop */}
+          <svg
+            className="absolute top-0 left-0 w-full h-full pointer-events-none hidden md:block"
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="none"
+            viewBox="0 0 1440 600"
+          >
+            <path
+              d="M0,180 C360,80 720,280 1080,130 S1440,230 1440,180 L1440,600 L0,600 Z"
+              fill="rgb(230, 210, 230)"
+            />
+          </svg>
+
+          <div className="relative p-0 sm:pt-0 sm:pb-2 sm:px-4">
+            <HeroEventsSection showViewAll={false} showCreate={false} compact={true} />
           </div>
-        </div> */}
 
-        {/* Post Event Button */}
-        <div className="mt-2 md:mt-4 mb-2 px-4">
-          <PostEventButton />
-        </div>
-
-        {/* Search Bar with Sort/Filter buttons */}
-        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
-          <form onSubmit={handleSearchSubmit} className="mb-3 md:max-w-md md:mx-auto">
-            <div className="relative flex items-center">
-              <svg
-                className="absolute left-4 w-5 h-5 text-gray-400 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search events..."
-                className="w-full pl-12 pr-14 py-3 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="absolute right-1.5 bg-teal-600 text-white hover:bg-teal-700 p-2.5 rounded-full shadow-sm transition-colors"
-                aria-label="Search"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
+          {/* Search Bar inside the curved container */}
+          <div className="relative px-3 sm:px-6 -mt-2 md:mt-0 pb-4">
+            <div className="md:max-w-2xl md:mx-auto">
+              {/* Post Event: left on desktop, right on mobile */}
+              <div className="flex items-center gap-2 md:gap-3">
+                <Link
+                  href="/events/add"
+                  className="order-2 md:order-1 bg-[#f5eef5] hover:bg-[#efe5ef] text-purple-700 text-sm font-bold py-2 px-4 md:py-2.5 md:px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                >
+                  + Post Event
+                </Link>
+                <form onSubmit={handleSearchSubmit} className="flex-1 order-1 md:order-2">
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      placeholder="E.g. Concert, Dance, Comedy etc"
+                      className="w-full pl-4 pr-11 py-2 bg-white border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-1.5 bg-purple-600 text-white hover:bg-purple-700 p-2 rounded-full shadow-sm transition-colors"
+                      aria-label="Search"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </form>
+          </div>
+        </section>
 
+        {/* Page Controls - Sort and Filter */}
+        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
           {/* Page Controls - Sort and Filter */}
           <div className="flex gap-2 md:gap-3 justify-center">
             <button

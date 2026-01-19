@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FaNewspaper, FaQuestionCircle, FaSearch, FaThumbsUp, FaGlobe, FaMapMarkerAlt, FaBell } from 'react-icons/fa';
 
-const HeroThreadsSection = ({ messages = [] }) => {
+const HeroThreadsSection = ({ messages = [], showViewAll = true, showCreate = true, compact = false }) => {
   const [currentMessage, setCurrentMessage] = useState(0);
 
   const defaultMessages = [
@@ -25,41 +25,41 @@ const HeroThreadsSection = ({ messages = [] }) => {
 
   return (
     <div className="w-full overflow-hidden">
-      <div className="relative flex flex-row items-center min-h-[160px] md:min-h-[200px] pb-8 md:pb-12">
+      <div className={`relative flex flex-row items-center ${compact ? 'min-h-[120px] md:min-h-[110px] pb-2 md:pb-1' : 'min-h-[160px] md:min-h-[200px] pb-8 md:pb-12'}`}>
         {/* Text in center with Forum heading and icons row */}
-        <div className="flex-1 p-2 md:p-5 flex items-center justify-center relative z-10">
-          <div className="flex flex-col items-center gap-1 md:gap-2">
+        <div className={`flex-1 p-2 ${compact ? 'md:p-3' : 'md:p-5'} flex items-center justify-center relative z-10`}>
+          <div className={`flex flex-col items-center ${compact ? 'gap-1' : 'gap-1 md:gap-2'}`}>
             {/* Forum heading above icons */}
-            <h2 className="text-2xl md:text-4xl font-black tracking-wide text-gray-700 drop-shadow-sm">Forum</h2>
-            
+            <h2 className={`${compact ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'} font-black tracking-wide text-gray-700 drop-shadow-sm`}>Forum</h2>
+
             {/* Thread icons and text */}
-            <div className="flex flex-col items-center gap-2 md:gap-3">
+            <div className={`flex flex-col items-center ${compact ? 'gap-1 md:gap-2' : 'gap-2 md:gap-3'}`}>
             {/* Thread icons in horizontal row */}
-            <div className="flex items-center gap-1.5 md:gap-3 category-icon">
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-blue-500 flex items-center justify-center">
-                <FaNewspaper className="w-3 h-3 md:w-5 md:h-5 text-white" />
+            <div className={`flex items-center ${compact ? 'gap-1 md:gap-2' : 'gap-1.5 md:gap-3'} category-icon`}>
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-blue-500 flex items-center justify-center`}>
+                <FaNewspaper className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-orange-500 flex items-center justify-center">
-                <FaQuestionCircle className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-orange-500 flex items-center justify-center`}>
+                <FaQuestionCircle className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-purple-500 flex items-center justify-center">
-                <FaSearch className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-purple-500 flex items-center justify-center`}>
+                <FaSearch className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-green-500 flex items-center justify-center">
-                <FaThumbsUp className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-green-500 flex items-center justify-center`}>
+                <FaThumbsUp className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-gray-600 flex items-center justify-center">
-                <FaGlobe className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-gray-600 flex items-center justify-center`}>
+                <FaGlobe className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-red-500 flex items-center justify-center">
-                <FaMapMarkerAlt className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-red-500 flex items-center justify-center`}>
+                <FaMapMarkerAlt className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-amber-500 flex items-center justify-center">
-                <FaBell className="w-3 h-3 md:w-5 md:h-5 text-white" />
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-amber-500 flex items-center justify-center`}>
+                <FaBell className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
             </div>
 
-              <p key={currentMessage} className="text-sm md:text-2xl font-extrabold text-gray-700 text-center animate-fade-in leading-tight tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+              <p key={currentMessage} className={`${compact ? 'text-xs md:text-lg' : 'text-sm md:text-2xl'} font-extrabold text-gray-700 text-center animate-fade-in leading-tight tracking-tight`} style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
                 {displayMessages[currentMessage]}
               </p>
             </div>
@@ -67,7 +67,7 @@ const HeroThreadsSection = ({ messages = [] }) => {
         </div>
 
         {/* Community chat illustration on right */}
-        <div className="flex-shrink-0 w-auto md:w-[200px] lg:w-[220px] p-2 md:p-4 pb-10 md:pb-4 flex flex-col items-center justify-center relative z-10">
+        <div className={`flex-shrink-0 w-auto ${compact ? 'md:w-[120px] lg:w-[140px]' : 'md:w-[200px] lg:w-[220px]'} p-2 ${compact ? 'md:p-1 pb-6 md:pb-1' : 'md:p-4 pb-10 md:pb-4'} flex flex-col items-center justify-center relative z-10`}>
           <div className="relative w-[80px] md:w-full md:max-w-[180px]">
             <div className="absolute inset-0 bg-gray-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
             <svg className="community-icon w-full h-auto" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
@@ -120,20 +120,26 @@ const HeroThreadsSection = ({ messages = [] }) => {
         </div>
         
         {/* Create and View All buttons - bottom right */}
-        <div className="absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10">
-          <Link
-            href="/threads/new"
-            className="bg-[#f0f0f0] hover:bg-[#e5e5e5] text-gray-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
-          >
-            + Create
-          </Link>
-          <Link
-            href="/threads"
-            className="bg-[#f0f0f0] hover:bg-[#e5e5e5] text-gray-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
-          >
-            View All
-          </Link>
-        </div>
+        {(showCreate || showViewAll) && (
+          <div className={`absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10 ${compact && showCreate ? 'md:hidden' : ''}`}>
+            {showCreate && (
+              <Link
+                href="/threads/new"
+                className="bg-[#f0f0f0] hover:bg-[#e5e5e5] text-gray-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
+              >
+                + Create
+              </Link>
+            )}
+            {showViewAll && (
+              <Link
+                href="/threads"
+                className="bg-[#f0f0f0] hover:bg-[#e5e5e5] text-gray-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
+              >
+                View All
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       <style jsx>{`

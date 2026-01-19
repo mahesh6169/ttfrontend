@@ -21,9 +21,9 @@ import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 import { FaFrown } from 'react-icons/fa';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import PostTopicButton from '@/components/buttons/PostTopicButton';
 import BottomAd from '@/components/ads/BottomAd';
 import { getCategoryDisplayName } from '@/constants/categories';
+import HeroThreadsSection from '@/components/threads/HeroThreadsSection';
 
 const libraries = ['places'];
 
@@ -507,57 +507,82 @@ const ThreadsPage = () => {
 
       {/* Main Content */}
       <div className="w-full">
-        {/* Hero Banner */}
-        {/* <div className="my-4 px-4">
-          <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
-              <span className="text-amber-500">Seek</span>
-              <span className="text-teal-700 mx-2">•</span>
-              <span className="text-teal-700">Learn</span>
-              <span className="text-teal-700 mx-2">•</span>
-              <span className="text-amber-500">Share</span>
-            </h1>
-            <p className="text-gray-600 text-center text-sm mt-2">Share knowledge with your community</p>
-          </div>
-        </div> */}
-
-        {/* Create New Topic Button */}
-        <div className="mt-2 md:mt-4 mb-2 px-4">
-          <PostTopicButton />
-        </div>
-
-        {/* Search Bar with Sort/Filter buttons */}
-        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
-          <form onSubmit={handleSearchSubmit} className="mb-3 md:max-w-md md:mx-auto">
-            <div className="relative flex items-center">
-              <svg
-                className="absolute left-4 w-5 h-5 text-gray-400 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search topics..."
-                className="w-full pl-12 pr-14 py-3 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
+        {/* Hero Section with Two-tone Gray Curved Container */}
+        <section
+          className="relative mt-2 md:mt-4 mb-4 mx-0 sm:mx-4 pt-0 pb-4 px-0 sm:pb-6 rounded-none sm:rounded-xl overflow-hidden"
+          style={{ background: 'rgb(180, 180, 180)' }}
+        >
+          {/* Wave layer 1 - Lighter gray */}
+          <div className="absolute inset-0 pointer-events-none">
+            <svg
+              className="absolute inset-0 w-full h-full"
+              viewBox="0 0 1000 400"
+              preserveAspectRatio="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0,50 C150,100 300,0 500,50 C700,100 850,0 1000,50 L1000,400 L0,400 Z"
+                fill="rgb(210, 210, 210)"
               />
-              <button
-                type="submit"
-                className="absolute right-1.5 bg-teal-600 text-white hover:bg-teal-700 p-2.5 rounded-full shadow-sm transition-colors"
-                aria-label="Search"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            </div>
-          </form>
+            </svg>
+          </div>
 
-          {/* Page Controls - Sort and Filter */}
+          {/* Wave layer 2 - Lightest gray */}
+          <div className="absolute inset-0 pointer-events-none">
+            <svg
+              className="absolute inset-0 w-full h-full"
+              viewBox="0 0 1000 400"
+              preserveAspectRatio="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0,80 C200,130 400,30 600,80 C800,130 900,30 1000,80 L1000,400 L0,400 Z"
+                fill="rgb(230, 230, 230)"
+              />
+            </svg>
+          </div>
+
+          {/* Hero Content */}
+          <HeroThreadsSection showViewAll={false} showCreate={false} compact={true} />
+
+          {/* Search section inside hero */}
+          <div className="relative px-3 sm:px-6 -mt-2 md:mt-0 pb-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              {/* Post Topic Button */}
+              <Link
+                href="/threads/new"
+                className="order-2 md:order-1 flex-shrink-0 bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-semibold py-2 px-3 md:py-2.5 md:px-4 rounded-lg shadow-sm transition-colors whitespace-nowrap"
+              >
+                + Post Topic
+              </Link>
+
+              {/* Search Bar */}
+              <form onSubmit={handleSearchSubmit} className="flex-1 order-1 md:order-2">
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    placeholder="E.g. Visa, Jobs, Housing etc"
+                    className="w-full pl-4 pr-11 py-2 bg-white border border-gray-300 rounded-full text-xs sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    className="absolute right-1 bg-gray-600 text-white hover:bg-gray-700 p-2 rounded-full shadow-sm transition-colors"
+                    aria-label="Search"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        {/* Page Controls - Sort and Filter */}
+        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
               onClick={() => setShowFilters(!showFilters)}
