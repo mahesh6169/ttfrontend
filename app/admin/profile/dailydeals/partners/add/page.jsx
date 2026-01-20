@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import axios from '@/utils/axiosConfig';
-import PartnerStoreForm from '@/components/dailydeals/admin/PartnerStoreForm';
+import PartnerStoreForm from '@/components/dailydeals/forms/PartnerStoreForm';
 
 export default function AddPartnerStorePage() {
   const router = useRouter();
