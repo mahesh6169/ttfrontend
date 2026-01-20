@@ -316,22 +316,9 @@ const SingleDealCard = ({ deal, chatProps }) => {
             {partner?.contactInfo?.phone && (
               <div className="flex items-center text-gray-600">
                 <MdPhone className="mr-2 text-lg flex-shrink-0" />
-                <div className="flex items-center gap-3 flex-wrap">
-                  <a href={`tel:${partner.contactInfo.phone}`} className="text-sm text-teal-600 hover:underline">
-                    {partner.contactInfo.phone}
-                  </a>
-                  {partner.contactInfo.whatsappEnabled && (
-                    <a
-                      href={`https://wa.me/61${partner.contactInfo.phone.substring(1)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded transition-colors"
-                    >
-                      <FaWhatsapp className="text-sm" />
-                      WhatsApp
-                    </a>
-                  )}
-                </div>
+                <a href={`tel:${partner.contactInfo.phone}`} className="text-sm text-teal-600 hover:underline">
+                  {partner.contactInfo.phone}
+                </a>
               </div>
             )}
 

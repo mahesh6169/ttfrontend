@@ -28,7 +28,6 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
     },
     contactInfo: {
       phone: initialData?.contactInfo?.phone || '',
-      whatsappEnabled: initialData?.contactInfo?.whatsappEnabled || false,
       email: initialData?.contactInfo?.email || '',
       website: initialData?.contactInfo?.website || '',
       socialMedia: initialData?.contactInfo?.socialMedia || []
@@ -279,30 +278,6 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
         />
         {errors.phone && (
           <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.phone}</p>
-        )}
-
-        {/* WhatsApp Toggle */}
-        {formData.contactInfo.phone && (
-          <div className="flex items-center mt-2">
-            <input
-              type="checkbox"
-              name="contactInfo.whatsappEnabled"
-              checked={formData.contactInfo.whatsappEnabled}
-              onChange={(e) => {
-                setFormData(prev => ({
-                  ...prev,
-                  contactInfo: {
-                    ...prev.contactInfo,
-                    whatsappEnabled: e.target.checked
-                  }
-                }));
-              }}
-              className="mr-2 w-5 h-5 sm:w-4 sm:h-4"
-            />
-            <label className="text-sm text-gray-600">
-              Enable WhatsApp for this number
-            </label>
-          </div>
         )}
       </div>
 

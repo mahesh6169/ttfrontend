@@ -100,7 +100,11 @@ export default function ManageDailyDealsPage() {
     return validDays.map(d => DAYS_SHORT[d] || d).join(', ');
   };
 
-  const isExpired = (endDate) => new Date(endDate) < new Date();
+  const isExpired = (endDate) => {
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // End of day
+    return end < new Date();
+  };
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto py-6 sm:py-8">

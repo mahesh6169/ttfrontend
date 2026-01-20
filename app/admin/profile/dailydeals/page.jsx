@@ -89,7 +89,11 @@ export default function DailyDealsPage() {
     return validDays.map(d => DAYS_SHORT[d] || d).join(', ');
   };
 
-  const isExpired = (endDate) => new Date(endDate) < new Date();
+  const isExpired = (endDate) => {
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // End of day
+    return end < new Date();
+  };
   const isExpiringSoon = (endDate) => {
     const daysLeft = Math.ceil((new Date(endDate) - new Date()) / (1000 * 60 * 60 * 24));
     return daysLeft <= 7 && daysLeft > 0;
