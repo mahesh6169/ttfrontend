@@ -487,7 +487,7 @@ const DailyDealsPage = () => {
               {/* Post Deal: left on desktop, right on mobile */}
               <div className="flex items-center gap-2 md:gap-3">
                 <Link
-                  href="/dailydeals/add"
+                  href="/dailydeals/manage"
                   className="order-2 md:order-1 bg-[#FFF8E1] hover:bg-[#FFECB3] text-sm font-bold py-2 px-4 md:py-2.5 md:px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
                   style={{ color: '#8B6914' }}
                 >

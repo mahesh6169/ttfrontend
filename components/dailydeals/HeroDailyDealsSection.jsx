@@ -141,7 +141,7 @@ const HeroDailyDealsSection = ({ messages = [], showViewAll = true, showCreate =
           <div className={`absolute bottom-2 md:bottom-3 right-2 md:right-4 flex items-center gap-2 z-10 ${compact && showCreate ? 'md:hidden' : ''}`}>
             {showCreate && (
               <Link
-                href="/dailydeals/add"
+                href="/dailydeals/manage"
                 className="bg-[#FFF8E1] hover:bg-[#FFECB3] text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
                 style={{ color: '#8B6914' }}
               >

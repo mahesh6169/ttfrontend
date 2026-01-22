@@ -8,9 +8,8 @@ import Link from 'next/link';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
-import CategorySelector from '@/components/shared/CategorySelector';
+import CategorySelector from '@/components/threads/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
-import { threadCategoryOptions } from '@/components/threads/categories';
 import SuccessView from '@/components/threads/SuccessView';
 import AuthorDetailsSection from '@/components/threads/AuthorDetailsSection';
 
@@ -403,7 +402,6 @@ if (createThread.fulfilled.match(resultAction)) {
             <CategorySelector
               value={formData.category}
               onChange={(value) => setFormData({ ...formData, category: value })}
-              categories={threadCategoryOptions}
               placeholder="Select Category"
               required={true}
             />

@@ -1,16 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaChevronDown, FaSearch, FaTimes } from 'react-icons/fa';
+import { CATEGORY_GROUPS } from '@/components/adverts/fieldSystem/CategoryAccess';
 
 const CategorySelector = ({ value, onChange, categories, placeholder = "Select a category", required = false, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedGroups, setExpandedGroups] = useState({ [CATEGORY_GROUPS[0]?.label]: true });
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Filter categories based on search
-  const filteredCategories = categories.filter(category =>
-    category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const toggleGroup = (label) => {
+    setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  // Filter categories based on search and available categories, grouped
+  const filteredGroups = CATEGORY_GROUPS.map((group) => ({
+    label: group.label,
+    categories: group.categories.filter(
+      (cat) =>
+        categories.includes(cat) &&
+        cat.toLowerCase().includes(searchTerm.toLowerCase())
+    ),
+  })).filter((group) => group.categories.length > 0);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -28,7 +39,6 @@ const CategorySelector = ({ value, onChange, categories, placeholder = "Select a
   // Focus search input when dropdown opens (desktop only)
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      // Only auto-focus on desktop (screens wider than 768px)
       if (window.innerWidth >= 768) {
         inputRef.current.focus();
       }
@@ -64,13 +74,13 @@ const CategorySelector = ({ value, onChange, categories, placeholder = "Select a
         </span>
         <div className="flex items-center gap-2">
           {value && !isOpen && !disabled && (
-            <FaTimes 
+            <FaTimes
               className="w-4 h-4 text-gray-400 hover:text-gray-600"
               onClick={handleClear}
             />
           )}
-          <FaChevronDown 
-            className={`w-4 h-4 text-gray-400 transition-transform duration-200 
+          <FaChevronDown
+            className={`w-4 h-4 text-gray-400 transition-transform duration-200
               ${isOpen ? 'transform rotate-180' : ''}`}
           />
         </div>
@@ -89,7 +99,7 @@ const CategorySelector = ({ value, onChange, categories, placeholder = "Select a
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search categories..."
-                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md 
+                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md
                   focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-200"
               />
             </div>
@@ -97,18 +107,37 @@ const CategorySelector = ({ value, onChange, categories, placeholder = "Select a
 
           {/* Category List */}
           <div className="max-h-60 overflow-y-auto">
-            {filteredCategories.length > 0 ? (
-              filteredCategories.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => handleSelect(category)}
-                  className={`w-full px-4 py-3 text-left hover:bg-teal-50 focus:bg-teal-50 
-                    focus:outline-none transition-colors
-                    ${value === category ? 'bg-teal-50 text-teal-700 font-medium' : 'text-gray-700'}`}
-                >
-                  {category}
-                </button>
+            {filteredGroups.length > 0 ? (
+              filteredGroups.map((group) => (
+                <div key={group.label}>
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.label)}
+                    className="w-full px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-y border-gray-200 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                  >
+                    {group.label}
+                    <svg
+                      className={`w-4 h-4 transition-transform ${expandedGroups[group.label] ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {(expandedGroups[group.label] || searchTerm) && group.categories.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => handleSelect(category)}
+                      className={`w-full px-4 py-3 text-left hover:bg-teal-50 focus:bg-teal-50
+                        focus:outline-none transition-colors
+                        ${value === category ? 'bg-teal-50 text-teal-700 font-medium' : 'text-gray-700'}`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
               ))
             ) : (
               <div className="px-4 py-8 text-center text-gray-500">

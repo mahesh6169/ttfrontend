@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AddressInput from '../shared/AddressInput';
 import ImageUploader from '../shared/ImageUploader';
-import CategorySelector from '../shared/CategorySelector';
+import CategorySelector from './CategorySelector';
 import CommunitySelector from '../shared/CommunitySelector';
 import SimpleDropdown from '../shared/SimpleDropdown';
 import FieldSystem from './fieldSystem';

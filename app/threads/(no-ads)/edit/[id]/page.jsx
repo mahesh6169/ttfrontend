@@ -11,9 +11,8 @@ import { toast } from 'react-toastify';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import { useRef } from 'react';
-import CategorySelector from '@/components/shared/CategorySelector';
+import CategorySelector from '@/components/threads/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
-import { threadCategoryOptions } from '@/components/threads/categories';
 import SuccessView from '@/components/threads/SuccessView';
 import AuthorDetailsSection from '@/components/threads/AuthorDetailsSection';
 
@@ -428,7 +427,6 @@ useEffect(() => {
           <CategorySelector
             value={formData.category}
             onChange={(value) => setFormData({ ...formData, category: value })}
-            categories={threadCategoryOptions}
             placeholder="Select Category"
             required={true}
           />

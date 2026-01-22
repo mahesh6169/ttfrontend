@@ -22,6 +22,9 @@ import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import { getCategoryDisplayName } from '@/constants/categories';
 import PromoBanner from '@/components/PromoBanner';
 import HeroListingSection from '@/components/adverts/HeroListingSection';
+import { getCategoriesForRole, CATEGORY_GROUPS } from '@/components/adverts/fieldSystem/CategoryAccess';
+import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
 
 const libraries = ['places'];
 
@@ -30,11 +33,23 @@ const AdvertsPage = () => {
   const { filters, pagination, adverts, meta, status, error, filterOptions } = useSelector((state) => state.searchAdverts);
   
   // Local state for UI
-  const [locationInput, setLocationInput] = useState('');
-  const [autocomplete, setAutocomplete] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchText, setSearchText] = useState(filters.searchText || '');
+
+  // Hero section - category and location picker
+  const [heroCategory, setHeroCategory] = useState('');
+  const [heroLocationInput, setHeroLocationInput] = useState('');
+  const [heroAutocomplete, setHeroAutocomplete] = useState(null);
+  const [heroLocation, setHeroLocation] = useState(null);
+  const [expandedGroups, setExpandedGroups] = useState({ [CATEGORY_GROUPS[0]?.label]: true });
+  const allCategories = getCategoriesForRole('user');
+
+  const toggleGroup = (label, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
+  };
   
   // Modal filter states
   const [tempFilters, setTempFilters] = useState({});
@@ -56,15 +71,10 @@ const sortOptions = [
     setTempFilters({
       categories: [...filters.categories],
       communities: [...filters.communities],
-      location: filters.location,
       state: filters.state || '',
       adType: filters.adType,
       sortBy: filters.sortBy,
     });
-    // Set location input when filter modal opens
-    if (filters.location) {
-      setLocationInput(filters.location.name || '');
-    }
   }, [showFilters, filters]);
 
   // Initial load - fetch filter options
@@ -88,24 +98,6 @@ const sortOptions = [
     }
   }, [filters.searchText]);
 
-  const handlePlaceChanged = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
-      if (place.geometry) {
-        const coordinates = [
-          place.geometry.location.lng(),
-          place.geometry.location.lat()
-        ];
-        dispatch(setLocation({ 
-          coordinates, 
-          radius: 10,
-          name: place.formatted_address || 'Selected Location'
-        }));
-        setLocationInput(place.formatted_address);
-      }
-    }
-  };
-
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
@@ -113,12 +105,48 @@ const sortOptions = [
 
   const handleClearLocation = () => {
     dispatch(updateFilter({ filterType: 'location', value: null }));
-    setLocationInput('');
+    setHeroLocation(null);
+    setHeroLocationInput('');
   };
 
   const handleClearSearch = () => {
     dispatch(updateFilter({ filterType: 'searchText', value: '' }));
     setSearchText('');
+  };
+
+  // Hero section Go button handler
+  const handleHeroGo = () => {
+    // Clear existing filters first
+    dispatch(clearAllFilters());
+
+    // Apply category if selected
+    if (heroCategory) {
+      dispatch(toggleCategory(heroCategory));
+    }
+
+    // Apply location if selected
+    if (heroLocation) {
+      dispatch(setLocation(heroLocation));
+    }
+  };
+
+  // Hero location place changed handler
+  const handleHeroPlaceChanged = () => {
+    if (heroAutocomplete) {
+      const place = heroAutocomplete.getPlace();
+      if (place.geometry) {
+        const coordinates = [
+          place.geometry.location.lng(),
+          place.geometry.location.lat()
+        ];
+        setHeroLocation({
+          coordinates,
+          radius: 10,
+          name: place.formatted_address || 'Selected Location'
+        });
+        setHeroLocationInput(place.formatted_address);
+      }
+    }
   };
 
   // Modal functions
@@ -127,15 +155,13 @@ const sortOptions = [
     setTempFilters({
       categories: [],
       communities: [],
-      location: null,
       state: '',
       adType: null,
       sortBy: 'newest',
     });
-    setLocationInput('');
     // Clear the search text
     setSearchText('');
-    
+
     // Apply the clear action immediately to Redux
     dispatch(clearAllFilters());
   };
@@ -166,7 +192,7 @@ const getCurrentSortLabel = () => {
         }
       });
     }
-    
+
     // Apply communities filter
     if (JSON.stringify(tempFilters.communities) !== JSON.stringify(filters.communities)) {
       filters.communities.forEach(comm => {
@@ -180,23 +206,16 @@ const getCurrentSortLabel = () => {
         }
       });
     }
-    
-    // Apply location filter
-    if (tempFilters.location) {
-      dispatch(setLocation(tempFilters.location));
-    } else if (filters.location && !tempFilters.location) {
-      dispatch(updateFilter({ filterType: 'location', value: null }));
-    }
-    
+
     // Apply state filter
     if (tempFilters.state !== filters.state) {
       dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
     }
-    
+
     // Apply ad type and sort
     dispatch(updateFilter({ filterType: 'adType', value: tempFilters.adType }));
     dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
-    
+
     setShowFilters(false);
   };
 
@@ -278,166 +297,20 @@ const getCurrentSortLabel = () => {
                       if (tempFilters.state === state.code) {
                         setTempFilters({ ...tempFilters, state: '' });
                       } else {
-                        setTempFilters({ ...tempFilters, state: state.code, location: null });
-                        setLocationInput('');
+                        setTempFilters({ ...tempFilters, state: state.code });
                       }
                     }}
                     className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       tempFilters.state === state.code
                         ? 'bg-teal-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    } ${tempFilters.location ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    disabled={!!tempFilters.location}
+                    }`}
                     title={state.name}
                   >
                     {state.code}
                   </button>
                 ))}
               </div>
-              {tempFilters.location && (
-                <p className="text-xs text-gray-500 mt-2">Clear location to use state filter</p>
-              )}
-            </div>
-
-            {/* Location with Radius */}
-            <div className={`mb-4 ${tempFilters.state ? 'opacity-50' : ''}`}>
-              <h3 className="font-semibold text-gray-700 mb-3">Location</h3>
-              {tempFilters.state && (
-                <p className="text-xs text-gray-500 mb-2">Clear state selection to use location filter</p>
-              )}
-              <LoadScriptNext
-                googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-                libraries={libraries}
-                onLoad={() => setIsScriptLoaded(true)}
-              >
-                <div className="relative">
-                  <Autocomplete
-                    onLoad={(autocompleteInstance) => setAutocomplete(autocompleteInstance)}
-                    onPlaceChanged={() => {
-                      if (autocomplete && !tempFilters.state) {
-                        const place = autocomplete.getPlace();
-                        if (place.geometry) {
-                          const coordinates = [
-                            place.geometry.location.lng(),
-                            place.geometry.location.lat()
-                          ];
-                          const location = {
-                            coordinates,
-                            radius: tempFilters.location?.radius || 10,
-                            name: place.formatted_address || 'Selected Location'
-                          };
-                          setTempFilters({ ...tempFilters, location, state: '' });
-                          setLocationInput(place.formatted_address);
-                        }
-                      }
-                    }}
-                    options={{
-                      componentRestrictions: { country: 'au' },
-                      types: ['geocode']
-                    }}
-                  >
-                    <input
-                      type="text"
-                      placeholder="Enter Suburb & Radius of search..."
-                      value={locationInput}
-                      onChange={(e) => setLocationInput(e.target.value)}
-                      className="w-full p-3 pr-10 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      disabled={!!tempFilters.state}
-                    />
-                  </Autocomplete>
-                  {tempFilters.location && (
-                    <button
-                      onClick={() => {
-                        setTempFilters({ ...tempFilters, location: null });
-                        setLocationInput('');
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Clear location"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </LoadScriptNext>
-              
-              {tempFilters.location && (
-                <div className="mt-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-sm text-gray-600">
-                      Search within:
-                    </label>
-                    <span className="text-sm font-medium text-gray-700">
-                      {tempFilters.location.radius} km
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="200"
-                    value={tempFilters.location.radius || 10}
-                    onChange={(e) => {
-                      const radius = parseInt(e.target.value);
-                      setTempFilters({
-                        ...tempFilters,
-                        location: { ...tempFilters.location, radius }
-                      });
-                    }}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer 
-                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 
-                      [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                      [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:bg-teal-700
-                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600 
-                      [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0
-                      [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:bg-teal-700"
-                  />
-                  <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                    <span>1 km</span>
-                    <span>200 km</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Categories */}
-            <div className="mb-4">
-              <h3 className="font-semibold text-gray-700 mb-3">Categories</h3>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
-                <div className="space-y-1 p-2">
-                  {filterOptions.categories.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      No categories available
-                    </p>
-                  ) : (
-                    filterOptions.categories.map((category) => (
-                    <label
-                      key={category}
-                      className="flex items-center cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={tempFilters.categories?.includes(category) || false}
-                        onChange={() => {
-                          const currentCategories = tempFilters.categories || [];
-                          const newCategories = currentCategories.includes(category)
-                            ? currentCategories.filter(c => c !== category)
-                            : [...currentCategories, category];
-                          setTempFilters({ ...tempFilters, categories: newCategories });
-                        }}
-                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{getCategoryDisplayName(category)}</span>
-                    </label>
-                  )))
-                  }
-                </div>
-              </div>
-              {tempFilters.categories?.length > 0 && (
-                <p className="text-xs text-gray-600 mt-1">
-                  {tempFilters.categories.length} selected
-                </p>
-              )}
             </div>
 
             {/* Communities */}
@@ -563,38 +436,345 @@ const getCurrentSortLabel = () => {
             <HeroListingSection showViewAll={false} showCreate={false} compact={true} />
           </div>
 
-          {/* Search Bar inside the curved container */}
+          {/* Category & Location Picker inside the curved container */}
           <div className="relative px-3 sm:px-6 -mt-2 md:mt-0 pb-4">
-            <div className="md:max-w-2xl md:mx-auto">
-              {/* Post Listing: left on desktop, right on mobile */}
-              <div className="flex items-center gap-2 md:gap-3">
+            <div className="md:max-w-3xl md:mx-auto">
+              {/* Mobile Layout - Stacked */}
+              <div className="flex flex-col gap-2 md:hidden">
+                {/* Post Listing Button */}
                 <Link
                   href="/listings/add"
-                  className="order-2 md:order-1 bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-sm font-bold py-2 px-4 md:py-2.5 md:px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                  className="self-start bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-sm font-bold py-2 px-4 rounded-full shadow-sm transition-colors"
                 >
                   + Post Listing
                 </Link>
-                <form onSubmit={handleSearchSubmit} className="flex-1 order-1 md:order-2">
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      placeholder="E.g. Room, Painter, Electrician etc"
-                      className="w-full pl-4 pr-11 py-2 bg-white border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-1.5 bg-teal-600 text-white hover:bg-teal-700 p-2 rounded-full shadow-sm transition-colors"
-                      aria-label="Search"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+
+                {/* Category Dropdown - Headless UI */}
+                <Listbox value={heroCategory} onChange={setHeroCategory}>
+                  <div className="relative">
+                    <ListboxButton className="relative w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all cursor-pointer text-left">
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                       </svg>
-                    </button>
+                      <span className={heroCategory ? 'text-gray-900' : 'text-gray-500'}>
+                        {heroCategory || 'Select Category'}
+                      </span>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                      </svg>
+                    </ListboxButton>
+                    <Transition
+                      as={Fragment}
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                    >
+                      <ListboxOptions
+                        anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                        className="z-50 w-[var(--button-width)] max-h-[var(--anchor-max-height,15rem)] overflow-auto rounded-xl bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none"
+                      >
+                        <ListboxOption
+                          value=""
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                All Categories
+                              </span>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                        {CATEGORY_GROUPS.map((group) => {
+                          const groupCategories = group.categories.filter((cat) => allCategories.includes(cat));
+                          if (groupCategories.length === 0) return null;
+                          return (
+                            <div key={group.label}>
+                              <button
+                                type="button"
+                                onClick={(e) => toggleGroup(group.label, e)}
+                                className="w-full px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-y border-gray-200 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                              >
+                                {group.label}
+                                <svg
+                                  className={`w-4 h-4 transition-transform ${expandedGroups[group.label] ? 'rotate-180' : ''}`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                              {expandedGroups[group.label] && groupCategories.map((cat) => (
+                                <ListboxOption
+                                  key={cat}
+                                  value={cat}
+                                  className={({ active }) =>
+                                    `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
+                                  }
+                                >
+                                  {({ selected }) => (
+                                    <>
+                                      <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                        {cat}
+                                      </span>
+                                      {selected && (
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
+                                </ListboxOption>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </ListboxOptions>
+                    </Transition>
                   </div>
-                </form>
+                </Listbox>
+
+                {/* Location Autocomplete */}
+                <LoadScriptNext
+                  googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                  libraries={libraries}
+                  onLoad={() => setIsScriptLoaded(true)}
+                >
+                  <div className="relative">
+                    <Autocomplete
+                      onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
+                      onPlaceChanged={handleHeroPlaceChanged}
+                      options={{
+                        componentRestrictions: { country: 'au' },
+                        types: ['geocode']
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Enter suburb or city"
+                        value={heroLocationInput}
+                        onChange={(e) => setHeroLocationInput(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      />
+                    </Autocomplete>
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                </LoadScriptNext>
+
+                {/* Radius Slider - shows when location is selected */}
+                {heroLocation && (
+                  <div className="flex items-center gap-2 px-3 -mt-1">
+                    <span className="text-xs text-gray-600">1km</span>
+                    <input
+                      type="range"
+                      min="1"
+                      max="200"
+                      value={heroLocation.radius}
+                      onChange={(e) => setHeroLocation({ ...heroLocation, radius: parseInt(e.target.value) })}
+                      className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
+                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
+                        [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-teal-600
+                        [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                    />
+                    <span className="text-xs text-gray-600">200km</span>
+                  </div>
+                )}
+
+                {/* Go Button */}
+                <button
+                  onClick={handleHeroGo}
+                  className="self-start bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-8 rounded-full shadow-sm transition-colors"
+                >
+                  Go
+                </button>
               </div>
+
+              {/* Desktop Layout - Inline */}
+              <div className="hidden md:flex items-center gap-3">
+                {/* Post Listing Button */}
+                <Link
+                  href="/listings/add"
+                  className="bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-sm font-bold py-2.5 px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                >
+                  + Post Listing
+                </Link>
+
+                {/* Category Dropdown - Headless UI */}
+                <Listbox value={heroCategory} onChange={setHeroCategory}>
+                  <div className="relative flex-1 max-w-[240px]">
+                    <ListboxButton className="relative w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all cursor-pointer text-left">
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                      </svg>
+                      <span className={`block truncate ${heroCategory ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {heroCategory || 'All Categories'}
+                      </span>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                      </svg>
+                    </ListboxButton>
+                    <Transition
+                      as={Fragment}
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                    >
+                      <ListboxOptions
+                        anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                        className="z-50 w-72 max-h-[var(--anchor-max-height,15rem)] overflow-auto rounded-xl bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none"
+                      >
+                        <ListboxOption
+                          value=""
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                All Categories
+                              </span>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                        {CATEGORY_GROUPS.map((group) => {
+                          const groupCategories = group.categories.filter((cat) => allCategories.includes(cat));
+                          if (groupCategories.length === 0) return null;
+                          return (
+                            <div key={group.label}>
+                              <button
+                                type="button"
+                                onClick={(e) => toggleGroup(group.label, e)}
+                                className="w-full px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-y border-gray-200 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                              >
+                                {group.label}
+                                <svg
+                                  className={`w-4 h-4 transition-transform ${expandedGroups[group.label] ? 'rotate-180' : ''}`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                              {expandedGroups[group.label] && groupCategories.map((cat) => (
+                                <ListboxOption
+                                  key={cat}
+                                  value={cat}
+                                  className={({ active }) =>
+                                    `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
+                                  }
+                                >
+                                  {({ selected }) => (
+                                    <>
+                                      <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                        {cat}
+                                      </span>
+                                      {selected && (
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
+                                </ListboxOption>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </ListboxOptions>
+                    </Transition>
+                  </div>
+                </Listbox>
+
+                {/* Location Autocomplete */}
+                <LoadScriptNext
+                  googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                  libraries={libraries}
+                  onLoad={() => setIsScriptLoaded(true)}
+                >
+                  <div className="relative flex-1 max-w-[250px]">
+                    <Autocomplete
+                      onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
+                      onPlaceChanged={handleHeroPlaceChanged}
+                      options={{
+                        componentRestrictions: { country: 'au' },
+                        types: ['geocode']
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Enter suburb or city"
+                        value={heroLocationInput}
+                        onChange={(e) => setHeroLocationInput(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      />
+                    </Autocomplete>
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                </LoadScriptNext>
+
+                {/* Go Button */}
+                <button
+                  onClick={handleHeroGo}
+                  className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 px-6 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                >
+                  Go
+                </button>
+              </div>
+
+              {/* Radius Slider - aligned under location field (Desktop) */}
+              {heroLocation && (
+                <div className="mt-1 flex items-center gap-3">
+                  <div className="w-[100px]"></div>
+                  <div className="flex-1 max-w-[240px]"></div>
+                  <div className="flex-1 max-w-[250px] flex items-center gap-2 px-3">
+                    <span className="text-xs text-gray-600">1km</span>
+                    <input
+                      type="range"
+                      min="1"
+                      max="200"
+                      value={heroLocation.radius}
+                      onChange={(e) => setHeroLocation({ ...heroLocation, radius: parseInt(e.target.value) })}
+                      className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
+                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
+                        [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-teal-600
+                        [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                    />
+                    <span className="text-xs text-gray-600">200km</span>
+                  </div>
+                  <div className="w-[52px]"></div>
+                </div>
+              )}
             </div>
           </div>
         </section>

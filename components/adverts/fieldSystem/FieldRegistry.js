@@ -450,7 +450,7 @@ fields: {
     }
   },
 
-  'Courier & Delivery Services': {
+  'Courier & Delivery': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -460,7 +460,7 @@ fields: {
     ]
   },
 
-  'Taxi & Ride Services': {
+  'Taxi & Ride': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -480,7 +480,7 @@ fields: {
     ]
   },
 
-  'Vehicle Repairs & Services': {
+  'Vehicle Repairs': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -510,7 +510,7 @@ fields: {
     ]
   },
 
-  'Plumbing & Gas Services': {
+  'Plumbing & Gas': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -520,7 +520,7 @@ fields: {
     ]
   },
 
-  'Landscaping & Gardening Services': {
+  'Landscaping & Gardening': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -530,7 +530,7 @@ fields: {
     ]
   },
 
-  'Air Conditioning & Refrigeration Services': {
+  'Air Conditioning & Refrigeration': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -550,7 +550,7 @@ fields: {
     ]
   },
 
-  'Handyman Services': {
+  'Handyman': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -560,7 +560,7 @@ fields: {
     ]
   },
 
-  'Sewing & Alteration Services': {
+  'Sewing & Alteration': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -570,7 +570,7 @@ fields: {
     ]
   },
 
-  'Removalists & Moving Services': {
+  'Removalists & Moving': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -580,7 +580,7 @@ fields: {
     ]
   },
 
-  'Accounting & Taxation Services': {
+  'Accounting & Taxation': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -600,7 +600,7 @@ fields: {
     ]
   },
 
-  'Restaurants & Catering Services': {
+  'Restaurants & Catering': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -620,7 +620,7 @@ fields: {
     ]
   },
 
-  'DJ & Audio Visual Services': {
+  'DJ & Audio Visual': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -640,7 +640,7 @@ fields: {
     ]
   },
 
-  'Decoration Services': {
+  'Decoration': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -650,7 +650,7 @@ fields: {
     ]
   },
 
-  'Party Hires & Services': {
+  'Party Hires': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -660,7 +660,7 @@ fields: {
     ]
   },
 
-  'Cleaning & Maintenance Services': {
+  'Cleaning & Maintenance': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -670,7 +670,7 @@ fields: {
     ]
   },
 
-  'Pest Control Services': {
+  'Pest Control': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -680,7 +680,7 @@ fields: {
     ]
   },
 
-  'Photography & Videography Services': {
+  'Photography & Videography': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -690,7 +690,7 @@ fields: {
     ]
   },
 
-  'Beauty, Hair & Makeup Services': {
+  'Beauty, Hair & Makeup': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -700,7 +700,7 @@ fields: {
     ]
   },
 
-  'Priest & Pooja Services': {
+  'Priest & Pooja': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -710,7 +710,7 @@ fields: {
     ]
   },
 
-  'Babysitting & Childcare Services': {
+  'Babysitting & Childcare': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -740,7 +740,7 @@ fields: {
     ]
   },
 
-  'Legal & Immigration Services': {
+  'Legal & Immigration': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -750,7 +750,7 @@ fields: {
     ]
   },
 
-  'Financial & Insurance Services': {
+  'Financial & Insurance': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -820,7 +820,7 @@ fields: {
     ]
   },
 
-  'Consultation & Professional Services': {
+  'Consultation & Professional': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -830,7 +830,7 @@ fields: {
     ]
   },
 
-  'Construction & Renovation Services': {
+  'Construction & Renovation': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -840,7 +840,7 @@ fields: {
     ]
   },
 
-  'Travel & Tourism Services': {
+  'Travel & Tourism': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -850,7 +850,7 @@ fields: {
     ]
   },
 
-  'Marketing & Advertising Services': {
+  'Marketing & Advertising': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -860,7 +860,7 @@ fields: {
     ]
   },
 
-  'IT & Software Services': {
+  'IT & Software': {
     sections: [
       {
         id: 'serviceDetailsSection',

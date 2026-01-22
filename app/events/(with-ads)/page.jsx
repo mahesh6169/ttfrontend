@@ -25,6 +25,7 @@ import PostEventButton from '@/components/buttons/PostEventButton';
 import { getCategoryDisplayName } from '@/constants/categories';
 import PromoBanner from '@/components/PromoBanner';
 import HeroEventsSection from '@/components/events/HeroEventsSection';
+import CategorySelector from '@/components/events/CategorySelector';
 
 const libraries = ['places'];
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;

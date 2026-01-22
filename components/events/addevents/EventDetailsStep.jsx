@@ -14,9 +14,8 @@ import {
 } from '@/store/slices/events/eventSlice';
 import AddressInput from '@/components/events/addevents/AddressInput';
 import ImageUploader from '@/components/events/addevents/ImageUploader';
-import { CATEGORY_OPTIONS } from '@/components/events/addevents/EventCategories';
 import { zonedTimeToUtc, utcToZonedTime, format } from 'date-fns-tz';
-import CategorySelector from '@/components/shared/CategorySelector';
+import CategorySelector from '@/components/events/CategorySelector';
 import TimezoneSelector from '@/components/shared/TimezoneSelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 
@@ -281,7 +280,6 @@ const EventDetailsStep = ({
           <CategorySelector
             value={formData.category || ''}
             onChange={(value) => handleChange({ target: { name: 'category', value } })}
-            categories={CATEGORY_OPTIONS}
             placeholder="Select a category"
             required={true}
           />
