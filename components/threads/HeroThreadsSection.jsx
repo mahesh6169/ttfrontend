@@ -30,7 +30,7 @@ const HeroThreadsSection = ({ messages = [], showViewAll = true, showCreate = tr
         <div className={`flex-1 p-2 ${compact ? 'md:p-3' : 'md:p-5'} flex items-center justify-center relative z-10`}>
           <div className={`flex flex-col items-center ${compact ? 'gap-1' : 'gap-1 md:gap-2'}`}>
             {/* Forum heading above icons */}
-            <h2 className={`${compact ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'} font-black tracking-wide text-gray-700 drop-shadow-sm`}>Forum</h2>
+            <h2 className={`${compact ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'} font-black tracking-wide drop-shadow-sm`} style={{ color: '#1E3A5F' }}>Forum</h2>
 
             {/* Thread icons and text */}
             <div className={`flex flex-col items-center ${compact ? 'gap-1 md:gap-2' : 'gap-2 md:gap-3'}`}>
@@ -59,7 +59,7 @@ const HeroThreadsSection = ({ messages = [], showViewAll = true, showCreate = tr
               </div>
             </div>
 
-              <p key={currentMessage} className={`${compact ? 'text-xs md:text-lg' : 'text-sm md:text-2xl'} font-extrabold text-gray-700 text-center animate-fade-in leading-tight tracking-tight`} style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+              <p key={currentMessage} className={`${compact ? 'text-xs md:text-lg' : 'text-sm md:text-2xl'} font-extrabold text-center animate-fade-in leading-tight tracking-tight`} style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif', color: '#1E3A5F' }}>
                 {displayMessages[currentMessage]}
               </p>
             </div>

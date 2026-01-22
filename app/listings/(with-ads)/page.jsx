@@ -236,16 +236,17 @@ const getCurrentSortLabel = () => {
       )}
 
       {/* Filter Modal - Mobile and Desktop Overlay */}
-      <div className={`fixed z-50 bg-white rounded-lg shadow-xl overflow-hidden
-        w-full max-w-xl 
-        inset-y-0 right-0 sm:inset-y-auto sm:top-10 sm:bottom-10 sm:left-1/2 sm:right-auto sm:-translate-x-1/2
+      <div className={`fixed z-50 bg-white rounded-lg shadow-xl
+        w-full max-w-xl
+        inset-y-0 right-0
+        sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-h-[85vh]
         transition-all duration-300 ease-in-out
-        ${showFilters 
-          ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto' 
+        overflow-y-auto
+        ${showFilters
+          ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto'
           : 'translate-x-full sm:translate-x-0 sm:opacity-0 sm:scale-95 sm:pointer-events-none'}`}>
 
-        <div className="h-full overflow-y-auto">
-          {/* Modal Header */}
+          {/* Modal Header - Sticky */}
           <div className="sticky top-0 flex items-center justify-between px-4 py-3 bg-white border-b z-10">
             <h2 className="text-lg font-semibold">Filters</h2>
             <div className="flex items-center gap-3">
@@ -265,7 +266,7 @@ const getCurrentSortLabel = () => {
           </div>
 
           {/* Filter Content */}
-          <div className="flex-1 overflow-y-auto p-3 pb-20 sm:pb-3">
+          <div className="p-3">
             {/* State Filter */}
             <div className="mb-4">
               <h3 className="font-semibold text-gray-700 mb-3">State</h3>
@@ -496,16 +497,15 @@ const getCurrentSortLabel = () => {
             </div>
           </div>
 
-          {/* Apply Button */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t sm:sticky">
+          {/* Apply Button - Sticky */}
+          <div className="sticky bottom-0 p-3 bg-white border-t flex justify-center">
             <button
               onClick={applyFilters}
-              className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-3 rounded shadow font-semibold transition-colors"
+              className="px-8 py-2 bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 text-sm rounded shadow font-semibold transition-colors"
             >
               Show results
             </button>
           </div>
-        </div>
       </div>
 
       {/* Main Content */}
@@ -529,30 +529,35 @@ const getCurrentSortLabel = () => {
           className="relative mt-2 md:mt-4 mb-4 mx-0 sm:mx-4 pt-0 pb-4 px-0 sm:pb-6 rounded-none sm:rounded-xl overflow-hidden"
           style={{ background: 'rgb(180, 210, 130)' }}
         >
-          {/* Curved two-tone background - Mobile */}
-          <svg
-            className="absolute top-0 left-0 w-full h-full pointer-events-none md:hidden"
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="none"
-            viewBox="0 0 1440 600"
-          >
-            <path
-              d="M0,200 C360,160 720,240 1080,180 S1440,220 1440,200 L1440,600 L0,600 Z"
-              fill="rgb(235, 245, 193)"
-            />
-          </svg>
-          {/* Curved two-tone background - Desktop */}
-          <svg
-            className="absolute top-0 left-0 w-full h-full pointer-events-none hidden md:block"
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="none"
-            viewBox="0 0 1440 600"
-          >
-            <path
-              d="M0,180 C360,80 720,280 1080,130 S1440,230 1440,180 L1440,600 L0,600 Z"
-              fill="rgb(235, 245, 193)"
-            />
-          </svg>
+          {/* Wave layer 1 - Medium green */}
+          <div className="absolute inset-0 pointer-events-none">
+            <svg
+              className="absolute inset-0 w-full h-full"
+              viewBox="0 0 1000 400"
+              preserveAspectRatio="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0,50 C150,100 300,0 500,50 C700,100 850,0 1000,50 L1000,400 L0,400 Z"
+                fill="rgb(205, 225, 160)"
+              />
+            </svg>
+          </div>
+
+          {/* Wave layer 2 - Lightest green */}
+          <div className="absolute inset-0 pointer-events-none">
+            <svg
+              className="absolute inset-0 w-full h-full"
+              viewBox="0 0 1000 400"
+              preserveAspectRatio="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0,80 C200,130 400,30 600,80 C800,130 900,30 1000,80 L1000,400 L0,400 Z"
+                fill="rgb(235, 245, 193)"
+              />
+            </svg>
+          </div>
 
           <div className="relative p-0 sm:pt-0 sm:pb-2 sm:px-4">
             <HeroListingSection showViewAll={false} showCreate={false} compact={true} />

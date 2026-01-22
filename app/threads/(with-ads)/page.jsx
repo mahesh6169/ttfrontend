@@ -234,16 +234,17 @@ const ThreadsPage = () => {
       )}
 
       {/* Filter Modal - Mobile and Desktop Overlay */}
-      <div className={`fixed z-50 bg-white rounded-lg shadow-xl overflow-hidden
-        w-full max-w-xl 
-        inset-y-0 right-0 sm:inset-y-auto sm:top-10 sm:bottom-10 sm:left-1/2 sm:right-auto sm:-translate-x-1/2
+      <div className={`fixed z-50 bg-white rounded-lg shadow-xl
+        w-full max-w-xl
+        inset-y-0 right-0
+        sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-h-[85vh]
         transition-all duration-300 ease-in-out
-        ${showFilters 
-          ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto' 
+        overflow-y-auto
+        ${showFilters
+          ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto'
           : 'translate-x-full sm:translate-x-0 sm:opacity-0 sm:scale-95 sm:pointer-events-none'}`}>
 
-        <div className="h-full overflow-y-auto">
-          {/* Modal Header */}
+          {/* Modal Header - Sticky */}
           <div className="sticky top-0 flex items-center justify-between p-4 bg-white border-b z-10">
             <h2 className="text-xl font-semibold">Filters</h2>
             <div className="flex items-center gap-4">
@@ -263,7 +264,7 @@ const ThreadsPage = () => {
           </div>
 
           {/* Filter Content */}
-          <div className="p-4 pb-20">
+          <div className="p-4">
             {/* State Filter */}
             <div className="mb-6">
               <h3 className="font-semibold text-gray-700 mb-3">State</h3>
@@ -493,26 +494,25 @@ const ThreadsPage = () => {
             </div>
           </div>
 
-          {/* Apply Button */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t sm:sticky">
+          {/* Apply Button - Sticky */}
+          <div className="sticky bottom-0 p-3 bg-white border-t flex justify-center">
             <button
               onClick={applyFilters}
-              className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-3 rounded shadow font-semibold transition-colors"
+              className="px-8 py-2 bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 text-sm rounded shadow font-semibold transition-colors"
             >
               Show results
             </button>
           </div>
-        </div>
       </div>
 
       {/* Main Content */}
       <div className="w-full">
-        {/* Hero Section with Two-tone Gray Curved Container */}
+        {/* Hero Section with Two-tone Blue Curved Container */}
         <section
           className="relative mt-2 md:mt-4 mb-4 mx-0 sm:mx-4 pt-0 pb-4 px-0 sm:pb-6 rounded-none sm:rounded-xl overflow-hidden"
-          style={{ background: 'rgb(180, 180, 180)' }}
+          style={{ background: '#a3d5ff' }}
         >
-          {/* Wave layer 1 - Lighter gray */}
+          {/* Wave layer 1 - Medium blue */}
           <div className="absolute inset-0 pointer-events-none">
             <svg
               className="absolute inset-0 w-full h-full"
@@ -522,12 +522,12 @@ const ThreadsPage = () => {
             >
               <path
                 d="M0,50 C150,100 300,0 500,50 C700,100 850,0 1000,50 L1000,400 L0,400 Z"
-                fill="rgb(210, 210, 210)"
+                fill="#B1DBFF"
               />
             </svg>
           </div>
 
-          {/* Wave layer 2 - Lightest gray */}
+          {/* Wave layer 2 - Lightest blue */}
           <div className="absolute inset-0 pointer-events-none">
             <svg
               className="absolute inset-0 w-full h-full"
@@ -537,7 +537,7 @@ const ThreadsPage = () => {
             >
               <path
                 d="M0,80 C200,130 400,30 600,80 C800,130 900,30 1000,80 L1000,400 L0,400 Z"
-                fill="rgb(230, 230, 230)"
+                fill="#BFE2FF"
               />
             </svg>
           </div>
@@ -551,7 +551,8 @@ const ThreadsPage = () => {
               {/* Post Topic Button */}
               <Link
                 href="/threads/new"
-                className="order-2 md:order-1 flex-shrink-0 bg-gray-700 hover:bg-gray-800 text-white text-xs md:text-sm font-semibold py-2 px-3 md:py-2.5 md:px-4 rounded-lg shadow-sm transition-colors whitespace-nowrap"
+                className="order-2 md:order-1 flex-shrink-0 bg-[#E8F4FF] hover:bg-[#D0E8FF] text-xs md:text-sm font-semibold py-2 px-3 md:py-2.5 md:px-4 rounded-lg shadow-sm transition-colors whitespace-nowrap"
+                style={{ color: '#1E3A5F' }}
               >
                 + Post Topic
               </Link>
@@ -562,13 +563,17 @@ const ThreadsPage = () => {
                   <input
                     type="text"
                     placeholder="E.g. Visa, Jobs, Housing etc"
-                    className="w-full pl-4 pr-11 py-2 bg-white border border-gray-300 rounded-full text-xs sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
+                    className="w-full pl-4 pr-11 py-2 bg-white border border-gray-300 rounded-full text-xs sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                    style={{ '--tw-ring-color': '#a3d5ff' }}
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                   />
                   <button
                     type="submit"
-                    className="absolute right-1 bg-gray-600 text-white hover:bg-gray-700 p-2 rounded-full shadow-sm transition-colors"
+                    className="absolute right-1 text-white p-2 rounded-full shadow-sm transition-colors"
+                    style={{ backgroundColor: '#a3d5ff' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1E3A5F'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#a3d5ff'}
                     aria-label="Search"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

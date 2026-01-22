@@ -16,7 +16,9 @@ import DealsGrid from '@/components/dailydeals/dealcomponents/DealsGrid';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import PostDealButton from '@/components/buttons/PostDealButton';
+import { getAutocompleteSuggestions, SUGGESTED_SEARCH_TERMS } from '@/utils/dailydeals/categoryMappings';
+import HeroDailyDealsSection from '@/components/dailydeals/HeroDailyDealsSection';
+import Link from 'next/link';
 
 const libraries = ['places'];
 
@@ -42,6 +44,8 @@ const DailyDealsPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchText, setSearchText] = useState(filters.searchText || '');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Temp filters for modal
   const [tempFilters, setTempFilters] = useState({});
@@ -85,7 +89,24 @@ const DailyDealsPage = () => {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    setShowSuggestions(false);
     dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
+  };
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchText(value);
+
+    // Get autocomplete suggestions
+    const suggestions = getAutocompleteSuggestions(value);
+    setSearchSuggestions(suggestions);
+    setShowSuggestions(suggestions.length > 0 && value.length >= 3);
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setSearchText(suggestion);
+    setShowSuggestions(false);
+    dispatch(updateFilter({ filterType: 'searchText', value: suggestion }));
   };
 
   const handleClearLocation = () => {
@@ -185,16 +206,17 @@ const DailyDealsPage = () => {
       )}
 
       {/* Filter Modal */}
-      <div className={`fixed z-50 bg-white rounded-lg shadow-xl overflow-hidden
+      <div className={`fixed z-50 bg-white rounded-lg shadow-xl
         w-full max-w-xl
-        inset-y-0 right-0 sm:inset-y-auto sm:top-10 sm:bottom-10 sm:left-1/2 sm:right-auto sm:-translate-x-1/2
+        inset-y-0 right-0
+        sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-h-[85vh]
         transition-all duration-300 ease-in-out
+        overflow-y-auto
         ${showFilters
           ? 'translate-x-0 sm:opacity-100 sm:scale-100 sm:pointer-events-auto'
           : 'translate-x-full sm:translate-x-0 sm:opacity-0 sm:scale-95 sm:pointer-events-none'}`}>
 
-        <div className="h-full overflow-y-auto">
-          {/* Modal Header */}
+          {/* Modal Header - Sticky */}
           <div className="sticky top-0 flex items-center justify-between px-4 py-3 bg-white border-b z-10">
             <h2 className="text-lg font-semibold">Filters</h2>
             <div className="flex items-center gap-3">
@@ -214,7 +236,7 @@ const DailyDealsPage = () => {
           </div>
 
           {/* Filter Content */}
-          <div className="flex-1 overflow-y-auto p-3 pb-20 sm:pb-3">
+          <div className="p-3">
             {/* Day Filter */}
             <div className="mb-4">
               <h3 className="font-semibold text-gray-700 mb-3">Day of Week</h3>
@@ -407,56 +429,122 @@ const DailyDealsPage = () => {
             </div>
           </div>
 
-          {/* Apply Button */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t sm:sticky">
+          {/* Apply Button - Sticky */}
+          <div className="sticky bottom-0 p-3 bg-white border-t flex justify-center">
             <button
               onClick={applyFilters}
-              className="w-full bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 py-3 rounded shadow font-semibold transition-colors"
+              className="px-8 py-2 bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 text-sm rounded shadow font-semibold transition-colors"
             >
               Show results
             </button>
           </div>
-        </div>
       </div>
 
       {/* Main Content */}
       <div className="w-full">
-        {/* Post Deal Button */}
-        <div className="mt-2 md:mt-4 mb-2 px-4">
-          <PostDealButton />
-        </div>
-
-        {/* Search Bar with Sort/Filter buttons */}
-        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
-          <form onSubmit={handleSearchSubmit} className="mb-3 md:max-w-md md:mx-auto">
-            <div className="relative flex items-center">
-              <svg
-                className="absolute left-4 w-5 h-5 text-gray-400 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search deals..."
-                className="w-full pl-12 pr-14 py-3 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
+        {/* Hero Section with two-tone curved container */}
+        <section
+          className="relative mt-2 md:mt-4 mb-4 mx-0 sm:mx-4 pt-0 pb-4 px-0 sm:pb-6 rounded-none sm:rounded-xl overflow-hidden"
+          style={{ background: '#fad643' }}
+        >
+          {/* Wave layer 1 - Medium yellow */}
+          <div className="absolute inset-0 pointer-events-none">
+            <svg
+              className="absolute inset-0 w-full h-full"
+              viewBox="0 0 1000 400"
+              preserveAspectRatio="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0,50 C150,100 300,0 500,50 C700,100 850,0 1000,50 L1000,400 L0,400 Z"
+                fill="#FBDC5F"
               />
-              <button
-                type="submit"
-                className="absolute right-1.5 bg-teal-600 text-white hover:bg-teal-700 p-2.5 rounded-full shadow-sm transition-colors"
-                aria-label="Search"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            </div>
-          </form>
+            </svg>
+          </div>
 
+          {/* Wave layer 2 - Lightest yellow */}
+          <div className="absolute inset-0 pointer-events-none">
+            <svg
+              className="absolute inset-0 w-full h-full"
+              viewBox="0 0 1000 400"
+              preserveAspectRatio="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0,80 C200,130 400,30 600,80 C800,130 900,30 1000,80 L1000,400 L0,400 Z"
+                fill="#FCE27B"
+              />
+            </svg>
+          </div>
+
+          <div className="relative p-0 sm:pt-0 sm:pb-2 sm:px-4">
+            <HeroDailyDealsSection showViewAll={false} showCreate={false} compact={true} />
+          </div>
+
+          {/* Search Bar inside the curved container */}
+          <div className="relative px-3 sm:px-6 -mt-2 md:mt-0 pb-4">
+            <div className="md:max-w-2xl md:mx-auto">
+              {/* Post Deal: left on desktop, right on mobile */}
+              <div className="flex items-center gap-2 md:gap-3">
+                <Link
+                  href="/dailydeals/add"
+                  className="order-2 md:order-1 bg-[#FFF8E1] hover:bg-[#FFECB3] text-sm font-bold py-2 px-4 md:py-2.5 md:px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                  style={{ color: '#8B6914' }}
+                >
+                  + Post Deal
+                </Link>
+                <form onSubmit={handleSearchSubmit} className="flex-1 order-1 md:order-2">
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      placeholder="E.g. Restaurant, Salon, Grocery etc"
+                      className="w-full pl-4 pr-11 py-2 bg-white border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                      style={{ '--tw-ring-color': '#fad643' }}
+                      value={searchText}
+                      onChange={handleSearchInputChange}
+                      onFocus={() => searchSuggestions.length > 0 && setShowSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-1.5 text-white p-2 rounded-full shadow-sm transition-colors"
+                      style={{ backgroundColor: '#fad643' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8B6914'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fad643'}
+                      aria-label="Search"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </button>
+
+                    {/* Autocomplete Suggestions Dropdown */}
+                    {showSuggestions && searchSuggestions.length > 0 && (
+                      <div className="absolute z-50 w-full top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                        {searchSuggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-yellow-50 transition-colors flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <span>{suggestion}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Page Controls - Sort and Filter */}
+        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
           {/* Filter and Sort buttons */}
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
@@ -593,7 +681,44 @@ const DailyDealsPage = () => {
 
         {/* Results */}
         <div className="px-3 sm:px-4 mt-4">
-          <DealsGrid deals={deals} dealStatus={status} />
+          {/* Empty state with suggestions when search returns no results */}
+          {status === 'success' && deals.length === 0 && filters.searchText ? (
+            <div className="text-center py-12">
+              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <p className="text-gray-600 text-lg mb-2">No matching stores found for "{filters.searchText}"</p>
+              <p className="text-gray-500 text-sm mb-4">Try searching for:</p>
+              <div className="flex flex-wrap justify-center gap-2 mb-6">
+                {SUGGESTED_SEARCH_TERMS.map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => handleSuggestionClick(term)}
+                    className="px-3 py-1.5 bg-teal-50 text-teal-700 rounded-full text-sm hover:bg-teal-100 transition-colors"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+              <div className="border-t border-gray-200 pt-6">
+                <p className="text-gray-500 text-sm mb-3">Or browse by category</p>
+                <button
+                  onClick={() => {
+                    handleClearSearch();
+                    setShowFilters(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  Open Filters
+                </button>
+              </div>
+            </div>
+          ) : (
+            <DealsGrid deals={deals} dealStatus={status} />
+          )}
         </div>
 
         {/* Pagination */}

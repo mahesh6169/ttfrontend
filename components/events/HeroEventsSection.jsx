@@ -75,7 +75,7 @@ const HeroEventsSection = ({ messages = [], showViewAll = true, showCreate = tru
         <div className={`flex-1 p-2 ${compact ? 'md:p-3' : 'md:p-5'} flex items-center justify-center relative z-10`}>
           <div className={`flex flex-col items-center ${compact ? 'gap-1' : 'gap-1 md:gap-2'}`}>
             {/* Events heading above icons */}
-            <h2 className={`${compact ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'} font-black tracking-wide text-purple-700 drop-shadow-sm`}>Events</h2>
+            <h2 className={`${compact ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'} font-black tracking-wide drop-shadow-sm`} style={{ color: '#4A1D68' }}>Events</h2>
 
             {/* Event icons and text */}
             <div className={`flex flex-col items-center ${compact ? 'gap-1 md:gap-2' : 'gap-2 md:gap-3'}`}>
@@ -107,7 +107,7 @@ const HeroEventsSection = ({ messages = [], showViewAll = true, showCreate = tru
               </div>
             </div>
 
-              <p key={currentMessage} className={`${compact ? 'text-xs md:text-lg' : 'text-sm md:text-2xl'} font-extrabold text-purple-700 text-center animate-fade-in leading-tight tracking-tight`} style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+              <p key={currentMessage} className={`${compact ? 'text-xs md:text-lg' : 'text-sm md:text-2xl'} font-extrabold text-center animate-fade-in leading-tight tracking-tight`} style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif', color: '#4A1D68' }}>
                 {displayMessages[currentMessage]}
               </p>
             </div>
@@ -161,7 +161,8 @@ const HeroEventsSection = ({ messages = [], showViewAll = true, showCreate = tru
             {showCreate && (
               <Link
                 href="/events/add"
-                className="bg-[#f5eef5] hover:bg-[#efe5ef] text-purple-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
+                className="bg-[#f5eef5] hover:bg-[#efe5ef] text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
+                style={{ color: '#4A1D68' }}
               >
                 + Create
               </Link>
@@ -169,7 +170,8 @@ const HeroEventsSection = ({ messages = [], showViewAll = true, showCreate = tru
             {showViewAll && (
               <Link
                 href="/events"
-                className="bg-[#f5eef5] hover:bg-[#efe5ef] text-purple-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
+                className="bg-[#f5eef5] hover:bg-[#efe5ef] text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
+                style={{ color: '#4A1D68' }}
               >
                 View All
               </Link>
