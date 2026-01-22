@@ -25,7 +25,9 @@ import PostEventButton from '@/components/buttons/PostEventButton';
 import { getCategoryDisplayName } from '@/constants/categories';
 import PromoBanner from '@/components/PromoBanner';
 import HeroEventsSection from '@/components/events/HeroEventsSection';
-import CategorySelector from '@/components/events/CategorySelector';
+import { CATEGORY_OPTIONS } from '@/components/events/addevents/EventCategories';
+import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
 
 const libraries = ['places'];
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -54,11 +56,13 @@ const EventsPage = () => {
   const { filters, pagination, events, meta, status, error, filterOptions } = useSelector((state) => state.searchEvents);
   
   // Local state for UI
-  const [locationInput, setLocationInput] = useState('');
-  const [autocomplete, setAutocomplete] = useState(null);
+  const [heroAutocomplete, setHeroAutocomplete] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [searchText, setSearchText] = useState(filters.searchText || '');
+  const [heroCategory, setHeroCategory] = useState('');
+  const [heroLocationInput, setHeroLocationInput] = useState('');
+  const [heroLocation, setHeroLocation] = useState(null);
+  const [heroRadius, setHeroRadius] = useState(60);
   
   // Modal filter states
   const [tempFilters, setTempFilters] = useState({});
@@ -74,17 +78,11 @@ const EventsPage = () => {
   // Initialize temporary filters
   useEffect(() => {
     setTempFilters({
-      categories: [...filters.categories],
       communities: [...filters.communities],
-      location: filters.location,
       state: filters.state || '',
       month: filters.month,
       sortBy: filters.sortBy,
     });
-    // Set location input when filter modal opens
-    if (filters.location) {
-      setLocationInput(filters.location.name || '');
-    }
   }, [showFilters, filters]);
 
   // Initial load - fetch filter options
@@ -101,37 +99,54 @@ const EventsPage = () => {
     dispatch(searchEvents());
   }, [filters, pagination.page, dispatch]);
 
-  const handlePlaceChanged = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
+  // Sync hero category with Redux filters - reset when category is cleared from active filters
+  useEffect(() => {
+    if (heroCategory && !filters.categories.includes(heroCategory)) {
+      setHeroCategory('');
+    }
+  }, [filters.categories]);
+
+  // Sync hero location with Redux filters - reset when location is cleared from active filters
+  useEffect(() => {
+    if (!filters.location && heroLocation) {
+      setHeroLocation(null);
+      setHeroLocationInput('');
+    }
+  }, [filters.location]);
+
+  const handleHeroSearch = () => {
+    // Apply category filter
+    if (heroCategory && !filters.categories.includes(heroCategory)) {
+      dispatch(toggleCategory(heroCategory));
+    }
+    // Apply location filter
+    if (heroLocation) {
+      dispatch(setLocation({ ...heroLocation, radius: heroRadius }));
+    }
+  };
+
+  const handleHeroPlaceChanged = () => {
+    if (heroAutocomplete) {
+      const place = heroAutocomplete.getPlace();
       if (place.geometry) {
         const coordinates = [
           place.geometry.location.lng(),
           place.geometry.location.lat()
         ];
-        dispatch(setLocation({ 
-          coordinates, 
-          radius: 60,
+        setHeroLocation({
+          coordinates,
+          radius: heroRadius,
           name: place.formatted_address || 'Selected Location'
-        }));
-        setLocationInput(place.formatted_address);
+        });
+        setHeroLocationInput(place.formatted_address);
       }
     }
   };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
-  };
-
   const handleClearLocation = () => {
     dispatch(updateFilter({ filterType: 'location', value: null }));
-    setLocationInput('');
-  };
-
-  const handleClearSearch = () => {
-    dispatch(updateFilter({ filterType: 'searchText', value: '' }));
-    setSearchText('');
+    setHeroLocationInput('');
+    setHeroLocation(null);
   };
 
   const handleClearMonth = () => {
@@ -141,14 +156,11 @@ const EventsPage = () => {
   // Modal functions
   const handleClearAllTempFilters = () => {
     setTempFilters({
-      categories: [],
       communities: [],
-      location: null,
       state: '',
       month: '',
       sortBy: 'date',
     });
-    setLocationInput('');
   };
 
   // Function to handle sort changes
@@ -164,20 +176,6 @@ const EventsPage = () => {
   };
 
   const applyFilters = () => {
-    // Apply all temporary filters to the store
-    if (JSON.stringify(tempFilters.categories) !== JSON.stringify(filters.categories)) {
-      filters.categories.forEach(cat => {
-        if (!tempFilters.categories.includes(cat)) {
-          dispatch(toggleCategory(cat));
-        }
-      });
-      tempFilters.categories.forEach(cat => {
-        if (!filters.categories.includes(cat)) {
-          dispatch(toggleCategory(cat));
-        }
-      });
-    }
-    
     // Apply communities filter
     if (JSON.stringify(tempFilters.communities) !== JSON.stringify(filters.communities)) {
       filters.communities.forEach(comm => {
@@ -191,33 +189,22 @@ const EventsPage = () => {
         }
       });
     }
-    
-    // Apply location filter
-    if (tempFilters.location) {
-      dispatch(setLocation(tempFilters.location));
-    } else if (filters.location && !tempFilters.location) {
-      dispatch(updateFilter({ filterType: 'location', value: null }));
-    }
-    
+
     // Apply state filter
     if (tempFilters.state !== filters.state) {
       dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
     }
-    
+
     // Apply month filter
     if (tempFilters.month !== filters.month) {
       dispatch(setMonth(tempFilters.month || ''));
     }
-    
+
     // Apply sort
     dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
-    
+
     setShowFilters(false);
   };
-
-  useEffect(() => {
-    setSearchText(filters.searchText || '');
-  }, [filters.searchText]);
 
   useEffect(() => {
     if (status === 'failed' && error) {
@@ -231,7 +218,6 @@ const EventsPage = () => {
     if (filters.communities.length > 0) count++;
     if (filters.location) count++;
     if (filters.state) count++;
-    if (filters.searchText) count++;
     if (filters.month) count++;
     return count;
   };
@@ -252,7 +238,7 @@ const EventsPage = () => {
   };
 
   return (
-    <div className="flex flex-col relative">
+    <div className="flex flex-col relative min-h-[calc(100vh-180px)]">
       {/* Modal Overlay */}
       {showFilters && (
         <div 
@@ -321,166 +307,20 @@ const EventsPage = () => {
                       if (tempFilters.state === state.code) {
                         setTempFilters({ ...tempFilters, state: '' });
                       } else {
-                        setTempFilters({ ...tempFilters, state: state.code, location: null });
-                        setLocationInput('');
+                        setTempFilters({ ...tempFilters, state: state.code });
                       }
                     }}
                     className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       tempFilters.state === state.code
                         ? 'bg-teal-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    } ${tempFilters.location ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    disabled={!!tempFilters.location}
+                    }`}
                     title={state.name}
                   >
                     {state.code}
                   </button>
                 ))}
               </div>
-              {tempFilters.location && (
-                <p className="text-xs text-gray-500 mt-2">Clear location to use state filter</p>
-              )}
-            </div>
-
-            {/* Location with Radius */}
-            <div className={`mb-6 ${tempFilters.state ? 'opacity-50' : ''}`}>
-              <h3 className="font-semibold text-gray-700 mb-3">Location</h3>
-              {tempFilters.state && (
-                <p className="text-xs text-gray-500 mb-2">Clear state selection to use location filter</p>
-              )}
-              <LoadScriptNext
-                googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-                libraries={libraries}
-                onLoad={() => setIsScriptLoaded(true)}
-              >
-                <div className="relative">
-                  <Autocomplete
-                    onLoad={(autocompleteInstance) => setAutocomplete(autocompleteInstance)}
-                    onPlaceChanged={() => {
-                      if (autocomplete && !tempFilters.state) {
-                        const place = autocomplete.getPlace();
-                        if (place.geometry) {
-                          const coordinates = [
-                            place.geometry.location.lng(),
-                            place.geometry.location.lat()
-                          ];
-                          const location = {
-                            coordinates,
-                            radius: tempFilters.location?.radius || 60,
-                            name: place.formatted_address || 'Selected Location'
-                          };
-                          setTempFilters({ ...tempFilters, location, state: '' });
-                          setLocationInput(place.formatted_address);
-                        }
-                      }
-                    }}
-                    options={{
-                      componentRestrictions: { country: 'au' },
-                      types: ['geocode']
-                    }}
-                  >
-                    <input
-                      type="text"
-                      placeholder="Enter location..."
-                      value={locationInput}
-                      onChange={(e) => setLocationInput(e.target.value)}
-                      className="w-full p-3 pr-10 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      disabled={!!tempFilters.state}
-                    />
-                  </Autocomplete>
-                  {tempFilters.location && (
-                    <button
-                      onClick={() => {
-                        setTempFilters({ ...tempFilters, location: null });
-                        setLocationInput('');
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Clear location"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </LoadScriptNext>
-              
-              {tempFilters.location && (
-                <div className="mt-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-sm text-gray-600">
-                      Search within:
-                    </label>
-                    <span className="text-sm font-medium text-gray-700">
-                      {tempFilters.location.radius} km
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="200"
-                    value={tempFilters.location.radius || 60}
-                    onChange={(e) => {
-                      const radius = parseInt(e.target.value);
-                      setTempFilters({
-                        ...tempFilters,
-                        location: { ...tempFilters.location, radius }
-                      });
-                    }}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer 
-                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 
-                      [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                      [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:bg-teal-700
-                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600 
-                      [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0
-                      [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:bg-teal-700"
-                  />
-                  <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                    <span>1 km</span>
-                    <span>200 km</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Categories */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-700 mb-3">Categories</h3>
-              <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
-                <div className="space-y-2 p-2">
-                  {!filterOptions.categories || filterOptions.categories.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      No categories available
-                    </p>
-                  ) : (
-                    filterOptions.categories.map((category) => (
-                    <label
-                      key={category}
-                      className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={tempFilters.categories?.includes(category) || false}
-                        onChange={() => {
-                          const currentCategories = tempFilters.categories || [];
-                          const newCategories = currentCategories.includes(category)
-                            ? currentCategories.filter(c => c !== category)
-                            : [...currentCategories, category];
-                          setTempFilters({ ...tempFilters, categories: newCategories });
-                        }}
-                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
-                      />
-                      <span className="ml-3 text-gray-700">{getCategoryDisplayName(category)}</span>
-                    </label>
-                  )))
-                  }
-                </div>
-              </div>
-              {tempFilters.categories?.length > 0 && (
-                <p className="text-sm text-gray-600 mt-2">
-                  {tempFilters.categories.length} selected
-                </p>
-              )}
             </div>
 
             {/* Communities */}
@@ -570,43 +410,208 @@ const EventsPage = () => {
             <HeroEventsSection showViewAll={false} showCreate={false} compact={true} />
           </div>
 
-          {/* Search Bar inside the curved container */}
+          {/* Hero Controls */}
           <div className="relative px-3 sm:px-6 -mt-2 md:mt-0 pb-4">
-            <div className="md:max-w-2xl md:mx-auto">
-              {/* Post Event: left on desktop, right on mobile */}
-              <div className="flex items-center gap-2 md:gap-3">
+            {/* Mobile: Post Event at top left */}
+            <div className="md:hidden mb-3">
+              <Link
+                href="/events/add"
+                className="inline-flex bg-[#f5eef5] hover:bg-[#efe5ef] text-sm font-bold py-2 px-4 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                style={{ color: '#4A1D68' }}
+              >
+                + Post Event
+              </Link>
+            </div>
+
+            <div className="md:max-w-4xl md:mx-auto">
+              {/* Desktop: All in one row */}
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                {/* Post Event - Desktop only */}
                 <Link
                   href="/events/add"
-                  className="order-2 md:order-1 bg-[#f5eef5] hover:bg-[#efe5ef] text-sm font-bold py-2 px-4 md:py-2.5 md:px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                  className="hidden md:inline-flex bg-[#f5eef5] hover:bg-[#efe5ef] text-sm font-bold py-2.5 px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
                   style={{ color: '#4A1D68' }}
                 >
                   + Post Event
                 </Link>
-                <form onSubmit={handleSearchSubmit} className="flex-1 order-1 md:order-2">
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      placeholder="E.g. Concert, Dance, Comedy etc"
-                      className="w-full pl-4 pr-11 py-2 bg-white border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                      style={{ '--tw-ring-color': '#a874d2' }}
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-1.5 text-white p-2 rounded-full shadow-sm transition-colors"
-                      style={{ backgroundColor: '#a874d2' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4A1D68'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#a874d2'}
-                      aria-label="Search"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+
+                {/* Category Dropdown - Headless UI */}
+                <Listbox value={heroCategory} onChange={setHeroCategory}>
+                  <div className="relative flex-1 md:flex-initial md:w-56">
+                    <ListboxButton className="relative w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer text-left">
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                       </svg>
-                    </button>
+                      <span className={heroCategory ? 'text-gray-900' : 'text-gray-500'}>
+                        {heroCategory || 'Select Category'}
+                      </span>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                      </svg>
+                    </ListboxButton>
+                    <Transition
+                      as={Fragment}
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                    >
+                      <ListboxOptions
+                        anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                        className="z-50 w-[var(--button-width)] max-h-[var(--anchor-max-height,15rem)] overflow-auto rounded-xl bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none"
+                      >
+                        <ListboxOption
+                          value=""
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-purple-50 text-purple-900' : 'text-gray-900'}`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                All Categories
+                              </span>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-purple-600">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                        {CATEGORY_OPTIONS.map((cat) => (
+                          <ListboxOption
+                            key={cat}
+                            value={cat}
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-purple-50 text-purple-900' : 'text-gray-900'}`
+                            }
+                          >
+                            {({ selected }) => (
+                              <>
+                                <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                  {cat}
+                                </span>
+                                {selected && (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-purple-600">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </ListboxOption>
+                        ))}
+                      </ListboxOptions>
+                    </Transition>
                   </div>
-                </form>
+                </Listbox>
+
+                {/* Location Input */}
+                <LoadScriptNext
+                  googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                  libraries={libraries}
+                  onLoad={() => setIsScriptLoaded(true)}
+                  loadingElement={
+                    <div className="relative flex-1 md:flex-initial md:w-64">
+                      <div className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-full animate-pulse">
+                        <div className="h-5 bg-gray-300 rounded w-32"></div>
+                      </div>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                  }
+                >
+                  <div className="relative flex-1 md:flex-initial md:w-64">
+                    <Autocomplete
+                      onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
+                      onPlaceChanged={handleHeroPlaceChanged}
+                      options={{
+                        componentRestrictions: { country: 'au' },
+                        types: ['geocode']
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Enter suburb or city"
+                        value={heroLocationInput}
+                        onChange={(e) => setHeroLocationInput(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      />
+                    </Autocomplete>
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                </LoadScriptNext>
+
+                {/* Go Button */}
+                <button
+                  onClick={handleHeroSearch}
+                  className="w-full md:w-auto px-6 py-2.5 text-white font-semibold rounded-full shadow-sm transition-colors"
+                  style={{ backgroundColor: '#4A1D68' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3a1554'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4A1D68'}
+                >
+                  Go
+                </button>
               </div>
+
+              {/* Radius slider - appears when location is selected */}
+              {heroLocation && (
+                <>
+                  {/* Mobile slider */}
+                  <div className="md:hidden mt-2">
+                    <div className="flex items-center gap-2 px-3">
+                      <span className="text-xs text-white/80">1km</span>
+                      <input
+                        type="range"
+                        min="1"
+                        max="200"
+                        value={heroRadius}
+                        onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                        className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
+                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
+                          [&::-webkit-slider-thumb]:bg-purple-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                          [&::-webkit-slider-thumb]:shadow-md
+                          [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-purple-600
+                          [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                      />
+                      <span className="text-xs text-white/80 min-w-[40px] text-right">{heroRadius}km</span>
+                    </div>
+                  </div>
+                  {/* Desktop slider - aligned under location */}
+                  <div className="hidden md:flex mt-1 items-center gap-3">
+                    {/* Spacer for Post Event button */}
+                    <div className="w-[108px]"></div>
+                    {/* Spacer for Category dropdown */}
+                    <div className="w-56"></div>
+                    {/* Slider aligned with location input */}
+                    <div className="w-64 flex items-center gap-2 px-3">
+                      <span className="text-xs text-white/80">1km</span>
+                      <input
+                        type="range"
+                        min="1"
+                        max="200"
+                        value={heroRadius}
+                        onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                        className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
+                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
+                          [&::-webkit-slider-thumb]:bg-purple-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                          [&::-webkit-slider-thumb]:shadow-md
+                          [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-purple-600
+                          [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                      />
+                      <span className="text-xs text-white/80 min-w-[40px] text-right">{heroRadius}km</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -712,18 +717,6 @@ const EventsPage = () => {
                       {filters.location.radius}km from {filters.location.name.split(',')[0]}
                       <button
                         onClick={handleClearLocation}
-                        className="hover:text-gray-900 font-bold ml-1"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
-
-                  {filters.searchText && (
-                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
-                      Search: "{filters.searchText}"
-                      <button
-                        onClick={handleClearSearch}
                         className="hover:text-gray-900 font-bold ml-1"
                       >
                         ×

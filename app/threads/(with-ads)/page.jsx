@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { 
-  searchThreads, 
+import {
+  searchThreads,
   fetchFilterOptions,
   toggleCategory,
   toggleCommunity,
@@ -24,6 +24,7 @@ import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import BottomAd from '@/components/ads/BottomAd';
 import { getCategoryDisplayName } from '@/constants/categories';
 import HeroThreadsSection from '@/components/threads/HeroThreadsSection';
+import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 
 const libraries = ['places'];
 
@@ -39,7 +40,14 @@ const ThreadsPage = () => {
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchText, setSearchText] = useState(filters.searchText || '');
-  
+
+  // Hero section state
+  const [heroCategory, setHeroCategory] = useState('');
+  const [heroLocationInput, setHeroLocationInput] = useState('');
+  const [heroAutocomplete, setHeroAutocomplete] = useState(null);
+  const [heroLocation, setHeroLocation] = useState(null);
+  const [heroRadius, setHeroRadius] = useState(50);
+
   // Modal filter states
   const [tempFilters, setTempFilters] = useState({});
 
@@ -66,16 +74,10 @@ const ThreadsPage = () => {
   // Initialize temporary filters
   useEffect(() => {
     setTempFilters({
-      categories: [...filters.categories],
       communities: [...filters.communities],
-      location: filters.location,
       state: filters.state || '',
       sortBy: filters.sortBy,
     });
-    // Set location input when filter modal opens
-    if (filters.location) {
-      setLocationInput(filters.location.name || '');
-    }
   }, [showFilters, filters]);
 
   // Initial load - fetch filter options
@@ -98,6 +100,56 @@ const ThreadsPage = () => {
   useEffect(() => {
     dispatch(searchThreads());
   }, [filters, pagination.page, dispatch]);
+
+  // Sync hero category with Redux filters - reset when category is cleared from active filters
+  useEffect(() => {
+    if (heroCategory && !filters.categories.includes(heroCategory)) {
+      setHeroCategory('');
+    }
+  }, [filters.categories]);
+
+  // Sync hero location with Redux filters - reset when location is cleared from active filters
+  useEffect(() => {
+    if (!filters.location && heroLocation) {
+      setHeroLocation(null);
+      setHeroLocationInput('');
+    }
+  }, [filters.location]);
+
+  // Hero Go button handler
+  const handleHeroGo = () => {
+    // Apply category if selected
+    if (heroCategory && !filters.categories.includes(heroCategory)) {
+      dispatch(toggleCategory(heroCategory));
+    }
+    // Apply location if selected
+    if (heroLocation) {
+      dispatch(setLocation({ ...heroLocation, radius: heroRadius }));
+    }
+    // Apply search text
+    if (searchText) {
+      dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
+    }
+  };
+
+  // Hero location place changed handler
+  const handleHeroPlaceChanged = () => {
+    if (heroAutocomplete) {
+      const place = heroAutocomplete.getPlace();
+      if (place.geometry) {
+        const coordinates = [
+          place.geometry.location.lng(),
+          place.geometry.location.lat()
+        ];
+        setHeroLocation({
+          coordinates,
+          radius: heroRadius,
+          name: place.formatted_address || 'Selected Location'
+        });
+        setHeroLocationInput(place.formatted_address);
+      }
+    }
+  };
 
   const handlePlaceChanged = () => {
     if (autocomplete) {
@@ -135,13 +187,10 @@ const ThreadsPage = () => {
   // Modal functions
   const handleClearAllTempFilters = () => {
     setTempFilters({
-      categories: [],
       communities: [],
-      location: null,
       state: '',
       sortBy: 'newest',
     });
-    setLocationInput('');
   };
 
   // Function to handle sort changes
@@ -157,20 +206,6 @@ const ThreadsPage = () => {
   };
 
   const applyFilters = () => {
-    // Apply all temporary filters to the store
-    if (JSON.stringify(tempFilters.categories) !== JSON.stringify(filters.categories)) {
-      filters.categories.forEach(cat => {
-        if (!tempFilters.categories.includes(cat)) {
-          dispatch(toggleCategory(cat));
-        }
-      });
-      tempFilters.categories.forEach(cat => {
-        if (!filters.categories.includes(cat)) {
-          dispatch(toggleCategory(cat));
-        }
-      });
-    }
-    
     // Apply communities filter
     if (JSON.stringify(tempFilters.communities) !== JSON.stringify(filters.communities)) {
       filters.communities.forEach(comm => {
@@ -184,22 +219,15 @@ const ThreadsPage = () => {
         }
       });
     }
-    
-    // Apply location filter
-    if (tempFilters.location) {
-      dispatch(setLocation(tempFilters.location));
-    } else if (filters.location && !tempFilters.location) {
-      dispatch(updateFilter({ filterType: 'location', value: null }));
-    }
-    
+
     // Apply state filter
     if (tempFilters.state !== filters.state) {
       dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
     }
-    
+
     // Apply sort
     dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
-    
+
     setShowFilters(false);
   };
 
@@ -224,7 +252,7 @@ const ThreadsPage = () => {
   };
 
   return (
-    <div className="flex flex-col relative">
+    <div className="flex flex-col relative min-h-[calc(100vh-180px)]">
       {/* Modal Overlay */}
       {showFilters && (
         <div 
@@ -245,9 +273,9 @@ const ThreadsPage = () => {
           : 'translate-x-full sm:translate-x-0 sm:opacity-0 sm:scale-95 sm:pointer-events-none'}`}>
 
           {/* Modal Header - Sticky */}
-          <div className="sticky top-0 flex items-center justify-between p-4 bg-white border-b z-10">
-            <h2 className="text-xl font-semibold">Filters</h2>
-            <div className="flex items-center gap-4">
+          <div className="sticky top-0 flex items-center justify-between px-4 py-3 bg-white border-b z-10">
+            <h2 className="text-lg font-semibold">Filters</h2>
+            <div className="flex items-center gap-3">
               <button
                 onClick={handleClearAllTempFilters}
                 className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
@@ -256,7 +284,7 @@ const ThreadsPage = () => {
               </button>
               <button
                 onClick={() => setShowFilters(false)}
-                className="text-2xl text-gray-600 hover:text-gray-800 transition-colors"
+                className="text-xl text-gray-600 hover:text-gray-800 transition-colors"
               >
                 ×
               </button>
@@ -264,9 +292,9 @@ const ThreadsPage = () => {
           </div>
 
           {/* Filter Content */}
-          <div className="p-4">
+          <div className="p-3">
             {/* State Filter */}
-            <div className="mb-6">
+            <div className="mb-4">
               <h3 className="font-semibold text-gray-700 mb-3">State</h3>
               <div className="grid grid-cols-4 gap-2">
                 {AUSTRALIAN_STATES.map(state => (
@@ -276,172 +304,26 @@ const ThreadsPage = () => {
                       if (tempFilters.state === state.code) {
                         setTempFilters({ ...tempFilters, state: '' });
                       } else {
-                        setTempFilters({ ...tempFilters, state: state.code, location: null });
-                        setLocationInput('');
+                        setTempFilters({ ...tempFilters, state: state.code });
                       }
                     }}
                     className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       tempFilters.state === state.code
-                        ? 'bg-teal-500 text-white'
+                        ? 'bg-blue-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    } ${tempFilters.location ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    disabled={!!tempFilters.location}
+                    }`}
                     title={state.name}
                   >
                     {state.code}
                   </button>
                 ))}
               </div>
-              {tempFilters.location && (
-                <p className="text-xs text-gray-500 mt-2">Clear location to use state filter</p>
-              )}
-            </div>
-
-            {/* Location with Radius */}
-            <div className={`mb-6 ${tempFilters.state ? 'opacity-50' : ''}`}>
-              <h3 className="font-semibold text-gray-700 mb-3">Location</h3>
-              {tempFilters.state && (
-                <p className="text-xs text-gray-500 mb-2">Clear state selection to use location filter</p>
-              )}
-              <LoadScriptNext
-                googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-                libraries={libraries}
-                onLoad={() => setIsScriptLoaded(true)}
-              >
-                <div className="relative">
-                  <Autocomplete
-                    onLoad={(autocompleteInstance) => setAutocomplete(autocompleteInstance)}
-                    onPlaceChanged={() => {
-                      if (autocomplete && !tempFilters.state) {
-                        const place = autocomplete.getPlace();
-                        if (place.geometry) {
-                          const coordinates = [
-                            place.geometry.location.lng(),
-                            place.geometry.location.lat()
-                          ];
-                          const location = {
-                            coordinates,
-                            radius: tempFilters.location?.radius || 10,
-                            name: place.formatted_address || 'Selected Location'
-                          };
-                          setTempFilters({ ...tempFilters, location, state: '' });
-                          setLocationInput(place.formatted_address);
-                        }
-                      }
-                    }}
-                    options={{
-                      componentRestrictions: { country: 'au' },
-                      types: ['geocode']
-                    }}
-                  >
-                    <input
-                      type="text"
-                      placeholder="Enter location..."
-                      value={locationInput}
-                      onChange={(e) => setLocationInput(e.target.value)}
-                      className="w-full p-3 pr-10 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      disabled={!!tempFilters.state}
-                    />
-                  </Autocomplete>
-                  {tempFilters.location && (
-                    <button
-                      onClick={() => {
-                        setTempFilters({ ...tempFilters, location: null });
-                        setLocationInput('');
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Clear location"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </LoadScriptNext>
-              
-              {tempFilters.location && (
-                <div className="mt-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-sm text-gray-600">
-                      Search within:
-                    </label>
-                    <span className="text-sm font-medium text-gray-700">
-                      {tempFilters.location.radius} km
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="200"
-                    value={tempFilters.location.radius || 10}
-                    onChange={(e) => {
-                      const radius = parseInt(e.target.value);
-                      setTempFilters({
-                        ...tempFilters,
-                        location: { ...tempFilters.location, radius }
-                      });
-                    }}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer 
-                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 
-                      [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                      [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:bg-teal-700
-                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600 
-                      [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0
-                      [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:bg-teal-700"
-                  />
-                  <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                    <span>1 km</span>
-                    <span>200 km</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Categories */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-700 mb-3">Categories</h3>
-              <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
-                <div className="space-y-2 p-2">
-                  {!filterOptions.categories || filterOptions.categories.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      No categories available
-                    </p>
-                  ) : (
-                    filterOptions.categories.map((category) => (
-                    <label
-                      key={category}
-                      className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={tempFilters.categories?.includes(category) || false}
-                        onChange={() => {
-                          const currentCategories = tempFilters.categories || [];
-                          const newCategories = currentCategories.includes(category)
-                            ? currentCategories.filter(c => c !== category)
-                            : [...currentCategories, category];
-                          setTempFilters({ ...tempFilters, categories: newCategories });
-                        }}
-                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
-                      />
-                      <span className="ml-3 text-gray-700">{getCategoryDisplayName(category)}</span>
-                    </label>
-                  )))
-                  }
-                </div>
-              </div>
-              {tempFilters.categories?.length > 0 && (
-                <p className="text-sm text-gray-600 mt-2">
-                  {tempFilters.categories.length} selected
-                </p>
-              )}
             </div>
 
             {/* Communities */}
-            <div className="mb-6">
+            <div className="mb-4">
               <h3 className="font-semibold text-gray-700 mb-3">Community/Language</h3>
-              <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
+              <div className="max-h-[7.5rem] overflow-y-auto border border-gray-200 rounded-md p-2">
                 <div className="grid grid-cols-2 gap-1">
                   {COMMUNITIES.map((community) => (
                     <label
@@ -458,7 +340,7 @@ const ThreadsPage = () => {
                             : [...currentCommunities, community.value];
                           setTempFilters({ ...tempFilters, communities: newCommunities });
                         }}
-                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2 transition-all"
                       />
                       <span className="ml-2 text-sm text-gray-700">{community.label}</span>
                     </label>
@@ -466,31 +348,10 @@ const ThreadsPage = () => {
                 </div>
               </div>
               {tempFilters.communities?.length > 0 && (
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs text-gray-600 mt-1">
                   {tempFilters.communities.length} selected
                 </p>
               )}
-            </div>
-
-            {/* Sort Options */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-700 mb-3">Sort By</h3>
-              <div className="space-y-2">
-                {sortOptions.map((option) => (
-                  <label key={option.value} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors">
-                    <input
-                      type="radio"
-                      name="sortBy"
-                      checked={tempFilters.sortBy === option.value}
-                      onChange={() => {
-                        setTempFilters({ ...tempFilters, sortBy: option.value });
-                      }}
-                      className="w-4 h-4 text-teal-600 focus:ring-teal-500 focus:ring-2"
-                    />
-                    <span className="ml-3 text-gray-700">{option.label}</span>
-                  </label>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -498,7 +359,7 @@ const ThreadsPage = () => {
           <div className="sticky bottom-0 p-3 bg-white border-t flex justify-center">
             <button
               onClick={applyFilters}
-              className="px-8 py-2 bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 text-sm rounded shadow font-semibold transition-colors"
+              className="px-8 py-2 bg-[#1E3A5F] text-white hover:bg-[#152d4a] text-sm rounded shadow font-semibold transition-colors"
             >
               Show results
             </button>
@@ -543,45 +404,217 @@ const ThreadsPage = () => {
           </div>
 
           {/* Hero Content */}
-          <HeroThreadsSection showViewAll={false} showCreate={false} compact={true} />
+          <div className="relative p-0 sm:pt-0 sm:pb-2 sm:px-4">
+            <HeroThreadsSection showViewAll={false} showCreate={false} compact={true} />
+          </div>
 
-          {/* Search section inside hero */}
+          {/* Hero Controls */}
           <div className="relative px-3 sm:px-6 -mt-2 md:mt-0 pb-4">
-            <div className="flex items-center gap-2 md:gap-3">
-              {/* Post Topic Button */}
-              <Link
-                href="/threads/new"
-                className="order-2 md:order-1 flex-shrink-0 bg-[#E8F4FF] hover:bg-[#D0E8FF] text-xs md:text-sm font-semibold py-2 px-3 md:py-2.5 md:px-4 rounded-lg shadow-sm transition-colors whitespace-nowrap"
-                style={{ color: '#1E3A5F' }}
-              >
-                + Post Topic
-              </Link>
-
-              {/* Search Bar */}
-              <form onSubmit={handleSearchSubmit} className="flex-1 order-1 md:order-2">
-                <div className="relative flex items-center">
+            <div className="md:max-w-4xl md:mx-auto">
+              {/* Search Input - Own row */}
+              <div className="mb-3">
+                <div className="relative">
                   <input
                     type="text"
-                    placeholder="E.g. Visa, Jobs, Housing etc"
-                    className="w-full pl-4 pr-11 py-2 bg-white border border-gray-300 rounded-full text-xs sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                    style={{ '--tw-ring-color': '#a3d5ff' }}
+                    placeholder="Search topics... e.g. Visa, Jobs, Housing"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
                   />
-                  <button
-                    type="submit"
-                    className="absolute right-1 text-white p-2 rounded-full shadow-sm transition-colors"
-                    style={{ backgroundColor: '#a3d5ff' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1E3A5F'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#a3d5ff'}
-                    aria-label="Search"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </button>
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                 </div>
-              </form>
+              </div>
+
+              {/* Post Topic, Category, Location, Go - Second row */}
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                {/* Post Topic Button */}
+                <Link
+                  href="/threads/new"
+                  className="self-start md:self-auto bg-[#E8F4FF] hover:bg-[#D0E8FF] text-sm font-bold py-2 px-4 md:py-2.5 md:px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                  style={{ color: '#1E3A5F' }}
+                >
+                  + Post Topic
+                </Link>
+
+                {/* Category Dropdown - Headless UI */}
+                <Listbox value={heroCategory} onChange={setHeroCategory}>
+                  <div className="relative flex-1 md:flex-initial md:w-52">
+                    <ListboxButton className="relative w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all cursor-pointer text-left">
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                      </svg>
+                      <span className={heroCategory ? 'text-gray-900' : 'text-gray-500'}>
+                        {heroCategory ? getCategoryDisplayName(heroCategory) : 'Category'}
+                      </span>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                      </svg>
+                    </ListboxButton>
+                    <Transition
+                      as={Fragment}
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                    >
+                      <ListboxOptions
+                        anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                        className="z-50 w-[var(--button-width)] max-h-[var(--anchor-max-height,15rem)] overflow-auto rounded-xl bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none"
+                      >
+                        <ListboxOption
+                          value=""
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-blue-50 text-blue-900' : 'text-gray-900'}`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                All Categories
+                              </span>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                        {filterOptions.categories?.map((cat) => (
+                          <ListboxOption
+                            key={cat}
+                            value={cat}
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-blue-50 text-blue-900' : 'text-gray-900'}`
+                            }
+                          >
+                            {({ selected }) => (
+                              <>
+                                <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                  {getCategoryDisplayName(cat)}
+                                </span>
+                                {selected && (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </ListboxOption>
+                        ))}
+                      </ListboxOptions>
+                    </Transition>
+                  </div>
+                </Listbox>
+
+                {/* Location Input */}
+                <LoadScriptNext
+                  googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                  libraries={libraries}
+                  onLoad={() => setIsScriptLoaded(true)}
+                  loadingElement={
+                    <div className="relative flex-1 md:flex-initial md:w-52">
+                      <div className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-full animate-pulse">
+                        <div className="h-5 bg-gray-300 rounded w-24"></div>
+                      </div>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                  }
+                >
+                  <div className="relative flex-1 md:flex-initial md:w-52">
+                    <Autocomplete
+                      onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
+                      onPlaceChanged={handleHeroPlaceChanged}
+                      options={{
+                        componentRestrictions: { country: 'au' },
+                        types: ['geocode']
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Location"
+                        value={heroLocationInput}
+                        onChange={(e) => setHeroLocationInput(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+                      />
+                    </Autocomplete>
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                </LoadScriptNext>
+
+                {/* Go Button */}
+                <button
+                  onClick={handleHeroGo}
+                  className="w-full md:w-auto px-6 py-2.5 text-white font-semibold rounded-full shadow-sm transition-colors"
+                  style={{ backgroundColor: '#1E3A5F' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#152d4a'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1E3A5F'}
+                >
+                  Go
+                </button>
+              </div>
+
+              {/* Radius slider - appears when location is selected */}
+              {heroLocation && (
+                <>
+                  {/* Mobile slider */}
+                  <div className="md:hidden mt-2">
+                    <div className="flex items-center gap-2 px-3">
+                      <span className="text-xs text-gray-700">1km</span>
+                      <input
+                        type="range"
+                        min="1"
+                        max="200"
+                        value={heroRadius}
+                        onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                        className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
+                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
+                          [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                          [&::-webkit-slider-thumb]:shadow-md
+                          [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-blue-600
+                          [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                      />
+                      <span className="text-xs text-gray-700 min-w-[40px] text-right">{heroRadius}km</span>
+                    </div>
+                  </div>
+                  {/* Desktop slider - aligned under location */}
+                  <div className="hidden md:flex mt-1 items-center gap-3">
+                    {/* Spacer for Post Topic button */}
+                    <div className="w-[116px]"></div>
+                    {/* Spacer for Category dropdown */}
+                    <div className="w-52"></div>
+                    {/* Slider aligned with location input */}
+                    <div className="w-52 flex items-center gap-2 px-3">
+                      <span className="text-xs text-gray-700">1km</span>
+                      <input
+                        type="range"
+                        min="1"
+                        max="200"
+                        value={heroRadius}
+                        onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                        className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
+                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
+                          [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                          [&::-webkit-slider-thumb]:shadow-md
+                          [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-blue-600
+                          [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                      />
+                      <span className="text-xs text-gray-700 min-w-[40px] text-right">{heroRadius}km</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -598,7 +631,7 @@ const ThreadsPage = () => {
               </svg>
               <span className="font-medium">Filter</span>
               {getActiveFilterCount() > 0 && (
-                <span className="bg-teal-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
+                <span className="bg-blue-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
                   {getActiveFilterCount()}
                 </span>
               )}
@@ -755,8 +788,8 @@ const ThreadsPage = () => {
                         <span>{getPostedText(thread.createdAt)}</span>
                         <span>•</span>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full ${
-                          thread.commentCount > 0 
-                            ? 'bg-teal-700 text-lime-100' 
+                          thread.commentCount > 0
+                            ? 'bg-[#1E3A5F] text-white'
                             : 'bg-gray-300 text-gray-700'
                         }`}>
                           {thread.commentCount} {thread.commentCount === 1 ? 'comment' : 'comments'}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   searchDeals,
@@ -16,9 +16,9 @@ import DealsGrid from '@/components/dailydeals/dealcomponents/DealsGrid';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import { getAutocompleteSuggestions, SUGGESTED_SEARCH_TERMS } from '@/utils/dailydeals/categoryMappings';
 import HeroDailyDealsSection from '@/components/dailydeals/HeroDailyDealsSection';
 import Link from 'next/link';
+import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 
 const libraries = ['places'];
 
@@ -38,14 +38,16 @@ const DailyDealsPage = () => {
     (state) => state.searchDeals
   );
 
-  const [locationInput, setLocationInput] = useState('');
-  const [autocomplete, setAutocomplete] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [searchText, setSearchText] = useState(filters.searchText || '');
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [searchSuggestions, setSearchSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Hero section state
+  const [heroCategory, setHeroCategory] = useState('');
+  const [heroLocationInput, setHeroLocationInput] = useState('');
+  const [heroAutocomplete, setHeroAutocomplete] = useState(null);
+  const [heroLocation, setHeroLocation] = useState(null);
+  const [heroRadius, setHeroRadius] = useState(50);
 
   // Temp filters for modal
   const [tempFilters, setTempFilters] = useState({});
@@ -59,15 +61,10 @@ const DailyDealsPage = () => {
   // Initialize temp filters when modal opens
   useEffect(() => {
     setTempFilters({
-      categories: [...filters.categories],
-      location: filters.location,
       state: filters.state || '',
       day: filters.day || '',
       sortBy: filters.sortBy
     });
-    if (filters.location) {
-      setLocationInput(filters.location.name || '');
-    }
   }, [showFilters, filters]);
 
   // Fetch filter options on mount
@@ -80,55 +77,62 @@ const DailyDealsPage = () => {
     dispatch(searchDeals());
   }, [filters, pagination.page, dispatch]);
 
-  // Sync search text
+  // Sync hero category with Redux filters - reset when category is cleared from active filters
   useEffect(() => {
-    if (filters.searchText === '' && searchText !== '') {
-      setSearchText('');
+    if (heroCategory && !filters.categories.includes(heroCategory)) {
+      setHeroCategory('');
     }
-  }, [filters.searchText]);
+  }, [filters.categories]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setShowSuggestions(false);
-    dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
+  // Sync hero location with Redux filters - reset when location is cleared from active filters
+  useEffect(() => {
+    if (!filters.location && heroLocation) {
+      setHeroLocation(null);
+      setHeroLocationInput('');
+    }
+  }, [filters.location]);
+
+  // Hero Go button handler
+  const handleHeroGo = () => {
+    // Apply category if selected
+    if (heroCategory && !filters.categories.includes(heroCategory)) {
+      dispatch(toggleCategory(heroCategory));
+    }
+    // Apply location if selected
+    if (heroLocation) {
+      dispatch(setLocation({ ...heroLocation, radius: heroRadius }));
+    }
   };
 
-  const handleSearchInputChange = (e) => {
-    const value = e.target.value;
-    setSearchText(value);
-
-    // Get autocomplete suggestions
-    const suggestions = getAutocompleteSuggestions(value);
-    setSearchSuggestions(suggestions);
-    setShowSuggestions(suggestions.length > 0 && value.length >= 3);
-  };
-
-  const handleSuggestionClick = (suggestion) => {
-    setSearchText(suggestion);
-    setShowSuggestions(false);
-    dispatch(updateFilter({ filterType: 'searchText', value: suggestion }));
+  // Hero location place changed handler
+  const handleHeroPlaceChanged = () => {
+    if (heroAutocomplete) {
+      const place = heroAutocomplete.getPlace();
+      if (place.geometry) {
+        const coordinates = [
+          place.geometry.location.lng(),
+          place.geometry.location.lat()
+        ];
+        setHeroLocation({
+          coordinates,
+          radius: heroRadius,
+          name: place.formatted_address || 'Selected Location'
+        });
+        setHeroLocationInput(place.formatted_address);
+      }
+    }
   };
 
   const handleClearLocation = () => {
     dispatch(updateFilter({ filterType: 'location', value: null }));
-    setLocationInput('');
-  };
-
-  const handleClearSearch = () => {
-    dispatch(updateFilter({ filterType: 'searchText', value: '' }));
-    setSearchText('');
   };
 
   const handleClearAllTempFilters = () => {
     setTempFilters({
-      categories: [],
-      location: null,
       state: '',
       day: '',
       sortBy: 'newest'
     });
-    setLocationInput('');
-    setSearchText('');
     dispatch(clearAllFilters());
   };
 
@@ -143,27 +147,6 @@ const DailyDealsPage = () => {
   };
 
   const applyFilters = () => {
-    // Apply categories
-    if (JSON.stringify(tempFilters.categories) !== JSON.stringify(filters.categories)) {
-      filters.categories.forEach(cat => {
-        if (!tempFilters.categories.includes(cat)) {
-          dispatch(toggleCategory(cat));
-        }
-      });
-      tempFilters.categories.forEach(cat => {
-        if (!filters.categories.includes(cat)) {
-          dispatch(toggleCategory(cat));
-        }
-      });
-    }
-
-    // Apply location
-    if (tempFilters.location) {
-      dispatch(setLocation(tempFilters.location));
-    } else if (filters.location && !tempFilters.location) {
-      dispatch(updateFilter({ filterType: 'location', value: null }));
-    }
-
     // Apply state
     if (tempFilters.state !== filters.state) {
       dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
@@ -186,7 +169,6 @@ const DailyDealsPage = () => {
     if (filters.location) count++;
     if (filters.state) count++;
     if (filters.day) count++;
-    if (filters.searchText) count++;
     return count;
   };
 
@@ -196,7 +178,7 @@ const DailyDealsPage = () => {
   };
 
   return (
-    <div className="flex flex-col relative min-h-screen pb-8">
+    <div className="flex flex-col relative min-h-[calc(100vh-180px)]">
       {/* Modal Overlay */}
       {showFilters && (
         <div
@@ -245,7 +227,7 @@ const DailyDealsPage = () => {
                   onClick={() => setTempFilters({ ...tempFilters, day: '' })}
                   className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     !tempFilters.day
-                      ? 'bg-teal-500 text-white'
+                      ? 'bg-yellow-500 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -257,7 +239,7 @@ const DailyDealsPage = () => {
                     onClick={() => setTempFilters({ ...tempFilters, day: day.value })}
                     className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       tempFilters.day === day.value
-                        ? 'bg-teal-500 text-white'
+                        ? 'bg-yellow-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
@@ -278,162 +260,29 @@ const DailyDealsPage = () => {
                       if (tempFilters.state === state.code) {
                         setTempFilters({ ...tempFilters, state: '' });
                       } else {
-                        setTempFilters({ ...tempFilters, state: state.code, location: null });
-                        setLocationInput('');
+                        setTempFilters({ ...tempFilters, state: state.code });
                       }
                     }}
                     className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       tempFilters.state === state.code
-                        ? 'bg-teal-500 text-white'
+                        ? 'bg-yellow-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    } ${tempFilters.location ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    disabled={!!tempFilters.location}
+                    }`}
                     title={state.name}
                   >
                     {state.code}
                   </button>
                 ))}
               </div>
-              {tempFilters.location && (
-                <p className="text-xs text-gray-500 mt-2">Clear location to use state filter</p>
-              )}
             </div>
 
-            {/* Location Filter */}
-            <div className={`mb-4 ${tempFilters.state ? 'opacity-50' : ''}`}>
-              <h3 className="font-semibold text-gray-700 mb-3">Location</h3>
-              {tempFilters.state && (
-                <p className="text-xs text-gray-500 mb-2">Clear state selection to use location filter</p>
-              )}
-              <LoadScriptNext
-                googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-                libraries={libraries}
-                onLoad={() => setIsScriptLoaded(true)}
-              >
-                <div className="relative">
-                  <Autocomplete
-                    onLoad={(autocompleteInstance) => setAutocomplete(autocompleteInstance)}
-                    onPlaceChanged={() => {
-                      if (autocomplete && !tempFilters.state) {
-                        const place = autocomplete.getPlace();
-                        if (place.geometry) {
-                          const coordinates = [
-                            place.geometry.location.lng(),
-                            place.geometry.location.lat()
-                          ];
-                          const location = {
-                            coordinates,
-                            radius: tempFilters.location?.radius || 10,
-                            name: place.formatted_address || 'Selected Location'
-                          };
-                          setTempFilters({ ...tempFilters, location, state: '' });
-                          setLocationInput(place.formatted_address);
-                        }
-                      }
-                    }}
-                    options={{
-                      componentRestrictions: { country: 'au' },
-                      types: ['geocode']
-                    }}
-                  >
-                    <input
-                      type="text"
-                      placeholder="Enter Suburb & Radius of search..."
-                      value={locationInput}
-                      onChange={(e) => setLocationInput(e.target.value)}
-                      className="w-full p-3 pr-10 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      disabled={!!tempFilters.state}
-                    />
-                  </Autocomplete>
-                  {tempFilters.location && (
-                    <button
-                      onClick={() => {
-                        setTempFilters({ ...tempFilters, location: null });
-                        setLocationInput('');
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Clear location"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </LoadScriptNext>
-
-              {tempFilters.location && (
-                <div className="mt-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-sm text-gray-600">Search within:</label>
-                    <span className="text-sm font-medium text-gray-700">{tempFilters.location.radius} km</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="200"
-                    value={tempFilters.location.radius || 10}
-                    onChange={(e) => {
-                      const radius = parseInt(e.target.value);
-                      setTempFilters({
-                        ...tempFilters,
-                        location: { ...tempFilters.location, radius }
-                      });
-                    }}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer
-                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                      [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
-                  />
-                  <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                    <span>1 km</span>
-                    <span>200 km</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Categories */}
-            <div className="mb-4">
-              <h3 className="font-semibold text-gray-700 mb-3">Categories</h3>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
-                <div className="space-y-1 p-2">
-                  {filterOptions.categories.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-4">No categories available</p>
-                  ) : (
-                    filterOptions.categories.map((category) => (
-                      <label
-                        key={category}
-                        className="flex items-center cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={tempFilters.categories?.includes(category) || false}
-                          onChange={() => {
-                            const currentCategories = tempFilters.categories || [];
-                            const newCategories = currentCategories.includes(category)
-                              ? currentCategories.filter(c => c !== category)
-                              : [...currentCategories, category];
-                            setTempFilters({ ...tempFilters, categories: newCategories });
-                          }}
-                          className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">{category}</span>
-                      </label>
-                    ))
-                  )}
-                </div>
-              </div>
-              {tempFilters.categories?.length > 0 && (
-                <p className="text-xs text-gray-600 mt-1">{tempFilters.categories.length} selected</p>
-              )}
-            </div>
           </div>
 
           {/* Apply Button - Sticky */}
           <div className="sticky bottom-0 p-3 bg-white border-t flex justify-center">
             <button
               onClick={applyFilters}
-              className="px-8 py-2 bg-teal-700 text-lime-100 hover:bg-teal-800 hover:text-lime-50 text-sm rounded shadow font-semibold transition-colors"
+              className="px-8 py-2 bg-yellow-600 text-white hover:bg-yellow-700 text-sm rounded shadow font-semibold transition-colors"
             >
               Show results
             </button>
@@ -481,64 +330,208 @@ const DailyDealsPage = () => {
             <HeroDailyDealsSection showViewAll={false} showCreate={false} compact={true} />
           </div>
 
-          {/* Search Bar inside the curved container */}
+          {/* Hero Controls */}
           <div className="relative px-3 sm:px-6 -mt-2 md:mt-0 pb-4">
-            <div className="md:max-w-2xl md:mx-auto">
-              {/* Post Deal: left on desktop, right on mobile */}
-              <div className="flex items-center gap-2 md:gap-3">
+            {/* Mobile: Post Deal at top left */}
+            <div className="md:hidden mb-3">
+              <Link
+                href="/dailydeals/manage"
+                className="inline-flex bg-[#FFF8E1] hover:bg-[#FFECB3] text-sm font-bold py-2 px-4 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                style={{ color: '#8B6914' }}
+              >
+                + Post Deal
+              </Link>
+            </div>
+
+            <div className="md:max-w-4xl md:mx-auto">
+              {/* Desktop: All in one row */}
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                {/* Post Deal - Desktop only */}
                 <Link
                   href="/dailydeals/manage"
-                  className="order-2 md:order-1 bg-[#FFF8E1] hover:bg-[#FFECB3] text-sm font-bold py-2 px-4 md:py-2.5 md:px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                  className="hidden md:inline-flex bg-[#FFF8E1] hover:bg-[#FFECB3] text-sm font-bold py-2.5 px-5 rounded-full shadow-sm transition-colors whitespace-nowrap"
                   style={{ color: '#8B6914' }}
                 >
                   + Post Deal
                 </Link>
-                <form onSubmit={handleSearchSubmit} className="flex-1 order-1 md:order-2">
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      placeholder="E.g. Restaurant, Salon, Grocery etc"
-                      className="w-full pl-4 pr-11 py-2 bg-white border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                      style={{ '--tw-ring-color': '#fad643' }}
-                      value={searchText}
-                      onChange={handleSearchInputChange}
-                      onFocus={() => searchSuggestions.length > 0 && setShowSuggestions(true)}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-1.5 text-white p-2 rounded-full shadow-sm transition-colors"
-                      style={{ backgroundColor: '#fad643' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8B6914'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fad643'}
-                      aria-label="Search"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                    </button>
 
-                    {/* Autocomplete Suggestions Dropdown */}
-                    {showSuggestions && searchSuggestions.length > 0 && (
-                      <div className="absolute z-50 w-full top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-                        {searchSuggestions.map((suggestion, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => handleSuggestionClick(suggestion)}
-                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-yellow-50 transition-colors flex items-center gap-2"
+                {/* Category Dropdown - Headless UI */}
+                <Listbox value={heroCategory} onChange={setHeroCategory}>
+                  <div className="relative flex-1 md:flex-initial md:w-56">
+                    <ListboxButton className="relative w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all cursor-pointer text-left">
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                      </svg>
+                      <span className={heroCategory ? 'text-gray-900' : 'text-gray-500'}>
+                        {heroCategory || 'Select Category'}
+                      </span>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                      </svg>
+                    </ListboxButton>
+                    <Transition
+                      as={Fragment}
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                    >
+                      <ListboxOptions
+                        anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                        className="z-50 w-[var(--button-width)] max-h-[var(--anchor-max-height,15rem)] overflow-auto rounded-xl bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none"
+                      >
+                        <ListboxOption
+                          value=""
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-yellow-50 text-yellow-900' : 'text-gray-900'}`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                All Categories
+                              </span>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-yellow-600">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                        {filterOptions.categories?.map((cat) => (
+                          <ListboxOption
+                            key={cat}
+                            value={cat}
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-yellow-50 text-yellow-900' : 'text-gray-900'}`
+                            }
                           >
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                            <span>{suggestion}</span>
-                          </button>
+                            {({ selected }) => (
+                              <>
+                                <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                  {cat}
+                                </span>
+                                {selected && (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-yellow-600">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </ListboxOption>
                         ))}
-                      </div>
-                    )}
+                      </ListboxOptions>
+                    </Transition>
                   </div>
-                </form>
+                </Listbox>
+
+                {/* Location Input */}
+                <LoadScriptNext
+                  googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                  libraries={libraries}
+                  onLoad={() => setIsScriptLoaded(true)}
+                  loadingElement={
+                    <div className="relative flex-1 md:flex-initial md:w-64">
+                      <div className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-full animate-pulse">
+                        <div className="h-5 bg-gray-300 rounded w-32"></div>
+                      </div>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                  }
+                >
+                  <div className="relative flex-1 md:flex-initial md:w-64">
+                    <Autocomplete
+                      onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
+                      onPlaceChanged={handleHeroPlaceChanged}
+                      options={{
+                        componentRestrictions: { country: 'au' },
+                        types: ['geocode']
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Enter suburb or city"
+                        value={heroLocationInput}
+                        onChange={(e) => setHeroLocationInput(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
+                      />
+                    </Autocomplete>
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                </LoadScriptNext>
+
+                {/* Go Button */}
+                <button
+                  onClick={handleHeroGo}
+                  className="w-full md:w-auto px-6 py-2.5 text-white font-semibold rounded-full shadow-sm transition-colors"
+                  style={{ backgroundColor: '#8B6914' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6B5210'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#8B6914'}
+                >
+                  Go
+                </button>
               </div>
+
+              {/* Radius slider - appears when location is selected */}
+              {heroLocation && (
+                <>
+                  {/* Mobile slider */}
+                  <div className="md:hidden mt-2">
+                    <div className="flex items-center gap-2 px-3">
+                      <span className="text-xs text-gray-700">1km</span>
+                      <input
+                        type="range"
+                        min="1"
+                        max="200"
+                        value={heroRadius}
+                        onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                        className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
+                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
+                          [&::-webkit-slider-thumb]:bg-yellow-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                          [&::-webkit-slider-thumb]:shadow-md
+                          [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-yellow-600
+                          [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                      />
+                      <span className="text-xs text-gray-700 min-w-[40px] text-right">{heroRadius}km</span>
+                    </div>
+                  </div>
+                  {/* Desktop slider - aligned under location */}
+                  <div className="hidden md:flex mt-1 items-center gap-3">
+                    {/* Spacer for Post Deal button */}
+                    <div className="w-[108px]"></div>
+                    {/* Spacer for Category dropdown */}
+                    <div className="w-56"></div>
+                    {/* Slider aligned with location input */}
+                    <div className="w-64 flex items-center gap-2 px-3">
+                      <span className="text-xs text-gray-700">1km</span>
+                      <input
+                        type="range"
+                        min="1"
+                        max="200"
+                        value={heroRadius}
+                        onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                        className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
+                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
+                          [&::-webkit-slider-thumb]:bg-yellow-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                          [&::-webkit-slider-thumb]:shadow-md
+                          [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-yellow-600
+                          [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                      />
+                      <span className="text-xs text-gray-700 min-w-[40px] text-right">{heroRadius}km</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -556,7 +549,7 @@ const DailyDealsPage = () => {
               </svg>
               <span className="font-medium">Filter</span>
               {getActiveFilterCount() > 0 && (
-                <span className="bg-teal-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
+                <span className="bg-yellow-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
                   {getActiveFilterCount()}
                 </span>
               )}
@@ -662,17 +655,6 @@ const DailyDealsPage = () => {
                     </span>
                   )}
 
-                  {filters.searchText && (
-                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
-                      Search: "{filters.searchText}"
-                      <button
-                        onClick={handleClearSearch}
-                        className="hover:text-gray-900 font-bold ml-1"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -681,44 +663,7 @@ const DailyDealsPage = () => {
 
         {/* Results */}
         <div className="px-3 sm:px-4 mt-4">
-          {/* Empty state with suggestions when search returns no results */}
-          {status === 'success' && deals.length === 0 && filters.searchText ? (
-            <div className="text-center py-12">
-              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <p className="text-gray-600 text-lg mb-2">No matching stores found for "{filters.searchText}"</p>
-              <p className="text-gray-500 text-sm mb-4">Try searching for:</p>
-              <div className="flex flex-wrap justify-center gap-2 mb-6">
-                {SUGGESTED_SEARCH_TERMS.map((term) => (
-                  <button
-                    key={term}
-                    onClick={() => handleSuggestionClick(term)}
-                    className="px-3 py-1.5 bg-teal-50 text-teal-700 rounded-full text-sm hover:bg-teal-100 transition-colors"
-                  >
-                    {term}
-                  </button>
-                ))}
-              </div>
-              <div className="border-t border-gray-200 pt-6">
-                <p className="text-gray-500 text-sm mb-3">Or browse by category</p>
-                <button
-                  onClick={() => {
-                    handleClearSearch();
-                    setShowFilters(true);
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
-                  Open Filters
-                </button>
-              </div>
-            </div>
-          ) : (
-            <DealsGrid deals={deals} dealStatus={status} />
-          )}
+          <DealsGrid deals={deals} dealStatus={status} />
         </div>
 
         {/* Pagination */}

@@ -98,6 +98,21 @@ const sortOptions = [
     }
   }, [filters.searchText]);
 
+  // Sync hero category with Redux filters - reset when category is cleared from active filters
+  useEffect(() => {
+    if (heroCategory && !filters.categories.includes(heroCategory)) {
+      setHeroCategory('');
+    }
+  }, [filters.categories]);
+
+  // Sync hero location with Redux filters - reset when location is cleared from active filters
+  useEffect(() => {
+    if (!filters.location && heroLocation) {
+      setHeroLocation(null);
+      setHeroLocationInput('');
+    }
+  }, [filters.location]);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
@@ -245,7 +260,7 @@ const getCurrentSortLabel = () => {
   };
 
   return (
-    <div className="flex flex-col relative">
+    <div className="flex flex-col relative min-h-[calc(100vh-180px)]">
       {/* Modal Overlay */}
       {showFilters && (
         <div 
@@ -551,6 +566,17 @@ const getCurrentSortLabel = () => {
                   googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                   libraries={libraries}
                   onLoad={() => setIsScriptLoaded(true)}
+                  loadingElement={
+                    <div className="relative">
+                      <div className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-full animate-pulse">
+                        <div className="h-5 bg-gray-300 rounded w-32"></div>
+                      </div>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                  }
                 >
                   <div className="relative">
                     <Autocomplete
@@ -592,7 +618,7 @@ const getCurrentSortLabel = () => {
                         [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-teal-600
                         [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
                     />
-                    <span className="text-xs text-gray-600">200km</span>
+                    <span className="text-xs text-gray-600 min-w-[40px] text-right">{heroLocation.radius}km</span>
                   </div>
                 )}
 
@@ -717,6 +743,17 @@ const getCurrentSortLabel = () => {
                   googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                   libraries={libraries}
                   onLoad={() => setIsScriptLoaded(true)}
+                  loadingElement={
+                    <div className="relative flex-1 max-w-[250px]">
+                      <div className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-full animate-pulse">
+                        <div className="h-5 bg-gray-300 rounded w-32"></div>
+                      </div>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                  }
                 >
                   <div className="relative flex-1 max-w-[250px]">
                     <Autocomplete
@@ -770,7 +807,7 @@ const getCurrentSortLabel = () => {
                         [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-teal-600
                         [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
                     />
-                    <span className="text-xs text-gray-600">200km</span>
+                    <span className="text-xs text-gray-600 min-w-[40px] text-right">{heroLocation.radius}km</span>
                   </div>
                   <div className="w-[52px]"></div>
                 </div>
