@@ -2,11 +2,10 @@
 
 // Import from modules
 import {
-  CATEGORY_ACCESS,
-  getCategoriesForRole,
-  canAccessCategory,
   ADDRESS_OPTIONAL_CATEGORIES,
-  isAddressOptional
+  isAddressOptional,
+  CATEGORY_GROUPS,
+  getAllCategories
 } from './CategoryAccess';
 
 import {
@@ -41,11 +40,10 @@ import {
 
 // Export everything individually
 export {
-  CATEGORY_ACCESS,
-  getCategoriesForRole,
-  canAccessCategory,
   ADDRESS_OPTIONAL_CATEGORIES,
   isAddressOptional,
+  CATEGORY_GROUPS,
+  getAllCategories,
   getFieldsForCategory,
   getOrderedFieldsForCategory,
   getFormStructure,
@@ -69,8 +67,7 @@ export {
 // Export a unified API for the field system
 export const FieldSystem = {
   // Category management
-  getCategoriesForRole,
-  canAccessCategory,
+  getAllCategories,
   isAddressOptional,
   
   // Field management
@@ -118,7 +115,7 @@ export const FieldSystem = {
     ].sort((a, b) => (a.order || 999) - (b.order || 999));
     
     return {
-      canAccess: engine.canAccessCategory(),
+      canAccess: true,
       fields: visibleFieldMap,
       orderedFields,
       pricingOptions,

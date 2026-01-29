@@ -2,7 +2,6 @@
 
 import { getFormStructure, getSharedField } from './FieldRegistry';
 import { getAvailablePricingOptions, PRICING_CONFIG } from './PricingConfig';
-import { canAccessCategory } from './CategoryAccess';
 import { isSectionHiddenForWanted, isFieldHiddenForWanted, isFieldOptionalForWanted } from './WantedFieldsConfig';
 
 export class FormEngine {
@@ -11,10 +10,6 @@ export class FormEngine {
     this.userRole = userRole;
     this.formData = formData;
     this.structure = getFormStructure(category);
-  }
-
-  canAccessCategory() {
-    return canAccessCategory(this.userRole, this.category);
   }
 
   // Get a field value from the form data
@@ -177,7 +172,7 @@ export class FormEngine {
 
   // Get all visible sections with their fields
   getVisibleSections() {
-    if (!this.canAccessCategory() || !this.structure || !this.structure.sections) {
+    if (!this.structure || !this.structure.sections) {
       return [];
     }
     const visibleSections = [];
@@ -212,7 +207,7 @@ export class FormEngine {
 
   // Compatibility method for old interface
   getVisibleFields() {
-    if (!this.canAccessCategory() || !this.structure || !this.structure.fields) {
+    if (!this.structure || !this.structure.fields) {
       return {};
     }
     const visibleFields = {};
@@ -234,10 +229,6 @@ export class FormEngine {
 export class DependencyResolver {
   constructor(category, userRole, formData = {}) {
     this.engine = new FormEngine(category, userRole, formData);
-  }
-  
-  canAccessCategory() {
-    return this.engine.canAccessCategory();
   }
   
   getVisibleFields() {

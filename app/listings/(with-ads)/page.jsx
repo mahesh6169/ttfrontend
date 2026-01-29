@@ -22,7 +22,7 @@ import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import { getCategoryDisplayName } from '@/constants/categories';
 import PromoBanner from '@/components/PromoBanner';
 import HeroListingSection from '@/components/adverts/HeroListingSection';
-import { getCategoriesForRole, CATEGORY_GROUPS } from '@/components/adverts/fieldSystem/CategoryAccess';
+import { getAllCategories, CATEGORY_GROUPS } from '@/components/adverts/fieldSystem/CategoryAccess';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 
@@ -43,7 +43,7 @@ const AdvertsPage = () => {
   const [heroAutocomplete, setHeroAutocomplete] = useState(null);
   const [heroLocation, setHeroLocation] = useState(null);
   const [expandedGroups, setExpandedGroups] = useState({ [CATEGORY_GROUPS[0]?.label]: true });
-  const allCategories = getCategoriesForRole('user');
+  const allCategories = getAllCategories();
 
   const toggleGroup = (label, e) => {
     e.preventDefault();

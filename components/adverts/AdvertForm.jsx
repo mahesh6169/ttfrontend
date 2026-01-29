@@ -393,7 +393,7 @@ const handleSubmit = (e) => {
   }
   
   // Address validation
-  const isAddressOptional = FieldSystem.isAddressOptional(userRole, formData.category);
+  const isAddressOptional = FieldSystem.isAddressOptional(formData.category);
   
   if (!isAddressOptional && (
     !formData.address.formattedAddress || 
@@ -513,7 +513,7 @@ const handleSubmit = (e) => {
   onSubmit(submitData);
 };
 
-const availableCategories = FieldSystem.getCategoriesForRole(userRole);
+const availableCategories = FieldSystem.getAllCategories();
 
 return (
   <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
