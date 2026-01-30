@@ -47,8 +47,8 @@ export const fetchFilterOptions = createAsyncThunk(
 const initialState = {
   // Filter state
   filters: {
-    categories: [],
-    communities: [],
+    categories: [],        // Parent categories
+    subcategories: [],     // Subcategories
     location: null, // { coordinates: [lng, lat], radius: 10, name: 'Address' }
     state: '', // Australian state code (NSW, VIC, etc.)
     searchText: '',
@@ -74,6 +74,7 @@ const initialState = {
   // Filter options (for dropdowns)
   filterOptions: {
     categories: [],
+    subcategories: [],
   },
   
   // UI state
@@ -96,7 +97,7 @@ const searchAdvertsSlice = createSlice({
     clearAllFilters: (state) => {
       state.filters = {
         categories: [],
-        communities: [],
+        subcategories: [],
         location: null,
         state: '',
         searchText: '',
@@ -111,11 +112,11 @@ const searchAdvertsSlice = createSlice({
       state.pagination = { ...state.pagination, ...action.payload };
     },
     
-    // Toggle category
+    // Toggle category (parent)
     toggleCategory: (state, action) => {
       const category = action.payload;
       const index = state.filters.categories.indexOf(category);
-      
+
       if (index > -1) {
         state.filters.categories.splice(index, 1);
       } else {
@@ -123,16 +124,16 @@ const searchAdvertsSlice = createSlice({
       }
       state.pagination.page = 1;
     },
-    
-    // Toggle community
-    toggleCommunity: (state, action) => {
-      const community = action.payload;
-      const index = state.filters.communities.indexOf(community);
-      
+
+    // Toggle subcategory
+    toggleSubcategory: (state, action) => {
+      const subcategory = action.payload;
+      const index = state.filters.subcategories.indexOf(subcategory);
+
       if (index > -1) {
-        state.filters.communities.splice(index, 1);
+        state.filters.subcategories.splice(index, 1);
       } else {
-        state.filters.communities.push(community);
+        state.filters.subcategories.push(subcategory);
       }
       state.pagination.page = 1;
     },
@@ -180,7 +181,7 @@ export const {
   clearAllFilters,
   updatePagination,
   toggleCategory,
-  toggleCommunity,
+  toggleSubcategory,
   setLocation,
 } = searchAdvertsSlice.actions;
 

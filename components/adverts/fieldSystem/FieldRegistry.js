@@ -50,7 +50,7 @@ export const FORM_STRUCTURE = {
   }
 },
 
-'Baby & Children': {
+'Baby & Kids': {
   sections: [
   {
     id: 'pricingSection',
@@ -240,7 +240,7 @@ fields: {
   }
 },
 
-'Pets': {
+'Pet Supplies': {
   sections: [
     { id: 'pricingSection', order: 10, title: null, specialField: 'pricing' },
     { 
@@ -298,7 +298,7 @@ fields: {
 }
 },
 
-'Real Estate': {
+'Sell, Rent & Share': {
     typeField: 'propertyType',
     sections: [
       {
@@ -353,14 +353,13 @@ fields: {
   },
 
   
-'Jobs': {
-    typeField: 'jobType',
+'Full Time': {
     sections: [
       {
-        id: 'typeSection',
+        id: 'fieldsSection',
         order: 10,
         title: null,
-        fields: ['jobType', 'jobTitle']
+        fields: ['jobTitle']
       }
     ],
     fields: {
@@ -369,86 +368,48 @@ fields: {
         label: 'Job Title',
         placeholder: 'e.g., Software Engineer',
         required: true
-      },
-      jobType: {
-        type: 'select',
-        label: 'Job Type',
-        options: ['Full-time', 'Part-time', 'Contract', 'Internship'],
-        required: true
       }
     }
   },
 
-  'Miscellaneous': {
+  'Casual': {
     sections: [
-      {
-        id: 'pricingSection',
-        order: 10,
-        title: null,
-        specialField: 'pricing'
-      },
-      {
-        id: 'conditionSection',
-        order: 15,
-        title: null,
-        specialField: 'condition',
-        dependencies: {
-          priceType: ['sell']
-        }
-      },
       {
         id: 'fieldsSection',
-        order: 20,
-        title: null,
-        fields: []
-      }
-    ],
-    fields: {}
-  },
-
-'Overseas Goods': {
-    typeField: 'goodsType',
-    sections: [
-      {
-        id: 'typeSection',
         order: 10,
         title: null,
-        fields: ['goodsType']
-      },
-      {
-        id: 'pricingSection',
-        order: 20,
-        title: null,
-        specialField: 'pricing',
-        requiresSection: 'typeSection'
-      },
-      {
-        id: 'detailsSection',
-        order: 30,
-        title: 'Delivery Details',
-        requiresSection: 'pricingSection',
-        fields: ['deliveryTime']
+        fields: ['jobTitle']
       }
     ],
     fields: {
-      goodsType: {
-        type: 'select',
-        label: 'Goods Type',
-        options: ['Electronics', 'Clothes', 'Groceries'],
+      jobTitle: {
+        type: 'text',
+        label: 'Job Title',
+        placeholder: 'e.g., Kitchen Hand',
         required: true
-      },
-      deliveryTime: {
-        type: 'number',
-        label: 'Delivery Time (weeks)',
-        placeholder: 'e.g., 2',
-        min: 1,
-        max: 12,
-        dependencies: {
-          priceType: ['sell']
-        }
       }
     }
   },
+
+  'Part Time': {
+    sections: [
+      {
+        id: 'fieldsSection',
+        order: 10,
+        title: null,
+        fields: ['jobTitle']
+      }
+    ],
+    fields: {
+      jobTitle: {
+        type: 'text',
+        label: 'Job Title',
+        placeholder: 'e.g., Receptionist',
+        required: true
+      }
+    }
+  },
+
 
   'Courier & Delivery': {
     sections: [
@@ -585,7 +546,7 @@ fields: {
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
@@ -600,22 +561,52 @@ fields: {
     ]
   },
 
-  'Restaurants & Catering': {
+  'Restaurants': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
 
-  'Cakes, Sweets & Snacks': {
+  'Catering': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
+      }
+    ]
+  },
+
+  'Cakes': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: []
+      }
+    ]
+  },
+
+  'Chat & Street Food': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: []
+      }
+    ]
+  },
+
+  'Sweets & Snacks': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: []
       }
     ]
   },
@@ -690,12 +681,32 @@ fields: {
     ]
   },
 
-  'Beauty, Hair & Makeup': {
+  'Hair, Makeup & Waxing': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: []
+      }
+    ]
+  },
+
+  'Massage': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
         fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Yoga': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: []
       }
     ]
   },
@@ -710,7 +721,27 @@ fields: {
     ]
   },
 
-  'Babysitting & Childcare': {
+  'Babysitting': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Aged Parent Care': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Domestic Help': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -745,7 +776,7 @@ fields: {
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
@@ -755,12 +786,12 @@ fields: {
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
 
-  'Driving Instructors': {
+  'Driving Lessons': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -770,107 +801,88 @@ fields: {
     ]
   },
 
-  'Academic Tutors': {
+  'Academic': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
 
-  'Music Tutors': {
+  'Music': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
 
-  'Dance Tutors': {
+  'Dance': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
 
-  'Arts Tutors': {
+  'Arts': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
 
-  'Sports Tutors': {
+  'Sports': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
 
-  'Consultation & Professional': {
-    sections: [
-      {
-        id: 'serviceDetailsSection',
-        order: 10,
-        fields: ['serviceArea']
-      }
-    ]
-  },
-
-  'Construction & Renovation': {
-    sections: [
-      {
-        id: 'serviceDetailsSection',
-        order: 10,
-        fields: ['serviceArea']
-      }
-    ]
-  },
 
   'Travel & Tourism': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
 
-  'Marketing & Advertising': {
+  'Logo Services': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
 
-  'IT & Software': {
+  'Business IT': {
     sections: [
       {
         id: 'serviceDetailsSection',
         order: 10,
-        fields: ['serviceArea']
+        fields: []
       }
     ]
   },
 
-  'Parents Travel Assistance': {
+  'Website Design': {
     sections: [
       {
         id: 'serviceDetailsSection',

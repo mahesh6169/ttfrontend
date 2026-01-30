@@ -21,7 +21,7 @@ export const PRICING_CONFIG = {
       }
     }
   },
-  'Baby & Children': {
+  'Baby & Kids': {
     required: true,
     options: {
       sell: {
@@ -95,7 +95,7 @@ export const PRICING_CONFIG = {
   }
 },
 
-'Pets': {
+'Pet Supplies': {
   required: true,
   options: {
     sell: { enabled: true, label: 'Sell', units: null },
@@ -126,7 +126,7 @@ export const PRICING_CONFIG = {
     }
   }
 },
-  'Real Estate': {
+  'Sell, Rent & Share': {
     required: true,
     options: {
       sell: {
@@ -146,39 +146,6 @@ export const PRICING_CONFIG = {
         label: 'Share',
         units: ['week', 'month'],
         validFor: ['Room', 'House'] // Only valid for these property types
-      }
-    }
-  },
-
-  'Overseas Goods': {
-    required: true,
-    options: {
-      sell: {
-        enabled: true,
-        label: 'Sell',
-        units: null,
-        validFor: ['*'] // Valid for all goods types
-      }
-    }
-  },
-
-  'Miscellaneous': {
-    required: true,
-    options: {
-      sell: {
-        enabled: true,
-        label: 'Sell',
-        units: null,
-      },
-      rent: {
-        enabled: true,
-        label: 'Rent',
-        units: ['day', 'week', 'month'],
-      },
-      hire: {
-        enabled: true,
-        label: 'Hire',
-        units: ['hour', 'day', 'week'],
       }
     }
   },

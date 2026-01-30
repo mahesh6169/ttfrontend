@@ -1,6 +1,11 @@
 export const DEAL_CATEGORIES = [
-  'Restaurants & Catering Services',
-  'Cakes, Sweets & Snacks',
-  'Beauty, Hair & Makeup Services',
+  'Restaurants',
+  'Catering',
+  'Cakes',
+  'Sweets & Snacks',
+  'Chat & Street Food',
+  'Hair, Makeup & Waxing',
+  'Massage',
+  'Yoga',
   'Retail Stores & Shops'
 ];

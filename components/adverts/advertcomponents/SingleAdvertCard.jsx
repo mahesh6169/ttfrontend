@@ -8,6 +8,8 @@ import SendMessage from '@/components/chat/SendMessage';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
+import { needsCommunityField } from '../fieldSystem/Categories';
+import { COMMUNITIES } from '@/utils/constants/communities';
 import { useRouter } from 'next/navigation';
 
 // Helper function to get optimized image URL
@@ -312,17 +314,34 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
               </div>
             )}
             
-            {/* Category */}
-            {advert.category && (
+            {/* Category > Subcategory */}
+            {(advert.category || advert.subcategory) && (
               <div className="text-sm sm:text-base">
                 <span className="font-semibold text-gray-700">Category:</span>{' '}
-                <span className="text-gray-600">{advert.category}</span>
+                <span className="text-gray-600">
+                  {advert.category && advert.subcategory
+                    ? `${advert.category} > ${advert.subcategory}`
+                    : advert.subcategory || advert.category}
+                </span>
               </div>
             )}
-            
+
+            {/* Community/Language - Only for eligible subcategories */}
+            {needsCommunityField(advert.subcategory) && advert.communities && advert.communities.length > 0 && (
+              <div className="text-sm sm:text-base">
+                <span className="font-semibold text-gray-700">Community:</span>{' '}
+                <span className="text-gray-600">
+                  {advert.communities.map(c => {
+                    const community = COMMUNITIES.find(comm => comm.value === c);
+                    return community ? community.label : c;
+                  }).join(', ')}
+                </span>
+              </div>
+            )}
+
             {/* Price Information - Only show for offered ads */}
             {advert.adType !== 'wanted' && (
-              !PRICING_CONFIG[advert.category] ? (
+              !PRICING_CONFIG[advert.subcategory] ? (
                 <div className="text-sm sm:text-base">
                   <span className="font-semibold text-gray-700">Price:</span>{' '}
                   <span className="text-gray-600">Request quote</span>

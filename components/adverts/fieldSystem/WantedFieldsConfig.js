@@ -1,19 +1,31 @@
 // components/adverts/fieldSystem/WantedFieldsConfig.js
 
 export const WANTED_FIELDS_CONFIG = {
-  'Real Estate': {
+  'Sell, Rent & Share': {
     hiddenSections: ['pricingSection'],
     hiddenFields: [],
     optionalFields: ['bedrooms', 'parking']
   },
-  
+
   'Cars & Vehicles': {
     hiddenSections: ['pricingSection'],
     hiddenFields: ['mileage', 'year'],
     optionalFields: ['make', 'model', 'fuelType', 'transmission']
   },
-  
-  'Jobs': {
+
+  'Full Time': {
+    hiddenSections: [],
+    hiddenFields: [],
+    optionalFields: ['jobTitle']
+  },
+
+  'Casual': {
+    hiddenSections: [],
+    hiddenFields: [],
+    optionalFields: ['jobTitle']
+  },
+
+  'Part Time': {
     hiddenSections: [],
     hiddenFields: [],
     optionalFields: ['jobTitle']
@@ -25,13 +37,7 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
-  'Miscellaneous': {
-    hiddenSections: ['pricingSection', 'conditionSection'],
-    hiddenFields: [],
-    optionalFields: []
-  },
-  
-  'Baby & Children': {
+  'Baby & Kids': {
     hiddenSections: ['pricingSection', 'conditionSection'],
     hiddenFields: [],
     optionalFields: ['brand', 'model']
@@ -61,7 +67,7 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: ['brand', 'model']
   },
   
-  'Pets': {
+  'Pet Supplies': {
     hiddenSections: ['pricingSection', 'conditionSection'],
     hiddenFields: [],
     optionalFields: ['brand', 'model']
@@ -71,12 +77,6 @@ export const WANTED_FIELDS_CONFIG = {
     hiddenSections: ['pricingSection', 'conditionSection'],
     hiddenFields: [],
     optionalFields: ['brand', 'model']
-  },
-  
-  'Overseas Goods': {
-    hiddenSections: [],
-    hiddenFields: [],
-    optionalFields: ['deliveryTime']
   },
   
   // Service categories - hide serviceArea for wanted ads
@@ -170,13 +170,31 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
-  'Restaurants & Catering': {
+  'Restaurants': {
+    hiddenSections: [],
+    hiddenFields: [],
+    optionalFields: []
+  },
+
+  'Catering': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
 
-  'Cakes, Sweets & Snacks': {
+  'Cakes': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Chat & Street Food': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Sweets & Snacks': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -224,7 +242,19 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
-  'Beauty, Hair & Makeup': {
+  'Hair, Makeup & Waxing': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Massage': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Yoga': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -236,7 +266,19 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
-  'Babysitting & Childcare': {
+  'Babysitting': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Aged Parent Care': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Domestic Help': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -266,49 +308,37 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
-  'Driving Instructors': {
+  'Driving Lessons': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
 
-  'Academic Tutors': {
+  'Academic': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
-  
-  'Music Tutors': {
+
+  'Music': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
-  
-  'Dance Tutors': {
+
+  'Dance': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
-  
-  'Arts Tutors': {
+
+  'Arts': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
-  
-  'Sports Tutors': {
-    hiddenSections: [],
-    hiddenFields: ['serviceArea'],
-    optionalFields: []
-  },
-  
-  'Consultation & Professional': {
-    hiddenSections: [],
-    hiddenFields: ['serviceArea'],
-    optionalFields: []
-  },
-  
-  'Construction & Renovation': {
+
+  'Sports': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -320,19 +350,19 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
-  'Marketing & Advertising': {
+  'Logo Services': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
-  
-  'IT & Software': {
+
+  'Business IT': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
-  
-  'Parents Travel Assistance': {
+
+  'Website Design': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []

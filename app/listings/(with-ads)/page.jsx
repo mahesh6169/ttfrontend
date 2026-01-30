@@ -1,28 +1,26 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  searchAdverts, 
+import {
+  searchAdverts,
   fetchFilterOptions,
   toggleCategory,
-  toggleCommunity,
+  toggleSubcategory,
   setLocation,
   updateFilter,
   clearAllFilters,
   updatePagination
 } from '@/store/slices/adverts/searchAdvertsSlice';
-import { COMMUNITIES } from '@/utils/constants/communities';
 import AdvertList from '@/components/adverts/advertcomponents/AdvertList';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import { getCategoryDisplayName } from '@/constants/categories';
 import PromoBanner from '@/components/PromoBanner';
 import HeroListingSection from '@/components/adverts/HeroListingSection';
-import { getAllCategories, CATEGORY_GROUPS } from '@/components/adverts/fieldSystem/CategoryAccess';
+import { CATEGORIES } from '@/components/adverts/fieldSystem/Categories';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 
@@ -37,19 +35,27 @@ const AdvertsPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchText, setSearchText] = useState(filters.searchText || '');
 
+  // Ref for scrolling to results on mobile
+  const resultsRef = useRef(null);
+
   // Hero section - category and location picker
-  const [heroCategory, setHeroCategory] = useState('');
+  const [heroParentCategory, setHeroParentCategory] = useState('');
+  const [heroSubcategory, setHeroSubcategory] = useState('');
   const [heroLocationInput, setHeroLocationInput] = useState('');
   const [heroAutocomplete, setHeroAutocomplete] = useState(null);
   const [heroLocation, setHeroLocation] = useState(null);
-  const [expandedGroups, setExpandedGroups] = useState({ [CATEGORY_GROUPS[0]?.label]: true });
-  const allCategories = getAllCategories();
 
-  const toggleGroup = (label, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
+  // Get subcategories for selected parent category
+  const heroSubcategories = heroParentCategory
+    ? CATEGORIES.find(c => c.label === heroParentCategory)?.subcategories || []
+    : [];
+
+  // Clear subcategory when parent changes
+  const handleParentCategoryChange = (value) => {
+    setHeroParentCategory(value);
+    setHeroSubcategory(''); // Reset subcategory when parent changes
   };
+
   
   // Modal filter states
   const [tempFilters, setTempFilters] = useState({});
@@ -69,8 +75,7 @@ const sortOptions = [
   // Initialize temporary filters
   useEffect(() => {
     setTempFilters({
-      categories: [...filters.categories],
-      communities: [...filters.communities],
+      subcategories: [...filters.subcategories],
       state: filters.state || '',
       adType: filters.adType,
       sortBy: filters.sortBy,
@@ -98,12 +103,17 @@ const sortOptions = [
     }
   }, [filters.searchText]);
 
-  // Sync hero category with Redux filters - reset when category is cleared from active filters
+  // Sync hero category with Redux filters - reset when cleared from active filters
   useEffect(() => {
-    if (heroCategory && !filters.categories.includes(heroCategory)) {
-      setHeroCategory('');
+    // Reset parent category if it's no longer in filters
+    if (heroParentCategory && !filters.categories.includes(heroParentCategory)) {
+      setHeroParentCategory('');
     }
-  }, [filters.categories]);
+    // Reset subcategory if it's no longer in filters
+    if (heroSubcategory && !filters.subcategories.includes(heroSubcategory)) {
+      setHeroSubcategory('');
+    }
+  }, [filters.categories, filters.subcategories]);
 
   // Sync hero location with Redux filters - reset when location is cleared from active filters
   useEffect(() => {
@@ -134,16 +144,41 @@ const sortOptions = [
     // Clear existing filters first
     dispatch(clearAllFilters());
 
-    // Apply category if selected
-    if (heroCategory) {
-      dispatch(toggleCategory(heroCategory));
+    // Apply category filter
+    if (heroParentCategory) {
+      // Always add parent category when selected
+      dispatch(toggleCategory(heroParentCategory));
+
+      // Also add subcategory if selected
+      if (heroSubcategory) {
+        dispatch(toggleSubcategory(heroSubcategory));
+      }
     }
 
     // Apply location if selected
     if (heroLocation) {
       dispatch(setLocation(heroLocation));
     }
+
+    // Scroll to results on mobile after a short delay
+    setTimeout(() => {
+      if (resultsRef.current && window.innerWidth < 768) {
+        resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
+
+  // Hero section Clear button handler
+  const handleHeroClear = () => {
+    // Clear hero selections
+    setHeroParentCategory('');
+    setHeroSubcategory('');
+    setHeroLocation(null);
+    setHeroLocationInput('');
+    // Clear Redux filters
+    dispatch(clearAllFilters());
+  };
+
 
   // Hero location place changed handler
   const handleHeroPlaceChanged = () => {
@@ -169,7 +204,6 @@ const sortOptions = [
     // Clear all temporary filters
     setTempFilters({
       categories: [],
-      communities: [],
       state: '',
       adType: null,
       sortBy: 'newest',
@@ -195,29 +229,15 @@ const getCurrentSortLabel = () => {
 
   const applyFilters = () => {
     // Apply all temporary filters to the store
-    if (JSON.stringify(tempFilters.categories) !== JSON.stringify(filters.categories)) {
-      filters.categories.forEach(cat => {
-        if (!tempFilters.categories.includes(cat)) {
-          dispatch(toggleCategory(cat));
+    if (JSON.stringify(tempFilters.subcategories) !== JSON.stringify(filters.subcategories)) {
+      filters.subcategories.forEach(cat => {
+        if (!tempFilters.subcategories.includes(cat)) {
+          dispatch(toggleSubcategory(cat));
         }
       });
-      tempFilters.categories.forEach(cat => {
-        if (!filters.categories.includes(cat)) {
-          dispatch(toggleCategory(cat));
-        }
-      });
-    }
-
-    // Apply communities filter
-    if (JSON.stringify(tempFilters.communities) !== JSON.stringify(filters.communities)) {
-      filters.communities.forEach(comm => {
-        if (!tempFilters.communities.includes(comm)) {
-          dispatch(toggleCommunity(comm));
-        }
-      });
-      tempFilters.communities.forEach(comm => {
-        if (!filters.communities.includes(comm)) {
-          dispatch(toggleCommunity(comm));
+      tempFilters.subcategories.forEach(cat => {
+        if (!filters.subcategories.includes(cat)) {
+          dispatch(toggleSubcategory(cat));
         }
       });
     }
@@ -247,13 +267,16 @@ const getCurrentSortLabel = () => {
   const getActiveFilterCount = () => {
     let count = 0;
     if (filters.categories.length > 0) count++;
-    if (filters.communities.length > 0) count++;
+    if (filters.subcategories.length > 0) count++;
     if (filters.location) count++;
     if (filters.state) count++;
     if (filters.searchText) count++;
     if (filters.adType) count++;
     return count;
   };
+
+  // Check if there are any hero selections or active filters to clear
+  const hasFiltersToShow = heroParentCategory || heroLocation || getActiveFilterCount() > 0;
 
   const getTotalResults = () => {
     return meta.totalRecords || adverts.length;
@@ -326,40 +349,6 @@ const getCurrentSortLabel = () => {
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Communities */}
-            <div className="mb-4">
-              <h3 className="font-semibold text-gray-700 mb-3">Community/Language</h3>
-              <div className="max-h-[7.5rem] overflow-y-auto border border-gray-200 rounded-md p-2">
-                <div className="grid grid-cols-2 gap-1">
-                  {COMMUNITIES.map((community) => (
-                    <label
-                      key={community.value}
-                      className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={tempFilters.communities?.includes(community.value) || false}
-                        onChange={() => {
-                          const currentCommunities = tempFilters.communities || [];
-                          const newCommunities = currentCommunities.includes(community.value)
-                            ? currentCommunities.filter(c => c !== community.value)
-                            : [...currentCommunities, community.value];
-                          setTempFilters({ ...tempFilters, communities: newCommunities });
-                        }}
-                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{community.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              {tempFilters.communities?.length > 0 && (
-                <p className="text-xs text-gray-600 mt-1">
-                  {tempFilters.communities.length} selected
-                </p>
-              )}
             </div>
 
             {/* Ad Type */}
@@ -464,15 +453,15 @@ const getCurrentSortLabel = () => {
                   + Post Listing
                 </Link>
 
-                {/* Category Dropdown - Headless UI */}
-                <Listbox value={heroCategory} onChange={setHeroCategory}>
+                {/* Parent Category Dropdown */}
+                <Listbox value={heroParentCategory} onChange={handleParentCategoryChange}>
                   <div className="relative">
                     <ListboxButton className="relative w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all cursor-pointer text-left">
                       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                       </svg>
-                      <span className={heroCategory ? 'text-gray-900' : 'text-gray-500'}>
-                        {heroCategory || 'Select Category'}
+                      <span className={heroParentCategory ? 'text-gray-900' : 'text-gray-500'}>
+                        {heroParentCategory || 'Select Category'}
                       </span>
                       <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
@@ -509,53 +498,104 @@ const getCurrentSortLabel = () => {
                             </>
                           )}
                         </ListboxOption>
-                        {CATEGORY_GROUPS.map((group) => {
-                          const groupCategories = group.categories.filter((cat) => allCategories.includes(cat));
-                          if (groupCategories.length === 0) return null;
-                          return (
-                            <div key={group.label}>
-                              <button
-                                type="button"
-                                onClick={(e) => toggleGroup(group.label, e)}
-                                className="w-full px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-y border-gray-200 flex items-center justify-between hover:bg-gray-100 transition-colors"
-                              >
-                                {group.label}
-                                <svg
-                                  className={`w-4 h-4 transition-transform ${expandedGroups[group.label] ? 'rotate-180' : ''}`}
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              </button>
-                              {expandedGroups[group.label] && groupCategories.map((cat) => (
-                                <ListboxOption
-                                  key={cat}
-                                  value={cat}
-                                  className={({ active }) =>
-                                    `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
-                                  }
-                                >
-                                  {({ selected }) => (
-                                    <>
-                                      <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                        {cat}
-                                      </span>
-                                      {selected && (
-                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
-                                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                          </svg>
-                                        </span>
-                                      )}
-                                    </>
-                                  )}
-                                </ListboxOption>
-                              ))}
-                            </div>
-                          );
-                        })}
+                        {CATEGORIES.map((group) => (
+                          <ListboxOption
+                            key={group.label}
+                            value={group.label}
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
+                            }
+                          >
+                            {({ selected }) => (
+                              <>
+                                <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                  {group.label}
+                                </span>
+                                {selected && (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </ListboxOption>
+                        ))}
+                      </ListboxOptions>
+                    </Transition>
+                  </div>
+                </Listbox>
+
+                {/* Subcategory Dropdown - always visible, disabled when no parent */}
+                <Listbox value={heroSubcategory} onChange={setHeroSubcategory} disabled={!heroParentCategory}>
+                  <div className="relative">
+                    <ListboxButton className={`relative w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-left ${heroParentCategory ? 'bg-white cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}`}>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      <span className={heroSubcategory ? 'text-gray-900' : 'text-gray-500'}>
+                        {heroSubcategory || (heroParentCategory ? 'Select Subcategory' : 'Select category first')}
+                      </span>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                      </svg>
+                    </ListboxButton>
+                    <Transition
+                      as={Fragment}
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                    >
+                      <ListboxOptions
+                        anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                        className="z-50 w-[var(--button-width)] max-h-[var(--anchor-max-height,15rem)] overflow-auto rounded-xl bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none"
+                      >
+                        <ListboxOption
+                          value=""
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                All in {heroParentCategory}
+                              </span>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                        {heroSubcategories.map((subcat) => (
+                          <ListboxOption
+                            key={subcat}
+                            value={subcat}
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
+                            }
+                          >
+                            {({ selected }) => (
+                              <>
+                                <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                  {subcat}
+                                </span>
+                                {selected && (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </ListboxOption>
+                        ))}
                       </ListboxOptions>
                     </Transition>
                   </div>
@@ -622,13 +662,23 @@ const getCurrentSortLabel = () => {
                   </div>
                 )}
 
-                {/* Go Button */}
-                <button
-                  onClick={handleHeroGo}
-                  className="self-start bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-8 rounded-full shadow-sm transition-colors"
-                >
-                  Go
-                </button>
+                {/* Go and Clear Buttons */}
+                <div className="flex gap-2 self-start">
+                  <button
+                    onClick={handleHeroGo}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-8 rounded-full shadow-sm transition-colors"
+                  >
+                    Go
+                  </button>
+                  {hasFiltersToShow && (
+                    <button
+                      onClick={handleHeroClear}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-full shadow-sm transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Desktop Layout - Inline */}
@@ -641,15 +691,15 @@ const getCurrentSortLabel = () => {
                   + Post Listing
                 </Link>
 
-                {/* Category Dropdown - Headless UI */}
-                <Listbox value={heroCategory} onChange={setHeroCategory}>
-                  <div className="relative flex-1 max-w-[240px]">
+                {/* Parent Category Dropdown */}
+                <Listbox value={heroParentCategory} onChange={handleParentCategoryChange}>
+                  <div className="relative flex-1 max-w-[200px]">
                     <ListboxButton className="relative w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all cursor-pointer text-left">
                       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                       </svg>
-                      <span className={`block truncate ${heroCategory ? 'text-gray-900' : 'text-gray-500'}`}>
-                        {heroCategory || 'All Categories'}
+                      <span className={`block truncate ${heroParentCategory ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {heroParentCategory || 'Category'}
                       </span>
                       <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
@@ -686,53 +736,104 @@ const getCurrentSortLabel = () => {
                             </>
                           )}
                         </ListboxOption>
-                        {CATEGORY_GROUPS.map((group) => {
-                          const groupCategories = group.categories.filter((cat) => allCategories.includes(cat));
-                          if (groupCategories.length === 0) return null;
-                          return (
-                            <div key={group.label}>
-                              <button
-                                type="button"
-                                onClick={(e) => toggleGroup(group.label, e)}
-                                className="w-full px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-y border-gray-200 flex items-center justify-between hover:bg-gray-100 transition-colors"
-                              >
-                                {group.label}
-                                <svg
-                                  className={`w-4 h-4 transition-transform ${expandedGroups[group.label] ? 'rotate-180' : ''}`}
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              </button>
-                              {expandedGroups[group.label] && groupCategories.map((cat) => (
-                                <ListboxOption
-                                  key={cat}
-                                  value={cat}
-                                  className={({ active }) =>
-                                    `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
-                                  }
-                                >
-                                  {({ selected }) => (
-                                    <>
-                                      <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                        {cat}
-                                      </span>
-                                      {selected && (
-                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
-                                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                          </svg>
-                                        </span>
-                                      )}
-                                    </>
-                                  )}
-                                </ListboxOption>
-                              ))}
-                            </div>
-                          );
-                        })}
+                        {CATEGORIES.map((group) => (
+                          <ListboxOption
+                            key={group.label}
+                            value={group.label}
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
+                            }
+                          >
+                            {({ selected }) => (
+                              <>
+                                <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                  {group.label}
+                                </span>
+                                {selected && (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </ListboxOption>
+                        ))}
+                      </ListboxOptions>
+                    </Transition>
+                  </div>
+                </Listbox>
+
+                {/* Subcategory Dropdown - always visible, disabled when no parent */}
+                <Listbox value={heroSubcategory} onChange={setHeroSubcategory} disabled={!heroParentCategory}>
+                  <div className="relative w-[260px]">
+                    <ListboxButton className={`relative w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-left ${heroParentCategory ? 'bg-white cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}`}>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      <span className={`block truncate ${heroSubcategory ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {heroSubcategory || (heroParentCategory ? 'Subcategory' : 'Select category first')}
+                      </span>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                      </svg>
+                    </ListboxButton>
+                    <Transition
+                      as={Fragment}
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                    >
+                      <ListboxOptions
+                        anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                        className="z-50 w-72 max-h-[var(--anchor-max-height,15rem)] overflow-auto rounded-xl bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none"
+                      >
+                        <ListboxOption
+                          value=""
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                All in {heroParentCategory}
+                              </span>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                        {heroSubcategories.map((subcat) => (
+                          <ListboxOption
+                            key={subcat}
+                            value={subcat}
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`
+                            }
+                          >
+                            {({ selected }) => (
+                              <>
+                                <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                  {subcat}
+                                </span>
+                                {selected && (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </ListboxOption>
+                        ))}
                       </ListboxOptions>
                     </Transition>
                   </div>
@@ -744,7 +845,7 @@ const getCurrentSortLabel = () => {
                   libraries={libraries}
                   onLoad={() => setIsScriptLoaded(true)}
                   loadingElement={
-                    <div className="relative flex-1 max-w-[250px]">
+                    <div className="relative w-[280px]">
                       <div className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-full animate-pulse">
                         <div className="h-5 bg-gray-300 rounded w-32"></div>
                       </div>
@@ -755,7 +856,7 @@ const getCurrentSortLabel = () => {
                     </div>
                   }
                 >
-                  <div className="relative flex-1 max-w-[250px]">
+                  <div className="relative w-[280px]">
                     <Autocomplete
                       onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
                       onPlaceChanged={handleHeroPlaceChanged}
@@ -779,37 +880,43 @@ const getCurrentSortLabel = () => {
                   </div>
                 </LoadScriptNext>
 
-                {/* Go Button */}
+              </div>
+
+              {/* Go and Clear Buttons - Desktop (separate row) */}
+              <div className="hidden md:flex justify-center gap-2 mt-2">
                 <button
                   onClick={handleHeroGo}
-                  className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 px-6 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                  className="bg-teal-600 hover:bg-teal-700 text-white font-medium text-sm py-1.5 px-6 rounded-full shadow-sm transition-colors whitespace-nowrap"
                 >
                   Go
                 </button>
+                {hasFiltersToShow && (
+                  <button
+                    onClick={handleHeroClear}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium text-sm py-1.5 px-4 rounded-full shadow-sm transition-colors whitespace-nowrap"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
 
-              {/* Radius Slider - aligned under location field (Desktop) */}
+              {/* Radius Slider - Desktop */}
               {heroLocation && (
-                <div className="mt-1 flex items-center gap-3">
-                  <div className="w-[100px]"></div>
-                  <div className="flex-1 max-w-[240px]"></div>
-                  <div className="flex-1 max-w-[250px] flex items-center gap-2 px-3">
-                    <span className="text-xs text-gray-600">1km</span>
-                    <input
-                      type="range"
-                      min="1"
-                      max="200"
-                      value={heroLocation.radius}
-                      onChange={(e) => setHeroLocation({ ...heroLocation, radius: parseInt(e.target.value) })}
-                      className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
-                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
-                        [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                        [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-teal-600
-                        [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
-                    />
-                    <span className="text-xs text-gray-600 min-w-[40px] text-right">{heroLocation.radius}km</span>
-                  </div>
-                  <div className="w-[52px]"></div>
+                <div className="hidden md:flex mt-2 items-center justify-center gap-2 max-w-md mx-auto">
+                  <span className="text-xs text-gray-600">1km</span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="200"
+                    value={heroLocation.radius}
+                    onChange={(e) => setHeroLocation({ ...heroLocation, radius: parseInt(e.target.value) })}
+                    className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
+                      [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                      [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-teal-600
+                      [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                  />
+                  <span className="text-xs text-gray-600 min-w-[40px] text-right">{heroLocation.radius}km</span>
                 </div>
               )}
             </div>
@@ -817,7 +924,7 @@ const getCurrentSortLabel = () => {
         </section>
 
         {/* Page Controls - Sort and Filter */}
-        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
+        <div ref={resultsRef} className="px-3 mb-3 sm:px-4 sm:mb-4">
           {/* Page Controls - Sort and Filter */}
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
@@ -828,11 +935,6 @@ const getCurrentSortLabel = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
               <span className="font-medium">Filter</span>
-              {getActiveFilterCount() > 0 && (
-                <span className="bg-teal-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                  {getActiveFilterCount()}
-                </span>
-              )}
             </button>
 
             <div className="relative">
@@ -877,43 +979,41 @@ const getCurrentSortLabel = () => {
           <div className="bg-gray-50 border-y">
             <div className="px-3 py-3 sm:px-4 flex items-center gap-3 max-w-full">
               <span className="text-sm text-gray-600 font-medium whitespace-nowrap flex-shrink-0">
-                Active filters:
+                Active Filters ({getActiveFilterCount()}):
               </span>
 
               <div className="flex-1 overflow-x-auto">
                 <div className="flex gap-2 pb-1">
+                  {/* Show parent categories */}
                   {filters.categories.map((category) => (
                     <span
                       key={category}
-                      className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
+                      className="inline-flex items-center gap-1 bg-teal-50 border border-teal-300 text-teal-800 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
                     >
-                      {getCategoryDisplayName(category)}
+                      {category}
                       <button
                         onClick={() => dispatch(toggleCategory(category))}
+                        className="hover:text-teal-900 font-bold ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  {/* Show subcategories */}
+                  {filters.subcategories.map((subcategory) => (
+                    <span
+                      key={subcategory}
+                      className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
+                    >
+                      {subcategory}
+                      <button
+                        onClick={() => dispatch(toggleSubcategory(subcategory))}
                         className="hover:text-gray-900 font-bold ml-1"
                       >
                         ×
                       </button>
                     </span>
                   ))}
-
-                  {filters.communities.map((community) => {
-                    const communityLabel = COMMUNITIES.find(c => c.value === community)?.label || community;
-                    return (
-                      <span
-                        key={community}
-                        className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
-                      >
-                        {communityLabel}
-                        <button
-                          onClick={() => dispatch(toggleCommunity(community))}
-                          className="hover:text-gray-900 font-bold ml-1"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    );
-                  })}
 
                   {filters.state && (
                     <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
@@ -981,9 +1081,15 @@ const getCurrentSortLabel = () => {
           <Pagination
             currentPage={meta.currentPage}
             totalPages={meta.totalPages}
-            onPageChange={(pageNum) =>
-              dispatch(updatePagination({ page: pageNum }))
-            }
+            onPageChange={(pageNum) => {
+              dispatch(updatePagination({ page: pageNum }));
+              // Scroll to results section
+              setTimeout(() => {
+                if (resultsRef.current) {
+                  resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }, 100);
+            }}
           />
         </div>
       </div>

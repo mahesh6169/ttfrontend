@@ -1,12 +1,16 @@
-// components/advertsv2/fieldSystem/index.js
+// components/adverts/fieldSystem/index.js
 
 // Import from modules
 import {
-  ADDRESS_OPTIONAL_CATEGORIES,
-  isAddressOptional,
-  CATEGORY_GROUPS,
-  getAllCategories
-} from './CategoryAccess';
+  CATEGORIES,
+  getAllParentCategories,
+  getSubcategories,
+  getAllSubcategories,
+  getParentForSubcategory,
+  isServiceSubcategory,
+  isValidCategoryCombo,
+  NON_SERVICE_SUBCATEGORIES
+} from './Categories';
 
 import {
   getFieldsForCategory,
@@ -40,23 +44,32 @@ import {
 
 // Export everything individually
 export {
-  ADDRESS_OPTIONAL_CATEGORIES,
-  isAddressOptional,
-  CATEGORY_GROUPS,
-  getAllCategories,
+  // Category management (new)
+  CATEGORIES,
+  getAllParentCategories,
+  getSubcategories,
+  getAllSubcategories,
+  getParentForSubcategory,
+  isServiceSubcategory,
+  isValidCategoryCombo,
+  NON_SERVICE_SUBCATEGORIES,
+  // Field management
   getFieldsForCategory,
   getOrderedFieldsForCategory,
   getFormStructure,
   FORM_STRUCTURE,
+  // Pricing management
   PRICING_CONFIG,
   getPricingOptionsForCategory,
   getAvailablePricingOptions,
   isPricingOptionValidForType,
   shouldShowPricingOption,
+  // Engine
   FormEngine,
   getFormEngine,
   DependencyResolver,
   getDependencyResolver,
+  // Wanted config
   WANTED_FIELDS_CONFIG,
   getWantedConfig,
   isSectionHiddenForWanted,
@@ -66,30 +79,35 @@ export {
 
 // Export a unified API for the field system
 export const FieldSystem = {
-  // Category management
-  getAllCategories,
-  isAddressOptional,
-  
+  // Category management (new two-level system)
+  getAllParentCategories,
+  getSubcategories,
+  getAllSubcategories,
+  getParentForSubcategory,
+  isServiceSubcategory,
+  isValidCategoryCombo,
+
   // Field management
   getFieldsForCategory,
   getOrderedFieldsForCategory,
   getFormStructure,
-  
+
   // Pricing management
   getPricingOptionsForCategory,
   getAvailablePricingOptions,
-  
+
   // Engine access
   getFormEngine,
   getDependencyResolver,
-  
+
   // Legacy method for backward compatibility
-  getFormConfiguration: (category, userRole, formData = {}) => {
-    const engine = getFormEngine(category, userRole, formData);
+  // Note: category parameter is now subcategory (the old flat category name)
+  getFormConfiguration: (subcategory, userRole, formData = {}) => {
+    const engine = getFormEngine(subcategory, userRole, formData);
     const visibleFieldMap = engine.getVisibleFields();
     const pricingOptions = engine.getAvailablePricingOptions();
     const pricingConfig = engine.getPricingConfig();
-    
+
     const pricingField = {
       id: 'pricing',
       type: 'pricing',
@@ -97,7 +115,7 @@ export const FieldSystem = {
       options: pricingOptions,
       order: 10
     };
-    
+
     const orderedFields = [
       pricingField,
       ...Object.entries(visibleFieldMap)
@@ -113,7 +131,7 @@ export const FieldSystem = {
           };
         })
     ].sort((a, b) => (a.order || 999) - (b.order || 999));
-    
+
     return {
       canAccess: true,
       fields: visibleFieldMap,
@@ -122,10 +140,11 @@ export const FieldSystem = {
       pricingConfig
     };
   },
-  
+
   // New method for section-based rendering
-  getFormSections: (category, userRole, formData = {}) => {
-    const engine = getFormEngine(category, userRole, formData);
+  // Note: category parameter is now subcategory (the old flat category name)
+  getFormSections: (subcategory, userRole, formData = {}) => {
+    const engine = getFormEngine(subcategory, userRole, formData);
     return engine.getVisibleSections();
   }
 };

@@ -10,6 +10,7 @@ import CommunitySelector from '../shared/CommunitySelector';
 import SimpleDropdown from '../shared/SimpleDropdown';
 import FieldSystem from './fieldSystem';
 import { getSharedField } from './fieldSystem/FieldRegistry';
+import { needsCommunityField } from './fieldSystem/Categories';
 import ContactInfoInput from './ContactInfoInput';
 
 const AdvertForm = ({ 
@@ -25,6 +26,7 @@ const AdvertForm = ({
   const [formData, setFormData] = useState(() => ({
     title: '',
     category: '',
+    subcategory: '',
     description: '',
     adType: 'offered',
     condition: '',
@@ -62,6 +64,8 @@ const AdvertForm = ({
     if (initialData && !formData.title) { // Only set if form is empty
       setFormData({
         ...initialData,
+        category: initialData.category || '',
+        subcategory: initialData.subcategory || '',
         condition: initialData.condition || '',
         fields: initialData.fields || {},
         pricing: initialData.pricing || [],
@@ -92,11 +96,11 @@ const AdvertForm = ({
   
   
 
-  // Update form sections when category or form data changes
+  // Update form sections when subcategory or form data changes
   useEffect(() => {
-    if (formData.category) {
+    if (formData.subcategory) {
       const sections = FieldSystem.getFormSections(
-        formData.category,
+        formData.subcategory,
         userRole,
         formData
       );
@@ -104,23 +108,23 @@ const AdvertForm = ({
     } else {
       setFormSections([]);
     }
-  }, [formData.category, formData.fields, formData.pricing, formData.adType, userRole]);
+  }, [formData.subcategory, formData.fields, formData.pricing, formData.adType, userRole]);
 
-  // Setup default pricing when category changes
+  // Setup default pricing when subcategory changes
   useEffect(() => {
-    if (formData.adType === 'offered' && formData.category) {
+    if (formData.adType === 'offered' && formData.subcategory) {
       const pricingSection = formSections.find(s => s.specialField === 'pricing');
-      
+
       if (pricingSection && Object.keys(pricingSection.pricingOptions || {}).length > 0) {
         if (formData.pricing.length === 0) {
           const [firstType, firstOption] = Object.entries(pricingSection.pricingOptions)[0];
-          
+
           const defaultPricing = [{
             priceType: firstType,
             amount: '',
             unit: firstOption.units?.[0] || ''
           }];
-          
+
           setFormData(prev => ({ ...prev, pricing: defaultPricing }));
           setSelectedPriceType(firstType);
         } else if (!selectedPriceType && formData.pricing.length > 0) {
@@ -128,7 +132,7 @@ const AdvertForm = ({
         }
       }
     }
-  }, [formSections, formData.adType, formData.category, formData.pricing, selectedPriceType]);
+  }, [formSections, formData.adType, formData.subcategory, formData.pricing, selectedPriceType]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -137,9 +141,9 @@ const AdvertForm = ({
   const handleFieldChange = (fieldId, value) => {
     setFormData(prev => {
       const newFields = { ...prev.fields, [fieldId]: value };
-      
+
       // Check if this is a type field that other fields depend on
-      const structure = FieldSystem.getFormStructure(prev.category);
+      const structure = FieldSystem.getFormStructure(prev.subcategory);
       if (structure && structure.typeField === fieldId) {
         // Clear fields that depend on the type field
         Object.entries(structure.fields || {}).forEach(([depFieldId, fieldConfig]) => {
@@ -259,13 +263,13 @@ const AdvertForm = ({
           </div>
         );
       case 'select':
-        // Check if this is vehicleType field in Cars & Vehicles category during edit
-        const isVehicleTypeLocked = initialData && 
-                                    formData.category === 'Cars & Vehicles' && 
+        // Check if this is vehicleType field in Cars & Vehicles subcategory during edit
+        const isVehicleTypeLocked = initialData &&
+                                    formData.subcategory === 'Cars & Vehicles' &&
                                     field.id === 'vehicleType';
-        
+
         // Check if this is a typeField (like propertyType, jobType, etc) during edit
-        const structure = FieldSystem.getFormStructure(formData.category);
+        const structure = FieldSystem.getFormStructure(formData.subcategory);
         const isTypeField = structure && structure.typeField === field.id;
         
         return (
@@ -385,20 +389,22 @@ const handleSubmit = (e) => {
   if (!formData.category) {
     newFieldErrors.category = 'Category is required';
   }
-  
+
+  // Subcategory validation
+  if (!formData.subcategory) {
+    newFieldErrors.subcategory = 'Subcategory is required';
+  }
+
   // Cleaner description validation
   const descriptionTrimmed = (formData.description || '').trim();
   if (descriptionTrimmed === '') {
     newFieldErrors.description = 'Description is required';
   }
   
-  // Address validation
-  const isAddressOptional = FieldSystem.isAddressOptional(formData.category);
-  
-  if (!isAddressOptional && (
-    !formData.address.formattedAddress || 
-    formData.address.location.coordinates[0] === 0 || 
-    formData.address.location.coordinates[1] === 0)) {
+  // Address validation - required for all listings
+  if (!formData.address.formattedAddress ||
+      formData.address.location.coordinates[0] === 0 ||
+      formData.address.location.coordinates[1] === 0) {
     newFieldErrors.address = 'Valid address with location is required';
   }
   
@@ -469,7 +475,7 @@ const handleSubmit = (e) => {
   
   // Clean up fields before submission - remove fields that don't belong to current configuration
   const cleanedFields = {};
-  const structure = FieldSystem.getFormStructure(formData.category);
+  const structure = FieldSystem.getFormStructure(formData.subcategory);
   
   if (structure) {
     // Only include fields that are currently visible
@@ -497,6 +503,7 @@ const handleSubmit = (e) => {
   const submitData = {
     title: formData.title,
     category: formData.category,
+    subcategory: formData.subcategory,
     description: formData.description,
     adType: formData.adType,
     condition: isConditionVisible ? (formData.condition || null) : null,  // Only include condition if visible
@@ -512,8 +519,6 @@ const handleSubmit = (e) => {
   
   onSubmit(submitData);
 };
-
-const availableCategories = FieldSystem.getAllCategories();
 
 return (
   <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
@@ -584,15 +589,15 @@ return (
       </div>
     </div>
 
-    {/* Category */}
+    {/* Category & Subcategory */}
     <div>
-      <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
-        Category <span className="text-red-500">*</span>
-        {initialData && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
-      </label>
+      {initialData && (
+        <p className="text-xs sm:text-sm text-gray-500 mb-2">(Category cannot be changed)</p>
+      )}
       <CategorySelector
-        value={formData.category}
-        onChange={(value) => {
+        category={formData.category}
+        subcategory={formData.subcategory}
+        onCategoryChange={(value) => {
           if (!initialData) {
             handleChange('category', value);
             // Clear error when user selects
@@ -601,23 +606,35 @@ return (
             }
           }
         }}
-        categories={availableCategories}
+        onSubcategoryChange={(value) => {
+          if (!initialData) {
+            handleChange('subcategory', value);
+            // Clear error when user selects
+            if (fieldErrors.subcategory) {
+              setFieldErrors(prev => ({ ...prev, subcategory: null }));
+            }
+          }
+        }}
         placeholder="Select a category"
-        required={true}
         disabled={!!initialData}
       />
       {fieldErrors.category && (
         <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.category}</p>
       )}
+      {fieldErrors.subcategory && (
+        <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.subcategory}</p>
+      )}
     </div>
 
-    {/* Community/Language Selection */}
-    <CommunitySelector
-      value={formData.communities}
-      onChange={(value) => handleChange('communities', value)}
-      label="Community/Language (Optional)"
-      showHint={true}
-    />
+    {/* Community/Language Selection - Only for eligible subcategories */}
+    {needsCommunityField(formData.subcategory) && (
+      <CommunitySelector
+        value={formData.communities}
+        onChange={(value) => handleChange('communities', value)}
+        label="Community/Language (Optional)"
+        showHint={true}
+      />
+    )}
 
     {/* Render all form sections */}
     {formSections.map((section, index) => {
@@ -699,9 +716,9 @@ return (
         
         {/* Regular fields for non-pricing sections */}
         {section.fields && section.fields.map(field => {
-          // Check if this is vehicleType field in Cars & Vehicles category during edit
-          const isVehicleTypeLocked = initialData && 
-                                      formData.category === 'Cars & Vehicles' && 
+          // Check if this is vehicleType field in Cars & Vehicles subcategory during edit
+          const isVehicleTypeLocked = initialData &&
+                                      formData.subcategory === 'Cars & Vehicles' &&
                                       field.id === 'vehicleType';
           
           return (

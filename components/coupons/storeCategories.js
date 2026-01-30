@@ -1,52 +1,58 @@
 export const STORE_CATEGORIES = [
   // Food & Dining
-  'Restaurants & Catering',
-  'Cakes, Sweets & Snacks',
-  'Indian Groceries',
-  
+  'Restaurants',
+  'Catering',
+  'Cakes',
+  'Sweets & Snacks',
+  'Chat & Street Food',
+
   // Automotive
-  'Car Cleaning & Detailing',
-  'Vehicle Repairs & Services',
-  'Driving Instructors',
-  
+  'Vehicle Repairs',
+  'Driving Lessons',
+
   // Beauty & Wellness
-  'Beauty, Hair & Makeup',
-  
+  'Hair, Makeup & Waxing',
+  'Massage',
+  'Yoga',
+
   // Home Services
-  'Cleaning Services',
+  'Cleaning & Maintenance',
   'Pest Control',
-  'Air Conditioning Services',
-  'Garden & Landscaping Services',
-  'Electrical Services',
-  'Plumbing & Gas Services',
-  
-  
+  'Air Conditioning & Refrigeration',
+  'Landscaping & Gardening',
+  'Electricians',
+  'Plumbing & Gas',
+  'Painters',
+  'Handyman',
+  'Home Repairs & Improvements',
+
   // Professional Services
   'Accounting & Taxation',
   'Legal & Immigration',
   'Financial & Insurance',
-  
+
   // Tech & Repairs
   'Computer & Mobile Repairs',
-  
+
   // Events & Entertainment
   'Photography & Videography',
   'DJ & Audio Visual',
   'Party Hires',
-  'Decoration Services',
-  
+  'Decoration',
+  'Entertainers & Performers',
+
   // Education & Tutoring
-  'Academic Tutors',
-  'Music Tutors',
-  'Dance Tutors',
-  
+  'Academic',
+  'Music',
+  'Dance',
+  'Arts',
+  'Sports',
+
   // Retail
-  'Retail Stores',
-  
+  'Retail Stores & Shops',
+
   // Travel & Transport
   'Travel & Tourism',
-  'Taxi & Ride Services',
+  'Taxi & Ride',
   'Courier & Delivery',
-  
-
 ];

@@ -15,23 +15,42 @@ export const SUGGESTED_SEARCH_TERMS = [
 ];
 
 const CATEGORY_MAPPINGS = {
-  'Restaurants & Catering Services': [
-    'restaurants', 'catering'
+  'Restaurants': [
+    'restaurants', 'restaurant', 'food', 'dining'
   ],
 
-  'Cakes, Sweets & Snacks': [
-    'cake', 'cupcakes', 'macarons', 'donuts',
-    'cookies', 'pani', 'puri', 'samosa'
+  'Catering': [
+    'catering', 'caterer'
   ],
 
-  'Beauty, Hair & Makeup Services': [
+  'Cakes': [
+    'cake', 'cupcakes', 'macarons', 'donuts', 'cookies'
+  ],
+
+  'Sweets & Snacks': [
+    'sweets', 'snacks', 'pani', 'puri', 'samosa'
+  ],
+
+  'Chat & Street Food': [
+    'chat', 'chaat', 'street food'
+  ],
+
+  'Hair, Makeup & Waxing': [
     'threading', 'tinting', 'facial', 'makeup', 'make-up',
     'hair', 'waxing', 'skin', 'bleach',
-    'manicure', 'pedicure', 'massage'
+    'manicure', 'pedicure'
+  ],
+
+  'Massage': [
+    'massage', 'spa'
+  ],
+
+  'Yoga': [
+    'yoga'
   ],
 
   'Retail Stores & Shops': [
-    'groceries'
+    'groceries', 'grocery', 'store', 'shop'
   ],
 };
 
