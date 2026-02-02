@@ -140,7 +140,13 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
-  'Handyman': {
+  'Cabinet Makers': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Handyman & Flatpacks': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []

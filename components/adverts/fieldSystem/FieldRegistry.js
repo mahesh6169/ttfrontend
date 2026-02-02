@@ -511,7 +511,17 @@ fields: {
     ]
   },
 
-  'Handyman': {
+  'Cabinet Makers': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Handyman & Flatpacks': {
     sections: [
       {
         id: 'serviceDetailsSection',
