@@ -42,7 +42,8 @@ const AdvertsPage = () => {
   const [heroParentCategory, setHeroParentCategory] = useState('');
   const [heroSubcategory, setHeroSubcategory] = useState('');
   const [heroLocationInput, setHeroLocationInput] = useState('');
-  const [heroAutocomplete, setHeroAutocomplete] = useState(null);
+  const [heroAutocompleteMobile, setHeroAutocompleteMobile] = useState(null);
+  const [heroAutocompleteDesktop, setHeroAutocompleteDesktop] = useState(null);
   const [heroLocation, setHeroLocation] = useState(null);
 
   // Get subcategories for selected parent category
@@ -179,11 +180,45 @@ const sortOptions = [
     dispatch(clearAllFilters());
   };
 
+  // Remove category and its associated subcategories
+  const handleRemoveCategory = (category) => {
+    // First remove the category
+    dispatch(toggleCategory(category));
+    // Also clear any subcategories (they belong to this parent)
+    filters.subcategories.forEach((sub) => {
+      dispatch(toggleSubcategory(sub));
+    });
+    // Reset hero selections if they match
+    if (heroParentCategory === category) {
+      setHeroParentCategory('');
+      setHeroSubcategory('');
+    }
+  };
 
-  // Hero location place changed handler
-  const handleHeroPlaceChanged = () => {
-    if (heroAutocomplete) {
-      const place = heroAutocomplete.getPlace();
+
+  // Hero location place changed handler - mobile
+  const handleHeroPlaceChangedMobile = () => {
+    if (heroAutocompleteMobile) {
+      const place = heroAutocompleteMobile.getPlace();
+      if (place.geometry) {
+        const coordinates = [
+          place.geometry.location.lng(),
+          place.geometry.location.lat()
+        ];
+        setHeroLocation({
+          coordinates,
+          radius: 10,
+          name: place.formatted_address || 'Selected Location'
+        });
+        setHeroLocationInput(place.formatted_address);
+      }
+    }
+  };
+
+  // Hero location place changed handler - desktop
+  const handleHeroPlaceChangedDesktop = () => {
+    if (heroAutocompleteDesktop) {
+      const place = heroAutocompleteDesktop.getPlace();
       if (place.geometry) {
         const coordinates = [
           place.geometry.location.lng(),
@@ -444,11 +479,11 @@ const getCurrentSortLabel = () => {
           <div className="relative px-3 sm:px-6 -mt-2 md:mt-0 pb-4">
             <div className="md:max-w-3xl md:mx-auto">
               {/* Mobile Layout - Stacked */}
-              <div className="flex flex-col gap-2 md:hidden">
+              <div className="flex flex-col gap-1.5 md:hidden">
                 {/* Post Listing Button */}
                 <Link
                   href="/listings/add"
-                  className="self-start bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-sm font-bold py-2 px-4 rounded-full shadow-sm transition-colors"
+                  className="self-start bg-[#f0f7d4] hover:bg-[#e8f2c1] text-teal-900 text-xs font-bold py-1.5 px-3 rounded-full shadow-sm transition-colors"
                 >
                   + Post Listing
                 </Link>
@@ -456,14 +491,14 @@ const getCurrentSortLabel = () => {
                 {/* Parent Category Dropdown */}
                 <Listbox value={heroParentCategory} onChange={handleParentCategoryChange}>
                   <div className="relative">
-                    <ListboxButton className="relative w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all cursor-pointer text-left">
-                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <ListboxButton className="relative w-full pl-8 pr-8 py-2 bg-white border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all cursor-pointer text-left">
+                      <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                       </svg>
                       <span className={heroParentCategory ? 'text-gray-900' : 'text-gray-500'}>
                         {heroParentCategory || 'Select Category'}
                       </span>
-                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
                       </svg>
                     </ListboxButton>
@@ -530,14 +565,14 @@ const getCurrentSortLabel = () => {
                 {/* Subcategory Dropdown - always visible, disabled when no parent */}
                 <Listbox value={heroSubcategory} onChange={setHeroSubcategory} disabled={!heroParentCategory}>
                   <div className="relative">
-                    <ListboxButton className={`relative w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-left ${heroParentCategory ? 'bg-white cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}`}>
-                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <ListboxButton className={`relative w-full pl-8 pr-8 py-2 border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-left ${heroParentCategory ? 'bg-white cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}`}>
+                      <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                       <span className={heroSubcategory ? 'text-gray-900' : 'text-gray-500'}>
                         {heroSubcategory || (heroParentCategory ? 'Select Subcategory' : 'Select category first')}
                       </span>
-                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
                       </svg>
                     </ListboxButton>
@@ -608,10 +643,10 @@ const getCurrentSortLabel = () => {
                   onLoad={() => setIsScriptLoaded(true)}
                   loadingElement={
                     <div className="relative">
-                      <div className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-full animate-pulse">
-                        <div className="h-5 bg-gray-300 rounded w-32"></div>
+                      <div className="w-full pl-8 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-full animate-pulse">
+                        <div className="h-4 bg-gray-300 rounded w-32"></div>
                       </div>
-                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
@@ -620,8 +655,8 @@ const getCurrentSortLabel = () => {
                 >
                   <div className="relative">
                     <Autocomplete
-                      onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
-                      onPlaceChanged={handleHeroPlaceChanged}
+                      onLoad={(autocompleteInstance) => setHeroAutocompleteMobile(autocompleteInstance)}
+                      onPlaceChanged={handleHeroPlaceChangedMobile}
                       options={{
                         componentRestrictions: { country: 'au' },
                         types: ['geocode']
@@ -632,10 +667,10 @@ const getCurrentSortLabel = () => {
                         placeholder="Enter suburb or city"
                         value={heroLocationInput}
                         onChange={(e) => setHeroLocationInput(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                        className="w-full pl-8 pr-4 py-2 bg-white border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                       />
                     </Autocomplete>
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
@@ -666,14 +701,14 @@ const getCurrentSortLabel = () => {
                 <div className="flex gap-2 self-start">
                   <button
                     onClick={handleHeroGo}
-                    className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-8 rounded-full shadow-sm transition-colors"
+                    className="bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold py-1.5 px-6 rounded-full shadow-sm transition-colors"
                   >
                     Go
                   </button>
                   {hasFiltersToShow && (
                     <button
                       onClick={handleHeroClear}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-full shadow-sm transition-colors"
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold py-1.5 px-3 rounded-full shadow-sm transition-colors"
                     >
                       Clear
                     </button>
@@ -858,8 +893,8 @@ const getCurrentSortLabel = () => {
                 >
                   <div className="relative w-[280px]">
                     <Autocomplete
-                      onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
-                      onPlaceChanged={handleHeroPlaceChanged}
+                      onLoad={(autocompleteInstance) => setHeroAutocompleteDesktop(autocompleteInstance)}
+                      onPlaceChanged={handleHeroPlaceChangedDesktop}
                       options={{
                         componentRestrictions: { country: 'au' },
                         types: ['geocode']
@@ -929,9 +964,9 @@ const getCurrentSortLabel = () => {
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
+              className="flex items-center gap-1 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-xs md:text-sm"
             >
-              <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
               <span className="font-medium">Filter</span>
@@ -939,10 +974,10 @@ const getCurrentSortLabel = () => {
 
             <div className="relative">
   <button
-    className="flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm"
+    className="flex items-center gap-1 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-xs md:text-sm"
     onClick={() => setShowSortMenu(!showSortMenu)}
   >
-    <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
     </svg>
     <span className="font-medium">Sort: {getCurrentSortLabel()}</span>
@@ -977,23 +1012,24 @@ const getCurrentSortLabel = () => {
         {/* Active Filters Display */}
         {getActiveFilterCount() > 0 && (
           <div className="bg-gray-50 border-y">
-            <div className="px-3 py-3 sm:px-4 flex items-center gap-3 max-w-full">
-              <span className="text-sm text-gray-600 font-medium whitespace-nowrap flex-shrink-0">
-                Active Filters ({getActiveFilterCount()}):
-              </span>
+            <div className="relative py-2 sm:py-3">
+              {/* Left edge fade - mobile only */}
+              <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-gray-50 to-transparent pointer-events-none z-10 md:hidden"></div>
+              {/* Right edge fade - mobile only */}
+              <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none z-10 md:hidden"></div>
 
-              <div className="flex-1 overflow-x-auto">
-                <div className="flex gap-2 pb-1">
+              <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 sm:px-4">
+                <div className="flex gap-2">
                   {/* Show parent categories */}
                   {filters.categories.map((category) => (
                     <span
                       key={category}
-                      className="inline-flex items-center gap-1 bg-teal-50 border border-teal-300 text-teal-800 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
+                      className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0"
                     >
                       {category}
                       <button
-                        onClick={() => dispatch(toggleCategory(category))}
-                        className="hover:text-teal-900 font-bold ml-1"
+                        onClick={() => handleRemoveCategory(category)}
+                        className="hover:text-teal-900 font-bold p-1 -mr-0.5"
                       >
                         ×
                       </button>
@@ -1003,12 +1039,12 @@ const getCurrentSortLabel = () => {
                   {filters.subcategories.map((subcategory) => (
                     <span
                       key={subcategory}
-                      className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0"
+                      className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0"
                     >
                       {subcategory}
                       <button
                         onClick={() => dispatch(toggleSubcategory(subcategory))}
-                        className="hover:text-gray-900 font-bold ml-1"
+                        className="hover:text-gray-900 font-bold p-1 -mr-0.5"
                       >
                         ×
                       </button>
@@ -1016,11 +1052,11 @@ const getCurrentSortLabel = () => {
                   ))}
 
                   {filters.state && (
-                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
-                      State: {filters.state}
+                    <span className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0">
+                      {filters.state}
                       <button
                         onClick={() => dispatch(updateFilter({ filterType: 'state', value: '' }))}
-                        className="hover:text-gray-900 font-bold ml-1"
+                        className="hover:text-gray-900 font-bold p-1 -mr-0.5"
                       >
                         ×
                       </button>
@@ -1028,14 +1064,14 @@ const getCurrentSortLabel = () => {
                   )}
 
                   {filters.location && (
-                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <span className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
-                      {filters.location.radius}km from {filters.location.name.split(',')[0]}
+                      {filters.location.radius}km {filters.location.name.split(',')[0]}
                       <button
                         onClick={handleClearLocation}
-                        className="hover:text-gray-900 font-bold ml-1"
+                        className="hover:text-gray-900 font-bold p-1 -mr-0.5"
                       >
                         ×
                       </button>
@@ -1043,11 +1079,11 @@ const getCurrentSortLabel = () => {
                   )}
 
                   {filters.searchText && (
-                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
-                      Search: "{filters.searchText}"
+                    <span className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0">
+                      "{filters.searchText}"
                       <button
                         onClick={handleClearSearch}
-                        className="hover:text-gray-900 font-bold ml-1"
+                        className="hover:text-gray-900 font-bold p-1 -mr-0.5"
                       >
                         ×
                       </button>
@@ -1055,11 +1091,11 @@ const getCurrentSortLabel = () => {
                   )}
 
                   {filters.adType && (
-                    <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap flex-shrink-0">
-                      Type: {filters.adType}
+                    <span className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0">
+                      {filters.adType}
                       <button
                         onClick={() => dispatch(updateFilter({ filterType: 'adType', value: null }))}
-                        className="hover:text-gray-900 font-bold ml-1"
+                        className="hover:text-gray-900 font-bold p-1 -mr-0.5"
                       >
                         ×
                       </button>
