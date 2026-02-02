@@ -61,12 +61,18 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: ['brand', 'model']
   },
   
-  'Home & Garden': {
+  'Home & Decor': {
     hiddenSections: ['pricingSection', 'conditionSection'],
     hiddenFields: [],
     optionalFields: ['brand', 'model']
   },
-  
+
+  'Garden & Outdoor': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: ['brand', 'model']
+  },
+
   'Pet Supplies': {
     hiddenSections: ['pricingSection', 'conditionSection'],
     hiddenFields: [],

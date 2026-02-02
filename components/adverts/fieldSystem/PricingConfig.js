@@ -86,7 +86,16 @@ export const PRICING_CONFIG = {
   }
 },
 
-'Home & Garden': {
+'Home & Decor': {
+  required: true,
+  options: {
+    sell: { enabled: true, label: 'Sell', units: null },
+    rent: { enabled: true, label: 'Rent', units: ['day', 'week', 'month'] },
+    hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
+  }
+},
+
+'Garden & Outdoor': {
   required: true,
   options: {
     sell: { enabled: true, label: 'Sell', units: null },

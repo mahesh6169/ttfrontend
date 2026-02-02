@@ -220,13 +220,13 @@ fields: {
   }
 },
 
-'Home & Garden': {
+'Home & Decor': {
   sections: [
     { id: 'pricingSection', order: 10, title: null, specialField: 'pricing' },
-    { 
-      id: 'conditionSection', 
-      order: 15, 
-      title: null, 
+    {
+      id: 'conditionSection',
+      order: 15,
+      title: null,
       specialField: 'condition',
       dependencies: {
         priceType: ['sell']
@@ -235,8 +235,28 @@ fields: {
     { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
   ],
   fields: {
-    brand: { type: 'text', label: 'Brand', placeholder: 'e.g., Weber, IKEA, Makita' },
-    model: { type: 'text', label: 'Model', placeholder: 'e.g., Genesis II, MALM, DHP482' }
+    brand: { type: 'text', label: 'Brand', placeholder: 'e.g., IKEA, West Elm, Freedom' },
+    model: { type: 'text', label: 'Model', placeholder: 'e.g., MALM, Billy, Hemnes' }
+  }
+},
+
+'Garden & Outdoor': {
+  sections: [
+    { id: 'pricingSection', order: 10, title: null, specialField: 'pricing' },
+    {
+      id: 'conditionSection',
+      order: 15,
+      title: null,
+      specialField: 'condition',
+      dependencies: {
+        priceType: ['sell']
+      }
+    },
+    { id: 'fieldsSection', order: 20, title: null, fields: ['brand', 'model'] }
+  ],
+  fields: {
+    brand: { type: 'text', label: 'Brand', placeholder: 'e.g., Weber, Ryobi, Makita' },
+    model: { type: 'text', label: 'Model', placeholder: 'e.g., Genesis II, One+, LXT' }
   }
 },
 

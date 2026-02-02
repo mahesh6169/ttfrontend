@@ -13,7 +13,8 @@ export const CATEGORIES = [
     label: 'Buy & Sell',
     subcategories: [
       'Cars & Vehicles',
-      'Home & Garden',
+      'Home & Decor',
+      'Garden & Outdoor',
       'Electronics & Computers',
       'Baby & Kids',
       'Health, Sport & Fitness',
@@ -151,7 +152,8 @@ export const CATEGORIES = [
 const NON_SERVICE_SUBCATEGORIES = [
   // Buy & Sell (all items)
   'Cars & Vehicles',
-  'Home & Garden',
+  'Home & Decor',
+  'Garden & Outdoor',
   'Electronics & Computers',
   'Baby & Kids',
   'Health, Sport & Fitness',
