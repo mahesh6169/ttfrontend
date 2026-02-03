@@ -61,8 +61,8 @@ const AdvertDetail = () => {
     );
   }
 
-  // Check if posted by support account (listings added on behalf of users)
-  const isPostedBySupport = advert.postedBy?.email?.toLowerCase() === 'support@desify.com.au';
+  // Check if this is an admin-added listing (on behalf of providers)
+  const isAdminListing = advert.isAdminListing || false;
 
   return (
     <div id="viewsmain" className="flex flex-col gap-2 px-2">
@@ -113,7 +113,7 @@ const AdvertDetail = () => {
               participantId: advert.postedBy?._id,
               owner: advert.postedBy?.name,
               preserveRedirectUrl: `/listings/views/${id}`,
-              isPostedBySupport,
+              isAdminListing,
             }}
           />
         </div>
@@ -126,7 +126,7 @@ const AdvertDetail = () => {
             participantId={advert.postedBy?._id}
             owner={advert.postedBy?.name}
             preserveRedirectUrl={`/listings/views/${id}`}
-            isPostedBySupport={isPostedBySupport}
+            isAdminListing={isAdminListing}
           />
         </div>
       </div>

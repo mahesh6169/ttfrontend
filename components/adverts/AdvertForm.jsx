@@ -10,7 +10,7 @@ import CommunitySelector from '../shared/CommunitySelector';
 import SimpleDropdown from '../shared/SimpleDropdown';
 import FieldSystem from './fieldSystem';
 import { getSharedField } from './fieldSystem/FieldRegistry';
-import { needsCommunityField } from './fieldSystem/Categories';
+import { needsCommunityField, isServiceSubcategory } from './fieldSystem/Categories';
 import ContactInfoInput from './ContactInfoInput';
 
 const AdvertForm = ({ 
@@ -49,7 +49,8 @@ const AdvertForm = ({
       email: '',
       website: '',
       socialMedia: []
-    }
+    },
+    notifyOnWanted: false
   }));
 
   const [formSections, setFormSections] = useState([]);
@@ -77,7 +78,8 @@ const AdvertForm = ({
           email: '',
           website: '',
           socialMedia: []
-        }
+        },
+        notifyOnWanted: initialData.notifyOnWanted || false
       });
       setExistingImages(initialData.existingImages || []);
       if (initialData.pricing && initialData.pricing.length > 0) {
@@ -514,7 +516,8 @@ const handleSubmit = (e) => {
     images: formData.images,
     existingImages: (formData.existingImages || []).filter(img => img && img.url),
     isNationwide: formData.isNationwide || false,
-    contactInfo: formData.contactInfo
+    contactInfo: formData.contactInfo,
+    notifyOnWanted: formData.notifyOnWanted || false
   };
   
   onSubmit(submitData);
@@ -799,6 +802,24 @@ return (
         </div>
       </label>
     </div>
+
+    {/* Notify on Wanted Ads - only for offered ads in service categories */}
+    {formData.adType === 'offered' && formData.subcategory && isServiceSubcategory(formData.subcategory) && (
+      <div className="bg-teal-50 rounded-lg p-4 border border-teal-200">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.notifyOnWanted || false}
+            onChange={(e) => handleChange('notifyOnWanted', e.target.checked)}
+            className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+          />
+          <div>
+            <span className="text-sm font-medium text-gray-700">Notify me when wanted ads are posted</span>
+            <p className="text-xs text-gray-500 mt-1">Get notified when someone posts a wanted ad matching your service category and location</p>
+          </div>
+        </label>
+      </div>
+    )}
 
     {/* Images */}
     <ImageUploader

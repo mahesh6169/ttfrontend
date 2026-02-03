@@ -14,7 +14,7 @@ const SendMessage = ({
   participantId,
   owner,
   preserveRedirectUrl,
-  isPostedBySupport = false,
+  isAdminListing = false,
 }) => {
   const dispatch = useDispatch();
   const router = useRouter();
@@ -89,8 +89,8 @@ const SendMessage = ({
     router.push('/login?preserveRedirect=true');
   };
 
-  // Show different content for listings/events posted by support on behalf of users
-  if (isPostedBySupport) {
+  // Show different content for admin-added listings (posted on behalf of providers)
+  if (isAdminListing) {
     return (
       <div className="border p-2 rounded shadow-md w-full">
         <h2 className="text-lg font-semibold mb-2">Get in touch</h2>
