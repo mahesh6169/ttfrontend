@@ -797,8 +797,8 @@ return (
           className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
         />
         <div>
-          <span className="text-sm font-medium text-gray-700">Advertise this Add NationWide</span>
-          <p className="text-xs text-gray-500 mt-1">This will advertise your advert when user filter across all states/suburbs</p>
+          <span className="text-sm font-medium text-gray-700">Advertise this Ad Nationwide</span>
+          <p className="text-xs text-gray-500 mt-1">Your ad will appear when users search in any state</p>
         </div>
       </label>
     </div>
