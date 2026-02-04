@@ -1,16 +1,31 @@
 'use client';
 
 import { Provider } from 'react-redux';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import store from './store';
-import ValidateToken from '@/components/ValidateToken'; // ✅ Moved here
-import ValidateAdminToken from '@/components/ValidateAdminToken'; // ✅ Admin token validation
+import ValidateToken from '@/components/ValidateToken';
+import ValidateAdminToken from '@/components/ValidateAdminToken';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,  // 2 minutes before data is considered stale
+      retry: 1,                   // Retry failed requests once
+    },
+  },
+});
 
 export function Providers({ children }) {
   return (
-    <Provider store={store}>
-      <ValidateToken /> {/* ✅ Runs once when app initializes */}
-      <ValidateAdminToken /> {/* ✅ Validates admin token on app load */}
-      {children}
-    </Provider>
+    <QueryClientProvider client={queryClient}>
+      <NuqsAdapter>
+        <Provider store={store}>
+          <ValidateToken />
+          <ValidateAdminToken />
+          {children}
+        </Provider>
+      </NuqsAdapter>
+    </QueryClientProvider>
   );
 }

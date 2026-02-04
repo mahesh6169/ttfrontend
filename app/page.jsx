@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import HeroSection from '@/components/home/HeroSection';
 import ListingsSection from '@/components/home/ListingsSection';
 import EventsSection from '@/components/home/EventsSection';
@@ -59,7 +60,9 @@ export default async function HomePage() {
 
   return (
     <main className="bg-slate-50">
-      <HeroSection />
+      <Suspense>
+        <HeroSection />
+      </Suspense>
 
       <div id="content" className="w-full md:container md:mx-auto space-y-6 py-6">
         <div className="bg-white border border-slate-200 rounded-2xl">

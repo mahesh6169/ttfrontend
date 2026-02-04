@@ -1,22 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  searchAdverts,
-  fetchFilterOptions,
-  toggleCategory,
-  toggleSubcategory,
-  setLocation,
-  updateFilter,
-  clearAllFilters,
-  updatePagination
-} from '@/store/slices/adverts/searchAdvertsSlice';
+import React, { useState, useRef } from 'react';
+import { useListingFilters } from '@/hooks/listings/useListingFilters';
+import { useSearchListings } from '@/hooks/listings/useSearchListings';
 import AdvertList from '@/components/adverts/advertcomponents/AdvertList';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
-import { toast } from 'react-toastify';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import PromoBanner from '@/components/PromoBanner';
 import HeroListingSection from '@/components/adverts/HeroListingSection';
@@ -27,140 +17,97 @@ import { Fragment } from 'react';
 const libraries = ['places'];
 
 const AdvertsPage = () => {
-  const dispatch = useDispatch();
-  const { filters, pagination, adverts, meta, status, error, filterOptions } = useSelector((state) => state.searchAdverts);
-  
-  // Local state for UI
+  // URL-based filter state (nuqs)
+  const {
+    cat, sub, state: stateFilter, adType, q, sort, page, location, hasLocation,
+    setParams, setFiltersWithPageReset, clearAllFilters, setLocation,
+    setCat, setSub, setState, setAdType, setQ, setSort, setPage, setRadius,
+    params,
+  } = useListingFilters();
+
+  // TanStack Query — fetches listings based on current URL filters
+  const { data, isLoading, isError, error, isPlaceholderData } = useSearchListings({
+    cat, sub, state: stateFilter, adType, q, sort, page, location,
+  });
+
+  const adverts = data?.adverts || [];
+  const meta = data?.meta || { currentPage: 1, totalPages: 1, totalRecords: 0, itemsPerPage: 12 };
+  const status = isLoading ? 'loading' : isError ? 'failed' : 'success';
+
+  // Local UI state
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [searchText, setSearchText] = useState(filters.searchText || '');
-
-  // Ref for scrolling to results on mobile
+  const [searchText, setSearchText] = useState(q || '');
   const resultsRef = useRef(null);
 
-  // Hero section - category and location picker
-  const [heroParentCategory, setHeroParentCategory] = useState('');
-  const [heroSubcategory, setHeroSubcategory] = useState('');
-  const [heroLocationInput, setHeroLocationInput] = useState('');
+  // Hero location input (local state for autocomplete text field)
+  const [heroLocationInput, setHeroLocationInput] = useState(location?.name || '');
   const [heroAutocompleteMobile, setHeroAutocompleteMobile] = useState(null);
   const [heroAutocompleteDesktop, setHeroAutocompleteDesktop] = useState(null);
-  const [heroLocation, setHeroLocation] = useState(null);
 
   // Get subcategories for selected parent category
-  const heroSubcategories = heroParentCategory
-    ? CATEGORIES.find(c => c.label === heroParentCategory)?.subcategories || []
+  const heroSubcategories = cat
+    ? CATEGORIES.find(c => c.label === cat)?.subcategories || []
     : [];
 
-  // Clear subcategory when parent changes
-  const handleParentCategoryChange = (value) => {
-    setHeroParentCategory(value);
-    setHeroSubcategory(''); // Reset subcategory when parent changes
-  };
-
-  
   // Modal filter states
   const [tempFilters, setTempFilters] = useState({});
 
-  //Add state for sort menu
-const [showSortMenu, setShowSortMenu] = useState(false);
+  // Sort menu
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
-const sortOptions = [
-  { value: 'newest', label: 'Newest first' },
-  { value: 'oldest', label: 'Oldest first' },
-  // Add more options in the future
-  // { value: 'price_low', label: 'Price: low to high' },
-  // { value: 'price_high', label: 'Price: high to low' },
-  // { value: 'distance', label: 'Distance' },
-];
+  const sortOptions = [
+    { value: 'newest', label: 'Newest first' },
+    { value: 'oldest', label: 'Oldest first' },
+  ];
 
-  // Initialize temporary filters
-  useEffect(() => {
+  // Initialize temporary filters when modal opens
+  const handleOpenFilters = () => {
     setTempFilters({
-      subcategories: [...filters.subcategories],
-      state: filters.state || '',
-      adType: filters.adType,
-      sortBy: filters.sortBy,
+      state: stateFilter || '',
+      adType: adType,
+      sortBy: sort,
     });
-  }, [showFilters, filters]);
+    setShowFilters(true);
+  };
 
-  // Initial load - fetch filter options
-  useEffect(() => {
-    dispatch(fetchFilterOptions())
-      .unwrap()
-      .catch((error) => {
-        console.error('Failed to load filter options:', error);
-      });
-  }, [dispatch]);
+  // --- Handlers ---
 
-  // Search whenever filters change
-  useEffect(() => {
-    dispatch(searchAdverts());
-  }, [filters, pagination.page, dispatch]);
-
-  // Sync local searchText with Redux state when filters are cleared
-  useEffect(() => {
-    if (filters.searchText === '' && searchText !== '') {
-      setSearchText('');
+  const handleParentCategoryChange = (value) => {
+    if (value === '') {
+      // "All Categories" selected
+      setFiltersWithPageReset({ cat: null, sub: null });
+    } else {
+      setCat(value);
     }
-  }, [filters.searchText]);
+  };
 
-  // Sync hero category with Redux filters - reset when cleared from active filters
-  useEffect(() => {
-    // Reset parent category if it's no longer in filters
-    if (heroParentCategory && !filters.categories.includes(heroParentCategory)) {
-      setHeroParentCategory('');
+  const handleSubcategoryChange = (value) => {
+    if (value === '') {
+      // "All in {category}" selected
+      setSub(null);
+    } else {
+      setSub(value);
     }
-    // Reset subcategory if it's no longer in filters
-    if (heroSubcategory && !filters.subcategories.includes(heroSubcategory)) {
-      setHeroSubcategory('');
-    }
-  }, [filters.categories, filters.subcategories]);
-
-  // Sync hero location with Redux filters - reset when location is cleared from active filters
-  useEffect(() => {
-    if (!filters.location && heroLocation) {
-      setHeroLocation(null);
-      setHeroLocationInput('');
-    }
-  }, [filters.location]);
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
+    setQ(searchText);
   };
 
   const handleClearLocation = () => {
-    dispatch(updateFilter({ filterType: 'location', value: null }));
-    setHeroLocation(null);
+    setLocation(null);
     setHeroLocationInput('');
   };
 
   const handleClearSearch = () => {
-    dispatch(updateFilter({ filterType: 'searchText', value: '' }));
+    setQ(null);
     setSearchText('');
   };
 
-  // Hero section Go button handler
+  // Hero section Go button
   const handleHeroGo = () => {
-    // Clear existing filters first
-    dispatch(clearAllFilters());
-
-    // Apply category filter
-    if (heroParentCategory) {
-      // Always add parent category when selected
-      dispatch(toggleCategory(heroParentCategory));
-
-      // Also add subcategory if selected
-      if (heroSubcategory) {
-        dispatch(toggleSubcategory(heroSubcategory));
-      }
-    }
-
-    // Apply location if selected
-    if (heroLocation) {
-      dispatch(setLocation(heroLocation));
-    }
-
     // Scroll to results on mobile after a short delay
     setTimeout(() => {
       if (resultsRef.current && window.innerWidth < 768) {
@@ -169,65 +116,48 @@ const sortOptions = [
     }, 100);
   };
 
-  // Hero section Clear button handler
+  // Hero section Clear button
   const handleHeroClear = () => {
-    // Clear hero selections
-    setHeroParentCategory('');
-    setHeroSubcategory('');
-    setHeroLocation(null);
+    clearAllFilters();
     setHeroLocationInput('');
-    // Clear Redux filters
-    dispatch(clearAllFilters());
+    setSearchText('');
   };
 
   // Remove category and its associated subcategories
-  const handleRemoveCategory = (category) => {
-    // First remove the category
-    dispatch(toggleCategory(category));
-    // Also clear any subcategories (they belong to this parent)
-    filters.subcategories.forEach((sub) => {
-      dispatch(toggleSubcategory(sub));
-    });
-    // Reset hero selections if they match
-    if (heroParentCategory === category) {
-      setHeroParentCategory('');
-      setHeroSubcategory('');
-    }
+  const handleRemoveCategory = () => {
+    setFiltersWithPageReset({ cat: null, sub: null });
   };
 
-
-  // Hero location place changed handler - mobile
+  // Hero location place changed - mobile
   const handleHeroPlaceChangedMobile = () => {
     if (heroAutocompleteMobile) {
       const place = heroAutocompleteMobile.getPlace();
       if (place.geometry) {
-        const coordinates = [
-          place.geometry.location.lng(),
-          place.geometry.location.lat()
-        ];
-        setHeroLocation({
-          coordinates,
-          radius: 10,
-          name: place.formatted_address || 'Selected Location'
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        setLocation({
+          lat,
+          lng,
+          radius: params.radius || 10,
+          name: place.formatted_address || 'Selected Location',
         });
         setHeroLocationInput(place.formatted_address);
       }
     }
   };
 
-  // Hero location place changed handler - desktop
+  // Hero location place changed - desktop
   const handleHeroPlaceChangedDesktop = () => {
     if (heroAutocompleteDesktop) {
       const place = heroAutocompleteDesktop.getPlace();
       if (place.geometry) {
-        const coordinates = [
-          place.geometry.location.lng(),
-          place.geometry.location.lat()
-        ];
-        setHeroLocation({
-          coordinates,
-          radius: 10,
-          name: place.formatted_address || 'Selected Location'
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        setLocation({
+          lat,
+          lng,
+          radius: params.radius || 10,
+          name: place.formatted_address || 'Selected Location',
         });
         setHeroLocationInput(place.formatted_address);
       }
@@ -236,82 +166,56 @@ const sortOptions = [
 
   // Modal functions
   const handleClearAllTempFilters = () => {
-    // Clear all temporary filters
     setTempFilters({
-      categories: [],
       state: '',
       adType: null,
       sortBy: 'newest',
     });
-    // Clear the search text
     setSearchText('');
-
-    // Apply the clear action immediately to Redux
-    dispatch(clearAllFilters());
+    clearAllFilters();
+    setHeroLocationInput('');
   };
 
-//  function to handle sort changes
-const handleSortChange = (sortValue) => {
-  dispatch(updateFilter({ filterType: 'sortBy', value: sortValue }));
-  setShowSortMenu(false);
-};
+  const handleSortChange = (sortValue) => {
+    setSort(sortValue);
+    setShowSortMenu(false);
+  };
 
-//current sort label for display
-const getCurrentSortLabel = () => {
-  const option = sortOptions.find(opt => opt.value === filters.sortBy);
-  return option?.label || 'Newest first';
-};
+  const getCurrentSortLabel = () => {
+    const option = sortOptions.find(opt => opt.value === sort);
+    return option?.label || 'Newest first';
+  };
 
   const applyFilters = () => {
-    // Apply all temporary filters to the store
-    if (JSON.stringify(tempFilters.subcategories) !== JSON.stringify(filters.subcategories)) {
-      filters.subcategories.forEach(cat => {
-        if (!tempFilters.subcategories.includes(cat)) {
-          dispatch(toggleSubcategory(cat));
-        }
-      });
-      tempFilters.subcategories.forEach(cat => {
-        if (!filters.subcategories.includes(cat)) {
-          dispatch(toggleSubcategory(cat));
-        }
-      });
+    const updates = {};
+    if (tempFilters.state !== (stateFilter || '')) {
+      updates.state = tempFilters.state || null;
     }
-
-    // Apply state filter
-    if (tempFilters.state !== filters.state) {
-      dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
+    if (tempFilters.adType !== adType) {
+      updates.adType = tempFilters.adType || null;
     }
-
-    // Apply ad type and sort
-    dispatch(updateFilter({ filterType: 'adType', value: tempFilters.adType }));
-    dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
-
+    if (tempFilters.sortBy !== sort) {
+      updates.sort = tempFilters.sortBy || null;
+    }
+    if (Object.keys(updates).length > 0) {
+      setFiltersWithPageReset(updates);
+    }
     setShowFilters(false);
   };
 
-  useEffect(() => {
-    setSearchText(filters.searchText || '');
-  }, [filters.searchText]);
-
-  useEffect(() => {
-    if (status === 'failed' && error) {
-      console.error('Search failed:', error.message || error || 'An error occurred');
-    }
-  }, [status, error]);
 
   const getActiveFilterCount = () => {
     let count = 0;
-    if (filters.categories.length > 0) count++;
-    if (filters.subcategories.length > 0) count++;
-    if (filters.location) count++;
-    if (filters.state) count++;
-    if (filters.searchText) count++;
-    if (filters.adType) count++;
+    if (cat) count++;
+    if (sub) count++;
+    if (hasLocation) count++;
+    if (stateFilter) count++;
+    if (q) count++;
+    if (adType) count++;
     return count;
   };
 
-  // Check if there are any hero selections or active filters to clear
-  const hasFiltersToShow = heroParentCategory || heroLocation || getActiveFilterCount() > 0;
+  const hasFiltersToShow = cat || hasLocation || getActiveFilterCount() > 0;
 
   const getTotalResults = () => {
     return meta.totalRecords || adverts.length;
@@ -321,7 +225,7 @@ const getCurrentSortLabel = () => {
     <div className="flex flex-col relative min-h-[calc(100vh-180px)]">
       {/* Modal Overlay */}
       {showFilters && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={() => setShowFilters(false)}
         ></div>
@@ -422,20 +326,6 @@ const getCurrentSortLabel = () => {
 
       {/* Main Content */}
       <div className="w-full">
-        {/* Hero Banner */}
-        {/* <div className="my-4 px-4">
-          <div className="bg-white border-2 border-teal-700 p-6 rounded-lg shadow">
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
-              <span className="text-amber-500">Find</span>
-              <span className="text-teal-700 mx-2">•</span>
-              <span className="text-teal-700">Offer</span>
-              <span className="text-teal-700 mx-2">•</span>
-              <span className="text-amber-500">Reach</span>
-            </h1>
-            <p className="text-gray-600 text-center text-sm mt-2">Connect with your community</p>
-          </div>
-        </div> */}
-
         {/* Hero Section with two-tone curved container */}
         <section
           className="relative mt-2 md:mt-4 mb-4 mx-0 sm:mx-4 pt-0 pb-4 px-0 sm:pb-6 rounded-none sm:rounded-xl overflow-hidden"
@@ -489,14 +379,14 @@ const getCurrentSortLabel = () => {
                 </Link>
 
                 {/* Parent Category Dropdown */}
-                <Listbox value={heroParentCategory} onChange={handleParentCategoryChange}>
+                <Listbox value={cat || ''} onChange={handleParentCategoryChange}>
                   <div className="relative">
                     <ListboxButton className="relative w-full pl-8 pr-8 py-2 bg-white border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all cursor-pointer text-left">
                       <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                       </svg>
-                      <span className={heroParentCategory ? 'text-gray-900' : 'text-gray-500'}>
-                        {heroParentCategory || 'Select Category'}
+                      <span className={cat ? 'text-gray-900' : 'text-gray-500'}>
+                        {cat || 'Select Category'}
                       </span>
                       <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
@@ -563,14 +453,14 @@ const getCurrentSortLabel = () => {
                 </Listbox>
 
                 {/* Subcategory Dropdown - always visible, disabled when no parent */}
-                <Listbox value={heroSubcategory} onChange={setHeroSubcategory} disabled={!heroParentCategory}>
+                <Listbox value={sub || ''} onChange={handleSubcategoryChange} disabled={!cat}>
                   <div className="relative">
-                    <ListboxButton className={`relative w-full pl-8 pr-8 py-2 border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-left ${heroParentCategory ? 'bg-white cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}`}>
+                    <ListboxButton className={`relative w-full pl-8 pr-8 py-2 border border-gray-200 rounded-full text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-left ${cat ? 'bg-white cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}`}>
                       <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                      <span className={heroSubcategory ? 'text-gray-900' : 'text-gray-500'}>
-                        {heroSubcategory || (heroParentCategory ? 'Select Subcategory' : 'Select category first')}
+                      <span className={sub ? 'text-gray-900' : 'text-gray-500'}>
+                        {sub || (cat ? 'Select Subcategory' : 'Select category first')}
                       </span>
                       <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
@@ -595,7 +485,7 @@ const getCurrentSortLabel = () => {
                           {({ selected }) => (
                             <>
                               <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                All in {heroParentCategory}
+                                All in {cat}
                               </span>
                               {selected && (
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
@@ -678,22 +568,22 @@ const getCurrentSortLabel = () => {
                 </LoadScriptNext>
 
                 {/* Radius Slider - shows when location is selected */}
-                {heroLocation && (
+                {hasLocation && (
                   <div className="flex items-center gap-2 px-3 -mt-1">
                     <span className="text-xs text-gray-600">1km</span>
                     <input
                       type="range"
                       min="1"
                       max="200"
-                      value={heroLocation.radius}
-                      onChange={(e) => setHeroLocation({ ...heroLocation, radius: parseInt(e.target.value) })}
+                      value={params.radius}
+                      onChange={(e) => setRadius(parseInt(e.target.value))}
                       className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
                         [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
                         [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
                         [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-teal-600
                         [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
                     />
-                    <span className="text-xs text-gray-600 min-w-[40px] text-right">{heroLocation.radius}km</span>
+                    <span className="text-xs text-gray-600 min-w-[40px] text-right">{params.radius}km</span>
                   </div>
                 )}
 
@@ -727,14 +617,14 @@ const getCurrentSortLabel = () => {
                 </Link>
 
                 {/* Parent Category Dropdown */}
-                <Listbox value={heroParentCategory} onChange={handleParentCategoryChange}>
+                <Listbox value={cat || ''} onChange={handleParentCategoryChange}>
                   <div className="relative flex-1 max-w-[200px]">
                     <ListboxButton className="relative w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all cursor-pointer text-left">
                       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                       </svg>
-                      <span className={`block truncate ${heroParentCategory ? 'text-gray-900' : 'text-gray-500'}`}>
-                        {heroParentCategory || 'Category'}
+                      <span className={`block truncate ${cat ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {cat || 'Category'}
                       </span>
                       <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
@@ -801,14 +691,14 @@ const getCurrentSortLabel = () => {
                 </Listbox>
 
                 {/* Subcategory Dropdown - always visible, disabled when no parent */}
-                <Listbox value={heroSubcategory} onChange={setHeroSubcategory} disabled={!heroParentCategory}>
+                <Listbox value={sub || ''} onChange={handleSubcategoryChange} disabled={!cat}>
                   <div className="relative w-[260px]">
-                    <ListboxButton className={`relative w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-left ${heroParentCategory ? 'bg-white cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}`}>
+                    <ListboxButton className={`relative w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-left ${cat ? 'bg-white cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}`}>
                       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                      <span className={`block truncate ${heroSubcategory ? 'text-gray-900' : 'text-gray-500'}`}>
-                        {heroSubcategory || (heroParentCategory ? 'Subcategory' : 'Select category first')}
+                      <span className={`block truncate ${sub ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {sub || (cat ? 'Subcategory' : 'Select category first')}
                       </span>
                       <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
@@ -833,7 +723,7 @@ const getCurrentSortLabel = () => {
                           {({ selected }) => (
                             <>
                               <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                All in {heroParentCategory}
+                                All in {cat}
                               </span>
                               {selected && (
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
@@ -936,22 +826,22 @@ const getCurrentSortLabel = () => {
               </div>
 
               {/* Radius Slider - Desktop */}
-              {heroLocation && (
+              {hasLocation && (
                 <div className="hidden md:flex mt-2 items-center justify-center gap-2 max-w-md mx-auto">
                   <span className="text-xs text-gray-600">1km</span>
                   <input
                     type="range"
                     min="1"
                     max="200"
-                    value={heroLocation.radius}
-                    onChange={(e) => setHeroLocation({ ...heroLocation, radius: parseInt(e.target.value) })}
+                    value={params.radius}
+                    onChange={(e) => setRadius(parseInt(e.target.value))}
                     className="flex-1 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
                       [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
                       [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-teal-600
                       [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
                   />
-                  <span className="text-xs text-gray-600 min-w-[40px] text-right">{heroLocation.radius}km</span>
+                  <span className="text-xs text-gray-600 min-w-[40px] text-right">{params.radius}km</span>
                 </div>
               )}
             </div>
@@ -963,7 +853,7 @@ const getCurrentSortLabel = () => {
           {/* Page Controls - Sort and Filter */}
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={handleOpenFilters}
               className="flex items-center gap-1 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-xs md:text-sm"
             >
               <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -996,7 +886,7 @@ const getCurrentSortLabel = () => {
             key={option.value}
             onClick={() => handleSortChange(option.value)}
             className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
-              filters.sortBy === option.value ? 'bg-gray-50 font-medium' : ''
+              sort === option.value ? 'bg-gray-50 font-medium' : ''
             }`}
           >
             {option.label}
@@ -1020,42 +910,28 @@ const getCurrentSortLabel = () => {
 
               <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 sm:px-4">
                 <div className="flex gap-2">
-                  {/* Show parent categories */}
-                  {filters.categories.map((category) => (
+                  {/* Show parent category */}
+                  {cat && (
                     <span
-                      key={category}
                       className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0"
                     >
-                      {category}
+                      {cat}
                       <button
-                        onClick={() => handleRemoveCategory(category)}
+                        onClick={handleRemoveCategory}
                         className="hover:text-teal-900 font-bold p-1 -mr-0.5"
                       >
                         ×
                       </button>
                     </span>
-                  ))}
-                  {/* Show subcategories */}
-                  {filters.subcategories.map((subcategory) => (
+                  )}
+                  {/* Show subcategory */}
+                  {sub && (
                     <span
-                      key={subcategory}
                       className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0"
                     >
-                      {subcategory}
+                      {sub}
                       <button
-                        onClick={() => dispatch(toggleSubcategory(subcategory))}
-                        className="hover:text-gray-900 font-bold p-1 -mr-0.5"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-
-                  {filters.state && (
-                    <span className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0">
-                      {filters.state}
-                      <button
-                        onClick={() => dispatch(updateFilter({ filterType: 'state', value: '' }))}
+                        onClick={() => setSub(null)}
                         className="hover:text-gray-900 font-bold p-1 -mr-0.5"
                       >
                         ×
@@ -1063,12 +939,24 @@ const getCurrentSortLabel = () => {
                     </span>
                   )}
 
-                  {filters.location && (
+                  {stateFilter && (
+                    <span className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0">
+                      {stateFilter}
+                      <button
+                        onClick={() => setState(null)}
+                        className="hover:text-gray-900 font-bold p-1 -mr-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+
+                  {hasLocation && (
                     <span className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0">
                       <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
-                      {filters.location.radius}km {filters.location.name.split(',')[0]}
+                      {params.radius}km {location.name.split(',')[0]}
                       <button
                         onClick={handleClearLocation}
                         className="hover:text-gray-900 font-bold p-1 -mr-0.5"
@@ -1078,9 +966,9 @@ const getCurrentSortLabel = () => {
                     </span>
                   )}
 
-                  {filters.searchText && (
+                  {q && (
                     <span className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0">
-                      "{filters.searchText}"
+                      &ldquo;{q}&rdquo;
                       <button
                         onClick={handleClearSearch}
                         className="hover:text-gray-900 font-bold p-1 -mr-0.5"
@@ -1090,11 +978,11 @@ const getCurrentSortLabel = () => {
                     </span>
                   )}
 
-                  {filters.adType && (
+                  {adType && (
                     <span className="inline-flex items-center gap-0.5 bg-white border border-gray-300 text-gray-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm whitespace-nowrap flex-shrink-0">
-                      {filters.adType}
+                      {adType}
                       <button
-                        onClick={() => dispatch(updateFilter({ filterType: 'adType', value: null }))}
+                        onClick={() => setAdType(null)}
                         className="hover:text-gray-900 font-bold p-1 -mr-0.5"
                       >
                         ×
@@ -1118,7 +1006,7 @@ const getCurrentSortLabel = () => {
             currentPage={meta.currentPage}
             totalPages={meta.totalPages}
             onPageChange={(pageNum) => {
-              dispatch(updatePagination({ page: pageNum }));
+              setPage(pageNum);
               // Scroll to results section
               setTimeout(() => {
                 if (resultsRef.current) {

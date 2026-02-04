@@ -140,10 +140,6 @@ export default function HomeTestPage() {
       return;
     }
 
-    // Only set filter for seeker mode (browsing)
-    if (mode === 'seeker' && link.filter) {
-      sessionStorage.setItem('pendingFilter', JSON.stringify(link.filter));
-    }
     router.push(target);
   };
 

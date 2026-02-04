@@ -25,12 +25,11 @@ export const CATEGORIES = [
     ],
   },
   {
-    label: 'Home & Vehicle Services',
+    label: 'Home Services',
     subcategories: [
       'Electricians',
       'Painters',
       'Plumbing & Gas',
-      'Car Servicing & Repairs',
       'Landscaping & Gardening',
       'Air Conditioning & Refrigeration',
       'Home Repairs & Improvements',
@@ -44,6 +43,12 @@ export const CATEGORIES = [
     ],
   },
   {
+    label: 'Vehicle Services',
+    subcategories: [
+      'Car Servicing & Repairs',
+    ],
+  },
+  {
     label: 'Beauty & Wellness',
     subcategories: [
       'Hair, Makeup & Waxing',
@@ -52,7 +57,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    label: 'Food & Hospitality',
+    label: 'Food & Catering',
     subcategories: [
       'Restaurants',
       'Catering',
@@ -62,7 +67,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    label: 'Events & Entertainment',
+    label: 'Party & Entertainment',
     subcategories: [
       'Decorations',
       'Photography & Videography',
@@ -170,7 +175,7 @@ const NON_SERVICE_SUBCATEGORIES = [
   'Full Time',
   'Casual',
   'Part Time',
-  // Food & Hospitality (fixed location - customers come to them)
+  // Food & Catering (fixed location - customers come to them)
   'Restaurants',
 ];
 

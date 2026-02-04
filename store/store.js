@@ -4,7 +4,7 @@ import advertReducer from './slices/adverts/advertSlice';
 import userReducer from './slices/users/userSlice';
 import userAdvertReducer from './slices/adverts/userAdvertsSlice';
 import messages from './slices/shared/messageSlice';
-import searchAdvertsReducer from './slices/adverts/searchAdvertsSlice';
+
 import searchEventsReducer from './slices/events/searchEventsSlice';
 import freeEventReducer from './slices/events/freeEventSlice';
 import threadReducer from './slices/threads/threadSlice';
@@ -26,7 +26,7 @@ const store = configureStore({
         user: userReducer,
         userAdverts: userAdvertReducer,
         messages: messages,
-        searchAdverts: searchAdvertsReducer,
+
         threads: threadReducer,
         admin: adminReducer,
         events: eventReducer,

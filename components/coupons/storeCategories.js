@@ -34,7 +34,7 @@ export const STORE_CATEGORIES = [
   // Tech & Repairs
   'Computer & Mobile Repairs',
 
-  // Events & Entertainment
+  // Party & Entertainment
   'Photography & Videography',
   'DJ & Audio Visual',
   'Party Hires',
