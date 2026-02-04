@@ -441,7 +441,7 @@ fields: {
     ]
   },
 
-  'Taxi & Ride': {
+  'Taxi & Transfers': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -461,7 +461,7 @@ fields: {
     ]
   },
 
-  'Vehicle Repairs': {
+  'Car Servicing & Repairs': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -551,7 +551,7 @@ fields: {
     ]
   },
 
-  'Sewing & Alteration': {
+  'Sewing & Alterations': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -561,7 +561,7 @@ fields: {
     ]
   },
 
-  'Removalists & Moving': {
+  'Packers & Movers': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -661,7 +661,7 @@ fields: {
     ]
   },
 
-  'Decoration': {
+  'Decorations': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -671,7 +671,7 @@ fields: {
     ]
   },
 
-  'Party Hires': {
+  'Party Hire': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -751,7 +751,7 @@ fields: {
     ]
   },
 
-  'Babysitting': {
+  'Childcare & Babysitting': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -791,7 +791,27 @@ fields: {
     ]
   },
 
-  'Retail Stores & Shops': {
+  'Indian Groceries': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: []
+      }
+    ]
+  },
+
+  'Butchers': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: []
+      }
+    ]
+  },
+
+  'Plant Nursery': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -831,7 +851,7 @@ fields: {
     ]
   },
 
-  'Academic': {
+  'Academic Tutoring': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -841,7 +861,7 @@ fields: {
     ]
   },
 
-  'Music': {
+  'Music Lessons': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -851,7 +871,7 @@ fields: {
     ]
   },
 
-  'Dance': {
+  'Dance Lessons': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -861,7 +881,7 @@ fields: {
     ]
   },
 
-  'Arts': {
+  'Art Classes': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -871,7 +891,7 @@ fields: {
     ]
   },
 
-  'Sports': {
+  'Sports Coaching': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -882,7 +902,17 @@ fields: {
   },
 
 
-  'Travel & Tourism': {
+  'Tour Guides & Operators': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: []
+      }
+    ]
+  },
+
+  'Travel Agents': {
     sections: [
       {
         id: 'serviceDetailsSection',

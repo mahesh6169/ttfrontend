@@ -92,7 +92,7 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
-  'Taxi & Ride': {
+  'Taxi & Transfers': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -104,7 +104,7 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
-  'Vehicle Repairs': {
+  'Car Servicing & Repairs': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -158,13 +158,13 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
-  'Sewing & Alteration': {
+  'Sewing & Alterations': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
 
-  'Removalists & Moving': {
+  'Packers & Movers': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -224,13 +224,13 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
-  'Decoration': {
+  'Decorations': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
   
-  'Party Hires': {
+  'Party Hire': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -278,7 +278,7 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
-  'Babysitting': {
+  'Childcare & Babysitting': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
@@ -302,9 +302,21 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
-  'Retail Stores & Shops': {
+  'Indian Groceries': {
     hiddenSections: [],
-    hiddenFields: ['serviceArea'],
+    hiddenFields: [],
+    optionalFields: []
+  },
+
+  'Butchers': {
+    hiddenSections: [],
+    hiddenFields: [],
+    optionalFields: []
+  },
+
+  'Plant Nursery': {
+    hiddenSections: [],
+    hiddenFields: [],
     optionalFields: []
   },
   
@@ -326,37 +338,43 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
-  'Academic': {
+  'Academic Tutoring': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
 
-  'Music': {
+  'Music Lessons': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
 
-  'Dance': {
+  'Dance Lessons': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
 
-  'Arts': {
+  'Art Classes': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
 
-  'Sports': {
+  'Sports Coaching': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []
   },
-  
-  'Travel & Tourism': {
+
+  'Tour Guides & Operators': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Travel Agents': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []

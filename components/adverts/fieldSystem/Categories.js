@@ -30,23 +30,24 @@ export const CATEGORIES = [
       'Electricians',
       'Painters',
       'Plumbing & Gas',
-      'Vehicle Repairs',
+      'Car Servicing & Repairs',
       'Landscaping & Gardening',
       'Air Conditioning & Refrigeration',
       'Home Repairs & Improvements',
       'Cabinet Makers',
       'Handyman & Flatpacks',
-      'Removalists & Moving',
-      'Sewing & Alteration',
+      'Packers & Movers',
+      'Sewing & Alterations',
       'Cleaning & Maintenance',
       'Pest Control',
+      'Domestic Help',
     ],
   },
   {
     label: 'Transport & Logistics',
     subcategories: [
       'Courier & Delivery',
-      'Taxi & Ride',
+      'Taxi & Transfers',
     ],
   },
   {
@@ -80,11 +81,10 @@ export const CATEGORIES = [
     ],
   },
   {
-    label: 'Household Services & Care',
+    label: 'Child & Aged Care',
     subcategories: [
-      'Babysitting',
+      'Childcare & Babysitting',
       'Aged Parent Care',
-      'Domestic Help',
     ],
   },
   {
@@ -100,34 +100,37 @@ export const CATEGORIES = [
   {
     label: 'Events & Entertainment',
     subcategories: [
-      'Decoration',
+      'Decorations',
       'Photography & Videography',
       'DJ & Audio Visual',
       'Entertainers & Performers',
-      'Party Hires',
+      'Party Hire',
     ],
   },
   {
     label: 'Retail & Local Businesses',
     subcategories: [
-      'Retail Stores & Shops',
+      'Indian Groceries',
+      'Butchers',
+      'Plant Nursery',
     ],
   },
   {
-    label: 'Travel',
+    label: 'Travel & Tourism',
     subcategories: [
-      'Travel & Tourism',
+      'Tour Guides & Operators',
+      'Travel Agents',
     ],
   },
   {
-    label: 'Tutors',
+    label: 'Tutoring & Lessons',
     subcategories: [
       'Driving Lessons',
-      'Academic',
-      'Music',
-      'Dance',
-      'Arts',
-      'Sports',
+      'Academic Tutoring',
+      'Music Lessons',
+      'Dance Lessons',
+      'Art Classes',
+      'Sports Coaching',
     ],
   },
   {
