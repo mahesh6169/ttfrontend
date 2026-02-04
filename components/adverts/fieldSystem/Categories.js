@@ -44,47 +44,11 @@ export const CATEGORIES = [
     ],
   },
   {
-    label: 'Transport & Logistics',
-    subcategories: [
-      'Courier & Delivery',
-      'Taxi & Transfers',
-    ],
-  },
-  {
-    label: 'Digital & IT Services',
-    subcategories: [
-      'Computer & Mobile Repairs',
-      'Business IT',
-      'Website Design',
-    ],
-  },
-  {
-    label: 'Professional & Business Services',
-    subcategories: [
-      'Accounting & Taxation',
-      'Legal & Immigration',
-      'Financial & Insurance',
-    ],
-  },
-  {
-    label: 'Marketing & Advertising',
-    subcategories: [
-      'Logo Services',
-    ],
-  },
-  {
     label: 'Beauty & Wellness',
     subcategories: [
       'Hair, Makeup & Waxing',
       'Massage',
       'Yoga',
-    ],
-  },
-  {
-    label: 'Child & Aged Care',
-    subcategories: [
-      'Childcare & Babysitting',
-      'Aged Parent Care',
     ],
   },
   {
@@ -108,21 +72,6 @@ export const CATEGORIES = [
     ],
   },
   {
-    label: 'Retail & Local Businesses',
-    subcategories: [
-      'Indian Groceries',
-      'Butchers',
-      'Plant Nursery',
-    ],
-  },
-  {
-    label: 'Travel & Tourism',
-    subcategories: [
-      'Tour Guides & Operators',
-      'Travel Agents',
-    ],
-  },
-  {
     label: 'Tutoring & Lessons',
     subcategories: [
       'Driving Lessons',
@@ -134,11 +83,62 @@ export const CATEGORIES = [
     ],
   },
   {
+    label: 'Child & Aged Care',
+    subcategories: [
+      'Childcare & Babysitting',
+      'Aged Parent Care',
+    ],
+  },
+  {
+    label: 'Professional & Business Services',
+    subcategories: [
+      'Accounting & Taxation',
+      'Legal & Immigration',
+      'Financial & Insurance',
+    ],
+  },
+  {
+    label: 'Transport & Logistics',
+    subcategories: [
+      'Courier & Delivery',
+      'Taxi & Transfers',
+    ],
+  },
+  {
+    label: 'Digital & IT Services',
+    subcategories: [
+      'Computer & Mobile Repairs',
+      'Business IT',
+      'Website Design',
+    ],
+  },
+  {
+    label: 'Retail & Local Businesses',
+    subcategories: [
+      'Indian Groceries',
+      'Butchers',
+      'Plant Nursery',
+    ],
+  },
+  {
     label: 'Employment',
     subcategories: [
       'Full Time',
       'Casual',
       'Part Time',
+    ],
+  },
+  {
+    label: 'Travel & Tourism',
+    subcategories: [
+      'Tour Guides & Operators',
+      'Travel Agents',
+    ],
+  },
+  {
+    label: 'Marketing & Advertising',
+    subcategories: [
+      'Logo Services',
     ],
   },
   {
