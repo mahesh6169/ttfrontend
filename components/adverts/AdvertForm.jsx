@@ -788,7 +788,7 @@ return (
     </div>
 
     {/* Nationwide visibility */}
-    <div className="bg-gray-50 rounded-lg p-4">
+    <div>
       <label className="flex items-center gap-3 cursor-pointer">
         <input
           type="checkbox"
@@ -797,7 +797,7 @@ return (
           className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
         />
         <div>
-          <span className="text-sm font-medium text-gray-700">Advertise this Ad Nationwide</span>
+          <span className="font-semibold sm:font-bold text-gray-700 text-sm sm:text-base">Advertise this Ad Nationwide</span>
           <p className="text-xs text-gray-500 mt-1">Your ad will appear when users search in any state</p>
         </div>
       </label>
@@ -805,7 +805,7 @@ return (
 
     {/* Notify on Wanted Ads - only for offered ads in service categories */}
     {formData.adType === 'offered' && formData.subcategory && isServiceSubcategory(formData.subcategory) && (
-      <div className="bg-teal-50 rounded-lg p-4 border border-teal-200">
+      <div>
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -814,7 +814,7 @@ return (
             className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
           />
           <div>
-            <span className="text-sm font-medium text-gray-700">Notify me when wanted ads are posted</span>
+            <span className="font-semibold sm:font-bold text-gray-700 text-sm sm:text-base">Notify me when wanted ads are posted</span>
             <p className="text-xs text-gray-500 mt-1">Get notified when someone posts a wanted ad matching your service category and location</p>
           </div>
         </label>

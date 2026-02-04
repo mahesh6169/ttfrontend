@@ -17,8 +17,8 @@ const ThreadsSection = ({ threads }) => {
           </Link>
         </div>
         <div className="flex flex-col items-center justify-center py-8 gap-2">
-          <FaComments className="text-3xl text-gray-400" />
-          <span className="text-sm text-gray-500">No discussions at the moment</span>
+          <FaComments className="text-3xl text-slate-400" />
+          <span className="text-sm text-slate-500">No discussions at the moment</span>
         </div>
       </section>
     );
@@ -45,9 +45,9 @@ const ThreadsSection = ({ threads }) => {
           <Link
             key={thread._id}
             href={`/threads/views/${thread._id}`}
-            className="block py-2 px-4 hover:bg-gray-50 rounded-md transition-colors"
+            className="block py-2 px-4 hover:bg-slate-50 rounded-md transition-colors"
           >
-            <h3 className="text-sm sm:text-base font-medium text-gray-800 line-clamp-1">
+            <h3 className="text-sm sm:text-base font-medium text-slate-900 line-clamp-1">
               {idx + 1}. {thread.title}
             </h3>
           </Link>

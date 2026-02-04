@@ -6,92 +6,67 @@ import { FaCalendarAlt, FaArrowRight } from 'react-icons/fa';
 import HomeCard from './HomeCard';
 
 const EventsSection = ({ events }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // Desktop: 4 cards per page
+  const [currentPage, setCurrentPage] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [mobileScrollIndex, setMobileScrollIndex] = useState(0);
-  const [mobileIsPaused, setMobileIsPaused] = useState(false);
-  const mobileScrollRef = useRef(null);
-  const mobileAutoScrollTimer = useRef(null);
-  const mobileResumeTimer = useRef(null);
+  const totalPages = events ? Math.ceil(events.length / 4) : 0;
 
+  // Mobile: 2 cards per page
+  const [mobilePage, setMobilePage] = useState(0);
+  const [mobileIsPaused, setMobileIsPaused] = useState(false);
+  const mobileResumeTimer = useRef(null);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const totalMobilePages = events ? Math.ceil(events.length / 2) : 0;
+
+  // Desktop auto-slide
   useEffect(() => {
     if (!events || events.length <= 4 || isPaused) return;
 
     const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => {
-        const nextIndex = prevIndex + 4;
-        return nextIndex >= events.length ? 0 : nextIndex;
-      });
+      setCurrentPage((prev) => (prev + 1) % totalPages);
     }, 4000);
 
     return () => clearInterval(timer);
-  }, [events, isPaused]);
+  }, [events, isPaused, totalPages]);
 
+  // Mobile auto-slide
   useEffect(() => {
-    if (!mobileScrollRef.current || !events || events.length === 0) return;
+    if (!events || events.length <= 2 || mobileIsPaused) return;
 
-    const container = mobileScrollRef.current;
-    const handleScroll = () => {
-      const scrollLeft = container.scrollLeft;
-      const cardWidth = container.offsetWidth * 0.9;
-      const newIndex = Math.round(scrollLeft / cardWidth);
-      setMobileScrollIndex(newIndex);
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [events]);
-
-  useEffect(() => {
-    if (!mobileScrollRef.current || !events || events.length <= 1 || mobileIsPaused) return;
-
-    mobileAutoScrollTimer.current = setInterval(() => {
-      const container = mobileScrollRef.current;
-      if (!container) return;
-
-      const currentScroll = container.scrollLeft;
-      const cardWidth = container.offsetWidth * 0.9;
-      const maxScroll = (events.length - 1) * cardWidth;
-
-      if (currentScroll >= maxScroll) {
-        container.scrollTo({
-          left: 0,
-          behavior: 'auto'
-        });
-        setTimeout(() => {
-          container.scrollTo({
-            left: cardWidth,
-            behavior: 'smooth'
-          });
-        }, 50);
-      } else {
-        container.scrollTo({
-          left: currentScroll + cardWidth,
-          behavior: 'smooth'
-        });
-      }
+    const timer = setInterval(() => {
+      setMobilePage((prev) => (prev + 1) % totalMobilePages);
     }, 4000);
 
-    return () => {
-      if (mobileAutoScrollTimer.current) {
-        clearInterval(mobileAutoScrollTimer.current);
-      }
-    };
-  }, [events, mobileScrollIndex, mobileIsPaused]);
+    return () => clearInterval(timer);
+  }, [events, mobileIsPaused, totalMobilePages]);
 
-  const handleMobileTouchStart = () => {
+  const handleMobileTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = e.touches[0].clientX;
     setMobileIsPaused(true);
-    
     if (mobileResumeTimer.current) {
       clearTimeout(mobileResumeTimer.current);
     }
   };
 
+  const handleMobileTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
   const handleMobileTouchEnd = () => {
+    const swipeDistance = touchStartX.current - touchEndX.current;
+    const minSwipe = 50;
+
+    if (swipeDistance > minSwipe) {
+      setMobilePage((prev) => Math.min(prev + 1, totalMobilePages - 1));
+    } else if (swipeDistance < -minSwipe) {
+      setMobilePage((prev) => Math.max(prev - 1, 0));
+    }
+
     if (mobileResumeTimer.current) {
       clearTimeout(mobileResumeTimer.current);
     }
-    
     mobileResumeTimer.current = setTimeout(() => {
       setMobileIsPaused(false);
     }, 5000);
@@ -110,26 +85,12 @@ const EventsSection = ({ events }) => {
           </Link>
         </div>
         <div className="flex flex-col items-center justify-center py-8 gap-2">
-          <FaCalendarAlt className="text-3xl text-gray-400" />
-          <span className="text-sm text-gray-500">No events at the moment</span>
+          <FaCalendarAlt className="text-3xl text-slate-400" />
+          <span className="text-sm text-slate-500">No events at the moment</span>
         </div>
       </section>
     );
   }
-
-  const getVisibleEvents = () => {
-    if (events.length <= 4) {
-      return events;
-    }
-    const result = [];
-    for (let i = 0; i < 4; i++) {
-      const index = (currentIndex + i) % events.length;
-      result.push(events[index]);
-    }
-    return result;
-  };
-  
-  const visibleEvents = getVisibleEvents();
 
   return (
     <section className="py-4 px-3 sm:py-6 sm:px-4">
@@ -144,59 +105,74 @@ const EventsSection = ({ events }) => {
         </Link>
       </div>
 
-      {/* Desktop: 4 rotating cards */}
+      {/* Desktop: Smooth sliding carousel - 4 per page */}
       <div
-        className="hidden md:grid md:grid-cols-4 gap-4"
+        className="hidden md:block overflow-hidden"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
-        {visibleEvents.map((event) => (
-          <HomeCard key={`${event._id}-${currentIndex}`} type="event" data={event} borderColor="border-gray-200" textBgColor="bg-gray-50" textColor="text-teal-900" />
-        ))}
-      </div>
-
-      {/* Mobile: Horizontal scroll carousel */}
-      <div className="md:hidden">
         <div
-          ref={mobileScrollRef}
-          className="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-1"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          onTouchStart={handleMobileTouchStart}
-          onTouchEnd={handleMobileTouchEnd}
+          className="flex transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${currentPage * 100}%)` }}
         >
-          {events.map((event) => (
-            <div
-              key={event._id}
-              className="flex-shrink-0 w-[90vw] snap-center"
-            >
-              <HomeCard type="event" data={event} borderColor="border-gray-200" textBgColor="bg-gray-50" textColor="text-teal-900" />
+          {Array.from({ length: totalPages }).map((_, pageIdx) => (
+            <div key={pageIdx} className="min-w-full grid grid-cols-4 gap-4">
+              {events.slice(pageIdx * 4, pageIdx * 4 + 4).map((event) => (
+                <HomeCard key={event._id} type="event" data={event} />
+              ))}
             </div>
           ))}
         </div>
+      </div>
 
-        <div className="flex justify-center gap-1 mt-2">
-          {events.map((_, idx) => (
-            <div
-              key={idx}
-              className={`h-1.5 rounded-full transition-all ${
-                idx === mobileScrollIndex
-                  ? 'w-6 bg-teal-600'
-                  : 'w-1.5 bg-gray-300'
-              }`}
-            />
+      {/* Mobile: Smooth sliding carousel - 2 per page */}
+      <div
+        className="md:hidden overflow-hidden"
+        onTouchStart={handleMobileTouchStart}
+        onTouchMove={handleMobileTouchMove}
+        onTouchEnd={handleMobileTouchEnd}
+      >
+        <div
+          className="flex transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${mobilePage * 100}%)` }}
+        >
+          {Array.from({ length: totalMobilePages }).map((_, pageIdx) => (
+            <div key={pageIdx} className="min-w-full grid grid-cols-2 gap-2 px-1">
+              {events.slice(pageIdx * 2, pageIdx * 2 + 2).map((event) => (
+                <HomeCard key={event._id} type="event" data={event} />
+              ))}
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Desktop rotation indicator dots */}
-      {events.length > 4 && (
-        <div className="hidden md:flex justify-center gap-1.5 mt-4">
-          {Array.from({ length: Math.ceil(events.length / 4) }).map((_, idx) => (
+      {/* Mobile slide indicator dots */}
+      {events.length > 2 && (
+        <div className="md:hidden flex justify-center gap-1.5 mt-3">
+          {Array.from({ length: totalMobilePages }).map((_, idx) => (
             <button
               key={idx}
-              onClick={() => setCurrentIndex(idx * 4)}
+              onClick={() => setMobilePage(idx)}
               className={`rounded-full transition-all ${
-                Math.floor(currentIndex / 4) === idx
+                mobilePage === idx
+                  ? 'w-6 h-1.5 bg-teal-600'
+                  : 'w-1.5 h-1.5 bg-gray-300'
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Desktop slide indicator dots */}
+      {events.length > 4 && (
+        <div className="hidden md:flex justify-center gap-1.5 mt-4">
+          {Array.from({ length: totalPages }).map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentPage(idx)}
+              className={`rounded-full transition-all ${
+                currentPage === idx
                   ? 'w-7 h-2 bg-teal-600'
                   : 'w-2 h-2 bg-gray-300'
               }`}

@@ -58,13 +58,19 @@ export default async function HomePage() {
   const { listings, events, threads } = await fetchHomeData();
 
   return (
-    <main className="bg-white">
+    <main className="bg-slate-50">
       <HeroSection />
 
-      <div id="content" className="w-full md:container md:mx-auto py-0">
-        <ListingsSection listings={listings} />
-        <EventsSection events={events} />
-        <ThreadsSection threads={threads} />
+      <div id="content" className="w-full md:container md:mx-auto space-y-6 py-6">
+        <div className="bg-white border border-slate-200 rounded-2xl">
+          <ListingsSection listings={listings} />
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl">
+          <EventsSection events={events} />
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl">
+          <ThreadsSection threads={threads} />
+        </div>
       </div>
 
       <Footer />

@@ -138,26 +138,26 @@ const HeroSection = () => {
       <div className="w-full md:container md:mx-auto">
         {/* Headline */}
         <div className="text-center mb-3 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-teal-800">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-teal-900">
             Your Online Community Marketplace
           </h1>
-          <p className="mt-2 sm:mt-3 text-gray-700 text-sm sm:text-base md:text-lg font-medium">
+          <p className="mt-2 sm:mt-3 text-slate-600 text-sm sm:text-base md:text-lg font-medium">
             Powered by community, not algorithms.
           </p>
         </div>
 
         {/* Quick Actions Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-5 md:p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 sm:p-5 md:p-8">
 
           {/* Segmented Pill Toggle */}
           <div className="flex justify-center mb-4 sm:mb-6">
-            <div className="inline-flex bg-gray-100 rounded-full p-1">
+            <div className="inline-flex bg-slate-100 rounded-full p-1">
               <button
                 onClick={() => setMode('poster')}
                 className={`px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-full text-xs sm:text-base font-semibold transition-all duration-300 ${
                   mode === 'poster'
-                    ? 'bg-teal-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-800'
+                    ? 'bg-teal-700 text-white shadow-md'
+                    : 'text-slate-700 hover:bg-slate-200 hover:text-slate-900'
                 }`}
               >
                 I want to
@@ -166,8 +166,8 @@ const HeroSection = () => {
                 onClick={() => setMode('seeker')}
                 className={`px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-full text-xs sm:text-base font-semibold transition-all duration-300 ${
                   mode === 'seeker'
-                    ? 'bg-teal-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-800'
+                    ? 'bg-teal-700 text-white shadow-md'
+                    : 'text-slate-700 hover:bg-slate-200 hover:text-slate-900'
                 }`}
               >
                 I'm looking to
@@ -186,10 +186,12 @@ const HeroSection = () => {
                   <button
                     key={index}
                     onClick={() => handleLinkClick(link)}
-                    className={`flex items-center gap-2 sm:gap-3 md:flex-col md:gap-2 p-2.5 sm:p-3 md:p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer ${link.color}`}
+                    className="flex items-center gap-2 sm:gap-3 md:flex-col md:gap-3 p-2.5 sm:p-3 md:p-5 rounded-2xl border border-slate-100 shadow-sm bg-white hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
                   >
-                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 shrink-0" />
-                    <span className="font-medium text-xs sm:text-sm md:text-base text-left md:text-center leading-tight">
+                    <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-slate-100 rounded-xl shrink-0">
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5 text-teal-700" />
+                    </div>
+                    <span className="font-medium text-xs sm:text-sm md:text-base text-left md:text-center leading-tight text-slate-900">
                       {label}
                     </span>
                   </button>

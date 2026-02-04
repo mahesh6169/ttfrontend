@@ -24,6 +24,7 @@ import { RiArrowGoBackFill } from "react-icons/ri";
 import { FaTimes, FaReply } from "react-icons/fa";
 import { MdDelete, MdOutlineRemoveRedEye } from "react-icons/md";
 import Link from 'next/link';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const ChatPage = () => {
   const router = useRouter();
@@ -32,7 +33,7 @@ const ChatPage = () => {
   const otherUserId = searchParams.get('otherUser');
 
   const dispatch = useDispatch();
-  const { tokenValidated, user } = useSelector((state) => state.user);
+  const { tokenValidated, user, status: authStatus } = useSelector((state) => state.user);
   const currentUserId = user?._id;
   const { activeConversation, status, error, replyingTo } = useSelector((state) => state.messages);
   const [newMessage, setNewMessage] = useState('');
@@ -335,8 +336,16 @@ useEffect(() => {
     }
   };
 
-  if (!tokenValidated) return <div className="text-center mt-8">Validating session...</div>;
-  if (!currentUserId) return <div className="text-center mt-8">Loading user data...</div>;
+  // Redirect to login if not authenticated (preserve full URL including query params)
+  useEffect(() => {
+    if (authStatus === 'failed' || (tokenValidated && !currentUserId)) {
+      const fullPath = window.location.pathname + window.location.search;
+      localStorage.setItem('redirectAfterLogin', fullPath);
+      router.push('/login?preserveRedirect=true');
+    }
+  }, [tokenValidated, currentUserId, authStatus, router]);
+
+  if ((!tokenValidated && authStatus !== 'failed') || !currentUserId) return <div className="flex justify-center mt-8"><LoadingSpinner /></div>;
   if (status === 'loading') return <div className="text-center mt-8">Loading chat...</div>;
   if (error) return <div className="text-center text-red-500">{error}</div>;
   if (!resource) return <div className="text-center text-gray-500">No conversation found.</div>;

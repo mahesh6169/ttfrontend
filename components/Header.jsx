@@ -63,8 +63,8 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-md transition-all duration-300">
-      <div className="container mx-auto py-2 md:py-2.5 text-teal-700 relative">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm transition-all duration-300">
+      <div className="container mx-auto py-2 md:py-2.5 text-slate-700 relative">
 
         {/* Top Row */}
         <div className="flex items-center justify-between">
@@ -96,18 +96,18 @@ const Header = () => {
                         <BsChatDotsFill size={22} className="text-teal-600 drop-shadow-[0_0_8px_rgba(13,148,136,0.6)]" />
                       </div>
                     ) : (
-                      <BsChatDots size={22} className="text-teal-700" />
+                      <BsChatDots size={22} className="text-slate-700" />
                     )}
                   </div>
-                  <span className="text-[10px] text-teal-700">Chat</span>
+                  <span className="text-[10px] text-slate-700">Chat</span>
                 </Link>
                 <button
                   onClick={handleLogout}
                   className="flex flex-col items-center p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
                   title="Signout"
                 >
-                  <LiaSignOutAltSolid size={22} className="text-teal-700" />
-                  <span className="text-[10px] text-teal-700">Signout</span>
+                  <LiaSignOutAltSolid size={22} className="text-slate-700" />
+                  <span className="text-[10px] text-slate-700">Signout</span>
                 </button>
               </>
             ) : (
@@ -116,8 +116,8 @@ const Header = () => {
                 className="flex flex-col items-center p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
                 title="Signin"
               >
-                <LiaSignInAltSolid size={22} className="text-teal-700 scale-x-[-1]" />
-                <span className="text-[10px] text-teal-700">Signin</span>
+                <LiaSignInAltSolid size={22} className="text-slate-700 scale-x-[-1]" />
+                <span className="text-[10px] text-slate-700">Signin</span>
               </Link>
             )}
           </div>
@@ -196,7 +196,7 @@ const Header = () => {
                   />
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 text-teal-700 hover:text-teal-600 transition-colors"
+                    className="flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300"
                     title="Signout"
                   >
                     <LiaSignOutAltSolid size={22} />
@@ -240,11 +240,11 @@ const DropdownNavLink = ({ href, icon, text, pathname, items }) => {
     >
       <Link
         href={href}
-        className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 
+        className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg transition-all duration-300
           ${
             isActive
-              ? 'text-teal-700 font-semibold'
-              : 'text-teal-700 hover:bg-gray-50 hover:text-teal-600'
+              ? 'text-teal-900 bg-slate-100 font-semibold'
+              : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
           }`}
       >
         {icon && <span>{icon}</span>}
@@ -261,7 +261,7 @@ const DropdownNavLink = ({ href, icon, text, pathname, items }) => {
             <Link
               key={index}
               href={item.disabled ? '#' : item.href}
-              className={`block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors
+              className={`block px-4 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors
                 ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={(e) => {
                 if (item.disabled) e.preventDefault();
@@ -293,9 +293,9 @@ const NavLink = ({ href, icon, text, pathname, mobile = false, onClick, showIcon
       className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 relative
         ${
           isActive
-            ? 'text-teal-700 font-semibold'
-            : 'text-teal-700 hover:bg-gray-50 hover:text-teal-600'
-        } 
+            ? 'text-teal-900 bg-slate-100 font-semibold'
+            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+        }
         ${mobile ? 'text-sm' : ''}`}
       title={typeof text === 'string' ? text : undefined}
     >
@@ -305,7 +305,6 @@ const NavLink = ({ href, icon, text, pathname, mobile = false, onClick, showIcon
       ) : (
         <span>{text}</span>
       )}
-      {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4/5 h-0.5 bg-lime-500 hidden md:block"></span>}
     </Link>
   );
 };

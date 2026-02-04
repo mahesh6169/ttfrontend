@@ -37,7 +37,7 @@ const BottomNavigation = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-b border-gray-300 md:hidden z-40 safe-area-inset-pb shadow-lg">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:hidden z-40 safe-area-inset-pb shadow-sm">
       <div className="flex items-center justify-around h-14">
         {navItems.map((item) => (
           <Link
@@ -45,18 +45,15 @@ const BottomNavigation = () => {
             href={item.href}
             className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
               item.isHome
-                ? (pathname === '/' ? 'text-teal-700 font-semibold' : 'text-teal-700 hover:text-teal-600')
-                : (isActive(item.href) ? 'text-teal-700 font-semibold' : 'text-teal-700 hover:text-teal-600')
+                ? (pathname === '/' ? 'text-teal-900 font-semibold' : 'text-slate-700 hover:text-slate-900')
+                : (isActive(item.href) ? 'text-teal-900 font-semibold' : 'text-slate-700 hover:text-slate-900')
             }`}
           >
             <div className="h-5 flex items-center justify-center">
               {item.icon}
             </div>
-            <span className="text-[10px] mt-0.5 relative">
+            <span className="text-[10px] mt-0.5">
               {item.label}
-              {(item.isHome ? pathname === '/' : isActive(item.href)) && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>
-              )}
             </span>
           </Link>
         ))}
@@ -66,17 +63,15 @@ const BottomNavigation = () => {
           href={isAuthenticated ? profilePath : '/login'}
           className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
             isAuthenticated
-              ? (isActive(profilePath) ? 'text-teal-700 font-semibold' : 'text-teal-700 hover:text-teal-600')
-              : (isActive('/login') ? 'text-teal-700 font-semibold' : 'text-teal-700 hover:text-teal-600')
+              ? (isActive(profilePath) ? 'text-teal-900 font-semibold' : 'text-slate-700 hover:text-slate-900')
+              : (isActive('/login') ? 'text-teal-900 font-semibold' : 'text-slate-700 hover:text-slate-900')
           }`}
         >
           <div className="h-5 flex items-center justify-center">
             <FaUser size={16} />
           </div>
-          <span className="text-[10px] mt-0.5 relative">
+          <span className="text-[10px] mt-0.5">
             Profile
-            {(isAuthenticated && isActive(profilePath)) && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
-            {(!isAuthenticated && isActive('/login')) && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-lime-500"></span>}
           </span>
         </Link>
       </div>
