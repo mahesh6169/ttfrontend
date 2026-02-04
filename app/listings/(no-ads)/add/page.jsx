@@ -4,15 +4,38 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { addAdvert, clearAdvert } from '@/store/slices/adverts/advertSlice';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AdvertForm from '@/components/adverts/AdvertForm';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import SuccessModal from '@/components/adverts/SuccessModal';
+import { getAllParentCategories, getSubcategories } from '@/components/adverts/fieldSystem/Categories';
 
 const AddAdvertPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Build prefill from URL params (validated against Categories.js)
+  const prefill = (() => {
+    const cat = searchParams.get('cat');
+    if (!cat) return null;
+
+    const validCategories = getAllParentCategories();
+    if (!validCategories.includes(cat)) return null;
+
+    const result = { category: cat };
+
+    const sub = searchParams.get('sub');
+    if (sub) {
+      const validSubs = getSubcategories(cat);
+      if (validSubs.includes(sub)) {
+        result.subcategory = sub;
+      }
+    }
+
+    return result;
+  })();
   
   // Update to use createStatus instead of status
   const { createStatus, success, message, errors, advert } = useSelector(state => state.advert);
@@ -99,7 +122,7 @@ const AddAdvertPage = () => {
           onAddAnother={() => {
             setShowSuccessModal(false);
             dispatch(clearAdvert());
-            // Reset form by clearing success state
+            router.replace('/listings/add');
           }}
           onManageListings={() => {
             // Navigate first, then clear state after a small delay
@@ -126,9 +149,10 @@ const AddAdvertPage = () => {
           )}
           
           {/* Update isLoading prop to use createStatus */}
-          <AdvertForm 
-            onSubmit={handleSubmit} 
-            isLoading={createStatus === 'loading' || (success && createStatus === 'succeeded')} 
+          <AdvertForm
+            prefill={prefill}
+            onSubmit={handleSubmit}
+            isLoading={createStatus === 'loading' || (success && createStatus === 'succeeded')}
             errors={errors}
             userRole={user?.role || 'user'}
             isSuccess={success && createStatus === 'succeeded'}

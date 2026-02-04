@@ -13,9 +13,10 @@ import { getSharedField } from './fieldSystem/FieldRegistry';
 import { needsCommunityField, isServiceSubcategory } from './fieldSystem/Categories';
 import ContactInfoInput from './ContactInfoInput';
 
-const AdvertForm = ({ 
-  initialData = null, 
-  onSubmit, 
+const AdvertForm = ({
+  initialData = null,
+  prefill = null,
+  onSubmit,
   isLoading = false,
   errors = [],
   userRole = 'user',
@@ -25,8 +26,8 @@ const AdvertForm = ({
   
   const [formData, setFormData] = useState(() => ({
     title: '',
-    category: '',
-    subcategory: '',
+    category: prefill?.category || '',
+    subcategory: prefill?.subcategory || '',
     description: '',
     adType: 'offered',
     condition: '',

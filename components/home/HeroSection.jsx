@@ -37,6 +37,7 @@ const LISTING_TILES = [
     seekerLabel: 'Rentals',
     icon: HiHome,
     posterTarget: '/listings/add',
+    posterParams: { cat: 'Real Estate', sub: 'Sell, Rent & Share' },
     seekerTarget: '/listings',
     seekerParams: { cat: 'Real Estate', sub: 'Sell, Rent & Share' },
     requiresAuth: true,
@@ -46,6 +47,7 @@ const LISTING_TILES = [
     seekerLabel: 'Vehicles',
     icon: LuCar,
     posterTarget: '/listings/add',
+    posterParams: { cat: 'Buy & Sell', sub: 'Cars & Vehicles' },
     seekerTarget: '/listings',
     seekerParams: { cat: 'Buy & Sell', sub: 'Cars & Vehicles' },
     requiresAuth: true,
@@ -55,6 +57,7 @@ const LISTING_TILES = [
     seekerLabel: 'Items for Sale',
     icon: HiShoppingBag,
     posterTarget: '/listings/add',
+    posterParams: { cat: 'Buy & Sell' },
     seekerTarget: '/listings',
     seekerParams: { cat: 'Buy & Sell' },
     requiresAuth: true,
@@ -64,6 +67,7 @@ const LISTING_TILES = [
     seekerLabel: 'Home Services',
     icon: HiWrench,
     posterTarget: '/listings/add',
+    posterParams: { cat: 'Home Services' },
     seekerTarget: '/listings',
     seekerParams: { cat: 'Home Services' },
     requiresAuth: true,
@@ -73,6 +77,7 @@ const LISTING_TILES = [
     seekerLabel: 'Party Services',
     icon: LuPartyPopper,
     posterTarget: '/listings/add',
+    posterParams: { cat: 'Party & Entertainment' },
     seekerTarget: '/listings',
     seekerParams: { cat: 'Party & Entertainment' },
     requiresAuth: true,
@@ -82,6 +87,7 @@ const LISTING_TILES = [
     seekerLabel: 'Catering',
     icon: LuUtensilsCrossed,
     posterTarget: '/listings/add',
+    posterParams: { cat: 'Food & Catering', sub: 'Catering' },
     seekerTarget: '/listings',
     seekerParams: { cat: 'Food & Catering', sub: 'Catering' },
     requiresAuth: true,
@@ -91,6 +97,7 @@ const LISTING_TILES = [
     seekerLabel: 'Beauty Services',
     icon: LuScissors,
     posterTarget: '/listings/add',
+    posterParams: { cat: 'Beauty & Wellness' },
     seekerTarget: '/listings',
     seekerParams: { cat: 'Beauty & Wellness' },
     requiresAuth: true,
@@ -168,12 +175,13 @@ const HeroSection = () => {
     router.push(target);
   };
 
-  // Listing tile click — handles poster/seeker + seekerParams
+  // Listing tile click — handles poster/seeker + params
   const handleListingTileClick = (tile) => {
     let target = mode === 'poster' ? tile.posterTarget : tile.seekerTarget;
-    if (mode === 'seeker' && tile.seekerParams) {
-      const params = new URLSearchParams(tile.seekerParams);
-      target = `${target}?${params.toString()}`;
+    const params = mode === 'poster' ? tile.posterParams : tile.seekerParams;
+    if (params) {
+      const searchParams = new URLSearchParams(params);
+      target = `${target}?${searchParams.toString()}`;
     }
     const requiresAuth = mode === 'poster' && tile.requiresAuth;
     navigateWithAuth(target, requiresAuth);
