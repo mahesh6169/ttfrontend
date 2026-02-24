@@ -36,10 +36,10 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         key={i}
         onClick={() => onPageChange(i)}
-        className={`text-xs px-2 py-0.5 rounded transition-colors ${
-          i === currentPage 
-            ? 'bg-teal-600 text-white font-medium' 
-            : 'text-gray-600 hover:bg-gray-100'
+        className={`min-w-[32px] text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
+          i === currentPage
+            ? 'bg-teal-700 text-white font-semibold'
+            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
         }`}
       >
         {i}
@@ -62,15 +62,15 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   };
 
   return (
-    <div className="flex items-center justify-center gap-1 my-2 flex-wrap">
+    <div className="flex items-center justify-center gap-1.5 py-4 flex-wrap">
       {/* First - Hidden on mobile */}
       {showFirstLast && (
         <button
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          className="text-xs px-2 py-0.5 rounded transition-colors
-               text-gray-600 hover:bg-gray-100
-               disabled:text-gray-300 disabled:cursor-not-allowed"
+          className="text-xs px-2.5 py-1.5 rounded-lg transition-colors
+               text-slate-600 hover:bg-slate-100
+               disabled:text-slate-400 disabled:cursor-not-allowed"
         >
           First
         </button>
@@ -80,9 +80,9 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={handlePrevBlock}
         disabled={currentBlock === 0}
-        className="text-xs px-2 py-0.5 rounded transition-colors
-             text-gray-600 hover:bg-gray-100
-             disabled:text-gray-300 disabled:cursor-not-allowed"
+        className="text-xs px-2.5 py-1.5 rounded-lg transition-colors
+             text-slate-600 hover:bg-slate-100
+             disabled:text-slate-400 disabled:cursor-not-allowed"
       >
         <span className="hidden sm:inline">Prev</span>
         <span className="sm:hidden">‹</span>
@@ -95,9 +95,9 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={handleNextBlock}
         disabled={(currentBlock + 1) * blockSize >= totalPages}
-        className="text-xs px-2 py-0.5 rounded transition-colors
-             text-gray-600 hover:bg-gray-100
-             disabled:text-gray-300 disabled:cursor-not-allowed"
+        className="text-xs px-2.5 py-1.5 rounded-lg transition-colors
+             text-slate-600 hover:bg-slate-100
+             disabled:text-slate-400 disabled:cursor-not-allowed"
       >
         <span className="hidden sm:inline">Next</span>
         <span className="sm:hidden">›</span>
@@ -108,9 +108,9 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         <button
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          className="text-xs px-2 py-0.5 rounded transition-colors
-               text-gray-600 hover:bg-gray-100
-               disabled:text-gray-300 disabled:cursor-not-allowed"
+          className="text-xs px-2.5 py-1.5 rounded-lg transition-colors
+               text-slate-600 hover:bg-slate-100
+               disabled:text-slate-400 disabled:cursor-not-allowed"
         >
           Last
         </button>

@@ -13,7 +13,7 @@ export const metadata = {
 
 const EventsWithAdsLayout = ({ children }) => {
   return (
-    <main id="Parent" className="container bg-white mt-4 mb-2 mx-auto">
+    <main id="Parent" className="container mt-4 mb-2 mx-auto">
       <StateSelector />
       <EventTopAd />
       <div className="flex gap-2">

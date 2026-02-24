@@ -247,7 +247,7 @@ const createDefaultFormData = () => ({
   category: '',
   communities: [],
   images: [],
-  
+
   // Coordinators
   coordinators: [{ name: '', role: '', phone: '', email: '' }],
 
@@ -260,7 +260,7 @@ const createDefaultFormData = () => ({
     abn: '', // Australian Business Number for invoicing (paid events)
     socialMedia: []
   },
-  
+
   // Recurring Event Settings
   recurrence: {
     isRecurring: false,
@@ -268,10 +268,13 @@ const createDefaultFormData = () => ({
     endDate: null,
     parentEventId: null
   },
-  
+
+  // Event Intent & Promotional Settings
+  eventIntent: null, // 'promote' | 'host' | null (user must select)
+  externalTicketUrl: '', // External ticketing link for promotional events
 
   // Ticketing
-   isPaid: false, // Default to free event
+  isPaid: false, // Default to free event
   isAdvertiseOnly: false, // For free events that are advertise-only
   capacity: '',
   maxAttendeesPerRegistration: '',
@@ -424,6 +427,10 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
       endDate: eventData.recurrence?.endDate || null,
       parentEventId: eventData.recurrence?.parentEventId || null
     },
+    // Event Intent & Promotional Settings
+    eventIntent: eventData.eventIntent || 'host', // Default to 'host' for existing events
+    externalTicketUrl: eventData.externalTicketUrl || '',
+
     isPaid: eventData.isPaid || false,
     isAdvertiseOnly: eventData.isAdvertiseOnly || false,
     capacity: eventData.capacity || '',
@@ -457,7 +464,7 @@ const eventSlice = createSlice({
     
     // Form state
     currentStep: 1,
-    totalSteps: 4, // Dynamic: 4 for free events (default), 5 for paid events
+    totalSteps: 3, // Dynamic: 3 for free/promotional events (default), 4 for hosted paid events
     
     // Form data
     formData: createDefaultFormData(),
@@ -526,13 +533,18 @@ deleteError: null,
       if (isEdit && eventData) {
         // Store original data for comparison
         state.originalEventData = eventData;
-        
+
         // Populate form with processed event data
         state.formData = processEventDataForEdit(eventData);
-        
-        // Set totalSteps based on event type
-        state.totalSteps = eventData.isPaid ? 5 : 4;
-        
+
+        // Set totalSteps based on event intent and type:
+        // - Promotional events (eventIntent === 'promote'): 3 steps
+        // - Hosted free events: 3 steps
+        // - Hosted paid events: 4 steps (includes refund policy)
+        const isPromotional = eventData.eventIntent === 'promote' || eventData.isAdvertiseOnly;
+        const isHostedPaid = eventData.eventIntent === 'host' && eventData.isPaid;
+        state.totalSteps = isHostedPaid ? 4 : 3;
+
         // Reset to first step for edit mode
         state.currentStep = 1;
       }
@@ -689,8 +701,11 @@ deleteError: null,
     toggleIsPaid: (state, action) => {
       state.formData.isPaid = action.payload;
       state.hasUnsavedChanges = true;
-      // Update totalSteps based on event type
-      state.totalSteps = action.payload ? 5 : 4; // 5 for paid (includes refund policy), 4 for free
+      // Update totalSteps based on event type (only for hosted events)
+      // Hosted paid: 4 steps (includes refund policy), Hosted free/Promotional: 3 steps
+      if (state.formData.eventIntent === 'host') {
+        state.totalSteps = action.payload ? 4 : 3;
+      }
       
       // Reset isAdvertiseOnly if switching to paid event
       if (action.payload) {
@@ -707,7 +722,7 @@ deleteError: null,
       if (!state.formData.isPaid) {
         state.formData.isAdvertiseOnly = action.payload;
         state.hasUnsavedChanges = true;
-        
+
         // If enabling advertise-only, clear all registration-related fields
         if (action.payload) {
           state.formData.capacity = '';
@@ -716,6 +731,41 @@ deleteError: null,
         }
       }
     },
+
+    // Event Intent & Promotional Settings
+    setEventIntent: (state, action) => {
+      state.formData.eventIntent = action.payload; // 'promote' | 'host'
+      state.hasUnsavedChanges = true;
+
+      if (action.payload === 'promote') {
+        // Promotional events: set isAdvertiseOnly for backwards compat
+        state.formData.isAdvertiseOnly = true;
+        state.formData.isPaid = null; // null = not yet selected, user must choose in Step 3
+        state.formData.capacity = '';
+        state.formData.maxAttendeesPerRegistration = '';
+        state.formData.registrationFields = [];
+        // Promotional events cannot be recurring
+        state.formData.recurrence = {
+          isRecurring: false,
+          repeatSchedule: [],
+          endDate: null,
+          parentEventId: null
+        };
+        state.totalSteps = 3; // Promotional events have 3 steps
+      } else if (action.payload === 'host') {
+        // Hosted events: clear promotional fields
+        state.formData.isAdvertiseOnly = false;
+        state.formData.externalTicketUrl = '';
+        // totalSteps depends on isPaid (set by toggleIsPaid)
+        state.totalSteps = state.formData.isPaid ? 4 : 3;
+      }
+    },
+
+    setExternalTicketUrl: (state, action) => {
+      state.formData.externalTicketUrl = action.payload;
+      state.hasUnsavedChanges = true;
+    },
+
     addTicketType: (state) => {
       state.formData.ticketTypes.push({ name: '', price: null, quantity: 0, startDate: null, expiryDate: null });
       state.hasUnsavedChanges = true;
@@ -919,7 +969,7 @@ updateGstIncluded: (state, action) => {
       }
       
       state.currentStep = 1;
-      state.totalSteps = 4; // Reset to default (free event)
+      state.totalSteps = 3; // Reset to default (3 steps for free/promotional events)
       state.isEditMode = false;
       state.editingEventId = null;
       state.originalEventData = null;
@@ -1212,6 +1262,10 @@ export const {
   addTicketType,
   updateTicketType,
   removeTicketType,
+
+  // Event Intent & Promotional Settings
+  setEventIntent,
+  setExternalTicketUrl,
   
 // Refund policy
 updateRefundPolicy,

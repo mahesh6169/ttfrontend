@@ -44,43 +44,38 @@ const StepIndicator = ({
 
   const config = modeConfig[mode] || modeConfig.add;
 
+  // New step structure:
+  // Step 1: Basic Info - Intent, Free/Paid, Title, date/time, Recurring (host+free), venue, address, images
+  // Step 2: Event Details - Category, description, organizer, coordinators
+  // Step 3: Registration - registration/ticket config based on intent
+  // Step 4: Refund Policy - Only for hosted paid events
   const allSteps = [
-    { 
-      number: 1, 
-      title: 'Event Type',
-      description: formData?.isPaid !== undefined 
-        ? (formData.isPaid ? 'Paid event' : 'Free event')
-        : 'Choose pricing model',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-        </svg>
-      )
-    },
-    { 
-      number: 2, 
-      title: 'Event Details',
-      description: mode === 'view' ? 'Basic information & schedule' : 'Basic information & schedule',
+    {
+      number: 1,
+      title: 'Basic Info',
+      description: 'Event type & details',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       )
     },
-    { 
-      number: 3, 
-      title: 'Organizer Info',
-      description: 'Organizer & coordinators',
+    {
+      number: 2,
+      title: 'Event Details',
+      description: 'Category & organizer',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
       )
     },
-    { 
-      number: 4, 
-      title: 'Configuration',
-      description: formData?.isPaid ? 'Tickets & Seating' : 'Registration setup',
+    {
+      number: 3,
+      title: 'Registration',
+      description: formData?.eventIntent === 'promote'
+        ? 'Promotional setup'
+        : (formData?.isPaid ? 'Tickets & seating' : 'Registration setup'),
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -88,10 +83,10 @@ const StepIndicator = ({
         </svg>
       )
     },
-    { 
-      number: 5, 
+    {
+      number: 4,
       title: 'Refund Policy',
-      description: formData?.isPaid ? 'Payment terms' : 'Not applicable',
+      description: 'Payment terms',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -100,12 +95,14 @@ const StepIndicator = ({
     },
   ];
 
-  // Filter steps based on event type
-  // For free events (isPaid === false), show only steps 1-4
-  // For paid events (isPaid === true) or null/undefined, show all 5 steps
-  const steps = formData?.isPaid === false 
-    ? allSteps.filter(step => step.number !== 5) // Remove refund policy step for free events
-    : allSteps;
+  // Filter steps based on event configuration:
+  // - Promotional events (eventIntent === 'promote'): 3 steps (no refund policy)
+  // - Hosted free events: 3 steps (no refund policy)
+  // - Hosted paid events: 4 steps (includes refund policy)
+  const showRefundPolicy = formData?.eventIntent === 'host' && formData?.isPaid === true;
+  const steps = showRefundPolicy
+    ? allSteps
+    : allSteps.filter(step => step.number !== 4);
     
   
   const handleStepClick = (stepNumber) => {
@@ -129,24 +126,27 @@ const StepIndicator = ({
 
 const isStepComplete = (stepNumber) => {
   switch (stepNumber) {
-    case 1: // Event Type (moved from step 3)
-      return formData?.isPaid !== undefined;
-    case 2: // Event Details (moved from step 1)
-      return formData?.title && formData?.dateTime && formData?.venue && formData?.description;
-    case 3: // Organizer Info (moved from step 2)
-      return formData?.organizer?.name?.trim() && formData?.organizer?.contact?.trim();
-    case 4: // Configuration (unchanged)
-      if (formData?.isPaid === undefined) return false;
-      
-      if (formData?.isPaid) {
-        return formData?.ticketTypes?.length > 0 && 
-               formData.ticketTypes.every(ticket => ticket.name && ticket.price > 0);
-      } else {
-        return formData?.maxAttendeesPerRegistration > 0;
+    case 1: // Basic Info - Intent, Title, Date/Time, Venue, Address
+      return formData?.eventIntent && formData?.title?.trim() && formData?.dateTime && formData?.venue?.trim() && formData?.address?.formattedAddress;
+    case 2: // Event Details - Category, Description, Organizer
+      return formData?.category?.trim() && formData?.description?.trim() &&
+             formData?.organizer?.name?.trim() && formData?.organizer?.contact?.trim();
+    case 3: // Registration - registration config based on intent
+      if (formData?.eventIntent === 'promote') {
+        // Promotional events need isPaid explicitly set (not null)
+        return formData?.isPaid !== null;
+      } else if (formData?.eventIntent === 'host') {
+        // Hosted events need registration config
+        if (formData?.isPaid) {
+          return formData?.ticketTypes?.length > 0 &&
+                 formData.ticketTypes.every(ticket => ticket.name && ticket.price > 0);
+        } else {
+          return formData?.maxAttendeesPerRegistration > 0;
+        }
       }
-    case 5: // Refund Policy (unchanged)
-      if (formData?.isPaid === undefined) return false;
-      if (!formData?.isPaid) return true; // Free events don't need refund policy
+      return false;
+    case 4: // Refund Policy - Only for hosted paid events
+      if (formData?.eventIntent !== 'host' || !formData?.isPaid) return true;
       return formData?.refundPolicy?.processingFeePolicy !== undefined;
     default:
       return false;

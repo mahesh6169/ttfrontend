@@ -625,7 +625,35 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Chat Container - Mobile Only (At the bottom) */}
       {chatProps && (
         <div className="block lg:hidden px-2 my-4">
-          <SendMessage {...chatProps} />
+          {chatProps.isAdminEvent ? (
+            <div className="p-4 text-center bg-gray-50 rounded-lg border">
+              <p className="text-sm text-gray-500">
+                This event was added by admin on behalf of the organizer.
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Please contact the organizer directly for any inquiries.
+              </p>
+            </div>
+          ) : chatProps.isPromotionalEvent ? (
+            <div className="p-4 text-center bg-purple-50 rounded-lg border border-purple-100">
+              <p className="text-sm text-gray-600 font-medium">Promotional Event</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Registration is handled externally by the organizer.
+              </p>
+              {event.externalTicketUrl && (
+                <a
+                  href={event.externalTicketUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Register / Get Tickets
+                </a>
+              )}
+            </div>
+          ) : (
+            <SendMessage {...chatProps} />
+          )}
         </div>
       )}
 

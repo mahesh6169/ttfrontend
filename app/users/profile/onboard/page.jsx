@@ -102,7 +102,7 @@ export default function OnboardPage() {
   };
 
   const handleAddEvent = () => {
-    router.push('/events/add-paid');
+    router.push('/events/add?intent=host&type=paid');
   };
 
   const stripeAccountStatus = accountStatus?.computedStatus || 'no_account';

@@ -14,6 +14,7 @@ import {
   HiMapPin,
   HiTag,
   HiChatBubbleLeftRight,
+  HiMegaphone,
 } from 'react-icons/hi2';
 import {
   LuCar,
@@ -116,16 +117,22 @@ const LISTING_TILES = [
 // --- Events Tab Tiles ---
 const EVENT_TILES = [
   {
-    label: 'Host an Event',
-    icon: HiCalendar,
-    target: '/events/add',
+    label: 'Promote an Event',
+    icon: HiMegaphone,
+    target: '/events/add?intent=promote',
     requiresAuth: true,
   },
   {
-    label: 'Sell Tickets',
+    label: 'Host Free Event',
+    icon: HiCalendar,
+    target: '/events/add?intent=host&type=free',
+    requiresAuth: true,
+  },
+  {
+    label: 'Host Paid Event',
     icon: HiTicket,
-    target: '/tickets',
-    requiresAuth: false,
+    target: '/events/add?intent=host&type=paid',
+    requiresAuth: true,
   },
   {
     label: 'Browse Events',

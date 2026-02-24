@@ -33,10 +33,9 @@ import { markCapacityStale } from '@/store/slices/events/eventCapacitySlice';
 
 // Step Components
 import StepIndicator from './StepIndicator';
+import BasicInfoStep from './BasicInfoStep';
 import EventDetailsStep from './EventDetailsStep';
-import OrganiserDetailsStep from './OrganiserDetailsStep';
-import EventTypeStep from './EventTypeStep';
-import TicketConfigStep from './TicketConfigStep';
+import RegistrationStep from './RegistrationStep';
 import RefundPolicyStep from './RefundPolicyStep';
 import SuccessStep from './SuccessStep';
 
@@ -103,9 +102,9 @@ const StepManager = ({
     };
   }, [dispatch]);
 
-  // Regenerate blob URLs when returning to step 2
+  // Regenerate blob URLs when returning to step 1 (BasicInfoStep with images)
   useEffect(() => {
-    if (isReturningToImageStep && currentStep === 2 && formData.images && formData.images.length > 0 && localImageFiles.length > 0) {
+    if (isReturningToImageStep && currentStep === 1 && formData.images && formData.images.length > 0 && localImageFiles.length > 0) {
       // Create file map for quick lookup
       const fileMap = new Map();
       localImageFiles.forEach(localFile => {
@@ -392,13 +391,17 @@ const StepManager = ({
     }
 
     if (!formData.category?.trim()) {
-  errors.category = ['Event category is required'];
-}
+      errors.category = ['Event category is required'];
+    }
 
-if (!formData.timeZone?.trim()) {
-  errors.timeZone = ['Event timezone is required'];
-}
+    if (!formData.timeZone?.trim()) {
+      errors.timeZone = ['Event timezone is required'];
+    }
 
+    // Event intent validation
+    if (!formData.eventIntent) {
+      errors.eventIntent = ['Please select whether you want to promote or host this event'];
+    }
 
     // Address validation
     if (
@@ -414,30 +417,28 @@ if (!formData.timeZone?.trim()) {
     }
 
     // Coordinator validation
-if (formData.coordinators && formData.coordinators.length > 0) {
-  const coordinatorErrors = [];
-  formData.coordinators.forEach((coord, index) => {
-    // If coordinator name is provided, then phone becomes required
-    if (coord.name?.trim() && !coord.phone?.trim()) {
-      coordinatorErrors.push(
-        `Coordinator ${index + 1}: Phone number is required when coordinator name is provided`
-      );
+    if (formData.coordinators && formData.coordinators.length > 0) {
+      const coordinatorErrors = [];
+      formData.coordinators.forEach((coord, index) => {
+        // If coordinator name is provided, then phone becomes required
+        if (coord.name?.trim() && !coord.phone?.trim()) {
+          coordinatorErrors.push(
+            `Coordinator ${index + 1}: Phone number is required when coordinator name is provided`
+          );
+        }
+      });
+      if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;
     }
-  });
-  if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;
-}
 
-
-      // Organizer validation
+    // Organizer validation
     if (!formData.organizer?.name?.trim()) {
       errors.organizer = ['Organizer name is required'];
     }
 
     if (!formData.organizer?.contact?.trim()) {
-  errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
-}
+      errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
+    }
 
-    
     // Basic email validation for organizer if provided
     if (
       formData.organizer?.email &&
@@ -447,8 +448,8 @@ if (formData.coordinators && formData.coordinators.length > 0) {
       errors.organizer = (errors.organizer || []).concat(['Organizer email format is invalid']);
     }
 
-    // Recurring event validation
-    if (formData.recurrence?.isRecurring) {
+    // Recurring event validation - only for non-promotional events
+    if (formData.eventIntent !== 'promote' && formData.recurrence?.isRecurring) {
       if (
         !formData.recurrence.repeatSchedule ||
         formData.recurrence.repeatSchedule.length === 0
@@ -480,8 +481,8 @@ if (formData.coordinators && formData.coordinators.length > 0) {
       }
     }
 
-    // Paid event specific validation
-    if (formData.isPaid) {
+    // Paid event specific validation (only for hosted paid events, not promotional)
+    if (formData.isPaid && formData.eventIntent === 'host') {
       if (
         formData.capacity === '' ||
         formData.capacity === undefined ||
@@ -598,8 +599,9 @@ if (ticket.startDate && ticket.expiryDate) {
         }
       }
     } else {
-      // Free event specific validation - skip if advertise-only
-      if (!formData.isAdvertiseOnly) {
+      // Free event specific validation - skip if promotional or advertise-only
+      const isPromotional = formData.eventIntent === 'promote' || formData.isAdvertiseOnly;
+      if (!isPromotional) {
         if (formData.capacity && formData.capacity < 0) {
           errors.capacity = ['Event capacity cannot be negative'];
         }
@@ -615,8 +617,9 @@ if (ticket.startDate && ticket.expiryDate) {
       }
     }
 
-    // Custom registration fields validation - skip if advertise-only
-    if (!formData.isAdvertiseOnly && formData.registrationFields && formData.registrationFields.length > 0) {
+    // Custom registration fields validation - skip if promotional or advertise-only
+    const isPromotionalEvent = formData.eventIntent === 'promote' || formData.isAdvertiseOnly;
+    if (!isPromotionalEvent && formData.registrationFields && formData.registrationFields.length > 0) {
       const fieldErrors = [];
       formData.registrationFields.forEach((field, index) => {
         if (!field.fieldName?.trim()) {
@@ -629,19 +632,21 @@ if (ticket.startDate && ticket.expiryDate) {
     return errors;
   }, [formData, isAddMode]);
 
-// switch statement with:
+// Step validation for new step structure:
+// Step 1: Basic Info (intent, free/paid, title, datetime, recurring, timezone, venue, address)
+// Step 2: Event Details (category, description, organizer, coordinators)
+// Step 3: Registration (registration config based on intent)
+// Step 4: Refund Policy (only for host + paid)
 const validateCurrentStep = useCallback(() => {
   const errors = {};
 
   switch (currentStep) {
-    case 1: // Event Type (moved from step 3)
-      // No specific validation needed for step 1, just selection
-      break;
-
-    case 2: // Event Details (moved from step 1)
+    case 1: // Basic Info - Intent, Free/Paid, Title, Date/Time, Recurring, Timezone, Venue, Address
+      // Intent is required first
+      if (!formData.eventIntent) {
+        errors.eventIntent = ['Please select whether you want to promote or host this event'];
+      }
       if (!formData.title?.trim()) errors.title = ['Event title is required'];
-      if (!formData.description?.trim())
-        errors.description = ['Event description is required'];
       if (!formData.dateTime) {
         errors.dateTime = ['Event date and time are required'];
       } else if (isAddMode) {
@@ -651,14 +656,10 @@ const validateCurrentStep = useCallback(() => {
           errors.dateTime = ['Event date must be in the future'];
         }
       }
-      if (!formData.venue?.trim()) errors.venue = ['Venue is required'];
-      if (!formData.category?.trim()) errors.category = ['Event category is required'];
       if (!formData.timeZone?.trim()) errors.timeZone = ['Event timezone is required'];
-      if (!formData.address?.formattedAddress)
-        errors.address = ['Event address is required'];
-      
-      // Recurring event validation
-      if (formData.recurrence?.isRecurring) {
+
+      // Recurring event validation (only for host + free events)
+      if (formData.eventIntent === 'host' && !formData.isPaid && formData.recurrence?.isRecurring) {
         if (!formData.recurrence.repeatSchedule || formData.recurrence.repeatSchedule.length === 0) {
           errors.recurrence = ['At least one repeat schedule is required for recurring events'];
         } else {
@@ -670,9 +671,13 @@ const validateCurrentStep = useCallback(() => {
           });
           if (recurringErrors.length > 0) errors.recurrence = recurringErrors;
         }
-        
+
         // End date validation for recurring events
-        if (formData.recurrence.endDate) {
+        if (!formData.recurrence.endDate) {
+          errors.recurrence = (errors.recurrence || []).concat([
+            'End date is required for recurring events',
+          ]);
+        } else {
           const endDate = new Date(formData.recurrence.endDate);
           const startDate = new Date(formData.dateTime);
           if (endDate <= startDate) {
@@ -682,27 +687,31 @@ const validateCurrentStep = useCallback(() => {
           }
         }
       }
+
+      if (!formData.venue?.trim()) errors.venue = ['Venue is required'];
+      if (!formData.address?.formattedAddress)
+        errors.address = ['Event address is required'];
       break;
 
-    case 3: // Organiser Details (moved from step 2)
+    case 2: // Event Details - Category, Description, Organizer, Coordinators
+      if (!formData.category?.trim()) errors.category = ['Event category is required'];
+      if (!formData.description?.trim())
+        errors.description = ['Event description is required'];
+
       // Organizer validation
       if (!formData.organizer?.name?.trim()) {
         errors.organizer = ['Organizer name is required'];
       }
-
       if (!formData.organizer?.contact?.trim()) {
         errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
       }
-      
-      // Coordinators validation - UPDATED: Now optional
+
+      // Coordinators validation - optional but validate if data entered
       if (formData.coordinators && formData.coordinators.length > 0) {
         const coordinatorErrors = [];
         formData.coordinators.forEach((coord, index) => {
-          // Only validate if coordinator has ANY data entered
           const hasAnyData = coord.name?.trim() || coord.phone?.trim() || coord.email?.trim() || coord.role?.trim();
-          
           if (hasAnyData) {
-            // If they started filling it out, require name and phone
             if (!coord.name?.trim() || !coord.phone?.trim()) {
               coordinatorErrors.push(
                 `Coordinator ${index + 1}: If adding a coordinator, name and phone are required`
@@ -710,103 +719,100 @@ const validateCurrentStep = useCallback(() => {
             }
           }
         });
-        if (coordinatorErrors.length > 0)
-          errors.coordinators = coordinatorErrors;
+        if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;
       }
       break;
 
-    case 4: // Ticket Config - Required field validation only
-      if (formData.isPaid) {
-        // Capacity is required
-        if (
-          formData.capacity === '' ||
-          formData.capacity === undefined ||
-          formData.capacity === null
-        ) {
-          errors.capacity = ['Event capacity is required'];
+    case 3: // Registration - registration/ticket config based on intent
+      // Promotional event validation - isPaid must be explicitly set (not null)
+      if (formData.eventIntent === 'promote') {
+        if (formData.isPaid === null) {
+          errors.isPaid = ['Please select whether this is a free or paid event'];
         }
-        
-        // Booking limit is required
-        if (
-          formData.maxAttendeesPerRegistration === undefined ||
-          formData.maxAttendeesPerRegistration === null ||
-          formData.maxAttendeesPerRegistration === ''
-        ) {
-          errors.maxAttendeesPerRegistration = ['Booking limit is required'];
-        }
-        
-        // Basic seating layout validation - required fields only
-        if (formData.seatingLayout && formData.seatingLayout.length > 0) {
-          const seatingErrors = [];
-          const totalSeats = formData.seatingLayout.reduce(
-            (total, row) => total + (row.seats?.length || 0), 0
-          );
-          
-          // Check if capacity matches total seats for seated events
-          if (formData.capacity && Number(formData.capacity) > 0) {
-            if (totalSeats !== Number(formData.capacity)) {
-              seatingErrors.push(`For seated events, capacity must match total seats. Current: ${totalSeats} seats, ${formData.capacity} capacity`);
-            }
-          }
-          
-          formData.seatingLayout.forEach((row, index) => {
-            if (!row.rowLabel?.trim()) {
-              seatingErrors.push(`Row ${index + 1} label is required`);
-            }
-            if (!row.seats || row.seats.length === 0) {
-              seatingErrors.push(`Row ${index + 1} must have at least one seat`);
-            }
-          });
-          
-          if (seatingErrors.length > 0) errors.seatingLayout = seatingErrors;
-        }
-        
-        if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
-          errors.ticketTypes = [
-            'At least one ticket type is required for paid events',
-          ];
-        } else {
-          formData.ticketTypes.forEach((ticket, index) => {
-            // Name is required
-            if (!ticket.name?.trim()) {
-              errors[`ticketName_${index}`] = ['Ticket name is required'];
-            }
+        // External URL is optional, no validation needed
+      }
 
-            // Price is required
-            if (
-              ticket.price === undefined ||
-              ticket.price === null ||
-              ticket.price === ''
-            ) {
-              errors[`ticketPrice_${index}`] = ['Ticket price is required'];
-            }
-          });
-        }
-      } else {
-        // Free event validation - skip if advertise-only
-        if (!formData.isAdvertiseOnly) {
-          // Only validate capacity and booking limit if not advertise-only
+      // Hosted event validation
+      if (formData.eventIntent === 'host') {
+        if (formData.isPaid) {
+          // Paid event: Capacity, booking limit, ticket types required
+          if (
+            formData.capacity === '' ||
+            formData.capacity === undefined ||
+            formData.capacity === null
+          ) {
+            errors.capacity = ['Event capacity is required'];
+          }
+
           if (
             formData.maxAttendeesPerRegistration === undefined ||
             formData.maxAttendeesPerRegistration === null ||
             formData.maxAttendeesPerRegistration === ''
           ) {
-            errors.maxAttendeesPerRegistration = [
-              'Booking limit is required',
-            ];
+            errors.maxAttendeesPerRegistration = ['Booking limit is required'];
+          }
+
+          // Seating layout validation
+          if (formData.seatingLayout && formData.seatingLayout.length > 0) {
+            const seatingErrors = [];
+            const totalSeats = formData.seatingLayout.reduce(
+              (total, row) => total + (row.seats?.length || 0), 0
+            );
+
+            if (formData.capacity && Number(formData.capacity) > 0) {
+              if (totalSeats !== Number(formData.capacity)) {
+                seatingErrors.push(`For seated events, capacity must match total seats. Current: ${totalSeats} seats, ${formData.capacity} capacity`);
+              }
+            }
+
+            formData.seatingLayout.forEach((row, index) => {
+              if (!row.rowLabel?.trim()) {
+                seatingErrors.push(`Row ${index + 1} label is required`);
+              }
+              if (!row.seats || row.seats.length === 0) {
+                seatingErrors.push(`Row ${index + 1} must have at least one seat`);
+              }
+            });
+
+            if (seatingErrors.length > 0) errors.seatingLayout = seatingErrors;
+          }
+
+          // Ticket types validation
+          if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
+            errors.ticketTypes = ['At least one ticket type is required for paid events'];
+          } else {
+            formData.ticketTypes.forEach((ticket, index) => {
+              if (!ticket.name?.trim()) {
+                errors[`ticketName_${index}`] = ['Ticket name is required'];
+              }
+              if (
+                ticket.price === undefined ||
+                ticket.price === null ||
+                ticket.price === ''
+              ) {
+                errors[`ticketPrice_${index}`] = ['Ticket price is required'];
+              }
+            });
+          }
+        } else {
+          // Free hosted event: Capacity and booking limit required
+          if (
+            formData.maxAttendeesPerRegistration === undefined ||
+            formData.maxAttendeesPerRegistration === null ||
+            formData.maxAttendeesPerRegistration === ''
+          ) {
+            errors.maxAttendeesPerRegistration = ['Booking limit is required'];
           }
         }
       }
       break;
 
-    case 5: // Refund Policy (unchanged)
-      // Only validate refund policy for paid events
-      if (formData.isPaid) {
+    case 4: // Refund Policy - Only for hosted paid events
+      if (formData.eventIntent === 'host' && formData.isPaid) {
         if (!formData.refundPolicy?.processingFeePolicy) {
           errors.refundPolicy = ['Please select a refund policy option'];
         }
       }
-      // Free events skip refund policy validation entirely
       break;
 
     default:
@@ -964,6 +970,14 @@ if (formData.dateTime) {
 
     // Event type
     submitFormData.append('isPaid', formData.isPaid ? 'true' : 'false');
+
+    // Event intent and promotional fields
+    if (formData.eventIntent) {
+      submitFormData.append('eventIntent', formData.eventIntent);
+    }
+    if (formData.externalTicketUrl) {
+      submitFormData.append('externalTicketUrl', formData.externalTicketUrl);
+    }
 
     // Free event specific fields
     if (!formData.isPaid) {
@@ -1253,9 +1267,12 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
     const submitFormData = prepareSubmissionData();
 
     try {
+      // Determine if this is a hosted paid event (not promotional)
+      const isHostedPaid = formData.eventIntent === 'host' && formData.isPaid;
+
       if (isEditingMode) {
         // Update existing event - choose the appropriate thunk based on event type
-        if (formData.isPaid) {
+        if (isHostedPaid) {
           await dispatch(
             updatePaidEvent({
               eventId: editingEventId,
@@ -1296,7 +1313,8 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
         }
       } else {
         // Create new event - choose the appropriate thunk based on event type
-        if (formData.isPaid) {
+        // Promotional events always use free endpoint (even if promoting a paid event)
+        if (isHostedPaid) {
           await dispatch(addPaidEvent(submitFormData)).unwrap();
         } else {
           await dispatch(addFreeEvent(submitFormData)).unwrap();
@@ -1314,6 +1332,7 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
     isEditingMode,
     editingEventId,
     formData.isPaid,
+    formData.eventIntent,
   ]);
 
   // Handle step navigation
@@ -1357,12 +1376,12 @@ const handleNext = useCallback(() => {
 
   const handlePrev = useCallback(() => {
     dispatch(clearFormErrors());
-    
-    // Set flag when returning to step 2 (image step)
-    if (currentStep === 3) {
+
+    // Set flag when returning to step 1 (BasicInfoStep with images)
+    if (currentStep === 2) {
       setIsReturningToImageStep(true);
     }
-    
+
     dispatch(prevStep());
     window.scrollTo(0, 0);
   }, [dispatch, currentStep]);
@@ -1482,17 +1501,9 @@ const handleAddAnother = useCallback(() => {
 
         {/* Step Content */}
         <div className="mt-8 bg-white p-1 sm:p-6 rounded-lg shadow-md border border-gray-200">
-           {currentStep === 1 && (
-    <EventTypeStep
-      formData={formData}
-      errors={formErrors}
-      mode={mode}
-      readOnly={isViewMode}
-    />
-  )}
-
-  {currentStep === 2 && (
-    <EventDetailsStep
+           {/* Step 1: Basic Info - Title, Date/Time, Venue, Address, Images */}
+  {currentStep === 1 && (
+    <BasicInfoStep
       formData={formData}
       errors={formErrors}
       onImagesChange={handleImagesChange}
@@ -1501,8 +1512,9 @@ const handleAddAnother = useCallback(() => {
     />
   )}
 
-  {currentStep === 3 && (
-    <OrganiserDetailsStep
+  {/* Step 2: Event Details - Category, Description, Recurring, Organizer, Coordinators */}
+  {currentStep === 2 && (
+    <EventDetailsStep
       formData={formData}
       errors={formErrors}
       mode={mode}
@@ -1510,8 +1522,9 @@ const handleAddAnother = useCallback(() => {
     />
   )}
 
-  {currentStep === 4 && (
-    <TicketConfigStep
+  {/* Step 3: Registration - Intent selection + registration/ticket config */}
+  {currentStep === 3 && (
+    <RegistrationStep
       formData={formData}
       errors={formErrors}
       mode={mode}
@@ -1520,7 +1533,8 @@ const handleAddAnother = useCallback(() => {
     />
   )}
 
-  {currentStep === 5 && formData.isPaid && (
+  {/* Step 4: Refund Policy - Only for hosted paid events */}
+  {currentStep === 4 && formData.eventIntent === 'host' && formData.isPaid && (
     <RefundPolicyStep
       formData={formData}
       errors={formErrors}

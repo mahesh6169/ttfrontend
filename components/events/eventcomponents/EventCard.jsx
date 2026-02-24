@@ -6,12 +6,26 @@ import { FaHeart } from 'react-icons/fa';
 import { format, differenceInDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { MdRepeat } from 'react-icons/md';
-import { FaMoneyBillWave } from 'react-icons/fa';
-import { FaClipboardList } from 'react-icons/fa';
+import { FaMoneyBillWave, FaClipboardList, FaBullhorn, FaExternalLinkAlt } from 'react-icons/fa';
 
 const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
-  const { title, dateTime, venue, address, images, createdAt, timeZone, isPaid, isAdvertiseOnly } = event;
+  const {
+    title,
+    dateTime,
+    venue,
+    address,
+    images,
+    createdAt,
+    timeZone,
+    isPaid,
+    isAdvertiseOnly,
+    eventIntent,
+    externalTicketUrl
+  } = event;
+
+  // Check if this is a promotional event
+  const isPromotional = eventIntent === 'promote' || isAdvertiseOnly;
 
   const getStateFromTimezone = (timezone) => {
   const timezoneMap = {
@@ -47,21 +61,21 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
   return (
     <div
       id="EventCard"
-      className="relative rounded-lg shadow-md"
+      className="relative bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition-all duration-200"
     >
       {/* Wishlist Button */}
       <button
         onClick={onWishlistToggle}
-        className={`absolute top-2 right-2 text-white p-2 rounded-full z-10 ${
+        className={`absolute top-2 right-2 text-white p-1.5 rounded-full z-10 ${
           isInWishlist
             ? 'bg-red-500 hover:bg-red-600'
-            : 'bg-gray-300 hover:bg-gray-400'
+            : 'bg-slate-300 hover:bg-slate-400'
         }`}
         title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
       >
         <FaHeart
-          className={`text-sm sm:text-base ${
-            isInWishlist ? 'text-white' : 'text-gray-700'
+          className={`text-xs sm:text-sm ${
+            isInWishlist ? 'text-white' : 'text-slate-700'
           }`}
         />
       </button>
@@ -78,88 +92,107 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         }}
       >
         {/* Image */}
-        <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-md">
+        <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-t-xl overflow-hidden">
           <img
             src={images?.[0]?.url || FALLBACK_IMAGE}
             alt={title}
-            className="w-full h-full object-cover rounded-md"
+            className="w-full h-full object-cover"
           />
         </div>
 
         {/* Title */}
-        <div className="px-2">
-          <h2 className="text-xs sm:text-sm text-center font-medium my-1 px-2 truncate text-gray-800">
+        <div className="p-2 pt-1.5">
+          <h2 className="text-sm font-semibold text-slate-900 line-clamp-2 min-h-[2.5rem]">
             {title}
           </h2>
         </div>
 
-{/* Date & Time + Location */}
-        <div className="px-2 mb-1">
-{/* Date Row */}
-          <div className="flex items-center text-sm text-gray-600 mb-1">
-            <BsCalendar2Event className="mr-1 flex-shrink-0" />
-            <span className="text-xs font-medium text-gray-600">
-              {timeZone ? 
+        {/* Date & Time + Location */}
+        <div className="px-2 pb-1">
+          {/* Date Row */}
+          <div className="flex items-center text-slate-600 mb-0.5">
+            <BsCalendar2Event className="text-xs mr-1 flex-shrink-0" />
+            <span className="text-xs font-medium text-slate-600">
+              {timeZone ?
                 formatInTimeZone(dateTime, timeZone, 'EEE dd MMM yyyy') :
                 format(new Date(dateTime), 'EEE dd MMM yyyy')
               }
             </span>
             {(event.recurrence?.isRecurring || event.isRecurringInstance) && (
-              <MdRepeat 
-                className="ml-1 text-gray-600 flex-shrink-0" 
+              <MdRepeat
+                className="ml-1 text-slate-500 flex-shrink-0"
                 title="Recurring Event"
                 size={14}
               />
             )}
           </div>
-          
-{/* Time Row */}
-          <div className="flex items-center text-sm text-gray-600 mb-1">
-            <div className="w-4 h-4 mr-1 flex items-center justify-center">
-              <span className="text-xs">🕙</span>
-            </div>
-<span className="text-xs font-medium text-gray-600">
-  {formatInTimeZone(dateTime, timeZone, 'h:mm a')}, {getStateFromTimezone(timeZone)}
-</span>
+
+          {/* Time Row */}
+          <div className="flex items-center text-slate-600 mb-0.5">
+            <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-xs font-medium text-slate-600">
+              {formatInTimeZone(dateTime, timeZone, 'h:mm a')}, {getStateFromTimezone(timeZone)}
+            </span>
           </div>
-          
+
           {/* Location Row */}
           <div className="flex items-center gap-1">
-            <MdLocationOn className="text-xs font-medium text-gray-600 flex-shrink-0" />
-            <span className="text-xs font-medium text-gray-600 truncate">
+            <MdLocationOn className="text-xs text-slate-500 flex-shrink-0" />
+            <span className="text-xs text-slate-500 truncate">
               {address?.suburb || address?.state
                 ? [address?.suburb, address?.state].filter(Boolean).join(', ')
                 : venue}
             </span>
           </div>
         </div>
-        <div className="flex items-center justify-between px-2 mb-1">
+        {/* Event Type + Posted Date */}
+        <div className="flex items-center justify-between px-2 pb-1.5">
           <div className="flex items-center gap-1">
-            {isPaid ? (
+            {isPromotional ? (
               <>
-                <FaMoneyBillWave 
-                  className="text-gray-600" 
+                <FaBullhorn
+                  className="text-teal-600"
+                  size={12}
+                  title="Promotional Event"
+                />
+                <span className="text-[10px] text-teal-600 font-medium">
+                  Promo
+                </span>
+                {externalTicketUrl && (
+                  <FaExternalLinkAlt
+                    className="text-teal-500 ml-1"
+                    size={10}
+                    title="External tickets"
+                  />
+                )}
+              </>
+            ) : isPaid ? (
+              <>
+                <FaMoneyBillWave
+                  className="text-slate-600"
                   size={12}
                   title="Paid Event"
                 />
-                <span className="text-[10px] text-gray-600 font-medium">
+                <span className="text-[10px] text-slate-600 font-medium">
                   Paid
                 </span>
               </>
-            ) : !isAdvertiseOnly ? (
+            ) : (
               <>
-                <FaClipboardList 
-                  className="text-gray-600" 
+                <FaClipboardList
+                  className="text-slate-600"
                   size={12}
                   title="Free Event - RSVP"
                 />
-                <span className="text-[10px] text-gray-600 font-medium">
+                <span className="text-[10px] text-slate-600 font-medium">
                   RSVP
                 </span>
               </>
-            ) : null}
+            )}
           </div>
-          <span className="text-xs font-medium text-gray-600 whitespace-nowrap">
+          <span className="text-xs text-slate-500 whitespace-nowrap">
             {postedText}
           </span>
         </div>

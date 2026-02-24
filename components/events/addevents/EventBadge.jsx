@@ -2,9 +2,23 @@
 
 import React from 'react';
 
-const EventBadge = ({ isPaid, isRecurring }) => {
+const EventBadge = ({ isPaid, isRecurring, eventIntent }) => {
   // Determine badge text and styling
   const getBadgeConfig = () => {
+    // Check for promotional events first
+    if (eventIntent === 'promote') {
+      return {
+        text: isPaid ? 'Promo (Paid)' : 'Promo (Free)',
+        bgColor: 'bg-purple-100',
+        textColor: 'text-purple-800',
+        icon: (
+          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+          </svg>
+        )
+      };
+    }
+
     if (isPaid) {
       return {
         text: 'Paid',
@@ -17,12 +31,12 @@ const EventBadge = ({ isPaid, isRecurring }) => {
         )
       };
     }
-    
+
     if (isRecurring) {
       return {
         text: 'Free/Recurring',
-        bgColor: 'bg-purple-100',
-        textColor: 'text-purple-800',
+        bgColor: 'bg-teal-100',
+        textColor: 'text-teal-800',
         icon: (
           <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -30,7 +44,7 @@ const EventBadge = ({ isPaid, isRecurring }) => {
         )
       };
     }
-    
+
     return {
       text: 'Free',
       bgColor: 'bg-green-100',

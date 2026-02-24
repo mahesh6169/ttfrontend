@@ -93,6 +93,12 @@ const EventDetail = () => {
   // Check if posted by support account (events added on behalf of users)
   const isPostedBySupport = selectedEvent.postedBy?.email?.toLowerCase() === 'support@desify.com.au';
 
+  // Check if this is an admin-created event (chat should be disabled)
+  const isAdminEvent = selectedEvent.isAdminEvent || false;
+
+  // Check if this is a promotional event (no registration/chat needed)
+  const isPromotionalEvent = selectedEvent.eventIntent === 'promote' || selectedEvent.isAdvertiseOnly;
+
   return (
     <div className="flex flex-col gap-2 px-2">
       {/* Navigation Bar */}
@@ -145,7 +151,7 @@ const EventDetail = () => {
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Event Details */}
         <div className="flex-[7] bg-white w-full">
-          <SingleEventCard 
+          <SingleEventCard
             event={selectedEvent}
             chatProps={{
               resourceId: id,
@@ -154,8 +160,9 @@ const EventDetail = () => {
               owner: selectedEvent.postedBy?.name,
               preserveRedirectUrl: `/events/views/${id}`,
               isPostedBySupport,
+              isAdminEvent,
+              isPromotionalEvent,
             }}
-             
           />
         </div>
 
@@ -163,14 +170,57 @@ const EventDetail = () => {
 
         {/* Secondary Content - Desktop Only */}
         <div className="hidden lg:block flex-[3] bg-white border rounded shadow-md p-2 self-start">
-          <SendMessage
-            resourceId={id}
-            resourceType="event"
-            participantId={selectedEvent.postedBy?._id}
-            owner={selectedEvent.postedBy?.name}
-            preserveRedirectUrl={`/events/views/${id}`}
-            isPostedBySupport={isPostedBySupport}
-          />
+          {isAdminEvent ? (
+            <div className="p-4 text-center">
+              <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-500">
+                This event was added by admin on behalf of the organizer.
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                Please contact the organizer directly for any inquiries.
+              </p>
+            </div>
+          ) : isPromotionalEvent ? (
+            <div className="p-4 text-center">
+              <div className="w-12 h-12 mx-auto mb-3 bg-purple-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-600 font-medium">
+                Promotional Event
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Registration is handled externally by the organizer.
+              </p>
+              {selectedEvent.externalTicketUrl && (
+                <a
+                  href={selectedEvent.externalTicketUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Register / Get Tickets
+                </a>
+              )}
+            </div>
+          ) : (
+            <SendMessage
+              resourceId={id}
+              resourceType="event"
+              participantId={selectedEvent.postedBy?._id}
+              owner={selectedEvent.postedBy?.name}
+              preserveRedirectUrl={`/events/views/${id}`}
+              isPostedBySupport={isPostedBySupport}
+            />
+          )}
         </div>
       </div>
       

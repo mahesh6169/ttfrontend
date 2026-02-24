@@ -1,87 +1,35 @@
-// components/events/addevents/EventDetailsStep.jsx - Mobile Optimized
+// components/events/addevents/EventDetailsStep.jsx
+// Step 2: Event Details - Category, Description, Organizer Info, Coordinators
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useDispatch } from 'react-redux';
-import { 
-  updateField, 
-  setAddress,
-  toggleRecurring,
-  addRepeatSchedule,
-  updateRepeatSchedule,
-  removeRepeatSchedule,
-  setRecurrenceEndDate,
-  setImages 
+import {
+  updateField,
+  addCoordinator,
+  updateCoordinator,
+  removeCoordinator,
+  updateOrganizerField,
+  addOrganizerSocialMedia,
+  updateOrganizerSocialMedia,
+  removeOrganizerSocialMedia,
 } from '@/store/slices/events/eventSlice';
-import AddressInput from '@/components/events/addevents/AddressInput';
-import ImageUploader from '@/components/events/addevents/ImageUploader';
-import { zonedTimeToUtc, utcToZonedTime, format } from 'date-fns-tz';
 import CategorySelector from '@/components/events/CategorySelector';
-import TimezoneSelector from '@/components/shared/TimezoneSelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 
-const AU_TIMEZONES = [
-  { label: 'Sydney (NSW)', value: 'Australia/Sydney', key: 'nsw' },
-  { label: 'Melbourne (VIC)', value: 'Australia/Melbourne', key: 'vic' },
-  { label: 'Brisbane (QLD)', value: 'Australia/Brisbane', key: 'qld' },
-  { label: 'Perth (WA)', value: 'Australia/Perth', key: 'wa' },
-  { label: 'Adelaide (SA)', value: 'Australia/Adelaide', key: 'sa' },
-  { label: 'Hobart (TAS)', value: 'Australia/Hobart', key: 'tas' },
-  { label: 'Darwin (NT)', value: 'Australia/Darwin', key: 'nt' },
-  { label: 'Canberra (ACT)', value: 'Australia/Sydney', key: 'act' },
-];
-
-const EventDetailsStep = ({ 
-  formData, 
-  errors = {}, 
-  onImagesChange, 
-  mode = 'add', // 'add' | 'edit' | 'view'
-  readOnly = false 
+const EventDetailsStep = ({
+  formData,
+  errors = {},
+  mode = 'add',
+  readOnly = false
 }) => {
   const dispatch = useDispatch();
-  const [endDateError, setEndDateError] = useState('');
   const isEditMode = mode === 'edit';
   const isViewMode = mode === 'view';
-  const isAddMode = mode === 'add';
   const disabled = readOnly || isViewMode;
 
   // Check if this is a recurring event
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
-
-  // Calculate recurring event details for display
-  const getRecurringScheduleText = () => {
-    if (!isRecurringEvent || !formData.recurrence?.repeatSchedule?.length) {
-      return '';
-    }
-    
-    const schedules = formData.recurrence.repeatSchedule;
-    if (schedules.length === 1) {
-      return `Every ${schedules[0].day} at ${schedules[0].time}`;
-    } else {
-      const days = schedules.map(s => s.day).join(', ');
-      return `Multiple times per week (${days})`;
-    }
-  };
-
-  // Mode-specific configurations
-  const modeConfig = {
-    add: {
-      title: 'Event Details',
-      subtitle: 'Tell us about your event',
-      submitText: 'Create Event'
-    },
-    edit: {
-      title: 'Edit Event Details',
-      subtitle: 'Update your event information',
-      submitText: 'Update Event'
-    },
-    view: {
-      title: 'Event Details',
-      subtitle: 'Event information',
-      submitText: 'View Only'
-    }
-  };
-
-  const config = modeConfig[mode] || modeConfig.add;
+  const isPaidEvent = formData.isPaid || false;
 
   const handleChange = (e) => {
     if (disabled) return;
@@ -89,182 +37,103 @@ const EventDetailsStep = ({
     dispatch(updateField({ field: name, value }));
   };
 
-  const handleAddressChange = (address) => {
+  // Organizer handlers
+  const handleOrganizerChange = (field, value) => {
     if (disabled) return;
-    console.log("Address being set in Redux:", address);
-    dispatch(setAddress(address));
+    dispatch(updateOrganizerField({ field, value }));
   };
 
-  // Recurring event handlers
-  const handleRecurringToggle = (e) => {
+  const handleAddSocialMedia = () => {
     if (disabled) return;
-    dispatch(toggleRecurring(e.target.checked));
+    dispatch(addOrganizerSocialMedia());
   };
 
-  const handleAddRepeatSchedule = () => {
+  const handleUpdateSocialMedia = (index, field, value) => {
     if (disabled) return;
-    dispatch(addRepeatSchedule());
+    dispatch(updateOrganizerSocialMedia({ index, field, value }));
   };
 
-  const handleUpdateRepeatSchedule = (index, field, value) => {
+  const handleRemoveSocialMedia = (index) => {
     if (disabled) return;
-    dispatch(updateRepeatSchedule({ index, field, value }));
+    dispatch(removeOrganizerSocialMedia(index));
   };
 
-  const handleRemoveRepeatSchedule = (index) => {
+  // Coordinator handlers
+  const handleAddCoordinator = () => {
     if (disabled) return;
-    dispatch(removeRepeatSchedule(index));
-  };
-
-  const handleRecurrenceEndDateChange = (e) => {
-    if (disabled) return;
-    
-    // Validate 6-month limit (we're already in free events section)
-    if (formData.dateTime && e.target.value) {
-      const startDate = new Date(formData.dateTime);
-      const selectedDate = new Date(e.target.value);
-      const maxDate = new Date(startDate);
-      maxDate.setMonth(maxDate.getMonth() + 6);
-      
-      if (selectedDate > maxDate) {
-        // Set error message and use max date
-        setEndDateError('Free recurring events are limited to 6 months. Date has been adjusted to the maximum allowed.');
-        dispatch(setRecurrenceEndDate(maxDate.toISOString().split('T')[0]));
-        
-        // Clear error after 5 seconds
-        setTimeout(() => setEndDateError(''), 5000);
-        return;
-      }
-    }
-    
-    // Clear any existing error
-    setEndDateError('');
-    dispatch(setRecurrenceEndDate(e.target.value || null));
-  };
-
-  // Enhanced format with proper timezone handling for edit mode
-  const formatDateTimeLocal = (dateTime) => {
-    if (!dateTime) return '';
-    
-    try {
-      if (typeof dateTime === 'string' && dateTime.includes('Z')) {
-        const eventTimeZone = formData.timeZone || 'Australia/Sydney';
-        const zonedDate = utcToZonedTime(dateTime, eventTimeZone);
-        return format(zonedDate, 'yyyy-MM-dd\'T\'HH:mm');
-      }
-      
-      if (typeof dateTime === 'string' && dateTime.includes('T') && !dateTime.includes('Z')) {
-        return dateTime.slice(0, 16);
-      }
-      
-      const date = new Date(dateTime);
-      if (isNaN(date.getTime())) return '';
-      
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return '';
+    if ((formData.coordinators || []).length < 10) {
+      dispatch(addCoordinator());
     }
   };
 
-  const getMinDate = () => {
-    if (isViewMode || isEditMode) return '';
-    
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  const handleUpdateCoordinator = (index, field, value) => {
+    if (disabled) return;
+    dispatch(updateCoordinator({ index, field, value }));
   };
 
-  const getUTCPreview = () => {
-    if (!formData.dateTime || !formData.timeZone) return '';
-    
-    try {
-      let dateToConvert = formData.dateTime;
-      
-      if (typeof dateToConvert === 'string' && dateToConvert.includes('Z')) {
-        const eventTimeZone = formData.timeZone || 'Australia/Sydney';
-        const zonedDate = utcToZonedTime(dateToConvert, eventTimeZone);
-        dateToConvert = format(zonedDate, 'yyyy-MM-dd\'T\'HH:mm');
-      }
-      
-      const utcDate = zonedTimeToUtc(dateToConvert, formData.timeZone);
-      return utcDate.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
-    } catch (error) {
-      return '';
+  const handleRemoveCoordinator = (index) => {
+    if (disabled) return;
+    if ((formData.coordinators || []).length > 1) {
+      dispatch(removeCoordinator(index));
     }
   };
 
-  // Enhanced mobile-first field styling with proper touch targets
+  // Validation helpers
+  const isValidPhone = (phone) => {
+    if (!phone) return false;
+    return /^[\d\s\-\+\(\)]+$/.test(phone);
+  };
+
+  const isValidEmail = (email) => {
+    if (!email) return true;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const getFieldError = (index, field) => {
+    if (!errors?.coordinators) return null;
+    const coordinatorErrors = Array.isArray(errors.coordinators) ? errors.coordinators : [];
+    return coordinatorErrors.find(
+      (err) => err.includes(`Coordinator ${index + 1}`) && err.toLowerCase().includes(field.toLowerCase())
+    );
+  };
+
+  // Field styling helpers
   const getFieldClasses = (fieldName) => {
-    // Special handling for description field to match listings page
     if (fieldName === 'description') {
       const baseClasses = 'w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded';
       const errorClasses = errors?.[fieldName] ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300';
-      const readOnlyClasses = disabled 
-        ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
+      const readOnlyClasses = disabled
+        ? 'bg-gray-100 cursor-not-allowed text-gray-600'
         : 'focus:outline-none focus:ring-2';
-      
       return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
     }
-    
-    // Default for other fields
+
     const baseClasses = 'w-full px-3 py-2.5 sm:py-2 border rounded-lg transition-colors text-sm';
     const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50' : 'border-gray-300';
-    const readOnlyClasses = disabled 
-      ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
+    const readOnlyClasses = disabled
+      ? 'bg-gray-100 cursor-not-allowed text-gray-600'
       : 'focus:ring-2 focus:ring-teal-500 focus:border-teal-500 active:border-teal-500';
-    
     return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
   };
 
-  // Mobile-optimized select styling
-  const getSelectClasses = (fieldName) => {
-    const baseClasses = 'w-full px-3 py-2.5 sm:py-2 border rounded-lg transition-colors text-sm appearance-none bg-white';
-    const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50' : 'border-gray-300';
-    const readOnlyClasses = disabled 
-      ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
-      : 'focus:ring-2 focus:ring-teal-500 focus:border-teal-500';
-    
+  const getOrganizerFieldClasses = (fieldName) => {
+    const baseClasses = 'w-full p-3 border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20';
+    const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50 focus:border-red-500' : 'border-gray-300 focus:border-teal-500';
+    const readOnlyClasses = disabled ? 'bg-gray-100 cursor-not-allowed text-gray-600' : '';
     return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
   };
-
 
   return (
     <div className="space-y-4 sm:space-y-6 px-0 sm:px-0">
-
-      
-      {/* Title - Enhanced for mobile */}
-      <div className="space-y-2">
-        <label className="block font-semibold text-sm">
-          Event Title <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          name="title"
-          value={formData.title || ''}
-          onChange={handleChange}
-          disabled={disabled}
-          className={getFieldClasses('title')}
-          placeholder={disabled ? '' : 'Enter event title'}
-          maxLength="200"
-        />
-        {errors?.title && (
-          <p className="text-red-500 text-xs sm:text-sm">
-            {Array.isArray(errors.title) ? errors.title[0] : errors.title}
-          </p>
-        )}
+      {/* Step Header */}
+      <div className="mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Event Details</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Add more details about your event and organizer information
+        </p>
       </div>
 
-      {/* Category - Enhanced dropdown for mobile */}
+      {/* Category */}
       <div className="space-y-2">
         <label className="block font-semibold text-sm">
           Category <span className="text-red-500">*</span>
@@ -303,304 +172,7 @@ const EventDetailsStep = ({
         </div>
       )}
 
-      {/* Time Zone - Mobile optimized */}
-      <div className="space-y-2">
-        <label className="block font-semibold text-sm">
-          Event Time Zone <span className="text-red-500">*</span>
-        </label>
-        {disabled || (isEditMode && isRecurringEvent) ? (
-          <input
-            type="text"
-            value={AU_TIMEZONES.find(tz => tz.value === formData.timeZone)?.label || 'No timezone selected'}
-            disabled={true}
-            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
-          />
-        ) : (
-          <TimezoneSelector
-            value={formData.timeZone || ''}
-            onChange={(value) => handleChange({ target: { name: 'timeZone', value } })}
-            timezones={AU_TIMEZONES}
-            placeholder="Select timezone"
-            required={true}
-          />
-        )}
-        {errors?.timeZone && (
-          <p className="text-red-500 text-xs sm:text-sm">
-            {Array.isArray(errors.timeZone) ? errors.timeZone[0] : errors.timeZone}
-          </p>
-        )}
-        {isEditMode && isRecurringEvent && (
-          <p className="text-amber-600 text-xs sm:text-sm mt-1 italic">
-            Not editable — recreate event to update.
-          </p>
-        )}
-      </div>
-
-      {/* Date & Time - Enhanced mobile experience */}
-      <div className="space-y-2">
-        <label className="block font-semibold text-sm">
-          Date & Time <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="datetime-local"
-          name="dateTime"
-          value={formatDateTimeLocal(formData.dateTime)}
-          onChange={handleChange}
-          min={getMinDate()}
-          disabled={disabled || (isEditMode && isRecurringEvent)}
-          onWheel={(e) => e.target.blur()}
-          className={getFieldClasses('dateTime')}
-        />
-        {errors?.dateTime && (
-          <p className="text-red-500 text-xs sm:text-sm">
-            {Array.isArray(errors.dateTime) ? errors.dateTime[0] : errors.dateTime}
-          </p>
-        )}
-        {isEditMode && isRecurringEvent && (
-          <p className="text-amber-600 text-xs sm:text-sm mt-1 italic">
-            Not editable — recreate event to update.
-          </p>
-        )}
-      </div>
-
-      {/* Recurring Event Section - Mobile optimized collapsible - Only show for free events */}
-      {!formData.isPaid && (
-        <div className="border rounded-xl p-4 bg-gray-50">
-        <div className="flex items-start space-x-3 mb-3">
-          <input
-            type="checkbox"
-            id="isRecurring"
-            checked={formData.recurrence?.isRecurring || false}
-            onChange={handleRecurringToggle}
-            disabled={disabled || isEditMode}
-            className="w-5 h-5 mt-0.5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 disabled:opacity-50"
-          />
-          <div className="flex-1">
-            <label htmlFor="isRecurring" className={`block text-sm font-medium ${isEditMode ? 'text-gray-500' : 'text-gray-900'}`}>
-              Make this a recurring event
-            </label>
-            {isEditMode && !formData.recurrence?.isRecurring && (
-              <p className="text-xs text-gray-500 mt-1">
-                Event type cannot be changed after creation
-              </p>
-            )}
-            {isEditMode && formData.recurrence?.isRecurring && (
-              <p className="text-xs text-amber-600 mt-1">
-                Recurring event type cannot be changed
-              </p>
-            )}
-          </div>
-        </div>
-        
-        {formData.recurrence?.isRecurring && (
-          <div className="space-y-4 mt-4 pt-4 border-t border-gray-200">
-            <p className="text-xs sm:text-sm text-gray-600">
-              {isViewMode 
-                ? 'This event repeats on the following schedule:'
-                : 'Set up when this event repeats. The main event date above will be the first occurrence.'
-              }
-            </p>
-            
-            {/* Repeat Schedule - Mobile-friendly layout */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium">
-                Repeat Schedule
-              </label>
-              {isEditMode && isRecurringEvent && (
-                <p className="text-xs text-amber-600 italic">
-                  Not editable — recreate event to update.
-                </p>
-              )}
-              {isEditMode && !isRecurringEvent && (
-                <p className="text-xs text-gray-500">
-                  Existing attendees will see updated schedule
-                </p>
-              )}
-              
-              {(formData.recurrence?.repeatSchedule || []).map((schedule, index) => (
-                <div key={index} className="bg-white rounded-lg border p-3 space-y-3">
-                  {/* Mobile-first: Stack day and time vertically on small screens */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Day</label>
-                      <div className="relative">
-                        <select
-                          value={schedule?.day || 'Mon'}
-                          onChange={(e) => handleUpdateRepeatSchedule(index, 'day', e.target.value)}
-                          disabled={disabled || (isEditMode && isRecurringEvent)}
-                          className={`w-full px-3 py-2 border rounded-lg text-sm appearance-none bg-white ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
-                        >
-                          <option value="Mon">Monday</option>
-                          <option value="Tue">Tuesday</option>
-                          <option value="Wed">Wednesday</option>
-                          <option value="Thu">Thursday</option>
-                          <option value="Fri">Friday</option>
-                          <option value="Sat">Saturday</option>
-                          <option value="Sun">Sunday</option>
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Time</label>
-                      <input
-                        type="time"
-                        value={schedule?.time || '18:00'}
-                        onChange={(e) => handleUpdateRepeatSchedule(index, 'time', e.target.value)}
-                        disabled={disabled || (isEditMode && isRecurringEvent)}
-                        onWheel={(e) => e.target.blur()}
-                        className={`w-full px-3 py-2 border rounded-lg text-sm ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
-                      />
-                    </div>
-                  </div>
-                  
-                  {!disabled && !(isEditMode && isRecurringEvent) && (formData.recurrence?.repeatSchedule || []).length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveRepeatSchedule(index)}
-                      className="flex items-center justify-center w-full sm:w-auto px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
-                      title="Remove this schedule"
-                    >
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                      </svg>
-                      Remove Schedule
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              {!disabled && !(isEditMode && isRecurringEvent) && (
-                <button
-                  type="button"
-                  onClick={handleAddRepeatSchedule}
-                  className="w-full sm:w-auto flex items-center justify-center px-4 py-2 text-teal-600 font-medium hover:bg-teal-50 rounded-lg transition-colors border border-teal-200 text-sm"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                  </svg>
-                  Add Another Day/Time
-                </button>
-              )}
-            </div>
-            
-            {/* End Date */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">
-                End Date <span className="text-red-500">*</span>
-              </label>
-              {isEditMode && (
-                <p className="text-xs text-gray-500">
-                  When to stop creating new instances
-                </p>
-              )}
-              <input
-                type="date"
-                value={formData.recurrence?.endDate ? new Date(formData.recurrence.endDate).toISOString().split('T')[0] : ''}
-                onChange={handleRecurrenceEndDateChange}
-                min={formData.dateTime ? new Date(formData.dateTime).toISOString().split('T')[0] : ''}
-                max={(() => {
-                  if (!formData.dateTime) return '';
-                  const startDate = new Date(formData.dateTime);
-                  const maxDate = new Date(startDate);
-                  maxDate.setMonth(maxDate.getMonth() + 6);
-                  return maxDate.toISOString().split('T')[0];
-                })()}
-                disabled={disabled || (isEditMode && isRecurringEvent)}
-                onWheel={(e) => e.target.blur()}
-                className={getFieldClasses('recurrenceEndDate')}
-                required={formData.recurrence?.isRecurring}
-              />
-              {endDateError && (
-                <p className="text-amber-600 text-xs sm:text-sm animate-pulse">
-                  ⚠️ {endDateError}
-                </p>
-              )}
-              {errors?.recurrenceEndDate && (
-                <p className="text-red-500 text-xs sm:text-sm">
-                  {Array.isArray(errors.recurrenceEndDate) ? errors.recurrenceEndDate[0] : errors.recurrenceEndDate}
-                </p>
-              )}
-              {isEditMode && isRecurringEvent && (
-                <p className="text-amber-600 text-xs sm:text-sm italic">
-                  Not editable — recreate event to update.
-                </p>
-              )}
-              <p className="text-xs text-gray-500">
-                {isViewMode 
-                  ? (formData.recurrence?.endDate 
-                      ? 'This recurring series ends on the specified date'
-                      : 'This recurring series has no end date'
-                    )
-                  : 'Maximum 6 months from start date.'
-                }
-              </p>
-            </div>
-            
-            {errors?.recurrence && (
-              <div className="text-red-500 text-xs sm:text-sm space-y-1">
-                {Array.isArray(errors.recurrence) 
-                  ? errors.recurrence.map((err, i) => <p key={i}>• {err}</p>) 
-                  : <p>• {errors.recurrence}</p>}
-              </div>
-            )}
-          </div>
-        )}
-        </div>
-      )}
-
-      {/* Venue - Enhanced for mobile */}
-      <div className="space-y-2">
-        <label className="block font-semibold text-sm">
-          Venue <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          name="venue"
-          value={formData.venue || ''}
-          onChange={handleChange}
-          disabled={disabled}
-          className={getFieldClasses('venue')}
-          placeholder={disabled ? '' : 'Enter venue name'}
-          maxLength="200"
-        />
-        {errors?.venue && (
-          <p className="text-red-500 text-xs sm:text-sm">
-            {Array.isArray(errors.venue) ? errors.venue[0] : errors.venue}
-          </p>
-        )}
-      </div>
-
-      {/* Address - Mobile optimized */}
-      <div className="space-y-2">
-        <AddressInput 
-          formData={formData} 
-          setFormData={(newDataOrUpdater) => {
-            if (disabled) return;
-            
-            console.log("setFormData called with:", newDataOrUpdater);
-            if (typeof newDataOrUpdater === 'function') {
-              const dummyPrev = { address: formData.address || {} };
-              const result = newDataOrUpdater(dummyPrev);
-              handleAddressChange(result.address);
-            } 
-            else if (newDataOrUpdater && newDataOrUpdater.address) {
-              handleAddressChange(newDataOrUpdater.address);
-            }
-          }}
-          errors={errors?.address}
-          placeholder={disabled ? 'Event address' : 'Enter event address'}
-          disabled={disabled}
-          mode={mode}
-        />        
-      </div>
-
-      {/* Description - Enhanced textarea for mobile */}
+      {/* Description */}
       <div className="space-y-2">
         <label className="block font-semibold text-sm">
           Description <span className="text-red-500">*</span>
@@ -628,25 +200,390 @@ const EventDetailsStep = ({
           </span>
         </div>
       </div>
-      
-      {/* Image Upload - Mobile optimized */}
-      <div className="space-y-2">
-        <ImageUploader
-          images={formData.images || []}
-          onImagesChange={disabled ? () => {} : onImagesChange}
-          maxImages={10}
-          className="space-y-3"
-          disabled={disabled}
-          mode={mode}
-        />
-        {errors?.images && (
-          <p className="text-red-500 text-xs sm:text-sm">
-            {Array.isArray(errors.images) ? errors.images[0] : errors.images}
-          </p>
-        )}
+
+      {/* Divider */}
+      <div className="border-t border-gray-200 pt-6 mt-6"></div>
+
+      {/* Organizer Details Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+        <div className="flex items-center mb-4">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Event Organizer</h3>
+            <p className="text-sm text-gray-500">Organization or person hosting this event</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+          {/* Organizer Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Organizer Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.organizer?.name || ''}
+              onChange={(e) => handleOrganizerChange('name', e.target.value)}
+              disabled={disabled}
+              className={getOrganizerFieldClasses('organizer')}
+              placeholder="Your name or organization name"
+              maxLength="100"
+            />
+            {errors?.organizer && (
+              <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                {Array.isArray(errors.organizer) ? errors.organizer[0] : errors.organizer}
+              </p>
+            )}
+          </div>
+
+          {/* Website */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Website
+            </label>
+            <input
+              type="url"
+              value={formData.organizer?.website || ''}
+              onChange={(e) => handleOrganizerChange('website', e.target.value)}
+              disabled={disabled}
+              className="w-full p-2.5 sm:p-3 text-sm border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+              placeholder="https://yourwebsite.com"
+              maxLength="200"
+            />
+          </div>
+
+          {/* Contact */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contact Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={formData.organizer?.contact || ''}
+              onChange={(e) => handleOrganizerChange('contact', e.target.value)}
+              disabled={disabled}
+              className={getOrganizerFieldClasses('organizer')}
+              placeholder="+61 4XX XXX XXX"
+              maxLength="20"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contact Email
+            </label>
+            <input
+              type="email"
+              value={formData.organizer?.email || ''}
+              onChange={(e) => handleOrganizerChange('email', e.target.value)}
+              disabled={disabled}
+              className="w-full p-2.5 sm:p-3 text-sm border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+              placeholder="contact@example.com"
+              maxLength="100"
+            />
+          </div>
+
+          {/* ABN - Only for paid events */}
+          {isPaidEvent && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                ABN (Australian Business Number)
+              </label>
+              <input
+                type="text"
+                value={formData.organizer?.abn || ''}
+                onChange={(e) => handleOrganizerChange('abn', e.target.value)}
+                disabled={disabled}
+                className="w-full p-2.5 sm:p-3 text-sm border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder="XX XXX XXX XXX"
+                maxLength="14"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                For invoice purposes. Format: 11 digits (e.g., 12 345 678 901)
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Social Media */}
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Social Media Links
+          </label>
+
+          {formData.organizer?.socialMedia && formData.organizer.socialMedia.length > 0 ? (
+            <div className="space-y-3">
+              {formData.organizer.socialMedia.map((social, index) => (
+                <div key={index} className="flex flex-col sm:flex-row gap-3 items-start">
+                  <input
+                    type="text"
+                    value={social.platform || ''}
+                    onChange={(e) => handleUpdateSocialMedia(index, 'platform', e.target.value)}
+                    disabled={disabled}
+                    className="w-full sm:flex-1 p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="Platform name (e.g., Facebook, Instagram)"
+                    maxLength="50"
+                  />
+                  <input
+                    type="url"
+                    value={social.url || ''}
+                    onChange={(e) => handleUpdateSocialMedia(index, 'url', e.target.value)}
+                    disabled={disabled}
+                    className="w-full sm:flex-[2] p-3 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="https://facebook.com/yourpage"
+                    maxLength="200"
+                  />
+                  {!disabled && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSocialMedia(index)}
+                      className="w-full sm:w-auto flex items-center justify-center p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Remove social media link"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                      <span className="ml-2 sm:hidden">Remove</span>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">No social media links added yet</p>
+          )}
+
+          {!disabled && (
+            <button
+              type="button"
+              onClick={handleAddSocialMedia}
+              className="mt-3 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-dashed border-blue-300 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 font-medium text-sm"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Add Social Media Link
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* Event Coordinators Section */}
+      <div className="mt-6">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Event Coordinators
+            <span className="text-sm font-normal text-gray-500 ml-2">(optional)</span>
+          </h3>
+          <p className="text-gray-600 text-sm mt-1">
+            Add coordinators who will help manage this event. Recommended for larger events.
+            {isRecurringEvent && (
+              <span className="block mt-1 text-blue-600 font-medium">
+                These coordinators will be responsible for all instances of your recurring event.
+              </span>
+            )}
+          </p>
+        </div>
 
+        {/* Coordinators List */}
+        <div className="space-y-4">
+          {(formData.coordinators || []).map((coordinator, index) => (
+            <div
+              key={index}
+              className="relative p-4 sm:p-6 border border-gray-200 rounded-lg bg-white hover:border-gray-300 transition-colors"
+            >
+              {/* Card Header */}
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center mr-3">
+                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">
+                      {coordinator?.name || `Coordinator ${index + 1}`}
+                    </h4>
+                    {coordinator?.role && (
+                      <p className="text-sm text-gray-500">{coordinator.role}</p>
+                    )}
+                  </div>
+                </div>
+
+                {!disabled && (formData.coordinators || []).length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCoordinator(index)}
+                    className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
+                    title="Remove coordinator"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Form Fields */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={coordinator?.name || ''}
+                    onChange={(e) => handleUpdateCoordinator(index, 'name', e.target.value)}
+                    disabled={disabled}
+                    className={`w-full p-3 border rounded-lg transition-colors ${
+                      getFieldError(index, 'name')
+                        ? 'border-red-500 focus:border-red-500'
+                        : 'border-gray-300 focus:border-teal-500'
+                    } focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 disabled:bg-gray-100 disabled:cursor-not-allowed`}
+                    placeholder="Enter coordinator's full name"
+                    maxLength="100"
+                  />
+                  {getFieldError(index, 'name') && (
+                    <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                      {getFieldError(index, 'name')}
+                    </p>
+                  )}
+                </div>
+
+                {/* Role */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Role/Responsibility
+                  </label>
+                  <input
+                    type="text"
+                    value={coordinator?.role || ''}
+                    onChange={(e) => handleUpdateCoordinator(index, 'role', e.target.value)}
+                    disabled={disabled}
+                    className="w-full p-2.5 sm:p-3 text-sm border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="e.g., Event Manager, Registration Coordinator"
+                    maxLength="100"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number <span className="text-red-500" title="Required if name is provided">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={coordinator?.phone || ''}
+                    onChange={(e) => handleUpdateCoordinator(index, 'phone', e.target.value)}
+                    disabled={disabled}
+                    className={`w-full p-3 border rounded-lg transition-colors ${
+                      getFieldError(index, 'phone') || (coordinator?.phone && !isValidPhone(coordinator.phone))
+                        ? 'border-red-500 focus:border-red-500'
+                        : 'border-gray-300 focus:border-teal-500'
+                    } focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 disabled:bg-gray-100 disabled:cursor-not-allowed`}
+                    placeholder="+61 4XX XXX XXX"
+                    maxLength="20"
+                  />
+                  {getFieldError(index, 'phone') && (
+                    <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                      {getFieldError(index, 'phone')}
+                    </p>
+                  )}
+                  {coordinator?.phone && !isValidPhone(coordinator.phone) && !getFieldError(index, 'phone') && (
+                    <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                      Please enter a valid phone number
+                    </p>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={coordinator?.email || ''}
+                    onChange={(e) => handleUpdateCoordinator(index, 'email', e.target.value)}
+                    disabled={disabled}
+                    className={`w-full p-3 border rounded-lg transition-colors ${
+                      getFieldError(index, 'email') || (coordinator?.email && !isValidEmail(coordinator.email))
+                        ? 'border-red-500 focus:border-red-500'
+                        : 'border-gray-300 focus:border-teal-500'
+                    } focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 disabled:bg-gray-100 disabled:cursor-not-allowed`}
+                    placeholder="coordinator@example.com"
+                    maxLength="100"
+                  />
+                  {getFieldError(index, 'email') && (
+                    <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                      {getFieldError(index, 'email')}
+                    </p>
+                  )}
+                  {coordinator?.email && !isValidEmail(coordinator.email) && !getFieldError(index, 'email') && (
+                    <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                      Please enter a valid email address
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* General Coordinator Errors */}
+        {errors?.coordinators && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex">
+              <svg className="h-5 w-5 text-red-600 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <div className="ml-3">
+                <h4 className="text-sm font-medium text-red-800">Coordinator Errors</h4>
+                <div className="mt-2 text-sm text-red-700">
+                  {Array.isArray(errors.coordinators) ? (
+                    errors.coordinators.map((err, i) => <p key={i}>• {err}</p>)
+                  ) : (
+                    <p>• {errors.coordinators}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Coordinator Button */}
+        {!disabled && (
+          <div className="text-center mt-4">
+            {(formData.coordinators || []).length < 10 ? (
+              <button
+                type="button"
+                onClick={handleAddCoordinator}
+                className="inline-flex items-center px-6 py-3 border border-dashed border-teal-300 rounded-lg text-teal-600 hover:text-teal-700 hover:border-teal-400 hover:bg-teal-50 transition-all duration-200 font-medium"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add Another Coordinator
+                <span className="ml-2 text-sm text-gray-500">
+                  ({(formData.coordinators || []).length}/10)
+                </span>
+              </button>
+            ) : (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-yellow-800 text-sm">
+                  Maximum number of coordinators (10) reached. Remove a coordinator to add a new one.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

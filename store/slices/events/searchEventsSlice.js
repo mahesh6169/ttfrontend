@@ -78,6 +78,7 @@ const initialState = {
     location: null, // { coordinates: [lng, lat], radius: 60, name: 'Address' }
     state: '', // Australian state code (NSW, VIC, etc.)
     month: '', // Format: "YYYY-MM"
+    eventType: '', // 'free', 'paid', or '' for all
     searchText: '',
     sortBy: 'date' // 'date', 'distance'
   },
@@ -126,6 +127,7 @@ const searchEventsSlice = createSlice({
         location: null,
         state: '',
         month: '',
+        eventType: '',
         searchText: '',
         sortBy: 'date'
       };
