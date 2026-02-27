@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { FaTimes, FaHeart, FaMobileAlt, FaEnvelope, FaGlobe, FaFacebook, FaInstagram, FaLock } from 'react-icons/fa';
+import { FaTimes, FaHeart, FaMobileAlt, FaEnvelope, FaGlobe, FaFacebook, FaInstagram, FaLock, FaCommentDots, FaExternalLinkAlt, FaShareAlt } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import { format, differenceInDays } from 'date-fns';
 import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
 import SendMessage from '@/components/chat/SendMessage';
+import ShareIcons from '@/components/shared/ShareIcons';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
@@ -83,12 +84,56 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [serviceAreaOverflow, setServiceAreaOverflow] = useState(false);
   const [descriptionOverflow, setDescriptionOverflow] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const serviceAreaRef = useRef(null);
   const descriptionRef = useRef(null);
+  const mobileContactRef = useRef(null);
   const {
     isInWishlist,
     toggleWishlist,
   } = useAdvertWishlist();
+
+  // Swipe gesture handlers
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && advert.images?.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % advert.images.length);
+    }
+    if (isRightSwipe && advert.images?.length > 1) {
+      setCurrentImageIndex((prev) => (prev === 0 ? advert.images.length - 1 : prev - 1));
+    }
+  };
+
+  // Scroll to and focus the mobile contact form
+  const handleContactClick = () => {
+    if (mobileContactRef.current) {
+      mobileContactRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Focus the textarea after scroll completes
+      setTimeout(() => {
+        const textarea = mobileContactRef.current?.querySelector('textarea');
+        if (textarea) {
+          textarea.focus();
+        }
+      }, 500);
+    }
+  };
 
   const checkOverflow = (ref, setter) => {
     if (ref.current) {
@@ -98,6 +143,25 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
       setter(hasOverflow && !isAtBottom);
     }
   };
+
+  // Keyboard navigation for fullscreen gallery
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isFullscreen) return;
+      if (e.key === 'ArrowLeft') {
+        setCurrentImageIndex((prev) => (prev === 0 ? advert.images.length - 1 : prev - 1));
+      }
+      if (e.key === 'ArrowRight') {
+        setCurrentImageIndex((prev) => (prev + 1) % advert.images.length);
+      }
+      if (e.key === 'Escape') {
+        setIsFullscreen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen, advert.images?.length]);
 
   useEffect(() => {
     checkOverflow(serviceAreaRef, setServiceAreaOverflow);
@@ -175,15 +239,16 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
   const priceLabels = getPriceLabel(advert.pricing);
 
-  // Determine border color based on ad type - using very subtle colors
-  const borderColorClass = advert.adType === 'wanted' 
-    ? 'border border-amber-100' 
-    : 'border border-teal-100';
 
   return (
     <div id="SingleAdvertCard" className="border rounded shadow-md mx-auto">
       {/* Image Section */}
-      <div className="relative w-full mx-auto bg-white rounded h-[200px] sm:h-[300px] md:h-[400px]">
+      <div
+        className="relative w-full mx-auto bg-white rounded h-[200px] sm:h-[300px] md:h-[400px]"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <img
           src={advert.images?.length > 0 ? getOptimizedImageUrl(advert.images[currentImageIndex]) : FALLBACK_IMAGE}
           alt={advert.title || 'Advert Image'}
@@ -210,16 +275,32 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
           <>
             <button
               onClick={handlePrevImage}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition-colors"
             >
               <FaChevronLeft />
             </button>
             <button
               onClick={handleNextImage}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition-colors"
             >
               <FaChevronRight />
             </button>
+
+            {/* Dot Indicators */}
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+              {advert.images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentImageIndex(index)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === currentImageIndex
+                      ? 'w-6 bg-teal-600'
+                      : 'w-2 bg-slate-300 hover:bg-slate-400'
+                  }`}
+                  aria-label={`Go to image ${index + 1}`}
+                />
+              ))}
+            </div>
           </>
         )}
 
@@ -229,13 +310,13 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
           className={`absolute top-2 right-2 text-white p-2 rounded-full z-10 ${
             isInWishlist(advert._id)
               ? 'bg-red-500 hover:bg-red-600'
-              : 'bg-gray-300 hover:bg-gray-400'
+              : 'bg-slate-300 hover:bg-slate-400'
           }`}
           title={isInWishlist(advert._id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
         >
           <FaHeart
             className={`text-sm sm:text-base md:text-lg ${
-              isInWishlist(advert._id) ? 'text-white' : 'text-gray-700'
+              isInWishlist(advert._id) ? 'text-white' : 'text-slate-700'
             }`}
           />
         </button>
@@ -243,7 +324,12 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
       {/* Fullscreen Modal */}
       {isFullscreen && advert.images?.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           <img
             src={getOptimizedImageUrl(advert.images[currentImageIndex], 'fullscreen')}
             alt={advert.title || 'Advert Image'}
@@ -254,71 +340,90 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             }}
           />
 
+          {/* Close Button */}
           <button
             onClick={handleCloseFullscreen}
-            className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+            className="absolute top-4 right-4 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition"
           >
-            <FaTimes size={30} />
+            <FaTimes size={24} />
           </button>
 
-          <button
-            onClick={handlePrevImage}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
-          >
-            Prev
-          </button>
-          <button
-            onClick={handleNextImage}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
-          >
-            Next
-          </button>
+          {/* Navigation Arrows (only if multiple images) */}
+          {advert.images.length > 1 && (
+            <>
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-3 rounded-full shadow hover:bg-amber-400 transition"
+              >
+                <FaChevronLeft size={20} />
+              </button>
+              <button
+                onClick={handleNextImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-3 rounded-full shadow hover:bg-amber-400 transition"
+              >
+                <FaChevronRight size={20} />
+              </button>
+
+              {/* Dot Indicators (Fullscreen) */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                {advert.images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`h-2.5 rounded-full transition-all duration-300 ${
+                      index === currentImageIndex
+                        ? 'w-8 bg-teal-500'
+                        : 'w-2.5 bg-slate-400 hover:bg-slate-300'
+                    }`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
-      {/* Content wrapper with subtle border */}
-      <div className={`${borderColorClass} rounded-b`}>
+      {/* Content wrapper */}
+      <div>
         {/* Title Section */}
         {advert.title && (
           <div className="my-2 px-2"> 
-            <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words">{advert.title}</h1>
+            <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-slate-900 break-words">{advert.title}</h1>
           </div>
         )}
     
       {/* Main Details Section */}
-      <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-        <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-          <h3 className="text-sm sm:text-base font-semibold text-gray-800">Details</h3>
-        </div>
-        <div className="p-3">
+      <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
+        <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Posted By */}
             {advert.postedBy?.name && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">Posted By:</span>{' '}
-                <span className="text-gray-600">{advert.postedBy.name}</span>
+                <span className="font-semibold text-slate-700">Posted By:</span>{' '}
+                <span className="text-slate-600">{advert.postedBy.name}</span>
               </div>
             )}
-            
+
             {/* Posted Date */}
             <div className="text-sm sm:text-base">
-              <span className="font-semibold text-gray-700">Posted:</span>{' '}
-              <span className="text-gray-600">{postedText}</span>
+              <span className="font-semibold text-slate-700">Posted:</span>{' '}
+              <span className="text-slate-600">{postedText}</span>
             </div>
-            
+
             {/* Ad Type */}
             {advert.adType && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">Ad Type:</span>{' '}
-                <span className="text-gray-600">{advert.adType === 'wanted' ? 'Wanted' : 'Offered'}</span>
+                <span className="font-semibold text-slate-700">Ad Type:</span>{' '}
+                <span className="text-slate-600">{advert.adType === 'wanted' ? 'Wanted' : 'Offered'}</span>
               </div>
             )}
-            
+
             {/* Category > Subcategory */}
             {(advert.category || advert.subcategory) && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">Category:</span>{' '}
-                <span className="text-gray-600">
+                <span className="font-semibold text-slate-700">Category:</span>{' '}
+                <span className="text-slate-600">
                   {advert.category && advert.subcategory
                     ? `${advert.category} > ${advert.subcategory}`
                     : advert.subcategory || advert.category}
@@ -329,8 +434,8 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             {/* Community/Language - Only for eligible subcategories */}
             {needsCommunityField(advert.subcategory) && advert.communities && advert.communities.length > 0 && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">Community:</span>{' '}
-                <span className="text-gray-600">
+                <span className="font-semibold text-slate-700">Community:</span>{' '}
+                <span className="text-slate-600">
                   {advert.communities.map(c => {
                     const community = COMMUNITIES.find(comm => comm.value === c);
                     return community ? community.label : c;
@@ -343,128 +448,115 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             {advert.adType !== 'wanted' && (
               !PRICING_CONFIG[advert.subcategory] ? (
                 <div className="text-sm sm:text-base">
-                  <span className="font-semibold text-gray-700">Price:</span>{' '}
-                  <span className="text-gray-600">Request quote</span>
+                  <span className="font-semibold text-slate-700">Price:</span>{' '}
+                  <span className="text-slate-600">Request quote</span>
                 </div>
               ) : (
                 priceLabels && priceLabels.map((price, index) => (
                   <div key={index} className="text-sm sm:text-base">
-                    <span className="font-semibold text-gray-700">{price.label}:</span>{' '}
-                    <span className="text-gray-600">{price.value}</span>
+                    <span className="font-semibold text-slate-700">{price.label}:</span>{' '}
+                    <span className="text-slate-600">{price.value}</span>
                   </div>
                 ))
               )
             )}
-            
+
             {/* Condition */}
             {advert.condition && advert.condition !== 'null' && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">Condition:</span>{' '}
-                <span className="text-gray-600">{advert.condition}</span>
+                <span className="font-semibold text-slate-700">Condition:</span>{' '}
+                <span className="text-slate-600">{advert.condition}</span>
               </div>
             )}
-            
+
             {/* Location - Full width at the bottom */}
             {advert.address && (
               <div className="text-sm sm:text-base col-span-1 sm:col-span-2">
-                <span className="font-semibold text-gray-700">
+                <span className="font-semibold text-slate-700">
                   {advert.address.street ? 'Address:' : 'Location:'}
                 </span>{' '}
-                <span className="text-gray-600">
-                  {advert.address.street 
-                    ? advert.address.formattedAddress 
+                <span className="text-slate-600">
+                  {advert.address.street
+                    ? advert.address.formattedAddress
                     : `${advert.address.suburb}${advert.address.state ? ', ' + advert.address.state : ''}`}
                 </span>
               </div>
             )}
           </div>
-        </div>
       </div>
 
       {/* Dynamic Fields Section */}
       {advert.fields && Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value).length > 0 && (
-        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Additional Details</h3>
-          </div>
-          <div className="p-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value).map(([key, value]) => (
-                <div key={key} className="text-sm sm:text-base">
-                  <span className="font-semibold text-gray-700">{formatFieldName(key)}:</span>{' '}
-                  <span className="text-gray-600">{value}</span>
-                </div>
-              ))}
-            </div>
+        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Additional Details</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value).map(([key, value]) => (
+              <div key={key} className="text-sm sm:text-base">
+                <span className="font-semibold text-slate-700">{formatFieldName(key)}:</span>{' '}
+                <span className="text-slate-600">{value}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* Service Areas Section */}
       {advert.fields?.serviceArea && (
-        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Service Areas</h3>
+        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3 relative">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Service Areas</h3>
+          <div ref={serviceAreaRef} className="text-sm sm:text-base text-slate-700 space-y-2 overflow-y-auto max-h-[120px] pr-2">
+            {advert.fields.serviceArea.split('\n').map((para, idx) => (
+              para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
+            ))}
           </div>
-          <div className="p-3 relative">
-            <div ref={serviceAreaRef} className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto max-h-[120px] pr-2">
-              {advert.fields.serviceArea.split('\n').map((para, idx) => (
-                para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
-              ))}
-            </div>
-            {serviceAreaOverflow && (
-              <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
-            )}
-          </div>
+          {serviceAreaOverflow && (
+            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+          )}
         </div>
       )}
 
       {/* Description Section */}
       {advert.description && (
-        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Description</h3>
+        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3 relative">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Description</h3>
+          <div
+            ref={descriptionRef}
+            className="text-sm sm:text-base text-slate-700 space-y-2 overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
+          >
+            {advert.description.split('\n').map((para, idx) => (
+              para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
+            ))}
           </div>
-          <div className="p-3 relative">
-            <div
-              ref={descriptionRef}
-              className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
-            >
-              {advert.description.split('\n').map((para, idx) => (
-                para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
-              ))}
-            </div>
-            {descriptionOverflow && (
-              <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
-            )}
-          </div>
+          {descriptionOverflow && (
+            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+          )}
         </div>
       )}
 
       {/* Contact Info Section */}
       {advert.contactInfo && (advert.contactInfo.mobile || advert.contactInfo.email || advert.contactInfo.website || (advert.contactInfo.socialMedia && advert.contactInfo.socialMedia.length > 0)) && (
-        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-          <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Contact Information</h3>
-          </div>
-          <div className="p-3 space-y-3">
+        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Contact Information</h3>
+          <div className="space-y-3">
             {/* Mobile */}
             {advert.contactInfo.mobile && (
               <div className="flex items-center gap-3 text-sm sm:text-base">
-                <FaMobileAlt className="text-gray-500 flex-shrink-0" />
+                <FaMobileAlt className="text-slate-500 flex-shrink-0" />
                 {user ? (
-                  <a href={`tel:${advert.contactInfo.mobile}`} className="text-teal-600 hover:underline">
+                  <a href={`tel:${advert.contactInfo.mobile}`} className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1">
                     {advert.contactInfo.mobile}
+                    <FaExternalLinkAlt className="text-xs text-slate-400" />
                   </a>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-600">{maskMobile(advert.contactInfo.mobile)}</span>
+                    <span className="text-slate-600">{maskMobile(advert.contactInfo.mobile)}</span>
                     <button
                       onClick={handleLoginToReveal}
-                      className="flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800"
+                      className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
                     >
                       <FaLock className="text-xs" />
                       Login to reveal
+                      <FaExternalLinkAlt className="text-xs" />
                     </button>
                   </div>
                 )}
@@ -474,20 +566,22 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             {/* Email */}
             {advert.contactInfo.email && (
               <div className="flex items-center gap-3 text-sm sm:text-base">
-                <FaEnvelope className="text-gray-500 flex-shrink-0" />
+                <FaEnvelope className="text-slate-500 flex-shrink-0" />
                 {user ? (
-                  <a href={`mailto:${advert.contactInfo.email}`} className="text-teal-600 hover:underline">
+                  <a href={`mailto:${advert.contactInfo.email}`} className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1">
                     {advert.contactInfo.email}
+                    <FaExternalLinkAlt className="text-xs text-slate-400" />
                   </a>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-600">{maskEmail(advert.contactInfo.email)}</span>
+                    <span className="text-slate-600">{maskEmail(advert.contactInfo.email)}</span>
                     <button
                       onClick={handleLoginToReveal}
-                      className="flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800"
+                      className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
                     >
                       <FaLock className="text-xs" />
                       Login to reveal
+                      <FaExternalLinkAlt className="text-xs" />
                     </button>
                   </div>
                 )}
@@ -497,21 +591,23 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             {/* Website - always visible */}
             {advert.contactInfo.website && (
               <div className="flex items-center gap-3 text-sm sm:text-base">
-                <FaGlobe className="text-gray-500 flex-shrink-0" />
+                <FaGlobe className="text-slate-500 flex-shrink-0" />
                 <a
                   href={advert.contactInfo.website.startsWith('http') ? advert.contactInfo.website : `https://${advert.contactInfo.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-teal-600 hover:underline truncate"
+                  className="text-slate-700 hover:text-slate-900 hover:underline truncate flex items-center gap-1"
                 >
                   {advert.contactInfo.website}
+                  <FaExternalLinkAlt className="text-xs text-slate-400 flex-shrink-0" />
                 </a>
               </div>
             )}
 
             {/* Social Media - always visible */}
             {advert.contactInfo.socialMedia && advert.contactInfo.socialMedia.length > 0 && (
-              <div className="flex flex-wrap gap-3 pt-1">
+              <div className="flex items-center gap-2 text-sm sm:text-base flex-wrap">
+                <span className="text-slate-700">Follow us:</span>
                 {advert.contactInfo.socialMedia.map((social, index) => {
                   const Icon = getSocialIcon(social.platform);
                   return (
@@ -520,10 +616,11 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
                       href={social.url.startsWith('http') ? social.url : `https://${social.url}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-200 transition-colors"
+                      className="flex items-center gap-1 text-slate-700 hover:text-slate-900"
                     >
-                      <Icon className="text-sm" />
+                      <Icon className="text-base" />
                       <span>{social.platform}</span>
+                      {index < advert.contactInfo.socialMedia.length - 1 && <span className="text-slate-400 ml-1">|</span>}
                     </a>
                   );
                 })}
@@ -535,11 +632,54 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
       {/* Chat Container - Mobile Only (After Additional Details) */}
       {chatProps && (
-        <div className="block lg:hidden px-2 my-4">
-          <SendMessage {...chatProps} />
+        <div ref={mobileContactRef} className="block lg:hidden px-2 my-4">
+          <SendMessage
+            {...chatProps}
+            onTextareaFocus={() => setIsTextareaFocused(true)}
+            onTextareaBlur={() => setIsTextareaFocused(false)}
+          />
         </div>
       )}
       </div> {/* End of content wrapper */}
+
+      {/* Floating Buttons - Mobile Only */}
+      {!isTextareaFocused && (
+        <div className="lg:hidden fixed bottom-20 right-4 z-40 flex flex-col gap-3">
+          {/* Share Button */}
+          <button
+            onClick={async () => {
+              if (navigator.share) {
+                try {
+                  await navigator.share({
+                    title: advert.title,
+                    text: advert.title,
+                    url: window.location.href
+                  });
+                } catch (err) {
+                  if (err.name !== 'AbortError') console.error('Share failed:', err);
+                }
+              }
+            }}
+            className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-colors"
+            aria-label="Share listing"
+          >
+            <FaShareAlt size={16} />
+            <span>Share</span>
+          </button>
+
+          {/* Chat Button */}
+          {chatProps && (
+            <button
+              onClick={handleContactClick}
+              className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-colors"
+              aria-label="Chat with seller"
+            >
+              <FaCommentDots size={16} />
+              <span>Chat</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

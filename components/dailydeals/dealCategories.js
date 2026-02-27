@@ -6,6 +6,5 @@ export const DEAL_CATEGORIES = [
   'Chat & Street Food',
   'Hair, Makeup & Waxing',
   'Massage',
-  'Yoga',
-  'Retail Stores & Shops'
+  'Indian Groceries',
 ];

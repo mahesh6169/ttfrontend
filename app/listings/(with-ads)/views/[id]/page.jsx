@@ -39,7 +39,7 @@ const AdvertDetail = () => {
         <p>{error}</p>
         <button 
           onClick={() => router.back()}
-          className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          className="mt-4 px-4 py-2 bg-slate-500 text-white rounded hover:bg-slate-600"
         >
           Go Back
         </button>
@@ -49,11 +49,11 @@ const AdvertDetail = () => {
 
   if (status === 'succeeded' && !advert) {
     return (
-      <div className="text-center text-gray-500 mt-8">
+      <div className="text-center text-slate-500 mt-8">
         <p>Listing not found.</p>
-        <button 
+        <button
           onClick={() => router.back()}
-          className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          className="mt-4 px-4 py-2 bg-slate-500 text-white rounded hover:bg-slate-600"
         >
           Go Back
         </button>
@@ -91,18 +91,8 @@ const AdvertDetail = () => {
         </Link>
       </div>
 
-      {/* Share Icons Row */}
-      <div className="flex items-center justify-center py-3 px-4">
-        <span className="text-sm sm:text-base font-bold text-sky-500 mr-3">Share</span>
-        <ShareIcons 
-          type="listing"
-          title={advert.title}
-          id={advert._id}
-        />
-      </div>
-
       {/* Main Content Grid */}
-      <div className="flex flex-col lg:flex-row gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-start gap-4">
         {/* Primary Content */}
         <div className="flex-[7] bg-white w-full">
           <SingleAdvertCard
@@ -114,12 +104,13 @@ const AdvertDetail = () => {
               owner: advert.postedBy?.name,
               preserveRedirectUrl: `/listings/views/${id}`,
               isAdminListing,
+              listingTitle: advert.title,
             }}
           />
         </div>
 
-        {/* Secondary Content - Desktop Only */}
-        <div className="hidden lg:block flex-[3] bg-white border rounded shadow-md p-2 self-start">
+        {/* Secondary Content - Desktop Only (Sticky Sidebar) */}
+        <div className="hidden lg:block flex-[3] sticky top-20 self-start space-y-4">
           <SendMessage
             resourceId={id}
             resourceType="advert"
@@ -127,7 +118,18 @@ const AdvertDetail = () => {
             owner={advert.postedBy?.name}
             preserveRedirectUrl={`/listings/views/${id}`}
             isAdminListing={isAdminListing}
+            listingTitle={advert.title}
           />
+
+          {/* Share Icons - Sticky with sidebar */}
+          <div className="flex items-center justify-center py-3 px-4 border border-slate-200 rounded shadow-sm">
+            <span className="text-sm font-bold text-sky-500 mr-3">Share</span>
+            <ShareIcons
+              type="listing"
+              title={advert.title}
+              id={advert._id}
+            />
+          </div>
         </div>
       </div>
     </div>

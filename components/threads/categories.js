@@ -1,39 +1,17 @@
 export const threadCategoryOptions = [
-  // Setup & essentials
   "Migration & Visas",
-  "Living in Australia",
+  "General Enquiries",
   "Health & Medical",
   "Personal Finance",
   "Legal",
   "Education & Academics",
   "Career & Employment",
-  "Technology",
-
-  // Family & community
   "Family & Kids",
   "Community & Cultural",
   "Devotional & Spiritual",
-
-  // Recreation
-  "Sports & Fitness",
-  "Hobbies & Leisure",
-  "Outdoors & Recreation",
-  "Arts, Music & Dance",
+  "Food & Dining",
   "Travel & Adventure",
-  "Pets",
-
-  // Housing & goods
-  "Real Estate",
-  "Home & Garden",
-  "Cars & Vehicles",
-  "Electronics & Computers",
-  "Fashion & Accessories",
-  "Food & Catering",
-
-  // Work & giving back
-  "Business & Professional",
-  "Charity & Fundraisers",
-
-  // Catch-all
-  "Miscellaneous",
+  "Lifestyle & Hobbies",
+  "Real Estate & Rentals",
+  "Technology & Gadgets",
 ];

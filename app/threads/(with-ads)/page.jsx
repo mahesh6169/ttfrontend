@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Fragment, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   searchThreads,
   fetchFilterOptions,
@@ -31,6 +31,7 @@ const ThreadsPage = () => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL;
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { filters, pagination, threads, meta, status, error, filterOptions } = useSelector((state) => state.searchThreads);
   
   // Local state for UI
@@ -89,7 +90,7 @@ const ThreadsPage = () => {
       .catch((error) => {
         console.error('Failed to load filter options:', error);
       });
-    
+
     // Also fetch recent activity
     dispatch(fetchRecentActivity(5))
       .unwrap()
@@ -97,6 +98,14 @@ const ThreadsPage = () => {
         console.error('Failed to load recent activity', error);
       });
   }, [dispatch]);
+
+  // Apply category filter from URL param - replaces existing category filter
+  const catParam = searchParams.get('cat');
+  useEffect(() => {
+    if (catParam) {
+      dispatch(updateFilter({ filterType: 'categories', value: [catParam] }));
+    }
+  }, [catParam, dispatch]);
 
   // Search whenever filters change
   useEffect(() => {

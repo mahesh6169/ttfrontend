@@ -180,9 +180,10 @@ if (!formData.category?.trim()) {
   
   export function validateReportForm(formData) {
     const errors = {};
-  
+
     const namePattern = /^[a-zA-Z\s'-]+$/;
-  
+    const validReasons = ['spam', 'fraud', 'misleading', 'outdated', 'inappropriate', 'other'];
+
     // Name
     if (!formData.senderName?.trim()) {
       errors.senderName = 'Name is required';
@@ -191,7 +192,7 @@ if (!formData.category?.trim()) {
     } else if (!namePattern.test(formData.senderName)) {
       errors.senderName = 'Name must only contain letters, spaces, hyphens, or apostrophes';
     }
-  
+
     // Email
     if (!formData.senderEmail?.trim()) {
       errors.senderEmail = 'Email is required';
@@ -200,14 +201,50 @@ if (!formData.category?.trim()) {
     } else if (!isValidEmailDomain(formData.senderEmail)) {
       errors.senderEmail = 'Please use a valid email provider';
     }
-  
-    // Message
-    if (!formData.message?.trim()) {
-      errors.message = 'Message is required';
-    } else if (formData.message.length > 1000) {
+
+    // Reason
+    if (!formData.reason?.trim()) {
+      errors.reason = 'Please select a reason';
+    } else if (!validReasons.includes(formData.reason)) {
+      errors.reason = 'Please select a valid reason';
+    }
+
+    // Message (optional, but validate length if provided)
+    if (formData.message?.trim() && formData.message.length > 1000) {
       errors.message = 'Message should not exceed 1000 characters';
     }
-  
+
+    return errors;
+  }
+
+  export function validateRemovalForm(formData) {
+    const errors = {};
+
+    const namePattern = /^[a-zA-Z\s'-]+$/;
+
+    // Name
+    if (!formData.senderName?.trim()) {
+      errors.senderName = 'Name is required';
+    } else if (formData.senderName.length > 20) {
+      errors.senderName = 'Name must be 20 characters or fewer';
+    } else if (!namePattern.test(formData.senderName)) {
+      errors.senderName = 'Name must only contain letters, spaces, hyphens, or apostrophes';
+    }
+
+    // Email
+    if (!formData.senderEmail?.trim()) {
+      errors.senderEmail = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.senderEmail)) {
+      errors.senderEmail = 'Email format is invalid';
+    } else if (!isValidEmailDomain(formData.senderEmail)) {
+      errors.senderEmail = 'Please use a valid email provider';
+    }
+
+    // Message (optional, but validate length if provided)
+    if (formData.message?.trim() && formData.message.length > 1000) {
+      errors.message = 'Message should not exceed 1000 characters';
+    }
+
     return errors;
   }
   

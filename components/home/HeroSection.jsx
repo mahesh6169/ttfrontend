@@ -15,6 +15,12 @@ import {
   HiTag,
   HiChatBubbleLeftRight,
   HiMegaphone,
+  HiGlobeAlt,
+  HiQuestionMarkCircle,
+  HiHeart,
+  HiBanknotes,
+  HiBriefcase,
+  HiBuildingOffice,
 } from 'react-icons/hi2';
 import {
   LuCar,
@@ -28,7 +34,7 @@ const FEATURE_TABS = [
   { id: 'listings', label: 'Listings' },
   { id: 'events', label: 'Events' },
   { id: 'deals', label: 'Deals' },
-  { id: 'community', label: 'Community' },
+  { id: 'forum', label: 'Forum' },
 ];
 
 // --- Listings Tab Tiles ---
@@ -142,6 +148,79 @@ const EVENT_TILES = [
   },
 ];
 
+// --- Forum Tab Tiles ---
+const FORUM_TILES = [
+  {
+    posterLabel: 'Migration & Visas',
+    seekerLabel: 'Migration & Visas',
+    icon: HiGlobeAlt,
+    posterTarget: '/threads/new',
+    posterParams: { cat: 'Migration & Visas' },
+    seekerTarget: '/threads',
+    seekerParams: { cat: 'Migration & Visas' },
+    requiresAuth: true,
+  },
+  {
+    posterLabel: 'General Enquiries',
+    seekerLabel: 'General Enquiries',
+    icon: HiQuestionMarkCircle,
+    posterTarget: '/threads/new',
+    posterParams: { cat: 'General Enquiries' },
+    seekerTarget: '/threads',
+    seekerParams: { cat: 'General Enquiries' },
+    requiresAuth: true,
+  },
+  {
+    posterLabel: 'Health & Medical',
+    seekerLabel: 'Health & Medical',
+    icon: HiHeart,
+    posterTarget: '/threads/new',
+    posterParams: { cat: 'Health & Medical' },
+    seekerTarget: '/threads',
+    seekerParams: { cat: 'Health & Medical' },
+    requiresAuth: true,
+  },
+  {
+    posterLabel: 'Personal Finance',
+    seekerLabel: 'Personal Finance',
+    icon: HiBanknotes,
+    posterTarget: '/threads/new',
+    posterParams: { cat: 'Personal Finance' },
+    seekerTarget: '/threads',
+    seekerParams: { cat: 'Personal Finance' },
+    requiresAuth: true,
+  },
+  {
+    posterLabel: 'Career & Employment',
+    seekerLabel: 'Career & Employment',
+    icon: HiBriefcase,
+    posterTarget: '/threads/new',
+    posterParams: { cat: 'Career & Employment' },
+    seekerTarget: '/threads',
+    seekerParams: { cat: 'Career & Employment' },
+    requiresAuth: true,
+  },
+  {
+    posterLabel: 'Real Estate & Rentals',
+    seekerLabel: 'Real Estate & Rentals',
+    icon: HiBuildingOffice,
+    posterTarget: '/threads/new',
+    posterParams: { cat: 'Real Estate & Rentals' },
+    seekerTarget: '/threads',
+    seekerParams: { cat: 'Real Estate & Rentals' },
+    requiresAuth: true,
+  },
+  {
+    posterLabel: 'Explore All',
+    seekerLabel: 'Explore All',
+    icon: HiMagnifyingGlass,
+    posterTarget: '/threads/new',
+    seekerTarget: '/threads',
+    requiresAuth: false,
+    isExploreAll: true,
+  },
+];
+
 const heroParsers = {
   tab: parseAsString.withDefault('listings'),
   mode: parseAsString.withDefault('poster'),
@@ -162,9 +241,9 @@ const HeroSection = () => {
     if (tabId === activeTab) return;
     setFadeIn(false);
     setTimeout(() => {
-      // Clear mode when leaving listings tab, keep it when entering listings
+      // Keep mode for listings and forum tabs, clear for others
       const updates = { tab: tabId };
-      if (tabId !== 'listings') {
+      if (tabId !== 'listings' && tabId !== 'forum') {
         updates.mode = null;
       }
       setHeroParams(updates);
@@ -199,8 +278,22 @@ const HeroSection = () => {
     navigateWithAuth(tile.target, tile.requiresAuth);
   };
 
+  // Forum tile click — handles poster/seeker + params
+  const handleForumTileClick = (tile) => {
+    let target = mode === 'poster' ? tile.posterTarget : tile.seekerTarget;
+    const params = mode === 'poster' ? tile.posterParams : tile.seekerParams;
+    if (params) {
+      const searchParams = new URLSearchParams(params);
+      target = `${target}?${searchParams.toString()}`;
+    }
+    const requiresAuth = mode === 'poster' && tile.requiresAuth;
+    navigateWithAuth(target, requiresAuth);
+  };
+
   const mainListingTiles = LISTING_TILES.filter((tile) => !tile.isExploreAll);
   const exploreAllTile = LISTING_TILES.find((tile) => tile.isExploreAll);
+  const mainForumTiles = FORUM_TILES.filter((tile) => !tile.isExploreAll);
+  const exploreAllForumTile = FORUM_TILES.find((tile) => tile.isExploreAll);
 
   // Shared tile classes — flat tiles on recessed bg, white stands out naturally
   const tileClass =
@@ -362,15 +455,75 @@ const HeroSection = () => {
               </div>
             )}
 
-            {/* ===== Community Tab — Placeholder ===== */}
-            {activeTab === 'community' && (
-              <div className="flex items-center justify-center py-8 sm:py-12">
-                <div className="text-center">
-                  <HiChatBubbleLeftRight className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-sm text-slate-400 font-medium">
-                    Community Forum — coming soon
-                  </p>
+            {/* ===== Forum Tab ===== */}
+            {activeTab === 'forum' && (
+              <div>
+                {/* Ask / Browse Toggle */}
+                <div className="flex justify-center mb-4 sm:mb-5">
+                  <div className="inline-flex bg-slate-100 rounded-full p-0.5 sm:p-1">
+                    <button
+                      onClick={() => setHeroParams({ mode: 'poster' })}
+                      className={`px-3 sm:px-5 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                        mode === 'poster'
+                          ? 'bg-white text-teal-700 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Ask a question
+                    </button>
+                    <button
+                      onClick={() => setHeroParams({ mode: 'seeker' })}
+                      className={`px-3 sm:px-5 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                        mode === 'seeker'
+                          ? 'bg-white text-teal-700 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Browse answers
+                    </button>
+                  </div>
                 </div>
+
+                {/* Forum Tiles — recessed inset panel */}
+                <div className={insetPanelClass}>
+                  <p className="text-xs italic text-teal-700 mb-2 sm:mb-2.5">Featured topics</p>
+                  <div className={gridContainerClass}>
+                    {mainForumTiles.map((tile, index) => {
+                      const Icon = tile.icon;
+                      const label =
+                        mode === 'poster' ? tile.posterLabel : tile.seekerLabel;
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleForumTileClick(tile)}
+                          className={tileClass}
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-slate-100 rounded-xl shrink-0">
+                            <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5 text-teal-700" />
+                          </div>
+                          <span className="font-medium text-xs sm:text-sm md:text-base text-left md:text-center leading-tight text-slate-900">
+                            {label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Explore All — centered below */}
+                {exploreAllForumTile && (
+                  <div className="flex justify-center mt-3 sm:mt-4">
+                    <button
+                      onClick={() => handleForumTileClick(exploreAllForumTile)}
+                      className="flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all duration-200 cursor-pointer"
+                    >
+                      <HiMagnifyingGlass className="w-4 h-4 sm:w-5 sm:h-5 text-teal-700" />
+                      <span className="font-medium text-xs sm:text-sm text-slate-700">
+                        {mode === 'poster' ? exploreAllForumTile.posterLabel : exploreAllForumTile.seekerLabel}
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

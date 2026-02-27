@@ -6,16 +6,18 @@ const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/support`;
 // 🎯 Thunk: Submit a report
 export const submitReport = createAsyncThunk(
   'support/submitReport',
-  async ({ type, id, title, message, senderName, senderEmail, captchaToken }, thunkAPI) => {
+  async ({ type, id, title, itemUrl, reason, message, senderName, senderEmail, captchaToken }, thunkAPI) => {
     try {
       const res = await axios.post(`${API_BASE_URL}/report`, {
         type,
         id,
         title,
+        itemUrl,
+        reason,
         message,
         senderName,
         senderEmail,
-        captchaToken, // ✅ Add this!
+        captchaToken,
       });
 
       return res.data;
@@ -40,7 +42,31 @@ export const submitContact = createAsyncThunk(
         senderName,
         senderEmail,
         mobile,
-        captchaToken, // ✅ Pass the captchaToken here
+        captchaToken,
+      });
+      return res.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
+// 🔴 Thunk: Submit a removal request
+export const submitRemoval = createAsyncThunk(
+  'support/submitRemoval',
+  async ({ type, id, title, itemUrl, message, senderName, senderEmail, captchaToken }, thunkAPI) => {
+    try {
+      const res = await axios.post(`${API_BASE_URL}/removal`, {
+        type,
+        id,
+        title,
+        itemUrl,
+        message,
+        senderName,
+        senderEmail,
+        captchaToken,
       });
       return res.data;
     } catch (error) {
@@ -57,6 +83,8 @@ const initialState = {
   reportError: null,
   contactStatus: 'idle', // idle | loading | success | failed
   contactError: null,
+  removalStatus: 'idle', // idle | loading | success | failed
+  removalError: null,
 };
 
 const supportSlice = createSlice({
@@ -70,6 +98,10 @@ const supportSlice = createSlice({
     resetContactStatus: (state) => {
       state.contactStatus = 'idle';
       state.contactError = null;
+    },
+    resetRemovalStatus: (state) => {
+      state.removalStatus = 'idle';
+      state.removalError = null;
     },
   },
   extraReducers: (builder) => {
@@ -87,22 +119,34 @@ const supportSlice = createSlice({
         state.reportError = action.payload;
       })
       // 🟢 Contact Reducers
-    builder
-    .addCase(submitContact.pending, (state) => {
-      state.contactStatus = 'loading';
-      state.contactError = null;
-    })
-    .addCase(submitContact.fulfilled, (state) => {
-      state.contactStatus = 'success';
-      state.contactError = null;
-    })
-    .addCase(submitContact.rejected, (state, action) => {
-      state.contactStatus = 'failed';
-      state.contactError = action.payload;
-    });
+      .addCase(submitContact.pending, (state) => {
+        state.contactStatus = 'loading';
+        state.contactError = null;
+      })
+      .addCase(submitContact.fulfilled, (state) => {
+        state.contactStatus = 'success';
+        state.contactError = null;
+      })
+      .addCase(submitContact.rejected, (state, action) => {
+        state.contactStatus = 'failed';
+        state.contactError = action.payload;
+      })
+      // 🔴 Removal Reducers
+      .addCase(submitRemoval.pending, (state) => {
+        state.removalStatus = 'loading';
+        state.removalError = null;
+      })
+      .addCase(submitRemoval.fulfilled, (state) => {
+        state.removalStatus = 'success';
+        state.removalError = null;
+      })
+      .addCase(submitRemoval.rejected, (state, action) => {
+        state.removalStatus = 'failed';
+        state.removalError = action.payload;
+      });
   },
 });
 
-export const { resetReportStatus, resetContactStatus } = supportSlice.actions;
+export const { resetReportStatus, resetContactStatus, resetRemovalStatus } = supportSlice.actions;
 
 export default supportSlice.reducer;

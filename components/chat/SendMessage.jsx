@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { sendMessage } from '@/store/slices/shared/messageSlice';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { CgProfile } from 'react-icons/cg';
 import { toast } from 'react-toastify';
 import { zonedTimeToUtc } from 'date-fns-tz';
@@ -15,6 +16,9 @@ const SendMessage = ({
   owner,
   preserveRedirectUrl,
   isAdminListing = false,
+  listingTitle = '',
+  onTextareaFocus,
+  onTextareaBlur,
 }) => {
   const dispatch = useDispatch();
   const router = useRouter();
@@ -92,33 +96,47 @@ const SendMessage = ({
   // Show different content for admin-added listings (posted on behalf of providers)
   if (isAdminListing) {
     return (
-      <div className="border p-2 rounded shadow-md w-full">
-        <h2 className="text-lg font-semibold mb-2">Get in touch</h2>
-        <div className="w-full border rounded p-3 bg-gray-50 text-sm text-gray-600">
+      <div className="border border-slate-200 p-3 rounded shadow-md w-full">
+        <h2 className="text-lg font-semibold text-slate-900 mb-3">Get in touch</h2>
+        <p className="text-sm text-slate-700 mb-4">
           This listing was posted on behalf of the owner. Please use the contact details provided in the listing to reach them directly.
-        </div>
+        </p>
+        <p className="text-xs text-slate-500">
+          Are you the business owner?{' '}
+          <Link
+            href={`/support/removal?type=listing&id=${resourceId}&title=${encodeURIComponent(listingTitle)}`}
+            onClick={() => {
+              localStorage.setItem('removalReturnUrl', preserveRedirectUrl);
+            }}
+            className="text-slate-700 hover:text-slate-900 underline"
+          >
+            Request removal of this listing
+          </Link>
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="border p-2 rounded shadow-md w-full">
-      <h2 className="text-lg font-semibold mb-2">Get in touch</h2>
+    <div className="border border-slate-200 p-3 rounded shadow-md w-full">
+      <h2 className="text-lg font-semibold text-slate-900 mb-3">Get in touch</h2>
       <p className="flex items-center mb-2">
-        <CgProfile className="mr-2 text-gray-700" size={24} />
+        <CgProfile className="mr-2 text-slate-700" size={24} />
         {owner || 'User'}
       </p>
-      <p className="mb-2 text-sm text-gray-600">Enquire about the listing</p>
+      <p className="mb-2 text-sm text-slate-600">Enquire about the listing</p>
 
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
+        onFocus={onTextareaFocus}
+        onBlur={onTextareaBlur}
         disabled={!user || sending}
         placeholder={
           user ? 'Type your message here' : 'Please login to type a message'
         }
-        className={`w-full border rounded p-2 mb-4 resize-none ${
-          !user ? 'bg-gray-100 cursor-not-allowed' : ''
+        className={`w-full border border-slate-200 rounded p-2 mb-4 resize-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all ${
+          !user ? 'bg-slate-100 cursor-not-allowed' : ''
         }`}
         rows={4}
       />
@@ -127,7 +145,7 @@ const SendMessage = ({
         <button
           onClick={handleSendMessage}
           disabled={sending}
-          className={`w-full bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors ${
+          className={`ml-auto bg-teal-700 text-white hover:bg-teal-800 px-6 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors ${
             sending ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
@@ -136,9 +154,9 @@ const SendMessage = ({
       ) : (
         <button
           onClick={handleLoginRedirect}
-          className="w-full py-2 px-4 bg-green-600 text-white rounded hover:bg-green-700"
+          className="ml-auto py-2 px-6 bg-teal-700 text-white rounded hover:bg-teal-800"
         >
-          Login to Send Message
+          Login
         </button>
       )}
     </div>

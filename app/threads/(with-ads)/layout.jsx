@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import ThreadTopAd from '@/components/ads/ThreadTopAd';
 import LeftAd from '@/components/ads/LeftAd';
 import RightAd from '@/components/ads/RightAd';
@@ -18,8 +19,10 @@ const ThreadsWithAdsLayout = ({ children }) => {
       <ThreadTopAd />
       <div className="flex gap-2">
         <LeftAd />
-        <div id="Main" className="flex-1 overflow-hidden">
-          {children}
+        <div id="Main" className="flex-1">
+          <Suspense>
+            {children}
+          </Suspense>
         </div>
         <RightAd />
       </div>

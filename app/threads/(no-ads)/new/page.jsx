@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createThread } from '@/store/slices/threads/threadSlice';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
@@ -12,22 +12,28 @@ import CategorySelector from '@/components/threads/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import SuccessView from '@/components/threads/SuccessView';
 import AuthorDetailsSection from '@/components/threads/AuthorDetailsSection';
+import { threadCategoryOptions } from '@/components/threads/categories';
 
 const libraries = ['places'];
 
 const CreateThreadPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const isLoggedIn = useSelector((state) => state.user.tokenValidated);
   const { user } = useSelector((state) => state.user) || {};
   const fileInputRef = useRef(null);
   const authorSectionRef = useRef(null);
 
+  // Get category from URL param and validate
+  const catParam = searchParams.get('cat');
+  const initialCategory = catParam && threadCategoryOptions.includes(catParam) ? catParam : '';
+
   const [formData, setFormData] = useState({
     title: '',
     question: '',
-    category: '',
+    category: initialCategory,
     communities: [],
     images: [],
     suburb: {

@@ -26,7 +26,7 @@ import {
 // Remove direct socket import - now handled by ThreadSocketListener
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
-import { FaChevronLeft, FaChevronRight, FaReply, FaTimes, FaUser } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaReply, FaTimes, FaUser, FaCommentDots, FaShareAlt } from 'react-icons/fa';
 import { MdNotificationsActive, MdNotificationsOff, MdDelete } from "react-icons/md";
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { MdReport } from "react-icons/md";
@@ -77,6 +77,9 @@ const ThreadChatPage = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [showFloatingButtons, setShowFloatingButtons] = useState(true);
+  const lastScrollY = useRef(0);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const lastMessageCountRef = useRef(0);
@@ -225,6 +228,29 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     setTimeout(() => scrollToBottom(false), 100);
   }, [threadId]);
 
+  // Hide floating buttons on scroll down, show on scroll up (mobile only)
+  useEffect(() => {
+    const handleWindowScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollDiff = currentScrollY - lastScrollY.current;
+
+      // Only trigger if scroll difference is significant (>10px)
+      if (Math.abs(scrollDiff) > 10) {
+        if (scrollDiff > 0) {
+          // Scrolling down - hide buttons
+          setShowFloatingButtons(false);
+        } else {
+          // Scrolling up - show buttons
+          setShowFloatingButtons(true);
+        }
+        lastScrollY.current = currentScrollY;
+      }
+    };
+
+    window.addEventListener('scroll', handleWindowScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleWindowScroll);
+  }, []);
+
   const handleSendMessage = () => {
     if (newMessage.trim()) {
       const localNow = new Date();
@@ -294,9 +320,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
       // Flash the message to indicate it's the target
-      messageElement.classList.add('bg-yellow-200');
+      messageElement.classList.add('bg-amber-200');
       setTimeout(() => {
-        messageElement.classList.remove('bg-yellow-200');
+        messageElement.classList.remove('bg-amber-200');
       }, 1500);
     }
   };
@@ -356,7 +382,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     if (threadStatus === 'success' && !thread._id) {
       return (
         <div className="flex justify-center items-center text-center p-8">
-          <p className="text-xs sm:text-sm text-gray-800">No Thread Found</p>
+          <p className="text-xs sm:text-sm text-slate-800">No Thread Found</p>
         </div>
       );
     }    
@@ -365,7 +391,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   return (
     <>
       <ThreadSocketListener />
-      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
+      <div id="viewsmain" className="flex flex-col gap-2 px-2">
     {/* Navigation Bar */}
     <div className="mt-4 flex justify-between items-center">
       {/* Back to Topics */}
@@ -391,17 +417,11 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       </Link>
     </div>
 
-    {/* Share Icons Row */}
-    <div className="flex items-center justify-center py-3 px-4 mt-4">
-      <span className="text-sm sm:text-base font-bold text-sky-500 mr-3">Share</span>
-      <ShareIcons 
-        type="thread"
-        title={thread.title}
-        id={thread._id}
-      />
-    </div>
-
-    <div className="border rounded shadow-md mt-4 w-full"> 
+    {/* Layout: Content + Sidebar */}
+    <div className="flex flex-col lg:flex-row lg:items-start gap-4 mt-4">
+      {/* Primary Content */}
+      <div className="flex-[7] bg-white w-full">
+        <div className="border rounded shadow-md w-full"> 
 
       {/* Image Section */}
       <div className="relative w-full mx-auto bg-white overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]">
@@ -427,23 +447,62 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             <>
               <button
                 onClick={handlePrevImage}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition"
               >
                 <FaChevronLeft />
               </button>
               <button
                 onClick={handleNextImage}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition"
               >
                 <FaChevronRight />
               </button>
+              {/* Dots Indicator */}
+              <div className="absolute bottom-2 right-2 flex gap-1.5">
+                {thread.images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      index === currentImageIndex
+                        ? 'bg-amber-400 w-4'
+                        : 'bg-white/70 hover:bg-white'
+                    }`}
+                  />
+                ))}
+              </div>
             </>
           )}
         </div>
 
       {/* Fullscreen Modal */}
       {isFullscreen && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsFullscreen(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setIsFullscreen(false);
+            if (e.key === 'ArrowLeft') handlePrevImage();
+            if (e.key === 'ArrowRight') handleNextImage();
+          }}
+          tabIndex={0}
+          ref={(el) => el?.focus()}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            e.currentTarget.dataset.touchStartX = touch.clientX;
+          }}
+          onTouchEnd={(e) => {
+            const touchStartX = parseFloat(e.currentTarget.dataset.touchStartX || '0');
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+              if (diff > 0) handleNextImage();
+              else handlePrevImage();
+            }
+          }}
+        >
           <img
             src={getOptimizedImageUrl(thread.images[currentImageIndex], 'fullscreen')}
             alt={thread.title || 'Thread Image'}
@@ -452,30 +511,48 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
           <button
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
+            className="absolute top-4 right-4 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition"
           >
-            <FaTimes size={30} />
+            <FaTimes size={24} />
           </button>
 
-          <button
-            onClick={handlePrevImage}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
-          >
-            Prev
-          </button>
-          <button
-            onClick={handleNextImage}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-gray-200 transition"
-          >
-            Next
-          </button>
+          {thread.images?.length > 1 && (
+            <>
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-3 rounded-full shadow hover:bg-amber-400 transition"
+              >
+                <FaChevronLeft size={20} />
+              </button>
+              <button
+                onClick={handleNextImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-3 rounded-full shadow hover:bg-amber-400 transition"
+              >
+                <FaChevronRight size={20} />
+              </button>
+              {/* Dots Indicator */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {thread.images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${
+                      index === currentImageIndex
+                        ? 'bg-amber-400 w-6'
+                        : 'bg-white/70 hover:bg-white'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
       {/* Title Section */}
       {thread.title && (
         <div className="my-2 px-2">
-          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-gray-800 break-words">{thread.title}</h1>
+          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-slate-800 break-words">{thread.title}</h1>
           <div className="flex justify-center mt-1">
             <ThreadConnectionStatus />
           </div>
@@ -483,34 +560,34 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       )}
 
       {/* Thread Details Section */}
-      <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-        <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-          <h3 className="text-sm sm:text-base font-semibold text-gray-800">Topic Details</h3>
+      <div className="border border-slate-200 rounded shadow-sm my-4 mx-2">
+        <div className="px-3 py-2 border-b border-slate-100">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-900">Topic Details</h3>
         </div>
         <div className="p-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {thread.category && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">Category:</span>{' '}
-                <span className="text-gray-600">{thread.category}</span>
+                <span className="font-semibold text-slate-700">Category:</span>{' '}
+                <span className="text-slate-600">{thread.category}</span>
               </div>
             )}
             {thread.owner?.name && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">Posted By:</span>{' '}
-                <span className="text-gray-600">{thread.owner?.name}</span>
+                <span className="font-semibold text-slate-700">Posted By:</span>{' '}
+                <span className="text-slate-600">{thread.owner?.name}</span>
               </div>
             )}
             {thread.createdAt && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">Posted:</span>{' '}
-                <span className="text-gray-600">{format(new Date(thread.createdAt), 'dd MMM yyyy')}</span>
+                <span className="font-semibold text-slate-700">Posted:</span>{' '}
+                <span className="text-slate-600">{format(new Date(thread.createdAt), 'dd MMM yyyy')}</span>
               </div>
             )}
             {thread.suburb?.name && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-gray-700">Location:</span>{' '}
-                <span className="text-gray-600">{thread.suburb?.name}</span>
+                <span className="font-semibold text-slate-700">Location:</span>{' '}
+                <span className="text-slate-600">{thread.suburb?.name}</span>
               </div>
             )}
           </div>
@@ -525,7 +602,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             className={`flex items-center gap-2 text-xs px-3 py-1 rounded-full border ${
               isMuted
                 ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                : 'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300'
+                : 'bg-slate-200 text-slate-800 border-slate-300 hover:bg-slate-300'
             } transition-colors duration-200`}
           >
             {isMuted ? (
@@ -546,13 +623,13 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
       {/* Topic Description Section */}
       {thread.question && (
-        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-          <div className="px-3 py-1.5 border-b border-gray-300">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Topic Description</h3>
+        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2">
+          <div className="px-3 py-2 border-b border-slate-100">
+            <h3 className="text-sm sm:text-base font-semibold text-slate-900">Topic Description</h3>
           </div>
           <div className="p-3 relative">
             <div 
-              className="text-sm sm:text-base text-gray-700 space-y-2 overflow-y-auto max-h-[200px] sm:max-h-[300px] pr-2"
+              className="text-sm sm:text-base text-slate-700 space-y-2 overflow-y-auto max-h-[200px] sm:max-h-[300px] pr-2"
               style={{ 
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#cbd5e0 #f7fafc'
@@ -567,27 +644,27 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       )}
 
       {/* Author Details Section */}
-      {thread.author && (thread.author.name || thread.author.website || thread.author.contact || 
-       thread.author.email || thread.author.aboutMyself || 
+      {thread.author && (thread.author.name || thread.author.website || thread.author.contact ||
+       thread.author.email || thread.author.aboutMyself ||
        (thread.author.socialMedia && thread.author.socialMedia.length > 0)) && (
-        <div className="border border-gray-300 rounded shadow-sm my-4 mx-2">
-          <div className="px-3 py-1.5 border-b border-gray-300">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800 flex items-center gap-2">
-              <FaUser className="text-gray-600" />
+        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2">
+          <div className="px-3 py-2 border-b border-slate-100">
+            <h3 className="text-sm sm:text-base font-semibold text-slate-900 flex items-center gap-2">
+              <FaUser className="text-slate-600" />
               <span>About {thread.author.name || 'Author'}</span>
             </h3>
           </div>
           <div className="p-3 space-y-2">
             {thread.author.aboutMyself && (
               <div className="flex items-start">
-                <span className="text-sm font-medium text-gray-600 w-24 shrink-0">About:</span>
-                <span className="text-sm text-gray-800">{thread.author.aboutMyself}</span>
+                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">About:</span>
+                <span className="text-sm text-slate-800">{thread.author.aboutMyself}</span>
               </div>
             )}
             
             {thread.author.website && (
               <div className="flex items-start">
-                <span className="text-sm font-medium text-gray-600 w-24 shrink-0">Website:</span>
+                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Website:</span>
                 <a 
                   href={thread.author.website} 
                   target="_blank" 
@@ -601,7 +678,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             
             {thread.author.contact && (
               <div className="flex items-start">
-                <span className="text-sm font-medium text-gray-600 w-24 shrink-0">Contact:</span>
+                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Contact:</span>
                 <a 
                   href={`tel:${thread.author.contact}`}
                   className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
@@ -613,7 +690,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             
             {thread.author.email && (
               <div className="flex items-start">
-                <span className="text-sm font-medium text-gray-600 w-24 shrink-0">Email:</span>
+                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Email:</span>
                 <a 
                   href={`mailto:${thread.author.email}`}
                   className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
@@ -625,7 +702,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             
             {thread.author.socialMedia && thread.author.socialMedia.length > 0 && (
               <div className="flex items-start">
-                <span className="text-sm font-medium text-gray-600 w-24 shrink-0">Social:</span>
+                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Social:</span>
                 <div className="flex flex-wrap gap-2">
                   {thread.author.socialMedia.map((social, index) => (
                     social.platform && social.url && (
@@ -634,7 +711,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                         href={social.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded border border-gray-300 transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 transition-colors"
                       >
                         <span>{social.platform}</span>
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -652,92 +729,87 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
       {/* Useful Answers Section */}
       {usefulAnswers.length > 0 ? (
-        <div className="border border-teal-600 rounded-lg shadow-sm my-4 mx-2">
-          <div className="px-3 py-1.5 border-b border-gray-300">
-            <div className="flex items-start sm:items-center justify-between gap-2">
+        <div className="border border-slate-200 rounded-lg shadow-sm my-4 mx-2">
+          <div className="px-2.5 py-1.5 border-b border-slate-100">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm sm:text-base font-semibold text-gray-800">
-                  <span className="sm:hidden">Useful Comments</span>
-                  <span className="hidden sm:inline">Useful Comments</span>
-                </h3>
-                <p className="text-xs text-gray-600 mt-1 hidden sm:block">Click thumbs up 👍 to mark comments as useful</p>
+                <h3 className="text-sm font-semibold text-slate-900">Useful Comments</h3>
               </div>
               {/* Navigation Buttons in Header */}
               {usefulAnswers.length > 1 && (
-                <div className="flex items-center space-x-1.5 flex-shrink-0">
+                <div className="flex items-center space-x-1 flex-shrink-0">
                   <button
                     onClick={() => setCurrentUsefulIndex((prev) => (prev === 0 ? usefulAnswers.length - 1 : prev - 1))}
-                    className="border border-teal-600 text-teal-700 p-1.5 rounded-full hover:bg-teal-50 transition"
+                    className="text-slate-400 hover:text-teal-600 hover:bg-slate-100 p-1 rounded transition focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   >
-                    <FaChevronLeft className="text-xs" />
+                    <FaChevronLeft size={10} />
                   </button>
-                  <span className="text-xs text-gray-600 font-medium whitespace-nowrap">
-                    {currentUsefulIndex + 1} / {usefulAnswers.length}
+                  <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
+                    {currentUsefulIndex + 1}/{usefulAnswers.length}
                   </span>
                   <button
                     onClick={() => setCurrentUsefulIndex((prev) => (prev + 1) % usefulAnswers.length)}
-                    className="border border-teal-600 text-teal-700 p-1.5 rounded-full hover:bg-teal-50 transition"
+                    className="text-slate-400 hover:text-teal-600 hover:bg-slate-100 p-1 rounded transition focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   >
-                    <FaChevronRight className="text-xs" />
+                    <FaChevronRight size={10} />
                   </button>
                 </div>
               )}
             </div>
           </div>
-          <div className="p-2 relative">
-            <div className="min-h-[100px] max-h-[200px] relative">
+          <div className="p-1.5 relative">
+            <div className="min-h-[60px] max-h-[120px] relative">
               {/* Current Useful Comment */}
               {usefulAnswers[currentUsefulIndex] && (
-                <div className="p-2 bg-white rounded-lg h-full overflow-y-auto">
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-semibold text-gray-800">
+                <div className="px-2 py-1.5 h-full overflow-y-auto">
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="font-medium text-slate-700">
                         {usefulAnswers[currentUsefulIndex].sender?.name || 'Former Member'}
                       </span>
-                      <span className="text-xs text-gray-500">
-                        {format(new Date(usefulAnswers[currentUsefulIndex].createdAt), 'dd MMM, h:mm a')}
+                      <span className="text-slate-400">·</span>
+                      <span className="text-slate-400">
+                        {format(new Date(usefulAnswers[currentUsefulIndex].createdAt), 'dd MMM')}
                       </span>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1.5 text-xs text-slate-400">
                       <button
                         onClick={() => handleLike(usefulAnswers[currentUsefulIndex]._id)}
-                        className={`flex items-center space-x-1 text-xs ${
+                        className={`flex items-center space-x-0.5 ${
                           usefulAnswers[currentUsefulIndex].likedBy?.includes(currentUser?._id)
-                            ? 'text-blue-500'
-                            : 'text-gray-500'
-                        } hover:text-blue-600`}
+                            ? 'text-teal-600'
+                            : ''
+                        } hover:text-teal-600 focus:outline-none`}
                       >
                         👍 {usefulAnswers[currentUsefulIndex].likes || 0}
                       </button>
                       <button
                         onClick={() => handleUnlike(usefulAnswers[currentUsefulIndex]._id)}
-                        className={`flex items-center space-x-1 text-xs ${
+                        className={`flex items-center space-x-0.5 ${
                           usefulAnswers[currentUsefulIndex].dislikedBy?.includes(currentUser?._id)
                             ? 'text-red-500'
-                            : 'text-gray-500'
-                        } hover:text-red-600`}
+                            : ''
+                        } hover:text-red-500 focus:outline-none`}
                       >
                         👎 {usefulAnswers[currentUsefulIndex].dislikes || 0}
                       </button>
                     </div>
                   </div>
-                  <div className="text-sm sm:text-base text-gray-700 overflow-y-auto max-h-[140px] pr-2">
+                  <p className="text-sm text-slate-600 leading-snug line-clamp-3">
                     {usefulAnswers[currentUsefulIndex].message}
-                  </div>
-                  {/* Fade overlay for long messages */}
-                  <div className="absolute bottom-3 left-3 right-3 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+                  </p>
                 </div>
               )}
 
               {/* Carousel Indicators */}
               {usefulAnswers.length > 1 && (
-                <div className="flex justify-center mt-3 space-x-1">
+                <div className="flex justify-center mt-2 space-x-1">
                   {usefulAnswers.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentUsefulIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === currentUsefulIndex ? 'bg-teal-600 w-6' : 'bg-gray-300'
+                      className={`h-1 rounded-full transition-all focus:outline-none ${
+                        index === currentUsefulIndex ? 'bg-teal-500 w-4' : 'bg-slate-300 w-1'
                       }`}
                     />
                   ))}
@@ -747,18 +819,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           </div>
         </div>
       ) : (
-        <div className="border border-teal-600 rounded-lg shadow-sm my-4 mx-2">
-          <div className="px-3 py-1.5 border-b border-gray-300">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800">Comments Marked as Useful</h3>
-            <p className="text-xs text-gray-600 mt-1">Click thumbs up 👍 to mark comments as useful</p>
+        <div className="border border-slate-200 rounded-lg shadow-sm my-4 mx-2">
+          <div className="px-2.5 py-1.5 border-b border-slate-100">
+            <h3 className="text-sm font-semibold text-slate-900">Useful Comments</h3>
           </div>
-          <div 
-            className="p-2 min-h-[100px] flex items-center justify-center"
-            style={{
-              background: 'linear-gradient(135deg, #f5f5f5 0%, #f9f9f9 50%, #f5f5f5 100%)',
-            }}
-          >
-            <p className="text-sm text-gray-600 font-medium">No comments marked as useful yet 👍</p>
+          <div className="p-3 flex items-center justify-center">
+            <p className="text-xs text-slate-400">No useful comments yet — be the first to 👍 one!</p>
           </div>
         </div>
       )}
@@ -766,7 +832,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
 
 {/* Message Area */}
-<div className="border border-gray-300 rounded shadow-sm my-4 mx-2 bg-white flex flex-col" style={{ maxHeight: '70vh' }}>
+<div id="conversation-area" className="border border-slate-200 rounded shadow-sm my-4 mx-2 bg-white flex flex-col" style={{ maxHeight: '70vh' }}>
 
   {/* Jump to Bottom Button */}
   {showJumpToBottom && (
@@ -778,7 +844,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             setIsAtBottom(true);
             setShowJumpToBottom(false);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 text-teal-700 rounded-full shadow-lg hover:bg-yellow-500 transition-all transform hover:scale-105 text-sm"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400/70 backdrop-blur-sm text-teal-800 rounded-full shadow hover:bg-amber-400 transition-all text-xs font-medium"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -819,7 +885,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               key={`date-${msg._id}`}
               className="flex justify-center my-3 w-full"
             >
-              <span className="bg-gray-700 text-white text-xs py-1 px-3 rounded-full shadow ">
+              <span className="bg-slate-700 text-white text-xs py-1 px-3 rounded-full shadow ">
                 {msgDate.toLocaleDateString()}
               </span>
             </div>
@@ -832,13 +898,13 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             } transition-colors duration-300`}
           >
             <div
-              className={`relative max-w-[85%] min-w-[100px] px-3 py-2 rounded-lg shadow-sm break-words
+              className={`relative max-w-[70%] min-w-[80px] px-2.5 py-1.5 rounded-lg break-words
                 ${
                   currentUser
                     ? isRightSide
-                      ? 'bg-teal-700 text-lime-100'
-                      : 'bg-gray-100 text-gray-800'
-                    : 'bg-gray-100 text-gray-800'
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-white text-slate-800 border border-slate-200'
+                    : 'bg-white text-slate-800 border border-slate-200'
                 }`}
             >
               <div className="flex justify-between items-center mb-1">
@@ -856,12 +922,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
               {/* Reply preview if message is a reply */}
               {msg.replyTo && (
-                <div 
+                <div
                   onClick={() => handleJumpToMessage(msg.replyTo._id)}
-                  className={`mb-2 p-2 rounded cursor-pointer transition-all ${
+                  className={`mb-2 p-1.5 rounded cursor-pointer transition-all ${
                     currentUser && isRightSide
-                      ? 'bg-teal-800 hover:bg-teal-900 border-l-4 border-yellow-400'
-                      : 'bg-gray-200 hover:bg-gray-300 border-l-4 border-teal-600'
+                      ? 'bg-teal-700 hover:bg-teal-800 border-l-2 border-white/50'
+                      : 'bg-slate-100 hover:bg-slate-200 border-l-2 border-teal-500'
                   }`}
                 >
                   <p className="text-xs font-semibold opacity-80">
@@ -879,14 +945,14 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 <p className="text-sm sm:text-base whitespace-pre-wrap">{msg.message}</p>
               )}
 
-              <div className="flex items-center space-x-3 mt-2 text-xs">
+              <div className="flex items-center space-x-3 mt-1.5 text-xs opacity-80">
                 {!msg.deletedAt && (
                   <>
                     <button
                       onClick={() => handleLike(msg._id)}
                       className={`flex items-center space-x-1 ${
                         currentUser && isRightSide
-                          ? 'hover:text-yellow-300'
+                          ? 'hover:opacity-100'
                           : 'hover:text-blue-600'
                       }`}
                     >
@@ -897,7 +963,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                       onClick={() => handleUnlike(msg._id)}
                       className={`flex items-center space-x-1 ${
                         currentUser && isRightSide
-                          ? 'hover:text-red-300'
+                          ? 'hover:opacity-100'
                           : 'hover:text-red-600'
                       }`}
                     >
@@ -911,12 +977,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                     onClick={() => handleReply(msg)}
                     className={`${
                       currentUser && isRightSide
-                        ? 'hover:text-lime-300'
+                        ? 'hover:opacity-100'
                         : 'hover:text-teal-600'
                     }`}
                     title="Reply"
                   >
-                    <FaReply size={14} />
+                    <FaReply size={12} />
                   </button>
                 )}
 
@@ -929,19 +995,19 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                       }}
                       className={`${
                         isRightSide
-                          ? 'hover:text-red-300'
+                          ? 'hover:opacity-100'
                           : 'hover:text-red-600'
                       }`}
                       title="Delete"
                     >
-                      <MdDelete size={16} />
+                      <MdDelete size={14} />
                     </button>
                     
                     {deleteConfirmId === msg._id && (
                       <div className="delete-popover absolute bottom-full right-0 mb-2 z-50">
-                        <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3 text-sm">
+                        <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg p-3 text-sm">
                           <div className="flex flex-col gap-2">
-                            <p className="text-gray-700 dark:text-gray-300 whitespace-nowrap">Delete message?</p>
+                            <p className="text-slate-700 dark:text-slate-300 whitespace-nowrap">Delete message?</p>
                             <div className="flex gap-2">
                               <button
                                 onClick={(e) => {
@@ -957,7 +1023,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                                   e.stopPropagation();
                                   cancelDelete();
                                 }}
-                                className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-xs font-medium"
+                                className="px-3 py-1 bg-slate-300 text-slate-700 rounded hover:bg-slate-400 text-xs font-medium"
                               >
                                 No
                               </button>
@@ -977,12 +1043,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       }, [])
             ) : (
               <div 
-                className="flex items-center justify-center h-full min-h-[200px] text-gray-500 relative overflow-hidden"
+                className="flex items-center justify-center h-full min-h-[200px] text-slate-500 relative overflow-hidden"
                 style={{
                   background: 'linear-gradient(135deg, #f5f5f5 0%, #f9f9f9 50%, #f5f5f5 100%)',
                 }}
               >
-                <p className="text-sm font-medium text-gray-600">No messages yet. Start the conversation!</p>
+                <p className="text-sm font-medium text-slate-600">No messages yet. Start the conversation!</p>
               </div>
             )}
   </div>
@@ -992,18 +1058,18 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     <div className="border-t bg-white p-3">
       {/* Reply indicator */}
       {replyingTo && (
-        <div className="mb-2 p-2 bg-gray-100 rounded-lg flex items-center justify-between">
+        <div className="mb-2 p-2 bg-slate-100 rounded-lg flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-semibold text-gray-700">
+            <p className="text-xs font-semibold text-slate-700">
               Replying to {replyingTo.sender?.name || 'Former Member'}
             </p>
-            <p className="text-xs text-gray-600 truncate">
+            <p className="text-xs text-slate-600 truncate">
               {replyingTo.message.substring(0, 80)}...
             </p>
           </div>
           <button
             onClick={handleCancelReply}
-            className="ml-2 text-gray-500 hover:text-gray-700"
+            className="ml-2 text-slate-500 hover:text-slate-700"
           >
             <FaTimes />
           </button>
@@ -1021,13 +1087,15 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               handleSendMessage();
             }
           }}
-          placeholder={socketConnected 
-            ? (replyingTo ? "Type your reply..." : "Join the conversation...") 
+          onFocus={() => setIsInputFocused(true)}
+          onBlur={() => setIsInputFocused(false)}
+          placeholder={socketConnected
+            ? (replyingTo ? "Type your reply..." : "Join the conversation...")
             : "Connection issue. Please try again in a moment..."}
           disabled={!socketConnected}
           rows={1}
           className={`flex-1 border rounded-lg outline-none resize-none p-2 text-sm sm:text-base ${
-            !socketConnected ? 'bg-gray-100 cursor-not-allowed' : ''
+            !socketConnected ? 'bg-slate-100 cursor-not-allowed' : ''
           }`}
           style={{
             minHeight: '2.5rem',
@@ -1041,7 +1109,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         <button
           onClick={handleSendMessage}
           disabled={!newMessage.trim() || !socketConnected}
-          className="px-4 py-2 bg-yellow-400 text-teal-700 hover:bg-teal-700 hover:text-lime-100 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 bg-teal-600 text-white hover:bg-teal-700 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           title={!socketConnected ? "Connection issue - please wait" : ""}
         >
           Send
@@ -1049,9 +1117,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       </div>
     </div>
   ) : (
-    <div className="border-t bg-gray-50 p-4">
+    <div className="border-t bg-slate-50 p-4">
       <div className="text-center">
-        <p className="text-gray-600 mb-3">Login to join the conversation</p>
+        <p className="text-slate-600 mb-3">Login to join the conversation</p>
         <Link
           href={`/login?preserveRedirect=true`}
           onClick={() => {
@@ -1070,7 +1138,97 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
 </div>
 
+        </div>
       </div>
+
+      {/* Desktop Sidebar - Comment + Share */}
+      <div className="hidden lg:block flex-[3] sticky top-20 self-start space-y-4">
+        {/* Comment Button */}
+        <div className="border border-slate-200 p-4 rounded shadow-md w-full">
+          <h2 className="text-lg font-semibold text-slate-900 mb-3">Join the Discussion</h2>
+          <p className="text-sm text-slate-600 mb-4">
+            Share your thoughts and engage with the community.
+          </p>
+          <button
+            onClick={() => {
+              const conversationArea = document.getElementById('conversation-area');
+              if (conversationArea) {
+                conversationArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setTimeout(() => {
+                  if (messageInputRef.current) {
+                    messageInputRef.current.focus();
+                  }
+                }, 500);
+              }
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition-colors font-semibold"
+          >
+            <FaCommentDots size={16} />
+            <span>Comment</span>
+          </button>
+        </div>
+
+        {/* Share Icons */}
+        <div className="flex items-center justify-center py-3 px-4 border border-slate-200 rounded shadow-sm">
+          <span className="text-sm font-bold text-sky-500 mr-3">Share</span>
+          <ShareIcons
+            type="thread"
+            title={thread.title}
+            id={thread._id}
+          />
+        </div>
+      </div>
+
+      {/* Mobile Floating Buttons - hide when input focused or scrolling down */}
+      {!isInputFocused && showFloatingButtons && (
+      <div className="lg:hidden fixed bottom-20 right-4 z-40 flex flex-col gap-3 transition-opacity duration-200">
+        {/* Share Button */}
+        <button
+          onClick={async () => {
+            const shareUrl = `${window.location.origin}/threads/views/${thread._id}`;
+            if (navigator.share) {
+              try {
+                await navigator.share({
+                  title: thread.title,
+                  text: `Check out this topic: ${thread.title}`,
+                  url: shareUrl,
+                });
+              } catch (err) {
+                if (err.name !== 'AbortError') {
+                  navigator.clipboard.writeText(shareUrl);
+                }
+              }
+            } else {
+              navigator.clipboard.writeText(shareUrl);
+            }
+          }}
+          className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-colors"
+        >
+          <FaShareAlt size={16} />
+          <span>Share</span>
+        </button>
+
+        {/* Comment Button */}
+        <button
+          onClick={() => {
+            const conversationArea = document.getElementById('conversation-area');
+            if (conversationArea) {
+              conversationArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              setTimeout(() => {
+                if (messageInputRef.current) {
+                  messageInputRef.current.focus();
+                }
+              }, 500);
+            }
+          }}
+          className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-colors"
+        >
+          <FaCommentDots size={16} />
+          <span>Comment</span>
+        </button>
+      </div>
+      )}
+    </div>
     </div>
     </>
   );

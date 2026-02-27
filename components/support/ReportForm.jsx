@@ -9,6 +9,36 @@ import { toast } from 'react-toastify';
 import { isFormSubmittedTooQuickly, isHoneypotTriggered } from '@/utils/forms/antiBot';
 import { sanitizeInput, validateReportForm } from '@/utils/forms/validation';
 
+// Map type param to display label
+const TYPE_LABELS = {
+  listing: 'Listing',
+  event: 'Event',
+  thread: 'Thread',
+  deal: 'Deal',
+  discount: 'Discount Code',
+  advert: 'Listing', // backward compatibility
+};
+
+// Map type param to view URL path
+const VIEW_URL_PATHS = {
+  listing: '/listings/views',
+  event: '/events/views',
+  thread: '/threads/views',
+  deal: '/dailydeals/views',
+  discount: '/discountcode/views',
+  advert: '/listings/views', // backward compatibility
+};
+
+const REPORT_REASONS = [
+  { value: '', label: 'Select a reason' },
+  { value: 'spam', label: 'Spam' },
+  { value: 'fraud', label: 'Fraud' },
+  { value: 'misleading', label: 'Misleading' },
+  { value: 'outdated', label: 'Outdated' },
+  { value: 'inappropriate', label: 'Inappropriate' },
+  { value: 'other', label: 'Other' },
+];
+
 const ReportForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -18,13 +48,22 @@ const ReportForm = () => {
 
   const title = searchParams.get('title') || '';
   const id = searchParams.get('id') || '';
-  const type = searchParams.get('type') || 'advert';
+  const type = searchParams.get('type') || 'listing';
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [reason, setReason] = useState('');
   const [message, setMessage] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const [formLoadTime, setFormLoadTime] = useState(Date.now());
+
+  // Generate item URL for admin reference
+  const itemUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${VIEW_URL_PATHS[type] || VIEW_URL_PATHS.listing}/${id}`
+    : '';
+
+  // Get display label for type
+  const typeLabel = TYPE_LABELS[type] || TYPE_LABELS.listing;
 
   useEffect(() => {
     if (user) {
@@ -49,6 +88,7 @@ const ReportForm = () => {
     const errors = validateReportForm({
       senderName: name,
       senderEmail: email,
+      reason,
       message,
     });
 
@@ -68,6 +108,8 @@ const ReportForm = () => {
         title: sanitizeInput(title),
         id,
         type,
+        itemUrl,
+        reason,
         senderName: sanitizeInput(name),
         senderEmail: sanitizeInput(email),
         message: sanitizeInput(message),
@@ -76,6 +118,7 @@ const ReportForm = () => {
     )
       .unwrap()
       .then(() => {
+        setReason('');
         setMessage('');
         setCaptchaToken(null);
 
@@ -91,9 +134,9 @@ const ReportForm = () => {
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-6">
-      <h2 className="text-xl font-bold mb-2">Report {type}</h2>
-      <p className="text-gray-600 mb-4">
-        <strong>Title:</strong> {title}
+      <h2 className="text-xl font-bold mb-2">Report this {typeLabel}</h2>
+      <p className="text-slate-600 mb-4">
+        <strong>{typeLabel}:</strong> {title}
       </p>
 
       <form onSubmit={handleSubmit}>
@@ -108,7 +151,7 @@ const ReportForm = () => {
 
         <input
           type="text"
-          className="w-full border p-2 rounded mb-2"
+          className="w-full border border-slate-200 p-2 rounded mb-2"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Your Name"
@@ -116,18 +159,30 @@ const ReportForm = () => {
 
         <input
           type="email"
-          className="w-full border p-2 rounded mb-2"
+          className="w-full border border-slate-200 p-2 rounded mb-2"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Your Email "
+          placeholder="Your Email"
         />
 
+        <select
+          className="w-full border border-slate-200 p-2 rounded mb-2"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        >
+          {REPORT_REASONS.map((opt) => (
+            <option key={opt.value} value={opt.value} disabled={opt.value === ''}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
         <textarea
-          className="w-full border p-2 rounded mb-2"
+          className="w-full border border-slate-200 p-2 rounded mb-2"
           rows={5}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Explain the issue clearly..."
+          placeholder="Provide additional details (Optional)"
         />
 
         <ReCAPTCHA
@@ -154,7 +209,7 @@ const ReportForm = () => {
                 router.back();
               }
             }}
-            className="bg-gray-600 text-white hover:bg-gray-700 px-4 py-2 rounded"
+            className="bg-slate-600 text-white hover:bg-slate-700 px-4 py-2 rounded"
           >
             Cancel
           </button>
