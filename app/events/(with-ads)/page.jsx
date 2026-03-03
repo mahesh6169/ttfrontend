@@ -1,25 +1,14 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { 
-  searchEvents, 
-  fetchFilterOptions,
-  toggleCategory,
-  toggleCommunity,
-  setLocation,
-  setMonth,
-  updateFilter,
-  clearAllFilters,
-  updatePagination
-} from '@/store/slices/events/searchEventsSlice';
+import React, { useState, useRef } from 'react';
+import { useEventFilters } from '@/hooks/events/useEventFilters';
+import { useSearchEvents } from '@/hooks/events/useSearchEvents';
 import { COMMUNITIES } from '@/utils/constants/communities';
 import EventsGrid from '@/components/events/eventcomponents/EventsGrid';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
-import { toast } from 'react-toastify';
-import { format, parse, addMonths } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import { getCategoryDisplayName } from '@/constants/categories';
 import { CATEGORY_OPTIONS, needsCommunityField } from '@/components/events/addevents/EventCategories';
@@ -27,14 +16,12 @@ import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } fro
 import { Fragment } from 'react';
 
 const libraries = ['places'];
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
 
 // Generate month options for the dropdown
 const generateMonthOptions = () => {
   const months = [];
   const currentDate = new Date();
-  
+
   // Add current month and next 11 months
   for (let i = 0; i < 12; i++) {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
@@ -42,29 +29,70 @@ const generateMonthOptions = () => {
     const monthDisplay = format(date, 'MMMM yyyy');
     months.push({ value: monthStr, label: monthDisplay });
   }
-  
+
   return months;
 };
 
 const monthOptions = generateMonthOptions();
 
 const EventsPage = () => {
-  const dispatch = useDispatch();
-  const { filters, pagination, events, meta, status, error, filterOptions } = useSelector((state) => state.searchEvents);
-  
-  // Local state for UI
+  // URL-based filters (nuqs)
+  const {
+    cat,
+    communities,
+    state,
+    month,
+    eventType,
+    sort,
+    page,
+    location,
+    hasLocation,
+    setCat,
+    setCommunities,
+    setState,
+    setMonth,
+    setEventType,
+    setSort,
+    setPage,
+    setLocation,
+    setRadius,
+    clearAllFilters,
+  } = useEventFilters();
+
+  // TanStack Query for fetching events
+  const { data, isLoading, isError } = useSearchEvents({
+    cat,
+    communities,
+    state,
+    month,
+    eventType,
+    q: null,
+    sort,
+    page,
+    location,
+  });
+
+  const events = data?.events || [];
+  const meta = data?.meta || { currentPage: 1, totalPages: 1, totalRecords: 0, itemsPerPage: 12 };
+  const status = isLoading ? 'loading' : isError ? 'failed' : 'success';
+
+  // Local state for UI only
   const [heroAutocomplete, setHeroAutocomplete] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [heroCategory, setHeroCategory] = useState('');
-  const [heroLocationInput, setHeroLocationInput] = useState('');
-  const [heroLocation, setHeroLocation] = useState(null);
-  const [heroRadius, setHeroRadius] = useState(60);
-  
-  // Modal filter states
-  const [tempFilters, setTempFilters] = useState({});
+  const [heroLocationInput, setHeroLocationInput] = useState(location?.name || '');
+  const [heroRadius, setHeroRadius] = useState(location?.radius || 60);
 
-  // Add state for sort menu
+  // Modal filter states (temporary until applied)
+  const [tempFilters, setTempFilters] = useState({
+    communities: [...communities],
+    state: state || '',
+    month: month || '',
+    eventType: eventType || '',
+    sortBy: sort,
+  });
+
+  // Sort menu state
   const [showSortMenu, setShowSortMenu] = useState(false);
 
   // Ref for scroll-to-results behavior
@@ -75,98 +103,70 @@ const EventsPage = () => {
     { value: 'distance', label: 'Distance (nearest first)' },
   ];
 
-  // Initialize temporary filters
-  useEffect(() => {
-    setTempFilters({
-      communities: [...filters.communities],
-      state: filters.state || '',
-      month: filters.month,
-      eventType: filters.eventType || '',
-      sortBy: filters.sortBy,
-    });
-  }, [showFilters, filters]);
-
-  // Initial load - fetch filter options
-  useEffect(() => {
-    dispatch(fetchFilterOptions())
-      .unwrap()
-      .catch((error) => {
-        console.error('Failed to load filter options:', error);
-      });
-  }, [dispatch]);
-
-  // Search whenever filters change
-  useEffect(() => {
-    dispatch(searchEvents());
-  }, [filters, pagination.page, dispatch]);
-
-  // Sync hero category with Redux filters - reset when category is cleared from active filters
-  useEffect(() => {
-    if (heroCategory && !filters.categories.includes(heroCategory)) {
-      setHeroCategory('');
-    }
-  }, [filters.categories]);
-
-  // Sync hero location with Redux filters - reset when location is cleared from active filters
-  useEffect(() => {
-    if (!filters.location && heroLocation) {
-      setHeroLocation(null);
-      setHeroLocationInput('');
-    }
-  }, [filters.location]);
-
-  // Clear communities when category changes to non-eligible
-  useEffect(() => {
-    const selectedCategory = filters.categories[0];
-    if (selectedCategory && !needsCommunityField(selectedCategory) && filters.communities.length > 0) {
-      // Clear all communities from Redux when category is non-eligible
-      filters.communities.forEach(comm => {
-        dispatch(toggleCommunity(comm));
-      });
-    }
-  }, [filters.categories, dispatch]);
-
-  const handleHeroSearch = () => {
-    // Apply category filter
-    if (heroCategory && !filters.categories.includes(heroCategory)) {
-      dispatch(toggleCategory(heroCategory));
-    }
-    // Apply location filter
-    if (heroLocation) {
-      dispatch(setLocation({ ...heroLocation, radius: heroRadius }));
-    }
-    // Scroll to results on mobile
-    if (resultsRef.current && window.innerWidth < 768) {
-      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+  // Auto-scroll to results on mobile
+  const scrollToResults = () => {
+    setTimeout(() => {
+      if (resultsRef.current && window.innerWidth < 768) {
+        resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
 
+  // Sync tempFilters when modal opens
+  const handleOpenFilters = () => {
+    setTempFilters({
+      communities: [...communities],
+      state: state || '',
+      month: month || '',
+      eventType: eventType || '',
+      sortBy: sort,
+    });
+    setShowFilters(true);
+  };
+
+  // Handle category change - applies immediately, auto-scroll
+  const handleCategoryChange = (newCat) => {
+    setCat(newCat || null);
+    scrollToResults();
+  };
+
+  // Handle location selection from autocomplete
   const handleHeroPlaceChanged = () => {
     if (heroAutocomplete) {
       const place = heroAutocomplete.getPlace();
       if (place.geometry) {
-        const coordinates = [
-          place.geometry.location.lng(),
-          place.geometry.location.lat()
-        ];
-        setHeroLocation({
-          coordinates,
+        const newLocation = {
+          coordinates: [
+            place.geometry.location.lng(),
+            place.geometry.location.lat()
+          ],
           radius: heroRadius,
           name: place.formatted_address || 'Selected Location'
-        });
+        };
+        setLocation(newLocation);
         setHeroLocationInput(place.formatted_address);
+        scrollToResults();
       }
     }
   };
 
-  const handleClearLocation = () => {
-    dispatch(updateFilter({ filterType: 'location', value: null }));
-    setHeroLocationInput('');
-    setHeroLocation(null);
+  // Handle radius change
+  const handleRadiusChange = (newRadius) => {
+    setHeroRadius(newRadius);
+    if (location) {
+      setRadius(newRadius);
+    }
   };
 
+  // Clear location filter
+  const handleClearLocation = () => {
+    setLocation(null);
+    setHeroLocationInput('');
+  };
+
+  // Clear month filter
   const handleClearMonth = () => {
-    dispatch(setMonth(''));
+    setMonth(null);
   };
 
   // Modal functions
@@ -180,72 +180,50 @@ const EventsPage = () => {
     });
   };
 
-  // Function to handle sort changes
+  // Handle sort change
   const handleSortChange = (sortValue) => {
-    dispatch(updateFilter({ filterType: 'sortBy', value: sortValue }));
+    setSort(sortValue);
     setShowSortMenu(false);
   };
 
   // Current sort label for display
   const getCurrentSortLabel = () => {
-    const option = sortOptions.find(opt => opt.value === filters.sortBy);
+    const option = sortOptions.find(opt => opt.value === sort);
     return option?.label || 'Date (soonest first)';
   };
 
+  // Apply modal filters
   const applyFilters = () => {
-    // Apply communities filter
-    if (JSON.stringify(tempFilters.communities) !== JSON.stringify(filters.communities)) {
-      filters.communities.forEach(comm => {
-        if (!tempFilters.communities.includes(comm)) {
-          dispatch(toggleCommunity(comm));
-        }
-      });
-      tempFilters.communities.forEach(comm => {
-        if (!filters.communities.includes(comm)) {
-          dispatch(toggleCommunity(comm));
-        }
-      });
-    }
-
-    // Apply state filter
-    if (tempFilters.state !== filters.state) {
-      dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
-    }
-
-    // Apply month filter
-    if (tempFilters.month !== filters.month) {
-      dispatch(setMonth(tempFilters.month || ''));
-    }
-
-    // Apply event type filter
-    if (tempFilters.eventType !== filters.eventType) {
-      dispatch(updateFilter({ filterType: 'eventType', value: tempFilters.eventType }));
-    }
-
-    // Apply sort
-    dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
-
+    // Apply all temp filters to URL
+    setCommunities(tempFilters.communities);
+    setState(tempFilters.state || null);
+    setMonth(tempFilters.month || null);
+    setEventType(tempFilters.eventType || null);
+    setSort(tempFilters.sortBy);
     setShowFilters(false);
+    scrollToResults();
   };
 
-  useEffect(() => {
-    if (status === 'failed' && error) {
-      console.error('Search failed:', error.message || error || 'An error occurred');
-    }
-  }, [status, error]);
+  // Handle clear all
+  const handleClearAll = () => {
+    clearAllFilters();
+    setHeroLocationInput('');
+    scrollToResults();
+  };
 
+  // Count active filters
   const getActiveFilterCount = () => {
     let count = 0;
-    if (filters.categories.length > 0) count++;
-    if (filters.communities.length > 0) count++;
-    if (filters.location) count++;
-    if (filters.state) count++;
-    if (filters.month) count++;
-    if (filters.eventType) count++;
+    if (cat) count++;
+    if (communities.length > 0) count++;
+    if (location) count++;
+    if (state) count++;
+    if (month) count++;
+    if (eventType) count++;
     return count;
   };
 
-  const hasFiltersToShow = heroCategory || heroLocation || getActiveFilterCount() > 0;
+  const hasFiltersToShow = cat || location || getActiveFilterCount() > 0;
 
   const formatMonth = (monthStr) => {
     if (!monthStr) return '';
@@ -256,17 +234,26 @@ const EventsPage = () => {
       return monthStr;
     }
   };
-  
+
   const handleMonthChange = (e) => {
     const value = e.target.value;
     setTempFilters({ ...tempFilters, month: value });
+  };
+
+  // Toggle community in temp filters
+  const handleTempCommunityToggle = (communityValue) => {
+    const currentCommunities = tempFilters.communities || [];
+    const newCommunities = currentCommunities.includes(communityValue)
+      ? currentCommunities.filter(c => c !== communityValue)
+      : [...currentCommunities, communityValue];
+    setTempFilters({ ...tempFilters, communities: newCommunities });
   };
 
   return (
     <div className="flex flex-col relative min-h-[calc(100vh-180px)]">
       {/* Modal Overlay */}
       {showFilters && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={() => setShowFilters(false)}
         ></div>
@@ -349,31 +336,31 @@ const EventsPage = () => {
             <div className="mb-6">
               <h3 className="font-semibold text-slate-700 mb-3">State</h3>
               <div className="grid grid-cols-4 gap-2">
-                {AUSTRALIAN_STATES.map(state => (
+                {AUSTRALIAN_STATES.map(stateOption => (
                   <button
-                    key={state.code}
+                    key={stateOption.code}
                     onClick={() => {
-                      if (tempFilters.state === state.code) {
+                      if (tempFilters.state === stateOption.code) {
                         setTempFilters({ ...tempFilters, state: '' });
                       } else {
-                        setTempFilters({ ...tempFilters, state: state.code });
+                        setTempFilters({ ...tempFilters, state: stateOption.code });
                       }
                     }}
                     className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      tempFilters.state === state.code
+                      tempFilters.state === stateOption.code
                         ? 'bg-teal-700 text-white'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
-                    title={state.name}
+                    title={stateOption.name}
                   >
-                    {state.code}
+                    {stateOption.code}
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Communities - Only show for eligible categories */}
-            {needsCommunityField(filters.categories[0]) && (
+            {needsCommunityField(cat) && (
               <div className="mb-6">
                 <h3 className="font-semibold text-slate-700 mb-3">Community/Language</h3>
                 <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-2">
@@ -386,13 +373,7 @@ const EventsPage = () => {
                         <input
                           type="checkbox"
                           checked={tempFilters.communities?.includes(community.value) || false}
-                          onChange={() => {
-                            const currentCommunities = tempFilters.communities || [];
-                            const newCommunities = currentCommunities.includes(community.value)
-                              ? currentCommunities.filter(c => c !== community.value)
-                              : [...currentCommunities, community.value];
-                            setTempFilters({ ...tempFilters, communities: newCommunities });
-                          }}
+                          onChange={() => handleTempCommunityToggle(community.value)}
                           className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
                         />
                         <span className="ml-2 text-sm text-slate-700">{community.label}</span>
@@ -440,15 +421,15 @@ const EventsPage = () => {
                 </Link>
               </div>
 
-              {/* Category Dropdown */}
-              <Listbox value={heroCategory} onChange={setHeroCategory}>
+              {/* Category Dropdown - Applies immediately */}
+              <Listbox value={cat || ''} onChange={handleCategoryChange}>
                 <div className="relative">
                   <ListboxButton className="relative w-full pl-9 pr-9 py-2.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all cursor-pointer text-left">
                     <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                     </svg>
-                    <span className={heroCategory ? 'text-slate-900' : 'text-slate-500'}>
-                      {heroCategory || 'Select Category'}
+                    <span className={cat ? 'text-slate-900' : 'text-slate-500'}>
+                      {cat || 'Select Category'}
                     </span>
                     <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -485,10 +466,10 @@ const EventsPage = () => {
                           </>
                         )}
                       </ListboxOption>
-                      {CATEGORY_OPTIONS.map((cat) => (
+                      {CATEGORY_OPTIONS.map((catOption) => (
                         <ListboxOption
-                          key={cat}
-                          value={cat}
+                          key={catOption}
+                          value={catOption}
                           className={({ active }) =>
                             `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
                           }
@@ -496,7 +477,7 @@ const EventsPage = () => {
                           {({ selected }) => (
                             <>
                               <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                {cat}
+                                {catOption}
                               </span>
                               {selected && (
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
@@ -552,14 +533,14 @@ const EventsPage = () => {
               </LoadScriptNext>
 
               {/* Radius Slider - Mobile (shown when location selected) */}
-              {heroLocation && (
+              {hasLocation && (
                 <div className="flex items-center gap-2">
                   <input
                     type="range"
                     min="1"
                     max="200"
                     value={heroRadius}
-                    onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                    onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
                     className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
                       [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
@@ -570,28 +551,17 @@ const EventsPage = () => {
                 </div>
               )}
 
-              {/* Go / Clear Buttons - Mobile */}
-              <div className="flex gap-2 mt-1">
-                <button
-                  onClick={handleHeroSearch}
-                  className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold py-2 px-5 rounded-full shadow-sm transition-colors"
-                >
-                  Go
-                </button>
-                {hasFiltersToShow && (
+              {/* Clear Button - Mobile (no Go button) */}
+              {hasFiltersToShow && (
+                <div className="flex gap-2 mt-1">
                   <button
-                    onClick={() => {
-                      setHeroCategory('');
-                      setHeroLocation(null);
-                      setHeroLocationInput('');
-                      dispatch(clearAllFilters());
-                    }}
+                    onClick={handleClearAll}
                     className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold py-2 px-4 rounded-full transition-colors"
                   >
                     Clear
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Desktop Layout - Inline */}
@@ -608,15 +578,15 @@ const EventsPage = () => {
 
               {/* Filters Row */}
               <div className="flex items-center gap-3">
-                {/* Category Dropdown - Desktop */}
-                <Listbox value={heroCategory} onChange={setHeroCategory}>
+                {/* Category Dropdown - Desktop - Applies immediately */}
+                <Listbox value={cat || ''} onChange={handleCategoryChange}>
                   <div className="relative flex-1 max-w-[220px]">
                     <ListboxButton className="relative w-full pl-9 pr-9 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all cursor-pointer text-left">
                       <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                       </svg>
-                      <span className={heroCategory ? 'text-slate-900' : 'text-slate-500'}>
-                        {heroCategory || 'Select Category'}
+                      <span className={cat ? 'text-slate-900' : 'text-slate-500'}>
+                        {cat || 'Select Category'}
                       </span>
                       <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -653,10 +623,10 @@ const EventsPage = () => {
                             </>
                           )}
                         </ListboxOption>
-                        {CATEGORY_OPTIONS.map((cat) => (
+                        {CATEGORY_OPTIONS.map((catOption) => (
                           <ListboxOption
-                            key={cat}
-                            value={cat}
+                            key={catOption}
+                            value={catOption}
                             className={({ active }) =>
                               `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
                             }
@@ -664,7 +634,7 @@ const EventsPage = () => {
                             {({ selected }) => (
                               <>
                                 <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                  {cat}
+                                  {catOption}
                                 </span>
                                 {selected && (
                                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
@@ -719,23 +689,10 @@ const EventsPage = () => {
                   </div>
                 </LoadScriptNext>
 
-                {/* Go Button - Desktop */}
-                <button
-                  onClick={handleHeroSearch}
-                  className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2.5 px-5 rounded-full shadow-sm transition-colors"
-                >
-                  Go
-                </button>
-
-                {/* Clear Button - Desktop */}
+                {/* Clear Button - Desktop (no Go button) */}
                 {hasFiltersToShow && (
                   <button
-                    onClick={() => {
-                      setHeroCategory('');
-                      setHeroLocation(null);
-                      setHeroLocationInput('');
-                      dispatch(clearAllFilters());
-                    }}
+                    onClick={handleClearAll}
                     className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold py-2.5 px-4 rounded-full transition-colors"
                   >
                     Clear
@@ -744,14 +701,14 @@ const EventsPage = () => {
               </div>
 
               {/* Radius Slider - Desktop (shown when location selected) */}
-              {heroLocation && (
+              {hasLocation && (
                 <div className="flex mt-3 items-center gap-2 max-w-md">
                   <input
                     type="range"
                     min="1"
                     max="200"
                     value={heroRadius}
-                    onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                    onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
                     className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
                       [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
@@ -769,7 +726,7 @@ const EventsPage = () => {
         <div ref={resultsRef} className="bg-white px-3 py-2 sm:px-4 sm:py-3">
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={handleOpenFilters}
               className="flex items-center gap-1 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-xs md:text-sm"
             >
               <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -802,7 +759,7 @@ const EventsPage = () => {
                         key={option.value}
                         onClick={() => handleSortChange(option.value)}
                         className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${
-                          filters.sortBy === option.value ? 'bg-slate-50 font-medium' : ''
+                          sort === option.value ? 'bg-slate-50 font-medium' : ''
                         }`}
                       >
                         {option.label}
@@ -826,26 +783,13 @@ const EventsPage = () => {
 
               <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 sm:px-4">
                 <div className="flex gap-2">
-                  {filters.categories.map((category) => (
+                  {cat && (
                     <span
-                      key={category}
                       className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
                     >
-                      {getCategoryDisplayName(category)}
+                      {getCategoryDisplayName(cat)}
                       <button
-                        onClick={() => dispatch(toggleCategory(category))}
-                        className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-
-                  {filters.state && (
-                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
-                      {filters.state}
-                      <button
-                        onClick={() => dispatch(updateFilter({ filterType: 'state', value: '' }))}
+                        onClick={() => setCat(null)}
                         className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
                       >
                         ×
@@ -853,12 +797,24 @@ const EventsPage = () => {
                     </span>
                   )}
 
-                  {filters.location && (
+                  {state && (
+                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
+                      {state}
+                      <button
+                        onClick={() => setState(null)}
+                        className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+
+                  {location && (
                     <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
                       <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
-                      {filters.location.radius}km {filters.location.name.split(',')[0]}
+                      {location.radius}km {location.name.split(',')[0]}
                       <button
                         onClick={handleClearLocation}
                         className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
@@ -868,9 +824,9 @@ const EventsPage = () => {
                     </span>
                   )}
 
-                  {filters.month && (
+                  {month && (
                     <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
-                      {formatMonth(filters.month)}
+                      {formatMonth(month)}
                       <button
                         onClick={handleClearMonth}
                         className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
@@ -880,11 +836,11 @@ const EventsPage = () => {
                     </span>
                   )}
 
-                  {filters.eventType && (
+                  {eventType && (
                     <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
-                      {filters.eventType === 'free' ? 'Free' : 'Paid'}
+                      {eventType === 'free' ? 'Free' : 'Paid'}
                       <button
-                        onClick={() => dispatch(updateFilter({ filterType: 'eventType', value: '' }))}
+                        onClick={() => setEventType(null)}
                         className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
                       >
                         ×
@@ -892,7 +848,7 @@ const EventsPage = () => {
                     </span>
                   )}
 
-                  {filters.communities.map((community) => {
+                  {communities.map((community) => {
                     const communityLabel = COMMUNITIES.find(c => c.value === community)?.label || community;
                     return (
                       <span
@@ -901,7 +857,10 @@ const EventsPage = () => {
                       >
                         {communityLabel}
                         <button
-                          onClick={() => dispatch(toggleCommunity(community))}
+                          onClick={() => {
+                            const newCommunities = communities.filter(c => c !== community);
+                            setCommunities(newCommunities);
+                          }}
                           className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
                         >
                           ×
@@ -927,7 +886,7 @@ const EventsPage = () => {
               currentPage={meta.currentPage}
               totalPages={meta.totalPages || 1}
               onPageChange={(pageNum) => {
-                dispatch(updatePagination({ page: pageNum }));
+                setPage(pageNum);
                 if (resultsRef.current) {
                   resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }

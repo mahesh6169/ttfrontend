@@ -1,19 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, Fragment, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  searchThreads,
-  fetchFilterOptions,
-  toggleCategory,
-  toggleCommunity,
-  setLocation,
-  updateFilter,
-  clearAllFilters,
-  updatePagination,
-  fetchRecentActivity
-} from '@/store/slices/threads/searchThreadsSlice';
+import React, { useState, Fragment, useRef } from 'react';
+import { useThreadFilters } from '@/hooks/threads/useThreadFilters';
+import { useSearchThreads, useThreadFilterOptions } from '@/hooks/threads/useSearchThreads';
 import { COMMUNITIES } from '@/utils/constants/communities';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
@@ -30,27 +19,61 @@ const libraries = ['places'];
 
 const ThreadsPage = () => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL;
-  const dispatch = useDispatch();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { filters, pagination, threads, meta, status, error, filterOptions } = useSelector((state) => state.searchThreads);
-  
-  // Local state for UI
-  const [locationInput, setLocationInput] = useState('');
-  const [autocomplete, setAutocomplete] = useState(null);
+
+  // URL-based filters (nuqs)
+  const {
+    cat,
+    communities,
+    state,
+    q,
+    sort,
+    page,
+    location,
+    hasLocation,
+    setCat,
+    setCommunities,
+    setState,
+    setQ,
+    setSort,
+    setPage,
+    setLocation,
+    setRadius,
+    clearAllFilters,
+  } = useThreadFilters();
+
+  // TanStack Query for fetching threads
+  const { data, isLoading, isError } = useSearchThreads({
+    cat,
+    communities,
+    state,
+    q,
+    sort,
+    page,
+    location,
+  });
+
+  // TanStack Query for filter options
+  const { data: filterOptionsData } = useThreadFilterOptions();
+  const filterOptions = filterOptionsData || { categories: [] };
+
+  const threads = data?.threads || [];
+  const meta = data?.meta || { currentPage: 1, totalPages: 1, totalRecords: 0, itemsPerPage: 12 };
+  const status = isLoading ? 'loading' : isError ? 'failed' : 'success';
+
+  // Local state for UI only
+  const [heroAutocomplete, setHeroAutocomplete] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [searchText, setSearchText] = useState(filters.searchText || '');
+  const [heroLocationInput, setHeroLocationInput] = useState(location?.name || '');
+  const [heroRadius, setHeroRadius] = useState(location?.radius || 10);
+  const [searchText, setSearchText] = useState(q || '');
 
-  // Hero section state
-  const [heroCategory, setHeroCategory] = useState('');
-  const [heroLocationInput, setHeroLocationInput] = useState('');
-  const [heroAutocomplete, setHeroAutocomplete] = useState(null);
-  const [heroLocation, setHeroLocation] = useState(null);
-  const [heroRadius, setHeroRadius] = useState(50);
-
-  // Modal filter states
-  const [tempFilters, setTempFilters] = useState({});
+  // Modal filter states (temporary until applied)
+  const [tempFilters, setTempFilters] = useState({
+    communities: [...communities],
+    state: state || '',
+    sortBy: sort,
+  });
 
   // Sort menu state
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -71,140 +94,79 @@ const ThreadsPage = () => {
     if (daysAgo <= 10) {
       return daysAgo === 0 ? 'Today' : `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`;
     } else {
-      return format(new Date(createdAt), 'dd MMM yyyy'); // e.g., 12 Apr 2025
+      return format(new Date(createdAt), 'dd MMM yyyy');
     }
   };
 
-  // Initialize temporary filters
-  useEffect(() => {
+  // Auto-scroll to results on mobile
+  const scrollToResults = () => {
+    setTimeout(() => {
+      if (resultsRef.current && window.innerWidth < 768) {
+        resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
+  // Sync tempFilters when modal opens
+  const handleOpenFilters = () => {
     setTempFilters({
-      communities: [...filters.communities],
-      state: filters.state || '',
-      sortBy: filters.sortBy,
+      communities: [...communities],
+      state: state || '',
+      sortBy: sort,
     });
-  }, [showFilters, filters]);
-
-  // Initial load - fetch filter options
-  useEffect(() => {
-    dispatch(fetchFilterOptions())
-      .unwrap()
-      .catch((error) => {
-        console.error('Failed to load filter options:', error);
-      });
-
-    // Also fetch recent activity
-    dispatch(fetchRecentActivity(5))
-      .unwrap()
-      .catch((error) => {
-        console.error('Failed to load recent activity', error);
-      });
-  }, [dispatch]);
-
-  // Apply category filter from URL param - replaces existing category filter
-  const catParam = searchParams.get('cat');
-  useEffect(() => {
-    if (catParam) {
-      dispatch(updateFilter({ filterType: 'categories', value: [catParam] }));
-    }
-  }, [catParam, dispatch]);
-
-  // Search whenever filters change
-  useEffect(() => {
-    dispatch(searchThreads());
-  }, [filters, pagination.page, dispatch]);
-
-  // Sync hero category with Redux filters - reset when category is cleared from active filters
-  useEffect(() => {
-    if (heroCategory && !filters.categories.includes(heroCategory)) {
-      setHeroCategory('');
-    }
-  }, [filters.categories]);
-
-  // Sync hero location with Redux filters - reset when location is cleared from active filters
-  useEffect(() => {
-    if (!filters.location && heroLocation) {
-      setHeroLocation(null);
-      setHeroLocationInput('');
-    }
-  }, [filters.location]);
-
-  // Clear communities when category changes to non-eligible or is cleared
-  useEffect(() => {
-    const currentCategory = filters.categories[0];
-    if (!needsCommunityField(currentCategory) && filters.communities.length > 0) {
-      dispatch(updateFilter({ filterType: 'communities', value: [] }));
-    }
-  }, [filters.categories, dispatch]);
-
-  // Hero Go button handler
-  const handleHeroGo = () => {
-    // Apply search text
-    if (searchText) {
-      dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
-    }
-    // Apply category if selected
-    if (heroCategory && !filters.categories.includes(heroCategory)) {
-      dispatch(toggleCategory(heroCategory));
-    }
-    // Apply location if selected
-    if (heroLocation) {
-      dispatch(setLocation({ ...heroLocation, radius: heroRadius }));
-    }
-    // Scroll to results on mobile
-    if (resultsRef.current && window.innerWidth < 768) {
-      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    setShowFilters(true);
   };
 
-  // Hero location place changed handler
+  // Handle category change - applies immediately, auto-scroll
+  const handleCategoryChange = (newCat) => {
+    setCat(newCat || null);
+    scrollToResults();
+  };
+
+  // Handle search text submit - applies immediately
+  const handleSearchSubmit = (e) => {
+    e?.preventDefault();
+    setQ(searchText || null);
+    scrollToResults();
+  };
+
+  // Handle location selection from autocomplete
   const handleHeroPlaceChanged = () => {
     if (heroAutocomplete) {
       const place = heroAutocomplete.getPlace();
       if (place.geometry) {
-        const coordinates = [
-          place.geometry.location.lng(),
-          place.geometry.location.lat()
-        ];
-        setHeroLocation({
-          coordinates,
+        const newLocation = {
+          coordinates: [
+            place.geometry.location.lng(),
+            place.geometry.location.lat()
+          ],
           radius: heroRadius,
           name: place.formatted_address || 'Selected Location'
-        });
+        };
+        setLocation(newLocation);
         setHeroLocationInput(place.formatted_address);
+        scrollToResults();
       }
     }
   };
 
-  const handlePlaceChanged = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
-      if (place.geometry) {
-        const coordinates = [
-          place.geometry.location.lng(),
-          place.geometry.location.lat()
-        ];
-        dispatch(setLocation({ 
-          coordinates, 
-          radius: 10,
-          name: place.formatted_address || 'Selected Location'
-        }));
-        setLocationInput(place.formatted_address);
-      }
+  // Handle radius change
+  const handleRadiusChange = (newRadius) => {
+    setHeroRadius(newRadius);
+    if (location) {
+      setRadius(newRadius);
     }
   };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    dispatch(updateFilter({ filterType: 'searchText', value: searchText }));
-  };
-
+  // Clear location filter
   const handleClearLocation = () => {
-    dispatch(updateFilter({ filterType: 'location', value: null }));
-    setLocationInput('');
+    setLocation(null);
+    setHeroLocationInput('');
   };
 
+  // Clear search text
   const handleClearSearch = () => {
-    dispatch(updateFilter({ filterType: 'searchText', value: '' }));
+    setQ(null);
     setSearchText('');
   };
 
@@ -217,71 +179,63 @@ const ThreadsPage = () => {
     });
   };
 
-  // Function to handle sort changes
+  // Handle sort change
   const handleSortChange = (sortValue) => {
-    dispatch(updateFilter({ filterType: 'sortBy', value: sortValue }));
+    setSort(sortValue);
     setShowSortMenu(false);
   };
 
   // Current sort label for display
   const getCurrentSortLabel = () => {
-    const option = sortOptions.find(opt => opt.value === filters.sortBy);
+    const option = sortOptions.find(opt => opt.value === sort);
     return option?.label || 'Newest first';
   };
 
+  // Apply modal filters
   const applyFilters = () => {
-    // Apply communities filter
-    if (JSON.stringify(tempFilters.communities) !== JSON.stringify(filters.communities)) {
-      filters.communities.forEach(comm => {
-        if (!tempFilters.communities.includes(comm)) {
-          dispatch(toggleCommunity(comm));
-        }
-      });
-      tempFilters.communities.forEach(comm => {
-        if (!filters.communities.includes(comm)) {
-          dispatch(toggleCommunity(comm));
-        }
-      });
-    }
-
-    // Apply state filter
-    if (tempFilters.state !== filters.state) {
-      dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
-    }
-
-    // Apply sort
-    dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
-
+    // Apply all temp filters to URL
+    setCommunities(tempFilters.communities);
+    setState(tempFilters.state || null);
+    setSort(tempFilters.sortBy);
     setShowFilters(false);
+    scrollToResults();
   };
 
-  useEffect(() => {
-    setSearchText(filters.searchText || '');
-  }, [filters.searchText]);
+  // Handle clear all
+  const handleClearAll = () => {
+    clearAllFilters();
+    setHeroLocationInput('');
+    setSearchText('');
+    scrollToResults();
+  };
 
-  useEffect(() => {
-    if (status === 'failed' && error) {
-      console.error('Search failed:', error.message || error || 'An error occurred');
-    }
-  }, [status, error]);
-
+  // Count active filters
   const getActiveFilterCount = () => {
     let count = 0;
-    if (filters.categories.length > 0) count++;
-    if (filters.communities.length > 0) count++;
-    if (filters.location) count++;
-    if (filters.state) count++;
-    if (filters.searchText) count++;
+    if (cat) count++;
+    if (communities.length > 0) count++;
+    if (location) count++;
+    if (state) count++;
+    if (q) count++;
     return count;
   };
 
-  const hasFiltersToShow = heroCategory || heroLocation || searchText || getActiveFilterCount() > 0;
+  const hasFiltersToShow = cat || location || q || getActiveFilterCount() > 0;
+
+  // Toggle community in temp filters
+  const handleTempCommunityToggle = (communityValue) => {
+    const currentCommunities = tempFilters.communities || [];
+    const newCommunities = currentCommunities.includes(communityValue)
+      ? currentCommunities.filter(c => c !== communityValue)
+      : [...currentCommunities, communityValue];
+    setTempFilters({ ...tempFilters, communities: newCommunities });
+  };
 
   return (
     <div className="flex flex-col relative min-h-[calc(100vh-180px)]">
       {/* Modal Overlay */}
       {showFilters && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={() => setShowFilters(false)}
         ></div>
@@ -323,31 +277,31 @@ const ThreadsPage = () => {
             <div className="mb-4">
               <h3 className="font-semibold text-slate-700 mb-3">State</h3>
               <div className="grid grid-cols-4 gap-2">
-                {AUSTRALIAN_STATES.map(state => (
+                {AUSTRALIAN_STATES.map(stateOption => (
                   <button
-                    key={state.code}
+                    key={stateOption.code}
                     onClick={() => {
-                      if (tempFilters.state === state.code) {
+                      if (tempFilters.state === stateOption.code) {
                         setTempFilters({ ...tempFilters, state: '' });
                       } else {
-                        setTempFilters({ ...tempFilters, state: state.code });
+                        setTempFilters({ ...tempFilters, state: stateOption.code });
                       }
                     }}
                     className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      tempFilters.state === state.code
+                      tempFilters.state === stateOption.code
                         ? 'bg-teal-700 text-white'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
-                    title={state.name}
+                    title={stateOption.name}
                   >
-                    {state.code}
+                    {stateOption.code}
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Communities - Only show when eligible category is selected */}
-            {needsCommunityField(filters.categories[0]) && (
+            {needsCommunityField(cat) && (
               <div className="mb-4">
                 <h3 className="font-semibold text-slate-700 mb-3">Community/Language</h3>
                 <div className="max-h-[7.5rem] overflow-y-auto border border-slate-200 rounded-md p-2">
@@ -360,13 +314,7 @@ const ThreadsPage = () => {
                         <input
                           type="checkbox"
                           checked={tempFilters.communities?.includes(community.value) || false}
-                          onChange={() => {
-                            const currentCommunities = tempFilters.communities || [];
-                            const newCommunities = currentCommunities.includes(community.value)
-                              ? currentCommunities.filter(c => c !== community.value)
-                              : [...currentCommunities, community.value];
-                            setTempFilters({ ...tempFilters, communities: newCommunities });
-                          }}
+                          onChange={() => handleTempCommunityToggle(community.value)}
                           className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
                         />
                         <span className="ml-2 text-sm text-slate-700">{community.label}</span>
@@ -413,29 +361,30 @@ const ThreadsPage = () => {
                 </Link>
               </div>
 
-              {/* Search Input - Threads specific */}
-              <div className="relative">
+              {/* Search Input - Applies on Enter */}
+              <form onSubmit={handleSearchSubmit} className="relative">
                 <input
                   type="text"
                   placeholder="Search topics..."
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
+                  onBlur={handleSearchSubmit}
                   className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                 />
                 <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-              </div>
+              </form>
 
-              {/* Category Dropdown */}
-              <Listbox value={heroCategory} onChange={setHeroCategory}>
+              {/* Category Dropdown - Applies immediately */}
+              <Listbox value={cat || ''} onChange={handleCategoryChange}>
                 <div className="relative">
                   <ListboxButton className="relative w-full pl-9 pr-9 py-2.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all cursor-pointer text-left">
                     <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                     </svg>
-                    <span className={heroCategory ? 'text-slate-900' : 'text-slate-500'}>
-                      {heroCategory ? getCategoryDisplayName(heroCategory) : 'Select Category'}
+                    <span className={cat ? 'text-slate-900' : 'text-slate-500'}>
+                      {cat ? getCategoryDisplayName(cat) : 'Select Category'}
                     </span>
                     <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -472,10 +421,10 @@ const ThreadsPage = () => {
                           </>
                         )}
                       </ListboxOption>
-                      {filterOptions.categories?.map((cat) => (
+                      {filterOptions.categories?.map((catOption) => (
                         <ListboxOption
-                          key={cat}
-                          value={cat}
+                          key={catOption}
+                          value={catOption}
                           className={({ active }) =>
                             `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
                           }
@@ -483,7 +432,7 @@ const ThreadsPage = () => {
                           {({ selected }) => (
                             <>
                               <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                {getCategoryDisplayName(cat)}
+                                {getCategoryDisplayName(catOption)}
                               </span>
                               {selected && (
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
@@ -539,14 +488,14 @@ const ThreadsPage = () => {
               </LoadScriptNext>
 
               {/* Radius Slider - Mobile (shown when location selected) */}
-              {heroLocation && (
+              {hasLocation && (
                 <div className="flex items-center gap-2">
                   <input
                     type="range"
                     min="1"
                     max="200"
                     value={heroRadius}
-                    onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                    onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
                     className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
                       [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
@@ -557,29 +506,17 @@ const ThreadsPage = () => {
                 </div>
               )}
 
-              {/* Go / Clear Buttons - Mobile */}
-              <div className="flex gap-2 mt-1">
-                <button
-                  onClick={handleHeroGo}
-                  className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold py-2 px-5 rounded-full shadow-sm transition-colors"
-                >
-                  Go
-                </button>
-                {hasFiltersToShow && (
+              {/* Clear Button - Mobile (no Go button) */}
+              {hasFiltersToShow && (
+                <div className="flex gap-2 mt-1">
                   <button
-                    onClick={() => {
-                      setSearchText('');
-                      setHeroCategory('');
-                      setHeroLocation(null);
-                      setHeroLocationInput('');
-                      dispatch(clearAllFilters());
-                    }}
+                    onClick={handleClearAll}
                     className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold py-2 px-4 rounded-full transition-colors"
                   >
                     Clear
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Desktop Layout - Inline */}
@@ -594,31 +531,32 @@ const ThreadsPage = () => {
                 </Link>
               </div>
 
-              {/* Search Input - Threads specific */}
-              <div className="relative mb-3">
+              {/* Search Input - Applies on Enter or blur */}
+              <form onSubmit={handleSearchSubmit} className="relative mb-3">
                 <input
                   type="text"
                   placeholder="Search topics... e.g. Visa, Jobs, Housing"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
+                  onBlur={handleSearchSubmit}
                   className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                 />
                 <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-              </div>
+              </form>
 
               {/* Filters Row */}
               <div className="flex items-center gap-3">
-                {/* Category Dropdown - Desktop */}
-                <Listbox value={heroCategory} onChange={setHeroCategory}>
+                {/* Category Dropdown - Desktop - Applies immediately */}
+                <Listbox value={cat || ''} onChange={handleCategoryChange}>
                   <div className="relative flex-1 max-w-[220px]">
                     <ListboxButton className="relative w-full pl-9 pr-9 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all cursor-pointer text-left">
                       <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                       </svg>
-                      <span className={heroCategory ? 'text-slate-900' : 'text-slate-500'}>
-                        {heroCategory ? getCategoryDisplayName(heroCategory) : 'Select Category'}
+                      <span className={cat ? 'text-slate-900' : 'text-slate-500'}>
+                        {cat ? getCategoryDisplayName(cat) : 'Select Category'}
                       </span>
                       <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -655,10 +593,10 @@ const ThreadsPage = () => {
                             </>
                           )}
                         </ListboxOption>
-                        {filterOptions.categories?.map((cat) => (
+                        {filterOptions.categories?.map((catOption) => (
                           <ListboxOption
-                            key={cat}
-                            value={cat}
+                            key={catOption}
+                            value={catOption}
                             className={({ active }) =>
                               `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
                             }
@@ -666,7 +604,7 @@ const ThreadsPage = () => {
                             {({ selected }) => (
                               <>
                                 <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                  {getCategoryDisplayName(cat)}
+                                  {getCategoryDisplayName(catOption)}
                                 </span>
                                 {selected && (
                                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
@@ -721,23 +659,11 @@ const ThreadsPage = () => {
                   </div>
                 </LoadScriptNext>
 
-                {/* Go / Clear Buttons - Desktop */}
-                <button
-                  onClick={handleHeroGo}
-                  className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2 px-5 rounded-full shadow-sm transition-colors"
-                >
-                  Go
-                </button>
+                {/* Clear Button - Desktop (no Go button) */}
                 {hasFiltersToShow && (
                   <button
-                    onClick={() => {
-                      setSearchText('');
-                      setHeroCategory('');
-                      setHeroLocation(null);
-                      setHeroLocationInput('');
-                      dispatch(clearAllFilters());
-                    }}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold py-2 px-4 rounded-full transition-colors"
+                    onClick={handleClearAll}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold py-2.5 px-4 rounded-full transition-colors"
                   >
                     Clear
                   </button>
@@ -745,14 +671,14 @@ const ThreadsPage = () => {
               </div>
 
               {/* Radius Slider - Desktop (shown when location selected) */}
-              {heroLocation && (
+              {hasLocation && (
                 <div className="flex items-center gap-2 mt-3 ml-[232px]">
                   <input
                     type="range"
                     min="1"
                     max="200"
                     value={heroRadius}
-                    onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                    onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
                     className="w-[200px] h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
                       [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
@@ -770,20 +696,15 @@ const ThreadsPage = () => {
         <div ref={resultsRef} className="bg-white px-3 py-2 sm:px-4 sm:py-3">
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={handleOpenFilters}
               className="flex items-center gap-1 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-xs md:text-sm"
             >
               <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
               <span className="font-medium">Filter</span>
-              {getActiveFilterCount() > 0 && (
-                <span className="bg-teal-700 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                  {getActiveFilterCount()}
-                </span>
-              )}
             </button>
-            
+
             <div className="relative">
               <button
                 className="flex items-center gap-1 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-xs md:text-sm"
@@ -794,12 +715,12 @@ const ThreadsPage = () => {
                 </svg>
                 <span className="font-medium">Sort: {getCurrentSortLabel()}</span>
               </button>
-              
+
               {/* Sort dropdown menu */}
               {showSortMenu && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-20" 
+                  <div
+                    className="fixed inset-0 z-20"
                     onClick={() => setShowSortMenu(false)}
                   ></div>
                   <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-30 border border-slate-200 py-1">
@@ -808,7 +729,7 @@ const ThreadsPage = () => {
                         key={option.value}
                         onClick={() => handleSortChange(option.value)}
                         className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-100 transition-colors ${
-                          filters.sortBy === option.value ? 'bg-slate-50 font-medium' : ''
+                          sort === option.value ? 'bg-slate-50 font-medium' : ''
                         }`}
                       >
                         {option.label}
@@ -831,26 +752,13 @@ const ThreadsPage = () => {
 
               <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 sm:px-4">
                 <div className="flex gap-2 items-center">
-                  {filters.categories.map((category) => (
+                  {cat && (
                     <span
-                      key={category}
                       className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
                     >
-                      {getCategoryDisplayName(category)}
+                      {getCategoryDisplayName(cat)}
                       <button
-                        onClick={() => dispatch(toggleCategory(category))}
-                        className="hover:text-teal-900 font-bold ml-1"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  
-                  {filters.state && (
-                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
-                      State: {filters.state}
-                      <button
-                        onClick={() => dispatch(updateFilter({ filterType: 'state', value: '' }))}
+                        onClick={() => setCat(null)}
                         className="hover:text-teal-900 font-bold ml-1"
                       >
                         ×
@@ -858,12 +766,24 @@ const ThreadsPage = () => {
                     </span>
                   )}
 
-                  {filters.location && (
+                  {state && (
+                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
+                      State: {state}
+                      <button
+                        onClick={() => setState(null)}
+                        className="hover:text-teal-900 font-bold ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+
+                  {location && (
                     <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
-                      {filters.location.radius}km from {filters.location.name.split(',')[0]}
+                      {location.radius}km from {location.name.split(',')[0]}
                       <button
                         onClick={handleClearLocation}
                         className="hover:text-teal-900 font-bold ml-1"
@@ -873,9 +793,9 @@ const ThreadsPage = () => {
                     </span>
                   )}
 
-                  {filters.searchText && (
+                  {q && (
                     <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm flex-shrink-0">
-                      <span className="max-w-[100px] md:max-w-[150px] truncate">Search: "{filters.searchText}"</span>
+                      <span className="max-w-[100px] md:max-w-[150px] truncate">Search: "{q}"</span>
                       <button
                         onClick={handleClearSearch}
                         className="hover:text-teal-900 font-bold ml-1 flex-shrink-0"
@@ -886,7 +806,7 @@ const ThreadsPage = () => {
                   )}
 
                   {/* Only show communities when eligible category is selected */}
-                  {needsCommunityField(filters.categories[0]) && filters.communities.map((community) => {
+                  {needsCommunityField(cat) && communities.map((community) => {
                     const communityLabel = COMMUNITIES.find(c => c.value === community)?.label || community;
                     return (
                       <span
@@ -895,7 +815,10 @@ const ThreadsPage = () => {
                       >
                         {communityLabel}
                         <button
-                          onClick={() => dispatch(toggleCommunity(community))}
+                          onClick={() => {
+                            const newCommunities = communities.filter(c => c !== community);
+                            setCommunities(newCommunities);
+                          }}
                           className="hover:text-teal-900 font-bold ml-1"
                         >
                           ×
@@ -931,10 +854,10 @@ const ThreadsPage = () => {
                     <div className="flex-1 min-w-0">
                       {/* Title */}
                       <h2 className="text-sm sm:text-base font-bold text-slate-800 mb-1">{thread.title}</h2>
-                      
+
                       {/* Question/Description */}
                       <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 mb-2">{thread.question}</p>
-                      
+
                       {/* Metadata */}
                       <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
                         <span>{thread.ownerName || 'Former Member'}</span>
@@ -955,7 +878,7 @@ const ThreadsPage = () => {
                     <div className="flex-shrink-0">
                       <img
                         src={
-                          thread.images?.[0] 
+                          thread.images?.[0]
                             ? (thread.images[0].optimizedUrls?.mobile || thread.images[0].url)
                             : FALLBACK_IMAGE
                         }
@@ -987,7 +910,7 @@ const ThreadsPage = () => {
               currentPage={meta.currentPage}
               totalPages={meta.totalPages}
               onPageChange={(pageNum) => {
-                dispatch(updatePagination({ page: pageNum }));
+                setPage(pageNum);
                 if (resultsRef.current) {
                   resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }

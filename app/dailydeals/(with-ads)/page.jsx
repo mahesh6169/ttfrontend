@@ -1,17 +1,8 @@
 'use client';
 
-import { useEffect, useState, Fragment, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  searchDeals,
-  fetchFilterOptions,
-  toggleCategory,
-  setLocation,
-  setDay,
-  updateFilter,
-  clearAllFilters,
-  updatePagination
-} from '@/store/slices/dailydeals/searchDealsSlice';
+import { useState, Fragment, useRef } from 'react';
+import { useDealFilters } from '@/hooks/deals/useDealFilters';
+import { useSearchDeals, useDealFilterOptions } from '@/hooks/deals/useSearchDeals';
 import DealsGrid from '@/components/dailydeals/dealcomponents/DealsGrid';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
@@ -32,27 +23,61 @@ const DAYS_OPTIONS = [
 ];
 
 const DailyDealsPage = () => {
-  const dispatch = useDispatch();
-  const { filters, pagination, deals, meta, status, filterOptions } = useSelector(
-    (state) => state.searchDeals
-  );
+  // URL-based filters (nuqs)
+  const {
+    cat,
+    state,
+    day,
+    sort,
+    page,
+    location,
+    hasLocation,
+    setCat,
+    setState,
+    setDay,
+    setSort,
+    setPage,
+    setLocation,
+    setRadius,
+    clearAllFilters,
+  } = useDealFilters();
 
+  // TanStack Query for fetching deals
+  const { data, isLoading, isError } = useSearchDeals({
+    cat,
+    state,
+    day,
+    q: null,
+    sort,
+    page,
+    location,
+  });
+
+  // TanStack Query for filter options
+  const { data: filterOptionsData } = useDealFilterOptions();
+  const filterOptions = filterOptionsData || { categories: [] };
+
+  const deals = data?.deals || [];
+  const meta = data || { currentPage: 1, totalPages: 1, totalCount: 0 };
+  const status = isLoading ? 'loading' : isError ? 'failed' : 'success';
+
+  // Local state for UI only
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [heroAutocomplete, setHeroAutocomplete] = useState(null);
+  const [heroLocationInput, setHeroLocationInput] = useState(location?.name || '');
+  const [heroRadius, setHeroRadius] = useState(location?.radius || 10);
+
+  // Temp filters for modal
+  const [tempFilters, setTempFilters] = useState({
+    state: state || '',
+    day: day || '',
+    sortBy: sort,
+  });
 
   // Ref for scroll-to-results behavior
   const resultsRef = useRef(null);
-
-  // Hero section state
-  const [heroCategory, setHeroCategory] = useState('');
-  const [heroLocationInput, setHeroLocationInput] = useState('');
-  const [heroAutocomplete, setHeroAutocomplete] = useState(null);
-  const [heroLocation, setHeroLocation] = useState(null);
-  const [heroRadius, setHeroRadius] = useState(50);
-
-  // Temp filters for modal
-  const [tempFilters, setTempFilters] = useState({});
 
   const sortOptions = [
     { value: 'newest', label: 'Newest first' },
@@ -60,51 +85,8 @@ const DailyDealsPage = () => {
     { value: 'oldest', label: 'Oldest first' }
   ];
 
-  // Initialize temp filters when modal opens
-  useEffect(() => {
-    setTempFilters({
-      state: filters.state || '',
-      day: filters.day || '',
-      sortBy: filters.sortBy
-    });
-  }, [showFilters, filters]);
-
-  // Fetch filter options on mount
-  useEffect(() => {
-    dispatch(fetchFilterOptions());
-  }, [dispatch]);
-
-  // Search whenever filters change
-  useEffect(() => {
-    dispatch(searchDeals());
-  }, [filters, pagination.page, dispatch]);
-
-  // Sync hero category with Redux filters - reset when category is cleared from active filters
-  useEffect(() => {
-    if (heroCategory && !filters.categories.includes(heroCategory)) {
-      setHeroCategory('');
-    }
-  }, [filters.categories]);
-
-  // Sync hero location with Redux filters - reset when location is cleared from active filters
-  useEffect(() => {
-    if (!filters.location && heroLocation) {
-      setHeroLocation(null);
-      setHeroLocationInput('');
-    }
-  }, [filters.location]);
-
-  // Hero Go button handler
-  const handleHeroGo = () => {
-    // Apply category if selected
-    if (heroCategory && !filters.categories.includes(heroCategory)) {
-      dispatch(toggleCategory(heroCategory));
-    }
-    // Apply location if selected
-    if (heroLocation) {
-      dispatch(setLocation({ ...heroLocation, radius: heroRadius }));
-    }
-    // Scroll to results on mobile
+  // Auto-scroll to results on mobile
+  const scrollToResults = () => {
     setTimeout(() => {
       if (resultsRef.current && window.innerWidth < 768) {
         resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -112,79 +94,108 @@ const DailyDealsPage = () => {
     }, 100);
   };
 
-  // Hero location place changed handler
+  // Sync tempFilters when modal opens
+  const handleOpenFilters = () => {
+    setTempFilters({
+      state: state || '',
+      day: day || '',
+      sortBy: sort,
+    });
+    setShowFilters(true);
+  };
+
+  // Handle category change - applies immediately
+  const handleCategoryChange = (newCat) => {
+    setCat(newCat || null);
+    scrollToResults();
+  };
+
+  // Handle location selection from autocomplete
   const handleHeroPlaceChanged = () => {
     if (heroAutocomplete) {
       const place = heroAutocomplete.getPlace();
       if (place.geometry) {
-        const coordinates = [
-          place.geometry.location.lng(),
-          place.geometry.location.lat()
-        ];
-        setHeroLocation({
-          coordinates,
+        const newLocation = {
+          coordinates: [
+            place.geometry.location.lng(),
+            place.geometry.location.lat()
+          ],
           radius: heroRadius,
           name: place.formatted_address || 'Selected Location'
-        });
+        };
+        setLocation(newLocation);
         setHeroLocationInput(place.formatted_address);
+        scrollToResults();
       }
     }
   };
 
-  const handleClearLocation = () => {
-    dispatch(updateFilter({ filterType: 'location', value: null }));
+  // Handle radius change
+  const handleRadiusChange = (newRadius) => {
+    setHeroRadius(newRadius);
+    if (location) {
+      setRadius(newRadius);
+    }
   };
 
+  // Clear location filter
+  const handleClearLocation = () => {
+    setLocation(null);
+    setHeroLocationInput('');
+  };
+
+  // Modal functions
   const handleClearAllTempFilters = () => {
     setTempFilters({
       state: '',
       day: '',
-      sortBy: 'newest'
+      sortBy: 'newest',
     });
-    dispatch(clearAllFilters());
   };
 
+  // Handle sort change
   const handleSortChange = (sortValue) => {
-    dispatch(updateFilter({ filterType: 'sortBy', value: sortValue }));
+    setSort(sortValue);
     setShowSortMenu(false);
   };
 
+  // Current sort label for display
   const getCurrentSortLabel = () => {
-    const option = sortOptions.find(opt => opt.value === filters.sortBy);
+    const option = sortOptions.find(opt => opt.value === sort);
     return option?.label || 'Newest first';
   };
 
+  // Apply modal filters
   const applyFilters = () => {
-    // Apply state
-    if (tempFilters.state !== filters.state) {
-      dispatch(updateFilter({ filterType: 'state', value: tempFilters.state }));
-    }
-
-    // Apply day
-    if (tempFilters.day !== filters.day) {
-      dispatch(setDay(tempFilters.day));
-    }
-
-    // Apply sort
-    dispatch(updateFilter({ filterType: 'sortBy', value: tempFilters.sortBy }));
-
+    setState(tempFilters.state || null);
+    setDay(tempFilters.day || null);
+    setSort(tempFilters.sortBy);
     setShowFilters(false);
+    scrollToResults();
   };
 
+  // Handle clear all
+  const handleClearAll = () => {
+    clearAllFilters();
+    setHeroLocationInput('');
+    scrollToResults();
+  };
+
+  // Count active filters
   const getActiveFilterCount = () => {
     let count = 0;
-    if (filters.categories.length > 0) count++;
-    if (filters.location) count++;
-    if (filters.state) count++;
-    if (filters.day) count++;
+    if (cat) count++;
+    if (location) count++;
+    if (state) count++;
+    if (day) count++;
     return count;
   };
 
-  const hasFiltersToShow = heroCategory || heroLocation || getActiveFilterCount() > 0;
+  const hasFiltersToShow = cat || location || getActiveFilterCount() > 0;
 
   const getDayLabel = (dayValue) => {
-    const day = DAYS_OPTIONS.find(d => d.value === dayValue);
-    return day?.label || dayValue;
+    const dayOption = DAYS_OPTIONS.find(d => d.value === dayValue);
+    return dayOption?.label || dayValue;
   };
 
   return (
@@ -243,17 +254,17 @@ const DailyDealsPage = () => {
                 >
                   All Days
                 </button>
-                {DAYS_OPTIONS.map(day => (
+                {DAYS_OPTIONS.map(dayOption => (
                   <button
-                    key={day.value}
-                    onClick={() => setTempFilters({ ...tempFilters, day: day.value })}
+                    key={dayOption.value}
+                    onClick={() => setTempFilters({ ...tempFilters, day: dayOption.value })}
                     className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      tempFilters.day === day.value
+                      tempFilters.day === dayOption.value
                         ? 'bg-teal-700 text-white'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
-                    {day.label.slice(0, 3)}
+                    {dayOption.label.slice(0, 3)}
                   </button>
                 ))}
               </div>
@@ -263,24 +274,24 @@ const DailyDealsPage = () => {
             <div className="mb-4">
               <h3 className="font-semibold text-slate-700 mb-3">State</h3>
               <div className="grid grid-cols-4 gap-2">
-                {AUSTRALIAN_STATES.map(state => (
+                {AUSTRALIAN_STATES.map(stateOption => (
                   <button
-                    key={state.code}
+                    key={stateOption.code}
                     onClick={() => {
-                      if (tempFilters.state === state.code) {
+                      if (tempFilters.state === stateOption.code) {
                         setTempFilters({ ...tempFilters, state: '' });
                       } else {
-                        setTempFilters({ ...tempFilters, state: state.code });
+                        setTempFilters({ ...tempFilters, state: stateOption.code });
                       }
                     }}
                     className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      tempFilters.state === state.code
+                      tempFilters.state === stateOption.code
                         ? 'bg-teal-700 text-white'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
-                    title={state.name}
+                    title={stateOption.name}
                   >
-                    {state.code}
+                    {stateOption.code}
                   </button>
                 ))}
               </div>
@@ -318,15 +329,15 @@ const DailyDealsPage = () => {
                 </Link>
               </div>
 
-              {/* Category Dropdown */}
-              <Listbox value={heroCategory} onChange={setHeroCategory}>
+              {/* Category Dropdown - Applies immediately */}
+              <Listbox value={cat || ''} onChange={handleCategoryChange}>
                 <div className="relative">
                   <ListboxButton className="relative w-full pl-9 pr-9 py-2.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all cursor-pointer text-left">
                     <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                     </svg>
-                    <span className={heroCategory ? 'text-slate-900' : 'text-slate-500'}>
-                      {heroCategory || 'Select Category'}
+                    <span className={cat ? 'text-slate-900' : 'text-slate-500'}>
+                      {cat || 'Select Category'}
                     </span>
                     <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -363,10 +374,10 @@ const DailyDealsPage = () => {
                           </>
                         )}
                       </ListboxOption>
-                      {filterOptions.categories?.map((cat) => (
+                      {filterOptions.categories?.map((catOption) => (
                         <ListboxOption
-                          key={cat}
-                          value={cat}
+                          key={catOption}
+                          value={catOption}
                           className={({ active }) =>
                             `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
                           }
@@ -374,7 +385,7 @@ const DailyDealsPage = () => {
                           {({ selected }) => (
                             <>
                               <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                {cat}
+                                {catOption}
                               </span>
                               {selected && (
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
@@ -430,14 +441,14 @@ const DailyDealsPage = () => {
               </LoadScriptNext>
 
               {/* Radius Slider - Mobile (shown when location selected) */}
-              {heroLocation && (
+              {hasLocation && (
                 <div className="flex items-center gap-2">
                   <input
                     type="range"
                     min="1"
                     max="200"
                     value={heroRadius}
-                    onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                    onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
                     className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
                       [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
@@ -448,28 +459,17 @@ const DailyDealsPage = () => {
                 </div>
               )}
 
-              {/* Go / Clear Buttons - Mobile */}
-              <div className="flex gap-2 mt-1">
-                <button
-                  onClick={handleHeroGo}
-                  className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold py-2 px-5 rounded-full shadow-sm transition-colors"
-                >
-                  Go
-                </button>
-                {hasFiltersToShow && (
+              {/* Clear Button - Mobile (no Go button) */}
+              {hasFiltersToShow && (
+                <div className="flex gap-2 mt-1">
                   <button
-                    onClick={() => {
-                      setHeroCategory('');
-                      setHeroLocation(null);
-                      setHeroLocationInput('');
-                      dispatch(clearAllFilters());
-                    }}
+                    onClick={handleClearAll}
                     className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold py-2 px-4 rounded-full transition-colors"
                   >
                     Clear
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Desktop Layout - Inline */}
@@ -486,15 +486,15 @@ const DailyDealsPage = () => {
 
               {/* Filters Row */}
               <div className="flex items-center gap-3">
-                {/* Category Dropdown - Desktop */}
-                <Listbox value={heroCategory} onChange={setHeroCategory}>
+                {/* Category Dropdown - Desktop - Applies immediately */}
+                <Listbox value={cat || ''} onChange={handleCategoryChange}>
                   <div className="relative flex-1 max-w-[220px]">
                     <ListboxButton className="relative w-full pl-9 pr-9 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all cursor-pointer text-left">
                       <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                       </svg>
-                      <span className={heroCategory ? 'text-slate-900' : 'text-slate-500'}>
-                        {heroCategory || 'Select Category'}
+                      <span className={cat ? 'text-slate-900' : 'text-slate-500'}>
+                        {cat || 'Select Category'}
                       </span>
                       <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -531,10 +531,10 @@ const DailyDealsPage = () => {
                             </>
                           )}
                         </ListboxOption>
-                        {filterOptions.categories?.map((cat) => (
+                        {filterOptions.categories?.map((catOption) => (
                           <ListboxOption
-                            key={cat}
-                            value={cat}
+                            key={catOption}
+                            value={catOption}
                             className={({ active }) =>
                               `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
                             }
@@ -542,7 +542,7 @@ const DailyDealsPage = () => {
                             {({ selected }) => (
                               <>
                                 <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                  {cat}
+                                  {catOption}
                                 </span>
                                 {selected && (
                                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
@@ -597,22 +597,11 @@ const DailyDealsPage = () => {
                   </div>
                 </LoadScriptNext>
 
-                {/* Go / Clear Buttons - Desktop */}
-                <button
-                  onClick={handleHeroGo}
-                  className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2 px-5 rounded-full shadow-sm transition-colors"
-                >
-                  Go
-                </button>
+                {/* Clear Button - Desktop (no Go button) */}
                 {hasFiltersToShow && (
                   <button
-                    onClick={() => {
-                      setHeroCategory('');
-                      setHeroLocation(null);
-                      setHeroLocationInput('');
-                      dispatch(clearAllFilters());
-                    }}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold py-2 px-4 rounded-full transition-colors"
+                    onClick={handleClearAll}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold py-2.5 px-4 rounded-full transition-colors"
                   >
                     Clear
                   </button>
@@ -620,14 +609,14 @@ const DailyDealsPage = () => {
               </div>
 
               {/* Radius Slider - Desktop (shown when location selected) */}
-              {heroLocation && (
+              {hasLocation && (
                 <div className="flex items-center gap-2 mt-3 ml-[232px]">
                   <input
                     type="range"
                     min="1"
                     max="200"
                     value={heroRadius}
-                    onChange={(e) => setHeroRadius(parseInt(e.target.value))}
+                    onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
                     className="w-[200px] h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
                       [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
@@ -646,18 +635,13 @@ const DailyDealsPage = () => {
           {/* Filter and Sort buttons */}
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={handleOpenFilters}
               className="flex items-center gap-1 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-xs md:text-sm"
             >
               <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
               <span className="font-medium">Filter</span>
-              {getActiveFilterCount() > 0 && (
-                <span className="bg-teal-700 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                  {getActiveFilterCount()}
-                </span>
-              )}
             </button>
 
             <div className="relative">
@@ -683,7 +667,7 @@ const DailyDealsPage = () => {
                         key={option.value}
                         onClick={() => handleSortChange(option.value)}
                         className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-100 transition-colors ${
-                          filters.sortBy === option.value ? 'bg-slate-50 font-medium' : ''
+                          sort === option.value ? 'bg-slate-50 font-medium' : ''
                         }`}
                       >
                         {option.label}
@@ -707,26 +691,13 @@ const DailyDealsPage = () => {
 
               <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 sm:px-4">
                 <div className="flex gap-2">
-                  {filters.categories.map((category) => (
+                  {cat && (
                     <span
-                      key={category}
                       className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
                     >
-                      {category}
+                      {cat}
                       <button
-                        onClick={() => dispatch(toggleCategory(category))}
-                        className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-
-                  {filters.day && (
-                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
-                      Day: {getDayLabel(filters.day)}
-                      <button
-                        onClick={() => dispatch(setDay(''))}
+                        onClick={() => setCat(null)}
                         className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
                       >
                         ×
@@ -734,11 +705,11 @@ const DailyDealsPage = () => {
                     </span>
                   )}
 
-                  {filters.state && (
+                  {day && (
                     <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
-                      {filters.state}
+                      Day: {getDayLabel(day)}
                       <button
-                        onClick={() => dispatch(updateFilter({ filterType: 'state', value: '' }))}
+                        onClick={() => setDay(null)}
                         className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
                       >
                         ×
@@ -746,12 +717,24 @@ const DailyDealsPage = () => {
                     </span>
                   )}
 
-                  {filters.location && (
+                  {state && (
+                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
+                      {state}
+                      <button
+                        onClick={() => setState(null)}
+                        className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+
+                  {location && (
                     <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
                       <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
-                      {filters.location.radius}km {filters.location.name.split(',')[0]}
+                      {location.radius}km {location.name.split(',')[0]}
                       <button
                         onClick={handleClearLocation}
                         className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
@@ -778,10 +761,10 @@ const DailyDealsPage = () => {
               currentPage={meta.currentPage}
               totalPages={meta.totalPages}
               onPageChange={(pageNum) => {
-                dispatch(updatePagination({ page: pageNum }));
-                setTimeout(() => {
-                  resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
+                setPage(pageNum);
+                if (resultsRef.current) {
+                  resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
               }}
             />
           </div>
