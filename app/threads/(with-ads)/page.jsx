@@ -24,6 +24,7 @@ import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import BottomAd from '@/components/ads/BottomAd';
 import { getCategoryDisplayName } from '@/constants/categories';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
+import { needsCommunityField } from '@/components/threads/categories';
 
 const libraries = ['places'];
 
@@ -126,6 +127,14 @@ const ThreadsPage = () => {
       setHeroLocationInput('');
     }
   }, [filters.location]);
+
+  // Clear communities when category changes to non-eligible or is cleared
+  useEffect(() => {
+    const currentCategory = filters.categories[0];
+    if (!needsCommunityField(currentCategory) && filters.communities.length > 0) {
+      dispatch(updateFilter({ filterType: 'communities', value: [] }));
+    }
+  }, [filters.categories, dispatch]);
 
   // Hero Go button handler
   const handleHeroGo = () => {
@@ -337,39 +346,41 @@ const ThreadsPage = () => {
               </div>
             </div>
 
-            {/* Communities */}
-            <div className="mb-4">
-              <h3 className="font-semibold text-slate-700 mb-3">Community/Language</h3>
-              <div className="max-h-[7.5rem] overflow-y-auto border border-slate-200 rounded-md p-2">
-                <div className="grid grid-cols-2 gap-1">
-                  {COMMUNITIES.map((community) => (
-                    <label
-                      key={community.value}
-                      className="flex items-center cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={tempFilters.communities?.includes(community.value) || false}
-                        onChange={() => {
-                          const currentCommunities = tempFilters.communities || [];
-                          const newCommunities = currentCommunities.includes(community.value)
-                            ? currentCommunities.filter(c => c !== community.value)
-                            : [...currentCommunities, community.value];
-                          setTempFilters({ ...tempFilters, communities: newCommunities });
-                        }}
-                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
-                      />
-                      <span className="ml-2 text-sm text-slate-700">{community.label}</span>
-                    </label>
-                  ))}
+            {/* Communities - Only show when eligible category is selected */}
+            {needsCommunityField(filters.categories[0]) && (
+              <div className="mb-4">
+                <h3 className="font-semibold text-slate-700 mb-3">Community/Language</h3>
+                <div className="max-h-[7.5rem] overflow-y-auto border border-slate-200 rounded-md p-2">
+                  <div className="grid grid-cols-2 gap-1">
+                    {COMMUNITIES.map((community) => (
+                      <label
+                        key={community.value}
+                        className="flex items-center cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={tempFilters.communities?.includes(community.value) || false}
+                          onChange={() => {
+                            const currentCommunities = tempFilters.communities || [];
+                            const newCommunities = currentCommunities.includes(community.value)
+                              ? currentCommunities.filter(c => c !== community.value)
+                              : [...currentCommunities, community.value];
+                            setTempFilters({ ...tempFilters, communities: newCommunities });
+                          }}
+                          className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
+                        />
+                        <span className="ml-2 text-sm text-slate-700">{community.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
+                {tempFilters.communities?.length > 0 && (
+                  <p className="text-xs text-slate-600 mt-1">
+                    {tempFilters.communities.length} selected
+                  </p>
+                )}
               </div>
-              {tempFilters.communities?.length > 0 && (
-                <p className="text-xs text-slate-600 mt-1">
-                  {tempFilters.communities.length} selected
-                </p>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Apply Button - Sticky */}
@@ -874,7 +885,8 @@ const ThreadsPage = () => {
                     </span>
                   )}
 
-                  {filters.communities.map((community) => {
+                  {/* Only show communities when eligible category is selected */}
+                  {needsCommunityField(filters.categories[0]) && filters.communities.map((community) => {
                     const communityLabel = COMMUNITIES.find(c => c.value === community)?.label || community;
                     return (
                       <span

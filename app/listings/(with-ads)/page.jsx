@@ -8,7 +8,8 @@ import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
-import { CATEGORIES } from '@/components/adverts/fieldSystem/Categories';
+import { CATEGORIES, needsCommunityField } from '@/components/adverts/fieldSystem/Categories';
+import { COMMUNITIES } from '@/utils/constants/communities';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 
@@ -17,15 +18,15 @@ const libraries = ['places'];
 const AdvertsPage = () => {
   // URL-based filter state (nuqs)
   const {
-    cat, sub, state: stateFilter, adType, q, sort, page, location, hasLocation,
-    setParams, setFiltersWithPageReset, clearAllFilters, setLocation,
+    cat, sub, state: stateFilter, adType, q, sort, page, location, hasLocation, communities,
+    setParams, setFiltersWithPageReset, clearAllFilters, setLocation, setCommunities,
     setCat, setSub, setState, setAdType, setQ, setSort, setPage, setRadius,
     params,
   } = useListingFilters();
 
   // TanStack Query — fetches listings based on current URL filters
   const { data, isLoading, isError, error, isPlaceholderData } = useSearchListings({
-    cat, sub, state: stateFilter, adType, q, sort, page, location,
+    cat, sub, state: stateFilter, adType, q, sort, page, location, communities,
   });
 
   const adverts = data?.adverts || [];
@@ -65,6 +66,7 @@ const AdvertsPage = () => {
       state: stateFilter || '',
       adType: adType,
       sortBy: sort,
+      communities: [...communities],
     });
     setShowFilters(true);
   };
@@ -78,6 +80,7 @@ const AdvertsPage = () => {
     } else {
       setCat(value);
     }
+    scrollToResults();
   };
 
   const handleSubcategoryChange = (value) => {
@@ -87,6 +90,7 @@ const AdvertsPage = () => {
     } else {
       setSub(value);
     }
+    scrollToResults();
   };
 
   const handleSearchSubmit = (e) => {
@@ -104,9 +108,8 @@ const AdvertsPage = () => {
     setSearchText('');
   };
 
-  // Hero section Go button
-  const handleHeroGo = () => {
-    // Scroll to results on mobile after a short delay
+  // Auto-scroll to results on mobile when filters change
+  const scrollToResults = () => {
     setTimeout(() => {
       if (resultsRef.current && window.innerWidth < 768) {
         resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -119,6 +122,7 @@ const AdvertsPage = () => {
     clearAllFilters();
     setHeroLocationInput('');
     setSearchText('');
+    scrollToResults();
   };
 
   // Remove category and its associated subcategories
@@ -140,6 +144,7 @@ const AdvertsPage = () => {
           name: place.formatted_address || 'Selected Location',
         });
         setHeroLocationInput(place.formatted_address);
+        scrollToResults();
       }
     }
   };
@@ -158,6 +163,7 @@ const AdvertsPage = () => {
           name: place.formatted_address || 'Selected Location',
         });
         setHeroLocationInput(place.formatted_address);
+        scrollToResults();
       }
     }
   };
@@ -195,6 +201,12 @@ const AdvertsPage = () => {
     if (tempFilters.sortBy !== sort) {
       updates.sort = tempFilters.sortBy || null;
     }
+    // Apply communities filter
+    const tempCommunitiesStr = (tempFilters.communities || []).join(',');
+    const currentCommunitiesStr = communities.join(',');
+    if (tempCommunitiesStr !== currentCommunitiesStr) {
+      updates.communities = tempFilters.communities?.length > 0 ? tempFilters.communities.join(',') : null;
+    }
     if (Object.keys(updates).length > 0) {
       setFiltersWithPageReset(updates);
     }
@@ -210,6 +222,7 @@ const AdvertsPage = () => {
     if (stateFilter) count++;
     if (q) count++;
     if (adType) count++;
+    if (communities.length > 0) count++;
     return count;
   };
 
@@ -309,6 +322,42 @@ const AdvertsPage = () => {
                 ))}
               </div>
             </div>
+
+            {/* Community/Language - Only show when eligible subcategory is selected */}
+            {needsCommunityField(sub, cat) && (
+              <div className="mb-5">
+                <h3 className="font-semibold text-slate-700 mb-3">Community/Language</h3>
+                <div className="max-h-[7.5rem] overflow-y-auto border border-slate-200 rounded-lg p-2">
+                  <div className="grid grid-cols-2 gap-1">
+                    {COMMUNITIES.map((community) => (
+                      <label
+                        key={community.value}
+                        className="flex items-center cursor-pointer hover:bg-slate-50 p-2 rounded-lg transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={tempFilters.communities?.includes(community.value) || false}
+                          onChange={() => {
+                            const currentCommunities = tempFilters.communities || [];
+                            const newCommunities = currentCommunities.includes(community.value)
+                              ? currentCommunities.filter(c => c !== community.value)
+                              : [...currentCommunities, community.value];
+                            setTempFilters({ ...tempFilters, communities: newCommunities });
+                          }}
+                          className="w-4 h-4 text-teal-700 rounded focus:ring-teal-500 focus:ring-2 transition-all"
+                        />
+                        <span className="ml-2 text-sm text-slate-700">{community.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                {tempFilters.communities?.length > 0 && (
+                  <p className="text-xs text-slate-600 mt-1">
+                    {tempFilters.communities.length} selected
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Apply Button - Sticky */}
@@ -551,23 +600,17 @@ const AdvertsPage = () => {
                 </div>
               )}
 
-              {/* Go and Clear Buttons */}
-              <div className="flex gap-2">
-                <button
-                  onClick={handleHeroGo}
-                  className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold py-2 px-5 rounded-full shadow-sm transition-colors"
-                >
-                  Go
-                </button>
-                {hasFiltersToShow && (
+              {/* Clear Button */}
+              {hasFiltersToShow && (
+                <div className="flex gap-2 mt-1">
                   <button
                     onClick={handleHeroClear}
                     className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold py-2 px-4 rounded-full transition-colors"
                   >
                     Clear
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Desktop Layout */}
@@ -773,13 +816,7 @@ const AdvertsPage = () => {
                   </div>
                 </LoadScriptNext>
 
-                {/* Go Button */}
-                <button
-                  onClick={handleHeroGo}
-                  className="bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm py-2.5 px-6 rounded-full shadow-sm transition-colors whitespace-nowrap"
-                >
-                  Go
-                </button>
+                {/* Clear Button */}
                 {hasFiltersToShow && (
                   <button
                     onClick={handleHeroClear}
@@ -953,6 +990,28 @@ const AdvertsPage = () => {
                       </button>
                     </span>
                   )}
+
+                  {/* Community chips - only show when eligible subcategory is selected */}
+                  {needsCommunityField(sub, cat) && communities.map((community) => {
+                    const communityLabel = COMMUNITIES.find(c => c.value === community)?.label || community;
+                    return (
+                      <span
+                        key={community}
+                        className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
+                      >
+                        {communityLabel}
+                        <button
+                          onClick={() => {
+                            const newCommunities = communities.filter(c => c !== community);
+                            setCommunities(newCommunities);
+                          }}
+                          className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -6,8 +6,7 @@ import SingleAdvertCard from '@/components/adverts/advertcomponents/SingleAdvert
 import SendMessage from '@/components/chat/SendMessage';
 import { useSelector, useDispatch } from 'react-redux';
 import { getAdvertById } from '@/store/slices/adverts/advertSlice';
-import { MdReport } from "react-icons/md";
-import Link from 'next/link';
+import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -77,18 +76,13 @@ const AdvertDetail = () => {
           <span>back</span>
         </button>
 
-        {/* Report this Advert */}
-        <Link
-          href={`/support/report?type=advert&id=${id}&title=${encodeURIComponent(advert.title)}`}
-          onClick={() => {
-            localStorage.setItem('reportReturnUrl', `/listings/views/${id}`);
-          }}
-          className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
-        >
-          <MdReport className="text-lg" />
-          <span className="hidden sm:inline">Report this advert</span>
-          <span className="sm:hidden">Report</span>
-        </Link>
+        {/* Report this Listing */}
+        <ReportLink
+          type="listing"
+          id={id}
+          title={advert.title}
+          returnUrl={`/listings/views/${id}`}
+        />
       </div>
 
       {/* Main Content Grid */}

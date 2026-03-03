@@ -12,7 +12,7 @@ import CategorySelector from '@/components/threads/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import SuccessView from '@/components/threads/SuccessView';
 import AuthorDetailsSection from '@/components/threads/AuthorDetailsSection';
-import { threadCategoryOptions } from '@/components/threads/categories';
+import { threadCategoryOptions, needsCommunityField } from '@/components/threads/categories';
 
 const libraries = ['places'];
 
@@ -407,7 +407,14 @@ if (createThread.fulfilled.match(resultAction)) {
           <div>
             <CategorySelector
               value={formData.category}
-              onChange={(value) => setFormData({ ...formData, category: value })}
+              onChange={(value) => {
+                // Clear communities if switching to a non-eligible category
+                const updates = { category: value };
+                if (!needsCommunityField(value)) {
+                  updates.communities = [];
+                }
+                setFormData({ ...formData, ...updates });
+              }}
               placeholder="Select Category"
               required={true}
             />
@@ -416,14 +423,17 @@ if (createThread.fulfilled.match(resultAction)) {
             )}
           </div>
           
-          <div>
-            <CommunitySelector
-              value={formData.communities}
-              onChange={(value) => setFormData({ ...formData, communities: value })}
-              label="Community/Language (Optional)"
-              showHint={true}
-            />
-          </div>
+          {/* Community/Language - Only for eligible categories */}
+          {needsCommunityField(formData.category) && (
+            <div>
+              <CommunitySelector
+                value={formData.communities}
+                onChange={(value) => setFormData({ ...formData, communities: value })}
+                label="Community/Language (Optional)"
+                showHint={true}
+              />
+            </div>
+          )}
 
           {/* Location/Suburb Selector - Fixed to allow typing */}
           <div>

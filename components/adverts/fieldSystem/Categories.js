@@ -222,9 +222,22 @@ const COMMUNITY_SUBCATEGORIES = [
   'Priest & Pooja',
 ];
 
-// Check if a subcategory needs community/language field
-export function needsCommunityField(subcategory) {
-  return COMMUNITY_SUBCATEGORIES.includes(subcategory);
+// Parent categories where ALL subcategories need community field
+const COMMUNITY_PARENT_CATEGORIES = [
+  'Cultural & Community',
+];
+
+// Check if community/language field is needed (by subcategory or parent category)
+export function needsCommunityField(subcategory, parentCategory = null) {
+  // Check subcategory first
+  if (COMMUNITY_SUBCATEGORIES.includes(subcategory)) {
+    return true;
+  }
+  // Check parent category (for filtering when no subcategory selected)
+  if (parentCategory && COMMUNITY_PARENT_CATEGORIES.includes(parentCategory)) {
+    return true;
+  }
+  return false;
 }
 
 // Export arrays for reference

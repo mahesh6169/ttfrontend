@@ -15,3 +15,14 @@ export const threadCategoryOptions = [
   "Real Estate & Rentals",
   "Technology & Gadgets",
 ];
+
+// Categories that require community/language selection
+export const COMMUNITY_THREAD_CATEGORIES = [
+  "Community & Cultural",
+  "Devotional & Spiritual",
+];
+
+// Check if a category needs community/language field
+export function needsCommunityField(category) {
+  return COMMUNITY_THREAD_CATEGORIES.includes(category);
+}

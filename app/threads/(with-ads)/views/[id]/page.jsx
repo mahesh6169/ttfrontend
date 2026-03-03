@@ -26,10 +26,10 @@ import {
 // Remove direct socket import - now handled by ThreadSocketListener
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
-import { FaChevronLeft, FaChevronRight, FaReply, FaTimes, FaUser, FaCommentDots, FaShareAlt } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaReply, FaTimes, FaUser, FaCommentDots, FaShareAlt, FaExternalLinkAlt } from 'react-icons/fa';
 import { MdNotificationsActive, MdNotificationsOff, MdDelete } from "react-icons/md";
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { MdReport } from "react-icons/md";
+import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
 import ThreadConnectionStatus from '@/components/threads/ThreadConnectionStatus';
 import ThreadSocketListener from '@/components/ThreadSocketListener';
@@ -403,18 +403,13 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         <span>back</span>
       </button>
     
-      {/* Report this Topic */}
-      <Link
-        href={`/support/report?type=topic&id=${thread._id}&title=${encodeURIComponent(thread.title)}`}
-        onClick={() => {
-          localStorage.setItem('reportReturnUrl', `/threads/views/${threadId}`);
-        }}
-        className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
-      >
-        <MdReport className="text-lg" />
-        <span className="hidden sm:inline">Report this topic</span>
-        <span className="sm:hidden">Report</span>
-      </Link>
+      {/* Report this Thread */}
+      <ReportLink
+        type="thread"
+        id={thread._id}
+        title={thread.title}
+        returnUrl={`/threads/views/${threadId}`}
+      />
     </div>
 
     {/* Layout: Content + Sidebar */}
@@ -665,44 +660,47 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             {thread.author.website && (
               <div className="flex items-start">
                 <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Website:</span>
-                <a 
-                  href={thread.author.website} 
-                  target="_blank" 
+                <a
+                  href={thread.author.website}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
+                  className="text-sm text-slate-700 hover:text-slate-900 hover:underline break-all inline-flex items-center gap-1"
                 >
                   {thread.author.website}
+                  <FaExternalLinkAlt className="text-xs text-slate-400 flex-shrink-0" />
                 </a>
               </div>
             )}
-            
+
             {thread.author.contact && (
               <div className="flex items-start">
                 <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Contact:</span>
-                <a 
+                <a
                   href={`tel:${thread.author.contact}`}
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                  className="text-sm text-slate-700 hover:text-slate-900 hover:underline inline-flex items-center gap-1"
                 >
                   {thread.author.contact}
+                  <FaExternalLinkAlt className="text-xs text-slate-400" />
                 </a>
               </div>
             )}
-            
+
             {thread.author.email && (
               <div className="flex items-start">
                 <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Email:</span>
-                <a 
+                <a
                   href={`mailto:${thread.author.email}`}
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
+                  className="text-sm text-slate-700 hover:text-slate-900 hover:underline break-all inline-flex items-center gap-1"
                 >
                   {thread.author.email}
+                  <FaExternalLinkAlt className="text-xs text-slate-400 flex-shrink-0" />
                 </a>
               </div>
             )}
-            
+
             {thread.author.socialMedia && thread.author.socialMedia.length > 0 && (
               <div className="flex items-start">
-                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Social:</span>
+                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Follow us:</span>
                 <div className="flex flex-wrap gap-2">
                   {thread.author.socialMedia.map((social, index) => (
                     social.platform && social.url && (

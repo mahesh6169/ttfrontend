@@ -93,38 +93,54 @@ const SendMessage = ({
     router.push('/login?preserveRedirect=true');
   };
 
-  // Show different content for admin-added listings (posted on behalf of providers)
+  // Show different content for admin-added listings/deals (posted on behalf of providers)
   if (isAdminListing) {
+    // Dynamic text based on resource type
+    const resourceLabel = resourceType === 'deal' ? 'deal' : 'listing';
+    const removalType = resourceType === 'deal' ? 'deal' : 'listing';
+
     return (
       <div className="border border-slate-200 p-3 rounded shadow-md w-full">
         <h2 className="text-lg font-semibold text-slate-900 mb-3">Get in touch</h2>
         <p className="text-sm text-slate-700 mb-4">
-          This listing was posted on behalf of the owner. Please use the contact details provided in the listing to reach them directly.
+          This {resourceLabel} was posted on behalf of the owner. Please use the contact details provided to reach them directly.
         </p>
-        <p className="text-xs text-slate-500">
-          Are you the business owner?{' '}
-          <Link
-            href={`/support/removal?type=listing&id=${resourceId}&title=${encodeURIComponent(listingTitle)}`}
-            onClick={() => {
-              localStorage.setItem('removalReturnUrl', preserveRedirectUrl);
-            }}
-            className="text-slate-700 hover:text-slate-900 underline"
-          >
-            Request removal of this listing
-          </Link>
-        </p>
+        {/* Only show removal link for listings, not deals (deals require business approval) */}
+        {resourceType !== 'deal' && (
+          <p className="text-xs text-slate-500">
+            Are you the business owner?{' '}
+            <Link
+              href={`/support/removal?type=${removalType}&id=${resourceId}&title=${encodeURIComponent(listingTitle)}`}
+              onClick={() => {
+                localStorage.setItem('removalReturnUrl', preserveRedirectUrl);
+              }}
+              className="text-slate-700 hover:text-slate-900 underline"
+            >
+              Request removal of this {resourceLabel}
+            </Link>
+          </p>
+        )}
       </div>
     );
   }
 
+  // Dynamic placeholder based on resource type
+  const getPlaceholder = () => {
+    if (!user) return 'Please login to send a message';
+    switch (resourceType) {
+      case 'advert': return 'Enquire about this listing...';
+      case 'event': return 'Enquire about this event...';
+      case 'deal': return 'Enquire about this deal...';
+      default: return 'Type your message...';
+    }
+  };
+
   return (
     <div className="border border-slate-200 p-3 rounded shadow-md w-full">
-      <h2 className="text-lg font-semibold text-slate-900 mb-3">Get in touch</h2>
-      <p className="flex items-center mb-2">
-        <CgProfile className="mr-2 text-slate-700" size={24} />
-        {owner || 'User'}
+      <p className="flex items-center mb-2 text-sm">
+        <CgProfile className="mr-2 text-slate-600" size={20} />
+        <span className="text-slate-700">{owner || 'User'}</span>
       </p>
-      <p className="mb-2 text-sm text-slate-600">Enquire about the listing</p>
 
       <textarea
         value={message}
@@ -132,13 +148,11 @@ const SendMessage = ({
         onFocus={onTextareaFocus}
         onBlur={onTextareaBlur}
         disabled={!user || sending}
-        placeholder={
-          user ? 'Type your message here' : 'Please login to type a message'
-        }
-        className={`w-full border border-slate-200 rounded p-2 mb-4 resize-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all ${
+        placeholder={getPlaceholder()}
+        className={`w-full border border-slate-200 rounded p-2 mb-3 resize-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-sm ${
           !user ? 'bg-slate-100 cursor-not-allowed' : ''
         }`}
-        rows={4}
+        rows={3}
       />
 
       {user ? (

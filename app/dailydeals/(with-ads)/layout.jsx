@@ -18,7 +18,7 @@ const DailyDealsLayout = ({ children }) => {
       <TopAd />
       <div className="flex gap-2">
         <LeftAd />
-        <div id="Main" className="flex-1 overflow-hidden">
+        <div id="Main" className="flex-1">
           {children}
         </div>
         <RightAd />

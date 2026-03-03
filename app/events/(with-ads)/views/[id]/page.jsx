@@ -7,8 +7,7 @@ import { fetchEventById, clearSelectedEvent, clearError } from '@/store/slices/e
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SingleEventCard from '@/components/events/eventcomponents/SingleEventCard';
 import SendMessage from '@/components/chat/SendMessage';
-import { MdReport } from "react-icons/md";
-import Link from 'next/link';
+import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
 
 
@@ -124,17 +123,12 @@ const EventDetail = () => {
         </button>
 
         {/* Report this Event */}
-        <Link
-          href={`/support/report?type=event&id=${id}&title=${encodeURIComponent(selectedEvent.title)}`}
-          onClick={() => {
-            localStorage.setItem('reportReturnUrl', `/events/views/${id}`);
-          }}
-          className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
-        >
-          <MdReport className="text-lg" />
-          <span className="hidden sm:inline">Report this event</span>
-          <span className="sm:hidden">Report</span>
-        </Link>
+        <ReportLink
+          type="event"
+          id={id}
+          title={selectedEvent.title}
+          returnUrl={`/events/views/${id}`}
+        />
       </div>
 
       {/* Layout: Card + Chat */}

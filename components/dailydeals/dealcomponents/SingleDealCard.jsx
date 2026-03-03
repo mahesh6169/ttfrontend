@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { MdLocationOn, MdPhone, MdEmail, MdLanguage, MdChevronLeft, MdChevronRight, MdClose } from 'react-icons/md';
-import { FaFacebook, FaInstagram, FaWhatsapp } from 'react-icons/fa';
+import { FaFacebook, FaInstagram, FaWhatsapp, FaExternalLinkAlt } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import Link from 'next/link';
 import SendMessage from '@/components/chat/SendMessage';
@@ -34,7 +34,7 @@ const DAYS_SHORT = {
   sunday: 'Sun'
 };
 
-const SingleDealCard = ({ deal, chatProps }) => {
+const SingleDealCard = ({ deal, chatProps, isAdminListing = false }) => {
   const partner = deal.partnerstoreId;
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL;
 
@@ -72,7 +72,7 @@ const SingleDealCard = ({ deal, chatProps }) => {
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       {/* Image Section */}
-      <div className="relative w-full mx-auto bg-gray-100 h-[200px] sm:h-[300px] md:h-[400px]">
+      <div className="relative w-full mx-auto bg-slate-100 h-[200px] sm:h-[300px] md:h-[400px]">
         <img
           src={displayImages[currentImageIndex]?.url || FALLBACK_IMAGE}
           alt={deal.dealTitle || 'Deal Image'}
@@ -98,34 +98,69 @@ const SingleDealCard = ({ deal, chatProps }) => {
           <>
             <button
               onClick={handlePrevImage}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-yellow-400 transition-colors"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition-colors"
             >
               <MdChevronLeft size={24} />
             </button>
             <button
               onClick={handleNextImage}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-yellow-400 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition-colors"
             >
               <MdChevronRight size={24} />
             </button>
           </>
         )}
 
-        {/* Image Counter */}
+        {/* Dots Indicator */}
         {displayImages.length > 1 && (
-          <div className="absolute bottom-2 right-2 bg-black/50 text-white text-sm px-2 py-1 rounded">
-            {currentImageIndex + 1} / {displayImages.length}
+          <div className="absolute bottom-2 right-2 flex gap-1.5">
+            {displayImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentImageIndex(index)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  index === currentImageIndex
+                    ? 'bg-amber-400 w-4'
+                    : 'bg-white/70 hover:bg-white'
+                }`}
+              />
+            ))}
           </div>
         )}
       </div>
 
       {/* Fullscreen Modal */}
       {isFullscreen && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsFullscreen(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setIsFullscreen(false);
+            if (e.key === 'ArrowLeft') handlePrevImage();
+            if (e.key === 'ArrowRight') handleNextImage();
+          }}
+          tabIndex={0}
+          ref={(el) => el?.focus()}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            e.currentTarget.dataset.touchStartX = touch.clientX;
+          }}
+          onTouchEnd={(e) => {
+            const touchStartX = parseFloat(e.currentTarget.dataset.touchStartX || '0');
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+              if (diff > 0) handleNextImage();
+              else handlePrevImage();
+            }
+          }}
+        >
           <img
             src={displayImages[currentImageIndex]?.url || FALLBACK_IMAGE}
             alt={deal.dealTitle || 'Deal Image'}
-            className="object-contain w-full h-full max-w-full max-h-full"
+            className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
             onError={(e) => {
               e.target.src = FALLBACK_IMAGE;
             }}
@@ -133,25 +168,39 @@ const SingleDealCard = ({ deal, chatProps }) => {
 
           <button
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-4 right-4 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-yellow-400 transition-colors"
+            className="absolute top-4 right-4 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition-colors"
           >
-            <MdClose size={30} />
+            <MdClose size={24} />
           </button>
 
           {displayImages.length > 1 && (
             <>
               <button
                 onClick={handlePrevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-yellow-400 transition-colors"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-3 rounded-full shadow hover:bg-amber-400 transition-colors"
               >
-                <MdChevronLeft size={30} />
+                <MdChevronLeft size={20} />
               </button>
               <button
                 onClick={handleNextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-yellow-300 text-teal-700 p-2 rounded-full shadow hover:bg-yellow-400 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-3 rounded-full shadow hover:bg-amber-400 transition-colors"
               >
-                <MdChevronRight size={30} />
+                <MdChevronRight size={20} />
               </button>
+              {/* Dots Indicator */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {displayImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${
+                      index === currentImageIndex
+                        ? 'bg-amber-400 w-6'
+                        : 'bg-white/70 hover:bg-white'
+                    }`}
+                  />
+                ))}
+              </div>
             </>
           )}
         </div>
@@ -162,81 +211,77 @@ const SingleDealCard = ({ deal, chatProps }) => {
         {/* Featured Badge */}
         {isFeatured && (
           <div className="text-center mb-3">
-            <span className="inline-block bg-yellow-400 text-yellow-900 text-sm font-bold px-3 py-1 rounded">
+            <span className="inline-block bg-amber-400 text-amber-900 text-sm font-bold px-3 py-1 rounded">
               Featured Deal
             </span>
           </div>
         )}
 
         {/* Title - Centered */}
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 text-center mb-4">
           {deal.dealTitle}
         </h1>
 
-        {/* Valid Days & Date */}
-        <div className="text-center text-gray-600 mb-6">
-          {(!deal.validDays || deal.validDays.length === 0 || deal.validDays.length === 7)
-            ? `Valid until ${format(new Date(deal.endDate), 'dd MMM')}`
-            : `Valid ${formatValidDays(deal.validDays)} until ${format(new Date(deal.endDate), 'dd MMM')}`
-          }
+        {/* Validity Info */}
+        <div className="text-center mb-6 space-y-1">
+          <p className="text-red-500 font-medium text-sm">
+            Valid until {format(new Date(deal.endDate), 'do MMM yyyy')}
+          </p>
+          {deal.validDays && deal.validDays.length > 0 && deal.validDays.length < 7 && (
+            <p className="text-slate-500 text-xs">
+              Available: {formatValidDays(deal.validDays)} only
+            </p>
+          )}
         </div>
 
         {/* Description */}
         {deal.description && (
-          <div className="border border-gray-300 rounded shadow-sm my-4">
-            <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-              <h3 className="text-sm sm:text-base font-semibold text-gray-800">Description</h3>
-            </div>
-            <div className="p-3">
-              <div className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap overflow-y-auto max-h-[200px] sm:max-h-[300px]">
-                {deal.description}
-              </div>
+          <div className="border border-slate-200 rounded shadow-sm my-4 p-3">
+            <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Description</h3>
+            <div className="text-sm sm:text-base text-slate-700 whitespace-pre-wrap overflow-y-auto max-h-[200px] sm:max-h-[300px]">
+              {deal.description}
             </div>
           </div>
         )}
 
-        {/* Deal Link */}
-        {deal.dealLink && (
-          <div className="text-center my-4">
-            <a
-              href={deal.dealLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              <MdLanguage className="text-lg" />
-              Link to the Deal
-            </a>
-          </div>
-        )}
-
-        {/* WhatsApp Order Button */}
-        {deal.whatsappOrders && deal.whatsappNumber && (
-          <div className="text-center my-4">
-            <a
-              href={`https://wa.me/61${deal.whatsappNumber.replace(/^0/, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              <FaWhatsapp className="text-lg" />
-              Order via WhatsApp
-            </a>
+        {/* Action Buttons - Deal Link & WhatsApp */}
+        {(deal.dealLink || (deal.whatsappOrders && deal.whatsappNumber)) && (
+          <div className="flex flex-wrap items-center gap-2 my-4 px-1">
+            {deal.dealLink && (
+              <a
+                href={deal.dealLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 border border-teal-600 text-teal-700 hover:bg-teal-50 px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              >
+                <MdLanguage className="text-base" />
+                View Deal
+              </a>
+            )}
+            {deal.whatsappOrders && deal.whatsappNumber && (
+              <a
+                href={`https://wa.me/61${deal.whatsappNumber.replace(/^0/, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 border border-green-600 text-green-700 hover:bg-green-50 px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              >
+                <FaWhatsapp className="text-base" />
+                Order via WhatsApp
+              </a>
+            )}
           </div>
         )}
 
         {/* Terms */}
         {deal.terms && (
-          <div className="border border-gray-300 rounded shadow-sm my-4">
-            <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-              <h3 className="text-sm sm:text-base font-semibold text-gray-800">Terms & Conditions</h3>
-            </div>
-            <div className="p-3 relative">
-              <div className={`text-sm text-gray-700 whitespace-pre-wrap overflow-hidden ${termsExpanded ? '' : 'max-h-24'}`}>
+          <div className="border border-slate-200 rounded shadow-sm my-4 p-3">
+            <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Terms & Conditions</h3>
+            <div className="relative">
+              <div className={`text-sm text-slate-700 whitespace-pre-wrap overflow-hidden ${termsExpanded ? '' : 'max-h-24'}`}>
                 {deal.terms}
               </div>
               {!termsExpanded && deal.terms.length > 200 && (
-                <div className="absolute bottom-8 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+                <div className="absolute bottom-6 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
               )}
               {deal.terms.length > 200 && (
                 <button
@@ -251,12 +296,11 @@ const SingleDealCard = ({ deal, chatProps }) => {
         )}
       </div>
 
-      {/* Deal Posted By Section */}
-      <div className="border border-gray-300 rounded shadow-sm my-4 mx-4">
-        <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-          <h3 className="text-sm sm:text-base font-semibold text-gray-800">Deal Posted By</h3>
-        </div>
-        <div className="p-3">
+      {/* Deal Posted By / Business Contact Details Section - Mobile Only */}
+      <div className="lg:hidden border border-slate-200 rounded shadow-sm my-4 mx-4 p-3">
+        <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">
+          {isAdminListing ? 'Business Contact Details' : 'Deal Posted By'}
+        </h3>
           {/* Two Column Layout on Desktop */}
           <div className="flex flex-col lg:flex-row lg:gap-6">
           {/* Left Column - Logo, Name, Category, Description */}
@@ -270,17 +314,16 @@ const SingleDealCard = ({ deal, chatProps }) => {
                   className="w-16 h-16 object-contain rounded-lg bg-white p-2 shadow-sm flex-shrink-0"
                 />
               ) : (
-                <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 flex-shrink-0">
+                <div className="w-16 h-16 bg-slate-200 rounded-lg flex items-center justify-center text-slate-400 flex-shrink-0">
                   {partner?.businessName?.charAt(0) || '?'}
                 </div>
               )}
 
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-lg text-gray-900">{partner?.businessName}</h4>
-                <p className="text-sm text-teal-600 mb-2">{partner?.category}</p>
+                <h4 className="font-bold text-lg text-slate-900">{partner?.businessName}</h4>
                 {partner?.description && (
                   <div>
-                    <p className={`text-sm text-gray-600 ${storeDescExpanded ? '' : 'line-clamp-2'}`}>
+                    <p className={`text-sm text-slate-600 ${storeDescExpanded ? '' : 'line-clamp-2'}`}>
                       {partner.description}
                     </p>
                     {partner.description.length > 100 && (
@@ -301,12 +344,12 @@ const SingleDealCard = ({ deal, chatProps }) => {
           <div className="flex-1 space-y-2">
             {/* Location */}
             {partner?.isNationwide ? (
-              <div className="flex items-center text-gray-600">
+              <div className="flex items-center text-slate-600">
                 <MdLocationOn className="mr-2 text-lg flex-shrink-0" />
                 <span className="text-sm">Available Nationwide</span>
               </div>
             ) : partner?.address?.formattedAddress && (
-              <div className="flex items-start text-gray-600">
+              <div className="flex items-start text-slate-600">
                 <MdLocationOn className="mr-2 text-lg mt-0.5 flex-shrink-0" />
                 <span className="text-sm">{partner.address.formattedAddress}</span>
               </div>
@@ -314,42 +357,46 @@ const SingleDealCard = ({ deal, chatProps }) => {
 
             {/* Phone */}
             {partner?.contactInfo?.phone && (
-              <div className="flex items-center text-gray-600">
-                <MdPhone className="mr-2 text-lg flex-shrink-0" />
-                <a href={`tel:${partner.contactInfo.phone}`} className="text-sm text-teal-600 hover:underline">
+              <div className="flex items-center gap-3 text-sm">
+                <MdPhone className="text-slate-500 flex-shrink-0" />
+                <a href={`tel:${partner.contactInfo.phone}`} className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1">
                   {partner.contactInfo.phone}
+                  <FaExternalLinkAlt className="text-xs text-slate-400" />
                 </a>
               </div>
             )}
 
             {/* Email */}
             {partner?.contactInfo?.email && (
-              <div className="flex items-center text-gray-600">
-                <MdEmail className="mr-2 text-lg flex-shrink-0" />
-                <a href={`mailto:${partner.contactInfo.email}`} className="text-sm text-teal-600 hover:underline">
+              <div className="flex items-center gap-3 text-sm">
+                <MdEmail className="text-slate-500 flex-shrink-0" />
+                <a href={`mailto:${partner.contactInfo.email}`} className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1">
                   {partner.contactInfo.email}
+                  <FaExternalLinkAlt className="text-xs text-slate-400" />
                 </a>
               </div>
             )}
 
             {/* Website */}
             {partner?.contactInfo?.website && (
-              <div className="flex items-center text-gray-600">
-                <MdLanguage className="mr-2 text-lg flex-shrink-0" />
+              <div className="flex items-center gap-3 text-sm">
+                <MdLanguage className="text-slate-500 flex-shrink-0" />
                 <a
                   href={partner.contactInfo.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-teal-600 hover:underline"
+                  className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1"
                 >
                   {partner.contactInfo.website.replace(/^https?:\/\//, '')}
+                  <FaExternalLinkAlt className="text-xs text-slate-400 flex-shrink-0" />
                 </a>
               </div>
             )}
 
             {/* Social Media */}
             {partner?.contactInfo?.socialMedia?.length > 0 && (
-              <div className="flex items-center gap-3 pt-1">
+              <div className="flex items-center gap-2 text-sm flex-wrap pt-1">
+                <span className="text-slate-700">Follow us:</span>
                 {partner.contactInfo.socialMedia.map((social, index) => {
                   const Icon = SOCIAL_ICONS[social.platform];
                   if (!Icon || !social.url) return null;
@@ -359,10 +406,10 @@ const SingleDealCard = ({ deal, chatProps }) => {
                       href={social.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-gray-600 hover:text-teal-600 transition-colors"
+                      className="text-slate-600 hover:text-teal-600 transition-colors"
                       title={social.platform}
                     >
-                      <Icon className="text-xl" />
+                      <Icon className="text-lg" />
                     </a>
                   );
                 })}
@@ -378,12 +425,11 @@ const SingleDealCard = ({ deal, chatProps }) => {
         >
           View all deals from {partner?.businessName} &rarr;
         </Link>
-        </div>
       </div>
 
       {/* Chat Container - Mobile Only */}
       {chatProps && (
-        <div className="block lg:hidden px-4 py-4 border-t">
+        <div id="mobile-chat" className="block lg:hidden px-4 py-4 border-t">
           <SendMessage {...chatProps} />
         </div>
       )}

@@ -138,6 +138,7 @@ const PartnerStoreImageUploader = ({
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           {hasLogo ? 'Replace Logo' : 'Upload Logo'}
+          <span className="text-xs font-normal text-gray-500 ml-1">(optional)</span>
           <span className="block text-xs font-normal text-gray-500 mt-1">
             PNG • Max 2MB • Recommended: 800×400px
           </span>

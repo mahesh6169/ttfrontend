@@ -32,7 +32,6 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
       website: initialData?.contactInfo?.website || '',
       socialMedia: initialData?.contactInfo?.socialMedia || []
     },
-    description: initialData?.description || '',
     isNationwide: initialData?.isNationwide || false,
     logo: null,
     keepExistingLogo: false
@@ -116,10 +115,6 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
       newErrors.address = 'Valid address with location is required for location-specific stores';
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-
     // Phone validation (Australian mobile: 10 digits starting with 0)
     if (formData.contactInfo.phone && !/^0\d{9}$/.test(formData.contactInfo.phone)) {
       newErrors.phone = 'Enter valid Australian mobile (10 digits starting with 0)';
@@ -176,7 +171,6 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
       submitData.append('category', formData.category);
       submitData.append('address', JSON.stringify(formData.address));
       submitData.append('contactInfo', JSON.stringify(formData.contactInfo));
-      submitData.append('description', formData.description);
       submitData.append('isNationwide', formData.isNationwide);
 
       if (formData.logo) {
@@ -375,28 +369,6 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
         {errors.socialMedia && (
           <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.socialMedia}</p>
         )}
-      </div>
-
-      {/* Description */}
-      <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
-          Description <span className="text-red-500">*</span>
-        </label>
-        <textarea
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          rows={4}
-          maxLength={2000}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-          placeholder="Brief description about the business"
-        />
-        <div className="flex justify-between mt-1">
-          {errors.description && (
-            <p className="text-red-500 text-xs sm:text-sm">{errors.description}</p>
-          )}
-          <p className="text-xs text-gray-400 ml-auto">{formData.description.length}/2000</p>
-        </div>
       </div>
 
       {/* Logo Upload */}

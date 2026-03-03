@@ -22,7 +22,7 @@ import { toast } from 'react-toastify';
 import { format, parse, addMonths } from 'date-fns';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import { getCategoryDisplayName } from '@/constants/categories';
-import { CATEGORY_OPTIONS } from '@/components/events/addevents/EventCategories';
+import { CATEGORY_OPTIONS, needsCommunityField } from '@/components/events/addevents/EventCategories';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 
@@ -114,6 +114,17 @@ const EventsPage = () => {
       setHeroLocationInput('');
     }
   }, [filters.location]);
+
+  // Clear communities when category changes to non-eligible
+  useEffect(() => {
+    const selectedCategory = filters.categories[0];
+    if (selectedCategory && !needsCommunityField(selectedCategory) && filters.communities.length > 0) {
+      // Clear all communities from Redux when category is non-eligible
+      filters.communities.forEach(comm => {
+        dispatch(toggleCommunity(comm));
+      });
+    }
+  }, [filters.categories, dispatch]);
 
   const handleHeroSearch = () => {
     // Apply category filter
@@ -361,39 +372,41 @@ const EventsPage = () => {
               </div>
             </div>
 
-            {/* Communities */}
-            <div className="mb-6">
-              <h3 className="font-semibold text-slate-700 mb-3">Community/Language</h3>
-              <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-2">
-                <div className="grid grid-cols-2 gap-1">
-                  {COMMUNITIES.map((community) => (
-                    <label
-                      key={community.value}
-                      className="flex items-center cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={tempFilters.communities?.includes(community.value) || false}
-                        onChange={() => {
-                          const currentCommunities = tempFilters.communities || [];
-                          const newCommunities = currentCommunities.includes(community.value)
-                            ? currentCommunities.filter(c => c !== community.value)
-                            : [...currentCommunities, community.value];
-                          setTempFilters({ ...tempFilters, communities: newCommunities });
-                        }}
-                        className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
-                      />
-                      <span className="ml-2 text-sm text-slate-700">{community.label}</span>
-                    </label>
-                  ))}
+            {/* Communities - Only show for eligible categories */}
+            {needsCommunityField(filters.categories[0]) && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-slate-700 mb-3">Community/Language</h3>
+                <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-2">
+                  <div className="grid grid-cols-2 gap-1">
+                    {COMMUNITIES.map((community) => (
+                      <label
+                        key={community.value}
+                        className="flex items-center cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={tempFilters.communities?.includes(community.value) || false}
+                          onChange={() => {
+                            const currentCommunities = tempFilters.communities || [];
+                            const newCommunities = currentCommunities.includes(community.value)
+                              ? currentCommunities.filter(c => c !== community.value)
+                              : [...currentCommunities, community.value];
+                            setTempFilters({ ...tempFilters, communities: newCommunities });
+                          }}
+                          className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 focus:ring-2 transition-all"
+                        />
+                        <span className="ml-2 text-sm text-slate-700">{community.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
+                {tempFilters.communities?.length > 0 && (
+                  <p className="text-sm text-slate-600 mt-1">
+                    {tempFilters.communities.length} selected
+                  </p>
+                )}
               </div>
-              {tempFilters.communities?.length > 0 && (
-                <p className="text-sm text-slate-600 mt-1">
-                  {tempFilters.communities.length} selected
-                </p>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Apply Button - Sticky */}

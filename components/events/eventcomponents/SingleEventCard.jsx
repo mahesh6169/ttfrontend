@@ -24,7 +24,8 @@ import {
   FaTag,
   FaUserFriends,
   FaShoppingCart,
-  FaShareAlt
+  FaShareAlt,
+  FaExternalLinkAlt
 } from 'react-icons/fa';
 import { MdLocationOn, MdEmail, MdPhone, MdPerson, MdEventSeat } from 'react-icons/md';
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
@@ -442,16 +443,20 @@ const SingleEventCard = ({ event, chatProps }) => {
                   href={event.organizer.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-slate-700 hover:text-slate-900 hover:underline"
+                  className="text-slate-700 hover:text-slate-900 hover:underline inline-flex items-center gap-1"
                 >
                   {event.organizer.website}
+                  <FaExternalLinkAlt className="text-xs text-slate-400" />
                 </a>
               </div>
             )}
             {event.organizer.contact && (
               <div className="text-sm sm:text-base">
                 <span className="font-semibold text-slate-700">Contact:</span>{' '}
-                <span className="text-slate-600">{event.organizer.contact}</span>
+                <a href={`tel:${event.organizer.contact}`} className="text-slate-700 hover:text-slate-900 hover:underline inline-flex items-center gap-1">
+                  {event.organizer.contact}
+                  <FaExternalLinkAlt className="text-xs text-slate-400" />
+                </a>
               </div>
             )}
             {event.organizer.email && (
@@ -459,9 +464,10 @@ const SingleEventCard = ({ event, chatProps }) => {
                 <span className="font-semibold text-slate-700">Email:</span>{' '}
                 <a
                   href={`mailto:${event.organizer.email}`}
-                  className="text-slate-700 hover:text-slate-900 hover:underline"
+                  className="text-slate-700 hover:text-slate-900 hover:underline inline-flex items-center gap-1"
                 >
                   {event.organizer.email}
+                  <FaExternalLinkAlt className="text-xs text-slate-400" />
                 </a>
               </div>
             )}

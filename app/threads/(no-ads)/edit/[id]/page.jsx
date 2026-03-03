@@ -13,6 +13,7 @@ import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import { useRef } from 'react';
 import CategorySelector from '@/components/threads/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
+import { needsCommunityField } from '@/components/threads/categories';
 import SuccessView from '@/components/threads/SuccessView';
 import AuthorDetailsSection from '@/components/threads/AuthorDetailsSection';
 
@@ -426,7 +427,14 @@ useEffect(() => {
         <div>
           <CategorySelector
             value={formData.category}
-            onChange={(value) => setFormData({ ...formData, category: value })}
+            onChange={(value) => {
+              // Clear communities if switching to a non-eligible category
+              const updates = { category: value };
+              if (!needsCommunityField(value)) {
+                updates.communities = [];
+              }
+              setFormData({ ...formData, ...updates });
+            }}
             placeholder="Select Category"
             required={true}
           />
@@ -434,15 +442,18 @@ useEffect(() => {
             <p className="text-red-500 text-sm mt-1">{errors.category}</p>
           )}
         </div>
-        
-        <div>
-          <CommunitySelector
-            value={formData.communities}
-            onChange={(value) => setFormData({ ...formData, communities: value })}
-            label="Community/Language (Optional)"
-            showHint={true}
-          />
-        </div>
+
+        {/* Community/Language - Only for eligible categories */}
+        {needsCommunityField(formData.category) && (
+          <div>
+            <CommunitySelector
+              value={formData.communities}
+              onChange={(value) => setFormData({ ...formData, communities: value })}
+              label="Community/Language (Optional)"
+              showHint={true}
+            />
+          </div>
+        )}
 
         {/* Location/Suburb Selector */}
         <div>

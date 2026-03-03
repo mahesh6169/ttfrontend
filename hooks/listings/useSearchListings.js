@@ -4,7 +4,7 @@ import axios from '@/utils/axiosConfig';
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/adverts`;
 
 // Build the filters object in the format the backend expects
-function buildApiFilters({ cat, sub, state, adType, q, sort, location }) {
+function buildApiFilters({ cat, sub, state, adType, q, sort, location, communities }) {
   const filters = {
     categories: cat ? [cat] : [],
     subcategories: sub ? [sub] : [],
@@ -13,6 +13,7 @@ function buildApiFilters({ cat, sub, state, adType, q, sort, location }) {
     searchText: q || '',
     adType: adType || null,
     sortBy: sort || 'newest',
+    communities: communities || [],
   };
   return filters;
 }
@@ -29,12 +30,12 @@ async function fetchListings({ filters, page }) {
 }
 
 // TanStack Query hook for searching listings
-export function useSearchListings({ cat, sub, state, adType, q, sort, page, location }) {
-  const apiFilters = buildApiFilters({ cat, sub, state, adType, q, sort, location });
+export function useSearchListings({ cat, sub, state, adType, q, sort, page, location, communities }) {
+  const apiFilters = buildApiFilters({ cat, sub, state, adType, q, sort, location, communities });
 
   return useQuery({
     // Query key includes all filter values — TanStack Query refetches when any change
-    queryKey: ['listings', cat, sub, state, adType, q, sort, page, location?.name, location?.coordinates?.[0], location?.coordinates?.[1], location?.radius],
+    queryKey: ['listings', cat, sub, state, adType, q, sort, page, location?.name, location?.coordinates?.[0], location?.coordinates?.[1], location?.radius, communities?.join(',')],
     queryFn: () => fetchListings({ filters: apiFilters, page }),
     // Keep previous results visible while new ones load (no flash of empty)
     placeholderData: (previousData) => previousData,

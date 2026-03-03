@@ -13,6 +13,7 @@ const listingFilterParsers = {
   lat: parseAsFloat,        // Latitude
   lng: parseAsFloat,        // Longitude
   radius: parseAsInteger.withDefault(10),
+  communities: parseAsString, // Comma-separated community values
 };
 
 // Shallow updates by default (no server re-render), replace history (no back-button spam)
@@ -40,7 +41,16 @@ export function useListingFilters() {
       lat: null,
       lng: null,
       radius: null,   // reverts to default 10
+      communities: null,
     });
+  };
+
+  // Helper: parse communities string to array
+  const communitiesArray = params.communities ? params.communities.split(',') : [];
+
+  // Helper: set communities (converts array to comma-separated string)
+  const setCommunities = (arr) => {
+    setFiltersWithPageReset({ communities: arr.length > 0 ? arr.join(',') : null });
   };
 
   // Helper: set location (batch update all 4 location params)
@@ -85,6 +95,7 @@ export function useListingFilters() {
     q: params.q,
     sort: params.sort,
     page: params.page,
+    communities: communitiesArray,  // Array of selected communities
     // Location as a structured object (matches what the API expects)
     location,
     hasLocation,
@@ -93,9 +104,10 @@ export function useListingFilters() {
     setFiltersWithPageReset,    // Update filters + reset page to 1
     clearAllFilters,
     setLocation,
+    setCommunities,             // Set communities array
     // Individual setters with page reset
-    setCat: (val) => setFiltersWithPageReset({ cat: val, sub: null }), // clear sub when parent changes
-    setSub: (val) => setFiltersWithPageReset({ sub: val }),
+    setCat: (val) => setFiltersWithPageReset({ cat: val, sub: null, communities: null }), // clear sub and communities when parent changes
+    setSub: (val) => setFiltersWithPageReset({ sub: val, communities: null }), // clear communities when sub changes
     setState: (val) => setFiltersWithPageReset({ state: val }),
     setAdType: (val) => setFiltersWithPageReset({ adType: val }),
     setQ: (val) => setFiltersWithPageReset({ q: val || null }),

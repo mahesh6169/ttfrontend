@@ -15,6 +15,7 @@ import {
 } from '@/store/slices/events/eventSlice';
 import CategorySelector from '@/components/events/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
+import { needsCommunityField } from '@/components/events/addevents/EventCategories';
 
 const EventDetailsStep = ({
   formData,
@@ -148,7 +149,13 @@ const EventDetailsStep = ({
         ) : (
           <CategorySelector
             value={formData.category || ''}
-            onChange={(value) => handleChange({ target: { name: 'category', value } })}
+            onChange={(value) => {
+              handleChange({ target: { name: 'category', value } });
+              // Clear communities if switching to non-eligible category
+              if (!needsCommunityField(value)) {
+                handleChange({ target: { name: 'communities', value: [] } });
+              }
+            }}
             placeholder="Select a category"
             required={true}
           />
@@ -160,8 +167,8 @@ const EventDetailsStep = ({
         )}
       </div>
 
-      {/* Community/Language Selection */}
-      {!disabled && (
+      {/* Community/Language Selection - Only for eligible categories */}
+      {!disabled && needsCommunityField(formData.category) && (
         <div className="space-y-2">
           <CommunitySelector
             value={formData.communities || []}
