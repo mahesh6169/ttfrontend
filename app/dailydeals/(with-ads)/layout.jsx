@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import TopAd from '@/components/ads/TopAd';
 import LeftAd from '@/components/ads/LeftAd';
 import RightAd from '@/components/ads/RightAd';
@@ -19,7 +20,9 @@ const DailyDealsLayout = ({ children }) => {
       <div className="flex gap-2">
         <LeftAd />
         <div id="Main" className="flex-1">
-          {children}
+          <Suspense>
+            {children}
+          </Suspense>
         </div>
         <RightAd />
       </div>
