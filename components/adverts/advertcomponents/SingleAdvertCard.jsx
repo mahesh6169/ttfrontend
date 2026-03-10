@@ -12,6 +12,7 @@ import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
 import { needsCommunityField } from '../fieldSystem/Categories';
 import { COMMUNITIES } from '@/utils/constants/communities';
 import { useRouter } from 'next/navigation';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 // Helper function to get optimized image URL
 const getOptimizedImageUrl = (imageObj, size = 'auto') => {
@@ -650,10 +651,11 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             onClick={async () => {
               if (navigator.share) {
                 try {
+                  const shareUrl = `${window.location.origin}${buildSlugUrl('listing', advert.title, advert._id)}`;
                   await navigator.share({
                     title: advert.title,
                     text: advert.title,
-                    url: window.location.href
+                    url: shareUrl
                   });
                 } catch (err) {
                   if (err.name !== 'AbortError') console.error('Share failed:', err);

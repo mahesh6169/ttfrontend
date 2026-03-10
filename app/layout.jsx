@@ -61,8 +61,8 @@ export const metadata = {
   
   // SOCIAL MEDIA SHARING - WhatsApp, Facebook, LinkedIn previews
   openGraph: {
-    title: `Desify – Classifieds, Events & Community Forum`, // Title in WhatsApp/FB preview
-    description: `List ads, promote business & services, create events, join discussions`, // Description in preview
+    title: `Classifieds | Events | Deals | Community`, // Title in WhatsApp/FB preview
+    description: `Post ads. Host events. Find deals. Ask community.`, // Description in preview
     url: siteUrl,
     siteName: siteName,
     images: [
@@ -70,7 +70,7 @@ export const metadata = {
         url: defaultOgImage,
         width: 1200,
         height: 630,
-        alt: `Desify – Classifieds, Events & Community Forum`,
+        alt: `Classifieds | Events | Deals | Community`,
       }
     ],
     locale: 'en_AU',
@@ -80,8 +80,8 @@ export const metadata = {
   // TWITTER/X SHARING - How your site appears when shared on Twitter/X
   twitter: {
     card: 'summary_large_image',
-    title: `Desify – Classifieds, Events & Community Forum`,
-    description: `List ads, promote business & services, create events, join discussions`,
+    title: `Classifieds | Events | Deals | Community`,
+    description: `Post ads. Host events. Find deals. Ask community.`,
     images: [defaultOgImage],
   },
   

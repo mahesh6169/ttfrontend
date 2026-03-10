@@ -7,6 +7,7 @@ import { getDealById, clearDeal } from '@/store/slices/dailydeals/dealSlice';
 import SingleDealCard from '@/components/dailydeals/dealcomponents/SingleDealCard';
 import SendMessage from '@/components/chat/SendMessage';
 import ShareIcons from '@/components/shared/ShareIcons';
+import { buildSlugUrl } from '@/utils/slugUtils';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Link from 'next/link';
 import ReportLink from '@/components/support/ReportLink';
@@ -288,12 +289,12 @@ const DealDetailPage = () => {
           {/* Share Button */}
           <button
             onClick={async () => {
-              const shareUrl = `${window.location.origin}/dailydeals/views/${id}`;
+              const shareUrl = `${window.location.origin}${buildSlugUrl('deal', deal.dealTitle, deal._id)}`;
               if (navigator.share) {
                 try {
                   await navigator.share({
                     title: deal.dealTitle,
-                    text: `Check out this deal: ${deal.dealTitle}`,
+                    text: deal.dealTitle,
                     url: shareUrl,
                   });
                 } catch (err) {

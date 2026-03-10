@@ -31,6 +31,7 @@ import { MdNotificationsActive, MdNotificationsOff, MdDelete } from "react-icons
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
+import { buildSlugUrl } from '@/utils/slugUtils';
 import ThreadConnectionStatus from '@/components/threads/ThreadConnectionStatus';
 import ThreadSocketListener from '@/components/ThreadSocketListener';
 
@@ -1183,12 +1184,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         {/* Share Button */}
         <button
           onClick={async () => {
-            const shareUrl = `${window.location.origin}/threads/views/${thread._id}`;
+            const shareUrl = `${window.location.origin}${buildSlugUrl('thread', thread.title, thread._id)}`;
             if (navigator.share) {
               try {
                 await navigator.share({
                   title: thread.title,
-                  text: `Check out this topic: ${thread.title}`,
+                  text: thread.title,
                   url: shareUrl,
                 });
               } catch (err) {
