@@ -136,8 +136,7 @@ export default async function ListingSlugPage({ params }) {
           <p className="text-gray-600">Listing not found</p>
           <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
         </div>
-        {/* <meta httpEquiv="refresh" content="3; url=/listings" /> */}
-        <meta httpEquiv="refresh" content="0; url=/listings" />
+        <meta httpEquiv="refresh" content="3; url=/listings" />
       </div>
     );
   }
@@ -147,8 +146,7 @@ export default async function ListingSlugPage({ params }) {
   return (
     <div className="flex justify-center items-center min-h-screen">
       <LoadingSpinner />
-      {/* <meta httpEquiv="refresh" content={`3; url=/listings/views/${listingId}`} /> */}
-      <meta httpEquiv="refresh" content={`0; url=/listings/views/${listingId}`} />
+      <meta httpEquiv="refresh" content={`3; url=/listings/views/${listingId}`} />
     </div>
   );
 }
