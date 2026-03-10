@@ -4,11 +4,23 @@
 
 import React, { Suspense, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useQueryStates, parseAsString, parseAsInteger } from 'nuqs';
 import StepManager from '@/components/events/addevents/StepManager';
 import { setEventIntent, updateField } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
+
+// Cancel button component for Add page (uses router.back)
+const CancelButton = ({ router }) => (
+  <div className="mb-4">
+    <button
+      onClick={() => router.back()}
+      className="inline-flex items-center justify-center bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-4 py-1.5 md:px-5 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
+    >
+      Cancel
+    </button>
+  </div>
+);
 
 // URL state parsers for event creation
 const eventParsers = {
@@ -21,6 +33,7 @@ const eventParsers = {
 const AddEventContent = () => {
   const router = useRouter();
   const dispatch = useDispatch();
+  const formStatus = useSelector(state => state.events.formStatus);
   const [eventParams, setEventParams] = useQueryStates(eventParsers, {
     shallow: true,
     history: 'push'
@@ -50,15 +63,18 @@ const AddEventContent = () => {
   };
 
   return (
-    <StepManager
-      mode="add"
-      onComplete={handleEventCreated}
-      allowCancel={true}
-      initialIntent={eventParams.intent}
-      initialType={eventParams.type}
-      initialStep={eventParams.step}
-      onStepChange={handleStepChange}
-    />
+    <div className="max-w-5xl mx-auto px-2 py-4 sm:px-4">
+      {formStatus !== 'succeeded' && <CancelButton router={router} />}
+      <StepManager
+        mode="add"
+        onComplete={handleEventCreated}
+        allowCancel={true}
+        initialIntent={eventParams.intent}
+        initialType={eventParams.type}
+        initialStep={eventParams.step}
+        onStepChange={handleStepChange}
+      />
+    </div>
   );
 };
 

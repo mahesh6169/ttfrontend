@@ -84,116 +84,151 @@ export default function ProfilePage() {
   };
   
 
-    // Show loading spinner if adverts are still loading
-    if (advertStatus === 'loading') {
-      return (
-        <div className="flex justify-center items-center h-screen">
-          <LoadingSpinner />
-        </div>
-      );
-    }
-  
-    // Handle errors
-    if (advertStatus === 'failed') {
-      return (
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-red-500">Error</h1>
-          <p>{advertError}</p>
-        </div>
-      );
-    }
-
-  return (
-    <div className='m-2' >
-      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center text-teal-700">
-        Manage Ads
-      </h1>
+  const PageHeader = () => (
+    <div className="mb-6">
+      {/* Back button */}
       <Link
-        href="/listings/add"
-        onClick={() =>
-          localStorage.setItem('cancelRedirectUrl', '/users/profile/manageads')
-        }
-        className="block my-2 p-2 bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 font-semibold lg:w-1/4 text-center rounded"
+        href="/users/profile"
+        className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors mb-4"
       >
-        + Post New Listing
+        <span>&lt;</span>
+        <span>back</span>
       </Link>
 
-      {adverts && adverts.length > 0 ? (
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-    {adverts.map((advert) => {
-  const expiryTime = new Date(advert.expiresAt).getTime();
-  const daysLeft = Math.floor((expiryTime - Date.now()) / (1000 * 60 * 60 * 24));
-  const isExpired = daysLeft < 0;
-  const canRenew = daysLeft <= 14; // Allow renewal 14 days before expiry or anytime after expired
-
-  return (
-    <div
-      key={advert._id}
-      className="p-4 border border-gray-300 rounded shadow hover:shadow-lg transition"
-
-    >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <h3 
-          className="text-xs font-bold truncate max-w-[60%] cursor-pointer hover:underline"
-          onClick={() => router.push(`/listings/views/${advert._id}`)}
+      {/* Hero section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Manage Listings</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Create, edit and manage your listings</p>
+        </div>
+        <Link
+          href="/listings/add"
+          onClick={() =>
+            localStorage.setItem('cancelRedirectUrl', '/users/profile/manageads')
+          }
+          className="inline-flex items-center justify-center gap-1 px-4 py-2.5 bg-teal-700 text-white hover:bg-teal-800 font-semibold text-sm rounded-lg shadow-sm transition-colors"
         >
-          {advert.title}
-        </h3>
-        <span
-          className={`text-xs font-semibold whitespace-nowrap ${
-            isExpired ? 'text-red-600' : 'text-gray-600'
-          }`}
-        >
-          {isExpired ? 'Expired' : `Expires in: ${daysLeft} day${daysLeft === 1 ? '' : 's'}`}
-        </span>
-      </div>
-
-      <div className="mt-2">
-        <img
-          src={advert.images?.[0]?.url || FALLBACK_IMAGE}
-          alt={advert.title}
-          className="w-full h-48 object-cover rounded"
-        />
-      </div>
-
-      <div className="flex justify-between items-center mt-4 gap-2">
-        <button
-          onClick={() => handleEdit(advert)}
-          className="flex-1 py-1 px-4 rounded transition bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100"
-        >
-          Edit
-        </button>
-
-        <button
-          onClick={() => canRenew && handleRenew(advert._id)}
-          disabled={!canRenew}
-          className={`flex-1 py-1 px-4 rounded transition ${
-            canRenew
-              ? daysLeft <= 7 
-                ? 'bg-orange-600 text-white hover:bg-orange-700' // Urgent color for last 7 days
-                : 'bg-green-600 text-white hover:bg-green-700'   // Normal color for 14-8 days
-              : 'bg-gray-400 text-white cursor-not-allowed'
-          }`}
-          title={!canRenew ? 'Renewal available within 14 days of expiry' : 'Renew for another 90 days'}
-        >
-          {canRenew && daysLeft <= 0 ? 'Renew !!' : 'Renew'}
-        </button>
-
-        <button
-          onClick={() => confirmDelete(advert._id)}
-          className="flex-1 bg-red-500 text-white py-1 px-4 rounded hover:bg-red-600 transition"
-        >
-          Delete
-        </button>
+          + Post New Listing
+        </Link>
       </div>
     </div>
   );
-})}
 
-  </div>
-) : (
-  <p className="text-gray-700 pt-25">You have no adverts posted.</p>
-)}
+  // Show loading spinner if adverts are still loading
+  if (advertStatus === 'loading') {
+    return (
+      <div className="px-2 py-6 sm:px-6 sm:py-8">
+        <PageHeader />
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner />
+        </div>
+      </div>
+    );
+  }
+
+  // Handle errors
+  if (advertStatus === 'failed') {
+    return (
+      <div className="px-2 py-6 sm:px-6 sm:py-8">
+        <PageHeader />
+        <div className="text-center py-12">
+          <p className="text-red-600 font-semibold">Error loading listings</p>
+          <p className="text-slate-600 text-sm mt-1">{advertError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-2 py-6 sm:px-6 sm:py-8">
+      <PageHeader />
+
+      {adverts && adverts.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {adverts.map((advert) => {
+            const expiryTime = new Date(advert.expiresAt).getTime();
+            const daysLeft = Math.floor((expiryTime - Date.now()) / (1000 * 60 * 60 * 24));
+            const isExpired = daysLeft < 0;
+            const canRenew = daysLeft <= 14;
+
+            return (
+              <div
+                key={advert._id}
+                className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                {/* Image */}
+                <div
+                  className="w-full h-32 sm:h-40 rounded-t-xl overflow-hidden cursor-pointer"
+                  onClick={() => router.push(`/listings/views/${advert._id}`)}
+                >
+                  <img
+                    src={advert.images?.[0]?.url || FALLBACK_IMAGE}
+                    alt={advert.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="p-2 pt-1.5">
+                  <h3
+                    className="text-sm font-semibold text-slate-900 line-clamp-2 min-h-[2.5rem] cursor-pointer hover:text-teal-700"
+                    onClick={() => router.push(`/listings/views/${advert._id}`)}
+                  >
+                    {advert.title}
+                  </h3>
+
+                  {/* Days left */}
+                  <p className={`text-xs mt-0.5 ${
+                    isExpired
+                      ? 'text-red-600 font-medium'
+                      : daysLeft <= 7
+                      ? 'text-amber-600'
+                      : 'text-slate-500'
+                  }`}>
+                    {isExpired ? 'Expired' : `${daysLeft}d left`}
+                  </p>
+
+                  {/* Actions - larger touch targets */}
+                  <div className="flex items-center justify-between sm:justify-center sm:gap-6 mt-2 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(advert)}
+                      className="text-teal-700 hover:text-teal-900 active:underline font-semibold py-1"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => canRenew && handleRenew(advert._id)}
+                      disabled={!canRenew}
+                      className={`font-semibold py-1 active:underline ${
+                        canRenew
+                          ? 'text-teal-700 hover:text-teal-900'
+                          : 'text-slate-400'
+                      }`}
+                      title={!canRenew ? 'Available within 14 days of expiry' : 'Renew for 90 days'}
+                    >
+                      Renew
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => confirmDelete(advert._id)}
+                      className="text-red-600 hover:text-red-700 active:underline font-semibold py-1"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-slate-600">You have no listings posted.</p>
+          <p className="text-slate-500 text-sm mt-1">Click "Post New Listing" to get started.</p>
+        </div>
+      )}
 
 
 

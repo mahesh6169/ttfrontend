@@ -3,13 +3,15 @@
 import React, { useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
-const ImageUploader = ({ 
-  images = [], 
-  onImagesChange, 
-  maxImages = 10, 
+const ImageUploader = ({
+  images = [],
+  onImagesChange,
+  maxImages = 10,
   className = "",
   disabled = false,
-  mode = 'add'
+  mode = 'add',
+  label = 'Upload Images',
+  showLabel = true
 }) => {
   console.log('🖼️ ImageUploader rendered with:', {
     imagesCount: images.length,
@@ -145,38 +147,52 @@ const ImageUploader = ({
   // Remove the automatic blob regeneration on mount as it causes issues
   // The parent component (StepManager) handles blob URL regeneration
 
+  const isMaxReached = images.length >= maxImages;
+
   return (
     <div className={className}>
-      <label className="block font-bold mb-2">
-        Upload Images (Max {maxImages})
-        {mode === 'view' && (
-          <span className="text-sm font-normal text-gray-500 ml-2">
-            (View only)
+      {/* Header */}
+      {showLabel && (
+        <>
+          <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+            {label}
           </span>
-        )}
-      </label>
+          <p className="text-xs text-slate-500 mt-1 mb-3">
+            JPEG & PNG only · Max {maxImages} images · {images.length}/{maxImages} uploaded
+          </p>
+        </>
+      )}
+      {!showLabel && (
+        <p className="text-xs text-slate-500 mb-2">
+          {images.length}/{maxImages} uploaded
+        </p>
+      )}
 
-      {/* File Input */}
+      {/* Choose Files Button */}
       {!disabled && (
-        <div className="mb-4">
+        <div>
           <input
             type="file"
             multiple
             accept="image/*"
             onChange={handleFileChange}
-            disabled={images.length >= maxImages}
-            className={`w-full p-2 border rounded-lg ${
-              images.length >= maxImages 
-                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed' 
-                : 'border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500'
-            }`}
+            disabled={isMaxReached}
+            className="hidden"
+            id={`image-upload-${label.replace(/\s+/g, '-').toLowerCase()}`}
           />
-          {images.length >= maxImages && (
-            <p className="text-xs text-amber-600 mt-1 flex items-center">
-              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              Maximum {maxImages} images reached
+          <label
+            htmlFor={`image-upload-${label.replace(/\s+/g, '-').toLowerCase()}`}
+            className={`inline-block px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+              isMaxReached
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer'
+            }`}
+          >
+            Choose Files
+          </label>
+          {isMaxReached && (
+            <p className="text-xs text-amber-600 mt-2">
+              Maximum reached. Remove images to add new ones.
             </p>
           )}
         </div>
@@ -184,42 +200,35 @@ const ImageUploader = ({
 
       {/* Disabled state message */}
       {disabled && (
-        <div className="mb-4 p-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600">
+        <div className="p-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 text-sm">
           Image uploads are disabled in view mode
         </div>
       )}
 
-      {/* Image Preview Grid */}
+      {/* Image Preview */}
       {images.length > 0 && (
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className="mt-3 flex gap-3 flex-wrap">
           {images.map((image, index) => {
             const src = getImageSrc(image);
-            
+
             return (
-              <div key={image.id || index} className="relative group">
+              <div key={image.id || index} className="relative">
                 {src ? (
                   <img
                     src={src}
                     alt={image.name || `Image ${index + 1}`}
-                    className="w-full h-24 object-cover border border-gray-200 rounded-lg"
+                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg"
                     onError={(e) => {
                       console.log('🖼️ Image load error for:', image.name || image.id, 'src:', e.target.src);
-                      
-                      // For new images with invalid blob URLs, request regeneration
+
                       if (image.isNew && e.target.src.startsWith('blob:')) {
                         console.log('🖼️ Blob URL invalid for new image:', image.id);
-                        // Hide the broken image
                         e.target.style.display = 'none';
                         const placeholder = e.target.parentNode.querySelector('.image-placeholder');
                         if (placeholder) placeholder.style.display = 'flex';
-                        
-                        // Don't trigger regeneration here - let the parent handle it
-                        // This prevents infinite loops in Chrome
                       } else if (image.preview && e.target.src === image.preview && image.url) {
-                        // Try fallback to server URL for existing images
                         e.target.src = image.url;
                       } else {
-                        // If all sources fail, show placeholder
                         e.target.style.display = 'none';
                         const placeholder = e.target.parentNode.querySelector('.image-placeholder');
                         if (placeholder) placeholder.style.display = 'flex';
@@ -227,53 +236,41 @@ const ImageUploader = ({
                     }}
                   />
                 ) : null}
-                
+
                 {/* Placeholder for failed images */}
-                <div 
-                  className="image-placeholder w-full h-24 border border-gray-200 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 text-xs"
+                <div
+                  className="image-placeholder w-20 h-20 sm:w-24 sm:h-24 border border-slate-200 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 text-xs"
                   style={{ display: src ? 'none' : 'flex' }}
                 >
-                  <div className="text-center">
-                    <svg className="w-6 h-6 mx-auto mb-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="text-center p-1">
+                    <svg className="w-5 h-5 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    {image.name || 'Image'}
                   </div>
                 </div>
                 
+                {/* Status Badge */}
+                {image.isExisting && (
+                  <span className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                    Saved
+                  </span>
+                )}
+                {image.isNew && mode === 'edit' && (
+                  <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                    New
+                  </span>
+                )}
+
                 {/* Remove Button */}
                 {!disabled && (
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(index)}
-                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-colors opacity-0 group-hover:opacity-100"
-                    title="Remove image"
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full hover:bg-red-600 flex items-center justify-center"
+                    title="Remove"
                   >
-                    ×
+                    ✕
                   </button>
-                )}
-                
-                {/* Status Badges */}
-                <div className="absolute bottom-1 left-1 flex gap-1">
-                  {image.isExisting && (
-                    <div className="bg-blue-500 text-white text-xs px-1 rounded">
-                      Existing
-                    </div>
-                  )}
-                  {image.isNew && (
-                    <div className="bg-green-500 text-white text-xs px-1 rounded">
-                      New
-                    </div>
-                  )}
-                </div>
-                
-                {/* Image info on hover */}
-                {!disabled && (
-                  <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="bg-black bg-opacity-75 text-white text-xs px-1 rounded max-w-20 truncate">
-                      {image.name || 'Image'}
-                    </div>
-                  </div>
                 )}
               </div>
             );
@@ -281,12 +278,6 @@ const ImageUploader = ({
         </div>
       )}
 
-      {/* Status Information */}
-      <div className="mt-2">
-        <p className="text-sm text-gray-500">
-          {images.length}/{maxImages} images uploaded
-        </p>
-      </div>
     </div>
   );
 };

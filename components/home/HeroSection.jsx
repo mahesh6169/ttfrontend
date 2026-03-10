@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useSelector } from 'react-redux';
 import { useQueryStates, parseAsString } from 'nuqs';
 import {
@@ -146,6 +147,30 @@ const EVENT_TILES = [
     target: '/events',
     requiresAuth: false,
   },
+];
+
+// --- Deals Tab Tiles ---
+const DEALS_TILES = [
+  {
+    label: 'Browse Deals',
+    icon: HiMagnifyingGlass,
+    target: '/dailydeals',
+    requiresAuth: false,
+  },
+  {
+    label: 'Post a Deal',
+    icon: HiTag,
+    target: '/users/profile/dailydeals',
+    requiresAuth: true,
+  },
+];
+
+// Popular deal categories for quick links
+const POPULAR_DEAL_CATEGORIES = [
+  { label: 'Restaurants', cat: 'Restaurants' },
+  { label: 'Catering', cat: 'Catering' },
+  { label: 'Cakes', cat: 'Cakes' },
+  { label: 'Hair & Makeup', cat: 'Hair, Makeup & Waxing' },
 ];
 
 // --- Forum Tab Tiles ---
@@ -443,14 +468,42 @@ const HeroSection = () => {
               </div>
             )}
 
-            {/* ===== Deals Tab — Placeholder ===== */}
+            {/* ===== Deals Tab ===== */}
             {activeTab === 'deals' && (
-              <div className="flex items-center justify-center py-8 sm:py-12">
-                <div className="text-center">
-                  <HiTag className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-sm text-slate-400 font-medium">
-                    Deals &amp; Coupons — coming soon
-                  </p>
+              <div className={`${insetPanelClass} md:max-w-md md:mx-auto`}>
+                {/* Action Buttons */}
+                <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+                  {DEALS_TILES.map((tile, index) => {
+                    const Icon = tile.icon;
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => handleSimpleTileClick(tile)}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-full bg-white border border-slate-200 hover:border-teal-300 hover:shadow-sm transition-all duration-200"
+                      >
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-teal-700" />
+                        <span className="font-medium text-sm sm:text-base text-slate-900">
+                          {tile.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Popular Categories */}
+                <div className="mt-4 pt-3 border-t border-slate-200/60">
+                  <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 sm:gap-x-3">
+                    <span className="text-xs text-slate-500 font-medium">Popular:</span>
+                    {POPULAR_DEAL_CATEGORIES.map((category, index) => (
+                      <Link
+                        key={index}
+                        href={`/dailydeals?cat=${encodeURIComponent(category.cat)}`}
+                        className="text-xs sm:text-sm text-teal-700 hover:text-teal-800 hover:underline font-medium"
+                      >
+                        {category.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

@@ -18,6 +18,7 @@ import {
 import AddressInput from '@/components/events/addevents/AddressInput';
 import ImageUploader from '@/components/events/addevents/ImageUploader';
 import TimezoneSelector from '@/components/shared/TimezoneSelector';
+import DateTimePicker from '@/components/shared/DateTimePicker';
 import { utcToZonedTime, format } from 'date-fns-tz';
 
 const AU_TIMEZONES = [
@@ -31,7 +32,7 @@ const AU_TIMEZONES = [
   { label: 'Canberra (ACT)', value: 'Australia/Sydney', key: 'act' },
 ];
 
-// Intent Selection Component
+// Intent Selection Component - Clean toggle buttons
 const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) => {
   const currentIntent = formData.eventIntent;
   const isPaid = formData.isPaid || false;
@@ -46,159 +47,88 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
     dispatch(toggleIsPaid(paid));
   };
 
+  const isLocked = disabled || isEditMode;
+
   return (
     <div className="space-y-4">
-      <div className="mb-2">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900">What would you like to do? <span className="text-red-500">*</span></h3>
-        <p className="text-sm text-gray-500 mt-1">Choose how you want to list your event</p>
-      </div>
+      {/* Event Type */}
+      <div>
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+          Event Type <span className="text-red-500">*</span>
+          {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
+        </label>
 
-      {/* Host Option - Primary/Prominent */}
-      <button
-        type="button"
-        onClick={() => handleIntentSelect('host')}
-        disabled={disabled || isEditMode}
-        className={`relative w-full p-5 sm:p-6 border-2 rounded-xl text-left transition-all duration-200 ${
-          currentIntent === 'host'
-            ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-200'
-            : 'border-gray-300 bg-white hover:border-teal-400 hover:bg-teal-50/50 hover:shadow-md'
-        } ${(disabled || isEditMode) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-      >
-        {currentIntent === 'host' && (
-          <div className="absolute top-3 right-3">
-            <svg className="w-6 h-6 text-teal-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-          </div>
-        )}
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <h4 className="text-lg font-semibold text-gray-900 mb-1">Host an Event</h4>
-            <p className="text-sm text-gray-600 mb-3">
-              Manage registrations or sell tickets on our platform. Get check-in tools, attendee management, and more.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
-                Registration
-              </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
-                Check-in
-              </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
-                Ticketing
-              </span>
-            </div>
-          </div>
+        <div className={`inline-grid grid-cols-2 gap-2 ${isLocked ? 'opacity-60' : ''}`}>
+          <button
+            type="button"
+            onClick={() => handleIntentSelect('host')}
+            disabled={isLocked}
+            className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
+              currentIntent === 'host'
+                ? 'bg-teal-700 text-white border-teal-700'
+                : 'bg-white text-slate-700 border-slate-300'
+            } ${isLocked ? 'cursor-not-allowed' : ''}`}
+          >
+            Host
+          </button>
+          <button
+            type="button"
+            onClick={() => handleIntentSelect('promote')}
+            disabled={isLocked}
+            className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
+              currentIntent === 'promote'
+                ? 'bg-teal-700 text-white border-teal-700'
+                : 'bg-white text-slate-700 border-slate-300'
+            } ${isLocked ? 'cursor-not-allowed' : ''}`}
+          >
+            Promote
+          </button>
         </div>
-      </button>
-
-      {/* Promote Option - Secondary/Subtle */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-gray-200"></div>
-        </div>
-        <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs text-gray-500">or just want visibility?</span>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => handleIntentSelect('promote')}
-        disabled={disabled || isEditMode}
-        className={`relative w-full p-3 sm:p-4 border rounded-lg text-left transition-all duration-200 ${
-          currentIntent === 'promote'
-            ? 'border-purple-400 bg-purple-50'
-            : 'border-gray-200 bg-gray-50 hover:border-purple-300 hover:bg-purple-50/50'
-        } ${(disabled || isEditMode) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-      >
-        {currentIntent === 'promote' && (
-          <div className="absolute top-2 right-2">
-            <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-          </div>
-        )}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-            </svg>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-700">Promote an Event</h4>
-            <p className="text-xs text-gray-500">List for visibility only. Registrations handled elsewhere.</p>
-          </div>
-        </div>
-      </button>
-
-      {errors?.eventIntent && (
-        <p className="text-red-500 text-sm mt-2">
-          {Array.isArray(errors.eventIntent) ? errors.eventIntent[0] : errors.eventIntent}
+        <p className="text-xs text-slate-500 mt-1">
+          {currentIntent === 'host' ? 'Manage registrations on our platform' : currentIntent === 'promote' ? 'List for visibility only' : 'Choose how to list your event'}
         </p>
-      )}
+        {errors?.eventIntent && (
+          <p className="text-red-500 text-xs sm:text-sm mt-1">
+            {Array.isArray(errors.eventIntent) ? errors.eventIntent[0] : errors.eventIntent}
+          </p>
+        )}
+      </div>
 
       {/* Free/Paid Toggle - Only shown when "Host" is selected */}
       {currentIntent === 'host' && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="mb-3">
-            <h4 className="text-sm font-semibold text-gray-900">Will attendees pay for tickets? <span className="text-red-500">*</span></h4>
-          </div>
-          <div className="flex gap-3">
+        <div>
+          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+            Ticket Type <span className="text-red-500">*</span>
+            {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
+          </label>
+
+          <div className={`inline-grid grid-cols-2 gap-2 ${isLocked ? 'opacity-60' : ''}`}>
             <button
               type="button"
               onClick={() => handlePaidToggle(false)}
-              disabled={disabled || isEditMode}
-              className={`flex-1 p-3 border-2 rounded-lg text-center transition-all duration-200 ${
+              disabled={isLocked}
+              className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
                 !isPaid
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 bg-white hover:border-green-300'
-              } ${(disabled || isEditMode) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                  ? 'bg-teal-700 text-white border-teal-700'
+                  : 'bg-white text-slate-700 border-slate-300'
+              } ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
-              <div className="w-8 h-8 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-1">
-                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <span className={`text-sm font-medium ${!isPaid ? 'text-green-700' : 'text-gray-700'}`}>
-                Free Event
-              </span>
-              <p className="text-xs text-gray-500 mt-0.5">Free registration</p>
+              Free
             </button>
-
             <button
               type="button"
               onClick={() => handlePaidToggle(true)}
-              disabled={disabled || isEditMode}
-              className={`flex-1 p-3 border-2 rounded-lg text-center transition-all duration-200 ${
+              disabled={isLocked}
+              className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
                 isPaid
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 bg-white hover:border-blue-300'
-              } ${(disabled || isEditMode) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                  ? 'bg-teal-700 text-white border-teal-700'
+                  : 'bg-white text-slate-700 border-slate-300'
+              } ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
-              <div className="w-8 h-8 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-1">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                </svg>
-              </div>
-              <span className={`text-sm font-medium ${isPaid ? 'text-blue-700' : 'text-gray-700'}`}>
-                Paid Event
-              </span>
-              <p className="text-xs text-gray-500 mt-0.5">Sell tickets</p>
+              Paid
             </button>
           </div>
         </div>
-      )}
-
-      {isEditMode && (
-        <p className="text-amber-600 text-xs italic mt-2">
-          Event type cannot be changed after creation.
-        </p>
       )}
     </div>
   );
@@ -279,11 +209,11 @@ const BasicInfoStep = ({
 
   // Field styling helper
   const getFieldClasses = (fieldName) => {
-    const baseClasses = 'w-full px-3 py-2.5 sm:py-2 border rounded-lg transition-colors text-sm';
-    const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50' : 'border-gray-300';
+    const baseClasses = 'w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2';
+    const errorClasses = errors?.[fieldName] ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300';
     const readOnlyClasses = disabled
-      ? 'bg-gray-100 cursor-not-allowed text-gray-600'
-      : 'focus:ring-2 focus:ring-teal-500 focus:border-teal-500 active:border-teal-500';
+      ? 'bg-slate-100 cursor-not-allowed text-slate-600'
+      : '';
 
     return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
   };
@@ -332,13 +262,11 @@ const BasicInfoStep = ({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 px-0 sm:px-0">
+    <div className="space-y-4 sm:space-y-6">
       {/* Step Header */}
-      <div className="mb-4">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Basic Information</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Tell us the essential details about your event
-        </p>
+      <div className="mb-2">
+        <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Basic Info</h2>
+        <p className="text-sm text-slate-500">Set up your event type and details</p>
       </div>
 
       {/* Intent Selection - First thing users choose */}
@@ -354,11 +282,11 @@ const BasicInfoStep = ({
       {formData.eventIntent && (
         <>
           {/* Divider */}
-          <div className="border-t border-gray-200 pt-4"></div>
+          <div className="border-t border-slate-200 pt-4 sm:pt-6"></div>
 
           {/* Title */}
-          <div className="space-y-2">
-            <label className="block font-semibold text-sm">
+          <div>
+            <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
               Event Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -372,172 +300,133 @@ const BasicInfoStep = ({
               maxLength="200"
             />
             {errors?.title && (
-              <p className="text-red-500 text-xs sm:text-sm">
+              <p className="text-red-500 text-xs sm:text-sm mt-1">
                 {Array.isArray(errors.title) ? errors.title[0] : errors.title}
               </p>
             )}
           </div>
 
-          {/* Time Zone */}
-          <div className="space-y-2">
-        <label className="block font-semibold text-sm">
-          Event Time Zone <span className="text-red-500">*</span>
-        </label>
-        {disabled || (isEditMode && isRecurringEvent) ? (
-          <input
-            type="text"
-            value={AU_TIMEZONES.find(tz => tz.value === formData.timeZone)?.label || 'No timezone selected'}
-            disabled={true}
-            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
-          />
-        ) : (
-          <TimezoneSelector
-            value={formData.timeZone || ''}
-            onChange={(value) => handleChange({ target: { name: 'timeZone', value } })}
-            timezones={AU_TIMEZONES}
-            placeholder="Select timezone"
-            required={true}
-          />
-        )}
-        {errors?.timeZone && (
-          <p className="text-red-500 text-xs sm:text-sm">
-            {Array.isArray(errors.timeZone) ? errors.timeZone[0] : errors.timeZone}
-          </p>
-        )}
-        {isEditMode && isRecurringEvent && (
-          <p className="text-amber-600 text-xs sm:text-sm mt-1 italic">
-            Not editable for recurring events.
-          </p>
-        )}
-      </div>
+          {/* Timezone + DateTime - Side by side on desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Time Zone */}
+            <div>
+              <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                Timezone <span className="text-red-500">*</span>
+                {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-500 ml-2">(Locked)</span>}
+              </label>
+              {disabled || (isEditMode && isRecurringEvent) ? (
+                <input
+                  type="text"
+                  value={AU_TIMEZONES.find(tz => tz.value === formData.timeZone)?.label || 'No timezone selected'}
+                  disabled={true}
+                  className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg bg-slate-100 text-slate-600 cursor-not-allowed"
+                />
+              ) : (
+                <TimezoneSelector
+                  value={formData.timeZone || ''}
+                  onChange={(value) => handleChange({ target: { name: 'timeZone', value } })}
+                  timezones={AU_TIMEZONES}
+                  placeholder="Select timezone"
+                  required={true}
+                />
+              )}
+              {errors?.timeZone && (
+                <p className="text-red-500 text-xs sm:text-sm mt-1">
+                  {Array.isArray(errors.timeZone) ? errors.timeZone[0] : errors.timeZone}
+                </p>
+              )}
+            </div>
 
-      {/* Date & Time */}
-      <div className="space-y-2">
-        <label className="block font-semibold text-sm">
-          Date & Time <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="datetime-local"
-          name="dateTime"
-          value={formatDateTimeLocal(formData.dateTime)}
-          onChange={handleChange}
-          min={getMinDate()}
-          disabled={disabled || (isEditMode && isRecurringEvent)}
-          onWheel={(e) => e.target.blur()}
-          className={getFieldClasses('dateTime')}
-        />
-        {errors?.dateTime && (
-          <p className="text-red-500 text-xs sm:text-sm">
-            {Array.isArray(errors.dateTime) ? errors.dateTime[0] : errors.dateTime}
-          </p>
-        )}
-        {isEditMode && isRecurringEvent && (
-          <p className="text-amber-600 text-xs sm:text-sm mt-1 italic">
-            Not editable for recurring events.
-          </p>
-        )}
-      </div>
+            {/* Date & Time */}
+            <div>
+              <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                Date & Time <span className="text-red-500">*</span>
+                {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-500 ml-2">(Locked)</span>}
+              </label>
+              <DateTimePicker
+                value={formatDateTimeLocal(formData.dateTime)}
+                onChange={handleChange}
+                min={getMinDate()}
+                disabled={disabled || (isEditMode && isRecurringEvent)}
+                error={!!errors?.dateTime}
+              />
+              {errors?.dateTime && (
+                <p className="text-red-500 text-xs sm:text-sm mt-1">
+                  {Array.isArray(errors.dateTime) ? errors.dateTime[0] : errors.dateTime}
+                </p>
+              )}
+            </div>
+          </div>
 
       {/* Recurring Event Section - Only show for hosted free events */}
       {canShowRecurring && (
-        <div className="border rounded-xl p-4 bg-gray-50">
-          <div className="flex items-start space-x-3 mb-3">
+        <div>
+          <label className="cursor-pointer">
+            <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+              Recurring Event
+              {isEditMode && <span className="text-xs font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
+            </span>
+            <p className="text-xs text-slate-500 mt-1 mb-2">
+              Set up a repeating schedule for this event
+            </p>
             <input
               type="checkbox"
               id="isRecurring"
               checked={formData.recurrence?.isRecurring || false}
               onChange={handleRecurringToggle}
               disabled={disabled || isEditMode}
-              className="w-5 h-5 mt-0.5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 disabled:opacity-50"
+              className="w-5 h-5 text-teal-700 rounded focus:ring-teal-500 disabled:opacity-50"
             />
-            <div className="flex-1">
-              <label htmlFor="isRecurring" className={`block text-sm font-medium ${isEditMode ? 'text-gray-500' : 'text-gray-900'}`}>
-                Make this a recurring event
-              </label>
-              {isEditMode && !formData.recurrence?.isRecurring && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Event type cannot be changed after creation
-                </p>
-              )}
-              {isEditMode && formData.recurrence?.isRecurring && (
-                <p className="text-xs text-amber-600 mt-1">
-                  Recurring event type cannot be changed
-                </p>
-              )}
-            </div>
-          </div>
+          </label>
 
           {formData.recurrence?.isRecurring && (
-            <div className="space-y-4 mt-4 pt-4 border-t border-gray-200">
-              <p className="text-xs sm:text-sm text-gray-600">
-                {isViewMode
-                  ? 'This event repeats on the following schedule:'
-                  : 'Set up when this event repeats. The main event date above will be the first occurrence.'
-                }
-              </p>
-
+            <div className="space-y-4 mt-4 pt-4 border-t border-slate-200">
               {/* Repeat Schedule */}
               <div className="space-y-3">
-                <label className="block text-sm font-medium">
+                <label className="block font-medium text-slate-600 text-sm">
                   Repeat Schedule
+                  {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-400 ml-2">(Locked)</span>}
                 </label>
-                {isEditMode && isRecurringEvent && (
-                  <p className="text-xs text-amber-600 italic">
-                    Not editable — recreate event to update.
-                  </p>
-                )}
 
                 {(formData.recurrence?.repeatSchedule || []).map((schedule, index) => (
-                  <div key={index} className="bg-white rounded-lg border p-3 space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Day</label>
-                        <div className="relative">
-                          <select
-                            value={schedule?.day || 'Mon'}
-                            onChange={(e) => handleUpdateRepeatSchedule(index, 'day', e.target.value)}
-                            disabled={disabled || (isEditMode && isRecurringEvent)}
-                            className={`w-full px-3 py-2 border rounded-lg text-sm appearance-none bg-white ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
-                          >
-                            <option value="Mon">Monday</option>
-                            <option value="Tue">Tuesday</option>
-                            <option value="Wed">Wednesday</option>
-                            <option value="Thu">Thursday</option>
-                            <option value="Fri">Friday</option>
-                            <option value="Sat">Saturday</option>
-                            <option value="Sun">Sunday</option>
-                          </select>
-                          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
+                  <div key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Day</label>
+                      <select
+                        value={schedule?.day || 'Mon'}
+                        onChange={(e) => handleUpdateRepeatSchedule(index, 'day', e.target.value)}
+                        disabled={disabled || (isEditMode && isRecurringEvent)}
+                        className={`w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 ${disabled ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                      >
+                        <option value="Mon">Monday</option>
+                        <option value="Tue">Tuesday</option>
+                        <option value="Wed">Wednesday</option>
+                        <option value="Thu">Thursday</option>
+                        <option value="Fri">Friday</option>
+                        <option value="Sat">Saturday</option>
+                        <option value="Sun">Sunday</option>
+                      </select>
+                    </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Time</label>
-                        <input
-                          type="time"
-                          value={schedule?.time || '18:00'}
-                          onChange={(e) => handleUpdateRepeatSchedule(index, 'time', e.target.value)}
-                          disabled={disabled || (isEditMode && isRecurringEvent)}
-                          onWheel={(e) => e.target.blur()}
-                          className={`w-full px-3 py-2 border rounded-lg text-sm ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-teal-500'}`}
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Time</label>
+                      <input
+                        type="time"
+                        value={schedule?.time || '18:00'}
+                        onChange={(e) => handleUpdateRepeatSchedule(index, 'time', e.target.value)}
+                        disabled={disabled || (isEditMode && isRecurringEvent)}
+                        onWheel={(e) => e.target.blur()}
+                        className={`w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 ${disabled ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                      />
                     </div>
 
                     {!disabled && !(isEditMode && isRecurringEvent) && (formData.recurrence?.repeatSchedule || []).length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleRemoveRepeatSchedule(index)}
-                        className="flex items-center justify-center w-full sm:w-auto px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm"
                       >
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                        Remove Schedule
+                        Remove
                       </button>
                     )}
                   </div>
@@ -547,20 +436,18 @@ const BasicInfoStep = ({
                   <button
                     type="button"
                     onClick={handleAddRepeatSchedule}
-                    className="w-full sm:w-auto flex items-center justify-center px-4 py-2 text-teal-600 font-medium hover:bg-teal-50 rounded-lg transition-colors border border-teal-200 text-sm"
+                    className="text-sm text-teal-700 hover:text-teal-800 font-medium"
                   >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    Add Another Day/Time
+                    + Add Another Day/Time
                   </button>
                 )}
               </div>
 
               {/* End Date */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium">
+              <div>
+                <label className="block font-medium mb-2 text-slate-600 text-sm">
                   End Date <span className="text-red-500">*</span>
+                  {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-400 ml-2">(Locked)</span>}
                 </label>
                 <input
                   type="date"
@@ -580,23 +467,14 @@ const BasicInfoStep = ({
                   required={formData.recurrence?.isRecurring}
                 />
                 {endDateError && (
-                  <p className="text-amber-600 text-xs sm:text-sm animate-pulse">
-                    {endDateError}
-                  </p>
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{endDateError}</p>
                 )}
                 {errors?.recurrenceEndDate && (
-                  <p className="text-red-500 text-xs sm:text-sm">
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">
                     {Array.isArray(errors.recurrenceEndDate) ? errors.recurrenceEndDate[0] : errors.recurrenceEndDate}
                   </p>
                 )}
-                {isEditMode && isRecurringEvent && (
-                  <p className="text-amber-600 text-xs sm:text-sm italic">
-                    Not editable — recreate event to update.
-                  </p>
-                )}
-                <p className="text-xs text-gray-500">
-                  Maximum 6 months from start date.
-                </p>
+                <p className="text-xs text-slate-500 mt-1">Maximum 6 months from start date</p>
               </div>
 
               {errors?.recurrence && (
@@ -611,48 +489,51 @@ const BasicInfoStep = ({
         </div>
       )}
 
-      {/* Venue */}
-      <div className="space-y-2">
-        <label className="block font-semibold text-sm">
-          Venue <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          name="venue"
-          value={formData.venue || ''}
-          onChange={handleChange}
-          disabled={disabled}
-          className={getFieldClasses('venue')}
-          placeholder={disabled ? '' : 'Enter venue name'}
-          maxLength="200"
-        />
-        {errors?.venue && (
-          <p className="text-red-500 text-xs sm:text-sm">
-            {Array.isArray(errors.venue) ? errors.venue[0] : errors.venue}
-          </p>
-        )}
-      </div>
+      {/* Venue + Address - Side by side on desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Venue */}
+        <div>
+          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+            Venue <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="venue"
+            value={formData.venue || ''}
+            onChange={handleChange}
+            disabled={disabled}
+            className={getFieldClasses('venue')}
+            placeholder={disabled ? '' : 'Enter venue name'}
+            maxLength="200"
+          />
+          {errors?.venue && (
+            <p className="text-red-500 text-xs sm:text-sm mt-1">
+              {Array.isArray(errors.venue) ? errors.venue[0] : errors.venue}
+            </p>
+          )}
+        </div>
 
-      {/* Address */}
-      <div className="space-y-2">
-        <AddressInput
-          formData={formData}
-          setFormData={(newDataOrUpdater) => {
-            if (disabled) return;
+        {/* Address */}
+        <div>
+          <AddressInput
+            formData={formData}
+            setFormData={(newDataOrUpdater) => {
+              if (disabled) return;
 
-            if (typeof newDataOrUpdater === 'function') {
-              const dummyPrev = { address: formData.address || {} };
-              const result = newDataOrUpdater(dummyPrev);
-              handleAddressChange(result.address);
-            } else if (newDataOrUpdater && newDataOrUpdater.address) {
-              handleAddressChange(newDataOrUpdater.address);
-            }
-          }}
-          errors={errors?.address}
-          placeholder={disabled ? 'Event address' : 'Enter event address'}
-          disabled={disabled}
-          mode={mode}
-        />
+              if (typeof newDataOrUpdater === 'function') {
+                const dummyPrev = { address: formData.address || {} };
+                const result = newDataOrUpdater(dummyPrev);
+                handleAddressChange(result.address);
+              } else if (newDataOrUpdater && newDataOrUpdater.address) {
+                handleAddressChange(newDataOrUpdater.address);
+              }
+            }}
+            errors={errors?.address}
+            placeholder={disabled ? 'Event address' : 'Enter event address'}
+            disabled={disabled}
+            mode={mode}
+          />
+        </div>
       </div>
 
           {/* Image Upload */}

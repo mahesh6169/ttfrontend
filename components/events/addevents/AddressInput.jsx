@@ -20,14 +20,14 @@ const AddressInput = ({
   const [isUserInput, setIsUserInput] = useState(false);
   const previousFormDataAddress = useRef(formData?.address?.formattedAddress);
 
-  // Error styling function (matching EventDetailsStep.jsx)
+  // Error styling function
   const getFieldClasses = (hasErrors) => {
-    const baseClasses = 'w-full px-3 py-3 sm:py-2 border rounded-lg transition-colors text-base sm:text-sm';
-    const errorClasses = hasErrors ? 'border-red-500 bg-red-50' : 'border-gray-300';
-    const readOnlyClasses = disabled 
-      ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
-      : 'focus:ring-2 focus:ring-teal-500 focus:border-teal-500 active:border-teal-500';
-    
+    const baseClasses = 'w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2';
+    const errorClasses = hasErrors ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300';
+    const readOnlyClasses = disabled
+      ? 'bg-slate-100 cursor-not-allowed text-slate-600'
+      : '';
+
     return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
   };
 
@@ -115,8 +115,8 @@ const AddressInput = ({
   const hasErrors = errors && (Array.isArray(errors) ? errors.length > 0 : errors);
 
   return (
-    <div className="space-y-2">
-      <label className="block font-semibold text-sm sm:text-base">
+    <div>
+      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
         Address <span className="text-red-500">*</span>
       </label>
       <LoadScriptNext
@@ -142,11 +142,10 @@ const AddressInput = ({
       
       {/* Error Display */}
       {hasErrors && (
-        <p className="text-red-500 text-xs sm:text-sm">
+        <p className="text-red-500 text-xs sm:text-sm mt-1">
           {Array.isArray(errors) ? errors[0] : errors}
         </p>
       )}
-      
     </div>
   );
 };

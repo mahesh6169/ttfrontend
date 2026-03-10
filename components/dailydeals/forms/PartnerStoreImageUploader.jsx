@@ -80,76 +80,84 @@ const PartnerStoreImageUploader = ({
 
   return (
     <div>
+      {/* Label */}
+      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        {hasLogo ? 'Replace Logo' : 'Upload Logo'}
+        <span className="text-xs font-normal text-slate-500 ml-1">(optional)</span>
+      </label>
+      <p className="text-xs sm:text-sm text-slate-500 mb-3">
+        PNG, JPEG, WebP · Max 2MB · Recommended: 800×400px
+      </p>
+
+      {/* Existing Logo (Edit Mode) */}
       {isEditMode && existingLogo && !preview && (
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Current Logo</label>
+          <p className="text-xs text-slate-500 mb-2">Current Logo</p>
           <div className="relative inline-block">
             <img
               src={existingLogo.url}
               alt={existingLogo.originalFilename || 'Partner store logo'}
-              className="w-32 h-32 object-contain border rounded bg-white p-2"
+              className="w-32 h-32 object-contain border border-slate-200 rounded-lg bg-white p-2"
               onError={(e) => {
                 e.target.src = 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
               }}
             />
-            {existingLogo.originalFilename && (
-              <p className="text-xs text-gray-600 mt-1 truncate w-32" title={existingLogo.originalFilename}>
-                {existingLogo.originalFilename}
-              </p>
-            )}
+            <span className="absolute top-1 left-1 bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded">
+              Saved
+            </span>
             <button
               type="button"
               onClick={handleRemoveExistingLogo}
-              className="absolute top-0 right-0 bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600"
+              className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs hover:bg-red-600 flex items-center justify-center"
               title="Remove current logo"
             >
-              Remove
+              ×
             </button>
           </div>
         </div>
       )}
 
+      {/* New Logo Preview */}
       {preview && (
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">New Logo Preview</label>
+          <p className="text-xs text-slate-500 mb-2">New Logo</p>
           <div className="relative inline-block">
             <img
               src={preview}
               alt="Logo preview"
-              className="w-32 h-32 object-contain border rounded bg-white p-2"
+              className="w-32 h-32 object-contain border border-slate-200 rounded-lg bg-white p-2"
             />
-            {formData.logo?.name && (
-              <p className="text-xs text-gray-600 mt-1 truncate w-32" title={formData.logo.name}>
-                {formData.logo.name}
-              </p>
-            )}
+            <span className="absolute top-1 left-1 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded">
+              New
+            </span>
             <button
               type="button"
               onClick={handleRemoveNewLogo}
-              className="absolute top-0 right-0 bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600"
+              className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs hover:bg-red-600 flex items-center justify-center"
               title="Remove new logo"
             >
-              Remove
+              ×
             </button>
           </div>
         </div>
       )}
 
+      {/* Choose Files Button */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {hasLogo ? 'Replace Logo' : 'Upload Logo'}
-          <span className="text-xs font-normal text-gray-500 ml-1">(optional)</span>
-          <span className="block text-xs font-normal text-gray-500 mt-1">
-            PNG • Max 2MB • Recommended: 800×400px
-          </span>
-        </label>
         <input
           type="file"
           accept="image/jpeg,image/jpg,image/png,image/webp"
           onChange={handleFileChange}
           ref={fileInputRef}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
+          className="hidden"
+          id="logo-upload"
         />
+        <label
+          htmlFor="logo-upload"
+          className="inline-block px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer transition-colors"
+        >
+          Choose File
+        </label>
       </div>
     </div>
   );

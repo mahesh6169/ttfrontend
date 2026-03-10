@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createThread } from '@/store/slices/threads/threadSlice';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
@@ -62,7 +61,7 @@ const CreateThreadPage = () => {
   const [showSuccessView, setShowSuccessView] = useState(false);
   const [createdThread, setCreatedThread] = useState(null);
   const [locationValidationError, setLocationValidationError] = useState('');
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -73,12 +72,12 @@ const CreateThreadPage = () => {
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-  
+
     if (files.length + preview.length > 10) {
       toast.error('You can upload up to 10 images only.');
       return;
     }
-  
+
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
     const validFiles = files.filter(file => {
       if (!allowedTypes.includes(file.type)) {
@@ -91,17 +90,16 @@ const CreateThreadPage = () => {
       }
       return true;
     });
-  
+
     const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
     setPreview((prev) => [...prev, ...newPreviews]);
-  
+
     setFormData((prev) => ({
       ...prev,
       images: [...prev.images, ...validFiles],
     }));
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
-  
 
   const handleRemoveImage = (index) => {
     setPreview((prev) => prev.filter((_, i) => i !== index));
@@ -111,11 +109,8 @@ const CreateThreadPage = () => {
     }));
   };
 
-  // Update location input handler
   const handleLocationInputChange = (e) => {
     setLocationInput(e.target.value);
-    
-    // Clear validation errors when user starts typing
     if (errors.suburb) {
       setErrors((prev) => ({ ...prev, suburb: '' }));
     }
@@ -128,28 +123,23 @@ const CreateThreadPage = () => {
     if (!autocomplete) return;
 
     const place = autocomplete.getPlace();
-    
-    // Check if we have a valid place with address components
+
     if (!place || !place.address_components) {
-      console.log("No valid place selected");
       return;
     }
-    
-    // Validate against "Australia" only
+
     const formattedAddressLower = (place.formatted_address || '').toLowerCase().trim();
     const genericLocations = ['australia', 'aus', 'au'];
-    
+
     if (genericLocations.includes(formattedAddressLower)) {
       setLocationValidationError('Please select a more specific location. Enter suburb or city.');
       setLocationInput('');
       return;
     }
 
-    // Clear any previous validation error
     setLocationValidationError('');
 
     const addressComponents = place.address_components;
-
     let suburb = '';
     let state = '';
     let postalCode = '';
@@ -157,8 +147,7 @@ const CreateThreadPage = () => {
 
     addressComponents.forEach((component) => {
       const types = component.types;
-      
-      // Try multiple suburb types for Australian locations
+
       if (!suburb) {
         if (types.includes('locality')) {
           suburb = component.long_name;
@@ -170,13 +159,12 @@ const CreateThreadPage = () => {
           suburb = component.long_name;
         }
       }
-      
+
       if (types.includes('administrative_area_level_1'))
         state = component.short_name;
       if (types.includes('postal_code')) postalCode = component.long_name;
     });
 
-    // Fallback: Extract from formatted address if no suburb found
     if (!suburb && place.formatted_address) {
       suburb = place.formatted_address.split(',')[0].trim();
     }
@@ -187,15 +175,6 @@ const CreateThreadPage = () => {
       coordinates = [lng, lat];
     }
 
-    // Debug logging
-    console.log('📍 Thread Location Data:', {
-      suburb,
-      state,
-      postalCode: postalCode || '',
-      coordinates
-    });
-
-    // Update formData with selected location
     setFormData((prev) => ({
       ...prev,
       suburb: {
@@ -209,8 +188,7 @@ const CreateThreadPage = () => {
       },
     }));
 
-    // Update the input value to show the selected location
-    const locationDisplay = postalCode 
+    const locationDisplay = postalCode
       ? `${suburb}, ${state} ${postalCode}`
       : `${suburb}, ${state}`;
     setLocationInput(locationDisplay);
@@ -220,10 +198,9 @@ const CreateThreadPage = () => {
     }
   };
 
-  // Update useEffect to set location input when suburb data changes
   useEffect(() => {
     if (formData.suburb.name) {
-      const display = formData.suburb.postalCode 
+      const display = formData.suburb.postalCode
         ? `${formData.suburb.name}, ${formData.suburb.state} ${formData.suburb.postalCode}`
         : `${formData.suburb.name}, ${formData.suburb.state}`;
       setLocationInput(display);
@@ -238,36 +215,18 @@ const CreateThreadPage = () => {
     if (!formData.question.trim()) newErrors.question = 'Question is required';
     if (!formData.category.trim()) newErrors.category = 'Category is required';
 
-    // Validate author fields
-    if (authorSectionRef.current && !authorSectionRef.current.validateFields()) {
-      return;
-    }
-
     const { name, state, postalCode, location } = formData.suburb;
-    
-    // Debug logging
-    console.log('🚀 Thread Submit - Suburb Data:', {
-      name,
-      state,
-      postalCode: postalCode || '(empty)',
-      coordinates: location?.coordinates,
-      fullSuburb: formData.suburb
-    });
-    
-    // Postal code is now optional
-    if (!name || !state || !location?.coordinates || location.coordinates.length !== 2 || 
+
+    if (!name || !state || !location?.coordinates || location.coordinates.length !== 2 ||
         (location.coordinates[0] === 0 && location.coordinates[1] === 0)) {
-      console.log('❌ Suburb validation failed:', {
-        hasName: !!name,
-        hasState: !!state,
-        hasCoordinates: !!location?.coordinates,
-        coordinatesLength: location?.coordinates?.length,
-        coordinates: location?.coordinates
-      });
       newErrors.suburb = 'Please select a valid location using the autocomplete field';
     }
 
-    if (Object.keys(newErrors).length > 0) {
+    // Validate author section (shows its own errors internally)
+    const authorValid = authorSectionRef.current ? authorSectionRef.current.validateFields() : true;
+
+    // Show page errors and stop if any validation failed
+    if (Object.keys(newErrors).length > 0 || !authorValid) {
       setErrors(newErrors);
       return;
     }
@@ -277,281 +236,317 @@ const CreateThreadPage = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     const formPayload = new FormData();
-    
-    // Append basic fields
     formPayload.append('title', formData.title);
     formPayload.append('question', formData.question);
     formPayload.append('category', formData.category);
-    
-    // Append communities
+
     if (formData.communities && formData.communities.length > 0) {
       formPayload.append('communities', JSON.stringify(formData.communities));
     }
-    
-    // Append suburb data
+
     formPayload.append('suburb', JSON.stringify(formData.suburb));
-    
-    // Append author data only if user opted in
-    if (authorSectionRef.current?.isOptedIn() && formData.author && 
-        (formData.author.name || formData.author.website || 
-         formData.author.contact || formData.author.email || 
-         formData.author.aboutMyself || 
+
+    if (authorSectionRef.current?.isOptedIn() && formData.author &&
+        (formData.author.name || formData.author.website ||
+         formData.author.contact || formData.author.email ||
+         formData.author.aboutMyself ||
          (formData.author.socialMedia && formData.author.socialMedia.length > 0))) {
       formPayload.append('author', JSON.stringify(formData.author));
     }
-    
-    // Append images
+
     formData.images.forEach((file) => formPayload.append('images', file));
 
     const resultAction = await dispatch(createThread(formPayload));
 
-if (createThread.fulfilled.match(resultAction)) {
-  // Get the created thread data
-  const thread = resultAction.payload.data || resultAction.payload;
-  if (thread) {
-    setCreatedThread(thread);
-    setShowSuccessView(true);
-  }
-} else {
-  toast.error(resultAction?.error?.message || 'Failed to create thread.');
-}
+    setIsSubmitting(false);
 
+    if (createThread.fulfilled.match(resultAction)) {
+      const thread = resultAction.payload.data || resultAction.payload;
+      if (thread) {
+        setCreatedThread(thread);
+        setShowSuccessView(true);
+      }
+    } else {
+      toast.error(resultAction?.error?.message || 'Failed to create thread.');
+    }
   };
 
+  const resetForm = () => {
+    setShowSuccessView(false);
+    setCreatedThread(null);
+    setFormData({
+      title: '',
+      question: '',
+      category: '',
+      communities: [],
+      images: [],
+      suburb: {
+        name: '',
+        state: '',
+        postalCode: '',
+        location: {
+          type: 'Point',
+          coordinates: [],
+        },
+      },
+      author: {
+        name: '',
+        website: '',
+        contact: '',
+        email: '',
+        aboutMyself: '',
+        socialMedia: []
+      },
+    });
+    setPreview([]);
+    setLocationInput('');
+    setErrors({});
+  };
+
+  const getInputClasses = (hasError) => `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+    hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
+  }`;
+
+  const isMaxImagesReached = preview.length >= 10;
+
   return (
-    <div className="max-w-5xl mx-auto mt-8 p-4 sm:p-6">
+    <div className="px-2 py-6 sm:px-6 sm:py-8">
       <RequireVerifiedAccount>
-      
         {showSuccessView && createdThread ? (
           <SuccessView
             thread={createdThread}
             mode="add"
-            onAddAnother={() => {
-              setShowSuccessView(false);
-              setCreatedThread(null);
-              // Reset form
-              setFormData({
-                title: '',
-                question: '',
-                category: '',
-                communities: [],
-                images: [],
-                suburb: {
-                  name: '',
-                  state: '',
-                  postalCode: '',
-                  location: {
-                    type: 'Point',
-                    coordinates: [],
-                  },
-                },
-                author: {
-                  name: '',
-                  website: '',
-                  contact: '',
-                  email: '',
-                  aboutMyself: '',
-                  socialMedia: []
-                },
-              });
-              setPreview([]);
-              setLocationInput('');
-            }}
+            onAddAnother={resetForm}
           />
         ) : (
-          <div className="bg-white border rounded-lg shadow-lg p-4 sm:p-6">
-            <h1 className="text-2xl font-bold mb-4">Create a New Topic</h1>
-            <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="text"
-              name="title"
-              placeholder="Topic Title"
-              value={formData.title}
-              onChange={handleChange}
-              className={`w-full p-2 border rounded-lg ${
-                errors.title ? 'border-red-500' : ''
-              }`}
-              required
-            />
-            {errors.title && (
-              <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-            )}
-          </div>
-
-          <div>
-            <textarea
-              name="question"
-              placeholder="Describe what would you like to ask"
-              value={formData.question}
-              onChange={handleChange}
-              className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
-                errors.question ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
-              }`}
-              required
-              maxLength="15000"
-            />
-            <div className="flex justify-between items-start gap-2">
-              <div className="flex-1">
-                {errors.question && (
-                  <p className="text-red-500 text-sm mt-1">{errors.question}</p>
-                )}
-              </div>
-              <span className="text-xs text-gray-400 whitespace-nowrap">
-                {(formData.question || '').length}/15000
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <CategorySelector
-              value={formData.category}
-              onChange={(value) => {
-                // Clear communities if switching to a non-eligible category
-                const updates = { category: value };
-                if (!needsCommunityField(value)) {
-                  updates.communities = [];
-                }
-                setFormData({ ...formData, ...updates });
-              }}
-              placeholder="Select Category"
-              required={true}
-            />
-            {errors.category && (
-              <p className="text-red-500 text-sm mt-1">{errors.category}</p>
-            )}
-          </div>
-          
-          {/* Community/Language - Only for eligible categories */}
-          {needsCommunityField(formData.category) && (
-            <div>
-              <CommunitySelector
-                value={formData.communities}
-                onChange={(value) => setFormData({ ...formData, communities: value })}
-                label="Community/Language (Optional)"
-                showHint={true}
-              />
-            </div>
-          )}
-
-          {/* Location/Suburb Selector - Fixed to allow typing */}
-          <div>
-            <label className="block font-bold mb-2 text-gray-700">
-              Location <span className="text-red-500">*</span>
-            </label>
-            <LoadScriptNext
-              googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-              libraries={libraries}
-            >
-              <Autocomplete
-                onLoad={(auto) => setAutocomplete(auto)}
-                onPlaceChanged={handlePlaceChanged}
-                options={{
-                  componentRestrictions: { country: 'AU' },
-                  types: ['geocode'],
-                }}
+          <div className="max-w-3xl mx-auto">
+            {/* Page Header */}
+            <div className="mb-8 text-center">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Create New Topic</h1>
+              <p className="text-sm text-slate-500 mt-1">Start a discussion or ask a question</p>
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="mt-4 inline-flex items-center justify-center bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-5 py-2 rounded-full shadow font-semibold text-sm transition-colors"
               >
+                Cancel
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              {/* Title */}
+              <div>
+                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                  Title <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  placeholder="Enter your suburb"
-                  className={`w-full p-2 border rounded ${
-                    errors.suburb || locationValidationError ? 'border-red-500' : 'border-gray-300'
+                  name="title"
+                  placeholder="What's your topic about?"
+                  value={formData.title}
+                  onChange={handleChange}
+                  className={getInputClasses(errors.title)}
+                  maxLength="200"
+                />
+                {errors.title && (
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.title}</p>
+                )}
+              </div>
+
+              {/* Question/Description */}
+              <div>
+                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="question"
+                  placeholder="Describe what you'd like to discuss or ask..."
+                  value={formData.question}
+                  onChange={handleChange}
+                  className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
+                    errors.question ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
                   }`}
-                  value={locationInput}
-                  onChange={handleLocationInputChange}
-                  onBlur={(e) => {
-                    const value = e.target.value.toLowerCase().trim();
-                    const genericLocations = ['australia', 'aus', 'au'];
-                    
-                    if (genericLocations.includes(value)) {
-                      setLocationValidationError('Please enter a more specific location. Include an address, suburb or city.');
+                  maxLength="15000"
+                />
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1">
+                    {errors.question && (
+                      <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.question}</p>
+                    )}
+                  </div>
+                  <span className="text-xs text-slate-400 whitespace-nowrap">
+                    {(formData.question || '').length}/15000
+                  </span>
+                </div>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <CategorySelector
+                  value={formData.category}
+                  onChange={(value) => {
+                    const updates = { category: value };
+                    if (!needsCommunityField(value)) {
+                      updates.communities = [];
+                    }
+                    setFormData({ ...formData, ...updates });
+                    if (errors.category) {
+                      setErrors({ ...errors, category: '' });
                     }
                   }}
+                  placeholder="Select a category"
+                  hasError={!!errors.category}
                 />
-              </Autocomplete>
-            </LoadScriptNext>
-            {errors.suburb && (
-              <p className="text-red-500 text-sm mt-1">{errors.suburb}</p>
-            )}
-            {locationValidationError && !errors.suburb && (
-              <p className="text-red-500 text-sm mt-1">{locationValidationError}</p>
-            )}
-            
-          </div>
+                {errors.category && (
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.category}</p>
+                )}
+              </div>
 
-          {/* Author Details Section */}
-          <AuthorDetailsSection
-            ref={authorSectionRef}
-            formData={formData}
-            onChange={setFormData}
-            errors={errors}
-            userName={user?.name || ''}
-          />
-
-          {/* Image Upload */}
-          <div>
-            <label className="block font-bold mb-2 text-gray-700">Upload Images (Optional)</label>
-            <p className="text-xs text-gray-600 mb-2">
-              You can upload up to 10 images. Current: {preview.length}/10
-            </p>
-            <input
-             ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileChange}
-              disabled={preview.length >= 10}
-              className={`w-full p-2 border rounded ${
-                preview.length >= 10 
-                  ? 'bg-gray-100 cursor-not-allowed opacity-50' 
-                  : 'cursor-pointer'
-              }`}
-            />
-            {preview.length >= 10 && (
-              <p className="text-sm text-amber-600 mt-1">
-                Maximum image limit reached. Remove existing images to add new ones.
-              </p>
-            )}
-            <div className="mt-4 flex gap-4 flex-wrap">
-              {preview.map((src, idx) => (
-                <div key={idx} className="relative">
-                  <img
-                    src={src}
-                    alt={`Preview ${idx}`}
-                    className="w-24 h-24 object-cover border"
+              {/* Community/Language */}
+              {needsCommunityField(formData.category) && (
+                <div>
+                  <CommunitySelector
+                    value={formData.communities}
+                    onChange={(value) => setFormData({ ...formData, communities: value })}
+                    label="Community/Language"
+                    showHint={true}
                   />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(idx)}
-                    className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
-                  >
-                    X
-                  </button>
                 </div>
-              ))}
-            </div>
-          </div>
+              )}
 
-          <div className="flex gap-4 mt-4">
-            <button
-              type="submit"
-              className="bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded"
-            >
-              Create Thread
-            </button>
-            <button
-              type="button"
-              className="bg-red-400 text-white hover:bg-red-600   px-4 py-2 rounded"
-              onClick={() => {
-                const backTo = localStorage.getItem('cancelRedirectUrl');
-                localStorage.removeItem('cancelRedirectUrl');
-                router.push(backTo || '/threads');
-              }}
-            >
-              Cancel
-            </button>
-          </div>
+              {/* Location */}
+              <div>
+                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                  Location <span className="text-red-500">*</span>
+                </label>
+                <LoadScriptNext
+                  googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                  libraries={libraries}
+                >
+                  <Autocomplete
+                    onLoad={(auto) => setAutocomplete(auto)}
+                    onPlaceChanged={handlePlaceChanged}
+                    options={{
+                      componentRestrictions: { country: 'AU' },
+                      types: ['geocode'],
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Enter your suburb"
+                      className={getInputClasses(errors.suburb || locationValidationError)}
+                      value={locationInput}
+                      onChange={handleLocationInputChange}
+                      onBlur={(e) => {
+                        const value = e.target.value.toLowerCase().trim();
+                        const genericLocations = ['australia', 'aus', 'au'];
+                        if (genericLocations.includes(value)) {
+                          setLocationValidationError('Please enter a more specific location.');
+                        }
+                      }}
+                    />
+                  </Autocomplete>
+                </LoadScriptNext>
+                {errors.suburb && (
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.suburb}</p>
+                )}
+                {locationValidationError && !errors.suburb && (
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{locationValidationError}</p>
+                )}
+              </div>
+
+              {/* Author Details */}
+              <div className="border-t border-slate-200 pt-4 sm:pt-6">
+                <AuthorDetailsSection
+                  ref={authorSectionRef}
+                  formData={formData}
+                  onChange={setFormData}
+                  errors={errors}
+                  userName={user?.name || ''}
+                />
+              </div>
+
+              {/* Images */}
+              <div className="border-t border-slate-200 pt-4 sm:pt-6">
+                <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+                  Upload Images
+                </span>
+                <p className="text-xs text-slate-500 mt-1 mb-3">
+                  JPEG, PNG, WebP & GIF only · Max 10 images · {preview.length}/10 uploaded
+                </p>
+
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    disabled={isMaxImagesReached}
+                    className="hidden"
+                    id="thread-image-upload"
+                  />
+                  <label
+                    htmlFor="thread-image-upload"
+                    className={`inline-block px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                      isMaxImagesReached
+                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer'
+                    }`}
+                  >
+                    Choose Files
+                  </label>
+                  {isMaxImagesReached && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      Maximum reached. Remove images to add new ones.
+                    </p>
+                  )}
+                </div>
+
+                {preview.length > 0 && (
+                  <div className="mt-3 flex gap-3 flex-wrap">
+                    {preview.map((src, idx) => (
+                      <div key={idx} className="relative">
+                        <img
+                          src={src}
+                          alt={`Preview ${idx + 1}`}
+                          className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full hover:bg-red-600 flex items-center justify-center"
+                          title="Remove"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Submit */}
+              <div className="text-center pt-4">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`px-8 py-3 rounded-lg font-semibold text-sm sm:text-base transition-colors ${
+                    isSubmitting
+                      ? 'bg-slate-400 cursor-not-allowed text-white'
+                      : 'bg-teal-700 hover:bg-teal-800 text-white'
+                  }`}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create'}
+                </button>
+              </div>
             </form>
           </div>
         )}

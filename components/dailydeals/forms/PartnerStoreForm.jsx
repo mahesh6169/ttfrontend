@@ -6,6 +6,7 @@ import { FaXTwitter } from 'react-icons/fa6';
 import PartnerStoreAddressInput from '../PartnerStoreAddressInput';
 import { DEAL_CATEGORIES } from '../dealCategories';
 import PartnerStoreImageUploader from './PartnerStoreImageUploader';
+import SimpleDropdown from '@/components/shared/SimpleDropdown';
 
 const SOCIAL_PLATFORMS = [
   { value: 'Facebook', label: 'Facebook', icon: FaFacebook },
@@ -13,7 +14,7 @@ const SOCIAL_PLATFORMS = [
   { value: 'X', label: 'X (Twitter)', icon: FaXTwitter },
 ];
 
-export default function PartnerStoreForm({ initialData = null, onSubmit, onCancel }) {
+export default function PartnerStoreForm({ initialData = null, onSubmit, isLoading = false }) {
   const [formData, setFormData] = useState({
     businessName: initialData?.businessName || '',
     category: initialData?.category || '',
@@ -191,7 +192,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       {/* Business Name */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
           Business Name <span className="text-red-500">*</span>
         </label>
         <input
@@ -199,7 +200,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
           name="businessName"
           value={formData.businessName}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="Enter business name"
         />
         {errors.businessName && (
@@ -209,37 +210,18 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
 
       {/* Category */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
           Category <span className="text-red-500">*</span>
         </label>
-        <select
-          name="category"
+        <SimpleDropdown
           value={formData.category}
-          onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-        >
-          <option value="">Select category</option>
-          {DEAL_CATEGORIES.map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
+          onChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+          options={DEAL_CATEGORIES}
+          placeholder="Select category"
+        />
         {errors.category && (
           <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.category}</p>
         )}
-      </div>
-
-      {/* Nationwide Checkbox */}
-      <div className="flex items-center">
-        <input
-          type="checkbox"
-          name="isNationwide"
-          checked={formData.isNationwide}
-          onChange={handleChange}
-          className="mr-2 w-5 h-5 sm:w-4 sm:h-4"
-        />
-        <label className="text-sm sm:text-base text-gray-700">
-          Nationwide store (no specific location)
-        </label>
       </div>
 
       {/* Address (conditional) */}
@@ -257,9 +239,24 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
         </div>
       )}
 
+      {/* Nationwide Checkbox */}
+      <div>
+        <label className="cursor-pointer">
+          <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">Nationwide Business</span>
+          <p className="text-xs text-slate-500 mt-1 mb-2">Check this to appear in all location searches across Australia</p>
+          <input
+            type="checkbox"
+            name="isNationwide"
+            checked={formData.isNationwide}
+            onChange={handleChange}
+            className="w-5 h-5 text-teal-700 rounded focus:ring-teal-500"
+          />
+        </label>
+      </div>
+
       {/* Contact Phone */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
           Contact Phone
         </label>
         <input
@@ -267,7 +264,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
           name="contactInfo.phone"
           value={formData.contactInfo.phone}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="0412345678"
         />
         {errors.phone && (
@@ -277,7 +274,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
 
       {/* Contact Email */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
           Contact Email
         </label>
         <input
@@ -285,7 +282,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
           name="contactInfo.email"
           value={formData.contactInfo.email}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="email@example.com"
         />
         {errors.email && (
@@ -295,16 +292,16 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
 
       {/* Website */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
           Website
-          <span className="block text-xs font-normal text-gray-500">Must be a valid URL starting with https://</span>
+          <span className="block text-xs font-normal text-slate-500">Must be a valid URL starting with https://</span>
         </label>
         <input
           type="url"
           name="contactInfo.website"
           value={formData.contactInfo.website}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="https://example.com"
         />
         {errors.website && (
@@ -314,9 +311,9 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
 
       {/* Social Media Links */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
           Social Media Links
-          <span className="text-xs font-normal text-gray-500 ml-1">(max 3)</span>
+          <span className="text-xs font-normal text-slate-500 ml-1">(max 3)</span>
         </label>
 
         {formData.contactInfo.socialMedia.map((social, index) => (
@@ -324,7 +321,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
             <select
               value={social.platform}
               onChange={(e) => handleSocialMediaChange(index, 'platform', e.target.value)}
-              className="w-full sm:w-36 p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full sm:w-36 p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
             >
               <option value="">Select</option>
               {getAvailablePlatforms(index).map(p => (
@@ -342,7 +339,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
                 value={social.url}
                 onChange={(e) => handleSocialMediaChange(index, 'url', e.target.value)}
                 placeholder="https://facebook.com/yourpage"
-                className="flex-1 p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="flex-1 p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
               <button
                 type="button"
@@ -359,7 +356,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
           <button
             type="button"
             onClick={addSocialMedia}
-            className="flex items-center gap-2 text-sm sm:text-base text-teal-600 hover:text-teal-700 font-medium mt-2"
+            className="flex items-center gap-2 text-sm sm:text-base text-teal-700 hover:text-teal-800 font-medium mt-2"
           >
             <FaPlus className="text-xs" />
             Add Social Media Link
@@ -384,28 +381,19 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, onCance
 
       {/* Submit Error */}
       {errors.submit && (
-        <div className="bg-red-50 border border-red-200 rounded p-3">
-          <p className="text-red-600 text-sm">{errors.submit}</p>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4">
+          <p className="text-red-600 text-sm sm:text-base">{errors.submit}</p>
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="w-full sm:w-auto px-6 py-3 sm:py-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-        )}
+      {/* Submit Button */}
+      <div className="text-center pt-4">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:flex-1 bg-teal-600 text-white py-3 sm:py-2 px-4 text-base sm:text-sm rounded-lg sm:rounded font-medium hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="px-8 py-3 rounded-lg font-semibold text-sm sm:text-base bg-teal-700 hover:bg-teal-800 text-white transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? 'Saving...' : (initialData ? 'Update Business' : 'Add Business')}
+          {isSubmitting ? (initialData ? 'Updating...' : 'Creating...') : (initialData ? 'Update' : 'Create')}
         </button>
       </div>
     </form>

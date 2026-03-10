@@ -1,28 +1,30 @@
-import React, { useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useEffect, useRef } from 'react';
+import { FaMobileAlt, FaEnvelope, FaGlobe, FaUser, FaShareAlt, FaTimes, FaPlus } from 'react-icons/fa';
 
 const SOCIAL_MEDIA_PLATFORMS = [
-  'Facebook',
-  'Instagram',
-  'Twitter',
-  'LinkedIn',
-  'YouTube',
-  'TikTok',
-  'Pinterest',
-  'Other'
+  { value: 'Facebook', label: 'Facebook' },
+  { value: 'Instagram', label: 'Instagram' },
+  { value: 'Twitter', label: 'X (Twitter)' },
+  { value: 'LinkedIn', label: 'LinkedIn' },
+  { value: 'YouTube', label: 'YouTube' },
+  { value: 'TikTok', label: 'TikTok' },
+  { value: 'Pinterest', label: 'Pinterest' },
+  { value: 'Other', label: 'Other' }
 ];
 
 const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {}, userName = '' }, ref) => {
   const [showAuthorDetails, setShowAuthorDetails] = useState(false);
-  const [availableFields, setAvailableFields] = useState({
-    website: false,
+  const [activeFields, setActiveFields] = useState({
     contact: false,
     email: false,
+    website: false,
     aboutMyself: false,
+    socialMedia: false,
   });
-
-  const [showFieldDropdown, setShowFieldDropdown] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
-  const [lastLoadedAuthorData, setLastLoadedAuthorData] = useState(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [platformDropdownOpen, setPlatformDropdownOpen] = useState(null); // index of open dropdown
+  const dropdownRefs = useRef({});
 
   // Initialize author object if it doesn't exist
   const author = formData.author || {
@@ -34,67 +36,49 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
     socialMedia: []
   };
 
-  // Initialize checkbox state based on existing author data (for edit mode)
-  React.useEffect(() => {
-    const hasAnyAuthorData = author.name || author.website || author.contact || 
-                             author.email || author.aboutMyself || 
+  // Initialize states based on existing author data (for edit mode)
+  useEffect(() => {
+    const hasAnyAuthorData = author.name || author.website || author.contact ||
+                             author.email || author.aboutMyself ||
                              (author.socialMedia && author.socialMedia.length > 0);
     if (hasAnyAuthorData && !showAuthorDetails) {
       setShowAuthorDetails(true);
     }
   }, []);
 
-  // Initialize availableFields based on existing author data (for edit mode)
-  React.useEffect(() => {
-    if (formData.author) {
-      // Create a signature of the author data to detect real changes
-      const authorSignature = JSON.stringify({
-        website: formData.author.website || '',
-        contact: formData.author.contact || '',
-        email: formData.author.email || '',
-        aboutMyself: formData.author.aboutMyself || '',
-      });
-      
-      // Only update if this is new/different author data
-      if (authorSignature !== lastLoadedAuthorData) {
-        console.log('👤 AuthorDetailsSection received author data:', formData.author);
-        const hasWebsite = !!(formData.author.website && formData.author.website.trim());
-        const hasContact = !!(formData.author.contact && formData.author.contact.trim());
-        const hasEmail = !!(formData.author.email && formData.author.email.trim());
-        const hasAboutMyself = !!(formData.author.aboutMyself && formData.author.aboutMyself.trim());
-        
-        console.log('✅ Available fields check:', { hasWebsite, hasContact, hasEmail, hasAboutMyself });
-        
-        // Check if any of these fields should be visible
-        const hasAnyFieldToShow = hasWebsite || hasContact || hasEmail || hasAboutMyself;
-        
-        if (hasAnyFieldToShow) {
-          console.log('🔄 Updating availableFields state');
-          setAvailableFields({
-            website: hasWebsite,
-            contact: hasContact,
-            email: hasEmail,
-            aboutMyself: hasAboutMyself,
-          });
-          setLastLoadedAuthorData(authorSignature);
-        }
+  // Initialize activeFields based on existing author data (for edit mode)
+  useEffect(() => {
+    if (formData.author && !hasInitialized) {
+      const hasData = formData.author.website || formData.author.contact ||
+                      formData.author.email || formData.author.aboutMyself ||
+                      (formData.author.socialMedia?.length > 0);
+
+      if (hasData) {
+        setActiveFields({
+          website: !!formData.author.website,
+          contact: !!formData.author.contact,
+          email: !!formData.author.email,
+          aboutMyself: !!formData.author.aboutMyself,
+          socialMedia: formData.author.socialMedia?.length > 0,
+        });
+        setHasInitialized(true);
       }
     }
-  }, [formData.author]);
+  }, [formData.author, hasInitialized]);
 
+  // Validation helpers
   const validateUrl = (url) => {
     if (!url || url.trim() === '') return null;
-    
     const trimmedUrl = url.trim();
-    if (trimmedUrl.startsWith('http://')) {
-      return 'URL must use HTTPS (https://), not HTTP';
-    }
-    
     if (!trimmedUrl.startsWith('https://')) {
       return 'URL must start with https://';
     }
-    
     return null;
+  };
+
+  const validateEmail = (email) => {
+    if (!email) return null;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? null : 'Enter a valid email';
   };
 
   const handleAuthorChange = (field, value) => {
@@ -105,74 +89,111 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
         [field]: value
       }
     });
-    
-    // Clear error for this field when user types
+
+    // Clear error when user types
     if (fieldErrors[field]) {
-      setFieldErrors({
-        ...fieldErrors,
-        [field]: null
-      });
+      setFieldErrors(prev => ({ ...prev, [field]: null }));
     }
   };
 
-  const handleAddField = (fieldName) => {
-    setAvailableFields({
-      ...availableFields,
-      [fieldName]: true
+  const toggleField = (field) => {
+    setActiveFields(prev => {
+      const newState = { ...prev, [field]: !prev[field] };
+
+      if (!newState[field]) {
+        // Deactivating - clear value and error
+        if (field === 'socialMedia') {
+          handleAuthorChange('socialMedia', []);
+        } else {
+          handleAuthorChange(field, '');
+        }
+        setFieldErrors(prev => ({ ...prev, [field]: null }));
+      } else {
+        // Activating - auto-add one entry for socialMedia
+        if (field === 'socialMedia') {
+          handleAuthorChange('socialMedia', [{ platform: '', url: '' }]);
+        }
+      }
+
+      return newState;
     });
-    setShowFieldDropdown(false);
   };
 
-  const handleRemoveField = (fieldName) => {
-    setAvailableFields({
-      ...availableFields,
-      [fieldName]: false
-    });
-    // Clear the field value and error
-    handleAuthorChange(fieldName, '');
-    if (fieldErrors[fieldName]) {
-      const newErrors = { ...fieldErrors };
-      delete newErrors[fieldName];
-      setFieldErrors(newErrors);
+  const clearField = (field) => {
+    if (field === 'socialMedia') {
+      handleAuthorChange('socialMedia', []);
+    } else {
+      handleAuthorChange(field, '');
     }
+    setFieldErrors(prev => ({ ...prev, [field]: null }));
+    setActiveFields(prev => ({ ...prev, [field]: false }));
   };
 
-  const handleAddSocialMedia = () => {
-    const newSocialMedia = [...(author.socialMedia || []), { platform: '', url: '' }];
-    handleAuthorChange('socialMedia', newSocialMedia);
+  // Social media handlers
+  const addSocialMedia = () => {
+    const current = author.socialMedia || [];
+    handleAuthorChange('socialMedia', [...current, { platform: '', url: '' }]);
   };
 
-  const handleUpdateSocialMedia = (index, field, value) => {
+  const updateSocialMedia = (index, key, value) => {
     const updated = [...(author.socialMedia || [])];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = { ...updated[index], [key]: value };
     handleAuthorChange('socialMedia', updated);
-    
-    // Clear error for this social media field when user types
-    if (field === 'url' && fieldErrors[`socialMedia_${index}`]) {
-      const newErrors = { ...fieldErrors };
-      delete newErrors[`socialMedia_${index}`];
-      setFieldErrors(newErrors);
+
+    if (key === 'url' && fieldErrors[`social_${index}`]) {
+      setFieldErrors(prev => ({ ...prev, [`social_${index}`]: null }));
     }
   };
 
-  const handleRemoveSocialMedia = (index) => {
+  const removeSocialMedia = (index) => {
     const updated = (author.socialMedia || []).filter((_, i) => i !== index);
     handleAuthorChange('socialMedia', updated);
-    
-    // Clear error for this social media field
-    if (fieldErrors[`socialMedia_${index}`]) {
-      const newErrors = { ...fieldErrors };
-      delete newErrors[`socialMedia_${index}`];
-      setFieldErrors(newErrors);
+    setFieldErrors(prev => ({ ...prev, [`social_${index}`]: null }));
+
+    // Auto-deactivate section when last entry removed
+    if (updated.length === 0) {
+      setActiveFields(prev => ({ ...prev, socialMedia: false }));
     }
   };
+
+  // Get available platforms (exclude already selected)
+  const getAvailablePlatforms = (currentIndex) => {
+    const selected = (author.socialMedia || [])
+      .map((s, i) => i !== currentIndex ? s.platform : null)
+      .filter(Boolean);
+    return SOCIAL_MEDIA_PLATFORMS.filter(p => !selected.includes(p.value));
+  };
+
+  // Select platform from dropdown
+  const selectPlatform = (index, platform) => {
+    updateSocialMedia(index, 'platform', platform);
+    setPlatformDropdownOpen(null);
+    // Clear platform error
+    if (fieldErrors[`social_platform_${index}`]) {
+      setFieldErrors(prev => ({ ...prev, [`social_platform_${index}`]: null }));
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (platformDropdownOpen !== null) {
+        const ref = dropdownRefs.current[platformDropdownOpen];
+        if (ref && !ref.contains(event.target)) {
+          setPlatformDropdownOpen(null);
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [platformDropdownOpen]);
 
   // Handle checkbox toggle
   const handleCheckboxToggle = (checked) => {
     setShowAuthorDetails(checked);
-    
+
     if (checked) {
-      // Prefill author name with username when checking the box
+      // Prefill author name with username
       if (userName) {
         onChange({
           ...formData,
@@ -187,7 +208,7 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
         });
       }
     } else {
-      // Clear all author data when unchecked
+      // Clear all author data
       onChange({
         ...formData,
         author: {
@@ -199,97 +220,106 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
           socialMedia: []
         }
       });
-      // Reset available fields
-      setAvailableFields({
-        website: false,
+      setActiveFields({
         contact: false,
         email: false,
+        website: false,
         aboutMyself: false,
+        socialMedia: false,
       });
-      // Clear all errors
       setFieldErrors({});
     }
   };
 
   // Validate all fields before form submission
+  // When a field is toggled ON, it becomes mandatory
   const validateFields = () => {
-    // If author details not opted in, skip validation
     if (!showAuthorDetails) return true;
-    
+
     const newErrors = {};
-    
-    // Validate visible fields that are empty
-    if (availableFields.website) {
-      if (!author.website || author.website.trim() === '') {
-        newErrors.website = 'Website cannot be empty. Please fill it or remove the field.';
+
+    // About Myself - mandatory if toggled on
+    if (activeFields.aboutMyself && !author.aboutMyself?.trim()) {
+      newErrors.aboutMyself = 'Please enter about yourself or turn off this field';
+    }
+
+    // Contact - mandatory if toggled on
+    if (activeFields.contact && !author.contact?.trim()) {
+      newErrors.contact = 'Please enter mobile number or turn off this field';
+    }
+
+    // Email - mandatory if toggled on, also validate format
+    if (activeFields.email) {
+      if (!author.email?.trim()) {
+        newErrors.email = 'Please enter email or turn off this field';
+      } else {
+        const emailError = validateEmail(author.email);
+        if (emailError) newErrors.email = emailError;
+      }
+    }
+
+    // Website - mandatory if toggled on, also validate format
+    if (activeFields.website) {
+      if (!author.website?.trim()) {
+        newErrors.website = 'Please enter website or turn off this field';
       } else {
         const urlError = validateUrl(author.website);
         if (urlError) newErrors.website = urlError;
       }
     }
-    
-    if (availableFields.contact && (!author.contact || author.contact.trim() === '')) {
-      newErrors.contact = 'Contact number cannot be empty. Please fill it or remove the field.';
-    }
-    
-    if (availableFields.email && (!author.email || author.email.trim() === '')) {
-      newErrors.email = 'Email cannot be empty. Please fill it or remove the field.';
-    }
-    
-    if (availableFields.aboutMyself && (!author.aboutMyself || author.aboutMyself.trim() === '')) {
-      newErrors.aboutMyself = 'About Myself cannot be empty. Please fill it or remove the field.';
-    }
-    
-    // Validate social media links
-    (author.socialMedia || []).forEach((social, index) => {
-      if (social.platform || social.url) {
-        if (!social.platform || !social.url || social.url.trim() === '') {
-          newErrors[`socialMedia_${index}`] = 'Both platform and URL are required, or remove this link.';
+
+    // Social Media - each entry must have platform and URL if section is active
+    if (activeFields.socialMedia) {
+      (author.socialMedia || []).forEach((social, index) => {
+        if (!social.platform) {
+          newErrors[`social_platform_${index}`] = 'Please select a platform';
+        }
+        if (!social.url?.trim()) {
+          newErrors[`social_${index}`] = 'Please enter URL or remove this link';
         } else {
           const urlError = validateUrl(social.url);
-          if (urlError) newErrors[`socialMedia_${index}`] = urlError;
+          if (urlError) newErrors[`social_${index}`] = urlError;
         }
-      }
-    });
-    
+      });
+    }
+
     setFieldErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Expose validation function and state to parent via ref
+  // Expose validation function to parent
   useImperativeHandle(ref, () => ({
     validateFields,
     isOptedIn: () => showAuthorDetails
   }));
 
-  // Check which fields can still be added
-  const getAvailableFieldOptions = () => {
-    const options = [];
-    if (!availableFields.website) options.push({ label: 'Website', value: 'website' });
-    if (!availableFields.contact) options.push({ label: 'Contact Number', value: 'contact' });
-    if (!availableFields.email) options.push({ label: 'Email', value: 'email' });
-    if (!availableFields.aboutMyself) options.push({ label: 'About Myself', value: 'aboutMyself' });
-    return options;
-  };
+  const getInputClasses = (hasError) => `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+    hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
+  }`;
 
-  const fieldOptions = getAvailableFieldOptions();
+  const getToggleClasses = (isActive) => `flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
+    isActive
+      ? 'bg-teal-700 text-white border-teal-700'
+      : 'bg-white text-slate-700 border-slate-300 hover:border-teal-400'
+  }`;
 
   return (
     <div className="mb-4">
-      <div className="flex items-start gap-3 mb-2">
+      {/* Opt-in Checkbox */}
+      <div className="flex items-start gap-3 mb-3">
         <input
           type="checkbox"
           id="showAuthorDetails"
           checked={showAuthorDetails}
           onChange={(e) => handleCheckboxToggle(e.target.checked)}
-          className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          className="mt-0.5 h-4 w-4 text-teal-600 focus:ring-teal-300 border-slate-300 rounded"
         />
         <div className="flex-1">
           <label htmlFor="showAuthorDetails" className="cursor-pointer">
-            <span className="block font-bold text-gray-700">
-              Author Details (Optional)
+            <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+              Author Details <span className="text-slate-400 font-normal text-xs">(Optional)</span>
             </span>
-            <p className="text-xs text-gray-600 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               I am a blogger or content creator - let people know more about me
             </p>
           </label>
@@ -297,273 +327,314 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
       </div>
 
       {showAuthorDetails && (
-        <>
-        <div className="space-y-4 p-4 rounded-lg border border-gray-200">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Author Name <span className="text-xs text-gray-500">(Optional - defaults to your username)</span>
-        </label>
-        <input
-          type="text"
-          value={author.name || ''}
-          onChange={(e) => handleAuthorChange('name', e.target.value)}
-          className="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-20 transition-colors"
-          placeholder="Your name or pen name"
-          maxLength="100"
-        />
-      </div>
-
-      {/* Website - Conditionally shown */}
-      {availableFields.website && (
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Website
-          </label>
-          <input
-            type="url"
-            value={author.website || ''}
-            onChange={(e) => handleAuthorChange('website', e.target.value)}
-            className={`w-full p-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-              fieldErrors.website 
-                ? 'border-red-500 focus:border-red-500 focus:ring-red-500 focus:ring-opacity-20' 
-                : 'border-gray-300 focus:border-teal-500 focus:ring-teal-500 focus:ring-opacity-20'
-            }`}
-            placeholder="https://yourwebsite.com"
-            maxLength="200"
-          />
-          <button
-            type="button"
-            onClick={() => handleRemoveField('website')}
-            className="absolute right-2 top-8 text-red-500 hover:text-red-700"
-            title="Remove field"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          {fieldErrors.website && (
-            <p className="text-red-500 text-sm mt-1">{fieldErrors.website}</p>
-          )}
-        </div>
-      )}
-
-      {/* Contact - Conditionally shown */}
-      {availableFields.contact && (
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Contact Number
-          </label>
-          <input
-            type="tel"
-            value={author.contact || ''}
-            onChange={(e) => handleAuthorChange('contact', e.target.value)}
-            className={`w-full p-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-              fieldErrors.contact 
-                ? 'border-red-500 focus:border-red-500 focus:ring-red-500 focus:ring-opacity-20' 
-                : 'border-gray-300 focus:border-teal-500 focus:ring-teal-500 focus:ring-opacity-20'
-            }`}
-            placeholder="+61 4XX XXX XXX"
-            maxLength="20"
-          />
-          <button
-            type="button"
-            onClick={() => handleRemoveField('contact')}
-            className="absolute right-2 top-8 text-red-500 hover:text-red-700"
-            title="Remove field"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          {fieldErrors.contact && (
-            <p className="text-red-500 text-sm mt-1">{fieldErrors.contact}</p>
-          )}
-        </div>
-      )}
-
-      {/* Email - Conditionally shown */}
-      {availableFields.email && (
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            type="email"
-            value={author.email || ''}
-            onChange={(e) => handleAuthorChange('email', e.target.value)}
-            className={`w-full p-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-              fieldErrors.email 
-                ? 'border-red-500 focus:border-red-500 focus:ring-red-500 focus:ring-opacity-20' 
-                : 'border-gray-300 focus:border-teal-500 focus:ring-teal-500 focus:ring-opacity-20'
-            }`}
-            placeholder="your.email@example.com"
-            maxLength="100"
-          />
-          <button
-            type="button"
-            onClick={() => handleRemoveField('email')}
-            className="absolute right-2 top-8 text-red-500 hover:text-red-700"
-            title="Remove field"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          {fieldErrors.email && (
-            <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
-          )}
-        </div>
-      )}
-
-      {/* About Myself - Conditionally shown */}
-      {availableFields.aboutMyself && (
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            About Myself
-          </label>
-          <textarea
-            value={author.aboutMyself || ''}
-            onChange={(e) => handleAuthorChange('aboutMyself', e.target.value)}
-            className={`w-full p-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors resize-none ${
-              fieldErrors.aboutMyself 
-                ? 'border-red-500 focus:border-red-500 focus:ring-red-500 focus:ring-opacity-20' 
-                : 'border-gray-300 focus:border-teal-500 focus:ring-teal-500 focus:ring-opacity-20'
-            }`}
-            placeholder="Tech blogger, Python enthusiast..."
-            maxLength="500"
-            rows="4"
-          />
-          <div className="flex justify-between items-center mt-1">
-            <button
-              type="button"
-              onClick={() => handleRemoveField('aboutMyself')}
-              className="text-sm text-red-500 hover:text-red-700"
-              title="Remove field"
-            >
-              Remove
-            </button>
-            <span className="text-xs text-gray-400">
-              {(author.aboutMyself || '').length}/500
-            </span>
+        <div className="space-y-4 p-4 rounded-lg border border-slate-200">
+          {/* Author Name - Always visible */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Author Name <span className="text-xs text-slate-500">(defaults to username)</span>
+            </label>
+            <input
+              type="text"
+              value={author.name || ''}
+              onChange={(e) => handleAuthorChange('name', e.target.value)}
+              className={getInputClasses(false)}
+              placeholder="Your name or pen name"
+              maxLength={100}
+            />
           </div>
-          {fieldErrors.aboutMyself && (
-            <p className="text-red-500 text-sm mt-1">{fieldErrors.aboutMyself}</p>
-          )}
-        </div>
-      )}
 
-      {/* Social Media Links */}
-      {author.socialMedia && author.socialMedia.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Social Media Links
-          </label>
-          <div className="space-y-2">
-            {author.socialMedia.map((social, index) => (
-              <div key={index}>
-                <div className="flex gap-2 items-start">
-                  <select
-                    value={social.platform || ''}
-                    onChange={(e) => handleUpdateSocialMedia(index, 'platform', e.target.value)}
-                    className={`w-1/3 p-2 text-sm border rounded-lg focus:outline-none focus:ring-2 ${
-                      fieldErrors[`socialMedia_${index}`]
-                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500 focus:ring-opacity-20'
-                        : 'border-gray-300 focus:border-teal-500 focus:ring-teal-500 focus:ring-opacity-20'
-                    }`}
-                  >
-                    <option value="">Select platform</option>
-                    {SOCIAL_MEDIA_PLATFORMS.map((platform) => (
-                      <option key={platform} value={platform}>
-                        {platform}
-                      </option>
-                    ))}
-                  </select>
+          {/* Toggle Buttons */}
+          <div>
+            <p className="text-xs text-slate-500 mb-2">Add details (tap to toggle)</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => toggleField('aboutMyself')}
+                className={getToggleClasses(activeFields.aboutMyself)}
+              >
+                <FaUser />
+                <span>About</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => toggleField('contact')}
+                className={getToggleClasses(activeFields.contact)}
+              >
+                <FaMobileAlt />
+                <span>Mobile</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => toggleField('email')}
+                className={getToggleClasses(activeFields.email)}
+              >
+                <FaEnvelope />
+                <span>Email</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => toggleField('website')}
+                className={getToggleClasses(activeFields.website)}
+              >
+                <FaGlobe />
+                <span>Website</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => toggleField('socialMedia')}
+                className={getToggleClasses(activeFields.socialMedia)}
+              >
+                <FaShareAlt />
+                <span>Social</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Dynamic Input Fields */}
+          {(activeFields.aboutMyself || activeFields.contact || activeFields.email || activeFields.website || activeFields.socialMedia) && (
+            <div className="space-y-4 pt-2">
+              {/* About Myself */}
+              {activeFields.aboutMyself && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium text-slate-700">About Myself</label>
+                    <button
+                      type="button"
+                      onClick={() => clearField('aboutMyself')}
+                      className="p-1 text-red-500 hover:text-red-700 rounded transition-colors"
+                      title="Remove"
+                    >
+                      <FaTimes className="text-sm" />
+                    </button>
+                  </div>
+                  <textarea
+                    value={author.aboutMyself || ''}
+                    onChange={(e) => handleAuthorChange('aboutMyself', e.target.value)}
+                    className={`${getInputClasses(fieldErrors.aboutMyself)} resize-none`}
+                    placeholder="Tech blogger, Python enthusiast..."
+                    maxLength={500}
+                    rows={3}
+                  />
+                  <div className="flex justify-between items-start mt-1">
+                    <div className="flex-1">
+                      {fieldErrors.aboutMyself && (
+                        <p className="text-xs text-red-500">{fieldErrors.aboutMyself}</p>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      {(author.aboutMyself || '').length}/500
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile/Contact */}
+              {activeFields.contact && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium text-slate-700">Mobile Number</label>
+                    <button
+                      type="button"
+                      onClick={() => clearField('contact')}
+                      className="p-1 text-red-500 hover:text-red-700 rounded transition-colors"
+                      title="Remove"
+                    >
+                      <FaTimes className="text-sm" />
+                    </button>
+                  </div>
+                  <input
+                    type="tel"
+                    value={author.contact || ''}
+                    onChange={(e) => handleAuthorChange('contact', e.target.value)}
+                    className={getInputClasses(fieldErrors.contact)}
+                    placeholder="+61 4XX XXX XXX"
+                    maxLength={20}
+                  />
+                  {fieldErrors.contact && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.contact}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Email */}
+              {activeFields.email && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium text-slate-700">Email Address</label>
+                    <button
+                      type="button"
+                      onClick={() => clearField('email')}
+                      className="p-1 text-red-500 hover:text-red-700 rounded transition-colors"
+                      title="Remove"
+                    >
+                      <FaTimes className="text-sm" />
+                    </button>
+                  </div>
+                  <input
+                    type="email"
+                    value={author.email || ''}
+                    onChange={(e) => {
+                      handleAuthorChange('email', e.target.value);
+                      const error = validateEmail(e.target.value);
+                      setFieldErrors(prev => ({ ...prev, email: error }));
+                    }}
+                    className={getInputClasses(fieldErrors.email)}
+                    placeholder="your@email.com"
+                    maxLength={100}
+                  />
+                  {fieldErrors.email && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Website */}
+              {activeFields.website && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium text-slate-700">Website</label>
+                    <button
+                      type="button"
+                      onClick={() => clearField('website')}
+                      className="p-1 text-red-500 hover:text-red-700 rounded transition-colors"
+                      title="Remove"
+                    >
+                      <FaTimes className="text-sm" />
+                    </button>
+                  </div>
                   <input
                     type="url"
-                    value={social.url || ''}
-                    onChange={(e) => handleUpdateSocialMedia(index, 'url', e.target.value)}
-                    className={`flex-1 p-2 text-sm border rounded-lg focus:outline-none focus:ring-2 ${
-                      fieldErrors[`socialMedia_${index}`]
-                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500 focus:ring-opacity-20'
-                        : 'border-gray-300 focus:border-teal-500 focus:ring-teal-500 focus:ring-opacity-20'
-                    }`}
-                    placeholder="https://facebook.com/yourpage"
-                    maxLength="200"
+                    value={author.website || ''}
+                    onChange={(e) => {
+                      handleAuthorChange('website', e.target.value);
+                      const error = validateUrl(e.target.value);
+                      setFieldErrors(prev => ({ ...prev, website: error }));
+                    }}
+                    className={getInputClasses(fieldErrors.website)}
+                    placeholder="https://yourwebsite.com"
+                    maxLength={200}
                   />
+                  {fieldErrors.website && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.website}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Social Media */}
+              {activeFields.socialMedia && (
+                <div className="space-y-3">
+                  {(author.socialMedia || []).map((social, index) => (
+                    <div key={index} className="space-y-2">
+                      {/* Row 1: Platform + X */}
+                      <div className="flex gap-2">
+                        {/* Platform Dropdown */}
+                        <div
+                          ref={el => dropdownRefs.current[index] = el}
+                          className="relative flex-1"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setPlatformDropdownOpen(platformDropdownOpen === index ? null : index)}
+                            className={`w-full p-3 sm:p-2 text-base sm:text-sm text-left border rounded-lg bg-white flex items-center justify-between
+                              ${social.platform ? 'text-slate-900' : 'text-slate-500'}
+                              ${platformDropdownOpen === index ? 'border-teal-500 ring-2 ring-teal-300' : fieldErrors[`social_platform_${index}`] ? 'border-red-500' : 'border-slate-300'}
+                              hover:border-slate-400 transition-all duration-200`}
+                          >
+                            <span className="truncate pr-2">
+                              {social.platform
+                                ? SOCIAL_MEDIA_PLATFORMS.find(p => p.value === social.platform)?.label || social.platform
+                                : 'Select platform'}
+                            </span>
+                            <svg
+                              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${platformDropdownOpen === index ? 'rotate-180' : ''}`}
+                              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+
+                          {/* Dropdown Menu */}
+                          {platformDropdownOpen === index && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg">
+                              <div className="max-h-60 overflow-y-auto">
+                                {getAvailablePlatforms(index).map(platform => (
+                                  <button
+                                    key={platform.value}
+                                    type="button"
+                                    onClick={() => selectPlatform(index, platform.value)}
+                                    className={`w-full px-4 py-3 text-left hover:bg-teal-50 focus:bg-teal-50
+                                      focus:outline-none transition-colors text-sm
+                                      ${social.platform === platform.value ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'}`}
+                                  >
+                                    {platform.label}
+                                  </button>
+                                ))}
+                              </div>
+                              {/* Mobile close button */}
+                              <div className="p-2 border-t border-slate-100 md:hidden">
+                                <button
+                                  type="button"
+                                  onClick={() => setPlatformDropdownOpen(null)}
+                                  className="w-full py-2 text-center text-slate-600 font-medium text-sm"
+                                >
+                                  Close
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => removeSocialMedia(index)}
+                          className="p-2 text-red-500 hover:text-red-700 rounded-lg transition-colors"
+                          title="Remove"
+                        >
+                          <FaTimes />
+                        </button>
+                      </div>
+                      {fieldErrors[`social_platform_${index}`] && (
+                        <p className="text-xs text-red-500">{fieldErrors[`social_platform_${index}`]}</p>
+                      )}
+
+                      {/* Row 2: Full-width URL */}
+                      <input
+                        type="url"
+                        value={social.url || ''}
+                        onChange={(e) => {
+                          updateSocialMedia(index, 'url', e.target.value);
+                          const error = validateUrl(e.target.value);
+                          setFieldErrors(prev => ({ ...prev, [`social_${index}`]: error }));
+                        }}
+                        className={getInputClasses(fieldErrors[`social_${index}`])}
+                        placeholder="https://..."
+                        maxLength={200}
+                      />
+                      {fieldErrors[`social_${index}`] && (
+                        <p className="text-xs text-red-500 mt-1">{fieldErrors[`social_${index}`]}</p>
+                      )}
+                    </div>
+                  ))}
+
                   <button
                     type="button"
-                    onClick={() => handleRemoveSocialMedia(index)}
-                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                    title="Remove social media link"
+                    onClick={addSocialMedia}
+                    className="flex items-center gap-2 text-sm text-teal-700 hover:text-teal-800 font-medium"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    <FaPlus className="text-xs" />
+                    Add Social Media Link
                   </button>
                 </div>
-                {fieldErrors[`socialMedia_${index}`] && (
-                  <p className="text-red-500 text-sm mt-1">{fieldErrors[`socialMedia_${index}`]}</p>
-                )}
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2">
-        {/* Add Field Dropdown */}
-        {fieldOptions.length > 0 && (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowFieldDropdown(!showFieldDropdown)}
-              className="inline-flex items-center px-3 py-2 border border-dashed border-blue-300 rounded-lg text-sm text-blue-600 hover:text-blue-700 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 font-medium"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add Field
-            </button>
-
-            {showFieldDropdown && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowFieldDropdown(false)}
-                />
-                <div className="absolute left-0 mt-1 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200 py-1">
-                  {fieldOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => handleAddField(option.value)}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Add Social Media Link */}
-        <button
-          type="button"
-          onClick={handleAddSocialMedia}
-          className="inline-flex items-center px-3 py-2 border border-dashed border-blue-300 rounded-lg text-sm text-blue-600 hover:text-blue-700 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 font-medium"
-        >
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Add Social Media Link
-        </button>
-      </div>
-        </div>
-        </>
-      )}
     </div>
   );
 });

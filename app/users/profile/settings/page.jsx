@@ -10,6 +10,7 @@ import {
 } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import DeleteAccountModal from '@/components/DeleteAccountModal';
 
@@ -133,10 +134,22 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-4 bg-white rounded shadow">
-      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center text-teal-700">
-        Account Settings
-      </h1>
+    <div className="px-2 py-6 sm:px-6 sm:py-8 max-w-2xl mx-auto">
+      {/* Back Button */}
+      <div className="mb-4">
+        <Link
+          href="/users/profile"
+          className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
+        >
+          <span>&lt;</span>
+          <span>back</span>
+        </Link>
+      </div>
+
+      <div className="bg-white rounded shadow p-4">
+        <h1 className="text-lg md:text-2xl font-bold mb-4 text-center text-teal-700">
+          Account Settings
+        </h1>
 
       <form onSubmit={handleUpdate} className="space-y-4">
         {/* Name */}
@@ -237,13 +250,14 @@ export default function Settings() {
         </button>
       </div>
 
-      {/* Delete Account Modal */}
-      <DeleteAccountModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleDelete}
-        isDeleting={isDeleting}
-      />
+        {/* Delete Account Modal */}
+        <DeleteAccountModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDelete}
+          isDeleting={isDeleting}
+        />
+      </div>
     </div>
   );
 }

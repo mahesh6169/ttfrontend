@@ -114,7 +114,7 @@ export default function StripeSetupPage() {
   if (checkingStatus) {
     return (
       <div className="min-h-screen bg-gray-50 px-4 py-8">
-        <div className="max-w-md mx-auto">
+        <div>
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
             <div className="h-4 bg-gray-200 rounded mb-8"></div>
@@ -189,7 +189,7 @@ export default function StripeSetupPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
-      <div className="max-w-md mx-auto">
+      <div>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold">Stripe Payout Setup</h1>

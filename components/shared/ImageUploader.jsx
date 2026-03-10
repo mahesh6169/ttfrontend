@@ -105,111 +105,114 @@ const ImageUploader = ({
     }
   }, [resetTrigger]);
 
+  const totalImages = existingImages.length + preview.length;
+  const isMaxReached = totalImages >= maxImages;
+
   return (
     <div>
-      {/* Existing Images Section (only for edit mode) */}
-      {mode === 'edit' && Array.isArray(existingImages) && existingImages.length > 0 && (
-        <div className="mb-4">
-          <label className="block font-bold mb-2">Existing Images</label>
-          <div className="flex gap-4 flex-wrap">
-          {existingImages
-  .map((imgObj, i) => ({ ...imgObj, _origIndex: i }))
-  .filter(imgObj => imgObj && typeof imgObj === 'object' && imgObj.url && typeof imgObj.url === 'string')
-  .map((imgObj, idx) => (
-    <div key={imgObj.url || idx} className="relative inline-block">
-      <img
-        src={imgObj.url}
-        alt={imgObj.originalFilename || `Existing image ${idx + 1}`}
-        className="w-24 h-24 object-cover border rounded"
-        onError={(e) => {
-          e.target.src = 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
-        }}
-      />
-      {imgObj.originalFilename && (
-        <p className="text-xs text-gray-600 mt-1 truncate w-24" title={imgObj.originalFilename}>
-          {imgObj.originalFilename}
-        </p>
-      )}
-      <button
-        type="button"
-        onClick={() => handleRemoveExistingImage(idx)}
-        className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded hover:bg-red-600"
-        title="Remove this existing image"
-        data-index={idx}
-      >
-        X
-      </button>
-    </div>
-  ))}
+      {/* Header */}
+      <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+        Upload Images
+      </span>
+      <p className="text-xs text-slate-500 mt-1 mb-3">
+        JPEG & PNG only · Max {maxImages} images · {totalImages}/{maxImages} uploaded
+      </p>
 
-          </div>
-        </div>
-      )}
-
-      {/* New Images Section (only show if there are new images) */}
-      {preview.length > 0 && (
-        <div className="mb-4">
-          <label className="block font-bold mb-2">New Images</label>
-          <div className="flex gap-4 flex-wrap">
-            {preview.map((src, index) => (
-              <div key={index} className="relative inline-block">
-                <img
-                  src={src}
-                  alt={`Preview ${index + 1}`}
-                  className="w-24 h-24 object-cover border rounded"
-                />
-                {formData.images[index]?.name && (
-                  <p className="text-xs text-gray-600 mt-1 truncate w-24" title={formData.images[index].name}>
-                    {formData.images[index].name}
-                  </p>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(index)}
-                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded hover:bg-red-600"
-                  title="Remove this image"
-                >
-                  X
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Upload Section */}
+      {/* Choose Files Button */}
       <div>
-        <label className="block font-bold mb-2">
-          Upload Images
-          <span className="block text-xs font-normal text-gray-600 mt-1">
-            (JPEG & PNG format only)
-          </span>
-          <span className="block text-xs font-normal text-gray-600">
-            Max {maxImages} Total • Images Uploaded: {existingImages.length + preview.length} / {maxImages}
-          </span>
-          <span className="block text-xs font-normal text-gray-600">
-            Images will appear in the order they were uploaded
-          </span>
-        </label>
         <input
           type="file"
           multiple
           accept="image/*"
           onChange={handleFileChange}
           ref={fileInputRef}
-          disabled={existingImages.length + preview.length >= maxImages}
-          className={`w-full p-2 border rounded ${
-            existingImages.length + preview.length >= maxImages 
-              ? 'bg-gray-100 cursor-not-allowed opacity-50' 
-              : 'cursor-pointer'
-          }`}
+          disabled={isMaxReached}
+          className="hidden"
+          id="image-upload-input"
         />
-        {existingImages.length + preview.length >= maxImages && (
-          <p className="text-sm text-amber-600 mt-1">
-            Maximum image limit reached. Remove existing images to add new ones.
+        <label
+          htmlFor="image-upload-input"
+          className={`inline-block px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+            isMaxReached
+              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer'
+          }`}
+        >
+          Choose Files
+        </label>
+        {isMaxReached && (
+          <p className="text-xs text-amber-600 mt-2">
+            Maximum reached. Remove images to add new ones.
           </p>
         )}
       </div>
+
+      {/* Uploaded Images */}
+      {totalImages > 0 && (
+        <div className="mt-3 flex gap-3 flex-wrap">
+            {/* Existing Images (edit mode) */}
+            {mode === 'edit' && existingImages
+              .map((imgObj, i) => ({ ...imgObj, _origIndex: i }))
+              .filter(imgObj => imgObj && typeof imgObj === 'object' && imgObj.url && typeof imgObj.url === 'string')
+              .map((imgObj, idx) => (
+                <div key={imgObj.url || idx} className="relative">
+                  <img
+                    src={imgObj.url}
+                    alt={imgObj.originalFilename || `Image ${idx + 1}`}
+                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg"
+                    onError={(e) => {
+                      e.target.src = 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
+                    }}
+                  />
+                  <span className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                    Saved
+                  </span>
+                  {imgObj.originalFilename && (
+                    <p className="text-[10px] text-slate-500 mt-1 truncate w-20 sm:w-24" title={imgObj.originalFilename}>
+                      {imgObj.originalFilename}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveExistingImage(idx)}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full hover:bg-red-600 flex items-center justify-center"
+                    title="Remove"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+
+            {/* New Images (preview) */}
+            {preview.map((src, index) => (
+              <div key={index} className="relative">
+                <img
+                  src={src}
+                  alt={`Preview ${index + 1}`}
+                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg"
+                />
+                {mode === 'edit' && (
+                  <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                    New
+                  </span>
+                )}
+                {formData.images[index]?.name && (
+                  <p className="text-[10px] text-slate-500 mt-1 truncate w-20 sm:w-24" title={formData.images[index].name}>
+                    {formData.images[index].name}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(index)}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full hover:bg-red-600 flex items-center justify-center"
+                  title="Remove"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+        </div>
+      )}
     </div>
   );
 };

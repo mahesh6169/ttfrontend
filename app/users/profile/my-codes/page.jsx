@@ -6,6 +6,20 @@ import { toast } from 'react-toastify';
 import axios from '@/utils/axiosConfig';
 import CouponCard from '@/components/coupons/couponcomponents/CouponCard';
 import { MdLocalOffer } from 'react-icons/md';
+import Link from 'next/link';
+
+// Back button component
+const BackButton = () => (
+  <div className="mb-4">
+    <Link
+      href="/users/profile"
+      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
+    >
+      <span>&lt;</span>
+      <span>back</span>
+    </Link>
+  </div>
+);
 
 export default function MyCodesPage() {
   const router = useRouter();
@@ -85,7 +99,8 @@ export default function MyCodesPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen py-8">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="px-4">
+          <BackButton />
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
             <p className="mt-4 text-gray-600">Loading your codes...</p>
@@ -97,7 +112,8 @@ export default function MyCodesPage() {
 
   return (
     <div className="min-h-screen py-4 sm:py-8">
-      <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
+      <div className="px-3 sm:px-4">
+        <BackButton />
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">My Discount Codes</h1>
           <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">

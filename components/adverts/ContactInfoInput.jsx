@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaMobileAlt, FaEnvelope, FaGlobe, FaFacebook, FaInstagram, FaPlus, FaTimes } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 
@@ -10,7 +10,7 @@ const SOCIAL_PLATFORMS = [
   { value: 'X', label: 'X (Twitter)', icon: FaXTwitter },
 ];
 
-const ContactInfoInput = ({ value = {}, onChange }) => {
+const ContactInfoInput = ({ value = {}, onChange, errors = {} }) => {
   // Track which fields are active/visible
   const [activeFields, setActiveFields] = useState({
     mobile: false,
@@ -21,6 +21,28 @@ const ContactInfoInput = ({ value = {}, onChange }) => {
 
   // Track if we've done initial setup (to avoid re-running on every value change)
   const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Validation state
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [platformDropdownOpen, setPlatformDropdownOpen] = useState(null);
+  const dropdownRefs = useRef({});
+
+  // Validation helpers
+  const isValidMobile = (mobile) => {
+    if (!mobile) return true;
+    const cleaned = mobile.replace(/\s/g, '');
+    return /^0\d{9}$/.test(cleaned);
+  };
+
+  const isValidEmail = (email) => {
+    if (!email) return true;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const isValidUrl = (url) => {
+    if (!url) return true;
+    return url.startsWith('https://') && url.length > 8;
+  };
 
   // Initialize activeFields based on existing values (for edit mode)
   // This runs when value prop changes and we haven't initialized yet
@@ -44,15 +66,24 @@ const ContactInfoInput = ({ value = {}, onChange }) => {
     setActiveFields(prev => {
       const newState = { ...prev, [field]: !prev[field] };
 
-      // If deactivating, clear the field value
       if (!newState[field]) {
+        // Deactivating - clear value and error
         const newValue = { ...value };
         if (field === 'socialMedia') {
           newValue.socialMedia = [];
         } else {
-          newValue[field] = '';
+          delete newValue[field];
         }
         onChange(newValue);
+        setFieldErrors(prev => ({ ...prev, [field]: null }));
+      } else {
+        // Activating
+        if (field === 'socialMedia') {
+          // Auto-add one entry
+          onChange({ ...value, socialMedia: [{ platform: '', url: '' }] });
+        } else {
+          onChange({ ...value, [field]: '' });
+        }
       }
 
       return newState;
@@ -63,11 +94,12 @@ const ContactInfoInput = ({ value = {}, onChange }) => {
   const clearField = (field) => {
     const newValue = { ...value };
     if (field === 'socialMedia') {
-      newValue.socialMedia = [];
+      delete newValue.socialMedia;
     } else {
-      newValue[field] = '';
+      delete newValue[field];
     }
     onChange(newValue);
+    setFieldErrors(prev => ({ ...prev, [field]: null }));
 
     // Also deactivate the field
     setActiveFields(prev => ({ ...prev, [field]: false }));
@@ -109,6 +141,13 @@ const ContactInfoInput = ({ value = {}, onChange }) => {
       ...value,
       socialMedia: newSocialMedia,
     });
+    // Clear error for removed entry
+    setFieldErrors(prev => ({ ...prev, [`social_${index}`]: null }));
+
+    // Auto-deactivate when last entry removed
+    if (newSocialMedia.length === 0) {
+      setActiveFields(prev => ({ ...prev, socialMedia: false }));
+    }
   };
 
   // Get available platforms (exclude already selected ones)
@@ -119,230 +158,316 @@ const ContactInfoInput = ({ value = {}, onChange }) => {
     return SOCIAL_PLATFORMS.filter(p => !selectedPlatforms.includes(p.value));
   };
 
-  const baseInputClasses = "w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-300";
+  // Select platform from dropdown
+  const selectPlatform = (index, platform) => {
+    handleSocialMediaChange(index, 'platform', platform);
+    setPlatformDropdownOpen(null);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (platformDropdownOpen !== null) {
+        const ref = dropdownRefs.current[platformDropdownOpen];
+        if (ref && !ref.contains(event.target)) {
+          setPlatformDropdownOpen(null);
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [platformDropdownOpen]);
+
+  const getInputClasses = (hasError) => `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+    hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
+  }`;
 
   return (
-    <div className="space-y-4">
+    <div>
       {/* Header */}
-      <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
-          Contact Information <span className="text-gray-400 font-normal text-xs">(Optional)</span>
-        </label>
-        <p className="text-xs text-gray-500 mb-3">
-          Add contact details to help buyers reach you directly. Click icons to add.
-        </p>
-      </div>
+      <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+        Contact Information <span className="text-slate-400 font-normal text-xs">(Optional)</span>
+      </span>
+      <p className="text-xs text-slate-500 mt-1 mb-3">
+        Add contact details to help buyers reach you directly
+      </p>
 
       {/* Icon Buttons Row */}
-      <div className="flex flex-wrap gap-2 sm:gap-3">
-        {/* Mobile Button */}
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => toggleField('mobile')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
             activeFields.mobile
-              ? 'bg-teal-600 text-white border-teal-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:border-teal-400'
+              ? 'bg-teal-700 text-white border-teal-700'
+              : 'bg-white text-slate-700 border-slate-300 hover:border-teal-400'
           }`}
         >
-          <FaMobileAlt className="text-sm" />
-          <span className="text-sm">Mobile</span>
+          <FaMobileAlt />
+          <span>Mobile</span>
         </button>
 
-        {/* Email Button */}
         <button
           type="button"
           onClick={() => toggleField('email')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
             activeFields.email
-              ? 'bg-teal-600 text-white border-teal-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:border-teal-400'
+              ? 'bg-teal-700 text-white border-teal-700'
+              : 'bg-white text-slate-700 border-slate-300 hover:border-teal-400'
           }`}
         >
-          <FaEnvelope className="text-sm" />
-          <span className="text-sm">Email</span>
+          <FaEnvelope />
+          <span>Email</span>
         </button>
 
-        {/* Website Button */}
         <button
           type="button"
           onClick={() => toggleField('website')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
             activeFields.website
-              ? 'bg-teal-600 text-white border-teal-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:border-teal-400'
+              ? 'bg-teal-700 text-white border-teal-700'
+              : 'bg-white text-slate-700 border-slate-300 hover:border-teal-400'
           }`}
         >
-          <FaGlobe className="text-sm" />
-          <span className="text-sm">Website</span>
+          <FaGlobe />
+          <span>Website</span>
         </button>
 
-        {/* Social Media Button */}
         <button
           type="button"
           onClick={() => toggleField('socialMedia')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
             activeFields.socialMedia
-              ? 'bg-teal-600 text-white border-teal-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:border-teal-400'
+              ? 'bg-teal-700 text-white border-teal-700'
+              : 'bg-white text-slate-700 border-slate-300 hover:border-teal-400'
           }`}
         >
-          <FaFacebook className="text-sm" />
-          <span className="text-sm">Social</span>
+          <FaFacebook />
+          <span>Social</span>
         </button>
       </div>
 
       {/* Input Fields */}
-      <div className="space-y-3">
-        {/* Mobile Input */}
-        {activeFields.mobile && (
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-gray-700">
-                Mobile Number
-              </label>
-              <button
-                type="button"
-                onClick={() => clearField('mobile')}
-                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                title="Remove mobile"
-              >
-                <FaTimes className="text-sm" />
-              </button>
-            </div>
-            <input
-              type="tel"
-              value={value.mobile || ''}
-              onChange={(e) => handleChange('mobile', e.target.value)}
-              placeholder="0412345678"
-              className={baseInputClasses}
-              maxLength={10}
-            />
-            <p className="text-xs text-gray-500 mt-1">Australian format: 10 digits starting with 0</p>
-          </div>
-        )}
-
-        {/* Email Input */}
-        {activeFields.email && (
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-gray-700">
-                Email Address
-              </label>
-              <button
-                type="button"
-                onClick={() => clearField('email')}
-                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                title="Remove email"
-              >
-                <FaTimes className="text-sm" />
-              </button>
-            </div>
-            <input
-              type="email"
-              value={value.email || ''}
-              onChange={(e) => handleChange('email', e.target.value)}
-              placeholder="your@email.com"
-              className={baseInputClasses}
-            />
-          </div>
-        )}
-
-        {/* Website Input */}
-        {activeFields.website && (
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-gray-700">
-                Website
-              </label>
-              <button
-                type="button"
-                onClick={() => clearField('website')}
-                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                title="Remove website"
-              >
-                <FaTimes className="text-sm" />
-              </button>
-            </div>
-            <input
-              type="url"
-              value={value.website || ''}
-              onChange={(e) => handleChange('website', e.target.value)}
-              placeholder="https://www.example.com"
-              className={baseInputClasses}
-            />
-          </div>
-        )}
-
-        {/* Social Media Inputs */}
-        {activeFields.socialMedia && (
-          <div className="bg-gray-50 p-3 rounded-lg space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">
-                Social Media Links <span className="text-gray-400 font-normal">(max 3)</span>
-              </label>
-              <button
-                type="button"
-                onClick={() => clearField('socialMedia')}
-                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                title="Remove all social media"
-              >
-                <FaTimes className="text-sm" />
-              </button>
-            </div>
-
-            {(value.socialMedia || []).map((social, index) => (
-              <div key={index} className="flex gap-2 items-start">
-                <select
-                  value={social.platform || ''}
-                  onChange={(e) => handleSocialMediaChange(index, 'platform', e.target.value)}
-                  className="w-32 sm:w-40 p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-300"
-                >
-                  <option value="">Platform</option>
-                  {getAvailablePlatforms(index).map(platform => (
-                    <option key={platform.value} value={platform.value}>
-                      {platform.label}
-                    </option>
-                  ))}
-                  {/* Keep current selection visible even if selected elsewhere */}
-                  {social.platform && !getAvailablePlatforms(index).find(p => p.value === social.platform) && (
-                    <option value={social.platform}>
-                      {SOCIAL_PLATFORMS.find(p => p.value === social.platform)?.label || social.platform}
-                    </option>
-                  )}
-                </select>
-                <input
-                  type="url"
-                  value={social.url || ''}
-                  onChange={(e) => handleSocialMediaChange(index, 'url', e.target.value)}
-                  placeholder="Profile URL"
-                  className={`flex-1 ${baseInputClasses}`}
-                />
+      {(activeFields.mobile || activeFields.email || activeFields.website || activeFields.socialMedia) && (
+        <div className="mt-4 space-y-4">
+          {/* Mobile Input */}
+          {activeFields.mobile && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium text-slate-700">Mobile Number</label>
                 <button
                   type="button"
-                  onClick={() => removeSocialMedia(index)}
-                  className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  onClick={() => clearField('mobile')}
+                  className="p-1 text-red-500 hover:text-red-700 rounded transition-colors"
                   title="Remove"
                 >
-                  <FaTimes />
+                  <FaTimes className="text-sm" />
                 </button>
               </div>
-            ))}
+              <input
+                type="tel"
+                value={value.mobile || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange('mobile', val);
+                  if (val && !isValidMobile(val)) {
+                    setFieldErrors(prev => ({ ...prev, mobile: 'Enter 10 digits starting with 0' }));
+                  } else {
+                    setFieldErrors(prev => ({ ...prev, mobile: null }));
+                  }
+                }}
+                placeholder="0412345678"
+                className={getInputClasses(fieldErrors.mobile || errors.mobile)}
+                maxLength={10}
+              />
+              {(fieldErrors.mobile || errors.mobile) ? (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.mobile || errors.mobile}</p>
+              ) : (
+                <p className="text-xs text-slate-500 mt-1">Australian format: 10 digits starting with 0</p>
+              )}
+            </div>
+          )}
 
-            {/* Add Social Media Button */}
-            {(value.socialMedia || []).length < 3 && (
-              <button
-                type="button"
-                onClick={addSocialMedia}
-                className="flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 font-medium"
-              >
-                <FaPlus className="text-xs" />
-                Add Social Media Link
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+          {/* Email Input */}
+          {activeFields.email && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium text-slate-700">Email Address</label>
+                <button
+                  type="button"
+                  onClick={() => clearField('email')}
+                  className="p-1 text-red-500 hover:text-red-700 rounded transition-colors"
+                  title="Remove"
+                >
+                  <FaTimes className="text-sm" />
+                </button>
+              </div>
+              <input
+                type="email"
+                value={value.email || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange('email', val);
+                  if (val && !isValidEmail(val)) {
+                    setFieldErrors(prev => ({ ...prev, email: 'Enter a valid email address' }));
+                  } else {
+                    setFieldErrors(prev => ({ ...prev, email: null }));
+                  }
+                }}
+                placeholder="your@email.com"
+                className={getInputClasses(fieldErrors.email || errors.email)}
+              />
+              {(fieldErrors.email || errors.email) && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.email || errors.email}</p>
+              )}
+            </div>
+          )}
+
+          {/* Website Input */}
+          {activeFields.website && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium text-slate-700">Website</label>
+                <button
+                  type="button"
+                  onClick={() => clearField('website')}
+                  className="p-1 text-red-500 hover:text-red-700 rounded transition-colors"
+                  title="Remove"
+                >
+                  <FaTimes className="text-sm" />
+                </button>
+              </div>
+              <input
+                type="url"
+                value={value.website || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange('website', val);
+                  if (val && !isValidUrl(val)) {
+                    setFieldErrors(prev => ({ ...prev, website: 'URL must start with https://' }));
+                  } else {
+                    setFieldErrors(prev => ({ ...prev, website: null }));
+                  }
+                }}
+                placeholder="https://www.example.com"
+                className={getInputClasses(fieldErrors.website || errors.website)}
+              />
+              {(fieldErrors.website || errors.website) && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.website || errors.website}</p>
+              )}
+            </div>
+          )}
+
+          {/* Social Media Inputs */}
+          {activeFields.socialMedia && (
+            <div className="space-y-3">
+              {(value.socialMedia || []).map((social, index) => (
+                <div key={index} className="space-y-2">
+                  {/* Row 1: Platform + X */}
+                  <div className="flex gap-2">
+                    {/* Platform Dropdown */}
+                    <div
+                      ref={el => dropdownRefs.current[index] = el}
+                      className="relative flex-1"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setPlatformDropdownOpen(platformDropdownOpen === index ? null : index)}
+                        className={`w-full p-3 sm:p-2 text-base sm:text-sm text-left border rounded-lg bg-white flex items-center justify-between
+                          ${social.platform ? 'text-slate-900' : 'text-slate-500'}
+                          ${platformDropdownOpen === index ? 'border-teal-500 ring-2 ring-teal-300' : 'border-slate-300'}
+                          hover:border-slate-400 transition-all duration-200`}
+                      >
+                        <span className="truncate pr-2">
+                          {social.platform
+                            ? SOCIAL_PLATFORMS.find(p => p.value === social.platform)?.label || social.platform
+                            : 'Select platform'}
+                        </span>
+                        <svg
+                          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${platformDropdownOpen === index ? 'rotate-180' : ''}`}
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      {platformDropdownOpen === index && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg">
+                          <div className="max-h-60 overflow-y-auto">
+                            {getAvailablePlatforms(index).map(platform => (
+                              <button
+                                key={platform.value}
+                                type="button"
+                                onClick={() => selectPlatform(index, platform.value)}
+                                className={`w-full px-4 py-3 text-left hover:bg-teal-50 focus:bg-teal-50
+                                  focus:outline-none transition-colors text-sm
+                                  ${social.platform === platform.value ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'}`}
+                              >
+                                {platform.label}
+                              </button>
+                            ))}
+                          </div>
+                          {/* Mobile close button */}
+                          <div className="p-2 border-t border-slate-100 md:hidden">
+                            <button
+                              type="button"
+                              onClick={() => setPlatformDropdownOpen(null)}
+                              className="w-full py-2 text-center text-slate-600 font-medium text-sm"
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => removeSocialMedia(index)}
+                      className="p-2 text-red-500 hover:text-red-700 rounded-lg transition-colors"
+                      title="Remove"
+                    >
+                      <FaTimes />
+                    </button>
+                  </div>
+
+                  {/* Row 2: Full-width URL */}
+                  <input
+                    type="url"
+                    value={social.url || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      handleSocialMediaChange(index, 'url', val);
+                      if (val && !isValidUrl(val)) {
+                        setFieldErrors(prev => ({ ...prev, [`social_${index}`]: 'URL must start with https://' }));
+                      } else {
+                        setFieldErrors(prev => ({ ...prev, [`social_${index}`]: null }));
+                      }
+                    }}
+                    placeholder="https://..."
+                    className={getInputClasses(fieldErrors[`social_${index}`] || errors.socialMedia?.[index])}
+                  />
+                  {(fieldErrors[`social_${index}`] || errors.socialMedia?.[index]) && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors[`social_${index}`] || errors.socialMedia?.[index]}</p>
+                  )}
+                </div>
+              ))}
+
+              {(value.socialMedia || []).length < 3 && (
+                <button
+                  type="button"
+                  onClick={addSocialMedia}
+                  className="flex items-center gap-2 text-sm text-teal-700 hover:text-teal-800 font-medium"
+                >
+                  <FaPlus className="text-xs" />
+                  Add Social Media Link
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

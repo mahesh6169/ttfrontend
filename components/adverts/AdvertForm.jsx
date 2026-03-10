@@ -45,12 +45,7 @@ const AdvertForm = ({
     },
     images: [],
     isNationwide: false,
-    contactInfo: {
-      mobile: '',
-      email: '',
-      website: '',
-      socialMedia: []
-    },
+    contactInfo: {},
     notifyOnWanted: false
   }));
 
@@ -210,8 +205,8 @@ const AdvertForm = ({
   const renderField = (field) => {
     const value = formData.fields[field.id] || '';
     const hasError = localErrors.some(err => err.includes(field.label));
-    const baseClasses = `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded focus:outline-none focus:ring-2 ${
-      hasError ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
+    const baseClasses = `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+      hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
     }`;
 
     // Dynamic placeholder for wanted ads
@@ -348,7 +343,7 @@ const renderPricingInputs = (pricingOptions) => {
               }}
               onWheel={(e) => e.target.blur()}
               placeholder={selectedPriceType === 'sell' ? '0.00' : selectedPriceType === 'rent' ? '0.00' : '0.00'}
-              className="w-full sm:w-40 p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-300"
+              className="w-full sm:w-40 p-3 sm:p-2 text-base sm:text-sm border rounded-lg border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-300"
             />
             {fieldErrors[`pricing_${selectedPriceType}`] && (
               <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors[`pricing_${selectedPriceType}`]}</p>
@@ -391,10 +386,8 @@ const handleSubmit = (e) => {
   // Category validation
   if (!formData.category) {
     newFieldErrors.category = 'Category is required';
-  }
-
-  // Subcategory validation
-  if (!formData.subcategory) {
+  } else if (!formData.subcategory) {
+    // Only validate subcategory if category is selected
     newFieldErrors.subcategory = 'Subcategory is required';
   }
 
@@ -409,6 +402,26 @@ const handleSubmit = (e) => {
       formData.address.location.coordinates[0] === 0 ||
       formData.address.location.coordinates[1] === 0) {
     newFieldErrors.address = 'Valid address with location is required';
+  }
+
+  // Contact info validation - if field is activated (empty string) but not filled
+  const contactInfo = formData.contactInfo || {};
+  if (contactInfo.mobile === '') {
+    newFieldErrors.contactMobile = 'Mobile number is required';
+  }
+  if (contactInfo.email === '') {
+    newFieldErrors.contactEmail = 'Email address is required';
+  }
+  if (contactInfo.website === '') {
+    newFieldErrors.contactWebsite = 'Website URL is required';
+  }
+  // Social media validation - if added but URL empty
+  if (contactInfo.socialMedia && contactInfo.socialMedia.length > 0) {
+    contactInfo.socialMedia.forEach((social, index) => {
+      if (!social.url || social.url === '') {
+        newFieldErrors[`contactSocial_${index}`] = 'Profile URL is required';
+      }
+    });
   }
   
   // Validate visible fields in each section
@@ -528,23 +541,23 @@ return (
   <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
     {/* Common fields - always show these */}
     <div>
-      <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
         Title <span className="text-red-500">*</span>
       </label>
-      <input 
-        type="text" 
-        value={formData.title} 
+      <input
+        type="text"
+        value={formData.title}
         onChange={(e) => {
           handleChange('title', e.target.value);
           // Clear error when user types
           if (fieldErrors.title) {
             setFieldErrors(prev => ({ ...prev, title: null }));
           }
-        }} 
-        className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded focus:outline-none focus:ring-2 ${
-          fieldErrors.title ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
-        }`} 
-        placeholder="Enter a descriptive title" 
+        }}
+        className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+          fieldErrors.title ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
+        }`}
+        placeholder="Enter a descriptive title"
       />
       {fieldErrors.title && (
         <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.title}</p>
@@ -553,19 +566,19 @@ return (
 
     {/* Ad Type */}
     <div>
-      <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
         Ad Type
-        {initialData && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
+        {initialData && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
       </label>
-      <div className="grid grid-cols-2 gap-2 sm:gap-0 sm:flex sm:border sm:border-gray-300 rounded-lg sm:rounded overflow-hidden">
-        <button 
-          type="button" 
+      <div className="grid grid-cols-2 gap-2 sm:gap-0 sm:flex sm:border sm:border-slate-300 rounded-lg overflow-hidden">
+        <button
+          type="button"
           disabled={!!initialData}
-          className={`p-3 sm:flex-1 rounded-lg sm:rounded-none border sm:border-0 ${
-            formData.adType === 'offered' 
-              ? 'bg-teal-600 text-white border-teal-600' 
-              : 'bg-white text-gray-700 border-gray-300'
-          } ${initialData ? 'opacity-50 cursor-not-allowed' : ''} transition-colors`} 
+          className={`py-2 px-3 sm:p-3 sm:flex-1 text-sm sm:text-base rounded-lg sm:rounded-none border sm:border-0 ${
+            formData.adType === 'offered'
+              ? 'bg-teal-700 text-white border-teal-700'
+              : 'bg-white text-slate-700 border-slate-300'
+          } ${initialData ? 'opacity-50 cursor-not-allowed' : ''} transition-colors`}
           onClick={() => {
             if (!initialData) {
               handleChange('adType', 'offered');
@@ -574,14 +587,14 @@ return (
         >
           Offered
         </button>
-        <button 
-          type="button" 
+        <button
+          type="button"
           disabled={!!initialData}
-          className={`p-3 sm:flex-1 rounded-lg sm:rounded-none border sm:border-0 ${
-            formData.adType === 'wanted' 
-              ? 'bg-teal-600 text-white border-teal-600' 
-              : 'bg-white text-gray-700 border-gray-300'
-          } ${initialData ? 'opacity-50 cursor-not-allowed' : ''} transition-colors`} 
+          className={`py-2 px-3 sm:p-3 sm:flex-1 text-sm sm:text-base rounded-lg sm:rounded-none border sm:border-0 ${
+            formData.adType === 'wanted'
+              ? 'bg-teal-700 text-white border-teal-700'
+              : 'bg-white text-slate-700 border-slate-300'
+          } ${initialData ? 'opacity-50 cursor-not-allowed' : ''} transition-colors`}
           onClick={() => {
             if (!initialData) {
               handleChange('adType', 'wanted');
@@ -595,9 +608,6 @@ return (
 
     {/* Category & Subcategory */}
     <div>
-      {initialData && (
-        <p className="text-xs sm:text-sm text-gray-500 mb-2">(Category cannot be changed)</p>
-      )}
       <CategorySelector
         category={formData.category}
         subcategory={formData.subcategory}
@@ -648,33 +658,33 @@ return (
       }
       
       return (
-        <div key={section.id} className={index > 0 ? "border-t pt-4 sm:pt-6" : ""}>
+        <div key={section.id} className={index > 0 ? "border-t border-slate-200 pt-4 sm:pt-6" : ""}>
           {/* Section title if it has one - but not for pricing sections that will be handled specially */}
           {section.title && section.specialField !== 'pricing' && (
-            <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-3 sm:mb-4 text-gray-700">{section.title}</h3>
+            <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-3 sm:mb-4 text-slate-700">{section.title}</h3>
           )}
           
           {/* Special handling for pricing section */}
           {section.specialField === 'pricing' && formData.adType === 'offered' && section.pricingOptions && Object.keys(section.pricingOptions).length > 0 && (
             <>
             {section.title && (
-              <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-2 sm:mb-3 text-gray-700">
+              <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-2 sm:mb-3 text-slate-700">
                 {section.title}
                 <span className="text-red-500 ml-1">*</span>
-                {initialData && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
+                {initialData && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
               </h3>
             )}
-            
+
             <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 sm:gap-3 mb-4">
               {Object.entries(section.pricingOptions).map(([type, config]) => (
                 <button
                   key={type}
                   type="button"
                   disabled={!!initialData}
-                  className={`px-2 sm:px-4 py-2.5 sm:py-2 border rounded-lg sm:rounded text-sm sm:text-base ${
+                  className={`px-2 sm:px-4 py-2.5 sm:py-2 border rounded-lg text-sm sm:text-base ${
                     selectedPriceType === type
-                      ? 'bg-teal-600 text-white border-teal-600'
-                      : 'bg-white text-gray-700 border-gray-300'
+                      ? 'bg-teal-700 text-white border-teal-700'
+                      : 'bg-white text-slate-700 border-slate-300'
                   } ${initialData ? 'opacity-50 cursor-not-allowed' : ''} transition-colors`}
                   onClick={() => {
                     if (!initialData) {
@@ -704,7 +714,7 @@ return (
           
           return (
             <div className="mb-4">
-              <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+              <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
                 {conditionField.label}
                 {conditionField.required && <span className="text-red-500 ml-1">*</span>}
               </label>
@@ -727,10 +737,10 @@ return (
           
           return (
             <div key={field.id} className="mb-4">
-              <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+              <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
                 {field.label}
                 {field.required && <span className="text-red-500 ml-1">*</span>}
-                {isVehicleTypeLocked && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Cannot be changed)</span>}
+                {isVehicleTypeLocked && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
               </label>
               {renderField(field)}
             </div>
@@ -742,23 +752,23 @@ return (
 
     {/* Description - always show this */}
     <div>
-      <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
         Description <span className="text-red-500">*</span>
       </label>
-      <textarea 
-        value={formData.description} 
+      <textarea
+        value={formData.description}
         onChange={(e) => {
           handleChange('description', e.target.value);
           // Clear error when user types
           if (fieldErrors.description) {
             setFieldErrors(prev => ({ ...prev, description: null }));
           }
-        }} 
-        className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
-          fieldErrors.description ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
-        }`} 
-        placeholder={formData.adType === 'wanted' 
-          ? "Describe what you're looking for, including specific requirements or preferences" 
+        }}
+        className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
+          fieldErrors.description ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
+        }`}
+        placeholder={formData.adType === 'wanted'
+          ? "Describe what you're looking for, including specific requirements or preferences"
           : "Provide detailed information about your item or service"}
         maxLength="15000"
       />
@@ -768,7 +778,7 @@ return (
             <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.description}</p>
           )}
         </div>
-        <span className="text-xs text-gray-400 whitespace-nowrap">
+        <span className="text-xs text-slate-400 whitespace-nowrap">
           {(formData.description || '').length}/15000
         </span>
       </div>
@@ -777,7 +787,32 @@ return (
     {/* Contact Information */}
     <ContactInfoInput
       value={formData.contactInfo}
-      onChange={(contactInfo) => handleChange('contactInfo', contactInfo)}
+      onChange={(contactInfo) => {
+        handleChange('contactInfo', contactInfo);
+        // Clear contact errors when user makes changes
+        setFieldErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.contactMobile;
+          delete newErrors.contactEmail;
+          delete newErrors.contactWebsite;
+          Object.keys(newErrors).forEach(key => {
+            if (key.startsWith('contactSocial_')) delete newErrors[key];
+          });
+          return newErrors;
+        });
+      }}
+      errors={{
+        mobile: fieldErrors.contactMobile,
+        email: fieldErrors.contactEmail,
+        website: fieldErrors.contactWebsite,
+        socialMedia: Object.entries(fieldErrors)
+          .filter(([key]) => key.startsWith('contactSocial_'))
+          .reduce((acc, [key, val]) => {
+            const index = parseInt(key.replace('contactSocial_', ''));
+            acc[index] = val;
+            return acc;
+          }, {})
+      }}
     />
 
     {/* Address */}
@@ -790,34 +825,30 @@ return (
 
     {/* Nationwide visibility */}
     <div>
-      <label className="flex items-center gap-3 cursor-pointer">
+      <label className="cursor-pointer">
+        <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">Advertise this Ad Nationwide</span>
+        <p className="text-xs text-slate-500 mt-1 mb-2">Your ad will appear when users search in any state</p>
         <input
           type="checkbox"
           checked={formData.isNationwide || false}
           onChange={(e) => handleChange('isNationwide', e.target.checked)}
-          className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+          className="w-5 h-5 text-teal-700 rounded focus:ring-teal-500"
         />
-        <div>
-          <span className="font-semibold sm:font-bold text-gray-700 text-sm sm:text-base">Advertise this Ad Nationwide</span>
-          <p className="text-xs text-gray-500 mt-1">Your ad will appear when users search in any state</p>
-        </div>
       </label>
     </div>
 
     {/* Notify on Wanted Ads - only for offered ads in service categories */}
     {formData.adType === 'offered' && formData.subcategory && isServiceSubcategory(formData.subcategory) && (
       <div>
-        <label className="flex items-center gap-3 cursor-pointer">
+        <label className="cursor-pointer">
+          <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">Notify me when wanted ads are posted</span>
+          <p className="text-xs text-slate-500 mt-1 mb-2">Get notified when someone posts a wanted ad matching your service category and location</p>
           <input
             type="checkbox"
             checked={formData.notifyOnWanted || false}
             onChange={(e) => handleChange('notifyOnWanted', e.target.checked)}
-            className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+            className="w-5 h-5 text-teal-700 rounded focus:ring-teal-500"
           />
-          <div>
-            <span className="font-semibold sm:font-bold text-gray-700 text-sm sm:text-base">Notify me when wanted ads are posted</span>
-            <p className="text-xs text-gray-500 mt-1">Get notified when someone posts a wanted ad matching your service category and location</p>
-          </div>
         </label>
       </div>
     )}
@@ -836,7 +867,7 @@ return (
 
     {/* Errors - Only show general errors that aren't field-specific */}
     {(localErrors.length > 0 || errors.length > 0) && (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+      <div className="bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4">
         <p className="font-semibold sm:font-bold text-red-700 mb-2 text-sm sm:text-base">Please fix the following errors:</p>
         <ul className="list-disc list-inside space-y-1">
           {localErrors.map((error, index) => (
@@ -850,41 +881,19 @@ return (
     )}
 
     {/* Submit */}
-    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-      <button 
-        type="submit" 
-        disabled={isLoading} 
-        className={`w-full sm:w-auto px-6 py-3 rounded-lg sm:rounded font-medium text-sm sm:text-base ${
-          isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-700 text-white'
+    <div className="text-center">
+      <button
+        type="submit"
+        disabled={isLoading}
+        className={`px-8 py-3 rounded-lg font-semibold text-sm sm:text-base ${
+          isLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800 text-white'
         } transition-colors`}
       >
-        {isSuccess ? 
-          (initialData ? 'Updated! Redirecting...' : 'Created! Redirecting...') : 
-          isLoading ? 
-            (initialData ? 'Updating...' : 'Creating...') : 
-            (initialData ? 'Update Listing' : 'Create Listing')}
-      </button>
-      <button 
-        type="button" 
-        onClick={() => {
-          // Check for stored cancel redirect first
-          const storedRedirect = localStorage.getItem('cancelRedirectUrl');
-          
-          if (storedRedirect) {
-            // Use stored redirect and clean up
-            localStorage.removeItem('cancelRedirectUrl');
-            router.push(storedRedirect);
-          } else if (initialData) {
-            // Editing mode - go back to manage ads
-            router.push('/users/profile/manageads');
-          } else {
-            // Default: go to listings page
-            router.push('/listings');
-          }
-        }} 
-        className="w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-lg sm:rounded text-gray-700 hover:bg-gray-50 text-sm sm:text-base transition-colors"
-      >
-        Cancel
+        {isSuccess ?
+          (initialData ? 'Updated!' : 'Created!') :
+          isLoading ?
+            (initialData ? 'Updating...' : 'Creating...') :
+            (initialData ? 'Update' : 'Create')}
       </button>
     </div>
   </form>

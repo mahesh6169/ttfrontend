@@ -4,6 +4,20 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import axios from '@/utils/axiosConfig';
+import Link from 'next/link';
+
+// Back button component
+const BackButton = () => (
+  <div className="mb-4">
+    <Link
+      href="/users/profile"
+      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
+    >
+      <span>&lt;</span>
+      <span>back</span>
+    </Link>
+  </div>
+);
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -174,8 +188,9 @@ export default function OnboardPage() {
 
   if (checkingStatus) {
     return (
-      <div className="min-h-screen bg-gray-50 px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+      <div className="min-h-screen bg-gray-50 px-2 sm:px-4 py-8">
+        <div className="max-w-3xl mx-auto">
+          <BackButton />
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
             <div className="h-4 bg-gray-200 rounded mb-8"></div>
@@ -187,8 +202,9 @@ export default function OnboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-3 md:px-4 py-4 md:py-6">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gray-50 px-2 sm:px-4 py-4 md:py-6">
+      <div className="max-w-3xl mx-auto">
+        <BackButton />
         <div className="mb-4 md:mb-6">
           <h1 className="text-lg md:text-2xl font-bold text-gray-900 mb-1">
             Welcome to Organiser Onboarding

@@ -1,11 +1,24 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { formatInTimeZone } from 'date-fns-tz';
 import EventSelector from '@/components/shared/EventSelector';
 import DateRangeSelector from '@/components/shared/DateRangeSelector';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import axios from '@/utils/axiosConfig';
+
+const BackButton = () => (
+  <div className="mb-4">
+    <Link
+      href="/users/profile"
+      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
+    >
+      <span>&lt;</span>
+      <span>back</span>
+    </Link>
+  </div>
+);
 
 const MyFreeEventRegistrationsPage = () => {
   // Local state (like paid tickets page)
@@ -230,9 +243,12 @@ const MyFreeEventRegistrationsPage = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">Loading your registrations...</span>
+      <div className="p-4">
+        <BackButton />
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2">Loading your registrations...</span>
+        </div>
       </div>
     );
   }
@@ -240,14 +256,17 @@ const MyFreeEventRegistrationsPage = () => {
   // Error state
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">Error: {error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          Retry
-        </button>
+      <div className="p-4">
+        <BackButton />
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700">Error: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -255,19 +274,23 @@ const MyFreeEventRegistrationsPage = () => {
   // No registrations state
   if (registrations.length === 0) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">No Registrations Yet</h2>
-        <p className="text-gray-600 mb-4">You haven't registered for any free events yet.</p>
-        <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          Browse Events
-        </button>
+      <div className="p-4">
+        <BackButton />
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">No Registrations Yet</h2>
+          <p className="text-gray-600 mb-4">You haven't registered for any free events yet.</p>
+          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Browse Events
+          </button>
+        </div>
       </div>
     );
   }
 
   // Main render
   return (
-    <div className="space-y-6">
+    <div className="p-4 space-y-6">
+      <BackButton />
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg sm:text-xl font-bold text-gray-900">Free Events - My RSVPs</h2>

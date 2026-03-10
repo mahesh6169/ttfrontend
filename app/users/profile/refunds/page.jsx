@@ -4,6 +4,20 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { formatInTimeZone } from 'date-fns-tz';
 import { toast } from 'react-toastify';
+import Link from 'next/link';
+
+// Back button component
+const BackButton = () => (
+  <div className="mb-4">
+    <Link
+      href="/users/profile"
+      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
+    >
+      <span>&lt;</span>
+      <span>back</span>
+    </Link>
+  </div>
+);
 import { 
   fetchOrganizerEvents,
   fetchRefundableTickets,
@@ -418,6 +432,9 @@ export default function RefundsPage() {
   return (
     <>
       <div className="space-y-2 sm:space-y-3">
+        {/* Back Button */}
+        <BackButton />
+
         {/* Page Header - Compact */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900">Refund Management</h2>

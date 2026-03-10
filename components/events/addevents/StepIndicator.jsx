@@ -212,12 +212,14 @@ const isStepComplete = (stepNumber) => {
       {/* Header with mode-specific information */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          {/* Event Badge - Always show */}
-          <EventBadge isPaid={formData?.isPaid} isRecurring={isRecurringEvent} />
-          
+          {/* Event Badge - Only show in edit/view mode */}
+          {mode !== 'add' && (
+            <EventBadge isPaid={formData?.isPaid} isRecurring={isRecurringEvent} />
+          )}
+
           {/* Mode and Status Indicators */}
           <div className="flex items-center space-x-2">
-            
+
             {/* Unsaved Changes Badge (Edit Mode Only) */}
             {mode === 'edit' && hasUnsavedChanges && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -227,7 +229,7 @@ const isStepComplete = (stepNumber) => {
                 Unsaved Changes
               </span>
             )}
-            
+
             {/* Read Only Badge */}
             {mode === 'view' && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -240,8 +242,9 @@ const isStepComplete = (stepNumber) => {
             )}
           </div>
         </div>
-        
-        <div className="text-right">
+
+        {/* Step counter - hidden on mobile since progress bar shows it */}
+        <div className="hidden md:block text-right">
           <div className="text-sm text-gray-500">
             Step {currentStep} of {actualTotalSteps}
           </div>
@@ -346,7 +349,7 @@ const isStepComplete = (stepNumber) => {
 
       {/* Mobile Step Indicator */}
       <div className="md:hidden">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-3">
             <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
               getColorClasses(getStepStatus(currentStep))
@@ -362,15 +365,14 @@ const isStepComplete = (stepNumber) => {
               </div>
             </div>
           </div>
-          
           <div className="text-sm text-gray-500">
             {currentStep}/{actualTotalSteps}
           </div>
         </div>
-        
+
         {/* Progress Bar */}
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
+          <div
             className={`h-2 rounded-full transition-all duration-300 ease-out ${getColorClasses('completed').split(' ').find(c => c.startsWith('bg-'))}`}
             style={{ width: `${(currentStep / actualTotalSteps) * 100}%` }}
           ></div>

@@ -1442,7 +1442,7 @@ const handleAddAnother = useCallback(() => {
         <RequireVerifiedAccount>
           <div className="flex flex-col items-center justify-center min-h-64">
             <LoadingSpinner size="large" />
-            <p className="mt-4 text-gray-600">Loading event data...</p>
+            <p className="mt-4 text-slate-600">Loading event data...</p>
           </div>
         </RequireVerifiedAccount>
       </div>
@@ -1493,14 +1493,14 @@ const handleAddAnother = useCallback(() => {
   }
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
+    <div className="px-0 py-4 sm:px-4 max-w-4xl mx-auto">
       <RequireVerifiedAccount message="You must be logged in to manage events.">
 
         {/* Step Indicator */}
         <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
 
         {/* Step Content */}
-        <div className="mt-8 bg-white p-1 sm:p-6 rounded-lg shadow-md border border-gray-200">
+        <div className="mt-8 bg-white p-3 sm:p-6 rounded-lg shadow-md border border-slate-200">
            {/* Step 1: Basic Info - Title, Date/Time, Venue, Address, Images */}
   {currentStep === 1 && (
     <BasicInfoStep
@@ -1543,122 +1543,67 @@ const handleAddAnother = useCallback(() => {
     />
   )}
 
-          {/* Navigation Buttons */}
+          {/* Navigation */}
           {!isViewMode && (
-            <div className="mt-8 flex justify-between px-4 sm:px-0">
+            <div className="mt-8 flex justify-between items-center">
               {currentStep > 1 ? (
                 <button
                   type="button"
                   onClick={handlePrev}
                   disabled={isLoading}
-                  className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-sm text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Previous
+                  ← Previous
+                </button>
+              ) : (
+                <div></div>
+              )}
+
+              {currentStep < totalSteps ? (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={isLoading}
+                  className="text-sm text-teal-700 hover:text-teal-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next →
                 </button>
               ) : (
                 <button
                   type="button"
-                  onClick={handleCancel}
+                  onClick={handleSubmit}
                   disabled={isLoading}
-                  className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`px-6 py-2 text-sm sm:text-base rounded-lg transition-colors flex items-center gap-2 ${
+                    isLoading
+                      ? 'bg-slate-400 cursor-not-allowed text-white'
+                      : 'bg-teal-700 hover:bg-teal-800 text-white'
+                  }`}
                 >
-                  Cancel
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      {isEditingMode ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : isEditingMode ? (
+                    'Update'
+                  ) : (
+                    'Create'
+                  )}
                 </button>
               )}
-
-{currentStep < totalSteps ? (
-  <button
-    type="button"
-    onClick={handleNext}
-    disabled={isLoading}
-    className={`px-3 sm:px-6 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm sm:text-base ${
-      isLoading
-        ? 'bg-gray-400 cursor-not-allowed text-white'
-        : 'bg-teal-600 hover:bg-teal-700 text-white'
-    }`}
-  >
-    {isLoading ? (
-      <>
-        <svg
-          className="animate-spin h-4 w-4 text-white"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          ></circle>
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
-        </svg>
-        Next
-      </>
-    ) : (
-      'Next'
-    )}
-  </button>
-) : (
-  <button
-    type="button"
-    onClick={handleSubmit}
-    disabled={isLoading}
-    className={`px-3 sm:px-6 py-2 text-sm sm:text-base ${
-      isLoading
-        ? 'bg-gray-400 cursor-not-allowed'
-        : 'bg-teal-600 hover:bg-teal-700'
-    } text-white rounded-lg transition-colors flex items-center gap-2`}
-  >
-    {isLoading ? (
-      <>
-        <svg
-          className="animate-spin h-4 w-4 text-white"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          ></circle>
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
-        </svg>
-        {isEditingMode
-          ? 'Updating Event...'
-          : 'Creating Event...'}
-      </>
-    ) : isEditingMode ? (
-      'Update Event'
-    ) : (
-      'Create Event'
-    )}
-  </button>
-)}
             </div>
           )}
 
           {/* View Mode Navigation */}
           {isViewMode && (
-            <div className="mt-8 flex justify-center px-4 sm:px-0">
+            <div className="mt-8 flex justify-center">
               <button
                 type="button"
                 onClick={() => router.push('/events')}
-                className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                className="px-6 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition-colors"
               >
                 Back to Events
               </button>

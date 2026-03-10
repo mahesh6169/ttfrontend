@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   updateThread,
@@ -10,7 +10,6 @@ import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
-import { useRef } from 'react';
 import CategorySelector from '@/components/threads/CategorySelector';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import { needsCommunityField } from '@/components/threads/categories';
@@ -52,7 +51,7 @@ const EditThreadPage = () => {
       socialMedia: []
     },
   });
-  
+
   const [existingImages, setExistingImages] = useState([]);
   const [preview, setPreview] = useState([]);
   const [autocomplete, setAutocomplete] = useState(null);
@@ -63,16 +62,17 @@ const EditThreadPage = () => {
   const [showSuccessView, setShowSuccessView] = useState(false);
   const [updatedThread, setUpdatedThread] = useState(null);
   const [locationValidationError, setLocationValidationError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (threadId) {
-      dispatch(fetchThreadById(threadId));
+      dispatch(fetchThreadById(threadId)).finally(() => setIsLoading(false));
     }
   }, [dispatch, threadId]);
 
   useEffect(() => {
     if (thread) {
-      console.log('🔍 Loading thread author data:', thread.author);
       const updatedFormData = {
         title: thread.title || '',
         question: thread.question || '',
@@ -97,25 +97,22 @@ const EditThreadPage = () => {
           socialMedia: []
         },
       };
-  
-      console.log('📝 Setting formData with author:', updatedFormData.author);
+
       setFormData(updatedFormData);
       setExistingImages(thread.images || []);
       setPreview((thread.images || []).map((img) => img.url));
-  
+
       if (thread.suburb && thread.suburb.name) {
         setLocationInput(`${thread.suburb.name}, ${thread.suburb.state} ${thread.suburb.postalCode}`);
       }
     }
   }, [thread, currentUser?.name]);
-  
 
-  // Add this useEffect to update locationInput when formData.suburb changes
-useEffect(() => {
-  if (formData.suburb && formData.suburb.name) {
-    setLocationInput(`${formData.suburb.name}, ${formData.suburb.state} ${formData.suburb.postalCode}`);
-  }
-}, [formData.suburb]);
+  useEffect(() => {
+    if (formData.suburb && formData.suburb.name) {
+      setLocationInput(`${formData.suburb.name}, ${formData.suburb.state} ${formData.suburb.postalCode}`);
+    }
+  }, [formData.suburb]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -126,12 +123,13 @@ useEffect(() => {
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-  
-    if (files.length + preview.length > 10) {
+    const totalImages = existingImages.length + preview.length - existingImages.length + files.length;
+
+    if (totalImages > 10) {
       toast.error('You can upload up to 10 images only.');
       return;
     }
-  
+
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
     const validFiles = files.filter((file) => {
       if (!allowedTypes.includes(file.type)) {
@@ -144,18 +142,17 @@ useEffect(() => {
       }
       return true;
     });
-  
+
     const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
     setPreview((prev) => [...prev, ...newPreviews]);
-  
+
     setFormData((prev) => ({
       ...prev,
       images: [...prev.images, ...validFiles],
     }));
-  
-    if (fileInputRef.current) fileInputRef.current.value = ''; // 👈 Reset file input
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
-  
 
   const handleRemoveImage = (index) => {
     if (index < existingImages.length) {
@@ -172,11 +169,8 @@ useEffect(() => {
     setPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Location input handler
   const handleLocationInputChange = (e) => {
     setLocationInput(e.target.value);
-    
-    // Clear validation errors when user starts typing
     if (errors.suburb) {
       setErrors((prev) => ({ ...prev, suburb: '' }));
     }
@@ -187,38 +181,33 @@ useEffect(() => {
 
   const handlePlaceChanged = () => {
     if (!autocomplete) return;
-  
+
     const place = autocomplete.getPlace();
-  
+
     if (!place || !place.address_components) {
-      console.log("No valid place selected");
       return;
     }
-  
-    // Validate against "Australia" only
+
     const formattedAddressLower = (place.formatted_address || '').toLowerCase().trim();
     const genericLocations = ['australia', 'aus', 'au'];
-    
+
     if (genericLocations.includes(formattedAddressLower)) {
       setLocationValidationError('Please select a more specific location. Enter suburb or city.');
       setLocationInput('');
       return;
     }
 
-    // Clear any previous validation error
     setLocationValidationError('');
 
     const addressComponents = place.address_components;
-  
     let suburb = '';
     let state = '';
     let postalCode = '';
     let coordinates = [];
-  
+
     addressComponents.forEach((component) => {
       const types = component.types;
-      
-      // Try multiple suburb types for Australian locations
+
       if (!suburb) {
         if (types.includes('locality')) {
           suburb = component.long_name;
@@ -230,13 +219,12 @@ useEffect(() => {
           suburb = component.long_name;
         }
       }
-      
+
       if (types.includes('administrative_area_level_1'))
         state = component.short_name;
       if (types.includes('postal_code')) postalCode = component.long_name;
     });
-  
-    // Fallback: Extract from formatted address if no suburb found
+
     if (!suburb && place.formatted_address) {
       suburb = place.formatted_address.split(',')[0].trim();
     }
@@ -246,8 +234,7 @@ useEffect(() => {
       const lng = place.geometry.location.lng();
       coordinates = [lng, lat];
     }
-  
-    // ✅ Update formData with selected location
+
     setFormData((prev) => ({
       ...prev,
       suburb: {
@@ -260,18 +247,13 @@ useEffect(() => {
         },
       },
     }));
-  
-    // ✅ Important: Clear existingImages because suburb is being changed
-    setExistingImages((prev) => [...prev]);
-  
-    // Update the input field
+
     setLocationInput(`${suburb}, ${state} ${postalCode}`);
-  
+
     if (errors.suburb) {
       setErrors((prev) => ({ ...prev, suburb: '' }));
     }
   };
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -282,46 +264,41 @@ useEffect(() => {
     if (!question.trim()) newErrors.question = 'Question is required';
     if (!category.trim()) newErrors.category = 'Category is required';
 
-    // Validate author fields
-    if (authorSectionRef.current && !authorSectionRef.current.validateFields()) {
-      return;
-    }
-
     const { name, state, postalCode, location } = suburb;
-    // Postal code is now optional
     if (!name || !state || location.coordinates.length !== 2) {
       newErrors.suburb = 'Please select a valid location using the autocomplete field';
     }
 
-    if (Object.keys(newErrors).length > 0) {
+    // Validate author section (shows its own errors internally)
+    const authorValid = authorSectionRef.current ? authorSectionRef.current.validateFields() : true;
+
+    // Show page errors and stop if any validation failed
+    if (Object.keys(newErrors).length > 0 || !authorValid) {
       setErrors(newErrors);
       return;
     }
+
+    setIsSubmitting(true);
 
     const formPayload = new FormData();
     formPayload.append('title', title);
     formPayload.append('question', question);
     formPayload.append('category', category);
-    
-    // Append communities
+
     if (formData.communities && formData.communities.length > 0) {
       formPayload.append('communities', JSON.stringify(formData.communities));
     }
-    
-    // Append suburb data
+
     formPayload.append('suburb', JSON.stringify(suburb));
-    
-    // Handle author data based on opt-in status
+
     if (authorSectionRef.current?.isOptedIn()) {
-      // User opted in - send author data
-      if (formData.author && (formData.author.name || formData.author.website || 
-          formData.author.contact || formData.author.email || 
-          formData.author.aboutMyself || 
+      if (formData.author && (formData.author.name || formData.author.website ||
+          formData.author.contact || formData.author.email ||
+          formData.author.aboutMyself ||
           (formData.author.socialMedia && formData.author.socialMedia.length > 0))) {
         formPayload.append('author', JSON.stringify(formData.author));
       }
     } else {
-      // User opted out - send empty author object to clear existing data
       formPayload.append('author', JSON.stringify({
         name: '',
         website: '',
@@ -331,7 +308,7 @@ useEffect(() => {
         socialMedia: []
       }));
     }
-    
+
     existingImages.forEach((img) =>
       formPayload.append('existingImages', JSON.stringify(img))
     );
@@ -341,18 +318,16 @@ useEffect(() => {
       updateThread({ threadId, formData: formPayload })
     );
 
+    setIsSubmitting(false);
+
     if (updateThread.fulfilled.match(result)) {
-      // Get the updated thread from the result
-      // Backend returns { message: '...', thread: {...} }
       const updated = result.payload?.thread;
-      
+
       if (!updated) {
-        console.error('No thread data in update response:', result.payload);
         toast.error('Thread updated but failed to get updated data');
         return;
       }
-      
-      // Revalidate metadata cache for WhatsApp sharing
+
       try {
         await fetch('/api/revalidate', {
           method: 'POST',
@@ -362,17 +337,40 @@ useEffect(() => {
       } catch (error) {
         console.error('Failed to revalidate metadata:', error);
       }
-      
+
       setUpdatedThread(updated);
-      // Show success view
       setShowSuccessView(true);
     } else {
       toast.error(result.payload || 'Failed to update thread.');
     }
   };
 
+  const handleCancel = () => {
+    const backTo = localStorage.getItem('cancelRedirectUrl');
+    localStorage.removeItem('cancelRedirectUrl');
+    router.push(backTo || '/users/profile/managethreads');
+  };
+
+  const getInputClasses = (hasError) => `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+    hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
+  }`;
+
+  const totalImages = existingImages.length + (preview.length - existingImages.length);
+  const isMaxImagesReached = totalImages >= 10;
+
+  if (isLoading) {
+    return (
+      <div className="px-2 py-6 sm:px-6 sm:py-8">
+        <div className="max-w-3xl mx-auto text-center py-12">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-700 mx-auto"></div>
+          <p className="mt-4 text-slate-500">Loading thread...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-6 mt-10">
+    <div className="px-2 py-6 sm:px-6 sm:py-8">
       <RequireVerifiedAccount>
         {showSuccessView && updatedThread ? (
           <SuccessView
@@ -380,196 +378,241 @@ useEffect(() => {
             mode="edit"
           />
         ) : (
-          <div className="bg-white border rounded-lg shadow-lg p-4 sm:p-6">
-            <h1 className="text-2xl font-bold mb-4">Edit Topic</h1>
-            <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <input
-            type="text"
-            name="title"
-            value={formData.title || ''}
-            onChange={handleChange}
-            className={`w-full p-2 border rounded-lg ${
-              errors.title ? 'border-red-500' : ''
-            }`}
-            placeholder="Topic Title"
-            required
-          />
-          {errors.title && (
-            <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-          )}
-        </div>
-        
-        <div>
-          <textarea
-            name="question"
-            value={formData.question || ''}
-            onChange={handleChange}
-            className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg sm:rounded min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
-              errors.question ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-teal-300'
-            }`}
-            placeholder="Describe your question..."
-            required
-            maxLength="15000"
-          />
-          <div className="flex justify-between items-start gap-2">
-            <div className="flex-1">
-              {errors.question && (
-                <p className="text-red-500 text-sm mt-1">{errors.question}</p>
-              )}
+          <div className="max-w-3xl mx-auto">
+            {/* Page Header */}
+            <div className="mb-8 text-center">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Edit Topic</h1>
+              <p className="text-sm text-slate-500 mt-1">Update your discussion or question</p>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="mt-4 inline-flex items-center justify-center bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-5 py-2 rounded-full shadow font-semibold text-sm transition-colors"
+              >
+                Cancel
+              </button>
             </div>
-            <span className="text-xs text-gray-400 whitespace-nowrap">
-              {(formData.question || '').length}/15000
-            </span>
-          </div>
-        </div>
-        
-        <div>
-          <CategorySelector
-            value={formData.category}
-            onChange={(value) => {
-              // Clear communities if switching to a non-eligible category
-              const updates = { category: value };
-              if (!needsCommunityField(value)) {
-                updates.communities = [];
-              }
-              setFormData({ ...formData, ...updates });
-            }}
-            placeholder="Select Category"
-            required={true}
-          />
-          {errors.category && (
-            <p className="text-red-500 text-sm mt-1">{errors.category}</p>
-          )}
-        </div>
 
-        {/* Community/Language - Only for eligible categories */}
-        {needsCommunityField(formData.category) && (
-          <div>
-            <CommunitySelector
-              value={formData.communities}
-              onChange={(value) => setFormData({ ...formData, communities: value })}
-              label="Community/Language (Optional)"
-              showHint={true}
-            />
-          </div>
-        )}
-
-        {/* Location/Suburb Selector */}
-        <div>
-          <label className="block font-bold mb-2 text-gray-700">
-            Location <span className="text-red-500">*</span>
-          </label>
-          <LoadScriptNext
-            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-            libraries={libraries}
-          >
-            <Autocomplete
-              onLoad={(auto) => setAutocomplete(auto)}
-              onPlaceChanged={handlePlaceChanged}
-              options={{
-                componentRestrictions: { country: 'AU' },
-                types: ['geocode'],
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Enter your suburb"
-                className={`w-full p-2 border rounded ${
-                  errors.suburb || locationValidationError ? 'border-red-500' : 'border-gray-300'
-                }`}
-                value={locationInput}
-                onChange={handleLocationInputChange}
-                onBlur={(e) => {
-                  const value = e.target.value.toLowerCase().trim();
-                  const genericLocations = ['australia', 'aus', 'au'];
-                  
-                  if (genericLocations.includes(value)) {
-                    setLocationValidationError('Please enter a more specific location. Include an address, suburb or city.');
-                  }
-                }}
-              />
-            </Autocomplete>
-          </LoadScriptNext>
-          {errors.suburb && (
-            <p className="text-red-500 text-sm mt-1">{errors.suburb}</p>
-          )}
-          {locationValidationError && !errors.suburb && (
-            <p className="text-red-500 text-sm mt-1">{locationValidationError}</p>
-          )}
-        </div>
-
-        {/* Author Details Section */}
-        <AuthorDetailsSection
-          ref={authorSectionRef}
-          formData={formData}
-          onChange={setFormData}
-          errors={errors}
-          userName={currentUser?.name || ''}
-        />
-
-        <div>
-          <label className="block font-bold mb-2 text-gray-700">Upload Images (Optional)</label>
-          <p className="text-xs text-gray-600 mb-2">
-            You can upload up to 10 images. Current: {preview.length}/10
-          </p>
-          <input
-  ref={fileInputRef} // 👈 Add this ref here
-  type="file"
-  multiple
-  accept="image/*"
-  onChange={handleFileChange}
-  disabled={preview.length >= 10}
-  className={`w-full p-2 border rounded ${
-    preview.length >= 10 
-      ? 'bg-gray-100 cursor-not-allowed opacity-50' 
-      : 'cursor-pointer'
-  }`}
-/>
-          {preview.length >= 10 && (
-            <p className="text-sm text-amber-600 mt-1">
-              Maximum image limit reached. Remove existing images to add new ones.
-            </p>
-          )}
-          <div className="flex gap-4 mt-4 flex-wrap">
-            {preview.map((src, idx) => (
-              <div key={idx} className="relative">
-                <img
-                  src={src}
-                  alt={`img-${idx}`}
-                  className="w-24 h-24 object-cover border"
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              {/* Title */}
+              <div>
+                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  placeholder="What's your topic about?"
+                  value={formData.title || ''}
+                  onChange={handleChange}
+                  className={getInputClasses(errors.title)}
+                  maxLength="200"
                 />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(idx)}
-                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
+                {errors.title && (
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.title}</p>
+                )}
+              </div>
+
+              {/* Question/Description */}
+              <div>
+                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="question"
+                  placeholder="Describe what you'd like to discuss or ask..."
+                  value={formData.question || ''}
+                  onChange={handleChange}
+                  className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
+                    errors.question ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
+                  }`}
+                  maxLength="15000"
+                />
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1">
+                    {errors.question && (
+                      <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.question}</p>
+                    )}
+                  </div>
+                  <span className="text-xs text-slate-400 whitespace-nowrap">
+                    {(formData.question || '').length}/15000
+                  </span>
+                </div>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <CategorySelector
+                  value={formData.category}
+                  onChange={(value) => {
+                    const updates = { category: value };
+                    if (!needsCommunityField(value)) {
+                      updates.communities = [];
+                    }
+                    setFormData({ ...formData, ...updates });
+                    if (errors.category) {
+                      setErrors({ ...errors, category: '' });
+                    }
+                  }}
+                  placeholder="Select a category"
+                  hasError={!!errors.category}
+                />
+                {errors.category && (
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.category}</p>
+                )}
+              </div>
+
+              {/* Community/Language */}
+              {needsCommunityField(formData.category) && (
+                <div>
+                  <CommunitySelector
+                    value={formData.communities}
+                    onChange={(value) => setFormData({ ...formData, communities: value })}
+                    label="Community/Language"
+                    showHint={true}
+                  />
+                </div>
+              )}
+
+              {/* Location */}
+              <div>
+                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                  Location <span className="text-red-500">*</span>
+                </label>
+                <LoadScriptNext
+                  googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                  libraries={libraries}
                 >
-                  X
+                  <Autocomplete
+                    onLoad={(auto) => setAutocomplete(auto)}
+                    onPlaceChanged={handlePlaceChanged}
+                    options={{
+                      componentRestrictions: { country: 'AU' },
+                      types: ['geocode'],
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Enter your suburb"
+                      className={getInputClasses(errors.suburb || locationValidationError)}
+                      value={locationInput}
+                      onChange={handleLocationInputChange}
+                      onBlur={(e) => {
+                        const value = e.target.value.toLowerCase().trim();
+                        const genericLocations = ['australia', 'aus', 'au'];
+                        if (genericLocations.includes(value)) {
+                          setLocationValidationError('Please enter a more specific location.');
+                        }
+                      }}
+                    />
+                  </Autocomplete>
+                </LoadScriptNext>
+                {errors.suburb && (
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.suburb}</p>
+                )}
+                {locationValidationError && !errors.suburb && (
+                  <p className="text-red-500 text-xs sm:text-sm mt-1">{locationValidationError}</p>
+                )}
+              </div>
+
+              {/* Author Details */}
+              <div className="border-t border-slate-200 pt-4 sm:pt-6">
+                <AuthorDetailsSection
+                  ref={authorSectionRef}
+                  formData={formData}
+                  onChange={setFormData}
+                  errors={errors}
+                  userName={currentUser?.name || ''}
+                />
+              </div>
+
+              {/* Images */}
+              <div className="border-t border-slate-200 pt-4 sm:pt-6">
+                <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+                  Upload Images
+                </span>
+                <p className="text-xs text-slate-500 mt-1 mb-3">
+                  JPEG, PNG, WebP & GIF only · Max 10 images · {preview.length}/10 uploaded
+                </p>
+
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    disabled={isMaxImagesReached}
+                    className="hidden"
+                    id="thread-edit-image-upload"
+                  />
+                  <label
+                    htmlFor="thread-edit-image-upload"
+                    className={`inline-block px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                      isMaxImagesReached
+                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer'
+                    }`}
+                  >
+                    Choose Files
+                  </label>
+                  {isMaxImagesReached && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      Maximum reached. Remove images to add new ones.
+                    </p>
+                  )}
+                </div>
+
+                {preview.length > 0 && (
+                  <div className="mt-3 flex gap-3 flex-wrap">
+                    {preview.map((src, idx) => (
+                      <div key={idx} className="relative">
+                        <img
+                          src={src}
+                          alt={`Image ${idx + 1}`}
+                          className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg"
+                        />
+                        {idx < existingImages.length && (
+                          <span className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                            Saved
+                          </span>
+                        )}
+                        {idx >= existingImages.length && (
+                          <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                            New
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full hover:bg-red-600 flex items-center justify-center"
+                          title="Remove"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Submit */}
+              <div className="text-center pt-4">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`px-8 py-3 rounded-lg font-semibold text-sm sm:text-base transition-colors ${
+                    isSubmitting
+                      ? 'bg-slate-400 cursor-not-allowed text-white'
+                      : 'bg-teal-700 hover:bg-teal-800 text-white'
+                  }`}
+                >
+                  {isSubmitting ? 'Updating...' : 'Update'}
                 </button>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex justify-between mt-4">
-          <button
-            type="submit"
-            className="bg-teal-600 text-lime-100 hover:bg-teal-700 hover:text-lime-100 px-4 py-2 rounded"
-          >
-            Update Thread
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              const backTo = localStorage.getItem('cancelRedirectUrl');
-              localStorage.removeItem('cancelRedirectUrl');
-              router.push(backTo || '/users/profile/managethreads');
-            }}
-            className="bg-red-400 text-white hover:bg-red-600 px-4 py-2 rounded"
-          >
-            Cancel
-          </button>
-        </div>
             </form>
           </div>
         )}

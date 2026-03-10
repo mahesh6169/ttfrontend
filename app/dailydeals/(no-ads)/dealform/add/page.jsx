@@ -1,22 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import axios from '@/utils/axiosConfig';
 import DealForm from '@/components/dailydeals/forms/DealForm';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 
-export default function AddDealPage() {
+function AddDealContent() {
   const router = useRouter();
-  const [cancelUrl, setCancelUrl] = useState('/dailydeals/manage');
-
-  useEffect(() => {
-    const savedCancelUrl = localStorage.getItem('cancelRedirectUrl');
-    if (savedCancelUrl) {
-      setCancelUrl(savedCancelUrl);
-    }
-  }, []);
+  const searchParams = useSearchParams();
+  const businessId = searchParams.get('businessId');
 
   const handleSubmit = async (formData) => {
     try {
@@ -28,8 +22,7 @@ export default function AddDealPage() {
 
       if (response.data.success) {
         toast.success('Deal created successfully!');
-        localStorage.removeItem('cancelRedirectUrl');
-        router.push('/dailydeals/manage');
+        router.push('/users/profile/dailydeals');
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create deal');
@@ -38,21 +31,51 @@ export default function AddDealPage() {
   };
 
   const handleCancel = () => {
-    localStorage.removeItem('cancelRedirectUrl');
-    router.push(cancelUrl);
+    router.back();
   };
 
   return (
-    <RequireVerifiedAccount>
-      <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto py-6 sm:py-8">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Add Daily Deal</h1>
-        <DealForm
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          partnersEndpoint="/user/dailydeals/mystores-dropdown"
-          isAdmin={false}
-        />
+    <div className="px-2 py-6 sm:px-6 sm:py-8">
+      <RequireVerifiedAccount>
+        <div className="max-w-3xl mx-auto">
+          {/* Page Header */}
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Add Deal</h1>
+            <p className="text-sm text-slate-500 mt-1">Create a promotional deal for your business</p>
+            <button
+              onClick={handleCancel}
+              className="mt-4 inline-flex items-center justify-center bg-amber-400 text-teal-800
+                hover:bg-amber-500 hover:text-teal-900 px-5 py-2 rounded-full shadow font-semibold text-sm transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {/* Form */}
+          <DealForm
+            initialData={businessId ? { partnerstoreId: businessId } : null}
+            onSubmit={handleSubmit}
+            partnersEndpoint="/user/dailydeals/mystores-dropdown"
+            isAdmin={false}
+          />
+        </div>
+      </RequireVerifiedAccount>
+    </div>
+  );
+}
+
+export default function AddDealPage() {
+  return (
+    <Suspense fallback={
+      <div className="px-2 py-6 sm:px-6 sm:py-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center">
+            <p className="text-slate-500">Loading...</p>
+          </div>
+        </div>
       </div>
-    </RequireVerifiedAccount>
+    }>
+      <AddDealContent />
+    </Suspense>
   );
 }

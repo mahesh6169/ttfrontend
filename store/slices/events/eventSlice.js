@@ -904,6 +904,12 @@ updateGstIncluded: (state, action) => {
       state.hasUnsavedChanges = true;
     },
 
+    // Set entire seating layout at once (for modal save)
+    setSeatingLayout: (state, action) => {
+      state.formData.seatingLayout = action.payload;
+      state.hasUnsavedChanges = true;
+    },
+
     // Enhanced image management
     setImages: (state, action) => {
       state.formData.images = action.payload.map(img => {
@@ -1279,7 +1285,8 @@ updateGstIncluded,
   updateRowLabel,
   updateSeatCount,
   removeSeatingRow,
-  
+  setSeatingLayout,
+
   // Images
   setImages,
   addImages,

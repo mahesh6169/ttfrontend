@@ -322,7 +322,7 @@ const DailyDealsPage = () => {
               {/* Post Deal Button - Right aligned */}
               <div className="flex justify-end">
                 <Link
-                  href="/dailydeals/manage"
+                  href="/users/profile/dailydeals"
                   className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors"
                 >
                   + Post Deal
@@ -477,7 +477,7 @@ const DailyDealsPage = () => {
               {/* Post Button - Right aligned */}
               <div className="flex justify-end mb-4">
                 <Link
-                  href="/dailydeals/manage"
+                  href="/users/profile/dailydeals"
                   className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors"
                 >
                   + Post Deal

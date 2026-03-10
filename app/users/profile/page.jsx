@@ -1,21 +1,66 @@
 'use client';
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
-  FaAd, FaCalendarAlt, FaEnvelope, FaUser, FaPlus,
-  FaCog, FaCheckCircle, FaEye, FaFileInvoice, FaTicketAlt, FaTag
+  FaCog,
+  FaCommentDots,
+  FaHeart,
+  FaBoxOpen,
+  FaTicketAlt,
+  FaBullseye,
+  FaComments,
+  FaTags,
+  FaChevronRight,
 } from 'react-icons/fa';
-import { MdFavorite } from 'react-icons/md';
-import { BsChatText, BsChatDots } from 'react-icons/bs';
-import { RiMoneyDollarCircleFill } from 'react-icons/ri';
 import LoadingSpinner from '@/components/LoadingSpinner';
+
+// localStorage key for persisting section states
+const STORAGE_KEY = 'profile_sections_state';
+
+// Default section states
+const DEFAULT_SECTIONS = {
+  listings: false,
+  events: false,
+  organizer: false,
+  threads: false,
+  deals: false,
+  coupons: false,
+};
 
 const ProfilePage = () => {
   const { user, status } = useSelector((state) => state.user);
-  const router = useRouter();
- 
+  const [sections, setSections] = useState(DEFAULT_SECTIONS);
+
+  // Load section states from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        setSections({ ...DEFAULT_SECTIONS, ...JSON.parse(saved) });
+      }
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  }, []);
+
+  // Save section states to localStorage when they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sections));
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  }, [sections]);
+
+  const toggleSection = (section) => {
+    setSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
   if (status === 'loading') {
     return (
       <div className="flex justify-center items-center h-screen w-full">
@@ -25,256 +70,220 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-2 py-3 sm:px-4 sm:py-6">
-      {/* Welcome Header with Back Button */}
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
-          Welcome, {user?.name || 'User'}!
+    <div className="px-2 py-6 sm:px-6 sm:py-8 max-w-2xl mx-auto">
+      {/* Welcome Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-900">
+          Welcome back, {user?.name || 'User'}!
         </h1>
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-        >
-          <span>&lt;</span>
-          <span>back</span>
-        </button>
+        <p className="text-sm text-slate-500 mt-1">Manage your account and content</p>
       </div>
 
-      {/* First Container: Account Settings & View */}
-      <div className="border border-gray-300 rounded-lg mb-3 p-3 sm:p-4">
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {/* Account Settings Column */}
-          <div>
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
-              <FaCog className="text-gray-600" />
-              Account Settings
-            </h3>
-            <div className="space-y-1.5">
-              <Link 
-                href="/users/profile/settings" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → User Settings
-              </Link>
-              <Link 
-                href="/users/profile/onboard" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Onboarding
-              </Link>
-            </div>
-          </div>
-
-          {/* View Column */}
-          <div>
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
-              <FaEye className="text-gray-600" />
-              View...
-            </h3>
-            <div className="space-y-1.5">
-              <Link 
-                href="/users/profile/myregistrations" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → My RSVPs
-              </Link>
-              <Link 
-                href="/users/profile/mytickets" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → My Tickets
-              </Link>
-              <Link 
-                href="/users/profile/myinvoices" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → My Invoices
-              </Link>
-              <Link 
-                href="/users/profile/my-codes" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → My Discount Codes
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Second Container: Add & Manage */}
-      <div className="border border-gray-300 rounded-lg mb-3 p-3 sm:p-4">
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {/* Add Column */}
-          <div>
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
-              <FaPlus className="text-gray-600" />
-              Add a...
-            </h3>
-            <div className="space-y-1.5">
-              <Link
-                href="/listings/add"
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Listing
-              </Link>
-              <Link
-                href="/events/add"
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Event
-              </Link>
-              <Link
-                href="/threads/new"
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Topic
-              </Link>
-              <Link
-                href="/users/profile/dailydeals"
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Daily Deal
-              </Link>
-            </div>
-          </div>
-
-          {/* Manage Column */}
-          <div>
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
-              <FaCog className="text-gray-600" />
-              Manage...
-            </h3>
-            <div className="space-y-1.5">
-              <Link
-                href="/users/profile/manageads"
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Listings
-              </Link>
-              <Link
-                href="/users/profile/manageevents"
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Events
-              </Link>
-              <Link
-                href="/users/profile/managethreads"
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Topics
-              </Link>
-              <Link
-                href="/users/profile/dailydeals"
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Daily Deals
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Third Container: Event Organizer & Check-in */}
-      <div className="border border-gray-300 rounded-lg mb-3 p-3 sm:p-4">
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {/* Event Organizer Column */}
-          <div>
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
-              <RiMoneyDollarCircleFill className="text-gray-600" />
-              Event Organizer
-            </h3>
-            <div className="space-y-1.5">
-              <Link 
-                href="/users/profile/onboard" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Onboarding
-              </Link>
-              <Link 
-                href="/users/profile/refunds" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Manage Refunds
-              </Link>
-            </div>
-          </div>
-
-          {/* Check-in Column */}
-          <div>
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 flex items-center gap-1">
-              <FaCheckCircle className="text-gray-600" />
-              Check-in...
-            </h3>
-            <div className="space-y-1.5">
-              <Link 
-                href="/users/profile/checkInFree" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → RSVPs
-              </Link>
-              <Link 
-                href="/users/profile/checkInPaid" 
-                className="block text-xs sm:text-sm text-gray-700 hover:text-teal-600 py-1 px-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                → Paid Events
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Last Container: Favorites & Messages */}
-      <div className="border border-gray-300 rounded-lg p-3 sm:p-4">
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {/* Favorites */}
-          <Link 
-            href="/users/profile/favourites"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors group"
-          >
-            <MdFavorite className="text-red-500 text-lg sm:text-xl" />
-            <span className="text-sm sm:text-base font-medium text-gray-700 group-hover:text-gray-900">
-              Favourites
-            </span>
-          </Link>
-
-          {/* Messages */}
-          <Link 
+      {/* Account Section - Quick Access Row */}
+      <div className="mb-8">
+        <div className="flex items-center gap-6 sm:gap-8">
+          <QuickLink
+            href="/users/profile/settings"
+            icon={FaCog}
+            label="Settings"
+          />
+          <QuickLink
             href="/users/profile/conversations"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors group"
-          >
-            <BsChatDots className="text-blue-500 text-lg sm:text-xl" />
-            <span className="text-sm sm:text-base font-medium text-gray-700 group-hover:text-gray-900">
-              Messages
-            </span>
-          </Link>
+            icon={FaCommentDots}
+            label="Messages"
+          />
+          <QuickLink
+            href="/users/profile/favourites"
+            icon={FaHeart}
+            label="Favorites"
+            iconColor="text-red-500"
+          />
         </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-slate-200 mb-6" />
+
+      {/* Accordion Sections */}
+      <div className="space-y-1">
+        {/* Listings Section */}
+        <AccordionSection
+          title="Listings"
+          icon={FaBoxOpen}
+          iconColor="text-teal-600"
+          isExpanded={sections.listings}
+          onToggle={() => toggleSection('listings')}
+        >
+          <div className="grid grid-cols-2 gap-2 pt-3">
+            <ActionCard href="/listings/add" label="Add Listing" />
+            <ActionCard href="/users/profile/manageads" label="Manage Listings" />
+          </div>
+        </AccordionSection>
+
+        {/* Events Section (Attendee) */}
+        <AccordionSection
+          title="Events [Attendee]"
+          icon={FaTicketAlt}
+          iconColor="text-purple-600"
+          isExpanded={sections.events}
+          onToggle={() => toggleSection('events')}
+        >
+          <div className="grid grid-cols-3 gap-2 pt-3">
+            <ActionCard href="/users/profile/myregistrations" label="Free Tickets" />
+            <ActionCard href="/users/profile/mytickets" label="Paid Tickets" />
+            <ActionCard href="/users/profile/myinvoices" label="Invoices" />
+          </div>
+        </AccordionSection>
+
+        {/* Events [Host] Section */}
+        <AccordionSection
+          title="Events [Host]"
+          icon={FaBullseye}
+          iconColor="text-amber-600"
+          isExpanded={sections.organizer}
+          onToggle={() => toggleSection('organizer')}
+        >
+          <div className="pt-3 space-y-4">
+            {/* Free Event */}
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Free Event</p>
+              <div className="grid grid-cols-3 gap-2">
+                <ActionCard href="/events/add" label="Add" />
+                <ActionCard href="/users/profile/manageevents" label="Manage" />
+                <ActionCard href="/users/profile/checkInFree" label="Check-in" />
+              </div>
+            </div>
+            {/* Paid Event */}
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Paid Event</p>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                <ActionCard href="/users/profile/onboard" label="Onboarding" />
+                <ActionCard href="/events/add" label="Add" />
+                <ActionCard href="/users/profile/manageevents" label="Manage" />
+                <ActionCard href="/users/profile/checkInPaid" label="Check-in" />
+                <ActionCard href="/users/profile/refunds" label="Refunds" />
+              </div>
+            </div>
+          </div>
+        </AccordionSection>
+
+        {/* Threads Section */}
+        <AccordionSection
+          title="Threads"
+          icon={FaComments}
+          iconColor="text-sky-600"
+          isExpanded={sections.threads}
+          onToggle={() => toggleSection('threads')}
+        >
+          <div className="grid grid-cols-2 gap-2 pt-3">
+            <ActionCard href="/threads/new" label="Add Topic" />
+            <ActionCard href="/users/profile/managethreads" label="Manage Topics" />
+          </div>
+        </AccordionSection>
+
+        {/* Deals Section */}
+        <AccordionSection
+          title="Deals"
+          icon={FaTags}
+          iconColor="text-orange-600"
+          isExpanded={sections.deals}
+          onToggle={() => toggleSection('deals')}
+        >
+          <div className="grid grid-cols-2 gap-2 pt-3">
+            <ActionCard href="/users/profile/dailydeals" label="Add Deal" />
+            <ActionCard href="/users/profile/dailydeals" label="Manage Deals" />
+          </div>
+        </AccordionSection>
+
+        {/* Coupons Section - Hidden for now
+        <AccordionSection
+          title="Coupons"
+          icon={FaTicketAlt}
+          iconColor="text-pink-600"
+          isExpanded={sections.coupons}
+          onToggle={() => toggleSection('coupons')}
+        >
+          <div className="pt-3">
+            <ActionCard href="/users/profile/my-codes" label="My Codes" />
+          </div>
+        </AccordionSection>
+        */}
       </div>
 
       {/* Support Links - Mobile Only */}
-      <div className="md:hidden border border-gray-300 rounded-lg mt-3 p-3">
-        <h3 className="text-sm font-semibold text-gray-800 mb-2">Support</h3>
-        <div className="space-y-2">
-          <Link 
-            href="/support/contact"
-            className="block text-xs text-gray-700 hover:text-teal-600 py-1.5 px-2 rounded hover:bg-gray-50 transition-colors"
-          >
-            → Contact Us
+      <div className="md:hidden mt-8 pt-6 border-t border-slate-200 text-center">
+        <div className="flex justify-center gap-4 text-sm text-slate-500">
+          <Link href="/support/contact" className="hover:text-teal-600 transition-colors">
+            Contact
           </Link>
-          <Link 
-            href="/support/terms"
-            className="block text-xs text-gray-700 hover:text-teal-600 py-1.5 px-2 rounded hover:bg-gray-50 transition-colors"
-          >
-            → Terms and Conditions
+          <span>·</span>
+          <Link href="/support/terms" className="hover:text-teal-600 transition-colors">
+            Terms
           </Link>
-          <Link 
-            href="/support/privacy"
-            className="block text-xs text-gray-700 hover:text-teal-600 py-1.5 px-2 rounded hover:bg-gray-50 transition-colors"
-          >
-            → Privacy Policy
+          <span>·</span>
+          <Link href="/support/privacy" className="hover:text-teal-600 transition-colors">
+            Privacy
           </Link>
         </div>
       </div>
     </div>
+  );
+};
+
+// Quick Link for Account section (simple row style)
+const QuickLink = ({ href, icon: Icon, label, iconColor = 'text-slate-600' }) => {
+  return (
+    <Link
+      href={href}
+      className="flex flex-col items-center gap-1.5 group"
+    >
+      <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-teal-50 flex items-center justify-center transition-colors">
+        <Icon className={`${iconColor} group-hover:text-teal-600 text-base transition-colors`} />
+      </div>
+      <span className="text-xs font-medium text-slate-600 group-hover:text-teal-600 transition-colors">
+        {label}
+      </span>
+    </Link>
+  );
+};
+
+// Accordion Section Component (Lighter)
+const AccordionSection = ({ title, icon: Icon, iconColor, isExpanded, onToggle, children }) => {
+  return (
+    <div className="border-b border-slate-100 last:border-b-0">
+      <button
+        onClick={onToggle}
+        className="w-full py-3 flex items-center justify-between hover:bg-slate-50 transition-colors rounded-lg px-2 -mx-2"
+      >
+        <div className="flex items-center gap-3">
+          <Icon className={`${iconColor} text-base`} />
+          <span className="text-sm font-semibold text-slate-900">{title}</span>
+        </div>
+        <FaChevronRight
+          className={`text-slate-400 text-xs transition-transform duration-200 ${
+            isExpanded ? 'rotate-90' : ''
+          }`}
+        />
+      </button>
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded ? 'max-h-[500px] opacity-100 pb-4' : 'max-h-0 opacity-0'
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// Action Card Component (Text only, no icon)
+const ActionCard = ({ href, label, className = '' }) => {
+  return (
+    <Link href={href} className={`group ${className}`}>
+      <div className="bg-slate-50 group-hover:bg-teal-50 rounded-lg transition-colors min-h-[44px] px-3 text-center flex items-center justify-center">
+        <span className="text-sm text-slate-700 group-hover:text-teal-700 transition-colors">{label}</span>
+      </div>
+    </Link>
   );
 };
 

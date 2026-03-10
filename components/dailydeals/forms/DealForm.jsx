@@ -14,7 +14,7 @@ const DAYS = [
   { value: 'sunday', label: 'Sun' }
 ];
 
-export default function DealForm({ initialData = null, onSubmit, onCancel, partnersEndpoint = '/admin/dailydeals/partners-dropdown', isAdmin = true }) {
+export default function DealForm({ initialData = null, onSubmit, partnersEndpoint = '/admin/dailydeals/partners-dropdown', isAdmin = true, isLoading = false }) {
   const [partners, setPartners] = useState([]);
   const [formData, setFormData] = useState({
     partnerstoreId: initialData?.partnerstoreId?._id || initialData?.partnerstoreId || '',
@@ -191,15 +191,15 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       {/* Business Selection */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-1 text-gray-700 text-sm sm:text-base">
+        <label className="block font-semibold sm:font-bold mb-1 text-slate-700 text-sm sm:text-base">
           Select Business <span className="text-red-500">*</span>
         </label>
-        <p className="text-xs text-gray-500 mb-2">Select Business/Store you want to create the Deal for</p>
+        <p className="text-xs text-slate-500 mb-2">Select Business/Store you want to create the Deal for</p>
         <select
           name="partnerstoreId"
           value={formData.partnerstoreId}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
         >
           <option value="">Select</option>
           {partners.map(partner => (
@@ -215,7 +215,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
 
       {/* Deal Title */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
           Deal Title <span className="text-red-500">*</span>
         </label>
         <input
@@ -223,7 +223,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
           name="dealTitle"
           value={formData.dealTitle}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="e.g., 20% Off All Pizzas"
         />
         {errors.dealTitle && (
@@ -233,7 +233,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
 
       {/* Description */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
           Description <span className="text-red-500">*</span>
         </label>
         <textarea
@@ -242,29 +242,29 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
           onChange={handleChange}
           rows={4}
           maxLength={15000}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="Describe the deal..."
         />
         <div className="flex justify-between mt-1">
           {errors.description && (
             <p className="text-red-500 text-xs sm:text-sm">{errors.description}</p>
           )}
-          <p className="text-xs text-gray-400 ml-auto">{formData.description.length}/15000</p>
+          <p className="text-xs text-slate-400 ml-auto">{formData.description.length}/15000</p>
         </div>
       </div>
 
       {/* Deal Link */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-1 text-gray-700 text-sm sm:text-base">
-          Offer URL <span className="text-xs font-normal text-gray-500">(optional)</span>
+        <label className="block font-semibold sm:font-bold mb-1 text-slate-700 text-sm sm:text-base">
+          Offer URL <span className="text-xs font-normal text-slate-500">(optional)</span>
         </label>
-        <p className="text-xs text-gray-500 mb-2">Link to social media, offer details, or redemption page</p>
+        <p className="text-xs text-slate-500 mb-2">Link to social media, offer details, or redemption page</p>
         <input
           type="url"
           name="dealLink"
           value={formData.dealLink}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="https://example.com/summer-sale"
         />
         {errors.dealLink && (
@@ -273,7 +273,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
       </div>
 
       {/* WhatsApp Orders */}
-      <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
+      <div className="border border-slate-200 rounded-lg p-3 sm:p-4">
         <div className="flex items-center">
           <input
             type="checkbox"
@@ -282,23 +282,23 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
             onChange={handleChange}
             className="mr-2 w-5 h-5 sm:w-4 sm:h-4"
           />
-          <label className="text-sm sm:text-base font-medium text-gray-700">
+          <label className="text-sm sm:text-base font-medium text-slate-700">
             I will take orders via WhatsApp
           </label>
         </div>
 
         {formData.whatsappOrders && (
           <div className="mt-3">
-            <label className="block font-semibold sm:font-bold mb-1 text-gray-700 text-sm sm:text-base">
+            <label className="block font-semibold sm:font-bold mb-1 text-slate-700 text-sm sm:text-base">
               WhatsApp Number <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-500 mb-2">Enter your Australian mobile number</p>
+            <p className="text-xs text-slate-500 mb-2">Enter your Australian mobile number</p>
             <input
               type="tel"
               name="whatsappNumber"
               value={formData.whatsappNumber}
               onChange={handleChange}
-              className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
               placeholder="0412 345 678"
             />
             {errors.whatsappNumber && (
@@ -310,10 +310,10 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
 
       {/* Deal Valid On */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-1 text-gray-700 text-sm sm:text-base">
-          Deal Valid On <span className="text-xs font-normal text-gray-500">(optional)</span>
+        <label className="block font-semibold sm:font-bold mb-1 text-slate-700 text-sm sm:text-base">
+          Deal Valid On <span className="text-xs font-normal text-slate-500">(optional)</span>
         </label>
-        <p className="text-xs text-gray-500 mb-2">Leave empty if valid every day</p>
+        <p className="text-xs text-slate-500 mb-2">Leave empty if valid every day</p>
         <div className="flex flex-wrap gap-2">
           {DAYS.map(day => (
             <button
@@ -322,8 +322,8 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
               onClick={() => handleDayToggle(day.value)}
               className={`px-4 py-2 sm:px-3 sm:py-1 rounded-full text-sm font-medium transition-colors ${
                 formData.validDays.includes(day.value)
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-teal-700 text-white'
+                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
               }`}
             >
               {day.label}
@@ -335,7 +335,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
       {/* Date Range */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
             Start Date <span className="text-red-500">*</span>
           </label>
           <input
@@ -343,14 +343,14 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
             name="startDate"
             value={formData.startDate}
             onChange={handleChange}
-            className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
           />
           {errors.startDate && (
             <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.startDate}</p>
           )}
         </div>
         <div>
-          <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
             End Date <span className="text-red-500">*</span>
           </label>
           <input
@@ -358,7 +358,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
             name="endDate"
             value={formData.endDate}
             onChange={handleChange}
-            className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
           />
           {errors.endDate && (
             <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.endDate}</p>
@@ -368,7 +368,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
 
       {/* Featured Section - Admin Only */}
       {isAdmin && (
-        <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
+        <div className="border border-slate-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center mb-4">
             <input
               type="checkbox"
@@ -377,7 +377,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
               onChange={handleChange}
               className="mr-2 w-5 h-5 sm:w-4 sm:h-4"
             />
-            <label className="text-sm sm:text-base font-medium text-gray-700">
+            <label className="text-sm sm:text-base font-medium text-slate-700">
               Feature this deal (show at top of list)
             </label>
           </div>
@@ -385,7 +385,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
           {formData.featured.isActive && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
                   Featured Start Date
                 </label>
                 <input
@@ -393,14 +393,14 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
                   name="featured.startDate"
                   value={formData.featured.startDate}
                   onChange={handleChange}
-                  className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
                 />
                 {errors.featuredStartDate && (
                   <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.featuredStartDate}</p>
                 )}
               </div>
               <div>
-                <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
                   Featured End Date
                 </label>
                 <input
@@ -408,7 +408,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
                   name="featured.endDate"
                   value={formData.featured.endDate}
                   onChange={handleChange}
-                  className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
                 />
                 {errors.featuredEndDate && (
                   <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.featuredEndDate}</p>
@@ -429,7 +429,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
             onChange={handleChange}
             className="mr-2 w-5 h-5 sm:w-4 sm:h-4"
           />
-          <label className="text-sm sm:text-base text-gray-700">
+          <label className="text-sm sm:text-base text-slate-700">
             Deal is active
           </label>
         </div>
@@ -437,7 +437,7 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
 
       {/* Terms */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-gray-700 text-sm sm:text-base">
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
           Terms & Conditions
         </label>
         <textarea
@@ -446,10 +446,10 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
           onChange={handleChange}
           rows={3}
           maxLength={1000}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="e.g., Not valid with other offers. Dine-in only."
         />
-        <p className="text-xs text-gray-400 text-right mt-1">{formData.terms.length}/1000</p>
+        <p className="text-xs text-slate-400 text-right mt-1">{formData.terms.length}/1000</p>
       </div>
 
       {/* Image Upload */}
@@ -463,28 +463,19 @@ export default function DealForm({ initialData = null, onSubmit, onCancel, partn
 
       {/* Submit Error */}
       {errors.submit && (
-        <div className="bg-red-50 border border-red-200 rounded p-3">
-          <p className="text-red-600 text-sm">{errors.submit}</p>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4">
+          <p className="text-red-600 text-sm sm:text-base">{errors.submit}</p>
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="w-full sm:w-auto px-6 py-3 sm:py-2 text-base sm:text-sm border border-gray-300 rounded-lg sm:rounded hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-        )}
+      {/* Submit Button */}
+      <div className="text-center pt-4">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:flex-1 bg-teal-600 text-white py-3 sm:py-2 px-4 text-base sm:text-sm rounded-lg sm:rounded font-medium hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="px-8 py-3 rounded-lg font-semibold text-sm sm:text-base bg-teal-700 hover:bg-teal-800 text-white transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? 'Saving...' : (initialData ? 'Update Deal' : 'Add Deal')}
+          {isSubmitting ? (initialData ? 'Updating...' : 'Creating...') : (initialData ? 'Update' : 'Create')}
         </button>
       </div>
     </form>
