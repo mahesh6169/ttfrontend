@@ -145,7 +145,7 @@ export default function DealImageUploader({
               <button
                 type="button"
                 onClick={() => removeExistingImage(img.publicId)}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center"
               >
                 ×
               </button>
@@ -166,7 +166,7 @@ export default function DealImageUploader({
               <button
                 type="button"
                 onClick={() => removeNewImage(img.id)}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center"
               >
                 ×
               </button>

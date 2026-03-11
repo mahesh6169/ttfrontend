@@ -72,11 +72,20 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
     }
   };
   
+  // Build share text: Title + CTA + URL
+  const buildShareText = () => {
+    let text = title || 'Check this out';
+    text += '\n\nView on Desify\n';
+    text += `\n${fullUrl}`;
+    return text;
+  };
+
   const handleShare = (platform) => {
-    const encodedUrl = encodeURIComponent(fullUrl);
+    const shareText = buildShareText();
+    const encodedText = encodeURIComponent(shareText);
 
     const shareUrls = {
-      whatsapp: `https://wa.me/?text=${encodedUrl}`
+      whatsapp: `https://wa.me/?text=${encodedText}`
     };
 
     if (shareUrls[platform]) {
@@ -87,9 +96,12 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
   // Native share for mobile devices
   const handleNativeShare = async () => {
     try {
+      let text = title || 'Check this out';
+      text += '\n\nView on Desify\n';
+
       await navigator.share({
         title: title || 'Check this out',
-        text: title || 'Check this out',
+        text: text,
         url: fullUrl
       });
     } catch (err) {
@@ -136,14 +148,16 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
         </button>
       )}
 
-      {/* WhatsApp */}
-      <button
-        onClick={() => handleShare('whatsapp')}
-        className={compact ? hoverClassName : greyButtonClass}
-        title="Share on WhatsApp"
-      >
-        <FaWhatsapp className={compact ? "text-base" : iconSize} />
-      </button>
+      {/* WhatsApp - show on desktop only (mobile uses native share) */}
+      {(!isMobile || !canNativeShare || compact) && (
+        <button
+          onClick={() => handleShare('whatsapp')}
+          className={compact ? hoverClassName : greyButtonClass}
+          title="Share on WhatsApp"
+        >
+          <FaWhatsapp className={compact ? "text-base" : iconSize} />
+        </button>
+      )}
     </div>
   );
 };

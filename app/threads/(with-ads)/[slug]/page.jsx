@@ -48,9 +48,9 @@ export async function generateMetadata({ params }) {
     // Simple call-to-action description
     const description = 'Join the conversation now!';
     
-    // Get first image or use default
+    // Get OG image or fallback (skip raw images to avoid >300KB issues)
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    let image = thread.ogImageUrl || thread.images?.[0]?.url || process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL;
+    let image = thread.ogImageUrl || process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL;
     
     // Ensure image URL is absolute
     if (image && !image.startsWith('http')) {
@@ -115,19 +115,17 @@ export default async function ThreadSlugPage({ params }) {
           <p className="text-gray-600">Topic not found</p>
           <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
         </div>
-        {/* <meta httpEquiv="refresh" content="3; url=/threads" /> */}
-      <meta httpEquiv="refresh" content="0; url=/threads" />
+        <meta httpEquiv="refresh" content="3; url=/threads" />
       </div>
     );
   }
-  
+
   // Use meta refresh instead of JavaScript redirect
   // This allows crawlers to read the meta tags before following the redirect
   return (
     <div className="flex justify-center items-center min-h-screen">
       <LoadingSpinner />
-      {/* <meta httpEquiv="refresh" content={`3; url=/threads/views/${threadId}`} /> */}
-      <meta httpEquiv="refresh" content={`0; url=/threads/views/${threadId}`} />
+      <meta httpEquiv="refresh" content={`3; url=/threads/views/${threadId}`} />
     </div>
   );
 }

@@ -461,6 +461,9 @@ const eventSlice = createSlice({
     myEvents: [],
     status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
     error: null,
+
+    // Last created/updated event (for SuccessStep sharing)
+    createdEvent: null,
     
     // Form state
     currentStep: 1,
@@ -973,7 +976,7 @@ updateGstIncluded: (state, action) => {
           }
         });
       }
-      
+
       state.currentStep = 1;
       state.totalSteps = 3; // Reset to default (3 steps for free/promotional events)
       state.isEditMode = false;
@@ -988,6 +991,7 @@ updateGstIncluded: (state, action) => {
       state.successMessage = '';
       state.isInitializing = false;
       state.initializationError = null;
+      state.createdEvent = null; // Clear created event on form reset
     },
     
     // Initialization state management
@@ -1017,6 +1021,11 @@ updateGstIncluded: (state, action) => {
 clearDeleteError: (state) => {
   state.deleteError = null;
 },
+
+    // Clear created event (for cleanup after sharing)
+    clearCreatedEvent: (state) => {
+      state.createdEvent = null;
+    },
   },
   
   extraReducers: (builder) => {
@@ -1030,6 +1039,8 @@ clearDeleteError: (state) => {
         state.formStatus = 'succeeded';
         state.successMessage = 'Free event created successfully!';
         state.hasUnsavedChanges = false;
+        // Store created event for SuccessStep sharing
+        state.createdEvent = action.payload;
         // Add to myEvents if it exists
         if (state.myEvents && Array.isArray(state.myEvents)) {
           state.myEvents.push(action.payload);
@@ -1049,6 +1060,8 @@ clearDeleteError: (state) => {
         state.formStatus = 'succeeded';
         state.successMessage = 'Paid event created successfully!';
         state.hasUnsavedChanges = false;
+        // Store created event for SuccessStep sharing
+        state.createdEvent = action.payload;
         // Add to myEvents if it exists
         if (state.myEvents && Array.isArray(state.myEvents)) {
           state.myEvents.push(action.payload);
@@ -1069,18 +1082,20 @@ clearDeleteError: (state) => {
         state.formStatus = 'succeeded';
         state.successMessage = 'Free event updated successfully!';
         state.hasUnsavedChanges = false;
-        
+        // Store updated event for SuccessStep sharing
+        state.createdEvent = action.payload;
+
         // Update in myEvents array
         const eventIndex = state.myEvents.findIndex(event => event._id === action.payload._id);
         if (eventIndex !== -1) {
           state.myEvents[eventIndex] = action.payload;
         }
-        
+
         // Update selectedEvent if it's the same event
         if (state.selectedEvent?._id === action.payload._id) {
           state.selectedEvent = action.payload;
         }
-        
+
         // Update original event data for comparison
         state.originalEventData = action.payload;
       })
@@ -1098,6 +1113,8 @@ clearDeleteError: (state) => {
   state.formStatus = 'succeeded';
   state.successMessage = 'Paid event updated successfully!';
   state.hasUnsavedChanges = false;
+  // Store updated event for SuccessStep sharing
+  state.createdEvent = action.payload;
 
   // Update in myEvents array
   const eventIndex = state.myEvents.findIndex(event => event._id === action.payload._id);
@@ -1128,18 +1145,20 @@ clearDeleteError: (state) => {
         state.formStatus = 'succeeded';
         state.successMessage = 'Event updated successfully!';
         state.hasUnsavedChanges = false;
-        
+        // Store updated event for SuccessStep sharing
+        state.createdEvent = action.payload;
+
         // Update in myEvents array
         const eventIndex = state.myEvents.findIndex(event => event._id === action.payload._id);
         if (eventIndex !== -1) {
           state.myEvents[eventIndex] = action.payload;
         }
-        
+
         // Update selectedEvent if it's the same event
         if (state.selectedEvent?._id === action.payload._id) {
           state.selectedEvent = action.payload;
         }
-        
+
         // Update original event data for comparison
         state.originalEventData = action.payload;
       })
@@ -1311,7 +1330,10 @@ updateGstIncluded,
 
   // Delete management
 clearDeleteError,
-  
+
+  // Created event management
+  clearCreatedEvent,
+
   // Form management
   resetForm,
 } = eventSlice.actions;

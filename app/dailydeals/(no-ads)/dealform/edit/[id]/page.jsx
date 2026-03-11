@@ -6,12 +6,15 @@ import { toast } from 'react-toastify';
 import axios from '@/utils/axiosConfig';
 import DealForm from '@/components/dailydeals/forms/DealForm';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
+import SuccessView from '@/components/dailydeals/SuccessView';
 
 export default function EditDealPage() {
   const router = useRouter();
   const { id } = useParams();
   const [deal, setDeal] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSuccessView, setShowSuccessView] = useState(false);
+  const [updatedDeal, setUpdatedDeal] = useState(null);
 
   useEffect(() => {
     const fetchDeal = async () => {
@@ -43,7 +46,8 @@ export default function EditDealPage() {
 
       if (response.data.success) {
         toast.success('Deal updated successfully!');
-        router.push('/users/profile/dailydeals');
+        setUpdatedDeal(response.data.deal);
+        setShowSuccessView(true);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update deal');
@@ -82,28 +86,35 @@ export default function EditDealPage() {
   return (
     <div className="px-2 py-6 sm:px-6 sm:py-8">
       <RequireVerifiedAccount>
-        <div className="max-w-3xl mx-auto">
-          {/* Page Header */}
-          <div className="mb-8 text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Edit Deal</h1>
-            <p className="text-sm text-slate-500 mt-1">Update your promotional deal</p>
-            <button
-              onClick={handleCancel}
-              className="mt-4 inline-flex items-center justify-center bg-amber-400 text-teal-800
-                hover:bg-amber-500 hover:text-teal-900 px-5 py-2 rounded-full shadow font-semibold text-sm transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-
-          {/* Form */}
-          <DealForm
-            initialData={deal}
-            onSubmit={handleSubmit}
-            partnersEndpoint="/user/dailydeals/mystores-dropdown"
-            isAdmin={false}
+        {showSuccessView && updatedDeal ? (
+          <SuccessView
+            deal={updatedDeal}
+            mode="edit"
           />
-        </div>
+        ) : (
+          <div className="max-w-3xl mx-auto">
+            {/* Page Header */}
+            <div className="mb-8 text-center">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Edit Deal</h1>
+              <p className="text-sm text-slate-500 mt-1">Update your promotional deal</p>
+              <button
+                onClick={handleCancel}
+                className="mt-4 inline-flex items-center justify-center bg-amber-400 text-teal-800
+                  hover:bg-amber-500 hover:text-teal-900 px-5 py-2 rounded-full shadow font-semibold text-sm transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {/* Form */}
+            <DealForm
+              initialData={deal}
+              onSubmit={handleSubmit}
+              partnersEndpoint="/user/dailydeals/mystores-dropdown"
+              isAdmin={false}
+            />
+          </div>
+        )}
       </RequireVerifiedAccount>
     </div>
   );

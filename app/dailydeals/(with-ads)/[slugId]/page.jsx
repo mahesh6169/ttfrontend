@@ -1,4 +1,5 @@
 import { extractIdFromSlug, META_DEFAULTS } from '@/utils/slugUtils';
+import { format } from 'date-fns';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -40,20 +41,29 @@ export async function generateMetadata({ params }) {
     // Generate meta tags
     const title = deal.dealTitle || 'Daily Deal';
 
-    // Build description
-    let description = deal.description || '';
+    // Build description: Until {date}. {location} {businessName}
+    let description = '';
+
+    // Add end date
+    if (deal.endDate) {
+      const endDate = format(new Date(deal.endDate), 'dd MMM');
+      description = `Until ${endDate}`;
+    }
+
+    // Add location (suburb, state)
+    const address = deal.partnerstoreId?.address;
+    if (address?.suburb && address?.state) {
+      description += description ? `. ${address.suburb}, ${address.state}` : `${address.suburb}, ${address.state}`;
+    }
+
+    // Add business name
     if (deal.partnerstoreId?.businessName) {
-      description = `${deal.partnerstoreId.businessName} - ${description}`;
+      description += description ? ` - ${deal.partnerstoreId.businessName}` : deal.partnerstoreId.businessName;
     }
 
-    // Ensure it fits within 160 chars
-    if (description.length > 160) {
-      description = description.substring(0, 157) + '...';
-    }
-
-    // Get first image or use default
+    // Get OG image or fallback (skip raw images to avoid >300KB issues)
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    let image = deal.images?.[0]?.url || process.env.NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL;
+    let image = deal.ogImageUrl || process.env.NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL;
 
     // Ensure image URL is absolute
     if (image && !image.startsWith('http')) {
@@ -98,9 +108,24 @@ export async function generateMetadata({ params }) {
     };
   } catch (error) {
     console.error('Error fetching deal for meta tags:', error);
+    const fallbackImage = process.env.NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL;
     return {
       title: 'Daily Deal - Desify',
       description: META_DEFAULTS.defaultDescription,
+      openGraph: {
+        title: 'Daily Deal',
+        description: META_DEFAULTS.defaultDescription,
+        siteName: META_DEFAULTS.siteName,
+        images: fallbackImage ? [{ url: fallbackImage, width: 1200, height: 630 }] : [],
+        locale: 'en_AU',
+        type: 'website',
+      },
+      twitter: {
+        card: fallbackImage ? 'summary_large_image' : 'summary',
+        title: 'Daily Deal',
+        description: META_DEFAULTS.defaultDescription,
+        images: fallbackImage ? [fallbackImage] : [],
+      },
     };
   }
 }
@@ -116,7 +141,7 @@ export default async function DealSlugPage({ params }) {
           <p className="text-gray-600">Deal not found</p>
           <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
         </div>
-        <meta httpEquiv="refresh" content="0; url=/dailydeals" />
+        <meta httpEquiv="refresh" content="3; url=/dailydeals" />
       </div>
     );
   }
@@ -125,7 +150,7 @@ export default async function DealSlugPage({ params }) {
   return (
     <div className="flex justify-center items-center min-h-screen">
       <LoadingSpinner />
-      <meta httpEquiv="refresh" content={`0; url=/dailydeals/views/${dealId}`} />
+      <meta httpEquiv="refresh" content={`3; url=/dailydeals/views/${dealId}`} />
     </div>
   );
 }

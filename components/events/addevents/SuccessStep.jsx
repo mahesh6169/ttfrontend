@@ -13,14 +13,12 @@ const SuccessStep = ({
   onManageEvents,
   onViewEvent,
 }) => {
-  // Get latest event from Redux (for add mode)
-  const latestEvent = useSelector(state => {
-    const myEvents = state.events?.myEvents || [];
-    return myEvents.length > 0 ? myEvents[myEvents.length - 1] : null;
-  });
+  // Get created/updated event from Redux (single source of truth)
+  const createdEvent = useSelector(state => state.events?.createdEvent);
 
-  const eventId = latestEvent?._id || event._id || event.id;
-  const eventTitle = event.title || latestEvent?.title || 'Untitled Event';
+  // Use createdEvent (from API response) as primary source, fallback to event prop
+  const eventId = createdEvent?._id || event._id || event.id;
+  const eventTitle = createdEvent?.title || event.title || 'Untitled Event';
   const isRecurringEvent = event.recurrence?.isRecurring || false;
 
   const getRecurringScheduleText = () => {

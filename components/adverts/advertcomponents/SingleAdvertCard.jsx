@@ -652,9 +652,11 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
               if (navigator.share) {
                 try {
                   const shareUrl = `${window.location.origin}${buildSlugUrl('listing', advert.title, advert._id)}`;
+                  const shareText = `${advert.title}\n\nView on Desify\n`;
+
                   await navigator.share({
                     title: advert.title,
-                    text: advert.title,
+                    text: shareText,
                     url: shareUrl
                   });
                 } catch (err) {

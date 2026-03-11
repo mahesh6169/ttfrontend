@@ -86,9 +86,9 @@ export async function generateMetadata({ params }) {
       }
     }
     
-    // Get first image or use default
+    // Get OG image or fallback (skip raw images to avoid >300KB issues)
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
-    let image = event.ogImageUrl || event.images?.[0]?.url || process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
+    let image = event.ogImageUrl || process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
     
     // Ensure image URL is absolute
     if (image && !image.startsWith('http')) {
@@ -151,19 +151,17 @@ export default async function EventSlugPage({ params }) {
           <p className="text-gray-600">Event not found</p>
           <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
         </div>
-        {/* <meta httpEquiv="refresh" content="3; url=/events" /> */}
-        <meta httpEquiv="refresh" content="0; url=/events" />
+        <meta httpEquiv="refresh" content="3; url=/events" />
       </div>
     );
   }
-  
+
   // Use meta refresh instead of JavaScript redirect
   // This allows crawlers to read the meta tags before following the redirect
   return (
     <div className="flex justify-center items-center min-h-screen">
       <LoadingSpinner />
-      {/* <meta httpEquiv="refresh" content={`3; url=/events/views/${eventId}`} /> */}
-      <meta httpEquiv="refresh" content={`0; url=/events/views/${eventId}`} />
+      <meta httpEquiv="refresh" content={`3; url=/events/views/${eventId}`} />
     </div>
   );
 }

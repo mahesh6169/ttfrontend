@@ -290,11 +290,13 @@ const DealDetailPage = () => {
           <button
             onClick={async () => {
               const shareUrl = `${window.location.origin}${buildSlugUrl('deal', deal.dealTitle, deal._id)}`;
+              const shareText = `${deal.dealTitle}\n\nView on Desify\n`;
+
               if (navigator.share) {
                 try {
                   await navigator.share({
                     title: deal.dealTitle,
-                    text: deal.dealTitle,
+                    text: shareText,
                     url: shareUrl,
                   });
                 } catch (err) {

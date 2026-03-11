@@ -1185,11 +1185,13 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         <button
           onClick={async () => {
             const shareUrl = `${window.location.origin}${buildSlugUrl('thread', thread.title, thread._id)}`;
+            const shareText = `${thread.title}\n\nView on Desify\n`;
+
             if (navigator.share) {
               try {
                 await navigator.share({
                   title: thread.title,
-                  text: thread.title,
+                  text: shareText,
                   url: shareUrl,
                 });
               } catch (err) {

@@ -75,7 +75,7 @@ const SuccessModal = ({
           <div className="border-t border-b border-gray-200 py-4 mb-6">
             <p className="text-sm text-gray-600 mb-3">Share your listing:</p>
             <div className="flex items-center justify-center">
-              <ShareIcons 
+              <ShareIcons
                 type="listing"
                 title={advert?.title || 'Listing'}
                 id={advertId}
