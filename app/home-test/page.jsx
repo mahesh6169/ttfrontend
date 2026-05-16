@@ -20,7 +20,7 @@ function HeroSection() {
   return (
     <div className="text-center mb-6 sm:mb-8">
       <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-teal-800">
-        Your Online Community Marketplace
+        Your Online Community Marketplaces
       </h1>
       <p className="mt-2 sm:mt-3 text-gray-700 text-sm sm:text-base md:text-lg font-medium">
         Powered by community, not algorithms.
