@@ -138,6 +138,7 @@ export default function UsersPage() {
                   <th className="border p-2">Name</th>
                   <th className="border p-2">Email</th>
                   <th className="border p-2">Role</th>
+                  <th className="border p-2">Registered</th>
                   <th className="border p-2">Actions</th>
                 </tr>
               </thead>
@@ -147,6 +148,9 @@ export default function UsersPage() {
                     <td className="border p-2">{user.name}</td>
                     <td className="border p-2">{user.email}</td>
                     <td className="border p-2">{user.role}</td>
+                    <td className="border p-2">
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
+                    </td>
                     <td className="border p-2 flex gap-2">
                       <button
                         onClick={() => handleEditClick(user)}
