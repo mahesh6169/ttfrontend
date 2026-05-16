@@ -60,8 +60,8 @@ const AdvertDetail = () => {
     );
   }
 
-  // Check if this is an admin-added listing (on behalf of providers)
-  const isAdminListing = advert.isAdminListing || false;
+  // Curated listing — posted by a Desify curator on behalf of the owner
+  const isCuratedListing = advert.isCuratedListing || false;
 
   return (
     <div id="viewsmain" className="flex flex-col gap-2 px-2">
@@ -97,7 +97,7 @@ const AdvertDetail = () => {
               participantId: advert.postedBy?._id,
               owner: advert.postedBy?.name,
               preserveRedirectUrl: `/listings/views/${id}`,
-              isAdminListing,
+              isCurated: isCuratedListing,
               listingTitle: advert.title,
             }}
           />
@@ -111,7 +111,7 @@ const AdvertDetail = () => {
             participantId={advert.postedBy?._id}
             owner={advert.postedBy?.name}
             preserveRedirectUrl={`/listings/views/${id}`}
-            isAdminListing={isAdminListing}
+            isCurated={isCuratedListing}
             listingTitle={advert.title}
           />
 

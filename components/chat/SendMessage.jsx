@@ -15,7 +15,7 @@ const SendMessage = ({
   participantId,
   owner,
   preserveRedirectUrl,
-  isAdminListing = false,
+  isCurated = false,
   listingTitle = '',
   onTextareaFocus,
   onTextareaBlur,
@@ -93,8 +93,8 @@ const SendMessage = ({
     router.push('/login?preserveRedirect=true');
   };
 
-  // Show different content for admin-added listings/deals (posted on behalf of providers)
-  if (isAdminListing) {
+  // Show different content for curated listings/deals (posted on behalf of providers)
+  if (isCurated) {
     // Dynamic text based on resource type
     const resourceLabel = resourceType === 'deal' ? 'deal' : 'listing';
     const removalType = resourceType === 'deal' ? 'deal' : 'listing';

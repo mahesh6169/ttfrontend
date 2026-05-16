@@ -138,7 +138,7 @@ const DealDetailPage = () => {
               participantId: ownerId,
               owner: ownerName,
               preserveRedirectUrl: `/dailydeals/views/${id}`,
-              isAdminListing,
+              isCurated: isAdminListing,
               listingTitle: deal.dealTitle,
             }}
           />
@@ -162,7 +162,7 @@ const DealDetailPage = () => {
             participantId={ownerId}
             owner={ownerName}
             preserveRedirectUrl={`/dailydeals/views/${id}`}
-            isAdminListing={isAdminListing}
+            isCurated={isAdminListing}
             listingTitle={deal.dealTitle}
           />
 
