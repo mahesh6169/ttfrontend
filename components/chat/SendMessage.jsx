@@ -105,21 +105,18 @@ const SendMessage = ({
         <p className="text-sm text-slate-700 mb-4">
           This {resourceLabel} was posted on behalf of the owner. Please use the contact details provided to reach them directly.
         </p>
-        {/* Only show removal link for listings, not deals (deals require business approval) */}
-        {resourceType !== 'deal' && (
-          <p className="text-xs text-slate-500">
-            Are you the business owner?{' '}
-            <Link
-              href={`/support/removal?type=${removalType}&id=${resourceId}&title=${encodeURIComponent(listingTitle)}`}
-              onClick={() => {
-                localStorage.setItem('removalReturnUrl', preserveRedirectUrl);
-              }}
-              className="text-slate-700 hover:text-slate-900 underline"
-            >
-              Request removal of this {resourceLabel}
-            </Link>
-          </p>
-        )}
+        <p className="text-xs text-slate-500">
+          Are you the business owner?{' '}
+          <Link
+            href={`/support/removal?type=${removalType}&id=${resourceId}&title=${encodeURIComponent(listingTitle)}`}
+            onClick={() => {
+              localStorage.setItem('removalReturnUrl', preserveRedirectUrl);
+            }}
+            className="text-slate-700 hover:text-slate-900 underline"
+          >
+            Request removal of this {resourceLabel}
+          </Link>
+        </p>
       </div>
     );
   }

@@ -13,12 +13,14 @@ import { sanitizeInput, validateRemovalForm } from '@/utils/forms/validation';
 const TYPE_LABELS = {
   listing: 'Listing',
   event: 'Event',
+  deal: 'Deal',
 };
 
 // Map type param to view URL path
 const VIEW_URL_PATHS = {
   listing: '/listings/views',
   event: '/events/views',
+  deal: '/dailydeals/views',
 };
 
 const RemovalForm = () => {

@@ -34,7 +34,7 @@ const DAYS_SHORT = {
   sunday: 'Sun'
 };
 
-const SingleDealCard = ({ deal, chatProps, isAdminListing = false }) => {
+const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
   const partner = deal.partnerstoreId;
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL;
 
@@ -296,10 +296,11 @@ const SingleDealCard = ({ deal, chatProps, isAdminListing = false }) => {
         )}
       </div>
 
-      {/* Deal Posted By / Business Contact Details Section - Mobile Only */}
+      {/* Deal Posted By Section - Mobile Only (hidden when curated by Desify) */}
+      {!isCurated && (
       <div className="lg:hidden border border-slate-200 rounded shadow-sm my-4 mx-4 p-3">
         <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">
-          {isAdminListing ? 'Business Contact Details' : 'Deal Posted By'}
+          Deal Posted By
         </h3>
           {/* Two Column Layout on Desktop */}
           <div className="flex flex-col lg:flex-row lg:gap-6">
@@ -426,6 +427,7 @@ const SingleDealCard = ({ deal, chatProps, isAdminListing = false }) => {
           View all deals from {partner?.businessName} &rarr;
         </Link>
       </div>
+      )}
 
       {/* Chat Container - Mobile Only */}
       {chatProps && (

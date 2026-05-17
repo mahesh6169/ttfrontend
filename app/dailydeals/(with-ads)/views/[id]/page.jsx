@@ -102,8 +102,8 @@ const DealDetailPage = () => {
   const ownerId = deal.postedBy?._id || deal.postedBy;
   const ownerName = partner?.businessName || deal.postedBy?.name || 'Business';
 
-  // Check if this is an admin-added deal (on behalf of business)
-  const isAdminListing = deal.isAdminListing || false;
+  // Curated deal — posted by a Desify curator on behalf of the business
+  const isCuratedDeal = deal.isCuratedDeal || false;
 
   return (
     <div id="viewsmain" className="flex flex-col gap-2 px-2 min-h-screen pb-8">
@@ -131,14 +131,14 @@ const DealDetailPage = () => {
         <div className="flex-[7] bg-white w-full">
           <SingleDealCard
             deal={deal}
-            isAdminListing={isAdminListing}
+            isCurated={isCuratedDeal}
             chatProps={{
               resourceId: id,
               resourceType: 'deal',
               participantId: ownerId,
               owner: ownerName,
               preserveRedirectUrl: `/dailydeals/views/${id}`,
-              isCurated: isAdminListing,
+              isCurated: isCuratedDeal,
               listingTitle: deal.dealTitle,
             }}
           />
@@ -162,7 +162,7 @@ const DealDetailPage = () => {
             participantId={ownerId}
             owner={ownerName}
             preserveRedirectUrl={`/dailydeals/views/${id}`}
-            isCurated={isAdminListing}
+            isCurated={isCuratedDeal}
             listingTitle={deal.dealTitle}
           />
 
@@ -176,10 +176,11 @@ const DealDetailPage = () => {
             />
           </div>
 
-          {/* Deal Posted By / Business Contact Details - Desktop Sidebar */}
+          {/* Deal Posted By - Desktop Sidebar (hidden when curated by Desify) */}
+          {!isCuratedDeal && (
           <div className="border border-slate-200 rounded shadow-sm p-3">
             <h3 className="text-sm font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">
-              {isAdminListing ? 'Business Contact Details' : 'Deal Posted By'}
+              Deal Posted By
             </h3>
 
             {/* Business Logo & Name */}
@@ -280,6 +281,7 @@ const DealDetailPage = () => {
               View all deals from {partner?.businessName} →
             </Link>
           </div>
+          )}
         </div>
       </div>
 
