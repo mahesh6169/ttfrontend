@@ -435,7 +435,8 @@ const StepManager = ({
       errors.organizer = ['Organizer name is required'];
     }
 
-    if (!formData.organizer?.contact?.trim()) {
+    // Contact number is required only for hosted events (optional for promotional)
+    if (formData.eventIntent !== 'promote' && !formData.organizer?.contact?.trim()) {
       errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
     }
 
@@ -702,7 +703,8 @@ const validateCurrentStep = useCallback(() => {
       if (!formData.organizer?.name?.trim()) {
         errors.organizer = ['Organizer name is required'];
       }
-      if (!formData.organizer?.contact?.trim()) {
+      // Contact number is required only for hosted events (optional for promotional)
+      if (formData.eventIntent !== 'promote' && !formData.organizer?.contact?.trim()) {
         errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
       }
 

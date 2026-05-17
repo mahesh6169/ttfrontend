@@ -227,7 +227,7 @@ const EventDetailsStep = ({
           {/* Contact */}
           <div>
             <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
-              Contact Number <span className="text-red-500">*</span>
+              Contact Number {formData.eventIntent !== 'promote' && <span className="text-red-500">*</span>}
             </label>
             <input
               type="tel"
