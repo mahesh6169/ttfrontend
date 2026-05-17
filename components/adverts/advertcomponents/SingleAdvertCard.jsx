@@ -398,11 +398,13 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
       <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
         <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Posted By */}
+            {/* Posted By — show "Desify Team" for curated listings */}
             {advert.postedBy?.name && (
               <div className="text-sm sm:text-base">
                 <span className="font-semibold text-slate-700">Posted By:</span>{' '}
-                <span className="text-slate-600">{advert.postedBy.name}</span>
+                <span className="text-slate-600">
+                  {chatProps?.isCurated ? 'Desify Team' : advert.postedBy.name}
+                </span>
               </div>
             )}
 

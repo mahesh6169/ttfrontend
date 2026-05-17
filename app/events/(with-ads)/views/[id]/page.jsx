@@ -89,14 +89,14 @@ const EventDetail = () => {
     );
   }
 
-  // Check if posted by support account (events added on behalf of users)
-  const isPostedBySupport = selectedEvent.postedBy?.email?.toLowerCase() === 'support@desify.com.au';
+  // Curated event — posted by a Desify curator on behalf of the organiser
+  const isCuratedEvent = selectedEvent.isCuratedEvent || false;
 
-  // Check if this is an admin-created event (chat should be disabled)
-  const isAdminEvent = selectedEvent.isAdminEvent || false;
-
-  // Check if this is a promotional event (no registration/chat needed)
+  // Check if this is a promotional event (external registration link)
   const isPromotionalEvent = selectedEvent.eventIntent === 'promote' || selectedEvent.isAdvertiseOnly;
+
+  // Dynamic CTA label based on free/paid for promotional events
+  const promoCtaLabel = selectedEvent.isPaid ? 'Get Tickets' : 'Register';
 
   return (
     <div id="viewsmain" className="flex flex-col gap-2 px-2">
@@ -143,9 +143,9 @@ const EventDetail = () => {
               participantId: selectedEvent.postedBy?._id,
               owner: selectedEvent.postedBy?.name,
               preserveRedirectUrl: `/events/views/${id}`,
-              isPostedBySupport,
-              isAdminEvent,
+              isCuratedEvent,
               isPromotionalEvent,
+              promoCtaLabel,
             }}
           />
         </div>
@@ -154,14 +154,14 @@ const EventDetail = () => {
 
         {/* Secondary Content - Desktop Only */}
         <div className="hidden lg:block flex-[3] sticky top-20 self-start space-y-4">
-          {isAdminEvent ? (
+          {isCuratedEvent ? (
             <div className="border border-slate-200 p-3 rounded shadow-md w-full">
               <h2 className="text-lg font-semibold text-slate-900 mb-3">Get in touch</h2>
               <p className="text-sm text-slate-700 mb-4">
-                This event was added by admin on behalf of the organizer. Please use the contact details provided to reach them directly.
+                This event has been added on behalf of the organiser. Please use the contact details provided to reach them directly.
               </p>
               <p className="text-xs text-slate-500">
-                Are you the event organizer?{' '}
+                Are you the organiser?{' '}
                 <a
                   href={`/support/removal?type=event&id=${id}&title=${encodeURIComponent(selectedEvent.title)}`}
                   onClick={() => {
@@ -173,35 +173,6 @@ const EventDetail = () => {
                 </a>
               </p>
             </div>
-          ) : isPromotionalEvent ? (
-            <div className="border border-slate-200 p-3 rounded shadow-md w-full">
-              <div className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 bg-purple-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                  </svg>
-                </div>
-                <p className="text-sm text-slate-600 font-medium">
-                  Promotional Event
-                </p>
-                <p className="text-xs text-slate-500 mt-2">
-                  Registration is handled externally by the organizer.
-                </p>
-                {selectedEvent.externalTicketUrl && (
-                  <a
-                    href={selectedEvent.externalTicketUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-1 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    Register / Get Tickets
-                  </a>
-                )}
-              </div>
-            </div>
           ) : (
             <SendMessage
               resourceId={id}
@@ -209,7 +180,6 @@ const EventDetail = () => {
               participantId={selectedEvent.postedBy?._id}
               owner={selectedEvent.postedBy?.name}
               preserveRedirectUrl={`/events/views/${id}`}
-              isPostedBySupport={isPostedBySupport}
             />
           )}
 

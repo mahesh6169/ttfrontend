@@ -403,10 +403,10 @@ const SingleEventCard = ({ event, chatProps }) => {
             </div>
           )}
 
-          {/* Organized By - hide when posted by support on behalf of users */}
-          {event.postedBy?.name && !chatProps?.isPostedBySupport && (
+          {/* Posted By - hide when curated on behalf of the organiser */}
+          {event.postedBy?.name && !chatProps?.isCuratedEvent && (
             <div className="text-sm sm:text-base">
-              <span className="font-semibold text-slate-700">Organized By:</span>{' '}
+              <span className="font-semibold text-slate-700">Posted By:</span>{' '}
               <span className="text-slate-600">{event.postedBy.name}</span>
             </div>
           )}
@@ -675,17 +675,34 @@ const SingleEventCard = ({ event, chatProps }) => {
         </div>
       )}
 
+      {/* External registration / tickets button — shown after event details */}
+      {chatProps?.isPromotionalEvent && event.externalTicketUrl && (
+        <div className="px-2 py-4 flex justify-center">
+          <a
+            href={event.externalTicketUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-teal-700 text-white hover:bg-teal-800 px-6 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors inline-flex items-center"
+          >
+            {chatProps.promoCtaLabel}
+            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+      )}
+
       {/* Chat Container - Mobile Only (At the bottom) */}
       {chatProps && (
         <div className="block lg:hidden px-2 my-4">
-          {chatProps.isAdminEvent ? (
+          {chatProps.isCuratedEvent ? (
             <div className="border border-slate-200 p-3 rounded shadow-md w-full">
               <h2 className="text-lg font-semibold text-slate-900 mb-3">Get in touch</h2>
               <p className="text-sm text-slate-700 mb-4">
-                This event was added by admin on behalf of the organizer. Please use the contact details provided to reach them directly.
+                This event has been added on behalf of the organiser. Please use the contact details provided to reach them directly.
               </p>
               <p className="text-xs text-slate-500">
-                Are you the event organizer?{' '}
+                Are you the organiser?{' '}
                 <a
                   href={`/support/removal?type=event&id=${event._id}&title=${encodeURIComponent(event.title)}`}
                   onClick={() => {
@@ -696,30 +713,6 @@ const SingleEventCard = ({ event, chatProps }) => {
                   Request removal of this event
                 </a>
               </p>
-            </div>
-          ) : chatProps.isPromotionalEvent ? (
-            <div className="border border-slate-200 p-3 rounded shadow-md w-full">
-              <div className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 bg-purple-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                  </svg>
-                </div>
-                <p className="text-sm text-slate-600 font-medium">Promotional Event</p>
-                <p className="text-xs text-slate-500 mt-2">
-                  Registration is handled externally by the organizer.
-                </p>
-                {event.externalTicketUrl && (
-                  <a
-                    href={event.externalTicketUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-1 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
-                  >
-                    Register / Get Tickets
-                  </a>
-                )}
-              </div>
             </div>
           ) : (
             <SendMessage {...chatProps} />
