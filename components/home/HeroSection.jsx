@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
@@ -28,6 +28,9 @@ import {
   LuPartyPopper,
   LuUtensilsCrossed,
   LuScissors,
+  LuDrama,
+  LuGift,
+  LuLayoutGrid,
 } from 'react-icons/lu';
 
 // --- Feature Tabs ---
@@ -246,6 +249,12 @@ const FORUM_TILES = [
   },
 ];
 
+const HERO_ROTATIONS = [
+  { text: 'Listings', Icon: LuLayoutGrid },
+  { text: 'Events', Icon: LuDrama },
+  { text: 'Deals', Icon: LuGift },
+];
+
 const heroParsers = {
   tab: parseAsString.withDefault('listings'),
   mode: parseAsString.withDefault('poster'),
@@ -257,6 +266,20 @@ const HeroSection = () => {
   const activeTab = heroParams.tab;
   const mode = heroParams.mode;
   const [fadeIn, setFadeIn] = useState(true);
+
+  // Rotating noun in the hero headline ("Discover ___ near you")
+  const [rotationIndex, setRotationIndex] = useState(0);
+  const [rotationVisible, setRotationVisible] = useState(true);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRotationVisible(false);
+      setTimeout(() => {
+        setRotationIndex((i) => (i + 1) % HERO_ROTATIONS.length);
+        setRotationVisible(true);
+      }, 200);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
 
   const { user, tokenValidated } = useSelector((state) => state.user);
   const isLoggedIn = tokenValidated && !!user?._id;
@@ -337,12 +360,24 @@ const HeroSection = () => {
       <div className="w-full md:container md:mx-auto">
         {/* Headline */}
         <div className="text-center mb-3 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-teal-900">
-            Your Online Community Marketplace
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-teal-900">
+            Discover{' '}
+            <span
+              className={`text-xl sm:text-2xl md:text-3xl font-serif italic font-medium inline-flex items-center gap-2 min-w-[8ch] sm:min-w-[10ch] transition-opacity duration-200 ${
+                rotationVisible ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              {(() => {
+                const { Icon, text } = HERO_ROTATIONS[rotationIndex];
+                return (
+                  <>
+                    {text}
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-teal-700 shrink-0" />
+                  </>
+                );
+              })()}
+            </span>
           </h1>
-          <p className="mt-2 sm:mt-3 text-slate-600 text-sm sm:text-base md:text-lg font-medium">
-            Powered by community, not algorithms.
-          </p>
         </div>
 
         {/* Quick Actions Card */}
