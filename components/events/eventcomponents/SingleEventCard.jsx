@@ -539,11 +539,9 @@ const SingleEventCard = ({ event, chatProps }) => {
           <div className="relative">
             <div
               ref={descriptionRef}
-              className="text-sm sm:text-base text-slate-700 space-y-2 overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
+              className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
             >
-              {event.description.split('\n').map((para, idx) => (
-                para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
-              ))}
+              {event.description}
             </div>
             {descriptionOverflow && (
               <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>

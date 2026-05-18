@@ -624,16 +624,14 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             <h3 className="text-sm sm:text-base font-semibold text-slate-900">Topic Description</h3>
           </div>
           <div className="p-3 relative">
-            <div 
-              className="text-sm sm:text-base text-slate-700 space-y-2 overflow-y-auto max-h-[200px] sm:max-h-[300px] pr-2"
-              style={{ 
+            <div
+              className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap overflow-y-auto max-h-[200px] sm:max-h-[300px] pr-2"
+              style={{
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#cbd5e0 #f7fafc'
               }}
             >
-              {thread.question.split('\n').map((para, idx) => (
-                para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
-              ))}
+              {thread.question}
             </div>
           </div>
         </div>
