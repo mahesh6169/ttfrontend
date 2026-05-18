@@ -507,10 +507,8 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
       {advert.fields?.serviceArea && (
         <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3 relative">
           <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Service Areas</h3>
-          <div ref={serviceAreaRef} className="text-sm sm:text-base text-slate-700 space-y-2 overflow-y-auto max-h-[120px] pr-2">
-            {advert.fields.serviceArea.split('\n').map((para, idx) => (
-              para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
-            ))}
+          <div ref={serviceAreaRef} className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap overflow-y-auto max-h-[120px] pr-2">
+            {advert.fields.serviceArea}
           </div>
           {serviceAreaOverflow && (
             <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
@@ -524,11 +522,9 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
           <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Description</h3>
           <div
             ref={descriptionRef}
-            className="text-sm sm:text-base text-slate-700 space-y-2 overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
+            className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
           >
-            {advert.description.split('\n').map((para, idx) => (
-              para.trim() && <p key={idx} className="leading-relaxed">{para}</p>
-            ))}
+            {advert.description}
           </div>
           {descriptionOverflow && (
             <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>

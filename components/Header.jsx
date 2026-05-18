@@ -71,7 +71,7 @@ const Header = () => {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-teal-700 hover:text-teal-600 transition-colors"
+            className="flex items-center gap-2 text-[40px] md:text-[44px] leading-none font-black tracking-tight md:font-extrabold md:tracking-normal text-teal-700 hover:text-teal-600 transition-colors"
           >
             Desify
           </Link>
