@@ -1,12 +1,20 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import Link from 'next/link';
 import { formatInTimeZone } from 'date-fns-tz';
 import { generateTicketsPDF } from '../../../../utils/paidEventTicketGenerator';
+import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import axios from '@/utils/axiosConfig';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'react-toastify';
 import { FaQrcode, FaDownload } from 'react-icons/fa';
+
+const DATE_FILTER_OPTIONS = [
+  { value: '3months', label: 'Last 3 months' },
+  { value: '6months', label: 'Last 6 months' },
+  { value: '1year', label: 'Last year' },
+  { value: 'all', label: 'Show all' },
+];
 
 const BackButton = () => (
   <div className="mb-4">
@@ -349,47 +357,139 @@ const EnhancedMyTicketsPage = () => {
           <div className="flex flex-col sm:flex-row sm:gap-4">
             {/* Date Filter - Compact */}
             <div className="sm:w-1/3">
-              <label htmlFor="dateFilter" className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
                 Date Range
               </label>
-              <select
-                id="dateFilter"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white"
-              >
-                <option value="3months">Last 3 months</option>
-                <option value="6months">Last 6 months</option>
-                <option value="1year">Last year</option>
-                <option value="all">Show all</option>
-              </select>
+              <Listbox value={dateFilter} onChange={setDateFilter}>
+                <div className="relative">
+                  <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+                    <span className="block truncate text-slate-900">
+                      {DATE_FILTER_OPTIONS.find((o) => o.value === dateFilter)?.label}
+                    </span>
+                    <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </ListboxButton>
+                  <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                    <ListboxOptions
+                      anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                      className="z-50 w-[var(--button-width)] max-h-60 overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-slate-200 focus:outline-none"
+                    >
+                      {DATE_FILTER_OPTIONS.map((option) => (
+                        <ListboxOption
+                          key={option.value}
+                          value={option.value}
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                {option.label}
+                              </span>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                      ))}
+                    </ListboxOptions>
+                  </Transition>
+                </div>
+              </Listbox>
             </div>
 
             {/* Event Selector - Compact */}
             <div className="flex-1 mt-3 sm:mt-0">
-              <label htmlFor="eventSelect" className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
                 Select Event
               </label>
-              <select
-                id="eventSelect"
-                value={selectedEventId}
-                onChange={(e) => setSelectedEventId(e.target.value)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white truncate"
-              >
-                <option value="">Choose an event</option>
-                {filteredEvents.length === 0 ? (
-                  <option disabled>No events found</option>
-                ) : (
-                  filteredEvents.map((event) => {
-                    const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
-                    return (
-                      <option key={event.id} value={event.id}>
-                        {event.eventCode} - {event.title} - {eventDateTime.date} - {eventDateTime.time}
-                      </option>
-                    );
-                  })
-                )}
-              </select>
+              {(() => {
+                const selectedEvent = events.find((e) => e.id === selectedEventId);
+                return (
+                  <Listbox value={selectedEventId} onChange={setSelectedEventId}>
+                    <div className="relative">
+                      <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+                        <span className={`block truncate ${selectedEvent ? 'text-slate-900' : 'text-slate-500'}`}>
+                          {selectedEvent
+                            ? `${selectedEvent.eventCode} - ${selectedEvent.title}`
+                            : 'Choose an event'}
+                        </span>
+                        <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </ListboxButton>
+                      <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                        <ListboxOptions
+                          anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                          className="z-50 w-[var(--button-width)] max-h-60 overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-slate-200 focus:outline-none"
+                        >
+                          <ListboxOption
+                            value=""
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
+                            }
+                          >
+                            {({ selected }) => (
+                              <>
+                                <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                  Choose an event
+                                </span>
+                                {selected && (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </ListboxOption>
+                          {filteredEvents.length === 0 ? (
+                            <div className="px-4 py-2.5 text-sm text-slate-400">
+                              No events found
+                            </div>
+                          ) : (
+                            filteredEvents.map((event) => {
+                              const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+                              return (
+                                <ListboxOption
+                                  key={event.id}
+                                  value={event.id}
+                                  className={({ active }) =>
+                                    `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
+                                  }
+                                >
+                                  {({ selected }) => (
+                                    <>
+                                      <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                        {event.eventCode} - {event.title} - {eventDateTime.date} - {eventDateTime.time}
+                                      </span>
+                                      {selected && (
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
+                                </ListboxOption>
+                              );
+                            })
+                          )}
+                        </ListboxOptions>
+                      </Transition>
+                    </div>
+                  </Listbox>
+                );
+              })()}
 
               {filteredEvents.length === 0 && events.length > 0 && (
                 <p className="text-xs text-gray-500 mt-1">

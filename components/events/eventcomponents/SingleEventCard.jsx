@@ -422,7 +422,7 @@ const SingleEventCard = ({ event, chatProps }) => {
           {/* Event Type */}
           <div className="text-sm sm:text-base">
             <span className="font-semibold text-slate-700">Type:</span>{' '}
-            <span className="text-slate-600">{event.isPaid ? 'Paid Event' : 'Free Event'}</span>
+            <span className="text-slate-600">{event.isPaid ? 'Paid Event' : 'RSVP Event'}</span>
           </div>
         </div>
       </div>

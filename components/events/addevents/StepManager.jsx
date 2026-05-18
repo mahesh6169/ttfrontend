@@ -690,8 +690,17 @@ const validateCurrentStep = useCallback(() => {
       }
 
       if (!formData.venue?.trim()) errors.venue = ['Venue is required'];
-      if (!formData.address?.formattedAddress)
-        errors.address = ['Event address is required'];
+      if (
+        !formData.address ||
+        !formData.address.formattedAddress?.trim() ||
+        !formData.address.location ||
+        !Array.isArray(formData.address.location.coordinates) ||
+        formData.address.location.coordinates.length !== 2 ||
+        formData.address.location.coordinates[0] === 0 ||
+        formData.address.location.coordinates[1] === 0
+      ) {
+        errors.address = ['Valid event address with location is required'];
+      }
       break;
 
     case 2: // Event Details - Category, Description, Organizer, Coordinators

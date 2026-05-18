@@ -314,7 +314,7 @@ const EventsPage = () => {
               <div className="flex gap-2">
                 {[
                   { value: '', label: 'All' },
-                  { value: 'free', label: 'Free' },
+                  { value: 'free', label: 'RSVP' },
                   { value: 'paid', label: 'Paid' },
                 ].map((type) => (
                   <button
@@ -838,7 +838,7 @@ const EventsPage = () => {
 
                   {eventType && (
                     <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
-                      {eventType === 'free' ? 'Free' : 'Paid'}
+                      {eventType === 'free' ? 'RSVP' : 'Paid'}
                       <button
                         onClick={() => setEventType(null)}
                         className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"

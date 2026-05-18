@@ -184,7 +184,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
                 <FaClipboardList
                   className="text-slate-600"
                   size={12}
-                  title="Free Event - RSVP"
+                  title="RSVP"
                 />
                 <span className="text-[10px] text-slate-600 font-medium">
                   RSVP

@@ -129,7 +129,7 @@ const ProfilePage = () => {
           onToggle={() => toggleSection('events')}
         >
           <div className="grid grid-cols-3 gap-2 pt-3">
-            <ActionCard href="/users/profile/myregistrations" label="Free Tickets" />
+            <ActionCard href="/users/profile/myregistrations" label="My RSVPs" />
             <ActionCard href="/users/profile/mytickets" label="Paid Tickets" />
             <ActionCard href="/users/profile/myinvoices" label="Invoices" />
           </div>
@@ -146,7 +146,7 @@ const ProfilePage = () => {
           <div className="pt-3 space-y-4">
             {/* Free Event */}
             <div>
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Free Event</p>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">RSVP Event</p>
               <div className="grid grid-cols-3 gap-2">
                 <ActionCard href="/events/add" label="Add" />
                 <ActionCard href="/users/profile/manageevents" label="Manage" />

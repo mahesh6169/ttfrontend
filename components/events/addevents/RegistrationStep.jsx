@@ -44,7 +44,7 @@ const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
                 : 'bg-white text-slate-700 border-slate-300'
             } ${disabled ? 'cursor-not-allowed' : ''}`}
           >
-            Free
+            RSVP
           </button>
           <button
             type="button"

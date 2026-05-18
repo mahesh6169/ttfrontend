@@ -1,12 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import axios from '@/utils/axiosConfig';
 import CouponCard from '@/components/coupons/couponcomponents/CouponCard';
 import { MdLocalOffer } from 'react-icons/md';
 import Link from 'next/link';
+
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+];
 
 // Back button component
 const BackButton = () => (
@@ -187,14 +193,49 @@ export default function MyCodesPage() {
                 {/* Sort Dropdown */}
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <label className="text-xs sm:text-sm text-gray-600">Sort:</label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="flex-1 sm:flex-initial px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                  </select>
+                  <Listbox value={sortBy} onChange={setSortBy}>
+                    <div className="relative flex-1 sm:flex-initial">
+                      <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 sm:px-3 sm:py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer text-left">
+                        <span className="block truncate text-slate-900">
+                          {SORT_OPTIONS.find((o) => o.value === sortBy)?.label}
+                        </span>
+                        <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </ListboxButton>
+                      <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                        <ListboxOptions
+                          anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                          className="z-50 w-[var(--button-width)] max-h-60 overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-slate-200 focus:outline-none"
+                        >
+                          {SORT_OPTIONS.map((option) => (
+                            <ListboxOption
+                              key={option.value}
+                              value={option.value}
+                              className={({ active }) =>
+                                `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
+                              }
+                            >
+                              {({ selected }) => (
+                                <>
+                                  <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                    {option.label}
+                                  </span>
+                                  {selected && (
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </ListboxOption>
+                          ))}
+                        </ListboxOptions>
+                      </Transition>
+                    </div>
+                  </Listbox>
                 </div>
               </div>
             </div>

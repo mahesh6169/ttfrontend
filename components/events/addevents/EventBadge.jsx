@@ -8,7 +8,7 @@ const EventBadge = ({ isPaid, isRecurring, eventIntent }) => {
     // Check for promotional events first
     if (eventIntent === 'promote') {
       return {
-        text: isPaid ? 'Promo (Paid)' : 'Promo (Free)',
+        text: isPaid ? 'Promo (Paid)' : 'Promo (RSVP)',
         bgColor: 'bg-purple-100',
         textColor: 'text-purple-800',
         icon: (
@@ -34,7 +34,7 @@ const EventBadge = ({ isPaid, isRecurring, eventIntent }) => {
 
     if (isRecurring) {
       return {
-        text: 'Free/Recurring',
+        text: 'RSVP/Recurring',
         bgColor: 'bg-teal-100',
         textColor: 'text-teal-800',
         icon: (
@@ -46,7 +46,7 @@ const EventBadge = ({ isPaid, isRecurring, eventIntent }) => {
     }
 
     return {
-      text: 'Free',
+      text: 'RSVP',
       bgColor: 'bg-green-100',
       textColor: 'text-green-800',
       icon: (

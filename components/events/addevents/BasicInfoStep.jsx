@@ -113,7 +113,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
                   : 'bg-white text-slate-700 border-slate-300'
               } ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
-              Free
+              RSVP
             </button>
             <button
               type="button"
@@ -250,7 +250,7 @@ const BasicInfoStep = ({
       maxDate.setMonth(maxDate.getMonth() + 6);
 
       if (selectedDate > maxDate) {
-        setEndDateError('Free recurring events are limited to 6 months. Date has been adjusted to the maximum allowed.');
+        setEndDateError('RSVP recurring events are limited to 6 months. Date has been adjusted to the maximum allowed.');
         dispatch(setRecurrenceEndDate(maxDate.toISOString().split('T')[0]));
         setTimeout(() => setEndDateError(''), 5000);
         return;
