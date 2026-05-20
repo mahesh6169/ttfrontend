@@ -416,31 +416,29 @@ const StepManager = ({
       errors.address = ['Valid event address with location is required'];
     }
 
-    // Coordinator validation
+    // Coordinator validation — Name is the anchor field
+    // Error messages target a single field so the inline display only shows under that field
     if (formData.coordinators && formData.coordinators.length > 0) {
       const coordinatorErrors = [];
       formData.coordinators.forEach((coord, index) => {
-        // If coordinator name is provided, then phone becomes required
-        if (coord.name?.trim() && !coord.phone?.trim()) {
-          coordinatorErrors.push(
-            `Coordinator ${index + 1}: Phone number is required when coordinator name is provided`
-          );
+        const hasName = !!coord.name?.trim();
+        const hasOtherData = !!(coord.phone?.trim() || coord.email?.trim() || coord.role?.trim());
+
+        if (hasName && !coord.phone?.trim()) {
+          coordinatorErrors.push(`Coordinator ${index + 1}: Phone is required.`);
+        } else if (!hasName && hasOtherData) {
+          coordinatorErrors.push(`Coordinator ${index + 1}: Name is required for this coordinator.`);
         }
       });
       if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;
     }
 
-    // Organizer validation
+    // Organiser validation — Name required; contact number is optional for all event types
     if (!formData.organizer?.name?.trim()) {
-      errors.organizer = ['Organizer name is required'];
+      errors.organizer = ['Organiser name is required'];
     }
 
-    // Contact number is required only for hosted events (optional for promotional)
-    if (formData.eventIntent !== 'promote' && !formData.organizer?.contact?.trim()) {
-      errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
-    }
-
-    // Basic email validation for organizer if provided
+    // Basic email validation for organiser if provided
     if (
       formData.organizer?.email &&
       formData.organizer.email.trim() &&
@@ -708,26 +706,23 @@ const validateCurrentStep = useCallback(() => {
       if (!formData.description?.trim())
         errors.description = ['Event description is required'];
 
-      // Organizer validation
+      // Organiser validation — Name required; contact number is optional for all event types
       if (!formData.organizer?.name?.trim()) {
-        errors.organizer = ['Organizer name is required'];
-      }
-      // Contact number is required only for hosted events (optional for promotional)
-      if (formData.eventIntent !== 'promote' && !formData.organizer?.contact?.trim()) {
-        errors.organizer = (errors.organizer || []).concat(['Organizer contact number is required']);
+        errors.organizer = ['Organiser name is required'];
       }
 
-      // Coordinators validation - optional but validate if data entered
+      // Coordinators validation — Name is the anchor field
+      // Error messages target a single field so the inline display only shows under that field
       if (formData.coordinators && formData.coordinators.length > 0) {
         const coordinatorErrors = [];
         formData.coordinators.forEach((coord, index) => {
-          const hasAnyData = coord.name?.trim() || coord.phone?.trim() || coord.email?.trim() || coord.role?.trim();
-          if (hasAnyData) {
-            if (!coord.name?.trim() || !coord.phone?.trim()) {
-              coordinatorErrors.push(
-                `Coordinator ${index + 1}: If adding a coordinator, name and phone are required`
-              );
-            }
+          const hasName = !!coord.name?.trim();
+          const hasOtherData = !!(coord.phone?.trim() || coord.email?.trim() || coord.role?.trim());
+
+          if (hasName && !coord.phone?.trim()) {
+            coordinatorErrors.push(`Coordinator ${index + 1}: Phone is required.`);
+          } else if (!hasName && hasOtherData) {
+            coordinatorErrors.push(`Coordinator ${index + 1}: Name is required for this coordinator.`);
           }
         });
         if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;

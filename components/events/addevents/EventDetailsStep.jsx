@@ -196,17 +196,17 @@ const EventDetailsStep = ({
       {/* Divider */}
       <div className="border-t border-slate-200 pt-6 mt-6"></div>
 
-      {/* Organizer Details Section */}
+      {/* Organiser Details Section */}
       <div>
         <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-3 sm:mb-4 text-slate-700">
-          Event Organizer
+          Organiser Details
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Organizer Name */}
+          {/* Organiser / Organisation Name */}
           <div>
             <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
-              Organizer Name <span className="text-red-500">*</span>
+              Organiser / Organisation <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -214,7 +214,7 @@ const EventDetailsStep = ({
               onChange={(e) => handleOrganizerChange('name', e.target.value)}
               disabled={disabled}
               className={getFieldClasses(!!errors?.organizer)}
-              placeholder="Your name or organization name"
+              placeholder="Your name or organisation name"
               maxLength="100"
             />
             {errors?.organizer && (
@@ -227,7 +227,7 @@ const EventDetailsStep = ({
           {/* Contact */}
           <div>
             <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
-              Contact Number {formData.eventIntent !== 'promote' && <span className="text-red-500">*</span>}
+              Contact Number
             </label>
             <input
               type="tel"
@@ -318,7 +318,7 @@ const EventDetailsStep = ({
                       disabled={disabled}
                       className={`${getFieldClasses(false)} w-32 sm:w-36`}
                     >
-                      <option value="">Platform</option>
+                      <option value="" disabled>Select</option>
                       {availablePlatforms.map(p => (
                         <option key={p.value} value={p.value}>{p.label}</option>
                       ))}
@@ -479,14 +479,9 @@ const EventDetailsStep = ({
           ))}
         </div>
 
-        {/* General Coordinator Errors */}
-        {errors?.coordinators && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700">
-              {Array.isArray(errors.coordinators) ? errors.coordinators[0] : errors.coordinators}
-            </p>
-          </div>
-        )}
+        {/* Section-level coordinator error box removed —
+            inline errors render under each specific field; the toast on submit
+            already summarises all errors at the top of the screen. */}
 
         {/* Add Coordinator Button */}
         {!disabled && (formData.coordinators || []).length < 10 && (
