@@ -1,7 +1,7 @@
 // components/events/addevents/RegistrationStep.jsx
 // Step 3: Registration - Intent selection + registration/ticket configuration
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import {
   updateField,
@@ -15,6 +15,7 @@ import {
   removeSeatingRow,
   addRegistrationField,
   updateRegistrationField,
+  updateFieldOptions,
   removeRegistrationField,
   updateGstIncluded,
   setFormErrors,
@@ -189,6 +190,78 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
 
 // Custom Registration Fields
 const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = false }) => {
+  // Snapshot of which fields were flagged at the LAST validation attempt (Update / Next click).
+  // Inline errors only render when a field is in this snapshot AND still currently invalid.
+  // New issues that emerge from editing don't appear inline until the user clicks Update again.
+  const [errorSnapshot, setErrorSnapshot] = useState({});
+
+  useEffect(() => {
+    const regErrors = errors?.registrationFields;
+    if (!regErrors || regErrors.length === 0) {
+      setErrorSnapshot({});
+      return;
+    }
+    // Parse helper output ("Question N: <message>") into per-field keys.
+    // Helper is sequential — at most one error per question, so the snapshot reflects exactly
+    // what the toast showed (no extra "could-be" errors leaking in).
+    const newSnapshot = {};
+    regErrors.forEach((errMsg) => {
+      const match = errMsg.match(/^Question (\d+): (.+)$/);
+      if (!match) return;
+      const idx = Number(match[1]) - 1;
+      const msg = match[2];
+      if (msg.startsWith('Type your question')) {
+        newSnapshot[`${idx}-name`] = true;
+      } else {
+        // Everything else is an options-related error
+        newSnapshot[`${idx}-options`] = true;
+      }
+    });
+    setErrorSnapshot(newSnapshot);
+  }, [errors?.registrationFields]);
+
+  const getNameError = (field, index) => {
+    if (!errorSnapshot[`${index}-name`]) return null;
+    return !field.fieldName?.trim() ? 'Type your question' : null;
+  };
+  const getOptionsError = (field, index) => {
+    if (!errorSnapshot[`${index}-options`]) return null;
+    if (field.fieldType !== 'select') return null;
+
+    const options = field.fieldOptions || [];
+    if (options.length === 0) return 'Add at least one option';
+    if (options.some((o) => !o?.trim())) return 'Fill all options or remove the empty ones';
+    const lowered = options.map((o) => o.trim().toLowerCase());
+    if (new Set(lowered).size !== lowered.length) return 'Options must be unique';
+    return null;
+  };
+
+  // Clear a field's snapshot entry as soon as the host takes any action on it.
+  // The user has acknowledged the issue — don't surface new errors for that field until next Update.
+  const clearSnapshotEntry = (key) => {
+    setErrorSnapshot((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  // Disable "Add question / Add dropdown" buttons when any existing question is incomplete.
+  // Stops hosts from stacking empty cards on top of unfinished ones.
+  // An empty option ROW counts as incomplete — the question isn't ready until every row has text.
+  const hasIncompleteQuestion = (formData.registrationFields || []).some((field) => {
+    if (!field.fieldName?.trim()) return true;
+    if (field.fieldType === 'select') {
+      const options = field.fieldOptions || [];
+      if (options.length === 0) return true;
+      if (options.some((o) => !o?.trim())) return true;
+      const lowered = options.map((o) => o.trim().toLowerCase());
+      if (new Set(lowered).size !== lowered.length) return true;
+    }
+    return false;
+  });
+
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
       <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-1 text-slate-700">
@@ -200,62 +273,184 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
 
       {(formData.registrationFields || []).length > 0 && (
         <div className="space-y-3 mb-4">
-          {(formData.registrationFields || []).map((field, index) => (
-            <div key={index} className="border border-slate-200 rounded-lg p-3">
-              <div className="flex gap-3 items-start">
+          {(formData.registrationFields || []).map((field, index) => {
+            const isDropdown = field?.fieldType === 'select';
+            const nameError = getNameError(field, index);
+            const optionsError = getOptionsError(field, index);
+            const hasAnyError = !!(nameError || optionsError);
+            return (
+              <div
+                key={index}
+                className={`border rounded-lg p-3 bg-white ${
+                  hasAnyError ? 'border-red-300' : 'border-slate-200'
+                }`}
+              >
+                {/* Type badge + Remove */}
+                <div className="flex items-center justify-between mb-2">
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                      isDropdown
+                        ? 'bg-teal-50 text-teal-700 ring-1 ring-teal-200'
+                        : 'bg-slate-100 text-slate-600 ring-1 ring-slate-200'
+                    }`}
+                  >
+                    {isDropdown ? (
+                      <>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                        Dropdown question
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h10" />
+                        </svg>
+                        Text question
+                      </>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => dispatch(removeRegistrationField(index))}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    aria-label="Remove question"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Question text */}
                 <input
                   type="text"
                   value={field?.fieldName || ''}
-                  onChange={(e) => dispatch(updateRegistrationField({ index, field: 'fieldName', value: e.target.value }))}
-                  className="flex-1 p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
-                  placeholder="e.g., Dietary Requirements"
+                  onChange={(e) => {
+                    dispatch(updateRegistrationField({ index, field: 'fieldName', value: e.target.value }));
+                    clearSnapshotEntry(`${index}-name`);
+                  }}
+                  className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 ${
+                    nameError ? 'border-red-300' : 'border-slate-300'
+                  }`}
+                  placeholder={isDropdown ? 'e.g., T-shirt size' : 'e.g., Dietary requirements'}
                   maxLength="100"
                 />
-                <button
-                  type="button"
-                  onClick={() => dispatch(removeRegistrationField(index))}
-                  className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                {nameError && (
+                  <p className="text-xs text-red-600 mt-1">{nameError}</p>
+                )}
+
+                {/* Options editor (only when type = Dropdown) */}
+                {isDropdown && (
+                  <div className="mt-3 pl-3 border-l-2 border-teal-200">
+                    <label className="block text-xs font-medium text-slate-600 mb-2">Options</label>
+                    <div className="space-y-2">
+                      {(field?.fieldOptions || []).map((option, optIdx) => (
+                        <div key={optIdx} className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            value={option || ''}
+                            onChange={(e) => {
+                              const newOptions = [...(field.fieldOptions || [])];
+                              newOptions[optIdx] = e.target.value;
+                              dispatch(updateFieldOptions({ index, options: newOptions }));
+                              clearSnapshotEntry(`${index}-options`);
+                            }}
+                            className="flex-1 p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
+                            placeholder={`Option ${optIdx + 1}`}
+                            maxLength="80"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newOptions = (field.fieldOptions || []).filter((_, i) => i !== optIdx);
+                              dispatch(updateFieldOptions({ index, options: newOptions }));
+                              clearSnapshotEntry(`${index}-options`);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            aria-label="Remove option"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newOptions = [...(field.fieldOptions || []), ''];
+                        dispatch(updateFieldOptions({ index, options: newOptions }));
+                        clearSnapshotEntry(`${index}-options`);
+                      }}
+                      disabled={(field.fieldOptions || []).some((o) => !o?.trim())}
+                      className="mt-2 inline-flex items-center px-3 py-1.5 text-xs text-teal-700 hover:text-teal-800 font-medium disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-teal-700"
+                    >
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Add option
+                    </button>
+                    {optionsError && (
+                      <p className="text-xs text-red-600 mt-2">{optionsError}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Required */}
+                <div className="flex items-center mt-3">
+                  <input
+                    type="checkbox"
+                    id={`required-${index}`}
+                    checked={field?.isRequired || false}
+                    onChange={(e) => dispatch(updateRegistrationField({ index, field: 'isRequired', value: e.target.checked }))}
+                    className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
+                  />
+                  <label htmlFor={`required-${index}`} className="ml-2 text-sm text-slate-600">
+                    Required
+                  </label>
+                </div>
               </div>
-              <div className="flex items-center mt-2">
-                <input
-                  type="checkbox"
-                  id={`required-${index}`}
-                  checked={field?.isRequired || false}
-                  onChange={(e) => dispatch(updateRegistrationField({ index, field: 'isRequired', value: e.target.checked }))}
-                  className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
-                />
-                <label htmlFor={`required-${index}`} className="ml-2 text-sm text-slate-600">
-                  Required
-                </label>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {errors?.registrationFields && (
-        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 text-xs sm:text-sm">
-            {Array.isArray(errors.registrationFields) ? errors.registrationFields[0] : errors.registrationFields}
+      {/* Top-level error box removed — errors now show inline under each input.
+          Toast on Next/Submit still summarises all errors. */}
+
+      {/* Add buttons — type-specific entry. Disabled when any existing question is incomplete,
+          so hosts can't pile up empty cards on top of unfinished ones. */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => dispatch(addRegistrationField())}
+          disabled={hasIncompleteQuestion}
+          className="inline-flex items-center px-3 py-2 text-sm font-medium text-teal-700 bg-white border border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-teal-200"
+        >
+          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h10" />
+          </svg>
+          Add question
+        </button>
+        <button
+          type="button"
+          onClick={() => dispatch(addRegistrationField({ fieldType: 'select' }))}
+          disabled={hasIncompleteQuestion}
+          className="inline-flex items-center px-3 py-2 text-sm font-medium text-teal-700 bg-white border border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-teal-200"
+        >
+          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+          Add dropdown
+        </button>
+        {hasIncompleteQuestion && (
+          <p className="w-full text-xs text-slate-500 mt-1">
+            Complete the question above to add another.
           </p>
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => dispatch(addRegistrationField())}
-        className="inline-flex items-center px-4 py-2 text-sm text-teal-700 hover:text-teal-800 font-medium"
-      >
-        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        Add Question
-      </button>
+        )}
+      </div>
     </div>
   );
 };

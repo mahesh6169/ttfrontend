@@ -49,7 +49,7 @@ const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate }
             onChange={(e) => handleFieldChange(field.fieldName, e.target.value)}
             className="w-full p-2 sm:p-3 text-xs sm:text-sm border border-gray-300 rounded-md sm:rounded-lg focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="">Select {field.fieldName}</option>
+            <option value="" disabled>Select</option>
             {field.fieldOptions?.map((option, idx) => (
               <option key={idx} value={option}>
                 {option}

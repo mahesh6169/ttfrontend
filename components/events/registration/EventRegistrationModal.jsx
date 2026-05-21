@@ -310,7 +310,7 @@ const formatEventDate = (dateTime, timeZone) => {
                 error ? 'border-red-500' : 'border-gray-300'
               }`}
             >
-              <option value="">Select {field.fieldName.toLowerCase()}</option>
+              <option value="" disabled>Select</option>
               {field.fieldOptions?.map((option, index) => (
                 <option key={index} value={option}>
                   {option}
