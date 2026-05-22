@@ -161,7 +161,7 @@ const ProfilePage = () => {
                 <ActionCard href="/events/add" label="Add" />
                 <ActionCard href="/users/profile/manageevents" label="Manage" />
                 <ActionCard href="/users/profile/checkInPaid" label="Check-in" />
-                <ActionCard href="/users/profile/refunds" label="Refunds" />
+                <ActionCard href="/users/profile/refunds" label="Orders" />
               </div>
             </div>
           </div>
