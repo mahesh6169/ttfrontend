@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { format } from 'date-fns';
 import {
   FaTimes,
@@ -25,17 +26,56 @@ import {
   FaUserFriends,
   FaShoppingCart,
   FaShareAlt,
-  FaExternalLinkAlt
+  FaExternalLinkAlt,
+  FaGlobe,
+  FaThumbsUp,
+  FaUserTie,
+  FaMapMarkedAlt,
+  FaCheckCircle
 } from 'react-icons/fa';
 import { MdLocationOn, MdEmail, MdPhone, MdPerson, MdEventSeat } from 'react-icons/md';
+import { GiTheaterCurtains } from 'react-icons/gi';
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 import { getEventTicketStatus, getTicketSaleStatus } from '@/utils/events/ticketStatusHelper';
 import SendMessage from '@/components/chat/SendMessage';
 import ShareIcons from '@/components/shared/ShareIcons';
-import EventRegistrationModal from '../registration/EventRegistrationModal';
+import { buildSlugUrl } from '@/utils/slugUtils';
+// Modal removed — RSVP now lives at /events/rsvp/[eventId] as a full page.
 import EventCapacityDisplay from './EventCapacityDisplay';
 import { formatInTimeZone } from 'date-fns-tz';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
+
+// Linkify URLs (http(s):// or www.) and @handles (assumed Instagram) in plain-text descriptions.
+const linkifyDescription = (text) => {
+  if (!text) return null;
+  const pattern = /(https?:\/\/[^\s<>"]+|www\.[^\s<>"]+|(?:^|(?<=\s))@[\w.]+)/g;
+  const parts = text.split(pattern);
+  return parts.map((part, i) => {
+    if (!part) return null;
+    if (/^https?:\/\//.test(part)) {
+      return (
+        <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 underline break-all">
+          {part}
+        </a>
+      );
+    }
+    if (/^www\./.test(part)) {
+      return (
+        <a key={i} href={`https://${part}`} target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 underline break-all">
+          {part}
+        </a>
+      );
+    }
+    if (/^@[\w.]+/.test(part)) {
+      return (
+        <a key={i} href={`https://instagram.com/${part.slice(1)}`} target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 underline">
+          {part}
+        </a>
+      );
+    }
+    return <React.Fragment key={i}>{part}</React.Fragment>;
+  });
+};
 
 // Add this helper function right after your imports
 const getOptimizedImageUrl = (imageObj, size = 'auto') => {
@@ -65,35 +105,126 @@ const SingleEventCard = ({ event, chatProps }) => {
   const router = useRouter();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [descriptionOverflow, setDescriptionOverflow] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const descriptionRef = useRef(null);
+  const chatRef = useRef(null);
+  const [chatInView, setChatInView] = useState(false);
+  const coordSliderRef = useRef(null);
+  const [coordActivePage, setCoordActivePage] = useState(0);
+  const [coordTotalPages, setCoordTotalPages] = useState(1);
+  const [coordCanScroll, setCoordCanScroll] = useState(false);
+
+  const coordMobileSliderRef = useRef(null);
+  const [coordMobileActivePage, setCoordMobileActivePage] = useState(0);
+  const [coordMobileTotalPages, setCoordMobileTotalPages] = useState(1);
+  const [coordMobileCanScroll, setCoordMobileCanScroll] = useState(false);
   const minSwipeDistance = 50;
+
+  const filteredCoords = event?.coordinators?.filter(
+    (c) => c?.name || c?.role || c?.phone || c?.email
+  ) || [];
+  const useCoordSlider = filteredCoords.length > 3;
+  const useCoordMobileSlider = filteredCoords.length > 2;
+
+  useEffect(() => {
+    const node = chatRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setChatInView(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [chatProps?.resourceId]);
+
+  useEffect(() => {
+    if (!useCoordSlider) return;
+    const el = coordSliderRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      if (clientWidth === 0) return;
+      const total = Math.max(1, Math.ceil(scrollWidth / clientWidth));
+      const maxScroll = scrollWidth - clientWidth;
+      setCoordTotalPages(total);
+      setCoordCanScroll(maxScroll > 1);
+      if (total <= 1 || maxScroll <= 0) {
+        setCoordActivePage(0);
+      } else {
+        const page = Math.round((scrollLeft / maxScroll) * (total - 1));
+        setCoordActivePage(Math.min(Math.max(page, 0), total - 1));
+      }
+    };
+
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+    };
+  }, [useCoordSlider, filteredCoords.length]);
+
+  const scrollToCoordPage = (page) => {
+    const el = coordSliderRef.current;
+    if (!el || coordTotalPages <= 1) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    const target = (page / (coordTotalPages - 1)) * maxScroll;
+    el.scrollTo({ left: target, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (!useCoordMobileSlider) return;
+    const el = coordMobileSliderRef.current;
+    if (!el) return;
+
+    const total = Math.ceil(filteredCoords.length / 2);
+    setCoordMobileTotalPages(total);
+
+    const update = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      if (clientHeight === 0) return;
+      const maxScroll = scrollHeight - clientHeight;
+      setCoordMobileCanScroll(maxScroll > 1);
+      if (total <= 1 || maxScroll <= 0) {
+        setCoordMobileActivePage(0);
+      } else {
+        const page = Math.round((scrollTop / maxScroll) * (total - 1));
+        setCoordMobileActivePage(Math.min(Math.max(page, 0), total - 1));
+      }
+    };
+
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+    };
+  }, [useCoordMobileSlider, filteredCoords.length]);
+
+  const scrollToCoordMobilePage = (page) => {
+    const el = coordMobileSliderRef.current;
+    if (!el || coordMobileTotalPages <= 1) return;
+    const maxScroll = el.scrollHeight - el.clientHeight;
+    const target = (page / (coordMobileTotalPages - 1)) * maxScroll;
+    el.scrollTo({ top: target, behavior: 'smooth' });
+  };
 
   const { isInEventWishlist, toggleEventWishlist, isAuthenticated } = useEventWishlist();
   const isInWishlist = isInEventWishlist(event?._id);
 
   const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
   const isRegistered = !!currentRegistration && currentRegistration.status === 'registered';
-
-  if (!event) {
-    return (
-      <div className="p-6 bg-white rounded-lg shadow-md">
-        <p className="text-slate-500">Event details not available.</p>
-      </div>
-    );
-  }
-
-  const checkOverflow = (ref, setter) => {
-    if (ref.current) {
-      const { scrollHeight, clientHeight, scrollTop } = ref.current;
-      const hasOverflow = scrollHeight > clientHeight;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 1;
-      setter(hasOverflow && !isAtBottom);
-    }
-  };
+  const isCheckedIn = !!currentRegistration && currentRegistration.status === 'checkedin';
 
   useEffect(() => {
     if (event?._id) {
@@ -102,36 +233,30 @@ const SingleEventCard = ({ event, chatProps }) => {
   }, [dispatch, event?._id]);
 
   useEffect(() => {
-    checkOverflow(descriptionRef, setDescriptionOverflow);
-
-    const descriptionEl = descriptionRef.current;
-    const handleDescriptionScroll = () => checkOverflow(descriptionRef, setDescriptionOverflow);
-
-    if (descriptionEl) {
-      descriptionEl.addEventListener('scroll', handleDescriptionScroll);
-    }
-
-    return () => {
-      if (descriptionEl) {
-        descriptionEl.removeEventListener('scroll', handleDescriptionScroll);
-      }
+    const el = descriptionRef.current;
+    if (!el) return;
+    const check = () => {
+      setDescriptionOverflow(el.scrollHeight > el.clientHeight + 1);
     };
-  }, [event.description]);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [event?.description, descriptionExpanded]);
 
-  // Check if user just logged in and wanted to register
+  // Check if user just logged in and wanted to register → send them straight to the RSVP page.
+  // (The old version opened a modal here; now RSVP lives at /events/rsvp/[eventId].)
   useEffect(() => {
     if (isAuthenticated && event?._id) {
       const pendingEventId = localStorage.getItem('eventRegistrationPending');
       if (pendingEventId === event._id) {
-        // Clear the flag
         localStorage.removeItem('eventRegistrationPending');
-        // Open registration modal for free events
         if (!event.isPaid) {
-          setShowRegistrationForm(true);
+          router.push(`/events/rsvp/${event._id}`);
         }
       }
     }
-  }, [isAuthenticated, event?._id, event?.isPaid]);
+  }, [isAuthenticated, event?._id, event?.isPaid, router]);
 
   const handleNextImage = () => {
     if (event.images?.length > 1) {
@@ -192,6 +317,14 @@ const SingleEventCard = ({ event, chatProps }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen]);
 
+  if (!event) {
+    return (
+      <div className="p-6 bg-white rounded-lg shadow-md">
+        <p className="text-slate-500">Event details not available.</p>
+      </div>
+    );
+  }
+
   // Handle ticket purchase navigation
   const handlePurchaseTickets = () => {
     if (!isAuthenticated) {
@@ -226,7 +359,7 @@ const SingleEventCard = ({ event, chatProps }) => {
   );
 
   return (
-    <div className="border rounded shadow-md mx-auto">
+    <div className="mx-auto">
       {/* Image Section */}
       <div
         className="relative w-full mx-auto bg-white overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]"
@@ -361,126 +494,108 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Title Section */}
       {event.title && (
         <div className="my-2 px-2">
-          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-slate-900 break-words">{event.title}</h1>
+          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-forest-900 break-words">{event.title}</h1>
+          {event.eventCode && (
+            <p className="text-center text-sm sm:text-base text-slate-700 mt-1">
+              (event code: {event.eventCode})
+            </p>
+          )}
         </div>
       )}
 
       {/* Main Details Section */}
-      <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
-        <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Event Details</h3>
+      <div className="my-4 mx-2 p-3">
+        <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">Event Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-          {/* Date & Time */}
-          <div className="text-sm sm:text-base">
-            <span className="font-semibold text-slate-700">Date:</span>{' '}
-            <span className="text-slate-600">{formattedDate}</span>
+          {/* Date */}
+          <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+            <FaCalendarAlt className="text-forest-900 shrink-0" size={13} title="Date" aria-label="Date" />
+            <span>{formattedDate}</span>
           </div>
 
-          <div className="text-sm sm:text-base">
-            <span className="font-semibold text-slate-700">Time:</span>{' '}
-            <span className="text-slate-600">{formattedTime} ({dateTimeZone})</span>
+          {/* Time */}
+          <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+            <FaClock className="text-forest-900 shrink-0" size={13} title="Time" aria-label="Time" />
+            <span>{formattedTime} ({dateTimeZone})</span>
           </div>
 
           {/* Venue */}
-          <div className="text-sm sm:text-base">
-            <span className="font-semibold text-slate-700">Venue:</span>{' '}
-            <span className="text-slate-600">{event.venue}</span>
+          <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+            <GiTheaterCurtains className="text-forest-900 shrink-0" size={15} title="Venue" aria-label="Venue" />
+            <span>{event.venue}</span>
           </div>
 
-          {/* Location - Full width if address exists */}
+          {/* Address - Full width if address exists */}
           {event.address && (
-            <div className="text-sm sm:text-base sm:col-span-2">
-              <span className="font-semibold text-slate-700">Address:</span>{' '}
-              <span className="text-slate-600">{event.address.formattedAddress}</span>
+            <div className="flex items-center gap-2 text-sm sm:text-base sm:col-span-2 text-slate-700 min-w-0">
+              <FaMapMarkedAlt className="text-forest-900 shrink-0" size={13} title="Address" aria-label="Address" />
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address.formattedAddress)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-slate-900 underline"
+              >
+                {event.address.formattedAddress}
+              </a>
             </div>
           )}
 
-          {/* Category */}
-          {event.category && (
-            <div className="text-sm sm:text-base">
-              <span className="font-semibold text-slate-700">Category:</span>{' '}
-              <span className="text-slate-600">{event.category}</span>
-            </div>
-          )}
-
-          {/* Posted By - hide when curated on behalf of the organiser */}
-          {event.postedBy?.name && !chatProps?.isCuratedEvent && (
-            <div className="text-sm sm:text-base">
-              <span className="font-semibold text-slate-700">Posted By:</span>{' '}
-              <span className="text-slate-600">{event.postedBy.name}</span>
-            </div>
-          )}
-
-          {/* Event Code */}
-          {event.eventCode && (
-            <div className="text-sm sm:text-base">
-              <span className="font-semibold text-slate-700">Event Code:</span>{' '}
-              <span className="text-slate-600">{event.eventCode}</span>
-            </div>
-          )}
-
-          {/* Event Type */}
-          <div className="text-sm sm:text-base">
-            <span className="font-semibold text-slate-700">Type:</span>{' '}
-            <span className="text-slate-600">{event.isPaid ? 'Paid Event' : 'RSVP Event'}</span>
-          </div>
         </div>
       </div>
           
       {/* Event Organizer Section */}
       {event.organizer && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Event Organizer</h3>
-          <div className="grid grid-cols-1 gap-2">
-            <div className="text-sm sm:text-base">
-              <span className="font-semibold text-slate-700">Name:</span>{' '}
-              <span className="text-slate-600">{event.organizer.name}</span>
+        <div className="my-4 mx-2 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">Event Organizer</h3>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+              <FaUser className="text-forest-900 shrink-0" size={13} title="Name" aria-label="Name" />
+              <span className="truncate" title={event.organizer.name}>{event.organizer.name}</span>
             </div>
+            {event.organizer.contact && (
+              <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+                <FaPhone className="text-forest-900 shrink-0" size={13} title="Phone" aria-label="Phone" />
+                <a href={`tel:${event.organizer.contact}`} className="hover:text-slate-900 underline truncate sm:whitespace-normal">
+                  {event.organizer.contact}
+                </a>
+              </div>
+            )}
+            {event.organizer.email && (
+              <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+                <FaEnvelope className="text-forest-900 shrink-0" size={13} title="Email" aria-label="Email" />
+                <a
+                  href={`mailto:${event.organizer.email}`}
+                  className="hover:text-slate-900 underline break-all"
+                >
+                  {event.organizer.email}
+                </a>
+              </div>
+            )}
             {event.organizer.website && (
-              <div className="text-sm sm:text-base">
-                <span className="font-semibold text-slate-700">Website:</span>{' '}
+              <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+                <FaGlobe className="text-forest-900 shrink-0" size={13} title="Website" aria-label="Website" />
                 <a
                   href={event.organizer.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-slate-700 hover:text-slate-900 hover:underline inline-flex items-center gap-1"
+                  className="hover:text-slate-900 underline inline-flex items-center gap-1 break-all"
                 >
                   {event.organizer.website}
                   <FaExternalLinkAlt className="text-xs text-slate-400" />
                 </a>
               </div>
             )}
-            {event.organizer.contact && (
-              <div className="text-sm sm:text-base">
-                <span className="font-semibold text-slate-700">Contact:</span>{' '}
-                <a href={`tel:${event.organizer.contact}`} className="text-slate-700 hover:text-slate-900 hover:underline inline-flex items-center gap-1">
-                  {event.organizer.contact}
-                  <FaExternalLinkAlt className="text-xs text-slate-400" />
-                </a>
-              </div>
-            )}
-            {event.organizer.email && (
-              <div className="text-sm sm:text-base">
-                <span className="font-semibold text-slate-700">Email:</span>{' '}
-                <a
-                  href={`mailto:${event.organizer.email}`}
-                  className="text-slate-700 hover:text-slate-900 hover:underline inline-flex items-center gap-1"
-                >
-                  {event.organizer.email}
-                  <FaExternalLinkAlt className="text-xs text-slate-400" />
-                </a>
-              </div>
-            )}
             {event.organizer.socialMedia && event.organizer.socialMedia.length > 0 && (
-              <div className="flex items-center gap-2 text-sm sm:text-base flex-wrap">
-                <span className="text-slate-700">Follow us:</span>
+              <div className="col-span-2 flex items-center gap-2 text-sm sm:text-base text-slate-700 flex-wrap">
+                <FaThumbsUp className="text-forest-900 shrink-0" size={13} title="Follow us" aria-label="Follow us" />
                 {event.organizer.socialMedia.map((social, index) => (
                   <React.Fragment key={index}>
                     <a
                       href={social.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-slate-700 hover:text-slate-900"
+                      className="hover:text-slate-900"
                     >
                       {social.platform}
                     </a>
@@ -498,75 +613,151 @@ const SingleEventCard = ({ event, chatProps }) => {
 
 
       {/* Coordinators Section */}
-      {event.coordinators?.length > 0 &&
-       event.coordinators.some(coord => coord?.name || coord?.role || coord?.phone || coord?.email) && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Event Coordinators</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {event.coordinators
-              .filter(coordinator => coordinator?.name || coordinator?.role || coordinator?.phone || coordinator?.email)
-              .map((coordinator, index) => (
-              <div key={index} className="border border-slate-200 rounded p-2">
-                {coordinator.name && (
-                  <div className="text-sm sm:text-base">
-                    <span className="font-semibold text-slate-700">{coordinator.name}</span>
-                  </div>
-                )}
-                {coordinator.role && (
-                  <div className="text-sm text-slate-600">{coordinator.role}</div>
-                )}
-                {coordinator.phone && (
-                  <div className="text-sm text-slate-600">{coordinator.phone}</div>
-                )}
-                {coordinator.email && (
-                  <div className="text-sm text-slate-600">
-                    <a href={`mailto:${coordinator.email}`} className="text-slate-700 hover:text-slate-900 hover:underline">
-                      {coordinator.email}
-                    </a>
-                  </div>
-                )}
+      {filteredCoords.length > 0 && (() => {
+        const renderCard = (coordinator, index, extraClasses = '') => (
+          <div key={index} className={`p-2 space-y-1 ${extraClasses}`}>
+            {coordinator.name && (
+              <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+                <FaUser className="text-forest-900 shrink-0" size={13} title="Name" aria-label="Name" />
+                <span className="truncate" title={coordinator.name}>{coordinator.name}</span>
               </div>
-            ))}
+            )}
+            {coordinator.phone && (
+              <div className="flex items-center gap-2 text-sm text-slate-600 min-w-0">
+                <FaPhone className="text-forest-900 shrink-0" size={12} title="Phone" aria-label="Phone" />
+                <a href={`tel:${coordinator.phone}`} className="hover:text-slate-900 underline truncate">{coordinator.phone}</a>
+              </div>
+            )}
+            {coordinator.role && (
+              <div className="flex items-center gap-2 text-sm text-slate-600 min-w-0">
+                <FaUserTie className="text-forest-900 shrink-0" size={12} title="Role" aria-label="Role" />
+                <span>{coordinator.role}</span>
+              </div>
+            )}
+            {coordinator.email && (
+              <div className="flex items-center gap-2 text-sm text-slate-600 min-w-0">
+                <FaEnvelope className="text-forest-900 shrink-0" size={12} title="Email" aria-label="Email" />
+                <a href={`mailto:${coordinator.email}`} className="hover:text-slate-900 underline break-all">
+                  {coordinator.email}
+                </a>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+
+        return (
+          <div className="my-4 mx-2 p-3">
+            <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">Event Coordinators</h3>
+
+            {/* Mobile: vertical slider when >2 coords, otherwise stacked */}
+            <div className="md:hidden">
+              {useCoordMobileSlider ? (
+                <div className="flex gap-2 items-stretch">
+                  <div
+                    ref={coordMobileSliderRef}
+                    className="flex-1 min-w-0 max-h-56 overflow-y-auto overscroll-contain snap-y snap-mandatory scroll-smooth space-y-3 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+                  >
+                    {filteredCoords.map((c, i) => renderCard(c, i, 'snap-start'))}
+                  </div>
+                  {coordMobileCanScroll && coordMobileTotalPages > 1 && (
+                    <div className="flex flex-col justify-center gap-1.5 shrink-0">
+                      {Array.from({ length: coordMobileTotalPages }).map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => scrollToCoordMobilePage(i)}
+                          aria-label={`Go to page ${i + 1}`}
+                          className={`w-2 rounded-full transition-all ${
+                            i === coordMobileActivePage
+                              ? 'h-6 bg-teal-700'
+                              : 'h-2 bg-slate-300 hover:bg-slate-400'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredCoords.map((c, i) => renderCard(c, i))}
+                </div>
+              )}
+            </div>
+
+            {/* Desktop: slider when >3 coords, otherwise 3-col grid */}
+            <div className="hidden md:block">
+              {useCoordSlider ? (
+                <>
+                  <div className="w-full max-w-full overflow-hidden">
+                    <div
+                      ref={coordSliderRef}
+                      className="w-full max-w-full flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+                    >
+                      {filteredCoords.map((c, i) => renderCard(c, i, 'snap-start shrink-0 grow-0 basis-[calc((100%-1.5rem)/3)] min-w-0'))}
+                    </div>
+                  </div>
+                  {coordCanScroll && coordTotalPages > 1 && (
+                    <div className="flex justify-center gap-1.5 mt-3">
+                      {Array.from({ length: coordTotalPages }).map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => scrollToCoordPage(i)}
+                          aria-label={`Go to page ${i + 1}`}
+                          className={`h-2 rounded-full transition-all ${
+                            i === coordActivePage
+                              ? 'w-6 bg-teal-700'
+                              : 'w-2 bg-slate-300 hover:bg-slate-400'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {filteredCoords.map((c, i) => renderCard(c, i))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
 
       {/* Description Section */}
       {event.description && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">About This Event</h3>
+        <div className="my-4 mx-2 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-1 border-b border-slate-200 mb-0">About This Event</h3>
           <div className="relative">
             <div
               ref={descriptionRef}
-              className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
+              className={`text-sm sm:text-base text-slate-700 leading-snug whitespace-pre-wrap -mt-1 ${
+                descriptionExpanded ? '' : 'line-clamp-[20]'
+              }`}
             >
-              {event.description}
+              {linkifyDescription(event.description)}
             </div>
-            {descriptionOverflow && (
+            {!descriptionExpanded && descriptionOverflow && (
               <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
             )}
           </div>
+          {(descriptionOverflow || descriptionExpanded) && (
+            <button
+              type="button"
+              onClick={() => setDescriptionExpanded((e) => !e)}
+              className="mt-2 text-teal-700 hover:text-teal-800 font-semibold text-sm underline"
+            >
+              {descriptionExpanded ? 'Read less' : 'Read more'}
+            </button>
+          )}
         </div>
       )}
 
-      {/* Capacity Display Section */}
-      {!event.isAdvertiseOnly && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Event Capacity</h3>
-          <EventCapacityDisplay
-            eventId={event._id}
-            isPaid={event.isPaid}
-            context="viewing"
-            maxPerRegistration={event.maxAttendeesPerRegistration}
-          />
-        </div>
-      )}
-        
       {/* Available Tickets Section (for paid events) */}
       {event.isPaid && event.ticketTypes?.length > 0 && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Available Tickets</h3>
+        <div className="my-4 mx-2 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">Available Tickets</h3>
           <div className="space-y-3">
             {event.ticketTypes.map((ticket, index) => (
               <div key={index} className="border border-slate-200 rounded p-3">
@@ -604,8 +795,8 @@ const SingleEventCard = ({ event, chatProps }) => {
 
       {/* Refund Policy Section (for paid events) */}
       {event.isPaid && event.refundPolicy && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Refund Policy</h3>
+        <div className="my-4 mx-2 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">Refund Policy</h3>
           <div className="text-sm text-slate-700 space-y-2">
             {/* Processing Fee Policy */}
             <p>
@@ -624,52 +815,91 @@ const SingleEventCard = ({ event, chatProps }) => {
         </div>
       )}
 
-      {/* Registration/Purchase Button Section */}
+      {/* Booking Card — capacity + limit + CTA bundled together */}
       {!event.isAdvertiseOnly && (
-        <div className="px-2 py-4 flex justify-center">
-          {event.isPaid ? (
-            <button
-              onClick={handlePurchaseTickets}
-              className="bg-teal-700 text-white hover:bg-teal-800 px-6 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors flex items-center"
-            >
-              <FaShoppingCart className="mr-2" />
-              Purchase Tickets
-            </button>
-          ) : (
-            isRegistered ? (
+        <div className="my-4 mx-2 p-4 border border-slate-200 rounded-lg bg-white shadow-sm">
+          <EventCapacityDisplay
+            eventId={event._id}
+            isPaid={event.isPaid}
+            context="viewing"
+            maxPerRegistration={event.maxAttendeesPerRegistration}
+          />
+          <div className="border-t border-slate-200 my-4"></div>
+          <div className="flex justify-center">
+            {event.isPaid ? (
               <button
-                onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
-                className="bg-red-500 text-white hover:bg-red-600 px-6 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
-                disabled={registrationStatus === 'loading'}
+                onClick={handlePurchaseTickets}
+                className="w-full sm:w-auto bg-teal-700 text-white hover:bg-teal-800 px-8 py-3 rounded-lg shadow font-semibold text-sm md:text-base transition-colors flex items-center justify-center"
               >
-                {registrationStatus === 'loading' ? 'Unregistering...' : 'Unregister from Event'}
+                <FaShoppingCart className="mr-2" />
+                Purchase Tickets
               </button>
             ) : (
-              <button
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    localStorage.setItem('redirectAfterLogin', window.location.pathname);
-                    localStorage.setItem('eventRegistrationPending', event._id);
-                    if (!localStorage.getItem('eventViewReturnUrl')) {
-                      localStorage.setItem('eventViewReturnUrl', '/events');
+              isCheckedIn ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-full sm:w-auto bg-green-50 text-green-700 border border-green-200 px-8 py-3 rounded-lg font-semibold text-sm md:text-base flex items-center justify-center gap-2">
+                    <FaCheckCircle />
+                    Checked In
+                  </div>
+                  <Link
+                    href="/users/profile/myregistrations"
+                    className="text-sm text-teal-700 hover:text-teal-800 underline"
+                  >
+                    View my RSVPs
+                  </Link>
+                </div>
+              ) : isRegistered ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-full sm:w-auto bg-green-50 text-green-700 border border-green-200 px-8 py-3 rounded-lg font-semibold text-sm md:text-base flex items-center justify-center gap-2">
+                    <FaCheckCircle />
+                    Already Registered
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <Link
+                      href="/users/profile/myregistrations"
+                      className="text-teal-700 hover:text-teal-800 underline"
+                    >
+                      View my RSVPs
+                    </Link>
+                    <span className="text-slate-300">·</span>
+                    <button
+                      type="button"
+                      onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
+                      disabled={registrationStatus === 'loading'}
+                      className="text-red-600 hover:text-red-700 underline disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {registrationStatus === 'loading' ? 'Cancelling...' : 'Cancel registration'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      // After login, land directly on the RSVP page (not back on event view).
+                      localStorage.setItem('redirectAfterLogin', `/events/rsvp/${event._id}`);
+                      localStorage.setItem('eventRegistrationPending', event._id);
+                      if (!localStorage.getItem('eventViewReturnUrl')) {
+                        localStorage.setItem('eventViewReturnUrl', '/events');
+                      }
+                      router.push('/login?preserveRedirect=true');
+                      return;
                     }
-                    router.push('/login?preserveRedirect=true');
-                    return;
+                    router.push(`/events/rsvp/${event._id}`);
+                  }}
+                  className="w-full sm:w-auto bg-teal-700 text-white hover:bg-teal-800 px-8 py-3 rounded-lg shadow font-semibold text-sm md:text-base transition-colors"
+                  disabled={registrationStatus === 'loading'}
+                >
+                  {registrationStatus === 'loading'
+                    ? 'Processing...'
+                    : !isAuthenticated
+                      ? 'Login to Register'
+                      : 'Register for Event'
                   }
-                  setShowRegistrationForm(true);
-                }}
-                className="bg-teal-700 text-white hover:bg-teal-800 px-6 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors"
-                disabled={registrationStatus === 'loading'}
-              >
-                {registrationStatus === 'loading'
-                  ? 'Processing...'
-                  : !isAuthenticated
-                    ? 'Login to Register'
-                    : 'Register for Event'
-                }
-              </button>
-            )
-          )}
+                </button>
+              )
+            )}
+          </div>
         </div>
       )}
 
@@ -692,9 +922,9 @@ const SingleEventCard = ({ event, chatProps }) => {
 
       {/* Chat Container - Mobile Only (At the bottom) */}
       {chatProps && (
-        <div className="block lg:hidden px-2 my-4">
+        <div ref={chatRef} className="block lg:hidden px-2 my-4">
           {chatProps.isCuratedEvent ? (
-            <div className="border border-slate-200 p-3 rounded shadow-md w-full">
+            <div className="p-3 w-full border-t border-slate-200">
               <h2 className="text-lg font-semibold text-slate-900 mb-3">Get in touch</h2>
               <p className="text-sm text-slate-700 mb-4">
                 This event has been added on behalf of the organiser. Please use the contact details provided to reach them directly.
@@ -718,33 +948,31 @@ const SingleEventCard = ({ event, chatProps }) => {
         </div>
       )}
 
-      {/* Registration Modal */}
-      <EventRegistrationModal
-        event={event}
-        isOpen={showRegistrationForm}
-        onClose={() => setShowRegistrationForm(false)}
-        onSuccess={(data) => {
-          console.log('Registration successful:', data);
-        }}
-      />
+      {/* Registration modal removed — RSVP is now a full page at /events/rsvp/[eventId]. */}
 
       {/* Floating Share Button - Mobile Only */}
       <button
         onClick={async () => {
           if (navigator.share) {
             try {
+              const slugUrl = buildSlugUrl('event', event.title, event._id);
+              const shareUrl = `${window.location.origin}${slugUrl}?v=${Date.now()}`;
               await navigator.share({
                 title: event.title,
                 text: event.title,
-                url: window.location.href
+                url: shareUrl
               });
             } catch (err) {
               if (err.name !== 'AbortError') console.error('Share failed:', err);
             }
           }
         }}
-        className="lg:hidden fixed bottom-20 right-4 z-40 bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-colors"
+        className={`lg:hidden fixed bottom-20 right-4 z-40 bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-all duration-200 ${
+          chatInView ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100'
+        }`}
         aria-label="Share event"
+        aria-hidden={chatInView}
+        tabIndex={chatInView ? -1 : 0}
       >
         <FaShareAlt size={16} />
         <span>Share</span>

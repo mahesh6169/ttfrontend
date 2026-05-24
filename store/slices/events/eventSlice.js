@@ -675,12 +675,16 @@ deleteError: null,
     },
     
     // Registration Fields with change tracking
-    addRegistrationField: (state) => {
-      state.formData.registrationFields.push({ 
-        fieldName: '', 
-        fieldType: 'text', 
-        fieldOptions: [], 
-        isRequired: false 
+    // Optional payload: { fieldType: 'text' | 'select' } — defaults to 'text' if absent
+    // Dropdowns pre-load with one empty option row so the host immediately sees
+    // they need to fill an option, instead of guessing why the form is incomplete.
+    addRegistrationField: (state, action) => {
+      const fieldType = action?.payload?.fieldType || 'text';
+      state.formData.registrationFields.push({
+        fieldName: '',
+        fieldType,
+        fieldOptions: fieldType === 'select' ? [''] : [],
+        isRequired: false
       });
       state.hasUnsavedChanges = true;
     },

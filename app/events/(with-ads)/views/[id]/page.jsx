@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEventById, clearSelectedEvent, clearError } from '@/store/slices/events/eventSlice';
+import { FaShareAlt } from 'react-icons/fa';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SingleEventCard from '@/components/events/eventcomponents/SingleEventCard';
 import SendMessage from '@/components/chat/SendMessage';
@@ -18,9 +19,30 @@ const EventDetail = () => {
 
   const { selectedEvent, status, error } = useSelector((state) => state.events);
 
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareRef = useRef(null);
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    const handleClickOutside = (event) => {
+      if (shareRef.current && !shareRef.current.contains(event.target)) {
+        setShareOpen(false);
+      }
+    };
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') setShareOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [shareOpen]);
+
   // ✅ FIX: Safe destructuring - use optional chaining instead
-  const showSeatSelection = selectedEvent?.isPaid && 
-                           selectedEvent?.seatingLayout && 
+  const showSeatSelection = selectedEvent?.isPaid &&
+                           selectedEvent?.seatingLayout &&
                            selectedEvent?.seatingLayout.length > 0;
 
 
@@ -116,7 +138,7 @@ const EventDetail = () => {
               router.back();
             }
           }}
-          className="flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
+          className="flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
         >
           <span>&lt;</span>
           <span>back</span>
@@ -183,14 +205,28 @@ const EventDetail = () => {
             />
           )}
 
-          {/* Share Icons - Sticky with sidebar */}
-          <div className="flex items-center justify-center py-3 px-4 border border-slate-200 rounded shadow-sm">
-            <span className="text-sm font-bold text-sky-500 mr-3">Share</span>
-            <ShareIcons
-              type="event"
-              title={selectedEvent.title}
-              id={selectedEvent._id}
-            />
+          {/* Share - popover trigger */}
+          <div className="flex justify-center py-3 px-4">
+            <div className="relative" ref={shareRef}>
+              <button
+                onClick={() => setShareOpen((open) => !open)}
+                aria-expanded={shareOpen}
+                aria-haspopup="true"
+                className="flex items-center gap-2 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-4 py-1.5 rounded-full font-semibold text-sm md:text-base transition-colors"
+              >
+                <FaShareAlt size={13} />
+                <span>Share</span>
+              </button>
+              {shareOpen && (
+                <div className="absolute right-0 mt-2 z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-3">
+                  <ShareIcons
+                    type="event"
+                    title={selectedEvent.title}
+                    id={selectedEvent._id}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

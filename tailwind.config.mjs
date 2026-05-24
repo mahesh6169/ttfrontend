@@ -10,6 +10,9 @@ const config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        forest: {
+          900: "rgb(56, 74, 53)",
+        },
       },
       animation: {
         pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite", // Custom animation

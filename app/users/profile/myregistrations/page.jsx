@@ -552,65 +552,37 @@ const MyFreeEventRegistrationsPage = () => {
               return (
                 <div key={registration._id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                   {/* Registration Header */}
-                  <div className="border-b border-gray-200">
-                    {/* Mobile Layout */}
-                    <div className="block sm:hidden p-4 space-y-3">
-                      {/* Row 1: Unregister Button (full width) */}
-                      <div className="w-full">
+                  <div className="border-b border-gray-200 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-slate-900 text-sm sm:text-base">
+                          {registration.registrationNumber}
+                        </span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-green-50 text-green-700 border-green-200">
+                          {registration.status === 'checkedin' ? '✓ Checked in' : 'Registered'}
+                        </span>
+                      </div>
+
+                      {registration.status !== 'checkedin' && (
                         <button
+                          type="button"
                           onClick={() => handleUnregister(registration.event)}
                           disabled={actionLoading}
-                          className="w-full px-4 py-2 rounded-md text-sm font-medium transition-colors bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                          className="text-sm text-red-600 hover:text-red-700 underline disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {actionLoading ? 'Processing...' : '🗑️ Unregister'}
+                          {actionLoading ? 'Cancelling...' : 'Cancel registration'}
                         </button>
-                      </div>
-
-                      {/* Row 2: Registration Number */}
-                      <div className="font-bold text-gray-900 text-base">
-                        {registration.registrationNumber}
-                      </div>
-
-                      {/* Row 3: Attendee Count and Registration Date */}
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="font-medium text-gray-700">
-                          {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
-                        </span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-600">
-                          Registered: {new Date(registration.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                      )}
                     </div>
-                    
-                    {/* Desktop Layout */}
-                    <div className="hidden sm:flex items-start justify-between gap-4 p-4">
-                      <div className="flex-1">
-                        {/* Registration Number */}
-                        <div className="font-semibold text-gray-900 text-sm sm:text-base mb-2">
-                          {registration.registrationNumber}
-                        </div>
-                        
-                        {/* Registration Details */}
-                        <div className="flex items-center gap-2 text-xs sm:text-sm">
-                          <span className="font-medium text-gray-700">
-                            {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
-                          </span>
-                          <span className="text-gray-500">•</span>
-                          <span className="text-gray-600">
-                            Registered: {new Date(registration.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Unregister Button */}
-                      <button
-                        onClick={() => handleUnregister(registration.event)}
-                        disabled={actionLoading}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-                      >
-                        {actionLoading ? 'Processing...' : '🗑️ Unregister'}
-                      </button>
+
+                    <div className="flex items-center gap-2 text-xs sm:text-sm mt-2">
+                      <span className="font-medium text-slate-700">
+                        {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
+                      </span>
+                      <span className="text-slate-400">•</span>
+                      <span className="text-slate-600">
+                        Registered: {new Date(registration.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                   

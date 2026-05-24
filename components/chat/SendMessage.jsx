@@ -6,6 +6,7 @@ import { sendMessage } from '@/store/slices/shared/messageSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CgProfile } from 'react-icons/cg';
+import { FaPaperPlane, FaSpinner } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { zonedTimeToUtc } from 'date-fns-tz';
 
@@ -100,7 +101,7 @@ const SendMessage = ({
     const removalType = resourceType === 'deal' ? 'deal' : 'listing';
 
     return (
-      <div className="border border-slate-200 p-3 rounded shadow-md w-full">
+      <div className="p-3 w-full border-t lg:border-t-0 lg:border-l border-slate-200">
         <h2 className="text-lg font-semibold text-slate-900 mb-3">Get in touch</h2>
         <p className="text-sm text-slate-700 mb-4">
           This {resourceLabel} was posted on behalf of the owner. Please use the contact details provided to reach them directly.
@@ -133,43 +134,50 @@ const SendMessage = ({
   };
 
   return (
-    <div className="border border-slate-200 p-3 rounded shadow-md w-full">
-      <p className="flex items-center mb-2 text-sm">
-        <CgProfile className="mr-2 text-slate-600" size={20} />
-        <span className="text-slate-700">{owner || 'User'}</span>
+    <div className="p-3 w-full border-t lg:border-t-0 lg:border-l border-slate-200">
+      <p className="flex items-center mb-2 text-sm sm:text-base font-semibold text-forest-900">
+        <CgProfile className="mr-2" size={20} />
+        <span>Chat with {owner || 'User'}</span>
       </p>
 
-      <textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onFocus={onTextareaFocus}
-        onBlur={onTextareaBlur}
-        disabled={!user || sending}
-        placeholder={getPlaceholder()}
-        className={`w-full border border-slate-200 rounded p-2 mb-3 resize-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-sm ${
-          !user ? 'bg-slate-100 cursor-not-allowed' : ''
-        }`}
-        rows={3}
-      />
-
-      {user ? (
-        <button
-          onClick={handleSendMessage}
-          disabled={sending}
-          className={`ml-auto bg-teal-700 text-white hover:bg-teal-800 px-6 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors ${
-            sending ? 'opacity-50 cursor-not-allowed' : ''
+      <div className={`border border-slate-200 rounded-lg overflow-hidden focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all ${!user ? 'bg-slate-50' : 'bg-white'}`}>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onFocus={onTextareaFocus}
+          onBlur={onTextareaBlur}
+          disabled={!user || sending}
+          placeholder={getPlaceholder()}
+          className={`w-full border-0 px-3 pt-3 pb-1 resize-none focus:outline-none focus:ring-0 text-base bg-transparent ${
+            !user ? 'cursor-not-allowed' : ''
           }`}
-        >
-          {sending ? 'Sending...' : 'Send'}
-        </button>
-      ) : (
-        <button
-          onClick={handleLoginRedirect}
-          className="ml-auto py-2 px-6 bg-teal-700 text-white rounded hover:bg-teal-800"
-        >
-          Login
-        </button>
-      )}
+          rows={3}
+        />
+        <div className="flex justify-end items-center px-2 pb-2">
+          {user ? (
+            <button
+              onClick={handleSendMessage}
+              disabled={sending || !message.trim()}
+              className="bg-teal-700 text-white hover:bg-teal-800 disabled:bg-slate-300 disabled:cursor-not-allowed h-8 w-8 rounded-md transition-colors flex items-center justify-center"
+              aria-label={sending ? 'Sending message' : 'Send message'}
+              title="Send"
+            >
+              {sending ? (
+                <FaSpinner className="animate-spin" size={14} />
+              ) : (
+                <FaPaperPlane size={13} />
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={handleLoginRedirect}
+              className="text-sm bg-teal-700 text-white hover:bg-teal-800 px-3 py-1.5 rounded-md transition-colors"
+            >
+              Login to send
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

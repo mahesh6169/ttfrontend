@@ -11,6 +11,7 @@ const SimpleDropdown = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const triggerRef = useRef(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -23,6 +24,15 @@ const SimpleDropdown = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // When the menu opens, scroll the trigger into view so the menu fits within the viewport.
+  // Fixes the mobile bug where a dropdown near the bottom of the viewport opens off-screen
+  // and the user can't reach options beyond the first one.
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      triggerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isOpen]);
 
   const handleSelect = (optionValue) => {
     onChange(optionValue);
@@ -42,6 +52,7 @@ const SimpleDropdown = ({
     <div ref={dropdownRef} className={`relative ${className}`}>
       {/* Selected Value Display */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
@@ -93,12 +104,12 @@ const SimpleDropdown = ({
             );
           })}
 
-          {/* Mobile-friendly close button */}
-          <div className="p-2 border-t border-slate-100 sm:hidden">
+          {/* Mobile-friendly close button — sized to match option text so it doesn't dominate */}
+          <div className="border-t border-slate-100 sm:hidden">
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="w-full py-2 text-center text-slate-600 font-medium"
+              className="w-full py-2 text-center text-sm text-slate-500"
             >
               Close
             </button>

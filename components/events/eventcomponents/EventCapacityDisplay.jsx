@@ -205,20 +205,20 @@ const EventCapacityDisplay = ({
     <div>
       {/* Summary display for both paid and free events - consistent format */}
       {consistentDisplayText && (
-        <div className="text-sm sm:text-base mb-3 text-gray-700">
+        <div className="text-sm sm:text-base font-semibold text-forest-900 mb-3">
           <FaUsers className="inline-block mr-2" />
           {consistentDisplayText}
         </div>
       )}
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Booking Limit */}
         {typeof maxPerRegistration === 'number' && (
           <div className="text-sm sm:text-base">
-            <span className="font-semibold text-gray-700">
-              Booking Limit:
+            <span className="font-semibold text-forest-900">
+              Max:
             </span>{' '}
-            <span className="text-gray-600">
+            <span className="text-slate-600">
               {maxPerRegistration} per registration
             </span>
           </div>
@@ -227,7 +227,7 @@ const EventCapacityDisplay = ({
         {/* Status: Only show when full */}
         {isFull && (
           <div className="text-sm sm:text-base">
-            <span className="font-semibold text-gray-700">Status:</span>{' '}
+            <span className="font-semibold text-forest-900">Status:</span>{' '}
             <span className="text-red-600 font-semibold">
               {isPaid ? 'Sold Out' : 'Fully Booked'}
             </span>

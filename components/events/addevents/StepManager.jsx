@@ -43,6 +43,46 @@ import SuccessStep from './SuccessStep';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
+// Validate the host-configured registration fields (text + dropdown question types).
+// Called from BOTH the per-step validator (case 3) and the global validateForm safety net,
+// so the rule lives in exactly one place and can't drift between call sites.
+// Returns null if valid, or an array of error strings if invalid.
+const validateRegistrationFieldsList = (formData) => {
+  const isPromotionalEvent = formData.eventIntent === 'promote' || formData.isAdvertiseOnly;
+  if (isPromotionalEvent) return null;
+  if (!formData.registrationFields || formData.registrationFields.length === 0) return null;
+
+  // Sequential: at most ONE error per question, in the order the host should fix them.
+  // Same priority as the inline display: question text → options exist → options non-empty → unique.
+  const errors = [];
+  formData.registrationFields.forEach((field, index) => {
+    const questionLabel = `Question ${index + 1}`;
+
+    if (!field.fieldName?.trim()) {
+      errors.push(`${questionLabel}: Type your question.`);
+      return;
+    }
+
+    if (field.fieldType === 'select') {
+      const options = field.fieldOptions || [];
+      if (options.length === 0) {
+        errors.push(`${questionLabel}: Add at least one option.`);
+        return;
+      }
+      if (options.some((o) => !o?.trim())) {
+        errors.push(`${questionLabel}: Fill all options or remove the empty ones.`);
+        return;
+      }
+      const lowered = options.map((o) => o.trim().toLowerCase());
+      if (new Set(lowered).size !== lowered.length) {
+        errors.push(`${questionLabel}: Options must be unique.`);
+      }
+    }
+  });
+
+  return errors.length > 0 ? errors : null;
+};
+
 const StepManager = ({
   mode = 'add', // 'add' | 'edit' | 'view'
   eventId = null,
@@ -616,17 +656,10 @@ if (ticket.startDate && ticket.expiryDate) {
       }
     }
 
-    // Custom registration fields validation - skip if promotional or advertise-only
-    const isPromotionalEvent = formData.eventIntent === 'promote' || formData.isAdvertiseOnly;
-    if (!isPromotionalEvent && formData.registrationFields && formData.registrationFields.length > 0) {
-      const fieldErrors = [];
-      formData.registrationFields.forEach((field, index) => {
-        if (!field.fieldName?.trim()) {
-          fieldErrors.push(`Registration field ${index + 1} name is required`);
-        }
-      });
-      if (fieldErrors.length > 0) errors.registrationFields = fieldErrors;
-    }
+    // Custom registration fields validation — uses shared helper (also called from case 3).
+    // Single source of truth for the rule; no drift between submit-time and per-step.
+    const regFieldErrors = validateRegistrationFieldsList(formData);
+    if (regFieldErrors) errors.registrationFields = regFieldErrors;
 
     return errors;
   }, [formData, isAddMode]);
@@ -811,6 +844,10 @@ const validateCurrentStep = useCallback(() => {
           }
         }
       }
+
+      // Registration fields validation — same helper used by validateForm safety net
+      const regFieldErrorsStep3 = validateRegistrationFieldsList(formData);
+      if (regFieldErrorsStep3) errors.registrationFields = regFieldErrorsStep3;
       break;
 
     case 4: // Refund Policy - Only for hosted paid events

@@ -367,7 +367,7 @@ const BasicInfoStep = ({
               {isEditMode && <span className="text-xs font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
             </span>
             <p className="text-xs text-slate-500 mt-1 mb-2">
-              Set up a repeating schedule for this event
+              Set up a repeating schedule for this event (Optional)
             </p>
             <input
               type="checkbox"
