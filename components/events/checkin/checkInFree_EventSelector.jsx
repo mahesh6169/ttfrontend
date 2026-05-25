@@ -29,11 +29,39 @@ const CheckInFree_EventSelector = () => {
   } = useSelector((state) => state.checkInFree);
   
   const [dateFilter, setDateFilter] = React.useState('3months'); // Default to 3 months
+  const [hasAutoSelected, setHasAutoSelected] = React.useState(false);
 
   // Load managed events on mount
   useEffect(() => {
     dispatch(fetchManagedFreeEvents());
   }, [dispatch]);
+
+  // Auto-select the next upcoming event once after managedEvents loads.
+  // "Next" = events from today onwards, earliest dateTime wins.
+  // Runs once per mount; respects manual selection / clearing afterwards.
+  useEffect(() => {
+    if (hasAutoSelected) return;
+    if (!managedEvents || managedEvents.length === 0) return;
+    if (selectedEvent) {
+      // User already had a selection (e.g., from prior session state) — don't override.
+      setHasAutoSelected(true);
+      return;
+    }
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const upcoming = managedEvents
+      .filter((ev) => ev.dateTime && new Date(ev.dateTime) >= startOfToday)
+      .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+    if (upcoming.length > 0) {
+      const nextEvent = upcoming[0];
+      dispatch(setSelectedEvent(nextEvent));
+      dispatch(fetchEventAttendees({ eventId: nextEvent._id, page: 1, limit: 20 }));
+    }
+    setHasAutoSelected(true);
+  }, [managedEvents, selectedEvent, dispatch, hasAutoSelected]);
 
   // Format event date with timezone support
   const formatEventDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
@@ -259,12 +287,10 @@ const CheckInFree_EventSelector = () => {
         </div>
       </div>
 
-      {/* Data Retention Warning - More compact */}
-      <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
-        <p className="text-xs text-amber-800">
-          <strong>Note:</strong> Events older than 2 years will be deleted.
-        </p>
-      </div>
+      {/* Data retention hint */}
+      <p className="text-xs text-forest-900">
+        Events older than 2 years will be deleted.
+      </p>
     </div>
   );
 };

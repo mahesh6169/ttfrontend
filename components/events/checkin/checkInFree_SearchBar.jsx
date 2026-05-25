@@ -52,7 +52,7 @@ const CheckInFree_SearchBar = () => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full sm:w-1/2">
       <div className="relative">
         {/* Search Icon */}
         <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">

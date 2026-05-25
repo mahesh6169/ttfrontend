@@ -4,7 +4,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { FaUser, FaPhone, FaEnvelope } from 'react-icons/fa';
 import CheckInFree_SimpleAttendeeRow from './checkInFree_SimpleAttendeeRow';
+import VerticalScrollSlider from '@/components/shared/VerticalScrollSlider';
 import Pagination from '@/components/Pagination';
 import { 
   bulkCheckInRegistration,
@@ -154,6 +156,9 @@ const CheckInFree_AttendeeList = () => {
         const hasMultipleAttendees = registration.attendees.length > 1;
         const showPartialCheckIn = someCheckedIn && !allCheckedIn && hasMultipleAttendees;
         const checkedInCount = registration.attendees.filter(a => a.checkedIn).length;
+        const bookerName = registration.user?.name || registration.userId?.name;
+        const hasBookerInfo = !!(bookerName || registration.mobile || registration.email);
+        const hasFormResponses = registration.formResponses && registration.formResponses.length > 0;
         
         return (
           <div 
@@ -161,11 +166,14 @@ const CheckInFree_AttendeeList = () => {
             className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
           >
             {/* Registration Header - New Layout */}
-            <div className="border-b border-gray-200">
-              {/* Mobile Layout - Button First */}
+            <div>
+              {/* Mobile Layout */}
               <div className="block sm:hidden p-4 space-y-3">
-                {/* Row 1: Check In/Out Button (full width) */}
-                <div className="w-full">
+                {/* Row 1: Reg Number + Bulk Action Button */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="font-bold text-gray-900 text-base">
+                    {registration.registrationNumber}
+                  </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -173,95 +181,28 @@ const CheckInFree_AttendeeList = () => {
                     }}
                     disabled={actionLoading}
                     className={`
-                      w-full px-4 py-2 rounded-md text-sm font-medium transition-colors
-                      ${allCheckedIn 
-                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                      px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap
+                      ${allCheckedIn
+                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         : 'bg-teal-600 text-white hover:bg-teal-700'
                       }
                       ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                     `}
                   >
-                    {allCheckedIn ? 'Check Out All' : 'Check In All'}
+                    {allCheckedIn
+                      ? `Check Out${hasMultipleAttendees ? ` All (${checkedInCount}/${registration.attendees.length})` : ''}`
+                      : `Check In${hasMultipleAttendees ? ` All (${checkedInCount}/${registration.attendees.length})` : ''}`}
                   </button>
-                </div>
-
-                {/* Row 2: Registration Number */}
-                <div className="font-bold text-gray-900 text-base">
-                  {registration.registrationNumber}
-                </div>
-
-                {/* Row 3: Name, Mobile and Email */}
-                <div>
-                  <div className="font-medium text-sm">
-                    {registration.user?.name || registration.userId?.name ? (
-                      <span className="text-gray-800">{registration.user?.name || registration.userId?.name}</span>
-                    ) : (
-                      <span className="text-red-600">Deleted User</span>
-                    )}
-                  </div>
-                  {(registration.mobile || registration.email) && (
-                    <div className="text-gray-600 text-xs break-all mt-1">
-                      {registration.mobile && <span>{registration.mobile}</span>}
-                      {registration.mobile && registration.email && <span> • </span>}
-                      {registration.email && <span>{registration.email}</span>}
-                    </div>
-                  )}
-                </div>
-
-                {/* Row 4: Attendee Count and Status */}
-                <div className="flex items-center gap-2 text-xs">
-                  <span>{registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}</span>
-                  <span className="text-gray-400">•</span>
-                  <span className={`font-medium ${allCheckedIn ? 'text-green-600' : showPartialCheckIn ? 'text-yellow-600' : 'text-gray-700'}`}>
-                    Checked In: {checkedInCount}/{registration.attendees.length}
-                  </span>
                 </div>
 
               </div>
               
-              {/* Desktop Layout - Keep existing */}
-              <div className="hidden sm:flex items-start justify-between gap-4 p-4">
-                <div className="flex-1">
-                  {/* Registration Number */}
-                  <div className="font-semibold text-gray-900 text-sm sm:text-base mb-1">
-                    {registration.registrationNumber}
-                  </div>
-                  
-                  {/* User Details */}
-                  <div className="text-xs sm:text-sm text-gray-600 mb-2">
-                    <span className="font-medium">
-                      {registration.user?.name || registration.userId?.name ? (
-                        <span className="text-gray-700">{registration.user?.name || registration.userId?.name}</span>
-                      ) : (
-                        <span className="text-red-600">Deleted User</span>
-                      )}
-                    </span>
-                    {registration.mobile && (
-                      <>
-                        <span className="mx-1">•</span>
-                        <span>{registration.mobile}</span>
-                      </>
-                    )}
-                    {registration.email && (
-                      <>
-                        <span className="mx-1">•</span>
-                        <span className="break-all">{registration.email}</span>
-                      </>
-                    )}
-                  </div>
-                  
-                  {/* Attendee Count and Check-in Status */}
-                  <div className="flex items-center gap-2 text-xs sm:text-sm">
-                    <span className="font-medium">
-                      {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
-                    </span>
-                    <span className="text-gray-500">•</span>
-                    <span className={`font-medium ${allCheckedIn ? 'text-green-600' : showPartialCheckIn ? 'text-yellow-600' : 'text-gray-600'}`}>
-                      Checked In: {checkedInCount}/{registration.attendees.length}
-                    </span>
-                  </div>
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex items-center justify-between gap-4 p-4">
+                <div className="font-semibold text-gray-900 text-sm sm:text-base">
+                  {registration.registrationNumber}
                 </div>
-                
+
                 {/* Check In All Button */}
                 <button
                   onClick={(e) => {
@@ -271,21 +212,37 @@ const CheckInFree_AttendeeList = () => {
                   disabled={actionLoading}
                   className={`
                     px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
-                    ${allCheckedIn 
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
+                    ${allCheckedIn
+                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       : 'bg-teal-600 text-white hover:bg-teal-700'
                     }
                     ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
                 >
-                  {allCheckedIn ? 'Check Out All' : 'Check In All'}
+                  {allCheckedIn
+                    ? `Check Out${hasMultipleAttendees ? ` All (${checkedInCount}/${registration.attendees.length})` : ''}`
+                    : `Check In${hasMultipleAttendees ? ` All (${checkedInCount}/${registration.attendees.length})` : ''}`}
                 </button>
               </div>
             </div>
             
             {/* Tab Buttons */}
-            <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
+            <div className="px-4 pb-3">
               <div className="flex gap-1 sm:gap-2">
+                {hasBookerInfo && (
+                  <button
+                    onClick={() => handleTabClick(registration._id, 'booker')}
+                    className={`
+                      px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
+                      ${isExpanded && activeTab[registration._id] === 'booker'
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    Booked by
+                  </button>
+                )}
                 <button
                   onClick={() => handleTabClick(registration._id, 'attendees')}
                   className={`
@@ -296,10 +253,9 @@ const CheckInFree_AttendeeList = () => {
                     }
                   `}
                 >
-                  <span className="sm:hidden">Attendees</span>
-                  <span className="hidden sm:inline">View Attendees</span>
+                  Attendees
                 </button>
-                {registration.formResponses && registration.formResponses.length > 0 && (
+                {hasFormResponses && (
                   <button
                     onClick={() => handleTabClick(registration._id, 'attendeeInfo')}
                     className={`
@@ -310,46 +266,83 @@ const CheckInFree_AttendeeList = () => {
                       }
                     `}
                   >
-                    <span className="sm:hidden">Attendee Info</span>
-                    <span className="hidden sm:inline">View Attendee Information</span>
+                    Information
                   </button>
                 )}
               </div>
             </div>
-            
+
             {/* Tab Content */}
             {isExpanded && (
-              <div className="border-t border-gray-200 mb-4">
-                {/* Attendees Tab */}
-                {(activeTab[registration._id] || 'attendees') === 'attendees' && (
-                  <div className="bg-gray-50 py-2 px-1 sm:px-2">
-                    <div className="space-y-0.5">
-                      {registration.attendees.map((attendee, idx) => (
-                        <CheckInFree_SimpleAttendeeRow
-                          key={attendee._id}
-                          attendee={attendee}
-                          ticketId={registration._id}
-                          registrationNumber={registration.registrationNumber}
-                          isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
-                        />
-                      ))}
+              <div className="mb-4">
+                {/* Booked by Tab */}
+                {activeTab[registration._id] === 'booker' && hasBookerInfo && (
+                  <div className="px-4 pb-3 space-y-2 text-sm">
+                    {/* Row 1: Name + Phone */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-700">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FaUser className="text-forest-900 shrink-0" size={13} title="Name" aria-label="Name" />
+                        {bookerName ? (
+                          <span className="truncate">{bookerName}</span>
+                        ) : (
+                          <span className="text-red-600">Deleted User</span>
+                        )}
+                      </div>
+                      {registration.mobile && (
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FaPhone className="text-forest-900 shrink-0" size={13} title="Phone" aria-label="Phone" />
+                          <a href={`tel:${registration.mobile}`} className="hover:text-slate-900 underline">
+                            {registration.mobile}
+                          </a>
+                        </div>
+                      )}
                     </div>
+                    {/* Row 2: Email */}
+                    {registration.email && (
+                      <div className="flex items-center gap-2 text-slate-700 min-w-0">
+                        <FaEnvelope className="text-forest-900 shrink-0" size={13} title="Email" aria-label="Email" />
+                        <a href={`mailto:${registration.email}`} className="hover:text-slate-900 underline break-all">
+                          {registration.email}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 )}
-                
-                {/* Attendee Information Tab */}
-                {activeTab[registration._id] === 'attendeeInfo' && registration.formResponses && (
-                  <div className="p-3 sm:p-4 bg-white">
-                    <div className="space-y-3">
-                      {registration.formResponses.map((response, index) => (
-                        <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
-                          <div className="font-medium text-gray-700 text-sm mb-1">{response.fieldName}:</div>
-                          <div className="text-gray-600 text-sm whitespace-pre-line break-words pl-4">
-                            {response.response}
+
+                {/* Attendees Tab */}
+                {(activeTab[registration._id] || 'attendees') === 'attendees' && (
+                  <div className="px-4 pb-3">
+                    <VerticalScrollSlider maxHeightClass="max-h-44 md:max-h-60">
+                      <div className="space-y-0.5">
+                        {registration.attendees.map((attendee, idx) => (
+                          <CheckInFree_SimpleAttendeeRow
+                            key={attendee._id}
+                            attendee={attendee}
+                            ticketId={registration._id}
+                            registrationNumber={registration.registrationNumber}
+                            isHighlighted={searchTerm && attendee.name?.toLowerCase().includes(searchTerm.toLowerCase())}
+                          />
+                        ))}
+                      </div>
+                    </VerticalScrollSlider>
+                  </div>
+                )}
+
+                {/* Information Tab */}
+                {activeTab[registration._id] === 'attendeeInfo' && hasFormResponses && (
+                  <div className="px-4 pb-3">
+                    <VerticalScrollSlider maxHeightClass="max-h-48 md:max-h-64">
+                      <div className="space-y-3 text-sm">
+                        {registration.formResponses.map((response, index) => (
+                          <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
+                            <div className="font-semibold text-gray-800 mb-1">{response.fieldName}:</div>
+                            <div className="text-gray-600 whitespace-pre-line break-words pl-4">
+                              {response.response}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </VerticalScrollSlider>
                   </div>
                 )}
               </div>

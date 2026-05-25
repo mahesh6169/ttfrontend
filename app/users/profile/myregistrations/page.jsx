@@ -6,6 +6,8 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import axios from '@/utils/axiosConfig';
+import { FaCalendarAlt, FaMapMarkedAlt, FaUser, FaPhone, FaEnvelope } from 'react-icons/fa';
+import { GiTheaterCurtains } from 'react-icons/gi';
 
 const DATE_FILTER_OPTIONS = [
   { value: '3months', label: 'Last 3 months' },
@@ -15,15 +17,13 @@ const DATE_FILTER_OPTIONS = [
 ];
 
 const BackButton = () => (
-  <div className="mb-4">
-    <Link
-      href="/users/profile"
-      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-    >
-      <span>&lt;</span>
-      <span>back</span>
-    </Link>
-  </div>
+  <Link
+    href="/users/profile"
+    className="inline-flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
+  >
+    <span>&lt;</span>
+    <span>back</span>
+  </Link>
 );
 
 const MyFreeEventRegistrationsPage = () => {
@@ -39,6 +39,7 @@ const MyFreeEventRegistrationsPage = () => {
   const [expandedRegistrations, setExpandedRegistrations] = useState(new Set());
   const [activeTab, setActiveTab] = useState({}); // { registrationId: 'attendees' | 'attendeeInfo' }
   const [dateFilter, setDateFilter] = useState('3months'); // Default to 3 months
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
   // Fetch all user registrations on mount
   useEffect(() => {
@@ -108,6 +109,30 @@ const MyFreeEventRegistrationsPage = () => {
       setSelectedEventRegistrations([]);
     }
   }, [selectedEventId, registrations]);
+
+  // Auto-select the next upcoming event once after events load.
+  // "Next" = events from today onwards, earliest dateTime wins.
+  // Runs once per mount; respects manual selection / clearing afterwards.
+  useEffect(() => {
+    if (hasAutoSelected) return;
+    if (!events || events.length === 0) return;
+    if (selectedEventId) {
+      setHasAutoSelected(true);
+      return;
+    }
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const upcoming = events
+      .filter((ev) => ev.dateTime && new Date(ev.dateTime) >= startOfToday)
+      .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+    if (upcoming.length > 0) {
+      setSelectedEventId(upcoming[0].id);
+    }
+    setHasAutoSelected(true);
+  }, [events, selectedEventId, hasAutoSelected]);
 
   // Apply date filtering to events
   useEffect(() => {
@@ -249,7 +274,7 @@ const MyFreeEventRegistrationsPage = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="p-4">
+      <div className="space-y-4">
         <BackButton />
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -262,7 +287,7 @@ const MyFreeEventRegistrationsPage = () => {
   // Error state
   if (error) {
     return (
-      <div className="p-4">
+      <div className="space-y-4">
         <BackButton />
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-700">Error: {error}</p>
@@ -280,7 +305,7 @@ const MyFreeEventRegistrationsPage = () => {
   // No registrations state
   if (registrations.length === 0) {
     return (
-      <div className="p-4">
+      <div className="space-y-4">
         <BackButton />
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">No Registrations Yet</h2>
@@ -295,15 +320,17 @@ const MyFreeEventRegistrationsPage = () => {
 
   // Main render
   return (
-    <div className="p-4 space-y-6">
-      <BackButton />
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900">Free Events - My RSVPs</h2>
+    <div className="space-y-2 sm:space-y-3">
+      {/* Top row: back button on left, title centered */}
+      <div className="relative flex items-center">
+        <BackButton />
+        <h2 className="absolute left-1/2 -translate-x-1/2 text-base sm:text-lg font-bold text-forest-900">
+          My RSVPs
+        </h2>
       </div>
 
       {/* Event Selector with Date Filter */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
+      <div className="bg-white rounded-lg p-4">
         <div className="space-y-3">
           {/* Combined Date Filter and Event Selector */}
           <div className="flex flex-col sm:flex-row sm:gap-4">
@@ -451,18 +478,16 @@ const MyFreeEventRegistrationsPage = () => {
             </div>
           </div>
 
-          {/* Data Retention Warning - More compact */}
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
-            <p className="text-xs text-amber-800">
-              <strong>Note:</strong> Please save your RSVPs. Events older than 2 years will be deleted.
-            </p>
-          </div>
+          {/* Data retention hint */}
+          <p className="text-xs text-forest-900">
+            Please save your RSVPs. Events older than 2 years will be deleted.
+          </p>
         </div>
       </div>
 
       {/* Selected Event Details & Registrations */}
       {selectedEventId && selectedEventRegistrations.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div>
           {/* Event Info Header */}
           {(() => {
             const selectedEvent = events.find(e => e.id === selectedEventId);
@@ -472,7 +497,7 @@ const MyFreeEventRegistrationsPage = () => {
             const eventDateTime = formatEventDateTime(eventInfo.dateTime, timeZone);
             
             return (
-              <div className="bg-gray-50 border-b border-gray-200 rounded-lg p-3 sm:p-4">
+              <div className="p-3 sm:p-4">
                 <div className="flex flex-wrap items-center gap-3 text-sm">
                   {/* Event Title */}
                   <h3 className="text-base sm:text-lg font-bold text-gray-900">
@@ -485,56 +510,60 @@ const MyFreeEventRegistrationsPage = () => {
                   </span>
                   
                   {/* Date & Time */}
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                  <div className="flex items-center gap-2 text-slate-700 min-w-0">
+                    <FaCalendarAlt className="text-forest-900 shrink-0" size={13} title="Date & Time" aria-label="Date & Time" />
                     <span>{eventDateTime.combined} ({timeZone})</span>
                   </div>
-                  
+
                   {/* Venue */}
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                  <div className="flex items-center gap-2 text-slate-700 min-w-0">
+                    <GiTheaterCurtains className="text-forest-900 shrink-0" size={15} title="Venue" aria-label="Venue" />
                     <span>{eventInfo.venue}</span>
                   </div>
 
                   {/* Address - Full width on new line if exists */}
-                  {eventInfo.address && (
-                    <div className="w-full flex items-start gap-1 text-gray-600 text-xs sm:text-sm">
-                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span>
-                        {typeof eventInfo.address === 'string' 
-                          ? eventInfo.address 
-                          : eventInfo.address.formattedAddress || 
-                            `${eventInfo.address.street || ''} ${eventInfo.address.suburb || ''} ${eventInfo.address.state || ''} ${eventInfo.address.postalCode || ''}`.trim()
-                        }
-                      </span>
-                    </div>
-                  )}
+                  {eventInfo.address && (() => {
+                    const addressText = typeof eventInfo.address === 'string'
+                      ? eventInfo.address
+                      : eventInfo.address.formattedAddress ||
+                        `${eventInfo.address.street || ''} ${eventInfo.address.suburb || ''} ${eventInfo.address.state || ''} ${eventInfo.address.postalCode || ''}`.trim();
+                    return (
+                      <div className="w-full flex items-center gap-2 text-slate-700 text-xs sm:text-sm min-w-0">
+                        <FaMapMarkedAlt className="text-forest-900 shrink-0" size={13} title="Address" aria-label="Address" />
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-slate-900 underline break-words"
+                        >
+                          {addressText}
+                        </a>
+                      </div>
+                    );
+                  })()}
 
                   {/* Organizer Info - Full width on new line */}
-                  <div className="w-full border-t border-gray-200 pt-3 mt-2">
-                    <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
-                      <div>
-                        <span className="font-medium text-gray-700">Organizer:</span> {eventInfo.organizer?.name || 'Event Organizer'}
-                      </div>
-                      {eventInfo.organizer?.phone && (
-                        <div>
-                          <span className="font-medium text-gray-700">Mobile:</span> {eventInfo.organizer.phone}
-                        </div>
-                      )}
-                      {eventInfo.organizer?.email && (
-                        <div className="break-all">
-                          <span className="font-medium text-gray-700">Email:</span> {eventInfo.organizer.email}
-                        </div>
-                      )}
+                  <div className="w-full pt-3 mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-slate-700">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FaUser className="text-forest-900 shrink-0" size={13} title="Organizer" aria-label="Organizer" />
+                      <span>{eventInfo.organizer?.name || 'Event Organizer'}</span>
                     </div>
+                    {eventInfo.organizer?.phone && (
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FaPhone className="text-forest-900 shrink-0" size={13} title="Phone" aria-label="Phone" />
+                        <a href={`tel:${eventInfo.organizer.phone}`} className="hover:text-slate-900 underline">
+                          {eventInfo.organizer.phone}
+                        </a>
+                      </div>
+                    )}
+                    {eventInfo.organizer?.email && (
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FaEnvelope className="text-forest-900 shrink-0" size={13} title="Email" aria-label="Email" />
+                        <a href={`mailto:${eventInfo.organizer.email}`} className="hover:text-slate-900 underline break-all">
+                          {eventInfo.organizer.email}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -550,7 +579,7 @@ const MyFreeEventRegistrationsPage = () => {
               const hasFormResponses = registration.formResponses && registration.formResponses.length > 0;
               
               return (
-                <div key={registration._id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div key={registration._id} className="overflow-hidden">
                   {/* Registration Header */}
                   <div className="border-b border-gray-200 p-4">
                     <div className="flex flex-wrap items-start justify-between gap-2">
