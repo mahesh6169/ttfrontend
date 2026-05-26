@@ -6,7 +6,6 @@ import React, { useEffect, Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import {
-  fetchManagedFreeEvents,
   setSelectedEvent,
   fetchEventAttendees
 } from '@/store/slices/events/checkInFreeSlice';
@@ -29,11 +28,34 @@ const CheckInFree_EventSelector = () => {
   } = useSelector((state) => state.checkInFree);
   
   const [dateFilter, setDateFilter] = React.useState('3months'); // Default to 3 months
+  const [hasAutoSelected, setHasAutoSelected] = React.useState(false);
 
-  // Load managed events on mount
+  // Auto-select the next upcoming event once after managedEvents loads.
+  // "Next" = events from today onwards, earliest dateTime wins.
+  // Runs once per mount; respects manual selection / clearing afterwards.
   useEffect(() => {
-    dispatch(fetchManagedFreeEvents());
-  }, [dispatch]);
+    if (hasAutoSelected) return;
+    if (!managedEvents || managedEvents.length === 0) return;
+    if (selectedEvent) {
+      // User already had a selection (e.g., from prior session state) — don't override.
+      setHasAutoSelected(true);
+      return;
+    }
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const upcoming = managedEvents
+      .filter((ev) => ev.dateTime && new Date(ev.dateTime) >= startOfToday)
+      .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+    if (upcoming.length > 0) {
+      const nextEvent = upcoming[0];
+      dispatch(setSelectedEvent(nextEvent));
+      dispatch(fetchEventAttendees({ eventId: nextEvent._id, page: 1, limit: 20 }));
+    }
+    setHasAutoSelected(true);
+  }, [managedEvents, selectedEvent, dispatch, hasAutoSelected]);
 
   // Format event date with timezone support
   const formatEventDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
@@ -67,7 +89,7 @@ const CheckInFree_EventSelector = () => {
 
   // Apply date filtering
   const getFilteredEvents = () => {
-    if (!managedEvents || managedEvents.length === 0) return [];
+    if (!managedEvents || managedEvents.length === 0) return { upcoming: [], past: [] };
     
     let filtered = [...managedEvents];
     
@@ -93,26 +115,67 @@ const CheckInFree_EventSelector = () => {
         break;
     }
     
-    // Sort by date (most recent first)
-    return filtered.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+    // Split into upcoming (today + future, ascending so soonest is first — matches
+    // the auto-select behavior) and past (descending, most recent first). The
+    // dropdown renders these as two visually separated groups.
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const upcoming = filtered
+      .filter((ev) => new Date(ev.dateTime) >= startOfToday)
+      .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+    const past = filtered
+      .filter((ev) => new Date(ev.dateTime) < startOfToday)
+      .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+
+    return { upcoming, past };
   };
 
-  const filteredEvents = getFilteredEvents();
+  const { upcoming: upcomingEvents, past: pastEvents } = getFilteredEvents();
+  const filteredCount = upcomingEvents.length + pastEvents.length;
+
+  const renderEventOption = (event) => {
+    const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
+    return (
+      <ListboxOption
+        key={event._id}
+        value={event._id}
+        className={({ active }) =>
+          `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
+        }
+      >
+        {({ selected }) => (
+          <>
+            <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+              {event.eventCode} - {event.title} - {eventDateTime.date} - {eventDateTime.time}
+            </span>
+            {selected && (
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </span>
+            )}
+          </>
+        )}
+      </ListboxOption>
+    );
+  };
 
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-        <div className="h-10 bg-gray-200 rounded w-full"></div>
+        <div className="h-4 bg-slate-200 rounded w-32 mb-2"></div>
+        <div className="h-10 bg-slate-200 rounded w-full"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-red-600 text-sm">
-        Error loading events: {error}
-      </div>
+      <p className="text-sm text-red-600">
+        Couldn't load your events: {error}
+      </p>
     );
   }
 
@@ -213,45 +276,27 @@ const CheckInFree_EventSelector = () => {
                       </>
                     )}
                   </ListboxOption>
-                  {filteredEvents.length === 0 ? (
+                  {filteredCount === 0 ? (
                     <div className="px-4 py-2.5 text-sm text-slate-400">
                       No events found
                     </div>
                   ) : (
-                    filteredEvents.map((event) => {
-                      const eventDateTime = formatEventDateTime(event.dateTime, event.timeZone);
-                      return (
-                        <ListboxOption
-                          key={event._id}
-                          value={event._id}
-                          className={({ active }) =>
-                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
-                          }
-                        >
-                          {({ selected }) => (
-                            <>
-                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                {event.eventCode} - {event.title} - {eventDateTime.date} - {eventDateTime.time}
-                              </span>
-                              {selected && (
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
-                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </ListboxOption>
-                      );
-                    })
+                    <>
+                      {upcomingEvents.map(renderEventOption)}
+                      {upcomingEvents.length > 0 && pastEvents.length > 0 && (
+                        <div className="mt-1 border-t border-slate-200 px-4 pt-2 pb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+                          Past events
+                        </div>
+                      )}
+                      {pastEvents.map(renderEventOption)}
+                    </>
                   )}
                 </ListboxOptions>
               </Transition>
             </div>
           </Listbox>
 
-          {filteredEvents.length === 0 && managedEvents.length > 0 && (
+          {filteredCount === 0 && managedEvents.length > 0 && (
             <p className="text-xs text-gray-500 mt-1">
               No events in selected range. Try a different date filter.
             </p>
@@ -259,12 +304,10 @@ const CheckInFree_EventSelector = () => {
         </div>
       </div>
 
-      {/* Data Retention Warning - More compact */}
-      <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
-        <p className="text-xs text-amber-800">
-          <strong>Note:</strong> Events older than 2 years will be deleted.
-        </p>
-      </div>
+      {/* Data retention hint */}
+      <p className="text-xs text-forest-900">
+        Events older than 2 years will be deleted.
+      </p>
     </div>
   );
 };

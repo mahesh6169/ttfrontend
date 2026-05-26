@@ -2,24 +2,24 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { formatInTimeZone } from 'date-fns-tz';
 import Link from 'next/link';
+import jsPDF from 'jspdf';
+import { FaDownload } from 'react-icons/fa';
+import axios from '@/utils/axiosConfig';
 
 // Back button component
 const BackButton = () => (
-  <div className="mb-4">
-    <Link
-      href="/users/profile"
-      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-    >
-      <span>&lt;</span>
-      <span>back</span>
-    </Link>
-  </div>
+  <Link
+    href="/users/profile"
+    className="inline-flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
+  >
+    <span>&lt;</span>
+    <span>back</span>
+  </Link>
 );
 
 // Components
@@ -30,29 +30,154 @@ import CheckInFree_AttendeeList from '@/components/events/checkin/checkInFree_At
 import CheckInFree_VirtualizedAttendeeList from '@/components/events/checkin/checkInFree_VirtualizedAttendeeList';
 
 // Redux
-import { clearCheckInData } from '@/store/slices/events/checkInFreeSlice';
+import { clearCheckInData, fetchManagedFreeEvents } from '@/store/slices/events/checkInFreeSlice';
 
 const CheckInFreePage = () => {
   const dispatch = useDispatch();
-  const { selectedEvent, attendees, pagination } = useSelector((state) => state.checkInFree);
-  
+  const { selectedEvent, attendees, pagination, managedEvents, loading } = useSelector((state) => state.checkInFree);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+
+  // Dispatch the fetch from the page (not from EventSelector) so it runs even when
+  // we'd otherwise early-return into the empty state. Without this, the empty-state
+  // guard below would fire on first paint (loading:false, managedEvents:[]) before
+  // any fetch had a chance to populate the list.
+  useEffect(() => {
+    dispatch(fetchManagedFreeEvents()).finally(() => setHasAttemptedLoad(true));
+  }, [dispatch]);
+
   // Use virtualized list for large datasets
   const useVirtualized = pagination.totalCount > 50;
 
-  // Format event date with timezone support
-  const formatEventDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
+  // Build a minimalist PDF attendee list for the selected event.
+  // One row per attendee; Reg No / Contact / Form info repeat only on the
+  // first row of each registration (blanks below to keep the table compact).
+  const handleSavePDF = async () => {
+    if (!selectedEvent || isDownloading) return;
+    setIsDownloading(true);
     try {
-      const date = formatInTimeZone(dateTime, timeZone, 'dd/MM/yyyy');
-      const time = formatInTimeZone(dateTime, timeZone, 'h:mm a');
-      return { date, time, combined: `${date} at ${time}` };
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      const fallbackDate = new Date(dateTime);
-      return {
-        date: fallbackDate.toLocaleDateString(),
-        time: fallbackDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        combined: fallbackDate.toLocaleString()
+      // Fetch all registrations (bypass pagination)
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${selectedEvent._id}/free/attendees?limit=10000`,
+        { withCredentials: true }
+      );
+      const registrations = response.data?.registrations || [];
+
+      if (registrations.length === 0) {
+        toast.info('No attendees to export');
+        return;
+      }
+
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const leftMargin = 10;
+      const rightMargin = 10;
+
+      let y = 15;
+
+      // Event title header
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text(selectedEvent.title, pageWidth / 2, y, { align: 'center' });
+      y += 8;
+
+      // Column layout (Status removed; more room redistributed to attendee + info)
+      const cols = {
+        regNo:    { x: leftMargin,        width: 25 },
+        contact:  { x: leftMargin + 25,   width: 25 },
+        attendee: { x: leftMargin + 50,   width: 45 },
+        info:     { x: leftMargin + 95,   width: pageWidth - rightMargin - (leftMargin + 95) },
       };
+
+      const drawHeader = () => {
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'bold');
+        doc.text('Reg No', cols.regNo.x, y);
+        doc.text('Contact', cols.contact.x, y);
+        doc.text('Attendee', cols.attendee.x, y);
+        doc.text('Additional Information', cols.info.x, y);
+        y += 2;
+        doc.setDrawColor(120);
+        doc.line(leftMargin, y, pageWidth - rightMargin, y);
+        y += 4;
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(8);
+      };
+
+      drawHeader();
+
+      // 8pt font in jsPDF renders at ~3.25mm per line. Slot at 3.5mm leaves a sliver
+      // of padding without inflating gaps. Use doc.setLineHeightFactor in tandem so
+      // wrapped multi-line text uses the same compact spacing.
+      doc.setLineHeightFactor(1.05);
+      const lineHeight = 3.5;
+      const attendeeRowGap = 0.5;
+      const answerGap = 1; // space between answer blocks in the Info column
+      const blockTrailingGap = 2; // space below the registration block, before the divider
+      const dividerTrailingGap = 4; // space below the divider, before the next registration
+
+      for (const reg of registrations) {
+        const attendeesList = reg.attendees || [];
+        const responses = (reg.formResponses || []).filter((r) => r && r.response);
+
+        // Pre-compute answer blocks (each answer = its own row, may wrap to multiple lines)
+        const answerBlocks = responses.map((r) => {
+          const text = String(r.response || '');
+          const lines = doc.splitTextToSize(text, cols.info.width);
+          return { lines, height: lines.length * lineHeight };
+        });
+
+        // Height needed for attendees column and answers column
+        const attendeesHeight = attendeesList.length > 0
+          ? attendeesList.length * lineHeight + (attendeesList.length - 1) * attendeeRowGap
+          : 0;
+        const answersHeight = answerBlocks.reduce(
+          (sum, b, i) => sum + b.height + (i < answerBlocks.length - 1 ? answerGap : 0),
+          0
+        );
+        const blockHeight = Math.max(attendeesHeight, answersHeight, lineHeight);
+
+        // Page break before drawing the registration
+        if (y + blockHeight + blockTrailingGap > pageHeight - 10) {
+          doc.addPage();
+          y = 15;
+          drawHeader();
+        }
+
+        // Reg No + Contact on the top row
+        doc.text(reg.registrationNumber || '', cols.regNo.x, y);
+        doc.text(reg.mobile || '', cols.contact.x, y);
+
+        // Attendees stacked vertically in their column
+        let attendeeY = y;
+        for (const att of attendeesList) {
+          doc.text(att.name || '', cols.attendee.x, attendeeY);
+          attendeeY += lineHeight + attendeeRowGap;
+        }
+
+        // Answers stacked vertically in info column — each answer own row, gap below
+        let answerY = y;
+        for (const block of answerBlocks) {
+          doc.text(block.lines, cols.info.x, answerY);
+          answerY += block.height + answerGap;
+        }
+
+        y += blockHeight + blockTrailingGap;
+
+        // Subtle separator between registrations
+        doc.setDrawColor(220);
+        doc.line(leftMargin, y, pageWidth - rightMargin, y);
+        y += dividerTrailingGap;
+      }
+
+      const safeTitle = (selectedEvent.title || 'attendees').replace(/[^a-z0-9\- ]/gi, '').trim() || 'attendees';
+      doc.save(`${safeTitle}.pdf`);
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      toast.error('Failed to generate PDF');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -63,66 +188,78 @@ const CheckInFreePage = () => {
     };
   }, [dispatch]);
 
+  // Scroll to top after managed events load so the back button + heading are visible
+  useEffect(() => {
+    if (!loading) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [loading]);
+
+  // Empty state: host has no free events to manage.
+  // Only show AFTER a fetch has actually resolved — otherwise the initial render
+  // (loading:false, managedEvents:[]) would falsely trigger this for everyone.
+  if (hasAttemptedLoad && !loading && (!managedEvents || managedEvents.length === 0)) {
+    return (
+      <div className="space-y-4">
+        <div className="relative flex items-center">
+          <BackButton />
+          <h2 className="absolute left-1/2 -translate-x-1/2 text-base sm:text-lg font-bold text-forest-900">
+            RSVP Events Check-In
+          </h2>
+        </div>
+        <div className="text-center py-12">
+          <h3 className="text-base sm:text-lg font-bold text-forest-900 mb-2">No events to check in</h3>
+          <p className="text-sm text-slate-600 mb-6">You haven't created any RSVP events yet.</p>
+          <Link
+            href="/events/add"
+            className="inline-flex items-center px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded-lg shadow font-semibold text-sm md:text-base transition-colors"
+          >
+            Create an Event
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="space-y-2 sm:space-y-3">
-        {/* Back Button */}
-        <BackButton />
-
-        {/* Page Header - Compact */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Free Event Check-In</h2>
+        {/* Top row: back button on left, title centered */}
+        <div className="relative flex items-center">
+          <BackButton />
+          <h2 className="absolute left-1/2 -translate-x-1/2 text-base sm:text-lg font-bold text-forest-900">
+            RSVP Events Check-In
+          </h2>
         </div>
 
         {/* Event Selector - Reduced padding */}
-        <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+        <div className="bg-white rounded-lg p-3 sm:p-4">
           <CheckInFree_EventSelector />
         </div>
 
-        {/* Selected Event Details - Compact */}
+        {/* Statistics - Compact spacing — Save to PDF inlined in the same row (right-aligned desktop, below center on mobile) */}
         {selectedEvent && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              {/* Event Title */}
-              <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                {selectedEvent.title}
-              </h3>
-              
-              {/* Event Code */}
-              <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
-                {selectedEvent.eventCode || selectedEvent._id}
-              </span>
-              
-              {/* Date & Time */}
-              <div className="flex items-center gap-1 text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span>{formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone).combined} ({selectedEvent.timeZone})</span>
-              </div>
-              
-              {/* Venue */}
-              <div className="flex items-center gap-1 text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>{selectedEvent.venue}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Statistics - Compact spacing */}
-        {selectedEvent && (
-          <CheckInFree_CheckInStats />
+          <CheckInFree_CheckInStats
+            rightSlot={
+              <button
+                type="button"
+                onClick={handleSavePDF}
+                disabled={isDownloading || pagination.totalCount === 0}
+                title={pagination.totalCount === 0 ? 'No attendees to export yet' : undefined}
+                className="flex items-center gap-1.5 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1.5 rounded-md font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-teal-700"
+              >
+                <FaDownload size={12} />
+                {isDownloading ? 'Generating...' : 'Save to PDF'}
+              </button>
+            }
+          />
         )}
 
         {/* Attendee List - Only show when event is selected */}
         {selectedEvent && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div>
             {/* Search Bar - No header needed */}
-            <div className="p-3 border-b bg-gray-50">
+            <div className="p-3">
               <CheckInFree_SearchBar />
             </div>
             

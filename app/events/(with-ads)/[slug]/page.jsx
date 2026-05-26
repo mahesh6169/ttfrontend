@@ -1,6 +1,6 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
 import { format } from 'date-fns';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import EventDetailSkeleton from '@/components/events/eventcomponents/EventDetailSkeleton';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -145,8 +145,11 @@ export default async function EventSlugPage({ params }) {
   const eventId = extractIdFromSlug(slug);
   
   if (!eventId) {
+    // Container shell matches /events/views/[id] so the loading state sits in the
+    // same vertical slot on both pages — avoids the spinner "jumping" position
+    // when the slug page hands off to the views page via meta-refresh.
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-[300px]">
         <div className="text-center">
           <p className="text-gray-600">Event not found</p>
           <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
@@ -156,12 +159,13 @@ export default async function EventSlugPage({ params }) {
     );
   }
 
-  // Use meta refresh instead of JavaScript redirect
-  // This allows crawlers to read the meta tags before following the redirect
+  // Use meta refresh instead of JavaScript redirect so crawlers can read meta tags
+  // before following the redirect. The skeleton matches the post-redirect views
+  // page shape, so the layout stays put during the handoff.
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <LoadingSpinner />
+    <>
+      <EventDetailSkeleton />
       <meta httpEquiv="refresh" content={`3; url=/events/views/${eventId}`} />
-    </div>
+    </>
   );
 }
