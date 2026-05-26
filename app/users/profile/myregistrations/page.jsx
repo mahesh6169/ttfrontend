@@ -6,8 +6,9 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import axios from '@/utils/axiosConfig';
-import { FaCalendarAlt, FaMapMarkedAlt, FaUser, FaPhone, FaEnvelope } from 'react-icons/fa';
+import { FaClock, FaCalendarAlt, FaMapMarkedAlt, FaUser, FaPhone, FaEnvelope } from 'react-icons/fa';
 import { GiTheaterCurtains } from 'react-icons/gi';
+import VerticalScrollSlider from '@/components/shared/VerticalScrollSlider';
 
 const DATE_FILTER_OPTIONS = [
   { value: '3months', label: 'Last 3 months' },
@@ -497,56 +498,72 @@ const MyFreeEventRegistrationsPage = () => {
             const eventDateTime = formatEventDateTime(eventInfo.dateTime, timeZone);
             
             return (
-              <div className="p-3 sm:p-4">
-                <div className="flex flex-wrap items-center gap-3 text-sm">
-                  {/* Event Title */}
+              <div className="p-3 sm:p-4 space-y-3 sm:space-y-2 text-sm">
+                {/* Title + Event Code chip — inline on both mobile and desktop */}
+                <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-base sm:text-lg font-bold text-gray-900">
                     {eventInfo.title}
                   </h3>
-                  
-                  {/* Event Code */}
                   <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
                     {eventInfo.eventCode || selectedEvent?.eventCode}
                   </span>
-                  
-                  {/* Date & Time */}
-                  <div className="flex items-center gap-2 text-slate-700 min-w-0">
-                    <FaCalendarAlt className="text-forest-900 shrink-0" size={13} title="Date & Time" aria-label="Date & Time" />
-                    <span>{eventDateTime.combined} ({timeZone})</span>
-                  </div>
+                </div>
 
-                  {/* Venue */}
-                  <div className="flex items-center gap-2 text-slate-700 min-w-0">
-                    <GiTheaterCurtains className="text-forest-900 shrink-0" size={15} title="Venue" aria-label="Venue" />
-                    <span>{eventInfo.venue}</span>
-                  </div>
-
-                  {/* Address - Full width on new line if exists */}
-                  {eventInfo.address && (() => {
-                    const addressText = typeof eventInfo.address === 'string'
-                      ? eventInfo.address
-                      : eventInfo.address.formattedAddress ||
-                        `${eventInfo.address.street || ''} ${eventInfo.address.suburb || ''} ${eventInfo.address.state || ''} ${eventInfo.address.postalCode || ''}`.trim();
-                    return (
-                      <div className="w-full flex items-center gap-2 text-slate-700 text-xs sm:text-sm min-w-0">
-                        <FaMapMarkedAlt className="text-forest-900 shrink-0" size={13} title="Address" aria-label="Address" />
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-slate-900 underline break-words"
-                        >
-                          {addressText}
-                        </a>
+                {/* Event details — 2-col grid (desktop). Mobile: time+date paired, venue + address each own row. */}
+                {(() => {
+                  const addressText = eventInfo.address
+                    ? (typeof eventInfo.address === 'string'
+                        ? eventInfo.address
+                        : eventInfo.address.formattedAddress ||
+                          `${eventInfo.address.street || ''} ${eventInfo.address.suburb || ''} ${eventInfo.address.state || ''} ${eventInfo.address.postalCode || ''}`.trim())
+                    : null;
+                  return (
+                    <div className="space-y-2 text-slate-700">
+                      {/* Row 1: Time + Date (paired both views) */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FaClock className="text-forest-900 shrink-0" size={13} title="Time" aria-label="Time" />
+                          <span>{eventDateTime.time} ({timeZone})</span>
+                        </div>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FaCalendarAlt className="text-forest-900 shrink-0" size={13} title="Date" aria-label="Date" />
+                          <span>{eventDateTime.date}</span>
+                        </div>
                       </div>
-                    );
-                  })()}
+                      {/* Row 2: Venue + Address (own row mobile, inline desktop hugging content) */}
+                      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-4 sm:gap-y-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <GiTheaterCurtains className="text-forest-900 shrink-0" size={15} title="Venue" aria-label="Venue" />
+                          <span>{eventInfo.venue}</span>
+                        </div>
+                        {addressText && (
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FaMapMarkedAlt className="text-forest-900 shrink-0" size={13} title="Address" aria-label="Address" />
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-slate-900 underline break-words"
+                            >
+                              {addressText}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
-                  {/* Organizer Info - Full width on new line */}
-                  <div className="w-full pt-3 mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-slate-700">
+                {/* Organiser block — subtle separator above */}
+                <div className="pt-3 mt-2 border-t border-slate-200 space-y-2">
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Organiser
+                  </div>
+                  {/* Name + Phone paired both views, Email full-width mobile / inline desktop (hugs content) */}
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-x-4 gap-y-2 text-slate-700">
                     <div className="flex items-center gap-2 min-w-0">
-                      <FaUser className="text-forest-900 shrink-0" size={13} title="Organizer" aria-label="Organizer" />
-                      <span>{eventInfo.organizer?.name || 'Event Organizer'}</span>
+                      <FaUser className="text-forest-900 shrink-0" size={13} title="Organiser" aria-label="Organiser" />
+                      <span className="truncate">{eventInfo.organizer?.name || 'Event Organizer'}</span>
                     </div>
                     {eventInfo.organizer?.phone && (
                       <div className="flex items-center gap-2 min-w-0">
@@ -557,7 +574,7 @@ const MyFreeEventRegistrationsPage = () => {
                       </div>
                     )}
                     {eventInfo.organizer?.email && (
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="col-span-2 sm:col-auto flex items-center gap-2 min-w-0">
                         <FaEnvelope className="text-forest-900 shrink-0" size={13} title="Email" aria-label="Email" />
                         <a href={`mailto:${eventInfo.organizer.email}`} className="hover:text-slate-900 underline break-all">
                           {eventInfo.organizer.email}
@@ -571,18 +588,22 @@ const MyFreeEventRegistrationsPage = () => {
           })()}
 
           {/* Registration Details */}
-          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-            <h4 className="text-base sm:text-lg font-semibold text-gray-900">Your Registration Details</h4>
-            
-            {selectedEventRegistrations.map((registration, index) => {
+          <div className="mt-4 sm:mt-6">
+            <div className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              Registration Details
+            </div>
+
+            <div className="space-y-3 sm:space-y-4">
+              {selectedEventRegistrations.map((registration, index) => {
               const isExpanded = expandedRegistrations.has(registration._id);
               const hasFormResponses = registration.formResponses && registration.formResponses.length > 0;
               
               return (
                 <div key={registration._id} className="overflow-hidden">
-                  {/* Registration Header */}
-                  <div className="border-b border-gray-200 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
+                  {/* Registration Header — no chrome, all rows on the same surface */}
+                  <div className="p-4">
+                    {/* Top row: Reg Number + status pill (left) · Cancel link (right) */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold text-slate-900 text-sm sm:text-base">
                           {registration.registrationNumber}
@@ -604,19 +625,10 @@ const MyFreeEventRegistrationsPage = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs sm:text-sm mt-2">
-                      <span className="font-medium text-slate-700">
-                        {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
-                      </span>
-                      <span className="text-slate-400">•</span>
-                      <span className="text-slate-600">
-                        Registered: {new Date(registration.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
                   </div>
-                  
-                  {/* Tab Buttons */}
-                  <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
+
+                  {/* Tab Bar — same surface as header, no separator */}
+                  <div className="px-4 pb-3">
                     <div className="flex gap-1 sm:gap-2">
                       <button
                         onClick={() => handleTabClick(registration._id, 'attendees')}
@@ -628,8 +640,7 @@ const MyFreeEventRegistrationsPage = () => {
                           }
                         `}
                       >
-                        <span className="sm:hidden">Attendees</span>
-                        <span className="hidden sm:inline">View Attendees</span>
+                        Attendees ({registration.attendees.length})
                       </button>
                       {hasFormResponses && (
                         <button
@@ -642,51 +653,52 @@ const MyFreeEventRegistrationsPage = () => {
                             }
                           `}
                         >
-                          <span className="sm:hidden">Attendee Info</span>
-                          <span className="hidden sm:inline">View Attendee Information</span>
+                          Information
                         </button>
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Tab Content */}
                   {isExpanded && (
-                    <div className="border-t border-gray-200">
+                    <div className="mb-4">
                       {/* Attendees Tab */}
                       {(activeTab[registration._id] || 'attendees') === 'attendees' && (
-                        <div className="p-3 sm:p-4 bg-white">
-                          <div className="space-y-2">
-                            {registration.attendees.map((attendee, idx) => (
-                              <div key={idx} className="border-b last:border-0 pb-2 last:pb-0">
-                                <div className="text-sm sm:text-base font-medium text-gray-900">
-                                  {attendee.name}
-                                </div>
-                                {attendee.age && (
-                                  <div className="text-xs sm:text-sm text-gray-600">
-                                    Age: {attendee.age}
+                        <div className="px-4 pb-3">
+                          <VerticalScrollSlider maxHeightClass="max-h-44 md:max-h-60">
+                            <div className="space-y-2">
+                              {registration.attendees.map((attendee, idx) => (
+                                <div key={idx} className="border-b last:border-0 pb-2 last:pb-0">
+                                  <div className="text-sm sm:text-base font-medium text-gray-900">
+                                    {attendee.name}
                                   </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                                  {attendee.age && (
+                                    <div className="text-xs sm:text-sm text-gray-600">
+                                      Age: {attendee.age}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </VerticalScrollSlider>
                         </div>
                       )}
-                      
-                      {/* Attendee Information Tab */}
+
+                      {/* Information Tab */}
                       {activeTab[registration._id] === 'attendeeInfo' && hasFormResponses && (
-                        <div className="p-3 sm:p-4 bg-white">
-                          <div className="space-y-3">
-                            {registration.formResponses.map((response, idx) => (
-                              <div key={idx} className="border-b last:border-0 pb-3 last:pb-0">
-                                <div className="font-medium text-gray-700 text-sm mb-1">
-                                  {response.fieldName}:
+                        <div className="px-4 pb-3">
+                          <VerticalScrollSlider maxHeightClass="max-h-48 md:max-h-64">
+                            <div className="space-y-3 text-sm">
+                              {registration.formResponses.map((response, idx) => (
+                                <div key={idx} className="border-b last:border-0 pb-3 last:pb-0">
+                                  <div className="font-semibold text-gray-800 mb-1">{response.fieldName}:</div>
+                                  <div className="text-gray-600 whitespace-pre-line break-words pl-4">
+                                    {response.response}
+                                  </div>
                                 </div>
-                                <div className="text-gray-600 text-sm whitespace-pre-line break-words pl-4">
-                                  {response.response}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                              ))}
+                            </div>
+                          </VerticalScrollSlider>
                         </div>
                       )}
                     </div>
@@ -694,6 +706,7 @@ const MyFreeEventRegistrationsPage = () => {
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
       )}
