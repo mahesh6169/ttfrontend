@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEventById, clearSelectedEvent, clearError } from '@/store/slices/events/eventSlice';
 import { FaShareAlt } from 'react-icons/fa';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import EventDetailSkeleton from '@/components/events/eventcomponents/EventDetailSkeleton';
 import SingleEventCard from '@/components/events/eventcomponents/SingleEventCard';
 import SendMessage from '@/components/chat/SendMessage';
 import ReportLink from '@/components/support/ReportLink';
@@ -60,11 +60,7 @@ const EventDetail = () => {
   }, [dispatch, id]);
 
   if ((status === 'idle' || status === 'loading') && !selectedEvent) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <LoadingSpinner />
-      </div>
-    );
+    return <EventDetailSkeleton />;
   }
 
   if (status === 'failed') {

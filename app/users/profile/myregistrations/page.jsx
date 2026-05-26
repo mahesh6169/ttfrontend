@@ -99,6 +99,14 @@ const MyFreeEventRegistrationsPage = () => {
     fetchAllMyRegistrations();
   }, []);
 
+  // After loading completes, scroll to top so the back button is visible
+  // (covers the empty/error states where scroll position from navigation could hide it)
+  useEffect(() => {
+    if (!loading) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [loading]);
+
   // Filter registrations when event is selected
   useEffect(() => {
     if (selectedEventId && registrations.length > 0) {
@@ -308,12 +316,15 @@ const MyFreeEventRegistrationsPage = () => {
     return (
       <div className="space-y-4">
         <BackButton />
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">No Registrations Yet</h2>
-          <p className="text-gray-600 mb-4">You haven't registered for any free events yet.</p>
-          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        <div className="text-center py-12">
+          <h2 className="text-base sm:text-lg font-bold text-forest-900 mb-2">No registrations yet</h2>
+          <p className="text-sm text-slate-600 mb-6">You haven't registered for any free events.</p>
+          <Link
+            href="/events"
+            className="inline-flex items-center px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded-lg shadow font-semibold text-sm md:text-base transition-colors"
+          >
             Browse Events
-          </button>
+          </Link>
         </div>
       </div>
     );

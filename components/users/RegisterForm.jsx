@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CURRENT_TERMS_VERSION } from '@/constants/terms';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import {
   sanitizeInput,
   validateAuthForm,
@@ -47,6 +48,8 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaTokenTime, setCaptchaTokenTime] = useState(null);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [suburbValidationError, setSuburbValidationError] = useState('');
   
   // Password validation checks
@@ -414,20 +417,31 @@ const Register = () => {
             <label htmlFor="password" className="block font-medium">
               Password <span className="text-red-500">*</span>
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              onFocus={() => setShowPasswordHint(true)}
-              onBlur={() => setShowPasswordHint(false)}
-              className={`w-full p-2 border rounded ${
-                errors.password ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Enter your password"
-              autoComplete="new-password"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleChange}
+                onFocus={() => setShowPasswordHint(true)}
+                onBlur={() => setShowPasswordHint(false)}
+                className={`w-full p-2 pr-10 border rounded ${
+                  errors.password ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter your password"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-700"
+              >
+                {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">{errors.password}</p>
             )}
@@ -466,20 +480,31 @@ const Register = () => {
             <label htmlFor="confirmPassword" className="block font-medium">
               Confirm Password <span className="text-red-500">*</span>
             </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              onFocus={() => setShowPasswordHint(true)}
-              onBlur={() => setShowPasswordHint(false)}
-              className={`w-full p-2 border rounded ${
-                errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Confirm your password"
-              autoComplete="new-password"
-            />
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                onFocus={() => setShowPasswordHint(true)}
+                onBlur={() => setShowPasswordHint(false)}
+                className={`w-full p-2 pr-10 border rounded ${
+                  errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Confirm your password"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                className="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-700"
+              >
+                {showConfirmPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+              </button>
+            </div>
             {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
             )}

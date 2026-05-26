@@ -728,11 +728,11 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Description Section */}
       {event.description && (
         <div className="my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-1 border-b border-slate-200 mb-0">About This Event</h3>
+          <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">About This Event</h3>
           <div className="relative">
             <div
               ref={descriptionRef}
-              className={`text-sm sm:text-base text-slate-700 leading-snug whitespace-pre-wrap -mt-1 ${
+              className={`text-sm sm:text-base text-slate-700 leading-snug whitespace-pre-wrap ${
                 descriptionExpanded ? '' : 'line-clamp-[20]'
               }`}
             >

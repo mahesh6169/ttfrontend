@@ -30,12 +30,21 @@ import CheckInFree_AttendeeList from '@/components/events/checkin/checkInFree_At
 import CheckInFree_VirtualizedAttendeeList from '@/components/events/checkin/checkInFree_VirtualizedAttendeeList';
 
 // Redux
-import { clearCheckInData } from '@/store/slices/events/checkInFreeSlice';
+import { clearCheckInData, fetchManagedFreeEvents } from '@/store/slices/events/checkInFreeSlice';
 
 const CheckInFreePage = () => {
   const dispatch = useDispatch();
-  const { selectedEvent, attendees, pagination } = useSelector((state) => state.checkInFree);
+  const { selectedEvent, attendees, pagination, managedEvents, loading } = useSelector((state) => state.checkInFree);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+
+  // Dispatch the fetch from the page (not from EventSelector) so it runs even when
+  // we'd otherwise early-return into the empty state. Without this, the empty-state
+  // guard below would fire on first paint (loading:false, managedEvents:[]) before
+  // any fetch had a chance to populate the list.
+  useEffect(() => {
+    dispatch(fetchManagedFreeEvents()).finally(() => setHasAttemptedLoad(true));
+  }, [dispatch]);
 
   // Use virtualized list for large datasets
   const useVirtualized = pagination.totalCount > 50;
@@ -179,6 +188,39 @@ const CheckInFreePage = () => {
     };
   }, [dispatch]);
 
+  // Scroll to top after managed events load so the back button + heading are visible
+  useEffect(() => {
+    if (!loading) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [loading]);
+
+  // Empty state: host has no free events to manage.
+  // Only show AFTER a fetch has actually resolved — otherwise the initial render
+  // (loading:false, managedEvents:[]) would falsely trigger this for everyone.
+  if (hasAttemptedLoad && !loading && (!managedEvents || managedEvents.length === 0)) {
+    return (
+      <div className="space-y-4">
+        <div className="relative flex items-center">
+          <BackButton />
+          <h2 className="absolute left-1/2 -translate-x-1/2 text-base sm:text-lg font-bold text-forest-900">
+            RSVP Events Check-In
+          </h2>
+        </div>
+        <div className="text-center py-12">
+          <h3 className="text-base sm:text-lg font-bold text-forest-900 mb-2">No events to check in</h3>
+          <p className="text-sm text-slate-600 mb-6">You haven't created any RSVP events yet.</p>
+          <Link
+            href="/events/add"
+            className="inline-flex items-center px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded-lg shadow font-semibold text-sm md:text-base transition-colors"
+          >
+            Create an Event
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="space-y-2 sm:space-y-3">
@@ -202,8 +244,9 @@ const CheckInFreePage = () => {
               <button
                 type="button"
                 onClick={handleSavePDF}
-                disabled={isDownloading}
-                className="flex items-center gap-1.5 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1.5 rounded-md font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isDownloading || pagination.totalCount === 0}
+                title={pagination.totalCount === 0 ? 'No attendees to export yet' : undefined}
+                className="flex items-center gap-1.5 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1.5 rounded-md font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-teal-700"
               >
                 <FaDownload size={12} />
                 {isDownloading ? 'Generating...' : 'Save to PDF'}

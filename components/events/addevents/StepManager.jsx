@@ -1598,6 +1598,15 @@ const handleAddAnother = useCallback(() => {
                 >
                   ← Previous
                 </button>
+              ) : allowCancel ? (
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={isLoading}
+                  className="text-sm text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
               ) : (
                 <div></div>
               )}
