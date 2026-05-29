@@ -2,14 +2,15 @@ export async function GET() {
   const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
   
   const staticPages = [
-    { url: '' },
-    { url: '/listings' },
-    { url: '/events' },
-    { url: '/threads' },
-    { url: '/discountcode' },
-    { url: '/support/contact' },
-    { url: '/support/terms' },
-    { url: '/support/privacy' },
+    { url: '', priority: '1.0', changefreq: 'daily' },
+    { url: '/tickets', priority: '0.9', changefreq: 'weekly' },
+    { url: '/listings', priority: '0.8', changefreq: 'daily' },
+    { url: '/events', priority: '0.8', changefreq: 'daily' },
+    { url: '/threads', priority: '0.7', changefreq: 'daily' },
+    { url: '/discountcode', priority: '0.7', changefreq: 'weekly' },
+    { url: '/support/contact', priority: '0.4', changefreq: 'yearly' },
+    { url: '/support/terms', priority: '0.3', changefreq: 'yearly' },
+    { url: '/support/privacy', priority: '0.3', changefreq: 'yearly' },
   ];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -17,6 +18,8 @@ export async function GET() {
 ${staticPages.map(page => `  <url>
     <loc>${siteUrl}${page.url}</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
   </url>`).join('\n')}
 </urlset>`;
 

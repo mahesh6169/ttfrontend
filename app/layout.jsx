@@ -27,12 +27,12 @@ export const metadata = {
   
   // GOOGLE SEARCH RESULTS - Primary title shown in search results
   title: {
-    default: `Desify – Indian Classifieds, Events & Community Forum in Australia`,
+    default: `Australia's Indian Community Platform`,
     template: `%s | Desify`,
   },
   
   // GOOGLE SEARCH RESULTS - Description shown below title in search results
-  description: `Post free ads, find services & events in Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast. Connect with Indian communities across all Australian cities.`,
+  description: `Sell & buy listings, business directory, browse Indian events, sell tickets, find deals, join forums — Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast.`,
   
   // METADATA - Who created the website
   authors: [{ name: siteName }],
@@ -61,8 +61,8 @@ export const metadata = {
   
   // SOCIAL MEDIA SHARING - WhatsApp, Facebook, LinkedIn previews
   openGraph: {
-    title: `Classifieds | Events | Deals | Community`, // Title in WhatsApp/FB preview
-    description: `Post ads. Host events. Find deals. Ask community.`, // Description in preview
+    title: `Australia's Indian Community Platform.`, // Title in WhatsApp/FB preview
+    description: `Sell & buy listings, business directory, browse or host events, sell tickets, share deals.`, // Description in preview
     url: siteUrl,
     siteName: siteName,
     images: [
@@ -70,7 +70,7 @@ export const metadata = {
         url: defaultOgImage,
         width: 1200,
         height: 630,
-        alt: `Classifieds | Events | Deals | Community`,
+        alt: `Australia's Indian Community Platform.`,
       }
     ],
     locale: 'en_AU',
@@ -80,8 +80,8 @@ export const metadata = {
   // TWITTER/X SHARING - How your site appears when shared on Twitter/X
   twitter: {
     card: 'summary_large_image',
-    title: `Classifieds | Events | Deals | Community`,
-    description: `Post ads. Host events. Find deals. Ask community.`,
+    title: `Australia's Indian Community Platform.`,
+    description: `Sell & buy listings, business directory, browse or host events, sell tickets, share deals.`,
     images: [defaultOgImage],
   },
   
@@ -111,7 +111,7 @@ const ParentLayout = ({ children }) => {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: siteName,
-    description: 'Post free ads, find services & events in Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast. Connect with Indian communities across all Australian cities.',
+    description: 'Sell & buy listings, business directory, browse Indian events, sell tickets, find deals, join forums — Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast.',
     url: siteUrl,
     // Tells Google about your search functionality
     potentialAction: {
@@ -133,7 +133,8 @@ const ParentLayout = ({ children }) => {
     '@type': 'Organization',
     '@id': `${siteUrl}/#organization`,
     name: siteName,
-    description: 'Post free ads, find services & events in Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast. Connect with Indian communities across all Australian cities.',
+    legalName: 'NEXO GROUP PTY LTD',
+    description: 'Sell & buy listings, business directory, browse Indian events, sell tickets, find deals, join forums — Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast.',
     url: siteUrl,
     logo: {
       '@type': 'ImageObject',
@@ -145,11 +146,14 @@ const ParentLayout = ({ children }) => {
     areaServed: {
       '@type': 'Country',
       name: 'Australia'
-    }
+    },
+    sameAs: [
+      'https://www.facebook.com/desifyau/',
+    ],
   };
 
   return (
-    <html lang="en">
+    <html lang="en-AU">
       <head>
         <Script
           id="json-ld-website"
