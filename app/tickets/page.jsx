@@ -1,11 +1,61 @@
-'use client';
-
 import Link from 'next/link';
 import PostPaidEventButton from '@/components/buttons/PostPaidEventButton';
+
+const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
+const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
+const defaultOgImage = process.env.NEXT_PUBLIC_DEFAULT_OG_IMAGE_URL || 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1764066113/ogshare_v4_psldb7.jpg';
+
+export const metadata = {
+  title: 'Sell Event Tickets Online – Australian Ticketing Platform',
+  description: 'All-in-one event ticketing platform for Australian organizers. Just 2% + $0.80 per ticket — no setup fees. Seating layouts, refunds, check-in, chat included.',
+  alternates: {
+    canonical: `${siteUrl}/tickets`,
+  },
+  openGraph: {
+    title: 'Sell Event Tickets Online with Desify',
+    description: 'Indian community ticketing platform for Australia. 2% + $0.80 per ticket. Seating layouts, refunds, check-in, chat.',
+    url: `${siteUrl}/tickets`,
+    siteName,
+    images: [{ url: defaultOgImage, width: 1200, height: 630, alt: 'Sell Event Tickets with Desify' }],
+    locale: 'en_AU',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sell Event Tickets Online with Desify',
+    description: 'Indian community ticketing platform for Australia. 2% + $0.80 per ticket.',
+    images: [defaultOgImage],
+  },
+  robots: { index: true, follow: true },
+};
+
+const serviceJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Desify Event Ticketing',
+  serviceType: 'Event Ticketing Platform',
+  provider: {
+    '@type': 'Organization',
+    name: siteName,
+    url: siteUrl,
+  },
+  areaServed: { '@type': 'Country', name: 'Australia' },
+  description: 'Online event ticketing platform for organizers in Australia. Includes attendee registration, custom seating layouts, refund management, check-in portal, and real-time chat.',
+  url: `${siteUrl}/tickets`,
+  offers: {
+    '@type': 'Offer',
+    priceCurrency: 'AUD',
+    description: '2% + $0.80 per ticket. No setup fees, no monthly charges.',
+  },
+};
 
 export default function TicketsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
       {/* Hero Banner */}
       <section className="relative min-h-[50vh] md:min-h-[60vh] flex items-center justify-center text-white overflow-hidden mt-2 md:mt-1">
         <video
