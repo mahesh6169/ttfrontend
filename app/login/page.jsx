@@ -1,18 +1,13 @@
-'use client';
+import LoginClient from './LoginClient';
 
-import React, { Suspense } from 'react';
-import dynamic from 'next/dynamic';
-
-const LoginForm = dynamic(() => import('@/components/users/LoginForm'), {
-  ssr: false,
-});
-
-const LoginPage = () => {
-  return (
-    <Suspense fallback={<div>Loading login form...</div>}>
-      <LoginForm />
-    </Suspense>
-  );
+export const metadata = {
+  title: 'Login',
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
-export default LoginPage;
+export default function LoginPage() {
+  return <LoginClient />;
+}

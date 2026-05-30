@@ -1,14 +1,13 @@
-'use client';
+import RegisterClient from './RegisterClient';
 
-import React, { Suspense } from 'react';
-import RegisterForm from '@/components/users/RegisterForm';
-
-const RegisterPage = () => {
-  return (
-    <Suspense fallback={<div>Loading registration form...</div>}>
-      <RegisterForm />
-    </Suspense>
-  );
+export const metadata = {
+  title: 'Register',
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
-export default RegisterPage;
+export default function RegisterPage() {
+  return <RegisterClient />;
+}
