@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from '@/utils/axiosConfig';
 
 // Fetch deals from the API using query params (not JSON.stringify)
-async function fetchDeals({ cat, state, day, q, sort, page, location }) {
+async function fetchDeals({ cat, state, day, q, partnerstoreId, sort, page, location }) {
   const params = new URLSearchParams();
 
   if (cat) {
@@ -22,6 +22,9 @@ async function fetchDeals({ cat, state, day, q, sort, page, location }) {
   if (q) {
     params.append('searchText', q);
   }
+  if (partnerstoreId) {
+    params.append('partnerstoreId', partnerstoreId);
+  }
   if (sort) {
     params.append('sortBy', sort);
   }
@@ -33,7 +36,7 @@ async function fetchDeals({ cat, state, day, q, sort, page, location }) {
 }
 
 // TanStack Query hook for searching deals
-export function useSearchDeals({ cat, state, day, q, sort, page, location }) {
+export function useSearchDeals({ cat, state, day, q, partnerstoreId, sort, page, location }) {
   return useQuery({
     // Query key includes all filter values — TanStack Query refetches when any change
     queryKey: [
@@ -42,6 +45,7 @@ export function useSearchDeals({ cat, state, day, q, sort, page, location }) {
       state,
       day,
       q,
+      partnerstoreId,
       sort,
       page,
       location?.name,
@@ -49,7 +53,7 @@ export function useSearchDeals({ cat, state, day, q, sort, page, location }) {
       location?.coordinates?.[1],
       location?.radius,
     ],
-    queryFn: () => fetchDeals({ cat, state, day, q, sort, page, location }),
+    queryFn: () => fetchDeals({ cat, state, day, q, partnerstoreId, sort, page, location }),
     // Keep previous results visible while new ones load (no flash of empty)
     placeholderData: (previousData) => previousData,
   });

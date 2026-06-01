@@ -176,11 +176,10 @@ const DealDetailPage = () => {
             />
           </div>
 
-          {/* Deal Posted By - Desktop Sidebar (hidden when curated by Desify) */}
-          {!isCuratedDeal && (
+          {/* Offered By - Desktop Sidebar */}
           <div className="border border-slate-200 rounded shadow-sm p-3">
             <h3 className="text-sm font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">
-              Deal Posted By
+              Offered By
             </h3>
 
             {/* Business Logo & Name */}
@@ -281,7 +280,6 @@ const DealDetailPage = () => {
               View all deals from {partner?.businessName} →
             </Link>
           </div>
-          )}
         </div>
       </div>
 

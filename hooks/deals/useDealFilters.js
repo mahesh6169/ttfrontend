@@ -6,6 +6,7 @@ const dealFilterParsers = {
   state: parseAsString,         // Australian state code (NSW, VIC, etc.)
   day: parseAsString,           // Day of week: monday, tuesday, etc.
   q: parseAsString,             // Search text
+  partnerstoreId: parseAsString,// Filter by a specific partner store
   sort: parseAsString.withDefault('newest'),  // 'newest', 'ending', 'oldest'
   page: parseAsInteger.withDefault(1),
   loc: parseAsString,           // Location display name
@@ -32,6 +33,7 @@ export function useDealFilters() {
       state: null,
       day: null,
       q: null,
+      partnerstoreId: null,
       sort: null,     // reverts to default 'newest'
       page: null,     // reverts to default 1
       loc: null,
@@ -83,6 +85,7 @@ export function useDealFilters() {
     state: params.state,
     day: params.day,
     q: params.q,
+    partnerstoreId: params.partnerstoreId,
     sort: params.sort,
     page: params.page,
     // Location as a structured object (matches what the API expects)

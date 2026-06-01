@@ -1,15 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInCalendarDays } from 'date-fns';
 import { MdLocationOn, MdStorefront } from 'react-icons/md';
 
 const DealCard = ({ deal }) => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL;
 
-  const daysUntilEnd = differenceInDays(new Date(deal.endDate), new Date());
+  const daysUntilEnd = differenceInCalendarDays(new Date(deal.endDate), new Date());
   const isEndingSoon = daysUntilEnd <= 3 && daysUntilEnd >= 0;
   const isEndsToday = daysUntilEnd === 0;
+  const daysLeftDisplay = daysUntilEnd + 1;
 
   const partner = deal.partnerstoreId;
   const location = partner?.isNationwide
@@ -51,7 +52,7 @@ const DealCard = ({ deal }) => {
           )}
           {isEndingSoon && !isEndsToday && (
             <span className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
-              {daysUntilEnd} days left
+              {daysLeftDisplay} {daysLeftDisplay === 1 ? 'day' : 'days'} left
             </span>
           )}
         </div>

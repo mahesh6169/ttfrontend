@@ -296,11 +296,10 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
         )}
       </div>
 
-      {/* Deal Posted By Section - Mobile Only (hidden when curated by Desify) */}
-      {!isCurated && (
+      {/* Offered By Section - Mobile Only */}
       <div className="lg:hidden border border-slate-200 rounded shadow-sm my-4 mx-4 p-3">
         <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">
-          Deal Posted By
+          Offered By
         </h3>
           {/* Two Column Layout on Desktop */}
           <div className="flex flex-col lg:flex-row lg:gap-6">
@@ -427,7 +426,6 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
           View all deals from {partner?.businessName} &rarr;
         </Link>
       </div>
-      )}
 
       {/* Chat Container - Mobile Only */}
       {chatProps && (
