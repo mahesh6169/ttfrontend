@@ -32,7 +32,7 @@ export const metadata = {
   },
   
   // GOOGLE SEARCH RESULTS - Description shown below title in search results
-  description: `Sell & buy listings, business directory, browse Indian events, sell tickets, find deals, join forums — Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast.`,
+  description: `Buy and sell for free, list services and businesses, get discovered locally, explore events, sell tickets, find deals, and join community discussions.`,
   
   // METADATA - Who created the website
   authors: [{ name: siteName }],
@@ -62,7 +62,7 @@ export const metadata = {
   // SOCIAL MEDIA SHARING - WhatsApp, Facebook, LinkedIn previews
   openGraph: {
     title: `Australia's Indian Community Platform.`, // Title in WhatsApp/FB preview
-    description: `Sell & buy listings, business directory, browse or host events, sell tickets, share deals.`, // Description in preview
+    description: `Browse listings, services and businesses, explore events, find deals and join community discussions.`, // Description in preview
     url: siteUrl,
     siteName: siteName,
     images: [
@@ -81,7 +81,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: `Australia's Indian Community Platform.`,
-    description: `Sell & buy listings, business directory, browse or host events, sell tickets, share deals.`,
+    description: `Browse listings, services and businesses, explore events, find deals and join community discussions.`,
     images: [defaultOgImage],
   },
   
@@ -111,7 +111,7 @@ const ParentLayout = ({ children }) => {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: siteName,
-    description: 'Sell & buy listings, business directory, browse Indian events, sell tickets, find deals, join forums — Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast.',
+    description: 'Buy and sell for free, list services and businesses, get discovered locally, explore events, sell tickets, find deals, and join community discussions.',
     url: siteUrl,
     // Tells Google about your search functionality
     potentialAction: {
@@ -134,7 +134,7 @@ const ParentLayout = ({ children }) => {
     '@id': `${siteUrl}/#organization`,
     name: siteName,
     legalName: 'NEXO GROUP PTY LTD',
-    description: 'Sell & buy listings, business directory, browse Indian events, sell tickets, find deals, join forums — Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast.',
+    description: 'Buy and sell for free, list services and businesses, get discovered locally, explore events, sell tickets, find deals, and join community discussions.',
     url: siteUrl,
     logo: {
       '@type': 'ImageObject',
