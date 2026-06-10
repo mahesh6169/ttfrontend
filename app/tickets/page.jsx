@@ -3,28 +3,28 @@ import PostPaidEventButton from '@/components/buttons/PostPaidEventButton';
 
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
-const defaultOgImage = process.env.NEXT_PUBLIC_DEFAULT_OG_IMAGE_URL || 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1764066113/ogshare_v4_psldb7.jpg';
+const ticketsOgImage = process.env.NEXT_PUBLIC_TICKETS_OG_IMAGE_URL;
 
 export const metadata = {
-  title: 'Sell Event Tickets Online – Australian Ticketing Platform',
-  description: 'All-in-one event ticketing platform for Australian organizers. Just 2% + $0.80 per ticket — no setup fees. Seating layouts, refunds, check-in, chat included.',
+  title: 'Sell Event Tickets Online | Simple Flat Fee Pricing',
+  description: 'Sell event tickets online with simple pricing. Multiple ticket types, seating layouts, refunds, check-in and email confirmations.',
   alternates: {
     canonical: `${siteUrl}/tickets`,
   },
   openGraph: {
-    title: 'Sell Event Tickets Online with Desify',
-    description: 'Indian community ticketing platform for Australia. 2% + $0.80 per ticket. Seating layouts, refunds, check-in, chat.',
+    title: 'Sell Event Tickets Online',
+    description: 'Sell tickets online with simple pricing, seating layouts and event management tools.',
     url: `${siteUrl}/tickets`,
     siteName,
-    images: [{ url: defaultOgImage, width: 1200, height: 630, alt: 'Sell Event Tickets with Desify' }],
+    images: [{ url: ticketsOgImage, width: 1200, height: 630, alt: 'Desify Tickets Image' }],
     locale: 'en_AU',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sell Event Tickets Online with Desify',
-    description: 'Indian community ticketing platform for Australia. 2% + $0.80 per ticket.',
-    images: [defaultOgImage],
+    title: 'Sell Event Tickets Online',
+    description: 'Sell tickets online with simple pricing, seating layouts and event management tools.',
+    images: [ticketsOgImage],
   },
   robots: { index: true, follow: true },
 };
@@ -45,7 +45,7 @@ const serviceJsonLd = {
   offers: {
     '@type': 'Offer',
     priceCurrency: 'AUD',
-    description: '2% + $0.80 per ticket. No setup fees, no monthly charges.',
+    description: 'Simple flat-fee pricing. No setup fees, no monthly charges.',
   },
 };
 
