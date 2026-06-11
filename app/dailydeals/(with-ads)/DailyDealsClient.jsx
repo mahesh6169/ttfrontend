@@ -315,19 +315,17 @@ const DailyDealsPage = () => {
       {/* Main Content */}
       <div className="w-full">
         {/* Hero Section */}
-        <section className="bg-white border border-slate-200 shadow-sm mx-3 md:mx-4 rounded-xl px-3 py-4 md:px-6 md:py-5 mt-2 md:mt-4 mb-4">
-          <h1 className="sr-only">Daily Deals</h1>
-
+        <section className="bg-white mx-3 md:mx-4 rounded-xl px-3 py-4 md:px-6 md:py-5 mt-2 md:mt-2 mb-4">
           <div className="md:max-w-4xl md:mx-auto">
             {/* Mobile Layout - Stacked */}
             <div className="flex flex-col gap-2 md:hidden">
-              {/* Post Deal Button - Right aligned */}
+              {/* Create Deal Button - Right aligned */}
               <div className="flex justify-end">
                 <Link
                   href="/users/profile/dailydeals"
                   className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors"
                 >
-                  + Post Deal
+                  + Create Deal
                 </Link>
               </div>
 
@@ -476,18 +474,8 @@ const DailyDealsPage = () => {
 
             {/* Desktop Layout - Inline */}
             <div className="hidden md:block">
-              {/* Post Button - Right aligned */}
-              <div className="flex justify-end mb-4">
-                <Link
-                  href="/users/profile/dailydeals"
-                  className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors"
-                >
-                  + Post Deal
-                </Link>
-              </div>
-
               {/* Filters Row */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center gap-3">
                 {/* Category Dropdown - Desktop - Applies immediately */}
                 <Listbox value={cat || ''} onChange={handleCategoryChange}>
                   <div className="relative flex-1 max-w-[220px]">
@@ -684,7 +672,7 @@ const DailyDealsPage = () => {
 
         {/* Active Filters Display */}
         {getActiveFilterCount() > 0 && (
-          <div className="bg-slate-50 border-y border-slate-200">
+          <div className="bg-slate-50">
             <div className="relative py-2 sm:py-3">
               {/* Left edge fade - mobile only */}
               <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none z-10 md:hidden"></div>
