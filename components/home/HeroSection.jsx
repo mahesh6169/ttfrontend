@@ -170,10 +170,10 @@ const DEALS_TILES = [
 
 // Popular deal categories for quick links
 const POPULAR_DEAL_CATEGORIES = [
-  { label: 'Restaurants', cat: 'Restaurants' },
-  { label: 'Catering', cat: 'Catering' },
-  { label: 'Cakes', cat: 'Cakes' },
-  { label: 'Hair & Makeup', cat: 'Hair, Makeup & Waxing' },
+  { label: 'Restaurants', cat: 'Food & Dining', subcat: 'Restaurants' },
+  { label: 'Catering', cat: 'Food & Dining', subcat: 'Catering' },
+  { label: 'Cakes', cat: 'Food & Dining', subcat: 'Cakes' },
+  { label: 'Hair & Makeup', cat: 'Beauty & Wellness', subcat: 'Hair, Makeup & Waxing' },
 ];
 
 // --- Forum Tab Tiles ---
@@ -532,7 +532,7 @@ const HeroSection = () => {
                     {POPULAR_DEAL_CATEGORIES.map((category, index) => (
                       <Link
                         key={index}
-                        href={`/dailydeals?cat=${encodeURIComponent(category.cat)}`}
+                        href={`/dailydeals?cat=${encodeURIComponent(category.cat)}&subcat=${encodeURIComponent(category.subcat)}`}
                         className="text-xs sm:text-sm text-teal-700 hover:text-teal-800 hover:underline font-medium"
                       >
                         {category.label}

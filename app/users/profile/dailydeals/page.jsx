@@ -216,7 +216,7 @@ export default function ManageDailyDealsPage() {
                   {/* Business Info */}
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-slate-900 truncate">{business.businessName}</div>
-                    <div className="text-sm text-teal-700">{business.category}</div>
+                    <div className="text-sm text-teal-700">{business.subcategory ? `${business.category} › ${business.subcategory}` : business.category}</div>
                     <div className="flex items-center text-xs text-slate-500 mt-0.5">
                       <MdLocationOn className="mr-0.5 flex-shrink-0" size={14} />
                       <span className="truncate">

@@ -5,7 +5,6 @@ import { format } from 'date-fns';
 import { MdLocationOn, MdPhone, MdEmail, MdLanguage, MdChevronLeft, MdChevronRight, MdClose } from 'react-icons/md';
 import { FaFacebook, FaInstagram, FaWhatsapp, FaExternalLinkAlt } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
-import Link from 'next/link';
 import SendMessage from '@/components/chat/SendMessage';
 
 const SOCIAL_ICONS = {
@@ -418,13 +417,6 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
           </div>
         </div>
 
-        {/* View All Deals from Partner */}
-        <Link
-          href={`/dailydeals?partnerstoreId=${partner?._id}`}
-          className="inline-block mt-3 text-teal-600 hover:text-teal-700 text-sm font-medium"
-        >
-          View all deals from {partner?.businessName} &rarr;
-        </Link>
       </div>
 
       {/* Chat Container - Mobile Only */}

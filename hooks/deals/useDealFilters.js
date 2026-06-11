@@ -2,7 +2,8 @@ import { useQueryStates, parseAsString, parseAsInteger, parseAsFloat } from 'nuq
 
 // URL param definitions for the deals page filters
 const dealFilterParsers = {
-  cat: parseAsString,           // Category (single selection)
+  cat: parseAsString,           // Category / parent group (single selection)
+  subcat: parseAsString,        // Subcategory within the selected parent
   state: parseAsString,         // Australian state code (NSW, VIC, etc.)
   day: parseAsString,           // Day of week: monday, tuesday, etc.
   q: parseAsString,             // Search text
@@ -30,6 +31,7 @@ export function useDealFilters() {
   const clearAllFilters = () => {
     setParams({
       cat: null,
+      subcat: null,
       state: null,
       day: null,
       q: null,
@@ -82,6 +84,7 @@ export function useDealFilters() {
     params,
     // Individual filter values (convenient access)
     cat: params.cat,
+    subcat: params.subcat,
     state: params.state,
     day: params.day,
     q: params.q,
@@ -97,7 +100,9 @@ export function useDealFilters() {
     clearAllFilters,
     setLocation,
     // Individual setters with page reset
-    setCat: (val) => setFiltersWithPageReset({ cat: val || null }),
+    // Changing the parent category clears any selected subcategory.
+    setCat: (val) => setFiltersWithPageReset({ cat: val || null, subcat: null }),
+    setSubcat: (val) => setFiltersWithPageReset({ subcat: val || null }),
     setState: (val) => setFiltersWithPageReset({ state: val || null }),
     setDay: (val) => setFiltersWithPageReset({ day: val || null }),
     setQ: (val) => setFiltersWithPageReset({ q: val || null }),

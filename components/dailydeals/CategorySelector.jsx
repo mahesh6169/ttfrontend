@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaChevronDown, FaSearch, FaTimes } from 'react-icons/fa';
-import { DEAL_CATEGORIES } from '@/components/dailydeals/dealCategories';
+import { getAllSubcategories } from '@/components/dailydeals/dealCategories';
+
+const DEAL_CATEGORIES = getAllSubcategories();
 
 const CategorySelector = ({ value, onChange, placeholder = "Select a category", required = false, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);

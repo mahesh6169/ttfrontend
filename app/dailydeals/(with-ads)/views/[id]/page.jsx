@@ -272,13 +272,6 @@ const DealDetailPage = () => {
               )}
             </div>
 
-            {/* View All Deals Link */}
-            <Link
-              href={`/dailydeals?partnerstoreId=${partner?._id}`}
-              className="block mt-3 pt-2 border-t border-slate-100 text-teal-600 hover:text-teal-700 text-xs font-medium"
-            >
-              View all deals from {partner?.businessName} →
-            </Link>
           </div>
         </div>
       </div>
