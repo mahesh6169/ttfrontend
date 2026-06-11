@@ -14,44 +14,84 @@ export const SUGGESTED_SEARCH_TERMS = [
   'catering'
 ];
 
+// Keys are taxonomy values (parent labels or subcategory labels) from
+// components/dailydeals/dealCategories.js. Search matches either field.
 const CATEGORY_MAPPINGS = {
-  'Restaurants': [
-    'restaurants', 'restaurant', 'food', 'dining'
-  ],
+  // Food & Dining
+  'Restaurants': ['restaurants', 'restaurant', 'food', 'dining'],
+  'Catering': ['catering', 'caterer'],
+  'Cakes': ['cake', 'cupcakes', 'macarons', 'donuts', 'cookies'],
+  'Sweets & Snacks': ['sweets', 'snacks', 'pani', 'puri', 'samosa'],
+  'Chat & Street Food': ['chat', 'chaat'],
 
-  'Catering': [
-    'catering', 'caterer'
-  ],
+  // Fashion
+  'Clothing & Ethnic Wear': ['clothing', 'clothes', 'saree', 'sari', 'ethnic', 'kurta', 'lehenga'],
+  'Jewellery & Accessories': ['jewellery', 'jewelry', 'jewel', 'gold', 'accessories'],
 
-  'Cakes': [
-    'cake', 'cupcakes', 'macarons', 'donuts', 'cookies'
-  ],
-
-  'Sweets & Snacks': [
-    'sweets', 'snacks', 'pani', 'puri', 'samosa'
-  ],
-
-  'Chat & Street Food': [
-    'chat', 'chaat', 'street food'
-  ],
-
+  // Beauty & Wellness
   'Hair, Makeup & Waxing': [
     'threading', 'tinting', 'facial', 'makeup', 'make-up',
-    'hair', 'waxing', 'skin', 'bleach',
-    'manicure', 'pedicure'
+    'hair', 'waxing', 'skin', 'bleach', 'manicure', 'pedicure'
   ],
+  'Massage': ['massage', 'spa'],
+  'Yoga': ['yoga'],
 
-  'Massage': [
-    'massage', 'spa'
-  ],
+  // Health & Medical
+  'Dental': ['dental', 'dentist', 'teeth'],
+  'Physiotherapy': ['physio', 'physiotherapy'],
+  'Optometry': ['optometry', 'optometrist', 'glasses'],
+  'Pharmacy': ['pharmacy', 'chemist', 'medicine'],
 
-  'Yoga': [
-    'yoga'
-  ],
+  // Fitness & Sport
+  'Gym': ['gym', 'fitness', 'workout'],
+  'Personal Training': ['trainer', 'pt'],
+  'Coaching': ['coaching', 'coach'],
 
-  'Retail Stores & Shops': [
-    'groceries', 'grocery', 'store', 'shop'
-  ],
+  // Electrical & Electronics
+  'Air Conditioners': ['aircon', 'ac', 'cooling'],
+  'Solar Panels': ['solar'],
+  'Laptops & Computers': ['laptop', 'laptops', 'computer', 'computers', 'pc'],
+
+  // Home Services
+  'Landscaping & Gardening': ['landscaping', 'gardening', 'garden', 'lawn'],
+  'Cleaning & Maintenance': ['cleaning', 'cleaner', 'maintenance'],
+  'Pest Control': ['pest'],
+
+  // Vehicle Services
+  'Car Servicing & Repairs': ['mechanic'],
+
+  // Real Estate
+  'Real Estate & Buyers Agents': ['property', 'realestate'],
+  'Mortgage Brokers': ['mortgage', 'broker'],
+
+  // Party & Entertainment
+  'Decorations': ['decoration', 'decorations', 'decor'],
+  'Photography & Videography': ['photography', 'photographer', 'videography'],
+  'DJ & Audio Visual': ['dj'],
+  'Entertainers & Performers': ['entertainer', 'performer', 'entertainment'],
+  'Party Hire': ['party'],
+
+  // Tutoring & Lessons
+  'Academic Tutoring': ['tutor', 'tutoring', 'academic', 'maths', 'english'],
+  'Music Lessons': ['music', 'singing', 'guitar', 'piano'],
+  'Dance Lessons': ['dance', 'dancing'],
+  'Art Classes': ['art', 'painting'],
+  'Driving Lessons': ['driving'],
+
+  // Professional & Business Services
+  'Accounting & Taxation': ['accounting', 'accountant', 'tax', 'taxation'],
+  'Legal & Immigration': ['legal', 'lawyer', 'immigration', 'visa', 'migration'],
+  'Finance': ['finance', 'financial'],
+  'Insurance': ['insurance'],
+
+  // Groceries
+  'Indian Groceries': ['groceries', 'grocery'],
+  'Fruit & Veg': ['fruit', 'vegetables', 'produce'],
+  'Dairy': ['dairy', 'milk'],
+
+  // Travel & Tourism
+  'Tour Guides & Operators': ['tour', 'tours'],
+  'Travel Agents': ['travel', 'flights', 'holiday'],
 };
 
 /**

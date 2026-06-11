@@ -2,11 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import axios from '@/utils/axiosConfig';
 
 // Fetch deals from the API using query params (not JSON.stringify)
-async function fetchDeals({ cat, state, day, q, partnerstoreId, sort, page, location }) {
+async function fetchDeals({ cat, subcat, state, day, q, partnerstoreId, sort, page, location }) {
   const params = new URLSearchParams();
 
   if (cat) {
     params.append('category', cat);
+  }
+  if (subcat) {
+    params.append('subcategory', subcat);
   }
   if (state) {
     params.append('state', state);
@@ -36,12 +39,13 @@ async function fetchDeals({ cat, state, day, q, partnerstoreId, sort, page, loca
 }
 
 // TanStack Query hook for searching deals
-export function useSearchDeals({ cat, state, day, q, partnerstoreId, sort, page, location }) {
+export function useSearchDeals({ cat, subcat, state, day, q, partnerstoreId, sort, page, location }) {
   return useQuery({
     // Query key includes all filter values — TanStack Query refetches when any change
     queryKey: [
       'deals',
       cat,
+      subcat,
       state,
       day,
       q,
@@ -53,7 +57,7 @@ export function useSearchDeals({ cat, state, day, q, partnerstoreId, sort, page,
       location?.coordinates?.[1],
       location?.radius,
     ],
-    queryFn: () => fetchDeals({ cat, state, day, q, partnerstoreId, sort, page, location }),
+    queryFn: () => fetchDeals({ cat, subcat, state, day, q, partnerstoreId, sort, page, location }),
     // Keep previous results visible while new ones load (no flash of empty)
     placeholderData: (previousData) => previousData,
   });

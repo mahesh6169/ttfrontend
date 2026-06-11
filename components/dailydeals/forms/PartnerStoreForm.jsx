@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { FaFacebook, FaInstagram, FaPlus, FaTimes } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import PartnerStoreAddressInput from '../PartnerStoreAddressInput';
-import { DEAL_CATEGORIES } from '../dealCategories';
+import { getAllParentCategories, getSubcategories } from '../dealCategories';
 import PartnerStoreImageUploader from './PartnerStoreImageUploader';
 import SimpleDropdown from '@/components/shared/SimpleDropdown';
 
@@ -18,6 +18,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
   const [formData, setFormData] = useState({
     businessName: initialData?.businessName || '',
     category: initialData?.category || '',
+    subcategory: initialData?.subcategory || '',
     address: initialData?.address || {
       formattedAddress: '',
       streetNumber: '',
@@ -110,6 +111,10 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
       newErrors.category = 'Category is required';
     }
 
+    if (!formData.subcategory) {
+      newErrors.subcategory = 'Subcategory is required';
+    }
+
     if (!formData.isNationwide && (!formData.address?.formattedAddress ||
       formData.address.location?.coordinates[0] === 0 ||
       formData.address.location?.coordinates[1] === 0)) {
@@ -170,6 +175,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
       const submitData = new FormData();
       submitData.append('businessName', formData.businessName);
       submitData.append('category', formData.category);
+      submitData.append('subcategory', formData.subcategory);
       submitData.append('address', JSON.stringify(formData.address));
       submitData.append('contactInfo', JSON.stringify(formData.contactInfo));
       submitData.append('isNationwide', formData.isNationwide);
@@ -208,19 +214,36 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
         )}
       </div>
 
-      {/* Category */}
+      {/* Category (parent group) */}
       <div>
         <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
           Category <span className="text-red-500">*</span>
         </label>
         <SimpleDropdown
           value={formData.category}
-          onChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-          options={DEAL_CATEGORIES}
+          onChange={(value) => setFormData(prev => ({ ...prev, category: value, subcategory: '' }))}
+          options={getAllParentCategories()}
           placeholder="Select category"
         />
         {errors.category && (
           <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.category}</p>
+        )}
+      </div>
+
+      {/* Subcategory (depends on selected parent) */}
+      <div>
+        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+          Subcategory <span className="text-red-500">*</span>
+        </label>
+        <SimpleDropdown
+          value={formData.subcategory}
+          onChange={(value) => setFormData(prev => ({ ...prev, subcategory: value }))}
+          options={getSubcategories(formData.category)}
+          placeholder={formData.category ? 'Select subcategory' : 'Select a category first'}
+          disabled={!formData.category}
+        />
+        {errors.subcategory && (
+          <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.subcategory}</p>
         )}
       </div>
 

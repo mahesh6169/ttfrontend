@@ -110,7 +110,7 @@ export default function PartnerStoresPage() {
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-gray-900 truncate">{store.businessName}</div>
                     <div className="text-xs text-gray-500">{store.partnerstoreId}</div>
-                    <div className="text-sm text-gray-600 mt-1">{store.category}</div>
+                    <div className="text-sm text-gray-600 mt-1">{store.subcategory ? `${store.category} › ${store.subcategory}` : store.category}</div>
                   </div>
                   <span className={`px-2 py-1 rounded text-xs whitespace-nowrap ${store.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {store.isActive ? 'Active' : 'Inactive'}
@@ -176,7 +176,7 @@ export default function PartnerStoresPage() {
                       <div className="font-medium text-gray-900">{store.businessName}</div>
                       <div className="text-xs text-gray-500">{store.partnerstoreId}</div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{store.category}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{store.subcategory ? `${store.category} › ${store.subcategory}` : store.category}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {store.isNationwide ? (
                         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Nationwide</span>

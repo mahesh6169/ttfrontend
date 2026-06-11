@@ -2,8 +2,9 @@
 
 import { useState, Fragment, useRef } from 'react';
 import { useDealFilters } from '@/hooks/deals/useDealFilters';
-import { useSearchDeals, useDealFilterOptions } from '@/hooks/deals/useSearchDeals';
+import { useSearchDeals } from '@/hooks/deals/useSearchDeals';
 import DealsGrid from '@/components/dailydeals/dealcomponents/DealsGrid';
+import { getAllParentCategories, getSubcategories } from '@/components/dailydeals/dealCategories';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
@@ -26,6 +27,7 @@ const DailyDealsPage = () => {
   // URL-based filters (nuqs)
   const {
     cat,
+    subcat,
     state,
     day,
     partnerstoreId,
@@ -34,6 +36,7 @@ const DailyDealsPage = () => {
     location,
     hasLocation,
     setCat,
+    setSubcat,
     setState,
     setDay,
     setSort,
@@ -46,6 +49,7 @@ const DailyDealsPage = () => {
   // TanStack Query for fetching deals
   const { data, isLoading, isError } = useSearchDeals({
     cat,
+    subcat,
     state,
     day,
     q: null,
@@ -55,9 +59,9 @@ const DailyDealsPage = () => {
     location,
   });
 
-  // TanStack Query for filter options
-  const { data: filterOptionsData } = useDealFilterOptions();
-  const filterOptions = filterOptionsData || { categories: [] };
+  // Subcategories come from the static taxonomy for the selected parent
+  // (same as /listings) so the dropdown always appears once a category is picked.
+  const subcategoryOptions = cat ? getSubcategories(cat) : [];
 
   const deals = data?.deals || [];
   const meta = data || { currentPage: 1, totalPages: 1, totalCount: 0 };
@@ -106,9 +110,15 @@ const DailyDealsPage = () => {
     setShowFilters(true);
   };
 
-  // Handle category change - applies immediately
+  // Handle category change - applies immediately (clears subcategory)
   const handleCategoryChange = (newCat) => {
     setCat(newCat || null);
+    scrollToResults();
+  };
+
+  // Handle subcategory change - applies immediately
+  const handleSubcategoryChange = (newSubcat) => {
+    setSubcat(newSubcat || null);
     scrollToResults();
   };
 
@@ -187,13 +197,14 @@ const DailyDealsPage = () => {
   const getActiveFilterCount = () => {
     let count = 0;
     if (cat) count++;
+    if (subcat) count++;
     if (location) count++;
     if (state) count++;
     if (day) count++;
     return count;
   };
 
-  const hasFiltersToShow = cat || location || getActiveFilterCount() > 0;
+  const hasFiltersToShow = cat || subcat || location || getActiveFilterCount() > 0;
 
   const getDayLabel = (dayValue) => {
     const dayOption = DAYS_OPTIONS.find(d => d.value === dayValue);
@@ -374,7 +385,7 @@ const DailyDealsPage = () => {
                           </>
                         )}
                       </ListboxOption>
-                      {filterOptions.categories?.map((catOption) => (
+                      {getAllParentCategories().map((catOption) => (
                         <ListboxOption
                           key={catOption}
                           value={catOption}
@@ -402,6 +413,82 @@ const DailyDealsPage = () => {
                   </Transition>
                 </div>
               </Listbox>
+
+              {/* Subcategory Dropdown - Mobile (always shown, greyed until a category is selected) */}
+              {(
+                <Listbox value={subcat || ''} onChange={handleSubcategoryChange} disabled={!cat}>
+                  <div className="relative">
+                    <ListboxButton className={`relative w-full pl-9 pr-9 py-2.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-left ${cat ? 'bg-white cursor-pointer' : 'bg-slate-100 cursor-not-allowed'}`}>
+                      <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      <span className={subcat ? 'text-slate-900' : 'text-slate-500'}>
+                        {subcat || (cat ? 'Select Subcategory' : 'Select category first')}
+                      </span>
+                      <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </ListboxButton>
+                    <Transition
+                      as={Fragment}
+                      leave="transition ease-in duration-100"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
+                    >
+                      <ListboxOptions
+                        anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                        className="z-50 w-[var(--button-width)] max-h-60 overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-slate-200 focus:outline-none"
+                      >
+                        <ListboxOption
+                          value=""
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                All Subcategories
+                              </span>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                        {subcategoryOptions.map((subOption) => (
+                          <ListboxOption
+                            key={subOption}
+                            value={subOption}
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
+                            }
+                          >
+                            {({ selected }) => (
+                              <>
+                                <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                  {subOption}
+                                </span>
+                                {selected && (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </ListboxOption>
+                        ))}
+                      </ListboxOptions>
+                    </Transition>
+                  </div>
+                </Listbox>
+              )}
 
               {/* Location Input - Mobile */}
               <LoadScriptNext
@@ -521,7 +608,7 @@ const DailyDealsPage = () => {
                             </>
                           )}
                         </ListboxOption>
-                        {filterOptions.categories?.map((catOption) => (
+                        {getAllParentCategories().map((catOption) => (
                           <ListboxOption
                             key={catOption}
                             value={catOption}
@@ -549,6 +636,82 @@ const DailyDealsPage = () => {
                     </Transition>
                   </div>
                 </Listbox>
+
+                {/* Subcategory Dropdown - Desktop (always shown, greyed until a category is selected) */}
+                {(
+                  <Listbox value={subcat || ''} onChange={handleSubcategoryChange} disabled={!cat}>
+                    <div className="relative flex-1 max-w-[220px]">
+                      <ListboxButton className={`relative w-full pl-9 pr-9 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-left ${cat ? 'bg-white cursor-pointer' : 'bg-slate-100 cursor-not-allowed'}`}>
+                        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        <span className={subcat ? 'text-slate-900' : 'text-slate-500'}>
+                          {subcat || (cat ? 'Select Subcategory' : 'Select category first')}
+                        </span>
+                        <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </ListboxButton>
+                      <Transition
+                        as={Fragment}
+                        leave="transition ease-in duration-100"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                      >
+                        <ListboxOptions
+                          anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                          className="z-50 w-[var(--button-width)] max-h-60 overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-slate-200 focus:outline-none"
+                        >
+                          <ListboxOption
+                            value=""
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
+                            }
+                          >
+                            {({ selected }) => (
+                              <>
+                                <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                  All Subcategories
+                                </span>
+                                {selected && (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </ListboxOption>
+                          {subcategoryOptions.map((subOption) => (
+                            <ListboxOption
+                              key={subOption}
+                              value={subOption}
+                              className={({ active }) =>
+                                `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${active ? 'bg-teal-50 text-teal-900' : 'text-slate-900'}`
+                              }
+                            >
+                              {({ selected }) => (
+                                <>
+                                  <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                    {subOption}
+                                  </span>
+                                  {selected && (
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-teal-600">
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </ListboxOption>
+                          ))}
+                        </ListboxOptions>
+                      </Transition>
+                    </div>
+                  </Listbox>
+                )}
 
                 {/* Location Input - Desktop */}
                 <LoadScriptNext
@@ -688,6 +851,20 @@ const DailyDealsPage = () => {
                       {cat}
                       <button
                         onClick={() => setCat(null)}
+                        className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+
+                  {subcat && (
+                    <span
+                      className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
+                    >
+                      {subcat}
+                      <button
+                        onClick={() => setSubcat(null)}
                         className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
                       >
                         ×
