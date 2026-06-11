@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import EventsClient from './EventsClient';
+import SeoFooterBlock from './SeoFooterBlock';
 
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
@@ -45,5 +47,25 @@ export const metadata = {
 };
 
 export default function EventsPage() {
-  return <EventsClient />;
+  return (
+    <>
+      <header className="px-3 sm:px-4 pt-3 sm:pt-5 pb-2 sm:pb-3">
+        <div className="border-y border-teal-100 py-3 sm:py-4 md:w-fit md:mx-auto md:px-8">
+          <h1 className="text-center text-base sm:text-xl md:text-2xl font-bold text-teal-900 leading-tight">
+            Discover Indian Events, Concerts &amp; Cultural Shows
+          </h1>
+        </div>
+        <div className="hidden md:flex justify-center mt-4">
+          <Link
+            href="/events/add"
+            className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2.5 px-5 rounded-lg shadow-sm transition-colors"
+          >
+            + Create Event
+          </Link>
+        </div>
+      </header>
+      <EventsClient />
+      <SeoFooterBlock />
+    </>
+  );
 }
