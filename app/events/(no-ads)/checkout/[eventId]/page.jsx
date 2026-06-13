@@ -76,6 +76,11 @@ const CheckoutPage = () => {
   // Ref to track if reservation is currently being fetched
   const isFetchingReservation = useRef(false);
 
+  // One-time latch: confirm-payment must run only once per successful charge. Set on entry,
+  // reset only if the confirm fails (so a real retry is allowed). Prevents a duplicate
+  // confirm-payment request from a refresh / retry / re-render (backend is idempotent too).
+  const hasConfirmedRef = useRef(false);
+
   // Fetch reservation data
   const fetchReservation = useCallback(async () => {
     if (!params.eventId || !user) {
@@ -471,6 +476,14 @@ const CheckoutPage = () => {
   };
 
   const handlePaymentSuccess = async (paymentIntent) => {
+    // Guard: only confirm once per successful charge. If this fires again (refresh, retry,
+    // re-render) bail immediately so we never send a duplicate confirm-payment request.
+    if (hasConfirmedRef.current) {
+      console.log('Confirm already in progress/done for this payment — ignoring duplicate fire');
+      return;
+    }
+    hasConfirmedRef.current = true;
+
     console.log('Payment successful, confirming with backend:', paymentIntent.id);
     setIsProcessing(true);
     
@@ -545,7 +558,11 @@ const CheckoutPage = () => {
       }
     } catch (error) {
       console.error('Payment confirmation failed:', error);
-      
+
+      // Un-latch so the buyer can retry a genuinely failed confirm. The card is already
+      // charged and the backend confirm-payment is idempotent, so re-sending is safe.
+      hasConfirmedRef.current = false;
+
       // Check if this is a capacity conflict error
       let errorMessage = error.response?.data?.message || error.message || 'Payment successful but failed to create tickets. Please contact support.';
       
