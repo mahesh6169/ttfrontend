@@ -83,6 +83,73 @@ const validateRegistrationFieldsList = (formData) => {
   return errors.length > 0 ? errors : null;
 };
 
+// Client mirror of the discount-code server validations (feature S1: V1/V2/V3/V5/V6). V4
+// (max uses vs already-used) is enforced server-side on edit since the form has no usedCount.
+// Returns an errors object keyed per code index (Object.assign into step errors), or {}.
+const validateDiscountCodesList = (formData) => {
+  const errors = {};
+  if (formData.eventIntent !== 'host' || !formData.isPaid) return errors;
+  const codes = formData.discountCodes || [];
+  if (codes.length === 0) return errors;
+
+  const ticketTypes = formData.ticketTypes || [];
+  const ticketNames = new Set(ticketTypes.filter((t) => (t?.name || '').trim()).map((t) => t.name));
+  const seen = new Set();
+
+  codes.forEach((dc, index) => {
+    const code = (dc.code || '').trim().toUpperCase();
+    // V1 — required + unique within the event
+    if (!code) {
+      errors[`discountCode_${index}`] = ['Discount code is required'];
+    } else if (seen.has(code)) {
+      errors[`discountCode_${index}`] = ['Duplicate code — each code must be unique'];
+    } else {
+      seen.add(code);
+    }
+
+    // V2 — value range + 2-decimal limit
+    const val = Number(dc.value);
+    if (dc.value === null || dc.value === undefined || dc.value === '' || isNaN(val)) {
+      errors[`discountValue_${index}`] = ['Discount value is required'];
+    } else if (dc.kind === 'percent') {
+      if (val < 1 || val > 90) errors[`discountValue_${index}`] = ['Percent must be between 1 and 90'];
+    } else if (val <= 0) {
+      errors[`discountValue_${index}`] = ['Amount must be greater than 0'];
+    } else if (Math.abs(val * 100 - Math.round(val * 100)) > 1e-9) {
+      errors[`discountValue_${index}`] = ['Amount can have at most 2 decimal places'];
+    }
+
+    // applies-to: only names that still exist count
+    const applies = (dc.appliesToTicketTypes || []).filter((n) => ticketNames.has(n));
+    // V3 — an active code must cover at least one existing ticket type
+    if (dc.active !== false && applies.length === 0) {
+      errors[`discountApplies_${index}`] = ['Pick at least one ticket type this code applies to'];
+    }
+
+    // V5 — date order
+    if (dc.validFrom && dc.validUntil && new Date(dc.validFrom) > new Date(dc.validUntil)) {
+      errors[`discountDates_${index}`] = ['"Valid from" must be on or before "valid until"'];
+    }
+
+    // V6 — must leave at least $1 on the cheapest covered ticket bought alone
+    if (applies.length > 0 && !isNaN(val)) {
+      const coveredPrices = ticketTypes
+        .filter((t) => applies.includes(t.name) && t.price !== null && t.price !== undefined && t.price !== '')
+        .map((t) => Number(t.price))
+        .filter((p) => !isNaN(p));
+      if (coveredPrices.length > 0) {
+        const cheapest = Math.min(...coveredPrices);
+        const after = dc.kind === 'percent' ? cheapest * (1 - val / 100) : cheapest - val;
+        if (Math.round(after * 100) < 100) {
+          errors[`discountValue_${index}`] = ['This drops a covered ticket below $1 — lower the value or untick that ticket type'];
+        }
+      }
+    }
+  });
+
+  return errors;
+};
+
 const StepManager = ({
   mode = 'add', // 'add' | 'edit' | 'view'
   eventId = null,
@@ -546,17 +613,17 @@ const StepManager = ({
             errors[`ticketName_${index}`] = ['Ticket Name is required'];
           }
 
-          // Price must be greater than 0
+          // Price must be at least $1 (S0/V0 — minimum ticket price)
           if (
             ticket.price === undefined ||
             ticket.price === null ||
             ticket.price === '' ||
             isNaN(Number(ticket.price)) ||
-            Number(ticket.price) <= 0
+            Number(ticket.price) < 1
           ) {
-            ticketErrors.push(`Ticket type ${index + 1} price must be greater than 0`);
+            ticketErrors.push(`Ticket type ${index + 1}: minimum ticket price is $1`);
             // Individual field error
-            errors[`ticketPrice_${index}`] = ['Price must be greater than 0'];
+            errors[`ticketPrice_${index}`] = ['Minimum ticket price is $1'];
           }
 
           
@@ -595,6 +662,9 @@ if (ticket.startDate && ticket.expiryDate) {
         });
 
         if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
+
+        // Discount codes validation (V1/V2/V3/V5/V6) — safety net
+        Object.assign(errors, validateDiscountCodesList(formData));
       }
 
       // Seating layout validation (if provided)
@@ -833,6 +903,9 @@ const validateCurrentStep = useCallback(() => {
               }
             });
           }
+
+          // Discount codes validation (V1/V2/V3/V5/V6)
+          Object.assign(errors, validateDiscountCodesList(formData));
         } else {
           // Free hosted event: Capacity and booking limit required
           if (
@@ -1141,6 +1214,40 @@ if (formData.dateTime) {
   });
   
   submitFormData.append('ticketTypes', JSON.stringify(processedTicketTypes));
+
+  // Discount codes. Prune appliesToTicketTypes to CURRENT ticket-type names (client-side
+  // rename/delete cascade; the server also drops stale names). Convert validity dates from the
+  // form's local calendar date to UTC (from = start-of-day, until = end-of-day so the whole
+  // last day stays valid — feature S1). Counters (usedCount/remainingUses) are server-owned
+  // and intentionally NOT sent.
+  if (Array.isArray(formData.discountCodes) && formData.discountCodes.length > 0) {
+    const currentTicketNames = new Set(
+      (formData.ticketTypes || []).filter(t => (t?.name || '').trim()).map(t => t.name)
+    );
+    const tz = formData.timeZone;
+    const toUtc = (localDate, endOfDay) => {
+      if (!localDate) return null;
+      const dateOnly = localDate.includes('T') ? localDate.slice(0, 10) : localDate;
+      if (!tz) return dateOnly;
+      try {
+        return zonedTimeToUtc(`${dateOnly}T${endOfDay ? '23:59:59' : '00:00:00'}`, tz).toISOString();
+      } catch (e) {
+        return localDate;
+      }
+    };
+    const processedDiscountCodes = formData.discountCodes.map(dc => ({
+      code: (dc.code || '').trim().toUpperCase(),
+      kind: dc.kind === 'fixed' ? 'fixed' : 'percent',
+      value: dc.value === '' || dc.value === undefined ? null : dc.value,
+      maxUses: dc.maxUses === '' || dc.maxUses === undefined ? null : dc.maxUses,
+      validFrom: toUtc(dc.validFrom, false),
+      validUntil: toUtc(dc.validUntil, true),
+      active: dc.active !== false,
+      appliesToTicketTypes: (dc.appliesToTicketTypes || []).filter(n => currentTicketNames.has(n)),
+      showHint: dc.showHint === true,
+    }));
+    submitFormData.append('discountCodes', JSON.stringify(processedDiscountCodes));
+  }
 }
 
       if (formData.seatingLayout && formData.seatingLayout.length > 0) {

@@ -573,6 +573,18 @@ const MyInvoicesPage = () => {
                         <span className="font-medium text-gray-700">Tickets:</span>
                         <span className="text-gray-900">{invoice.ticketCount}</span>
                       </div>
+                      {invoice.amounts?.discount && invoice.amounts.discount.amount > 0 && (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="font-medium text-gray-700">Subtotal:</span>
+                            <span className="text-gray-900">${(invoice.amounts.subtotal ?? invoice.amounts.total).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="font-medium text-teal-700">Discount ({invoice.amounts.discount.code}):</span>
+                            <span className="text-teal-700">-${invoice.amounts.discount.amount.toFixed(2)}</span>
+                          </div>
+                        </>
+                      )}
                       <div className="flex justify-between">
                         <span className="font-medium text-gray-700">Total Amount:</span>
                         <span className="text-gray-900 font-semibold">${invoice.amounts.total.toFixed(2)}</span>
@@ -608,11 +620,24 @@ const MyInvoicesPage = () => {
                           <div className="text-gray-900">{invoice.ticketCount}</div>
                         </div>
                         
+                        {invoice.amounts?.discount && invoice.amounts.discount.amount > 0 && (
+                          <>
+                            <div>
+                              <span className="font-medium text-gray-700">Subtotal:</span>
+                              <div className="text-gray-900">${(invoice.amounts.subtotal ?? invoice.amounts.total).toFixed(2)}</div>
+                            </div>
+                            <div>
+                              <span className="font-medium text-teal-700">Discount ({invoice.amounts.discount.code}):</span>
+                              <div className="text-teal-700">-${invoice.amounts.discount.amount.toFixed(2)}</div>
+                            </div>
+                          </>
+                        )}
+
                         <div>
                           <span className="font-medium text-gray-700">Total Amount:</span>
                           <div className="text-gray-900 font-semibold">${invoice.amounts.total.toFixed(2)}</div>
                         </div>
-                        
+
                         {invoice.hasRefunds && (
                           <div>
                             <span className="font-medium text-gray-700">Refunded:</span>
@@ -930,9 +955,25 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     doc.setDrawColor(200);
     doc.line(tableLeft, yPosition, tableLeft + tableWidth, yPosition);
     yPosition += 5;
+    // Subtotal + Discount lines (only when a discount was applied) — keeps the line-item
+    // amounts (base prices) reconciling with the discounted Total Paid below.
+    if (invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0) {
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(10);
+      doc.text(
+        `Subtotal: $${(invoiceData.amounts.subtotal ?? invoiceData.amounts.total).toFixed(2)}`,
+        tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' }
+      );
+      yPosition += 5;
+      doc.text(
+        `Discount (${invoiceData.amounts.discount.code}): -$${invoiceData.amounts.discount.amount.toFixed(2)}`,
+        tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' }
+      );
+      yPosition += 5;
+    }
     doc.setFont(undefined, 'bold');
     doc.setFontSize(11);
-    const totalText = invoiceData.gstIncluded 
+    const totalText = invoiceData.gstIncluded
       ? `Total Paid: $${invoiceData.amounts.total.toFixed(2)} (incl. GST)`
       : `Total Paid: $${invoiceData.amounts.total.toFixed(2)}`;
     doc.text(totalText, tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' });
@@ -982,8 +1023,8 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
         doc.setFont(undefined, 'bold');
         doc.text('Ticket Type', tableLeft + 2, yPosition);
         doc.text('Quantity', tableLeft + col1Width + 2, yPosition);
-        doc.text('Price', tableLeft + col1Width + col2Width + 2, yPosition);
-        doc.text('Refund Amount', tableLeft + col1Width + col2Width + col3Width + 2, yPosition);
+        // Price column dropped (S6) — with discounts the original price would mislead.
+        doc.text('Refund Amount', tableLeft + col1Width + col2Width + 2, yPosition);
         yPosition += 5;
         
         // Group refunded tickets by type
@@ -998,7 +1039,6 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
             if (!acc[typeName]) {
               acc[typeName] = {
                 name: typeName,
-                price: originalItem.ticketType.price,
                 quantity: 0,
                 refundAmount: 0
               };
@@ -1019,9 +1059,9 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
           
           doc.text(item.name, tableLeft + 2, yPosition);
           doc.text(item.quantity.toString(), tableLeft + col1Width + 10, yPosition, { align: 'center' });
-          doc.text(`$${item.price.toFixed(2)}`, tableLeft + col1Width + col2Width + 15, yPosition, { align: 'right' });
+          // Price column dropped (S6); Refund Amount moves into its position.
           doc.setTextColor(220, 38, 38); // Red color for refund amounts
-          doc.text(`$${item.refundAmount.toFixed(2)}`, tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' });
+          doc.text(`$${item.refundAmount.toFixed(2)}`, tableLeft + col1Width + col2Width + 15, yPosition, { align: 'right' });
           doc.setTextColor(0);
           yPosition += 6;
         });
@@ -1270,6 +1310,24 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                         </tr>
                       ))}
                       
+                      {/* Subtotal + Discount (only when a discount was applied) */}
+                      {invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0 && (
+                        <>
+                          <tr className="bg-white border-t border-gray-200">
+                            <td className="px-4 py-2 text-sm" colSpan="2"></td>
+                            <td className="px-4 py-2 text-sm text-right text-gray-700" colSpan="2">
+                              Subtotal: ${(invoiceData.amounts.subtotal ?? invoiceData.amounts.total).toFixed(2)}
+                            </td>
+                          </tr>
+                          <tr className="bg-white">
+                            <td className="px-4 py-2 text-sm" colSpan="2"></td>
+                            <td className="px-4 py-2 text-sm text-right text-teal-700" colSpan="2">
+                              Discount ({invoiceData.amounts.discount.code}): -${invoiceData.amounts.discount.amount.toFixed(2)}
+                            </td>
+                          </tr>
+                        </>
+                      )}
+
                       {/* Total Row */}
                       <tr className="bg-gray-50 border-t border-gray-300">
                         <td className="px-4 py-3 text-sm font-medium" colSpan="2"></td>
@@ -1312,7 +1370,7 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                               <tr>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Ticket Type</th>
                                 <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Quantity</th>
-                                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Price</th>
+                                {/* Price column dropped (S6) — original price would mislead on a discounted refund */}
                                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Refund Amount</th>
                               </tr>
                             </thead>
@@ -1330,7 +1388,6 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                                     if (!acc[typeName]) {
                                       acc[typeName] = {
                                         name: typeName,
-                                        price: originalItem.ticketType.price,
                                         quantity: 0,
                                         refundAmount: 0
                                       };
@@ -1346,7 +1403,7 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                                   <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-red-25'}>
                                     <td className="px-4 py-3 text-sm border-t border-gray-100">{group.name}</td>
                                     <td className="px-4 py-3 text-sm text-center border-t border-gray-100">{group.quantity}</td>
-                                    <td className="px-4 py-3 text-sm text-right border-t border-gray-100">${group.price.toFixed(2)}</td>
+                                    {/* Price column dropped (S6) */}
                                     <td className="px-4 py-3 text-sm text-right border-t border-gray-100 font-medium text-red-600">${group.refundAmount.toFixed(2)}</td>
                                   </tr>
                                 ));

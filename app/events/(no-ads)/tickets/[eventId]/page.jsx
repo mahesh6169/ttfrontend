@@ -19,6 +19,7 @@ import {
   FaExclamationTriangle,
   FaArrowLeft,
   FaBell,
+  FaTag,
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getEventTicketStatus, getTicketSaleStatus } from '@/utils/events/ticketStatusHelper';
@@ -890,9 +891,9 @@ const TicketSelectionPage = () => {
                  {/* Ticket Sale Status */}
                  {(() => {
                    const status = getTicketSaleStatus(ticketType, selectedEvent.timeZone, eventCapacity);
-                   
+
                    if (!status) return null;
-                   
+
                    return (
                      <div className={`mt-1 sm:mt-2 text-[10px] sm:text-xs font-medium ${status.className}`}>
                        <span className="inline-block">{status.icon}</span>
@@ -900,6 +901,26 @@ const TicketSelectionPage = () => {
                      </div>
                    );
                  })()}
+
+                 {/* Public discount-code hints (S2). The API only ships redeemable, show-hint
+                     codes to non-owners, so anything present here is safe to display. A code
+                     covers this ticket type when its appliesToTicketTypes includes the NAME. */}
+                 {(selectedEvent.discountCodes || [])
+                   .filter((dc) => (dc.appliesToTicketTypes || []).includes(ticketType.name))
+                   .map((dc) => (
+                     <div
+                       key={dc.code}
+                       className="mt-1.5 sm:mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-teal-50 border border-teal-400 text-teal-800 text-[10px] sm:text-xs"
+                     >
+                       <FaTag className="text-teal-600 w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                       <span>
+                         Use code <span className="font-bold text-teal-700">{dc.code}</span>
+                         {dc.kind === 'fixed'
+                           ? ` for $${Number(dc.value).toFixed(2)} off`
+                           : ` for ${dc.value}% off`}
+                       </span>
+                     </div>
+                   ))}
                 </div>
               );
             })}

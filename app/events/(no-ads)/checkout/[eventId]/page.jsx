@@ -22,6 +22,7 @@ import {
   FaChevronUp,
   FaChevronDown,
   FaDownload,
+  FaTag,
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import { generateTicketsPDF } from '@/utils/paidEventTicketGenerator';
@@ -63,7 +64,13 @@ const CheckoutPage = () => {
   const [paymentStatus, setPaymentStatus] = useState({ status: null, clientSecret: null, amount: 0 });
   const [purchaseError, setPurchaseError] = useState(null);
   const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
-  
+
+  // Discount code (S3). appliedDiscount holds the server-validated summary numbers.
+  const [discountCodeInput, setDiscountCodeInput] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null); // { code, kind, value, subtotal, discountAmount, total }
+  const [discountError, setDiscountError] = useState(null);
+  const [discountLoading, setDiscountLoading] = useState(false);
+
   // Two-step process state
   const [currentStep, setCurrentStep] = useState('details'); // 'details' or 'payment'
   const [showMobileOrderSummary, setShowMobileOrderSummary] = useState(false);
@@ -222,23 +229,34 @@ const CheckoutPage = () => {
   // Simple totals - memoized to prevent recalculation
   const totals = useMemo(() => {
     // Use reservation's totalAmount if available, otherwise calculate from tickets
-    const finalTotal = reservation?.totalAmount || ticketTotals.totalPrice;
-    
-    console.log('Final total calculation:', {
-      reservationTotal: reservation?.totalAmount,
-      ticketTotalsPrice: ticketTotals.totalPrice,
-      finalTotal: finalTotal
-    });
-    
+    const baseTotal = reservation?.totalAmount || ticketTotals.totalPrice;
+
+    // When a discount is applied, use the server-validated numbers (authoritative; Option A
+    // summary line). create-payment-intent re-validates and is the final word on the charge.
+    if (appliedDiscount && appliedDiscount.discountAmount > 0) {
+      return {
+        subtotal: appliedDiscount.subtotal,
+        discountCode: appliedDiscount.code,
+        discountAmount: appliedDiscount.discountAmount,
+        gst: 0,
+        serviceFee: 0,
+        processingFee: 0,
+        total: appliedDiscount.total,
+        totalQuantity: ticketTotals.totalQuantity
+      };
+    }
+
     return {
-      subtotal: finalTotal,
+      subtotal: baseTotal,
+      discountCode: null,
+      discountAmount: 0,
       gst: 0, // GST is display only, not calculated
       serviceFee: 0, // No service fee shown to customer
       processingFee: 0, // No processing fee shown to customer
-      total: finalTotal, // Total equals subtotal
+      total: baseTotal, // Total equals subtotal
       totalQuantity: ticketTotals.totalQuantity
     };
-  }, [reservation?.totalAmount, ticketTotals]);
+  }, [reservation?.totalAmount, ticketTotals, appliedDiscount]);
 
   // Format selected tickets for PaymentSummary - memoized
   const formattedTickets = useMemo(() => {
@@ -383,6 +401,52 @@ const CheckoutPage = () => {
     }, 100);
   };
 
+  // tickets map (ticketTypeId -> qty) — shared by validate-discount and create-payment-intent
+  const buildTicketsMap = useCallback(() => (
+    selectedTickets.reduce((acc, t) => { acc[t.ticketTypeId] = t.quantity; return acc; }, {})
+  ), [selectedTickets]);
+
+  // Apply a discount code (S3). Read-only validate-discount call; create-payment-intent
+  // re-validates authoritatively at pay time.
+  const handleApplyDiscount = async () => {
+    const code = (discountCodeInput || '').trim();
+    if (!code) { setDiscountError('Enter a discount code.'); return; }
+    setDiscountLoading(true);
+    setDiscountError(null);
+    try {
+      const { data } = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/paid/validate-discount`,
+        { code, tickets: buildTicketsMap() },
+        { withCredentials: true }
+      );
+      if (data?.valid) {
+        setAppliedDiscount({
+          code: data.code,
+          kind: data.kind,
+          value: data.value,
+          subtotal: data.subtotal,
+          discountAmount: data.discountAmount,
+          total: data.total,
+        });
+        setDiscountError(null);
+      } else {
+        setAppliedDiscount(null);
+        setDiscountError(data?.message || 'This discount code cannot be applied.');
+      }
+    } catch (err) {
+      setAppliedDiscount(null);
+      setDiscountError(err.response?.data?.message || 'Could not validate the code. Please try again.');
+    } finally {
+      setDiscountLoading(false);
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountError(null);
+    setDiscountCodeInput('');
+  };
+
   // Handle payment intent creation
   const handleCreatePaymentIntent = async () => {
     setIsProcessing(true);
@@ -408,13 +472,16 @@ const CheckoutPage = () => {
           tickets: selectedTickets.reduce((acc, ticket) => {
             acc[ticket.ticketTypeId] = ticket.quantity;
             return acc;
-          }, {})
+          }, {}),
+          // Discount (S3/S4). Backend re-validates and is authoritative for the charge.
+          ...(appliedDiscount?.code ? { discountCode: appliedDiscount.code } : {})
         },
         { withCredentials: true }
       );
 
       if (response.data.clientSecret) {
-        const currentAmount = reservation?.totalAmount || totals.total || 0;
+        // Prefer the backend's discounted total (it ran the min-charge guard); fall back to local.
+        const currentAmount = response.data.pricing?.total ?? appliedDiscount?.total ?? reservation?.totalAmount ?? totals.total ?? 0;
         console.log('Payment intent created. Setting amount:', {
           currentAmount: currentAmount,
           reservationTotal: reservation?.totalAmount,
@@ -435,6 +502,17 @@ const CheckoutPage = () => {
       // Provide user-friendly generic messages
       let errorMessage = 'Unable to process payment at this time. Please try again.';
       
+      // Discount became invalid between Apply and Pay (expired / used up). Drop it and ask the
+      // buyer to retry without the code (honor-price only applies AFTER a successful charge).
+      if (error.response?.data?.errorCode === 'INVALID_DISCOUNT') {
+        setAppliedDiscount(null);
+        setDiscountError(error.response?.data?.message || 'This discount code is no longer valid. It has been removed — please try again.');
+        setErrors({ payment: 'The discount code is no longer valid and was removed. Please review your total and try again.' });
+        setPaymentStatus({ status: null, clientSecret: null, amount: 0 });
+        setIsProcessing(false);
+        return;
+      }
+
       // Check for specific error scenarios
       if (error.response?.status === 409 || error.response?.data?.message?.includes('capacity')) {
         errorMessage = 'Sorry, these tickets are no longer available. Someone else may have just completed their purchase. Please go back and try selecting different tickets.';
@@ -1129,6 +1207,54 @@ const CheckoutPage = () => {
                           />
                         </div>
                       )}
+
+                      {/* Discount Code (S3) */}
+                      <div className="mt-3 sm:mt-4 border-t pt-3 sm:pt-4">
+                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                          Discount code
+                        </label>
+                        {appliedDiscount ? (
+                          <div className="flex items-center justify-between gap-2 rounded-md border border-teal-300 bg-teal-50 px-3 py-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FaTag className="text-teal-700 w-3.5 h-3.5 flex-shrink-0" />
+                              <span className="text-xs sm:text-sm text-teal-800 truncate">
+                                <span className="font-bold">{appliedDiscount.code}</span> applied
+                                {appliedDiscount.discountAmount > 0 && (
+                                  <span className="text-teal-700"> — you save ${appliedDiscount.discountAmount.toFixed(2)}</span>
+                                )}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleRemoveDiscount}
+                              className="text-xs sm:text-sm text-red-600 hover:text-red-700 font-medium flex-shrink-0"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={discountCodeInput}
+                              onChange={(e) => { setDiscountCodeInput(e.target.value.toUpperCase()); if (discountError) setDiscountError(null); }}
+                              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyDiscount(); } }}
+                              placeholder="Enter code"
+                              maxLength={50}
+                              className="flex-1 px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300 uppercase"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleApplyDiscount}
+                              disabled={discountLoading || !discountCodeInput.trim()}
+                              className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium text-white ${discountLoading || !discountCodeInput.trim() ? 'bg-gray-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'}`}
+                            >
+                              {discountLoading ? 'Checking…' : 'Apply'}
+                            </button>
+                          </div>
+                        )}
+                        {discountError && <p className="text-red-500 text-xs mt-1">{discountError}</p>}
+                      </div>
 
                       {/* Proceed to Payment Button */}
                       <button

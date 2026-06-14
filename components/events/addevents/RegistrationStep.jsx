@@ -9,6 +9,9 @@ import {
   addTicketType,
   updateTicketType,
   removeTicketType,
+  addDiscountCode,
+  updateDiscountCode,
+  removeDiscountCode,
   addSeatingRow,
   updateRowLabel,
   updateSeatCount,
@@ -570,13 +573,15 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                   </label>
                   <input
                     type="number"
-                    min="0"
+                    min="1"
                     step="0.01"
                     value={ticket.price === undefined || ticket.price === null ? '' : ticket.price}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (!validatePriceDecimals(val)) {
                         setPriceErrors({ ...priceErrors, [index]: 'Maximum 2 decimal places allowed' });
+                      } else if (val !== '' && Number(val) < 1) {
+                        setPriceErrors({ ...priceErrors, [index]: 'Minimum ticket price is $1' });
                       } else {
                         const newErrors = { ...priceErrors };
                         delete newErrors[index];
@@ -639,6 +644,217 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
         Add Ticket Type
+      </button>
+    </div>
+  );
+};
+
+// Discount Codes (Paid Events Only) — see feature-add-discountcode.md S1.
+// Mirrors TicketTypesSection. appliesToTicketTypes stores ticket-type NAMES (explicit — no
+// "all by default"). kind is 'percent' | 'fixed' to match the backend enum exactly.
+const DiscountCodesSection = ({ formData, errors, dispatch }) => {
+  const getInputClasses = (hasError) => {
+    const base = 'w-full p-3 sm:p-2 text-base sm:text-sm text-slate-700 border rounded-lg focus:outline-none focus:ring-2';
+    return `${base} ${hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
+  };
+
+  const clearError = (key) => {
+    if (errors?.[key]) {
+      const next = { ...errors };
+      delete next[key];
+      dispatch(setFormErrors(next));
+    }
+  };
+
+  const codes = formData.discountCodes || [];
+  // A code references ticket types by NAME, so only named ticket types can be covered.
+  const namedTicketTypes = (formData.ticketTypes || []).filter((t) => (t?.name || '').trim());
+
+  const toggleApplies = (index, name, checked) => {
+    const current = codes[index]?.appliesToTicketTypes || [];
+    const updated = checked ? [...new Set([...current, name])] : current.filter((nm) => nm !== name);
+    dispatch(updateDiscountCode({ index, field: 'appliesToTicketTypes', value: updated }));
+    clearError(`discountApplies_${index}`);
+  };
+
+  return (
+    <div className="border-t border-slate-200 pt-6 mt-6">
+      <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-1 text-slate-700">
+        Discount Codes
+      </h3>
+      <p className="text-xs text-slate-500 mb-4">
+        Optional. Create promo codes buyers apply at checkout. Each code discounts only the ticket types you tick.
+      </p>
+
+      {codes.length > 0 && (
+        <div className="space-y-3 mb-4">
+          {codes.map((dc, index) => (
+            <div key={index} className="border border-slate-200 rounded-lg p-3">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-sm font-medium text-slate-700">
+                  Code {index + 1}{dc?.code ? `: ${dc.code}` : ''}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => dispatch(removeDiscountCode(index))}
+                  className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  aria-label="Remove discount code"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Code */}
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Code <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    value={dc?.code || ''}
+                    onChange={(e) => { dispatch(updateDiscountCode({ index, field: 'code', value: e.target.value.toUpperCase() })); clearError(`discountCode_${index}`); }}
+                    placeholder="SUMMER20"
+                    maxLength="50"
+                    className={getInputClasses(!!errors?.[`discountCode_${index}`])}
+                  />
+                  {errors?.[`discountCode_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`discountCode_${index}`][0]}</p>}
+                </div>
+
+                {/* Type */}
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Type <span className="text-red-500">*</span></label>
+                  <select
+                    value={dc?.kind || 'percent'}
+                    onChange={(e) => dispatch(updateDiscountCode({ index, field: 'kind', value: e.target.value }))}
+                    className={getInputClasses(false)}
+                  >
+                    <option value="percent">Percentage (%)</option>
+                    <option value="fixed">Fixed amount ($)</option>
+                  </select>
+                </div>
+
+                {/* Value */}
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">
+                    {dc?.kind === 'fixed' ? 'Amount ($)' : 'Percent (1–90)'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={dc?.kind === 'fixed' ? '0.01' : '1'}
+                    max={dc?.kind === 'fixed' ? undefined : '90'}
+                    step={dc?.kind === 'fixed' ? '0.01' : '1'}
+                    value={dc.value === null || dc.value === undefined ? '' : dc.value}
+                    onChange={(e) => { const v = e.target.value; dispatch(updateDiscountCode({ index, field: 'value', value: v === '' ? null : Number(v) })); clearError(`discountValue_${index}`); }}
+                    onWheel={(e) => e.target.blur()}
+                    className={getInputClasses(!!errors?.[`discountValue_${index}`])}
+                    placeholder={dc?.kind === 'fixed' ? '5.00' : '10'}
+                  />
+                  {errors?.[`discountValue_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`discountValue_${index}`][0]}</p>}
+                </div>
+
+                {/* Max uses */}
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Max uses (blank = unlimited)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={dc.maxUses === null || dc.maxUses === undefined ? '' : dc.maxUses}
+                    onChange={(e) => { const v = e.target.value; dispatch(updateDiscountCode({ index, field: 'maxUses', value: v === '' ? null : Number(v) })); clearError(`discountUses_${index}`); }}
+                    onWheel={(e) => e.target.blur()}
+                    className={getInputClasses(!!errors?.[`discountUses_${index}`])}
+                    placeholder="Unlimited"
+                  />
+                  {errors?.[`discountUses_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`discountUses_${index}`][0]}</p>}
+                </div>
+
+                {/* Valid from */}
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Valid from</label>
+                  <input
+                    type="date"
+                    value={dc.validFrom ? (dc.validFrom.includes('T') ? dc.validFrom.slice(0, 10) : dc.validFrom) : ''}
+                    onChange={(e) => { dispatch(updateDiscountCode({ index, field: 'validFrom', value: e.target.value || null })); clearError(`discountDates_${index}`); }}
+                    className={getInputClasses(!!errors?.[`discountDates_${index}`])}
+                  />
+                </div>
+
+                {/* Valid until */}
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Valid until</label>
+                  <input
+                    type="date"
+                    value={dc.validUntil ? (dc.validUntil.includes('T') ? dc.validUntil.slice(0, 10) : dc.validUntil) : ''}
+                    onChange={(e) => { dispatch(updateDiscountCode({ index, field: 'validUntil', value: e.target.value || null })); clearError(`discountDates_${index}`); }}
+                    className={getInputClasses(!!errors?.[`discountDates_${index}`])}
+                  />
+                </div>
+              </div>
+
+              {errors?.[`discountDates_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`discountDates_${index}`][0]}</p>}
+
+              {/* Applies to (ticket-type NAMES, explicit) */}
+              <div className="mt-3 pt-3 border-t border-slate-200">
+                <label className="block text-xs font-medium text-slate-600 mb-2">
+                  Applies to <span className="text-red-500">*</span>
+                  <span className="font-normal text-slate-400"> — tick the ticket types this code discounts</span>
+                </label>
+                {namedTicketTypes.length === 0 ? (
+                  <p className="text-xs text-amber-600">Name your ticket types above first, then choose which ones this code applies to.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-3">
+                    {namedTicketTypes.map((t) => (
+                      <label key={t.name} className="flex items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          checked={(dc.appliesToTicketTypes || []).includes(t.name)}
+                          onChange={(e) => toggleApplies(index, t.name, e.target.checked)}
+                          className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
+                        />
+                        <span className="text-sm text-slate-600">{t.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {errors?.[`discountApplies_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`discountApplies_${index}`][0]}</p>}
+              </div>
+
+              {/* Active + Show hint */}
+              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={dc?.active !== false}
+                    onChange={(e) => dispatch(updateDiscountCode({ index, field: 'active', value: e.target.checked }))}
+                    className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
+                  />
+                  <span className="text-sm text-slate-600">Active</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={dc?.showHint === true}
+                    onChange={(e) => dispatch(updateDiscountCode({ index, field: 'showHint', value: e.target.checked }))}
+                    className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
+                  />
+                  <span className="text-sm text-slate-600">Show hint publicly on the tickets page</span>
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => dispatch(addDiscountCode())}
+        className="inline-flex items-center px-4 py-2 text-sm text-teal-700 hover:text-teal-800 font-medium"
+      >
+        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        Add Discount Code
       </button>
     </div>
   );
@@ -735,6 +951,15 @@ const RegistrationStep = ({
             {/* Ticket Types (Paid Only) */}
             {isPaidEvent && (
               <TicketTypesSection
+                formData={formData}
+                errors={errors}
+                dispatch={dispatch}
+              />
+            )}
+
+            {/* Discount Codes (Paid Only) */}
+            {isPaidEvent && (
+              <DiscountCodesSection
                 formData={formData}
                 errors={errors}
                 dispatch={dispatch}

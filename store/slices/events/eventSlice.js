@@ -282,6 +282,9 @@ const createDefaultFormData = () => ({
   
   // Paid Event Details
   ticketTypes: [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
+  // Discount Codes (Paid Events Only). kind: 'percent' | 'fixed'; appliesToTicketTypes holds
+  // ticket-type NAMES (explicit — no "all by default"). Matches the backend schema exactly.
+  discountCodes: [],
   seatingLayout: [],
   seatingLayoutImage: [],
   organizerReservedSeats: '',
@@ -391,7 +394,32 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
     return processedTicket;
   });
 };
-  
+
+  // 🔧 Convert discount-code validity dates from UTC to local (yyyy-MM-dd) for the form.
+  // Only the OWNER receives full discountCodes from the API (public gets hint-only); in edit
+  // mode this is always the owner. Counters (usedCount/remainingUses) are server-owned and
+  // are NOT put into the form — the backend reconciles them on save.
+  const processDiscountCodesForEdit = (discountCodes, timeZone) => {
+    if (!discountCodes || !Array.isArray(discountCodes)) return [];
+    const toLocal = (d) => {
+      if (!d) return null;
+      if (!timeZone) return d;
+      try { return format(utcToZonedTime(d, timeZone), 'yyyy-MM-dd'); }
+      catch { return d; }
+    };
+    return discountCodes.map((dc) => ({
+      code: dc.code || '',
+      kind: dc.kind === 'fixed' ? 'fixed' : 'percent',
+      value: dc.value ?? null,
+      maxUses: dc.maxUses ?? null,
+      validFrom: toLocal(dc.validFrom),
+      validUntil: toLocal(dc.validUntil),
+      active: dc.active !== false,
+      appliesToTicketTypes: Array.isArray(dc.appliesToTicketTypes) ? dc.appliesToTicketTypes : [],
+      showHint: dc.showHint === true,
+    }));
+  };
+
   return {
     title: eventData.title || '',
     description: eventData.description || '',
@@ -436,9 +464,10 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
     capacity: eventData.capacity || '',
     maxAttendeesPerRegistration: eventData.maxAttendeesPerRegistration || '',
     registrationFields: eventData.registrationFields || [],
-    ticketTypes: (eventData.ticketTypes && eventData.ticketTypes.length > 0) 
+    ticketTypes: (eventData.ticketTypes && eventData.ticketTypes.length > 0)
   ? processTicketDatesForEdit(eventData.ticketTypes, eventData.timeZone)
   : [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
+    discountCodes: processDiscountCodesForEdit(eventData.discountCodes, eventData.timeZone),
     seatingLayout: eventData.seatingLayout || [],
     seatingLayoutImage: eventData.seatingLayoutImage || [],
     organizerReservedSeats: eventData.organizerReservedSeats || '',
@@ -785,6 +814,33 @@ deleteError: null,
     removeTicketType: (state, action) => {
       const index = action.payload;
       state.formData.ticketTypes = state.formData.ticketTypes.filter((_, i) => i !== index);
+      state.hasUnsavedChanges = true;
+    },
+
+    // Discount Codes (Paid Events Only) — mirror ticket-type reducers.
+    addDiscountCode: (state) => {
+      if (!Array.isArray(state.formData.discountCodes)) state.formData.discountCodes = [];
+      state.formData.discountCodes.push({
+        code: '',
+        kind: 'percent', // 'percent' | 'fixed'
+        value: null,
+        maxUses: null,
+        validFrom: null,
+        validUntil: null,
+        active: true,
+        appliesToTicketTypes: [], // ticket-type NAMES (explicit)
+        showHint: false,
+      });
+      state.hasUnsavedChanges = true;
+    },
+    updateDiscountCode: (state, action) => {
+      const { index, field, value } = action.payload;
+      state.formData.discountCodes[index][field] = value;
+      state.hasUnsavedChanges = true;
+    },
+    removeDiscountCode: (state, action) => {
+      const index = action.payload;
+      state.formData.discountCodes = state.formData.discountCodes.filter((_, i) => i !== index);
       state.hasUnsavedChanges = true;
     },
 
@@ -1291,6 +1347,9 @@ export const {
   addTicketType,
   updateTicketType,
   removeTicketType,
+  addDiscountCode,
+  updateDiscountCode,
+  removeDiscountCode,
 
   // Event Intent & Promotional Settings
   setEventIntent,
