@@ -39,11 +39,6 @@ const RefundPolicyStep = ({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Step Header */}
-      <div className="mb-4">
-        <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Refund Policy</h2>
-      </div>
-
       {/* Explanation */}
       <p className="text-sm text-slate-600 mb-3">
         Choose how refunds are handled. This will be shown to customers at checkout.

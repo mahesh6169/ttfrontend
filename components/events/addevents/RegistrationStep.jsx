@@ -907,24 +907,6 @@ const RegistrationStep = ({
 
   return (
     <div className="space-y-6">
-      {/* Step Header */}
-      <div className="mb-4">
-        <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
-          {isPromotionalEvent
-            ? 'Promotional Event'
-            : formData.isPaid
-              ? 'Registration & Tickets'
-              : 'Registration'}
-        </h2>
-        <p className="text-sm text-slate-500 mt-1">
-          {isPromotionalEvent
-            ? 'Configure your promotional event listing'
-            : formData.isPaid
-              ? 'Configure ticket types and how attendees will register'
-              : 'Configure how attendees will RSVP to your event'}
-        </p>
-      </div>
-
       {/* Promotional Event Configuration */}
       {isPromotionalEvent && (
         <PromotionalConfig

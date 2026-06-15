@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import StepManager from '@/components/events/addevents/StepManager';
+import ContentShell from '@/components/events/ContentShell';
 
 const AddPaidEventPage = () => {
   const router = useRouter();
@@ -32,14 +33,14 @@ const AddPaidEventPage = () => {
   }
 
   return (
-    <div>
-      <StepManager 
-        mode="add" 
+    <ContentShell>
+      <StepManager
+        mode="add"
         initialFormData={{ isPaid: true }}
-        onComplete={() => {}} 
-        allowCancel={true} 
+        onComplete={() => {}}
+        allowCancel={true}
       />
-    </div>
+    </ContentShell>
   );
 };
 

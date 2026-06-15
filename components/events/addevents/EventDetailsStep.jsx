@@ -13,9 +13,6 @@ import {
   updateOrganizerSocialMedia,
   removeOrganizerSocialMedia,
 } from '@/store/slices/events/eventSlice';
-import CategorySelector from '@/components/events/CategorySelector';
-import CommunitySelector from '@/components/shared/CommunitySelector';
-import { needsCommunityField } from '@/components/events/addevents/EventCategories';
 
 const SOCIAL_PLATFORMS = [
   { value: 'Facebook', label: 'Facebook' },
@@ -114,88 +111,6 @@ const EventDetailsStep = ({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Step Header */}
-      <div className="mb-2">
-        <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Event Details</h2>
-        <p className="text-sm text-slate-500">Describe your event and add organizer information</p>
-      </div>
-
-      {/* Category */}
-      <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
-          Category <span className="text-red-500">*</span>
-        </label>
-        {disabled ? (
-          <input
-            type="text"
-            value={formData.category || 'No category selected'}
-            disabled={true}
-            className={getFieldClasses(false)}
-          />
-        ) : (
-          <CategorySelector
-            value={formData.category || ''}
-            onChange={(value) => {
-              handleChange({ target: { name: 'category', value } });
-              if (!needsCommunityField(value)) {
-                handleChange({ target: { name: 'communities', value: [] } });
-              }
-            }}
-            placeholder="Select a category"
-            required={true}
-          />
-        )}
-        {errors?.category && (
-          <p className="text-red-500 text-xs sm:text-sm mt-1">
-            {Array.isArray(errors.category) ? errors.category[0] : errors.category}
-          </p>
-        )}
-      </div>
-
-      {/* Community/Language Selection - Only for eligible categories */}
-      {!disabled && needsCommunityField(formData.category) && (
-        <div className="space-y-2">
-          <CommunitySelector
-            value={formData.communities || []}
-            onChange={(value) => handleChange({ target: { name: 'communities', value } })}
-            label="Community/Language (Optional)"
-            showHint={true}
-          />
-        </div>
-      )}
-
-      {/* Description */}
-      <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
-          Description <span className="text-red-500">*</span>
-        </label>
-        <textarea
-          name="description"
-          value={formData.description || ''}
-          onChange={handleChange}
-          disabled={disabled}
-          className={`${getFieldClasses(!!errors?.description)} min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y`}
-          rows="6"
-          placeholder={disabled ? '' : 'Describe your event - what attendees can expect, agenda, special requirements, etc.'}
-          maxLength="15000"
-        />
-        <div className="flex justify-between items-start gap-2 mt-1">
-          <div className="flex-1">
-            {errors?.description && (
-              <p className="text-red-500 text-xs sm:text-sm">
-                {Array.isArray(errors.description) ? errors.description[0] : errors.description}
-              </p>
-            )}
-          </div>
-          <span className="text-xs text-slate-400 whitespace-nowrap">
-            {(formData.description || '').length}/15000
-          </span>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-slate-200 pt-6 mt-6"></div>
-
       {/* Organiser Details Section */}
       <div>
         <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-3 sm:mb-4 text-slate-700">

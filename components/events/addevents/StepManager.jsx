@@ -756,6 +756,8 @@ const validateCurrentStep = useCallback(() => {
         errors.eventIntent = ['Please select whether you want to promote or host this event'];
       }
       if (!formData.title?.trim()) errors.title = ['Event title is required'];
+      if (!formData.category?.trim()) errors.category = ['Event category is required'];
+      if (!formData.description?.trim()) errors.description = ['Event description is required'];
       if (!formData.dateTime) {
         errors.dateTime = ['Event date and time are required'];
       } else if (isAddMode) {
@@ -811,11 +813,7 @@ const validateCurrentStep = useCallback(() => {
       }
       break;
 
-    case 2: // Event Details - Category, Description, Organizer, Coordinators
-      if (!formData.category?.trim()) errors.category = ['Event category is required'];
-      if (!formData.description?.trim())
-        errors.description = ['Event description is required'];
-
+    case 2: // Organiser - Organizer details, social, coordinators
       // Organiser validation — Name required; contact number is optional for all event types
       if (!formData.organizer?.name?.trim()) {
         errors.organizer = ['Organiser name is required'];
@@ -1650,8 +1648,27 @@ const handleAddAnother = useCallback(() => {
   }
 
   return (
-    <div className="px-0 py-4 sm:px-4 max-w-4xl mx-auto">
+    <div className="w-full">
       <RequireVerifiedAccount message="You must be logged in to manage events.">
+
+        {/* Page Title — row 1 of the Content Shell (centered) */}
+        <h1 className="text-center text-xl sm:text-2xl font-bold text-slate-800 mb-3">
+          {customTitle || 'Create Event'}
+        </h1>
+
+        {/* Top Toolbar — row 2: Cancel (left). Single exit for the wizard. */}
+        {!isViewMode && allowCancel && (
+          <div className="mb-4 sm:mb-6 flex items-center">
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={isLoading}
+              className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ✕ Cancel
+            </button>
+          </div>
+        )}
 
         {/* Step Indicator */}
         <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
@@ -1711,15 +1728,6 @@ const handleAddAnother = useCallback(() => {
                   className="text-sm text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ← Previous
-                </button>
-              ) : allowCancel ? (
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                  className="text-sm text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancel
                 </button>
               ) : (
                 <div></div>

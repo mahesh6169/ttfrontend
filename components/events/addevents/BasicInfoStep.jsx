@@ -19,6 +19,9 @@ import AddressInput from '@/components/events/addevents/AddressInput';
 import ImageUploader from '@/components/events/addevents/ImageUploader';
 import TimezoneSelector from '@/components/shared/TimezoneSelector';
 import DateTimePicker from '@/components/shared/DateTimePicker';
+import CategorySelector from '@/components/events/CategorySelector';
+import CommunitySelector from '@/components/shared/CommunitySelector';
+import { needsCommunityField } from '@/components/events/addevents/EventCategories';
 import { utcToZonedTime, format } from 'date-fns-tz';
 
 const AU_TIMEZONES = [
@@ -53,40 +56,40 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
     <div className="space-y-4">
       {/* Event Type */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
-          Event Type <span className="text-red-500">*</span>
-          {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
-        </label>
+        <div className="flex items-baseline gap-4">
+          <label className="font-semibold sm:font-bold text-slate-700 text-sm sm:text-base whitespace-nowrap">
+            Event Type <span className="text-red-500">*</span>
+            {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
+          </label>
 
-        <div className={`inline-grid grid-cols-2 gap-2 ${isLocked ? 'opacity-60' : ''}`}>
-          <button
-            type="button"
-            onClick={() => handleIntentSelect('host')}
-            disabled={isLocked}
-            className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
-              currentIntent === 'host'
-                ? 'bg-teal-700 text-white border-teal-700'
-                : 'bg-white text-slate-700 border-slate-300'
-            } ${isLocked ? 'cursor-not-allowed' : ''}`}
-          >
-            Host
-          </button>
-          <button
-            type="button"
-            onClick={() => handleIntentSelect('promote')}
-            disabled={isLocked}
-            className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
-              currentIntent === 'promote'
-                ? 'bg-teal-700 text-white border-teal-700'
-                : 'bg-white text-slate-700 border-slate-300'
-            } ${isLocked ? 'cursor-not-allowed' : ''}`}
-          >
-            Promote
-          </button>
+          <div className={`flex items-center ${isLocked ? 'opacity-60' : ''}`}>
+            <button
+              type="button"
+              onClick={() => handleIntentSelect('host')}
+              disabled={isLocked}
+              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
+                currentIntent === 'host'
+                  ? 'text-teal-700 font-semibold border-teal-700'
+                  : 'text-slate-500 border-transparent hover:text-slate-700'
+              } ${isLocked ? 'cursor-not-allowed' : ''}`}
+            >
+              Host
+            </button>
+            <span aria-hidden="true" className="mx-3 h-4 w-px bg-slate-300"></span>
+            <button
+              type="button"
+              onClick={() => handleIntentSelect('promote')}
+              disabled={isLocked}
+              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
+                currentIntent === 'promote'
+                  ? 'text-teal-700 font-semibold border-teal-700'
+                  : 'text-slate-500 border-transparent hover:text-slate-700'
+              } ${isLocked ? 'cursor-not-allowed' : ''}`}
+            >
+              Promote
+            </button>
+          </div>
         </div>
-        <p className="text-xs text-slate-500 mt-1">
-          {currentIntent === 'host' ? 'Manage registrations on our platform' : currentIntent === 'promote' ? 'List for visibility only' : 'Choose how to list your event'}
-        </p>
         {errors?.eventIntent && (
           <p className="text-red-500 text-xs sm:text-sm mt-1">
             {Array.isArray(errors.eventIntent) ? errors.eventIntent[0] : errors.eventIntent}
@@ -96,33 +99,34 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
 
       {/* Free/Paid Toggle - Only shown when "Host" is selected */}
       {currentIntent === 'host' && (
-        <div>
-          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <div className="flex items-baseline gap-4">
+          <label className="font-semibold sm:font-bold text-slate-700 text-sm sm:text-base whitespace-nowrap">
             Ticket Type <span className="text-red-500">*</span>
             {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
           </label>
 
-          <div className={`inline-grid grid-cols-2 gap-2 ${isLocked ? 'opacity-60' : ''}`}>
+          <div className={`flex items-center ${isLocked ? 'opacity-60' : ''}`}>
             <button
               type="button"
               onClick={() => handlePaidToggle(false)}
               disabled={isLocked}
-              className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
+              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
                 !isPaid
-                  ? 'bg-teal-700 text-white border-teal-700'
-                  : 'bg-white text-slate-700 border-slate-300'
+                  ? 'text-teal-700 font-semibold border-teal-700'
+                  : 'text-slate-500 border-transparent hover:text-slate-700'
               } ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
               RSVP
             </button>
+            <span aria-hidden="true" className="mx-3 h-4 w-px bg-slate-300"></span>
             <button
               type="button"
               onClick={() => handlePaidToggle(true)}
               disabled={isLocked}
-              className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
+              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
                 isPaid
-                  ? 'bg-teal-700 text-white border-teal-700'
-                  : 'bg-white text-slate-700 border-slate-300'
+                  ? 'text-teal-700 font-semibold border-teal-700'
+                  : 'text-slate-500 border-transparent hover:text-slate-700'
               } ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
               Paid
@@ -263,12 +267,6 @@ const BasicInfoStep = ({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Step Header */}
-      <div className="mb-2">
-        <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Basic Info</h2>
-        <p className="text-sm text-slate-500">Set up your event type and details</p>
-      </div>
-
       {/* Intent Selection - First thing users choose */}
       <IntentSelection
         formData={formData}
@@ -281,9 +279,6 @@ const BasicInfoStep = ({
       {/* Rest of fields only shown after intent is selected */}
       {formData.eventIntent && (
         <>
-          {/* Divider */}
-          <div className="border-t border-slate-200 pt-4 sm:pt-6"></div>
-
           {/* Title */}
           <div>
             <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
@@ -304,6 +299,79 @@ const BasicInfoStep = ({
                 {Array.isArray(errors.title) ? errors.title[0] : errors.title}
               </p>
             )}
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+              Category <span className="text-red-500">*</span>
+            </label>
+            {disabled ? (
+              <input
+                type="text"
+                value={formData.category || 'No category selected'}
+                disabled={true}
+                className={getFieldClasses('category')}
+              />
+            ) : (
+              <CategorySelector
+                value={formData.category || ''}
+                onChange={(value) => {
+                  handleChange({ target: { name: 'category', value } });
+                  if (!needsCommunityField(value)) {
+                    handleChange({ target: { name: 'communities', value: [] } });
+                  }
+                }}
+                placeholder="Select a category"
+                required={true}
+              />
+            )}
+            {errors?.category && (
+              <p className="text-red-500 text-xs sm:text-sm mt-1">
+                {Array.isArray(errors.category) ? errors.category[0] : errors.category}
+              </p>
+            )}
+          </div>
+
+          {/* Community/Language Selection - Only for eligible categories */}
+          {!disabled && needsCommunityField(formData.category) && (
+            <div className="space-y-2">
+              <CommunitySelector
+                value={formData.communities || []}
+                onChange={(value) => handleChange({ target: { name: 'communities', value } })}
+                label="Community/Language (Optional)"
+                showHint={true}
+              />
+            </div>
+          )}
+
+          {/* Description */}
+          <div>
+            <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+              Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="description"
+              value={formData.description || ''}
+              onChange={handleChange}
+              disabled={disabled}
+              className={`${getFieldClasses('description')} min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y`}
+              rows="6"
+              placeholder={disabled ? '' : 'Describe your event - what attendees can expect, agenda, special requirements, etc.'}
+              maxLength="15000"
+            />
+            <div className="flex justify-between items-start gap-2 mt-1">
+              <div className="flex-1">
+                {errors?.description && (
+                  <p className="text-red-500 text-xs sm:text-sm">
+                    {Array.isArray(errors.description) ? errors.description[0] : errors.description}
+                  </p>
+                )}
+              </div>
+              <span className="text-xs text-slate-400 whitespace-nowrap">
+                {(formData.description || '').length}/15000
+              </span>
+            </div>
           </div>
 
           {/* Timezone + DateTime - Side by side on desktop */}
