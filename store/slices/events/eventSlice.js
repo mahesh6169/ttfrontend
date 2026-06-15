@@ -412,6 +412,7 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
       kind: dc.kind === 'fixed' ? 'fixed' : 'percent',
       value: dc.value ?? null,
       maxUses: dc.maxUses ?? null,
+      usedCount: dc.usedCount ?? 0, // read-only; carried so the wizard can enforce V4 inline (step 3). NOT sent on save (server owns counters).
       validFrom: toLocal(dc.validFrom),
       validUntil: toLocal(dc.validUntil),
       active: dc.active !== false,

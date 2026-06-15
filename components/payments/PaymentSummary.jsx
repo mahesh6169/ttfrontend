@@ -190,7 +190,7 @@ const PaymentSummary = ({
             <div className="flex justify-between text-[10px] sm:text-xs lg:text-sm text-teal-700">
               <span className="flex items-center gap-1">
                 <FaTag className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                Discount{totals.discountCode ? ` (${totals.discountCode})` : ''}
+                Discount{totals.discountCode ? ` (${totals.discountCode}${totals.discountScopeLabel ? `: ${totals.discountScopeLabel}` : ''})` : ''}
               </span>
               <span>-${totals.discountAmount?.toFixed(2)}</span>
             </div>

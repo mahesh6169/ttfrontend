@@ -83,8 +83,9 @@ const validateRegistrationFieldsList = (formData) => {
   return errors.length > 0 ? errors : null;
 };
 
-// Client mirror of the discount-code server validations (feature S1: V1/V2/V3/V5/V6). V4
-// (max uses vs already-used) is enforced server-side on edit since the form has no usedCount.
+// Client mirror of the discount-code server validations (feature S1: V1–V6). V4 (max uses vs
+// already-used) uses the read-only usedCount carried into the edit form, so it surfaces inline
+// in step 3; the server still re-checks it on save as the backstop.
 // Returns an errors object keyed per code index (Object.assign into step errors), or {}.
 const validateDiscountCodesList = (formData) => {
   const errors = {};
@@ -131,6 +132,12 @@ const validateDiscountCodesList = (formData) => {
       errors[`discountDates_${index}`] = ['"Valid from" must be on or before "valid until"'];
     }
 
+    // V4 (edit) — max uses cannot be set below what's already been used (shows under Max uses)
+    const used = dc.usedCount || 0;
+    if (dc.maxUses != null && dc.maxUses < used) {
+      errors[`discountUses_${index}`] = [`${used} already used — max uses cannot be below ${used}`];
+    }
+
     // V6 — must leave at least $1 on the cheapest covered ticket bought alone
     if (applies.length > 0 && !isNaN(val)) {
       const coveredPrices = ticketTypes
@@ -141,7 +148,7 @@ const validateDiscountCodesList = (formData) => {
         const cheapest = Math.min(...coveredPrices);
         const after = dc.kind === 'percent' ? cheapest * (1 - val / 100) : cheapest - val;
         if (Math.round(after * 100) < 100) {
-          errors[`discountValue_${index}`] = ['This drops a covered ticket below $1 — lower the value or untick that ticket type'];
+          errors[`discountValue_${index}`] = ['This makes a ticket cost under $1. Lower the discount or uncheck that ticket type.'];
         }
       }
     }

@@ -838,7 +838,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                     onChange={(e) => dispatch(updateDiscountCode({ index, field: 'showHint', value: e.target.checked }))}
                     className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
                   />
-                  <span className="text-sm text-slate-600">Show hint publicly on the tickets page</span>
+                  <span className="text-sm text-slate-600">Show discount code during checkout</span>
                 </label>
               </div>
             </div>

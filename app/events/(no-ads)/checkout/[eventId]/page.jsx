@@ -234,10 +234,17 @@ const CheckoutPage = () => {
     // When a discount is applied, use the server-validated numbers (authoritative; Option A
     // summary line). create-payment-intent re-validates and is the final word on the charge.
     if (appliedDiscount && appliedDiscount.discountAmount > 0) {
+      // "Applies to" label: name the covered ticket types in the cart; collapse to "all
+      // tickets" when the code covers every type the buyer is purchasing.
+      const cartNames = [...new Set(selectedTickets.filter(t => t.quantity > 0).map(t => t.ticketName))];
+      const covered = (appliedDiscount.appliesToTicketTypes || []).filter(n => cartNames.includes(n));
+      const discountScopeLabel = covered.join(', '); // list the covered ticket-type names
+
       return {
         subtotal: appliedDiscount.subtotal,
         discountCode: appliedDiscount.code,
         discountAmount: appliedDiscount.discountAmount,
+        discountScopeLabel,
         gst: 0,
         serviceFee: 0,
         processingFee: 0,
@@ -256,7 +263,7 @@ const CheckoutPage = () => {
       total: baseTotal, // Total equals subtotal
       totalQuantity: ticketTotals.totalQuantity
     };
-  }, [reservation?.totalAmount, ticketTotals, appliedDiscount]);
+  }, [reservation?.totalAmount, ticketTotals, appliedDiscount, selectedTickets]);
 
   // Format selected tickets for PaymentSummary - memoized
   const formattedTickets = useMemo(() => {
@@ -424,6 +431,7 @@ const CheckoutPage = () => {
           code: data.code,
           kind: data.kind,
           value: data.value,
+          appliesToTicketTypes: data.appliesToTicketTypes || [],
           subtotal: data.subtotal,
           discountAmount: data.discountAmount,
           total: data.total,
@@ -1219,6 +1227,7 @@ const CheckoutPage = () => {
                               <FaTag className="text-teal-700 w-3.5 h-3.5 flex-shrink-0" />
                               <span className="text-xs sm:text-sm text-teal-800 truncate">
                                 <span className="font-bold">{appliedDiscount.code}</span> applied
+                                {totals.discountScopeLabel ? ` to ${totals.discountScopeLabel}` : ''}
                                 {appliedDiscount.discountAmount > 0 && (
                                   <span className="text-teal-700"> — you save ${appliedDiscount.discountAmount.toFixed(2)}</span>
                                 )}
