@@ -180,6 +180,22 @@ const PaymentSummary = ({
 
       {/* Price Breakdown */}
       <div className="border-t border-gray-200 pt-1.5 sm:pt-2 lg:pt-3 space-y-1 sm:space-y-1.5 lg:space-y-2">
+        {/* Subtotal + Discount (Option A — only when a discount is applied) */}
+        {totals.discountAmount > 0 && (
+          <>
+            <div className="flex justify-between text-[10px] sm:text-xs lg:text-sm text-gray-700">
+              <span>Subtotal</span>
+              <span>${totals.subtotal?.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-[10px] sm:text-xs lg:text-sm text-teal-700">
+              <span className="flex items-center gap-1">
+                <FaTag className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                Discount{totals.discountCode ? ` (${totals.discountCode}${totals.discountScopeLabel ? `: ${totals.discountScopeLabel}` : ''})` : ''}
+              </span>
+              <span>-${totals.discountAmount?.toFixed(2)}</span>
+            </div>
+          </>
+        )}
         {/* Total */}
         <div className="flex justify-between text-xs sm:text-sm lg:text-base font-bold text-teal-700">
           <span>Total</span>

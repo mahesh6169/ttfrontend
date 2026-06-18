@@ -83,6 +83,93 @@ const validateRegistrationFieldsList = (formData) => {
   return errors.length > 0 ? errors : null;
 };
 
+// Client mirror of the discount-code server validations (feature S1: V1–V6). V4 (max uses vs
+// already-used) uses the read-only usedCount carried into the edit form, so it surfaces inline
+// in step 3; the server still re-checks it on save as the backstop.
+// Returns an errors object keyed per code index (Object.assign into step errors), or {}.
+const validateDiscountCodesList = (formData) => {
+  const errors = {};
+  if (formData.eventIntent !== 'host' || !formData.isPaid) return errors;
+  const codes = formData.discountCodes || [];
+  if (codes.length === 0) return errors;
+
+  const ticketTypes = formData.ticketTypes || [];
+  const ticketNames = new Set(ticketTypes.filter((t) => (t?.name || '').trim()).map((t) => t.name));
+  const seen = new Set();
+  const eventDay = formData.dateTime ? String(formData.dateTime).slice(0, 10) : '';
+
+  codes.forEach((dc, index) => {
+    const code = (dc.code || '').trim().toUpperCase();
+    // V1 — required + 3-20 chars + unique within the event
+    if (!code) {
+      errors[`discountCode_${index}`] = ['Discount code is required'];
+    } else if (code.length < 3 || code.length > 20) {
+      errors[`discountCode_${index}`] = ['Code must be 3-20 characters'];
+    } else if (seen.has(code)) {
+      errors[`discountCode_${index}`] = ['Duplicate code — each code must be unique'];
+    } else {
+      seen.add(code);
+    }
+
+    // V2 — value range + 2-decimal limit
+    const val = Number(dc.value);
+    if (dc.value === null || dc.value === undefined || dc.value === '' || isNaN(val)) {
+      errors[`discountValue_${index}`] = ['Discount value is required'];
+    } else if (dc.kind === 'percent') {
+      if (!Number.isInteger(val) || val < 1 || val > 90) errors[`discountValue_${index}`] = ['Percent must be a whole number from 1 to 90'];
+    } else if (val <= 0) {
+      errors[`discountValue_${index}`] = ['Amount must be greater than 0'];
+    } else if (Math.abs(val * 100 - Math.round(val * 100)) > 1e-9) {
+      errors[`discountValue_${index}`] = ['Amount can have at most 2 decimal places'];
+    }
+
+    // applies-to: only names that still exist count
+    const applies = (dc.appliesToTicketTypes || []).filter((n) => ticketNames.has(n));
+    // V3 — an active code must cover at least one existing ticket type
+    if (dc.active !== false && applies.length === 0) {
+      errors[`discountApplies_${index}`] = ['Pick at least one ticket type this code applies to'];
+    }
+
+    // V5 — date order; V7 — window cannot run past the event day (by day)
+    const vFrom = dc.validFrom ? String(dc.validFrom).slice(0, 10) : '';
+    const vUntil = dc.validUntil ? String(dc.validUntil).slice(0, 10) : '';
+    if (eventDay && vFrom && vFrom > eventDay) {
+      errors[`discountDates_${index}`] = ["Valid from can't be after the event day"];
+    } else if (eventDay && vUntil && vUntil > eventDay) {
+      errors[`discountDates_${index}`] = ["Valid until can't be after the event day"];
+    } else if (vFrom && vUntil && vFrom > vUntil) {
+      errors[`discountDates_${index}`] = ['"Valid from" must be on or before "valid until"'];
+    }
+
+    // V4 — max uses must be a whole number >= 1, and (edit) not below what's already used
+    const used = dc.usedCount || 0;
+    if (dc.maxUses != null) {
+      if (!Number.isInteger(dc.maxUses) || dc.maxUses < 1) {
+        errors[`discountUses_${index}`] = ['Max uses must be a whole number (1 or more)'];
+      } else if (dc.maxUses < used) {
+        errors[`discountUses_${index}`] = [`${used} already used — max uses cannot be below ${used}`];
+      }
+    }
+
+    // V6 — must leave at least $1 on the cheapest covered ticket bought alone
+    if (applies.length > 0 && !isNaN(val)) {
+      const coveredPrices = ticketTypes
+        .filter((t) => applies.includes(t.name) && t.price !== null && t.price !== undefined && t.price !== '')
+        .map((t) => Number(t.price))
+        .filter((p) => !isNaN(p));
+      if (coveredPrices.length > 0) {
+        const cheapest = Math.min(...coveredPrices);
+        const after = dc.kind === 'percent' ? cheapest * (1 - val / 100) : cheapest - val;
+        if (Math.round(after * 100) < 100) {
+          errors[`discountValue_${index}`] = ['This makes a ticket cost under $1. Lower the discount or uncheck that ticket type.'];
+        }
+      }
+    }
+  });
+
+  return errors;
+};
+
 const StepManager = ({
   mode = 'add', // 'add' | 'edit' | 'view'
   eventId = null,
@@ -408,21 +495,21 @@ const StepManager = ({
 
     // Basic validation
     if (!formData.title?.trim()) {
-      errors.title = ['Event title is required'];
+      errors.title = ['Title is required'];
     }
 
     if (!formData.description?.trim()) {
-      errors.description = ['Event description is required'];
+      errors.description = ['Description is required'];
     }
 
     if (!formData.dateTime) {
-      errors.dateTime = ['Event date and time are required'];
+      errors.dateTime = ['Date & time are required'];
     } else {
       // Check if date is in the future (only for new events or when changing date)
       const eventDate = new Date(formData.dateTime);
       const now = new Date();
       if (isAddMode && eventDate <= now) {
-        errors.dateTime = ['Event date must be in the future'];
+        errors.dateTime = ['Date must be in the future'];
       }
     }
 
@@ -431,16 +518,16 @@ const StepManager = ({
     }
 
     if (!formData.category?.trim()) {
-      errors.category = ['Event category is required'];
+      errors.category = ['Category is required'];
     }
 
     if (!formData.timeZone?.trim()) {
-      errors.timeZone = ['Event timezone is required'];
+      errors.timeZone = ['Timezone is required'];
     }
 
     // Event intent validation
     if (!formData.eventIntent) {
-      errors.eventIntent = ['Please select whether you want to promote or host this event'];
+      errors.eventIntent = ['Choose Host or Promote'];
     }
 
     // Address validation
@@ -453,7 +540,7 @@ const StepManager = ({
       formData.address.location.coordinates[0] === 0 ||
       formData.address.location.coordinates[1] === 0
     ) {
-      errors.address = ['Valid event address with location is required'];
+      errors.address = ['A valid address is required'];
     }
 
     // Coordinator validation — Name is the anchor field
@@ -465,9 +552,9 @@ const StepManager = ({
         const hasOtherData = !!(coord.phone?.trim() || coord.email?.trim() || coord.role?.trim());
 
         if (hasName && !coord.phone?.trim()) {
-          coordinatorErrors.push(`Coordinator ${index + 1}: Phone is required.`);
+          coordinatorErrors.push(`Coordinator ${index + 1}: Phone is required`);
         } else if (!hasName && hasOtherData) {
-          coordinatorErrors.push(`Coordinator ${index + 1}: Name is required for this coordinator.`);
+          coordinatorErrors.push(`Coordinator ${index + 1}: Name is required`);
         }
       });
       if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;
@@ -475,7 +562,7 @@ const StepManager = ({
 
     // Organiser validation — Name required; contact number is optional for all event types
     if (!formData.organizer?.name?.trim()) {
-      errors.organizer = ['Organiser name is required'];
+      errors.organizer = ['Name is required'];
     }
 
     // Basic email validation for organiser if provided
@@ -484,7 +571,7 @@ const StepManager = ({
       formData.organizer.email.trim() &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.organizer.email)
     ) {
-      errors.organizer = (errors.organizer || []).concat(['Organizer email format is invalid']);
+      errors.organizer = (errors.organizer || []).concat(['Email is invalid']);
     }
 
     // Recurring event validation - only for non-promotional events
@@ -494,14 +581,14 @@ const StepManager = ({
         formData.recurrence.repeatSchedule.length === 0
       ) {
         errors.recurrence = [
-          'At least one repeat schedule is required for recurring events',
+          'Add at least one repeat schedule',
         ];
       } else {
         const recurringErrors = [];
         formData.recurrence.repeatSchedule.forEach((schedule, index) => {
           if (!schedule.day || !schedule.time) {
             recurringErrors.push(
-              `Repeat schedule ${index + 1} day and time are required`
+              `Schedule ${index + 1}: day & time required`
             );
           }
         });
@@ -514,7 +601,7 @@ const StepManager = ({
         const startDate = new Date(formData.dateTime);
         if (endDate <= startDate) {
           errors.recurrence = (errors.recurrence || []).concat([
-            'Recurring end date must be after the event start date',
+            'End date must be after the start',
           ]);
         }
       }
@@ -546,55 +633,42 @@ const StepManager = ({
             errors[`ticketName_${index}`] = ['Ticket Name is required'];
           }
 
-          // Price must be greater than 0
+          // Price must be at least $1 (S0/V0 — minimum ticket price)
           if (
             ticket.price === undefined ||
             ticket.price === null ||
             ticket.price === '' ||
             isNaN(Number(ticket.price)) ||
-            Number(ticket.price) <= 0
+            Number(ticket.price) < 1
           ) {
-            ticketErrors.push(`Ticket type ${index + 1} price must be greater than 0`);
+            ticketErrors.push(`Ticket type ${index + 1}: minimum ticket price is $1`);
             // Individual field error
-            errors[`ticketPrice_${index}`] = ['Price must be greater than 0'];
+            errors[`ticketPrice_${index}`] = ['Minimum ticket price is $1'];
           }
 
           
 
-          // Date validation: startDate should be before expiryDate if both are set
-          const today = new Date();
-today.setHours(0, 0, 0, 0); // Start of today
-
-if (ticket.startDate) {
-  const startDate = new Date(ticket.startDate);
-  if (startDate < today) {
-    ticketErrors.push(`Ticket type ${index + 1} start date cannot be in the past`);
-    errors[`ticketStartDate_${index}`] = ['Start date cannot be in the past'];
-  }
-}
-
-if (ticket.expiryDate) {
-  const expiryDate = new Date(ticket.expiryDate);
-  if (expiryDate < today) {
-    ticketErrors.push(`Ticket type ${index + 1} expiry date cannot be in the past`);
-    errors[`ticketExpiryDate_${index}`] = ['Expiry date cannot be in the past'];
-  }
-}
-
-
-
-if (ticket.startDate && ticket.expiryDate) {
-  const startDate = new Date(ticket.startDate);
-  const expiryDate = new Date(ticket.expiryDate);
-  if (startDate >= expiryDate) {
-    ticketErrors.push(
-      `Ticket type ${index + 1} start date must be before expiry date`
-    );
-  }
-}
+          // Date window (V7): start/expiry on or before the event day (by day); expiry on or after
+          // start. Same-day (one-day early-bird) allowed. No past-date restriction.
+          const eventDayStr = formData.dateTime ? String(formData.dateTime).slice(0, 10) : '';
+          const tStart = ticket.startDate ? String(ticket.startDate).slice(0, 10) : '';
+          const tExpiry = ticket.expiryDate ? String(ticket.expiryDate).slice(0, 10) : '';
+          if (eventDayStr && tStart && tStart > eventDayStr) {
+            errors[`ticketDate_${index}`] = ["Start date can't be after the event day"];
+            ticketErrors.push(`Ticket type ${index + 1}: start date can't be after the event day`);
+          } else if (eventDayStr && tExpiry && tExpiry > eventDayStr) {
+            errors[`ticketDate_${index}`] = ["Expiry date can't be after the event day"];
+            ticketErrors.push(`Ticket type ${index + 1}: expiry date can't be after the event day`);
+          } else if (tStart && tExpiry && tExpiry < tStart) {
+            errors[`ticketDate_${index}`] = ['Expiry must be on or after the start'];
+            ticketErrors.push(`Ticket type ${index + 1}: expiry must be on or after the start`);
+          }
         });
 
         if (ticketErrors.length > 0) errors.ticketTypes = ticketErrors;
+
+        // Discount codes validation (V1/V2/V3/V5/V6) — safety net
+        Object.assign(errors, validateDiscountCodesList(formData));
       }
 
       // Seating layout validation (if provided)
@@ -676,29 +750,31 @@ const validateCurrentStep = useCallback(() => {
     case 1: // Basic Info - Intent, Free/Paid, Title, Date/Time, Recurring, Timezone, Venue, Address
       // Intent is required first
       if (!formData.eventIntent) {
-        errors.eventIntent = ['Please select whether you want to promote or host this event'];
+        errors.eventIntent = ['Choose Host or Promote'];
       }
-      if (!formData.title?.trim()) errors.title = ['Event title is required'];
+      if (!formData.title?.trim()) errors.title = ['Title is required'];
+      if (!formData.category?.trim()) errors.category = ['Category is required'];
+      if (!formData.description?.trim()) errors.description = ['Description is required'];
       if (!formData.dateTime) {
-        errors.dateTime = ['Event date and time are required'];
+        errors.dateTime = ['Date & time are required'];
       } else if (isAddMode) {
         const eventDate = new Date(formData.dateTime);
         const now = new Date();
         if (eventDate <= now) {
-          errors.dateTime = ['Event date must be in the future'];
+          errors.dateTime = ['Date must be in the future'];
         }
       }
-      if (!formData.timeZone?.trim()) errors.timeZone = ['Event timezone is required'];
+      if (!formData.timeZone?.trim()) errors.timeZone = ['Timezone is required'];
 
       // Recurring event validation (only for host + free events)
       if (formData.eventIntent === 'host' && !formData.isPaid && formData.recurrence?.isRecurring) {
         if (!formData.recurrence.repeatSchedule || formData.recurrence.repeatSchedule.length === 0) {
-          errors.recurrence = ['At least one repeat schedule is required for recurring events'];
+          errors.recurrence = ['Add at least one repeat schedule'];
         } else {
           const recurringErrors = [];
           formData.recurrence.repeatSchedule.forEach((schedule, index) => {
             if (!schedule.day || !schedule.time) {
-              recurringErrors.push(`Repeat schedule ${index + 1} day and time are required`);
+              recurringErrors.push(`Schedule ${index + 1}: day & time required`);
             }
           });
           if (recurringErrors.length > 0) errors.recurrence = recurringErrors;
@@ -707,14 +783,14 @@ const validateCurrentStep = useCallback(() => {
         // End date validation for recurring events
         if (!formData.recurrence.endDate) {
           errors.recurrence = (errors.recurrence || []).concat([
-            'End date is required for recurring events',
+            'End date is required',
           ]);
         } else {
           const endDate = new Date(formData.recurrence.endDate);
           const startDate = new Date(formData.dateTime);
           if (endDate <= startDate) {
             errors.recurrence = (errors.recurrence || []).concat([
-              'Recurring end date must be after the event start date',
+              'End date must be after the start',
             ]);
           }
         }
@@ -730,18 +806,23 @@ const validateCurrentStep = useCallback(() => {
         formData.address.location.coordinates[0] === 0 ||
         formData.address.location.coordinates[1] === 0
       ) {
-        errors.address = ['Valid event address with location is required'];
+        errors.address = ['A valid address is required'];
       }
       break;
 
-    case 2: // Event Details - Category, Description, Organizer, Coordinators
-      if (!formData.category?.trim()) errors.category = ['Event category is required'];
-      if (!formData.description?.trim())
-        errors.description = ['Event description is required'];
-
+    case 2: // Organiser - Organizer details, social, coordinators
       // Organiser validation — Name required; contact number is optional for all event types
       if (!formData.organizer?.name?.trim()) {
-        errors.organizer = ['Organiser name is required'];
+        errors.organizer = ['Name is required'];
+      }
+
+      // Basic email validation for organiser if provided
+      if (
+        formData.organizer?.email &&
+        formData.organizer.email.trim() &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.organizer.email)
+      ) {
+        errors.organizer = (errors.organizer || []).concat(['Email is invalid']);
       }
 
       // Coordinators validation — Name is the anchor field
@@ -753,9 +834,9 @@ const validateCurrentStep = useCallback(() => {
           const hasOtherData = !!(coord.phone?.trim() || coord.email?.trim() || coord.role?.trim());
 
           if (hasName && !coord.phone?.trim()) {
-            coordinatorErrors.push(`Coordinator ${index + 1}: Phone is required.`);
+            coordinatorErrors.push(`Coordinator ${index + 1}: Phone is required`);
           } else if (!hasName && hasOtherData) {
-            coordinatorErrors.push(`Coordinator ${index + 1}: Name is required for this coordinator.`);
+            coordinatorErrors.push(`Coordinator ${index + 1}: Name is required`);
           }
         });
         if (coordinatorErrors.length > 0) errors.coordinators = coordinatorErrors;
@@ -820,6 +901,7 @@ const validateCurrentStep = useCallback(() => {
           if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
             errors.ticketTypes = ['At least one ticket type is required for paid events'];
           } else {
+            const eventDayStr = formData.dateTime ? String(formData.dateTime).slice(0, 10) : '';
             formData.ticketTypes.forEach((ticket, index) => {
               if (!ticket.name?.trim()) {
                 errors[`ticketName_${index}`] = ['Ticket name is required'];
@@ -831,8 +913,21 @@ const validateCurrentStep = useCallback(() => {
               ) {
                 errors[`ticketPrice_${index}`] = ['Ticket price is required'];
               }
+              // Date window (V7): start/expiry <= event day (by day); expiry >= start. Same-day allowed.
+              const tStart = ticket.startDate ? String(ticket.startDate).slice(0, 10) : '';
+              const tExpiry = ticket.expiryDate ? String(ticket.expiryDate).slice(0, 10) : '';
+              if (eventDayStr && tStart && tStart > eventDayStr) {
+                errors[`ticketDate_${index}`] = ["Start date can't be after the event day"];
+              } else if (eventDayStr && tExpiry && tExpiry > eventDayStr) {
+                errors[`ticketDate_${index}`] = ["Expiry date can't be after the event day"];
+              } else if (tStart && tExpiry && tExpiry < tStart) {
+                errors[`ticketDate_${index}`] = ['Expiry must be on or after the start'];
+              }
             });
           }
+
+          // Discount codes validation (V1/V2/V3/V5/V6)
+          Object.assign(errors, validateDiscountCodesList(formData));
         } else {
           // Free hosted event: Capacity and booking limit required
           if (
@@ -1141,6 +1236,40 @@ if (formData.dateTime) {
   });
   
   submitFormData.append('ticketTypes', JSON.stringify(processedTicketTypes));
+
+  // Discount codes. Prune appliesToTicketTypes to CURRENT ticket-type names (client-side
+  // rename/delete cascade; the server also drops stale names). Convert validity dates from the
+  // form's local calendar date to UTC (from = start-of-day, until = end-of-day so the whole
+  // last day stays valid — feature S1). Counters (usedCount/remainingUses) are server-owned
+  // and intentionally NOT sent.
+  if (Array.isArray(formData.discountCodes) && formData.discountCodes.length > 0) {
+    const currentTicketNames = new Set(
+      (formData.ticketTypes || []).filter(t => (t?.name || '').trim()).map(t => t.name)
+    );
+    const tz = formData.timeZone;
+    const toUtc = (localDate, endOfDay) => {
+      if (!localDate) return null;
+      const dateOnly = localDate.includes('T') ? localDate.slice(0, 10) : localDate;
+      if (!tz) return dateOnly;
+      try {
+        return zonedTimeToUtc(`${dateOnly}T${endOfDay ? '23:59:59' : '00:00:00'}`, tz).toISOString();
+      } catch (e) {
+        return localDate;
+      }
+    };
+    const processedDiscountCodes = formData.discountCodes.map(dc => ({
+      code: (dc.code || '').trim().toUpperCase(),
+      kind: dc.kind === 'fixed' ? 'fixed' : 'percent',
+      value: dc.value === '' || dc.value === undefined ? null : dc.value,
+      maxUses: dc.maxUses === '' || dc.maxUses === undefined ? null : dc.maxUses,
+      validFrom: toUtc(dc.validFrom, false),
+      validUntil: toUtc(dc.validUntil, true),
+      active: dc.active !== false,
+      appliesToTicketTypes: (dc.appliesToTicketTypes || []).filter(n => currentTicketNames.has(n)),
+      showHint: dc.showHint === true,
+    }));
+    submitFormData.append('discountCodes', JSON.stringify(processedDiscountCodes));
+  }
 }
 
       if (formData.seatingLayout && formData.seatingLayout.length > 0) {
@@ -1288,18 +1417,8 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
     if (Object.keys(validationErrors).length > 0) {
       dispatch(setFormErrors(validationErrors));
 
-      // Show toast with all errors
-      const errorMessages = Object.values(validationErrors).flat();
-      toast.error(
-        <div>
-          <p className="font-bold">Please fix the following errors:</p>
-          <ul className="list-disc pl-4">
-            {errorMessages.map((msg, i) => (
-              <li key={i}>{msg}</li>
-            ))}
-          </ul>
-        </div>
-      );
+      // Inline field errors carry the specifics; the toast is just a generic attention-grabber.
+      toast.error('Form Errors — please fix the highlighted fields.');
       return;
     }
 
@@ -1389,25 +1508,8 @@ const handleNext = useCallback(() => {
 
 
 
-    // Show specific error messages instead of generic message
-    const errorMessages = Object.values(currentErrors).flat();
-    const errorCount = errorMessages.length;
-    
-    toast.error(
-      <div>
-        <p className="font-bold">
-          {errorCount === 1 
-            ? 'Please fix the following error:' 
-            : `Please fix the following ${errorCount} errors:`
-          }
-        </p>
-        <ul className="list-disc pl-4 mt-2">
-          {errorMessages.map((msg, i) => (
-            <li key={i} className="text-sm">{msg}</li>
-          ))}
-        </ul>
-      </div>
-    );
+    // Inline field errors carry the specifics; the toast is just a generic attention-grabber.
+    toast.error('Form Errors — please fix the highlighted fields.');
     return;
   }
 
@@ -1481,7 +1583,7 @@ const handleAddAnother = useCallback(() => {
   // Show loading spinner during initialization
   if (isInitializing) {
     return (
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
         <RequireVerifiedAccount>
           <div className="flex flex-col items-center justify-center min-h-64">
             <LoadingSpinner size="large" />
@@ -1495,7 +1597,7 @@ const handleAddAnother = useCallback(() => {
   // Show error if initialization failed
   if (initializationError) {
     return (
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
         <RequireVerifiedAccount>
           <div className="text-center">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -1521,7 +1623,7 @@ const handleAddAnother = useCallback(() => {
 
 
     return (
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
         <RequireVerifiedAccount>
           <SuccessStep
             event={formData}
@@ -1536,8 +1638,27 @@ const handleAddAnother = useCallback(() => {
   }
 
   return (
-    <div className="px-0 py-4 sm:px-4 max-w-4xl mx-auto">
+    <div className="w-full">
       <RequireVerifiedAccount message="You must be logged in to manage events.">
+
+        {/* Page Title — row 1 of the Content Shell (centered) */}
+        <h1 className="text-center text-xl sm:text-2xl font-bold text-slate-800 mb-3">
+          {customTitle || 'Create Event'}
+        </h1>
+
+        {/* Top Toolbar — row 2: Cancel (left). Single exit for the wizard. */}
+        {!isViewMode && allowCancel && (
+          <div className="mb-4 sm:mb-6 flex items-center">
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={isLoading}
+              className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ✕ Cancel
+            </button>
+          </div>
+        )}
 
         {/* Step Indicator */}
         <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
@@ -1598,28 +1719,23 @@ const handleAddAnother = useCallback(() => {
                 >
                   ← Previous
                 </button>
-              ) : allowCancel ? (
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                  className="text-sm text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancel
-                </button>
               ) : (
                 <div></div>
               )}
 
               {currentStep < totalSteps ? (
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={isLoading}
-                  className="text-sm text-teal-700 hover:text-teal-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next →
-                </button>
+                (currentStep === 1 && (!formData.eventIntent || (formData.eventIntent === 'host' && formData.isPaid === null))) ? (
+                  <div></div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={isLoading}
+                    className="text-sm text-teal-700 hover:text-teal-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next →
+                  </button>
+                )
               ) : (
                 <button
                   type="button"

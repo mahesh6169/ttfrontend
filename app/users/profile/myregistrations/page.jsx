@@ -41,6 +41,7 @@ const MyFreeEventRegistrationsPage = () => {
   const [activeTab, setActiveTab] = useState({}); // { registrationId: 'attendees' | 'attendeeInfo' }
   const [dateFilter, setDateFilter] = useState('3months'); // Default to 3 months
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
+  const [cancelEventId, setCancelEventId] = useState(null); // Event pending cancellation (drives confirm modal)
 
   // Fetch all user registrations on mount
   useEffect(() => {
@@ -231,6 +232,7 @@ const MyFreeEventRegistrationsPage = () => {
       setError(`Unregistration failed: ${error.message}`);
     } finally {
       setActionLoading(false);
+      setCancelEventId(null);
     }
   };
 
@@ -627,7 +629,7 @@ const MyFreeEventRegistrationsPage = () => {
                       {registration.status !== 'checkedin' && (
                         <button
                           type="button"
-                          onClick={() => handleUnregister(registration.event)}
+                          onClick={() => setCancelEventId(registration.event)}
                           disabled={actionLoading}
                           className="text-sm text-red-600 hover:text-red-700 underline disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -717,6 +719,46 @@ const MyFreeEventRegistrationsPage = () => {
                 </div>
               );
             })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel confirmation modal */}
+      {cancelEventId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !actionLoading && setCancelEventId(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-slate-900">
+              Cancel registration?
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Are you sure you want to cancel this registration? This action cannot be undone.
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                onClick={() => setCancelEventId(null)}
+                disabled={actionLoading}
+                className="w-full sm:w-auto px-4 py-2 rounded-full border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Keep registration
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUnregister(cancelEventId)}
+                disabled={actionLoading}
+                className="w-full sm:w-auto px-4 py-2 rounded-full bg-red-600 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading ? 'Cancelling...' : 'Yes, cancel'}
+              </button>
             </div>
           </div>
         </div>

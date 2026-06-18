@@ -154,7 +154,7 @@ const ImageUploader = ({
       {/* Header */}
       {showLabel && (
         <>
-          <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+          <span className="block font-medium text-slate-600 text-sm sm:text-base">
             {label}
           </span>
           <p className="text-xs text-slate-500 mt-1 mb-3">

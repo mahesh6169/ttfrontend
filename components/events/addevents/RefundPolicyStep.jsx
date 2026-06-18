@@ -1,12 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { updateRefundPolicy } from '@/store/slices/events/eventSlice';
-
-// Platform fee configuration
-const PLATFORM_FEES = {
-  flatFee: 0.80,
-  percentageFee: 2.0,
-};
+import { platformFeeLabel, platformFeeFor } from '@/utils/platformFee';
 
 const RefundPolicyStep = ({
   formData = {},
@@ -16,6 +11,9 @@ const RefundPolicyStep = ({
 }) => {
   const dispatch = useDispatch();
   const disabled = readOnly || mode === 'view';
+
+  // Editable sample ticket price for the breakdown preview ($10 default).
+  const [samplePrice, setSamplePrice] = useState('10');
 
   const handleRefundPolicyChange = (field, value) => {
     if (disabled) return;
@@ -36,93 +34,101 @@ const RefundPolicyStep = ({
   }
 
   const selectedPolicy = formData.refundPolicy?.processingFeePolicy || 'non-refundable';
+  const feesRefunded = selectedPolicy === 'refunded'; // toggle ON = full refund, organiser absorbs fee
+
+  const price = Number(samplePrice) || 0;
+  const fee = platformFeeFor(price);
+  const customerRefund = feesRefunded ? price : Math.max(0, price - fee);
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Step Header */}
-      <div className="mb-4">
-        <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Refund Policy</h2>
-      </div>
-
-      {/* Explanation */}
-      <p className="text-sm text-slate-600 mb-3">
-        Choose how refunds are handled. This will be shown to customers at checkout.
-      </p>
-
-      {/* Refund Options */}
-      <div className="space-y-3">
-        {/* Non-refundable option */}
-        <label
-          className={`block p-4 border rounded-lg cursor-pointer transition-colors ${
-            selectedPolicy === 'non-refundable'
-              ? 'border-teal-700 bg-teal-50/50'
-              : 'border-slate-200 hover:border-slate-300'
-          } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
-        >
-          <div className="flex items-start gap-3">
-            <input
-              type="radio"
-              name="processingFeePolicy"
-              value="non-refundable"
-              checked={selectedPolicy === 'non-refundable'}
-              onChange={() => handleRefundPolicyChange('processingFeePolicy', 'non-refundable')}
-              disabled={disabled}
-              className="mt-0.5 w-4 h-4 text-teal-700 border-slate-300 focus:ring-teal-300"
-            />
-            <div className="flex-1">
-              <span className="block text-sm font-medium text-slate-700">
-                Platform fees are non-refundable
-              </span>
-              <span className="block text-xs text-slate-500 mt-1">
-                Customer receives ticket price minus platform fees. Example: $10 ticket → $9.00 refund
-              </span>
-            </div>
-          </div>
-        </label>
-
-        {/* Refundable option */}
-        <label
-          className={`block p-4 border rounded-lg cursor-pointer transition-colors ${
-            selectedPolicy === 'refunded'
-              ? 'border-teal-700 bg-teal-50/50'
-              : 'border-slate-200 hover:border-slate-300'
-          } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
-        >
-          <div className="flex items-start gap-3">
-            <input
-              type="radio"
-              name="processingFeePolicy"
-              value="refunded"
-              checked={selectedPolicy === 'refunded'}
-              onChange={() => handleRefundPolicyChange('processingFeePolicy', 'refunded')}
-              disabled={disabled}
-              className="mt-0.5 w-4 h-4 text-teal-700 border-slate-300 focus:ring-teal-300"
-            />
-            <div className="flex-1">
-              <span className="block text-sm font-medium text-slate-700">
-                Full refund including platform fees
-              </span>
-              <span className="block text-xs text-slate-500 mt-1">
-                Customer receives full ticket price. You absorb the platform fees.
-              </span>
-            </div>
-          </div>
-        </label>
-      </div>
-
-      {/* Additional Refund Conditions */}
+      {/* Heading */}
       <div>
-        <label className="block text-sm font-medium text-slate-700">
-          Additional Refund Conditions <span className="text-slate-400 font-normal">(optional)</span>
+        <h3 className="font-medium text-sm sm:text-base text-slate-600">
+          Processing Fee Policy <span className="text-red-500">*</span>
+        </h3>
+        <p className="text-xs text-slate-500 mt-1">
+          This refund policy will be displayed at checkout.
+        </p>
+      </div>
+
+      {/* Processing fees — segmented toggle + explanation (aligned under the toggle) */}
+      <div className="flex flex-wrap items-start gap-3">
+        <span className="text-sm font-medium text-slate-600 pt-2">Processing Fees</span>
+        <div>
+          <div className="inline-grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => handleRefundPolicyChange('processingFeePolicy', 'refunded')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors disabled:cursor-not-allowed ${
+                feesRefunded ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              Refundable
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => handleRefundPolicyChange('processingFeePolicy', 'non-refundable')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors disabled:cursor-not-allowed ${
+                !feesRefunded ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              Non-Refundable
+            </button>
+          </div>
+          <p className="text-sm text-slate-500 mt-2">
+            {feesRefunded
+              ? 'You refund the customer the full ticket price and absorb the platform fee.'
+              : 'You refund the ticket price minus the platform fee — the customer absorbs it.'}
+          </p>
+        </div>
+      </div>
+
+      {/* Live breakdown (organiser's view) */}
+      <div className="rounded-lg border border-slate-200 p-3">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <span className="text-sm text-slate-500">If a ticket costs</span>
+          <div className="relative">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-slate-500">$</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={samplePrice}
+              onChange={(e) => setSamplePrice(e.target.value)}
+              onWheel={(e) => e.target.blur()}
+              className="w-24 pl-5 pr-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
+            />
+          </div>
+        </div>
+        <dl className="space-y-1.5 text-sm">
+          <div className="flex justify-between">
+            <dt className="text-slate-500">You refund the customer</dt>
+            <dd className="font-medium text-slate-800">${customerRefund.toFixed(2)}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-slate-500">Platform fee</dt>
+            <dd className="font-medium text-slate-800">${fee.toFixed(2)}</dd>
+          </div>
+        </dl>
+        <p className="text-sm text-slate-400 mt-3">Platform fee: {platformFeeLabel()} per ticket</p>
+      </div>
+
+      {/* Additional Refund Policy */}
+      <div>
+        <label className="block text-sm font-medium text-slate-600">
+          Additional Refund Policy <span className="text-slate-400 font-normal">(optional)</span>
         </label>
-        <p className="text-xs text-slate-500 mb-2">Will be displayed to customers</p>
+        <p className="text-xs text-slate-500 mb-2">List any other refund terms you want shown to customers at checkout.</p>
         <textarea
           rows={3}
           disabled={disabled}
           className={`w-full p-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 resize-none ${
             disabled ? 'bg-slate-100 cursor-not-allowed text-slate-500' : ''
           }`}
-          placeholder="e.g., Refunds available up to 24 hours before event"
+          placeholder="e.g. No refund for change of mind"
           value={formData.refundPolicy?.policyText || ''}
           onChange={(e) => handleRefundPolicyChange('policyText', e.target.value)}
           maxLength={500}
@@ -132,13 +138,11 @@ const RefundPolicyStep = ({
         </p>
       </div>
 
-      {/* Errors */}
+      {/* Error */}
       {errors?.refundPolicy && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-700">
-            {Array.isArray(errors.refundPolicy) ? errors.refundPolicy[0] : errors.refundPolicy}
-          </p>
-        </div>
+        <p className="text-red-500 text-xs sm:text-sm">
+          {Array.isArray(errors.refundPolicy) ? errors.refundPolicy[0] : errors.refundPolicy}
+        </p>
       )}
     </div>
   );

@@ -14,11 +14,15 @@ import {
   updateRepeatSchedule,
   removeRepeatSchedule,
   setRecurrenceEndDate,
+  setFormErrors,
 } from '@/store/slices/events/eventSlice';
 import AddressInput from '@/components/events/addevents/AddressInput';
 import ImageUploader from '@/components/events/addevents/ImageUploader';
 import TimezoneSelector from '@/components/shared/TimezoneSelector';
 import DateTimePicker from '@/components/shared/DateTimePicker';
+import CategorySelector from '@/components/events/CategorySelector';
+import CommunitySelector from '@/components/shared/CommunitySelector';
+import { needsCommunityField } from '@/components/events/addevents/EventCategories';
 import { utcToZonedTime, format } from 'date-fns-tz';
 
 const AU_TIMEZONES = [
@@ -35,7 +39,7 @@ const AU_TIMEZONES = [
 // Intent Selection Component - Clean toggle buttons
 const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) => {
   const currentIntent = formData.eventIntent;
-  const isPaid = formData.isPaid || false;
+  const isPaid = formData.isPaid; // can be null (neither RSVP nor Paid chosen yet)
 
   const handleIntentSelect = (intent) => {
     if (disabled || isEditMode) return;
@@ -53,40 +57,40 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
     <div className="space-y-4">
       {/* Event Type */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
-          Event Type <span className="text-red-500">*</span>
-          {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
-        </label>
+        <div className="flex items-baseline gap-4">
+          <label className="text-sm sm:text-base font-medium text-slate-600 whitespace-nowrap">
+            Event Type <span className="text-red-500">*</span>
+            {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
+          </label>
 
-        <div className={`inline-grid grid-cols-2 gap-2 ${isLocked ? 'opacity-60' : ''}`}>
-          <button
-            type="button"
-            onClick={() => handleIntentSelect('host')}
-            disabled={isLocked}
-            className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
-              currentIntent === 'host'
-                ? 'bg-teal-700 text-white border-teal-700'
-                : 'bg-white text-slate-700 border-slate-300'
-            } ${isLocked ? 'cursor-not-allowed' : ''}`}
-          >
-            Host
-          </button>
-          <button
-            type="button"
-            onClick={() => handleIntentSelect('promote')}
-            disabled={isLocked}
-            className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
-              currentIntent === 'promote'
-                ? 'bg-teal-700 text-white border-teal-700'
-                : 'bg-white text-slate-700 border-slate-300'
-            } ${isLocked ? 'cursor-not-allowed' : ''}`}
-          >
-            Promote
-          </button>
+          <div className={`flex items-center ${isLocked ? 'opacity-60' : ''}`}>
+            <button
+              type="button"
+              onClick={() => handleIntentSelect('host')}
+              disabled={isLocked}
+              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
+                currentIntent === 'host'
+                  ? 'text-teal-700 font-semibold border-teal-700'
+                  : 'text-slate-500 border-transparent hover:text-slate-700'
+              } ${isLocked ? 'cursor-not-allowed' : ''}`}
+            >
+              Host
+            </button>
+            <span aria-hidden="true" className="mx-3 h-4 w-px bg-slate-300"></span>
+            <button
+              type="button"
+              onClick={() => handleIntentSelect('promote')}
+              disabled={isLocked}
+              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
+                currentIntent === 'promote'
+                  ? 'text-teal-700 font-semibold border-teal-700'
+                  : 'text-slate-500 border-transparent hover:text-slate-700'
+              } ${isLocked ? 'cursor-not-allowed' : ''}`}
+            >
+              Promote
+            </button>
+          </div>
         </div>
-        <p className="text-xs text-slate-500 mt-1">
-          {currentIntent === 'host' ? 'Manage registrations on our platform' : currentIntent === 'promote' ? 'List for visibility only' : 'Choose how to list your event'}
-        </p>
         {errors?.eventIntent && (
           <p className="text-red-500 text-xs sm:text-sm mt-1">
             {Array.isArray(errors.eventIntent) ? errors.eventIntent[0] : errors.eventIntent}
@@ -96,33 +100,34 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
 
       {/* Free/Paid Toggle - Only shown when "Host" is selected */}
       {currentIntent === 'host' && (
-        <div>
-          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <div className="flex items-baseline gap-4">
+          <label className="font-medium text-slate-600 text-sm sm:text-base whitespace-nowrap">
             Ticket Type <span className="text-red-500">*</span>
             {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
           </label>
 
-          <div className={`inline-grid grid-cols-2 gap-2 ${isLocked ? 'opacity-60' : ''}`}>
+          <div className={`flex items-center ${isLocked ? 'opacity-60' : ''}`}>
             <button
               type="button"
               onClick={() => handlePaidToggle(false)}
               disabled={isLocked}
-              className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
-                !isPaid
-                  ? 'bg-teal-700 text-white border-teal-700'
-                  : 'bg-white text-slate-700 border-slate-300'
+              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
+                isPaid === false
+                  ? 'text-teal-700 font-semibold border-teal-700'
+                  : 'text-slate-500 border-transparent hover:text-slate-700'
               } ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
               RSVP
             </button>
+            <span aria-hidden="true" className="mx-3 h-4 w-px bg-slate-300"></span>
             <button
               type="button"
               onClick={() => handlePaidToggle(true)}
               disabled={isLocked}
-              className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
-                isPaid
-                  ? 'bg-teal-700 text-white border-teal-700'
-                  : 'bg-white text-slate-700 border-slate-300'
+              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
+                isPaid === true
+                  ? 'text-teal-700 font-semibold border-teal-700'
+                  : 'text-slate-500 border-transparent hover:text-slate-700'
               } ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
               Paid
@@ -152,17 +157,29 @@ const BasicInfoStep = ({
   // Check if recurring is allowed (only for host + free events)
   const isPromotionalEvent = formData.eventIntent === 'promote';
   const isPaidEvent = formData.isPaid || false;
-  const canShowRecurring = formData.eventIntent === 'host' && !isPaidEvent;
+  const canShowRecurring = formData.eventIntent === 'host' && formData.isPaid === false && !isEditMode;
 
   const handleChange = (e) => {
     if (disabled) return;
     const { name, value } = e.target;
     dispatch(updateField({ field: name, value }));
+    // Clear this field's error as soon as the user edits it (re-checked on next Next/Submit).
+    if (errors?.[name]) {
+      const next = { ...errors };
+      delete next[name];
+      dispatch(setFormErrors(next));
+    }
   };
 
   const handleAddressChange = (address) => {
     if (disabled) return;
     dispatch(setAddress(address));
+    // Clear the address error once a new address is picked (re-checked on next Next/Submit).
+    if (errors?.address) {
+      const next = { ...errors };
+      delete next.address;
+      dispatch(setFormErrors(next));
+    }
   };
 
   // Format datetime for input field
@@ -218,6 +235,14 @@ const BasicInfoStep = ({
     return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
   };
 
+  // Recurrence errors come back as one array; split so schedule errors sit by the
+  // schedule rows and end-date errors sit under the End Date field.
+  const recurrenceErrorList = Array.isArray(errors?.recurrence)
+    ? errors.recurrence
+    : (errors?.recurrence ? [errors.recurrence] : []);
+  const scheduleErrors = recurrenceErrorList.filter((e) => /schedule/i.test(e));
+  const endDateRecurrenceErrors = recurrenceErrorList.filter((e) => /end date/i.test(e));
+
   // Recurring event handlers
   const handleRecurringToggle = (e) => {
     if (disabled) return;
@@ -250,7 +275,7 @@ const BasicInfoStep = ({
       maxDate.setMonth(maxDate.getMonth() + 6);
 
       if (selectedDate > maxDate) {
-        setEndDateError('RSVP recurring events are limited to 6 months. Date has been adjusted to the maximum allowed.');
+        setEndDateError('Recurring events max 6 months - adjusted');
         dispatch(setRecurrenceEndDate(maxDate.toISOString().split('T')[0]));
         setTimeout(() => setEndDateError(''), 5000);
         return;
@@ -263,30 +288,24 @@ const BasicInfoStep = ({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Step Header */}
-      <div className="mb-2">
-        <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Basic Info</h2>
-        <p className="text-sm text-slate-500">Set up your event type and details</p>
-      </div>
+      {/* Intent Selection - First thing users choose. Hidden in edit mode (Event Type +
+          Ticket Type can't be changed; stored values still drive the rest of the form). */}
+      {!isEditMode && (
+        <IntentSelection
+          formData={formData}
+          disabled={disabled}
+          dispatch={dispatch}
+          errors={errors}
+          isEditMode={isEditMode}
+        />
+      )}
 
-      {/* Intent Selection - First thing users choose */}
-      <IntentSelection
-        formData={formData}
-        disabled={disabled}
-        dispatch={dispatch}
-        errors={errors}
-        isEditMode={isEditMode}
-      />
-
-      {/* Rest of fields only shown after intent is selected */}
-      {formData.eventIntent && (
+      {/* Rest of fields shown after intent is selected — and, for Host, after a Ticket Type is chosen */}
+      {formData.eventIntent && (formData.eventIntent !== 'host' || formData.isPaid !== null) && (
         <>
-          {/* Divider */}
-          <div className="border-t border-slate-200 pt-4 sm:pt-6"></div>
-
           {/* Title */}
           <div>
-            <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
               Event Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -306,11 +325,84 @@ const BasicInfoStep = ({
             )}
           </div>
 
+          {/* Category */}
+          <div>
+            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
+              Category <span className="text-red-500">*</span>
+            </label>
+            {disabled ? (
+              <input
+                type="text"
+                value={formData.category || 'No category selected'}
+                disabled={true}
+                className={getFieldClasses('category')}
+              />
+            ) : (
+              <CategorySelector
+                value={formData.category || ''}
+                onChange={(value) => {
+                  handleChange({ target: { name: 'category', value } });
+                  if (!needsCommunityField(value)) {
+                    handleChange({ target: { name: 'communities', value: [] } });
+                  }
+                }}
+                placeholder="Select a category"
+                required={true}
+              />
+            )}
+            {errors?.category && (
+              <p className="text-red-500 text-xs sm:text-sm mt-1">
+                {Array.isArray(errors.category) ? errors.category[0] : errors.category}
+              </p>
+            )}
+          </div>
+
+          {/* Community/Language Selection - Only for eligible categories */}
+          {!disabled && needsCommunityField(formData.category) && (
+            <div className="space-y-2">
+              <CommunitySelector
+                value={formData.communities || []}
+                onChange={(value) => handleChange({ target: { name: 'communities', value } })}
+                label="Community/Language (Optional)"
+                showHint={true}
+              />
+            </div>
+          )}
+
+          {/* Description */}
+          <div>
+            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
+              Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="description"
+              value={formData.description || ''}
+              onChange={handleChange}
+              disabled={disabled}
+              className={`${getFieldClasses('description')} min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y`}
+              rows="6"
+              placeholder={disabled ? '' : 'Describe your event - what attendees can expect, agenda, special requirements, etc.'}
+              maxLength="15000"
+            />
+            <div className="flex justify-between items-start gap-2 mt-1">
+              <div className="flex-1">
+                {errors?.description && (
+                  <p className="text-red-500 text-xs sm:text-sm">
+                    {Array.isArray(errors.description) ? errors.description[0] : errors.description}
+                  </p>
+                )}
+              </div>
+              <span className="text-xs text-slate-400 whitespace-nowrap">
+                {(formData.description || '').length}/15000
+              </span>
+            </div>
+          </div>
+
           {/* Timezone + DateTime - Side by side on desktop */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Time Zone */}
             <div>
-              <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+              <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                 Timezone <span className="text-red-500">*</span>
                 {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-500 ml-2">(Locked)</span>}
               </label>
@@ -339,7 +431,7 @@ const BasicInfoStep = ({
 
             {/* Date & Time */}
             <div>
-              <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+              <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                 Date & Time <span className="text-red-500">*</span>
                 {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-500 ml-2">(Locked)</span>}
               </label>
@@ -362,7 +454,7 @@ const BasicInfoStep = ({
       {canShowRecurring && (
         <div>
           <label className="cursor-pointer">
-            <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+            <span className="block font-medium text-slate-600 text-sm sm:text-base">
               Recurring Event
               {isEditMode && <span className="text-xs font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
             </span>
@@ -436,10 +528,19 @@ const BasicInfoStep = ({
                   <button
                     type="button"
                     onClick={handleAddRepeatSchedule}
-                    className="text-sm text-teal-700 hover:text-teal-800 font-medium"
+                    className="inline-flex items-center px-4 py-2 text-sm text-teal-700 hover:text-teal-800 font-medium"
                   >
-                    + Add Another Day/Time
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Another Day/Time
                   </button>
+                )}
+
+                {scheduleErrors.length > 0 && (
+                  <div className="text-red-500 text-xs sm:text-sm space-y-1 mt-1">
+                    {scheduleErrors.map((err, i) => <p key={i}>{err}</p>)}
+                  </div>
                 )}
               </div>
 
@@ -474,16 +575,13 @@ const BasicInfoStep = ({
                     {Array.isArray(errors.recurrenceEndDate) ? errors.recurrenceEndDate[0] : errors.recurrenceEndDate}
                   </p>
                 )}
+                {endDateRecurrenceErrors.length > 0 && (
+                  <div className="text-red-500 text-xs sm:text-sm space-y-1 mt-1">
+                    {endDateRecurrenceErrors.map((err, i) => <p key={i}>{err}</p>)}
+                  </div>
+                )}
                 <p className="text-xs text-slate-500 mt-1">Maximum 6 months from start date</p>
               </div>
-
-              {errors?.recurrence && (
-                <div className="text-red-500 text-xs sm:text-sm space-y-1">
-                  {Array.isArray(errors.recurrence)
-                    ? errors.recurrence.map((err, i) => <p key={i}>• {err}</p>)
-                    : <p>• {errors.recurrence}</p>}
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -493,7 +591,7 @@ const BasicInfoStep = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Venue */}
         <div>
-          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+          <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
             Venue <span className="text-red-500">*</span>
           </label>
           <input

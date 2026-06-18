@@ -40,6 +40,8 @@ const MyInvoicesPage = () => {
   const [invoiceData, setInvoiceData] = useState(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [invoiceError, setInvoiceError] = useState(null);
+  const [invoiceMode, setInvoiceMode] = useState('invoice'); // 'invoice' | 'refund'
+  const [targetRefundId, setTargetRefundId] = useState(null); // stripeRefundId shown when mode === 'refund'
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -178,29 +180,17 @@ const MyInvoicesPage = () => {
     }
   };
 
-  // Get invoice status badge
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      'paid': { color: 'bg-green-100 text-green-800', text: 'Paid' },
-      'partially_refunded': { color: 'bg-orange-100 text-orange-800', text: 'Partially Refunded' },
-      'fully_refunded': { color: 'bg-red-100 text-red-800', text: 'Fully Refunded' }
-    };
-
-    const config = statusConfig[status] || statusConfig['paid'];
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.color}`}>
-        {config.text}
-      </span>
-    );
-  };
-
   // Handle view invoice with API call
-  const handleViewInvoice = async (invoice) => {
+  // Opens the modal over a fetched invoice. mode 'invoice' shows purchase details; mode 'refund'
+  // shows only the one refund transaction (refundStripeId).
+  const openInvoiceView = async (invoice, mode = 'invoice', refundStripeId = null) => {
+    setInvoiceMode(mode);
+    setTargetRefundId(refundStripeId);
     setInvoiceLoading(true);
     setInvoiceError(null);
     setSelectedInvoice(invoice);
     setShowInvoiceModal(true);
-    
+
     try {
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/invoices/${invoice.invoiceNumber}`,
@@ -213,7 +203,6 @@ const MyInvoicesPage = () => {
 
       if (data.success) {
         setInvoiceData(data.invoice);
-        console.log('Invoice data loaded:', data.invoice.invoiceNumber);
       } else {
         throw new Error(data.message || 'Failed to load invoice');
       }
@@ -224,6 +213,21 @@ const MyInvoicesPage = () => {
     } finally {
       setInvoiceLoading(false);
     }
+  };
+
+  const handleViewInvoice = (invoice) => openInvoiceView(invoice, 'invoice');
+  const handleViewRefund = (invoice, refundStripeId) => openInvoiceView(invoice, 'refund', refundStripeId);
+
+  // Group an invoice's embedded refund entries into transactions (one per stripeRefundId),
+  // summing the amount and carrying the human-readable refund id. Sorted oldest first.
+  const groupRefundsForList = (refunds) => {
+    const grouped = (refunds || []).reduce((acc, r) => {
+      const key = r.stripeRefundId || 'unknown';
+      if (!acc[key]) acc[key] = { stripeRefundId: r.stripeRefundId, refundRequestId: r.refundRequestId, refundDate: r.refundDate, totalAmount: 0 };
+      acc[key].totalAmount += (r.refundAmount || 0);
+      return acc;
+    }, {});
+    return Object.values(grouped).sort((a, b) => new Date(a.refundDate) - new Date(b.refundDate));
   };
 
   // Filter invoices when event is selected
@@ -544,98 +548,44 @@ const MyInvoicesPage = () => {
               );
               return paginatedInvoices;
             })().map((invoice) => (
-              <div key={invoice.invoiceNumber} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                {/* Invoice Card - Simple Layout (No Tabs) */}
-                <div className="p-4">
-                  {/* Mobile Layout */}
-                  <div className="block sm:hidden space-y-3">
-                    {/* Row 1: View Invoice Button (full width) */}
-                    <div className="w-full">
-                      <button
-                        onClick={() => handleViewInvoice(invoice)}
-                        className="w-full px-4 py-2 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
-                      >
-                        📄 View Invoice
-                      </button>
-                    </div>
+              <div key={invoice.invoiceNumber} className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+                {/* Invoice link row */}
+                <button
+                  onClick={() => handleViewInvoice(invoice)}
+                  className="w-full flex items-center gap-3 px-3 sm:px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-lg shrink-0" aria-hidden>🧾</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-blue-700 truncate">{invoice.invoiceNumber}</span>
+                    <span className="block text-xs text-gray-500 mt-0.5">{formatDate(invoice.invoiceDate)}</span>
+                  </span>
+                  <span className="shrink-0 font-semibold text-gray-900">${invoice.amounts.total.toFixed(2)}</span>
+                  <svg className="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
 
-                    {/* Row 2: Invoice Number + Status */}
-                    <div className="flex items-center gap-2">
-                      <div className="font-bold text-gray-900 text-base">
-                        Invoice: {invoice.invoiceNumber}
-                      </div>
-                      {getStatusBadge(invoice.status)}
-                    </div>
-
-                    {/* Row 3: Invoice Details */}
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Tickets:</span>
-                        <span className="text-gray-900">{invoice.ticketCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Total Amount:</span>
-                        <span className="text-gray-900 font-semibold">${invoice.amounts.total.toFixed(2)}</span>
-                      </div>
-                      {invoice.hasRefunds && (
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-700">Refunded:</span>
-                          <span className="text-red-600 font-semibold">${invoice.amounts.totalRefunded.toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Purchase Date:</span>
-                        <span className="text-gray-900">{formatDate(invoice.invoiceDate)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Desktop Layout */}
-                  <div className="hidden sm:flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      {/* Invoice Number + Status */}
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="font-semibold text-gray-900 text-sm sm:text-base">
-                          Invoice: {invoice.invoiceNumber}
-                        </div>
-                        {getStatusBadge(invoice.status)}
-                      </div>
-                      
-                      {/* Invoice Details */}
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm">
-                        <div>
-                          <span className="font-medium text-gray-700">Tickets:</span>
-                          <div className="text-gray-900">{invoice.ticketCount}</div>
-                        </div>
-                        
-                        <div>
-                          <span className="font-medium text-gray-700">Total Amount:</span>
-                          <div className="text-gray-900 font-semibold">${invoice.amounts.total.toFixed(2)}</div>
-                        </div>
-                        
-                        {invoice.hasRefunds && (
-                          <div>
-                            <span className="font-medium text-gray-700">Refunded:</span>
-                            <div className="text-red-600 font-semibold">${invoice.amounts.totalRefunded.toFixed(2)}</div>
-                          </div>
-                        )}
-                        
-                        <div>
-                          <span className="font-medium text-gray-700">Purchase Date:</span>
-                          <div className="text-gray-900">{formatDate(invoice.invoiceDate)}</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* View Invoice Button */}
+                {/* Refund link rows — one per refund transaction */}
+                {invoice.refunds && invoice.refunds.length > 0 &&
+                  groupRefundsForList(invoice.refunds).map((g, i) => (
                     <button
-                      onClick={() => handleViewInvoice(invoice)}
-                      className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap bg-blue-600 text-white hover:bg-blue-700"
+                      key={g.stripeRefundId || i}
+                      onClick={() => handleViewRefund(invoice, g.stripeRefundId)}
+                      className="w-full flex items-center gap-3 px-3 sm:px-4 py-3 text-left hover:bg-gray-50 transition-colors"
                     >
-                      📄 View Invoice
+                      <span className="text-lg shrink-0 text-red-500" aria-hidden>↩</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-medium text-blue-700 truncate">
+                          {g.refundRequestId || `${invoice.invoiceNumber} · Refund ${i + 1}`}
+                        </span>
+                        <span className="block text-xs text-gray-500 mt-0.5">Refund · {formatDate(g.refundDate)}</span>
+                      </span>
+                      <span className="shrink-0 font-semibold text-red-600">-${g.totalAmount.toFixed(2)}</span>
+                      <svg className="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </button>
-                  </div>
-                </div>
+                  ))}
               </div>
             ))}
           </div>
@@ -667,6 +617,8 @@ const MyInvoicesPage = () => {
           invoiceData={invoiceData}
           invoiceLoading={invoiceLoading}
           invoiceError={invoiceError}
+          mode={invoiceMode}
+          targetRefundId={targetRefundId}
           onClose={() => {
             setShowInvoiceModal(false);
             setSelectedInvoice(null);
@@ -680,8 +632,9 @@ const MyInvoicesPage = () => {
 };
 
 // Enhanced Invoice Modal Component with timestamps
-const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onClose }) => {
+const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onClose, mode = 'invoice', targetRefundId = null }) => {
   const [isDownloading, setIsDownloading] = React.useState(false);
+  const isRefundView = mode === 'refund';
   
   // Prevent body scroll when modal is open
   React.useEffect(() => {
@@ -720,23 +673,40 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     const pageWidth = doc.internal.pageSize.width;
     const contentWidth = pageWidth - leftMargin - rightMargin;
     
-    // INVOICE Header
+    // Header identity — INVOICE or REFUND
     doc.setFontSize(24);
     doc.setFont(undefined, 'bold');
-    doc.text('INVOICE', leftMargin, yPosition);
-    
-    // Invoice Number and Date on the right
+    doc.text(isRefundView ? 'REFUND' : 'INVOICE', leftMargin, yPosition);
+
+    // Right-side meta
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    doc.text('Issue Date', pageWidth - rightMargin - 40, yPosition - 5);
-    doc.setFont(undefined, 'bold');
-    doc.text(formatDate(invoiceData.invoiceDate), pageWidth - rightMargin - 40, yPosition);
-    
+    const metaX = pageWidth - rightMargin - 50;
+    if (isRefundView) {
+      doc.text('Refund Date', metaX, yPosition - 5);
+      doc.setFont(undefined, 'bold');
+      doc.text(targetRefund?.refundDate ? formatDate(targetRefund.refundDate) : '-', metaX, yPosition);
+      doc.setFont(undefined, 'normal');
+      doc.text('Invoice Reference', metaX, yPosition + 7);
+      doc.setFont(undefined, 'bold');
+      doc.text(invoiceData.invoiceNumber, metaX, yPosition + 12);
+    } else {
+      doc.text('Issue Date', metaX, yPosition - 5);
+      doc.setFont(undefined, 'bold');
+      doc.text(formatDate(invoiceData.invoiceDate), metaX, yPosition);
+    }
+
     yPosition += 8;
     doc.setFontSize(11);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(100);
-    doc.text(`Invoice #${invoiceData.invoiceNumber}`, leftMargin, yPosition);
+    doc.text(
+      isRefundView
+        ? (targetRefund?.refundRequestId ? `Refund #${targetRefund.refundRequestId}` : 'Refund')
+        : `Invoice #${invoiceData.invoiceNumber}`,
+      leftMargin,
+      yPosition
+    );
     doc.setTextColor(0);
     yPosition += 15;
     
@@ -868,78 +838,141 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     
     yPosition += 15;
     
-    // Purchase Details with timestamp
-    doc.setFontSize(13);
-    doc.setFont(undefined, 'bold');
-    doc.text(`Purchase Details | ${formatDateTime(invoiceData.payment.paymentDate)}`, leftMargin, yPosition);
-    yPosition += 10;
-    
-    // Table-like structure with borders
+    // (No "Purchase Details" heading — matches the on-screen invoice; the table is self-explanatory.)
+
+    // Tickets table — invoice shows Price/Discount/Amount; refund shows Amount/Refund Amount.
     const tableLeft = leftMargin;
-    const col1Width = 80;
-    const col2Width = 30;
-    const col3Width = 35;
-    const col4Width = 35;
-    const tableWidth = col1Width + col2Width + col3Width + col4Width;
-    
-    // Table header background
-    doc.setFillColor(240, 240, 240);
-    doc.rect(tableLeft, yPosition - 5, tableWidth, 8, 'F');
-    
-    // Table headers
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'bold');
-    doc.text('Ticket Type', tableLeft + 2, yPosition);
-    doc.text('Quantity', tableLeft + col1Width + 2, yPosition);
-    doc.text('Price', tableLeft + col1Width + col2Width + 2, yPosition);
-    doc.text('Amount', tableLeft + col1Width + col2Width + col3Width + 2, yPosition);
-    yPosition += 5;
-    
-    // Group line items by type
-    doc.setFont(undefined, 'normal');
-    const groupedItems = invoiceData.lineItems.reduce((acc, item) => {
-      const key = item.ticketType.name;
-      if (!acc[key]) {
-        acc[key] = {
-          name: key,
-          quantity: 0,
-          price: item.ticketType.price,
-          amount: 0
-        };
+    const tableWidth = 180;
+
+    if (!isRefundView) {
+      const col1Width = 55; // Ticket Type
+      const col2Width = 25; // Quantity
+      const col3Width = 30; // Price
+      const col4Width = 35; // Discount
+      const qtyCenterX = tableLeft + col1Width + col2Width / 2;
+      const priceRightX = tableLeft + col1Width + col2Width + col3Width - 2;
+      const discRightX = tableLeft + col1Width + col2Width + col3Width + col4Width - 2;
+      const amountRightX = tableLeft + tableWidth - 2;
+
+      // Header band
+      doc.setFillColor(240, 240, 240);
+      doc.rect(tableLeft, yPosition - 5, tableWidth, 8, 'F');
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Ticket Type', tableLeft + 2, yPosition);
+      doc.text('Quantity', qtyCenterX, yPosition, { align: 'center' });
+      doc.text('Price', priceRightX, yPosition, { align: 'right' });
+      doc.text('Discount', discRightX, yPosition, { align: 'right' });
+      doc.text('Amount', amountRightX, yPosition, { align: 'right' });
+      yPosition += 9; // clear the grey band before the first row
+
+      // Group by ticket type, summing the REAL per-ticket discount stored at purchase.
+      const groups = Object.values(invoiceData.lineItems.reduce((acc, item) => {
+        const key = item.ticketType.name;
+        if (!acc[key]) acc[key] = { name: key, quantity: 0, price: item.ticketType.price, discount: 0, amount: 0 };
+        const lineDiscount = item.discountAmount || 0;
+        acc[key].quantity += item.quantity || 1;
+        acc[key].discount += lineDiscount;
+        acc[key].amount += (item.ticketType.price * (item.quantity || 1)) - lineDiscount;
+        return acc;
+      }, {}));
+
+      doc.setFont(undefined, 'normal');
+      groups.forEach((item, index) => {
+        if (index % 2 === 1) {
+          doc.setFillColor(250, 250, 250);
+          doc.rect(tableLeft, yPosition - 4, tableWidth, 6, 'F');
+        }
+        doc.text(item.name, tableLeft + 2, yPosition);
+        doc.text(item.quantity.toString(), qtyCenterX, yPosition, { align: 'center' });
+        doc.text(`$${item.price.toFixed(2)}`, priceRightX, yPosition, { align: 'right' });
+        doc.text(item.discount > 0 ? `-$${item.discount.toFixed(2)}` : '-', discRightX, yPosition, { align: 'right' });
+        doc.text(`$${item.amount.toFixed(2)}`, amountRightX, yPosition, { align: 'right' });
+        yPosition += 6;
+      });
+
+      // Separator + Total
+      doc.setDrawColor(200);
+      doc.line(tableLeft, yPosition, tableLeft + tableWidth, yPosition);
+      yPosition += 5;
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(11);
+      const totalText = invoiceData.gstIncluded
+        ? `Total Paid: $${invoiceData.amounts.total.toFixed(2)} (incl. GST)`
+        : `Total Paid: $${invoiceData.amounts.total.toFixed(2)}`;
+      doc.text(totalText, amountRightX, yPosition, { align: 'right' });
+
+      // Discount code note (so the code itself is visible, not just the amount)
+      if (invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0) {
+        yPosition += 6;
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(100);
+        const dTypes = [...new Set(invoiceData.lineItems.filter(i => (i.discountAmount || 0) > 0).map(i => i.ticketType.name))];
+        const dSuffix = dTypes.length ? ` to ${dTypes.join(', ')}` : '';
+        doc.text(`* Discount code ${invoiceData.amounts.discount.code} applied${dSuffix}`, tableLeft, yPosition);
+        doc.setTextColor(0);
       }
-      acc[key].quantity += item.quantity || 1;
-      acc[key].amount += (item.ticketType.price * (item.quantity || 1));
-      return acc;
-    }, {});
-    
-    // Draw rows
-    Object.values(groupedItems).forEach((item, index) => {
-      if (index % 2 === 1) {
-        doc.setFillColor(250, 250, 250);
-        doc.rect(tableLeft, yPosition - 4, tableWidth, 6, 'F');
-      }
-      
-      doc.text(item.name, tableLeft + 2, yPosition);
-      doc.text(item.quantity.toString(), tableLeft + col1Width + 10, yPosition, { align: 'center' });
-      doc.text(`$${item.price.toFixed(2)}`, tableLeft + col1Width + col2Width + 15, yPosition, { align: 'right' });
-      doc.text(`$${item.amount.toFixed(2)}`, tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' });
-      yPosition += 6;
-    });
-    
-    // Total row
-    doc.setDrawColor(200);
-    doc.line(tableLeft, yPosition, tableLeft + tableWidth, yPosition);
-    yPosition += 5;
-    doc.setFont(undefined, 'bold');
-    doc.setFontSize(11);
-    const totalText = invoiceData.gstIncluded 
-      ? `Total Paid: $${invoiceData.amounts.total.toFixed(2)} (incl. GST)`
-      : `Total Paid: $${invoiceData.amounts.total.toFixed(2)}`;
-    doc.text(totalText, tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' });
-    
-    // Policy notes
-    yPosition += 8;
-    if (invoiceData.refundPolicy?.processingFeePolicy || invoiceData.refundPolicy?.policyText) {
+    } else {
+      // Refund table: Ticket Type | Quantity | Amount (paid after discount) | Refund Amount
+      const rCol1 = 60; // Ticket Type
+      const rCol2 = 35; // Quantity
+      const rCol3 = 40; // Amount
+      const rQtyCenterX = tableLeft + rCol1 + rCol2 / 2;
+      const rAmountRightX = tableLeft + rCol1 + rCol2 + rCol3 - 2;
+      const rRefundRightX = tableLeft + tableWidth - 2;
+
+      // Header band
+      doc.setFillColor(240, 240, 240);
+      doc.rect(tableLeft, yPosition - 5, tableWidth, 8, 'F');
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Ticket Type', tableLeft + 2, yPosition);
+      doc.text('Quantity', rQtyCenterX, yPosition, { align: 'center' });
+      doc.text('Amount', rAmountRightX, yPosition, { align: 'right' });
+      doc.text('Refund Amount', rRefundRightX, yPosition, { align: 'right' });
+      yPosition += 9; // clear the grey band before the first row
+
+      // Group the refunded tickets by type; Amount = paid after discount, Refund Amount = refunded.
+      const refundTickets = (targetRefund?.tickets || []).reduce((acc, ticket) => {
+        const originalItem = invoiceData.lineItems.find(item => item.ticketNumber === ticket.ticketNumber);
+        if (originalItem) {
+          const typeName = originalItem.ticketType.name;
+          if (!acc[typeName]) acc[typeName] = { name: typeName, quantity: 0, amount: 0, refundAmount: 0 };
+          const qty = originalItem.quantity || 1;
+          acc[typeName].quantity += qty;
+          acc[typeName].amount += (originalItem.ticketType.price * qty) - (originalItem.discountAmount || 0);
+          acc[typeName].refundAmount += ticket.amount;
+        }
+        return acc;
+      }, {});
+
+      doc.setFont(undefined, 'normal');
+      Object.values(refundTickets).forEach((item, index) => {
+        if (index % 2 === 1) {
+          doc.setFillColor(250, 250, 250);
+          doc.rect(tableLeft, yPosition - 4, tableWidth, 6, 'F');
+        }
+        doc.text(item.name, tableLeft + 2, yPosition);
+        doc.text(item.quantity.toString(), rQtyCenterX, yPosition, { align: 'center' });
+        doc.text(`$${item.amount.toFixed(2)}`, rAmountRightX, yPosition, { align: 'right' });
+        doc.text(`$${item.refundAmount.toFixed(2)}`, rRefundRightX, yPosition, { align: 'right' });
+        yPosition += 6;
+      });
+
+      // Bottom separator
+      doc.setDrawColor(200);
+      doc.line(tableLeft, yPosition, tableLeft + tableWidth, yPosition);
+    }
+
+    // Terms and Conditions (refund policy) — matches the on-screen invoice
+    if (invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) {
+      yPosition += 10;
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(80);
+      doc.text('Terms and Conditions:', tableLeft, yPosition);
+      yPosition += 5;
       doc.setFontSize(8);
       doc.setFont(undefined, 'normal');
       doc.setTextColor(100);
@@ -953,102 +986,14 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
       }
       doc.setTextColor(0);
     }
-    
-    // Refunds section if any
-    if (invoiceData.refunds && invoiceData.refunds.length > 0) {
-      yPosition += 15;
-      
-      // Group refunds by transaction (sorted oldest first)
-      const refundGroups = groupRefundsByTransaction(invoiceData.refunds);
-      
-      refundGroups.forEach((refundGroup, groupIndex) => {
-        // Check if we need a new page
-        if (yPosition > 250) {
-          doc.addPage();
-          yPosition = 20;
-        }
-        
-        // Refund header with timestamp
-        doc.setFontSize(13);
-        doc.setFont(undefined, 'bold');
-        doc.text(`Refund #${groupIndex + 1} | ${formatDateTime(refundGroup.refundDate)}`, leftMargin, yPosition);
-        yPosition += 10;
-        
-        // Refund table header with red background
-        doc.setFillColor(255, 240, 240);
-        doc.rect(tableLeft, yPosition - 5, tableWidth, 8, 'F');
-        
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'bold');
-        doc.text('Ticket Type', tableLeft + 2, yPosition);
-        doc.text('Quantity', tableLeft + col1Width + 2, yPosition);
-        doc.text('Price', tableLeft + col1Width + col2Width + 2, yPosition);
-        doc.text('Refund Amount', tableLeft + col1Width + col2Width + col3Width + 2, yPosition);
-        yPosition += 5;
-        
-        // Group refunded tickets by type
-        doc.setFont(undefined, 'normal');
-        const refundTicketsByType = refundGroup.tickets.reduce((acc, ticket) => {
-          const originalItem = invoiceData.lineItems.find(item => 
-            item.ticketNumber === ticket.ticketNumber
-          );
-          
-          if (originalItem) {
-            const typeName = originalItem.ticketType.name;
-            if (!acc[typeName]) {
-              acc[typeName] = {
-                name: typeName,
-                price: originalItem.ticketType.price,
-                quantity: 0,
-                refundAmount: 0
-              };
-            }
-            acc[typeName].quantity += 1;
-            acc[typeName].refundAmount += ticket.amount;
-          }
-          
-          return acc;
-        }, {});
-        
-        // Draw refund rows
-        Object.values(refundTicketsByType).forEach((item, index) => {
-          if (index % 2 === 1) {
-            doc.setFillColor(255, 250, 250);
-            doc.rect(tableLeft, yPosition - 4, tableWidth, 6, 'F');
-          }
-          
-          doc.text(item.name, tableLeft + 2, yPosition);
-          doc.text(item.quantity.toString(), tableLeft + col1Width + 10, yPosition, { align: 'center' });
-          doc.text(`$${item.price.toFixed(2)}`, tableLeft + col1Width + col2Width + 15, yPosition, { align: 'right' });
-          doc.setTextColor(220, 38, 38); // Red color for refund amounts
-          doc.text(`$${item.refundAmount.toFixed(2)}`, tableLeft + col1Width + col2Width + col3Width + 15, yPosition, { align: 'right' });
-          doc.setTextColor(0);
-          yPosition += 6;
-        });
-        
-        // Refund reason and notes
-        yPosition += 3;
-        doc.setFontSize(8);
-        doc.setTextColor(100);
-        doc.text(`Refund Reason: ${refundGroup.reason || 'Customer request'}`, tableLeft, yPosition);
-        yPosition += 4;
-        if (invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable') {
-          doc.text('* Processing fees are non-refundable', tableLeft, yPosition);
-          yPosition += 4;
-        }
-        if (invoiceData.refundPolicy?.policyText) {
-          doc.text(`* ${invoiceData.refundPolicy.policyText}`, tableLeft, yPosition);
-          yPosition += 4;
-        }
-        doc.setTextColor(0);
-        yPosition += 4;
-      });
-      
-    }
-    
-    
+
+    // (No refunds section — the invoice is a purchase-time snapshot; refunds are their own REF- documents.)
+
+
     // Save the PDF
-    const fileName = `Invoice_${invoiceData.invoiceNumber}_${new Date().getTime()}.pdf`;
+    const fileName = isRefundView
+      ? `Refund_${targetRefund?.refundRequestId || invoiceData.invoiceNumber}_${new Date().getTime()}.pdf`
+      : `Invoice_${invoiceData.invoiceNumber}_${new Date().getTime()}.pdf`;
     doc.save(fileName);
     
     // Small delay before removing loading state
@@ -1072,7 +1017,8 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     }
   };
 
-  // Helper function to group line items by ticket type for Purchase Details table
+  // Helper function to group line items by ticket type for Purchase Details table.
+  // amount is the NET line total (base − discount); discount sums each ticket's S4-D share.
   const groupLineItemsByType = (lineItems) => {
     const grouped = lineItems.reduce((acc, item) => {
       const typeName = item.ticketType.name;
@@ -1081,11 +1027,14 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
           name: typeName,
           price: item.ticketType.price,
           quantity: 0,
+          discount: 0,
           amount: 0
         };
       }
+      const lineDiscount = item.discountAmount || 0;
       acc[typeName].quantity += item.quantity;
-      acc[typeName].amount += (item.ticketType.price * item.quantity);
+      acc[typeName].discount += lineDiscount;
+      acc[typeName].amount += (item.ticketType.price * item.quantity) - lineDiscount;
       return acc;
     }, {});
 
@@ -1099,12 +1048,14 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
       if (!acc[refundId]) {
         acc[refundId] = {
           stripeRefundId: refundId,
+          refundRequestId: refund.refundRequestId,
           refundDate: refund.refundDate,
           reason: refund.reason,
           tickets: [],
-          totalAmount: refund.refundAmount
+          totalAmount: 0
         };
       }
+      acc[refundId].totalAmount += (refund.refundAmount || 0);
       
       // All refunds are now individual - one ticket per refund entry
       if (refund.ticketNumber) {
@@ -1118,17 +1069,27 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     }, {});
 
     // Sort refunds by date - oldest first
-    return Object.values(grouped).sort((a, b) => 
+    return Object.values(grouped).sort((a, b) =>
       new Date(a.refundDate) - new Date(b.refundDate)
     );
   };
+
+  // In refund view, the specific refund being shown — drives the header's REF id + refund date.
+  const targetRefund = (isRefundView && invoiceData?.refunds?.length)
+    ? groupRefundsByTransaction(invoiceData.refunds).find(g => !targetRefundId || g.stripeRefundId === targetRefundId)
+    : null;
+
+  // Ticket types the discount actually covered (lines with a real discount), for the "applied to …" note.
+  const discountedTypeNames = invoiceData?.lineItems
+    ? [...new Set(invoiceData.lineItems.filter(i => (i.discountAmount || 0) > 0).map(i => i.ticketType.name))]
+    : [];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-[9999] overflow-y-auto">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[85vh] sm:max-h-[90vh] my-auto flex flex-col">
         {/* Header - Fixed at top */}
         <div className="flex-shrink-0 flex justify-between items-center p-4 sm:p-6 border-b">
-          <h3 className="text-lg sm:text-xl font-semibold">Invoice Details</h3>
+          <h3 className="text-lg sm:text-xl font-semibold">{isRefundView ? 'Refund Details' : 'Invoice Details'}</h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-xl"
@@ -1162,16 +1123,31 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
           {/* Show invoice content only if data is loaded */}
           {invoiceData && !invoiceLoading && (
             <>
-              {/* Invoice Header */}
+              {/* Header — invoice or refund identity */}
               <div className="border-b pb-6 mb-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">INVOICE</h2>
-                    <p className="text-gray-600 mt-1">Invoice #{invoiceData.invoiceNumber}</p>
+                    <h2 className="text-2xl font-bold text-gray-900">{isRefundView ? 'REFUND' : 'INVOICE'}</h2>
+                    <p className="text-gray-600 mt-1">
+                      {isRefundView
+                        ? (targetRefund?.refundRequestId ? `Refund #${targetRefund.refundRequestId}` : 'Refund')
+                        : `Invoice #${invoiceData.invoiceNumber}`}
+                    </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">Issue Date</p>
-                    <p className="font-medium">{formatDate(invoiceData.invoiceDate)}</p>
+                    {isRefundView ? (
+                      <>
+                        <p className="text-sm text-gray-600">Refund Date</p>
+                        <p className="font-medium">{targetRefund?.refundDate ? formatDate(targetRefund.refundDate) : '—'}</p>
+                        <p className="text-sm text-gray-600 mt-2">Invoice Reference</p>
+                        <p className="font-medium">{invoiceData.invoiceNumber}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-600">Issue Date</p>
+                        <p className="font-medium">{formatDate(invoiceData.invoiceDate)}</p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1244,126 +1220,137 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                 </div>
               </div>
 
-              {/* Purchase Details Table with timestamp */}
+              {/* Purchase Details Table with timestamp — invoice view only */}
+              {!isRefundView && (
               <div className="mb-8">
-                <h4 className="text-lg font-bold text-gray-900 mb-4">
-                  Purchase Details | {formatDateTime(invoiceData.payment.paymentDate)}
-                </h4>
-                
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Ticket Type</th>
-                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Quantity</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Price</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white">
-                      {groupLineItemsByType(invoiceData.lineItems).map((group, index) => (
-                        <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-4 py-3 text-sm border-t border-gray-100">{group.name}</td>
-                          <td className="px-4 py-3 text-sm text-center border-t border-gray-100">{group.quantity}</td>
-                          <td className="px-4 py-3 text-sm text-right border-t border-gray-100">${group.price.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-sm text-right border-t border-gray-100 font-medium">${group.amount.toFixed(2)}</td>
+                  {/* Table scrolls sideways on small screens if columns don't fit */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Ticket Type</th>
+                          <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-medium text-gray-700">Quantity</th>
+                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Price</th>
+                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Discount</th>
+                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Amount</th>
                         </tr>
-                      ))}
-                      
-                      {/* Total Row */}
-                      <tr className="bg-gray-50 border-t border-gray-300">
-                        <td className="px-4 py-3 text-sm font-medium" colSpan="2"></td>
-                        <td className="px-4 py-3 text-sm text-right font-bold" colSpan="2">
-                          Total Paid: ${invoiceData.amounts.total.toFixed(2)}
-                          {invoiceData.gstIncluded && ' (incl. GST)'}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  
-                  {/* Policy Notes Below Table */}
-                  {(invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
-                    <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-600 space-y-1">
-                      {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
-                        <p>* Processing fees are non-refundable</p>
+                      </thead>
+                      <tbody className="bg-white">
+                        {groupLineItemsByType(invoiceData.lineItems).map((group, index) => (
+                          <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm border-t border-gray-100 whitespace-nowrap">{group.name}</td>
+                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-center border-t border-gray-100">{group.quantity}</td>
+                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-gray-100 whitespace-nowrap">${group.price.toFixed(2)}</td>
+                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-gray-100 text-teal-700 whitespace-nowrap">
+                              {group.discount > 0 ? `-$${group.discount.toFixed(2)}` : '—'}
+                            </td>
+                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-gray-100 font-medium whitespace-nowrap">${group.amount.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Total Paid — outside the table so it stays visible on mobile (never clipped by table overflow) */}
+                  <div className="bg-gray-50 border-t border-gray-300 px-3 sm:px-4 py-3 text-right text-sm font-bold text-gray-900">
+                    Total Paid: ${invoiceData.amounts.total.toFixed(2)}{invoiceData.gstIncluded && ' (incl. GST)'}
+                  </div>
+
+                  {/* Notes Below Table — discount code (informational) + Terms & Conditions (refund policy) */}
+                  {((invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0) || invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
+                    <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-600 space-y-2">
+                      {invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0 && (
+                        <p>* Discount code {invoiceData.amounts.discount.code} applied{discountedTypeNames.length ? ` to ${discountedTypeNames.join(', ')}` : ''}</p>
                       )}
-                      {invoiceData.refundPolicy?.policyText && (
-                        <p>* {invoiceData.refundPolicy.policyText}</p>
+                      {(invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
+                        <div className="space-y-1">
+                          <p className="font-semibold text-gray-700">Terms and Conditions:</p>
+                          {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
+                            <p>* Processing fees are non-refundable</p>
+                          )}
+                          {invoiceData.refundPolicy?.policyText && (
+                            <p>* {invoiceData.refundPolicy.policyText}</p>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
                 </div>
               </div>
+              )}
 
-              {/* Refund Details Table with timestamps (only if refunds exist) - sorted oldest first */}
-              {invoiceData.refunds && invoiceData.refunds.length > 0 && (
+              {/* The invoice is a purchase-time snapshot — refunds are NOT appended here; they open as
+                  their own Refund links/views from the list. */}
+
+              {/* Refund view: show only the opened refund transaction */}
+              {isRefundView && invoiceData.refunds && invoiceData.refunds.length > 0 && (
                 <div className="mb-8">
                   {(() => {
-                    const refundGroups = groupRefundsByTransaction(invoiceData.refunds);
+                    const refundGroups = groupRefundsByTransaction(invoiceData.refunds)
+                      .filter((g) => !targetRefundId || g.stripeRefundId === targetRefundId);
                     return refundGroups.map((refundGroup, groupIndex) => (
                       <div key={refundGroup.stripeRefundId} className="mb-6">
-                        <h4 className="text-lg font-bold text-gray-900 mb-4">
-                          Refund #{groupIndex + 1} | {formatDateTime(refundGroup.refundDate)}
-                        </h4>
-                        
                         <div className="border border-gray-200 rounded-lg overflow-hidden">
-                          <table className="w-full">
-                            <thead className="bg-red-50">
-                              <tr>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Ticket Type</th>
-                                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Quantity</th>
-                                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Price</th>
-                                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Refund Amount</th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white">
-                              {(() => {
-                                // Group refunded tickets by type for this refund transaction
-                                const refundTicketsByType = refundGroup.tickets.reduce((acc, ticket) => {
-                                  // Find the original line item to get ticket type info
-                                  const originalItem = invoiceData.lineItems.find(item => 
-                                    item.ticketNumber === ticket.ticketNumber
-                                  );
-                                  
-                                  if (originalItem) {
-                                    const typeName = originalItem.ticketType.name;
-                                    if (!acc[typeName]) {
-                                      acc[typeName] = {
-                                        name: typeName,
-                                        price: originalItem.ticketType.price,
-                                        quantity: 0,
-                                        refundAmount: 0
-                                      };
-                                    }
-                                    acc[typeName].quantity += 1;
-                                    acc[typeName].refundAmount += ticket.amount;
-                                  }
-                                  
-                                  return acc;
-                                }, {});
+                          {/* Table scrolls sideways on small screens if columns don't fit */}
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Ticket Type</th>
+                                  <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-medium text-gray-700">Quantity</th>
+                                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Amount</th>
+                                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Refund Amount</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white">
+                                {(() => {
+                                  // Group refunded tickets by type for this refund transaction.
+                                  // Amount = what was paid for that ticket (price after discount); Refund Amount = refunded.
+                                  const refundTicketsByType = refundGroup.tickets.reduce((acc, ticket) => {
+                                    const originalItem = invoiceData.lineItems.find(item =>
+                                      item.ticketNumber === ticket.ticketNumber
+                                    );
 
-                                return Object.values(refundTicketsByType).map((group, index) => (
-                                  <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-red-25'}>
-                                    <td className="px-4 py-3 text-sm border-t border-gray-100">{group.name}</td>
-                                    <td className="px-4 py-3 text-sm text-center border-t border-gray-100">{group.quantity}</td>
-                                    <td className="px-4 py-3 text-sm text-right border-t border-gray-100">${group.price.toFixed(2)}</td>
-                                    <td className="px-4 py-3 text-sm text-right border-t border-gray-100 font-medium text-red-600">${group.refundAmount.toFixed(2)}</td>
-                                  </tr>
-                                ));
-                              })()}
-                            </tbody>
-                          </table>
-                          
-                          {/* Refund Reason and Policy Notes */}
-                          <div className="px-4 py-3 bg-red-50 border-t border-gray-200 text-xs text-gray-600 space-y-1">
-                            <p>Refund Reason: {refundGroup.reason || 'Customer request'}</p>
-                            {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
-                              <p>* Processing fees are non-refundable</p>
-                            )}
-                            {invoiceData.refundPolicy?.policyText && (
-                              <p>* {invoiceData.refundPolicy.policyText}</p>
-                            )}
+                                    if (originalItem) {
+                                      const typeName = originalItem.ticketType.name;
+                                      if (!acc[typeName]) {
+                                        acc[typeName] = { name: typeName, quantity: 0, amount: 0, refundAmount: 0 };
+                                      }
+                                      const qty = originalItem.quantity || 1;
+                                      acc[typeName].quantity += qty;
+                                      acc[typeName].amount += (originalItem.ticketType.price * qty) - (originalItem.discountAmount || 0);
+                                      acc[typeName].refundAmount += ticket.amount;
+                                    }
+
+                                    return acc;
+                                  }, {});
+
+                                  return Object.values(refundTicketsByType).map((group, index) => (
+                                    <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm border-t border-gray-100 whitespace-nowrap">{group.name}</td>
+                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-center border-t border-gray-100">{group.quantity}</td>
+                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-gray-100 whitespace-nowrap">${group.amount.toFixed(2)}</td>
+                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-gray-100 font-medium whitespace-nowrap">${group.refundAmount.toFixed(2)}</td>
+                                    </tr>
+                                  ));
+                                })()}
+                              </tbody>
+                            </table>
                           </div>
+
+                          {/* Terms and Conditions (refund policy) */}
+                          {(invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
+                            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-600 space-y-1">
+                              <p className="font-semibold text-gray-700">Terms and Conditions:</p>
+                              {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
+                                <p>* Processing fees are non-refundable</p>
+                              )}
+                              {invoiceData.refundPolicy?.policyText && (
+                                <p>* {invoiceData.refundPolicy.policyText}</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ));
@@ -1371,14 +1358,14 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                 </div>
               )}
 
-              {/* Actions */}
+              {/* Actions — PDF download (invoice or refund) */}
               <div className="mt-8 pt-6 border-t">
-                <button 
+                <button
                   onClick={downloadPDF}
                   disabled={isDownloading}
                   className={`w-full px-4 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
-                    isDownloading 
-                      ? 'bg-blue-400 cursor-not-allowed' 
+                    isDownloading
+                      ? 'bg-blue-400 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700'
                   } text-white`}
                 >
@@ -1393,7 +1380,7 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                   ) : (
                     <>
                       <FaDownload />
-                      <span>Download Invoice</span>
+                      <span>{isRefundView ? 'Download Refund' : 'Download Invoice'}</span>
                     </>
                   )}
                 </button>

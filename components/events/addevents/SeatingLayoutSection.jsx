@@ -109,17 +109,6 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
     }
   };
 
-  // Generate summary of configured seats
-  const getSeatsSummary = (layout = formData.seatingLayout) => {
-    if (!layout || layout.length === 0) return null;
-
-    return layout.map(row => {
-      const label = row.rowLabel || 'A';
-      const count = row.seats?.length || 0;
-      return `${label}1-${label}${count}`;
-    }).join('  ·  ');
-  };
-
   // Modal handlers
   const openModal = () => {
     // Snapshot current state into draft
@@ -139,6 +128,9 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
   const handleSave = () => {
     // Validate before saving
     if (reservedSeatsError) return;
+    // Total seats must equal event capacity (when a capacity is set).
+    const capacity = Number(formData.capacity) || 0;
+    if (capacity > 0 && getDraftTotalSeats() !== capacity) return;
 
     // Commit draft to Redux
     dispatch(setSeatingLayout(draftSeatingLayout));
@@ -205,29 +197,10 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="font-semibold sm:font-bold text-base sm:text-lg text-slate-700">
-            Seating Configuration
-          </h3>
-          {formData.capacity > 0 && formData.seatingLayout?.length > 0 && (
-            <p className="text-xs mt-1 font-medium">
-              Seats/Capacity: {(() => {
-                const totalSeats = formData.seatingLayout.reduce((total, row) => total + (row.seats?.length || 0), 0);
-                const isMatching = totalSeats === Number(formData.capacity);
-                const seatColor = isMatching ? 'text-green-600' : 'text-red-600';
-                return (
-                  <>
-                    <span className={seatColor}>{totalSeats}</span>
-                    <span className="text-slate-600">/</span>
-                    <span className={isMatching ? 'text-green-600' : 'text-slate-600'}>{formData.capacity}</span>
-                    {!isMatching && <span className="text-red-600 ml-1">(must match)</span>}
-                  </>
-                );
-              })()}
-            </p>
-          )}
-        </div>
+      <div className="mb-3 flex items-center gap-2">
+        <h3 className="font-medium text-sm sm:text-base text-slate-600">
+          Seating Configuration
+        </h3>
         <button
           type="button"
           onClick={() => setShowInstructions(true)}
@@ -255,23 +228,73 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
         <button
           type="button"
           onClick={openModal}
-          className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 hover:bg-slate-100 hover:border-slate-300 transition-colors text-left group"
+          className="w-full bg-white border border-slate-200 rounded-lg p-3 hover:bg-slate-50 hover:border-slate-300 transition-colors text-left group"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="text-sm text-slate-700">
-                <span className="font-medium">Configured:</span> {getSeatsSummary()}
-              </div>
-              {formData.organizerReservedSeats && (
-                <div className="text-sm text-slate-700 mt-1">
-                  <span className="font-medium">Reserved:</span> {formData.organizerReservedSeats}
+          {(() => {
+            const layout = formData.seatingLayout || [];
+            const totalSeats = layout.reduce((t, r) => t + (r.seats?.length || 0), 0);
+            const capacity = Number(formData.capacity) || 0;
+            const isMatching = capacity > 0 && totalSeats === capacity;
+            // Cap visible row chips so big layouts (e.g. 40+ rows) don't wrap into a wall;
+            // the card opens the modal for the full list.
+            const MAX_ROW_CHIPS = 12;
+            const shownRows = layout.slice(0, MAX_ROW_CHIPS);
+            const extraRows = layout.length - shownRows.length;
+            return (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <span className="text-sm text-slate-700">
+                      <span className="font-semibold">{totalSeats}</span> seat{totalSeats === 1 ? '' : 's'}
+                      <span className="text-slate-400"> · </span>
+                      <span className="font-semibold">{layout.length}</span> row{layout.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {capacity > 0 && (isMatching ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Matches capacity
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 text-xs font-medium px-2 py-0.5">
+                        {totalSeats > capacity ? `${totalSeats - capacity} over capacity` : `${capacity - totalSeats} short`}
+                      </span>
+                    ))}
+                    <svg className="w-4 h-4 text-slate-400 group-hover:text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </div>
                 </div>
-              )}
-            </div>
-            <svg className="w-4 h-4 text-slate-400 group-hover:text-slate-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-          </div>
+
+                <div className="mt-2 flex items-start gap-2">
+                  <span className="w-16 shrink-0 text-xs text-slate-500 mt-1">Rows</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {shownRows.map((row, i) => (
+                      <span key={i} className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
+                        {row.rowLabel || '?'}1-{row.rowLabel || '?'}{row.seats?.length || 0}
+                      </span>
+                    ))}
+                    {extraRows > 0 && (
+                      <span className="text-xs text-slate-500">+{extraRows} more</span>
+                    )}
+                  </div>
+                </div>
+
+                {formData.organizerReservedSeats && (
+                  <div className="mt-1.5 flex items-start gap-2">
+                    <span className="w-16 shrink-0 text-xs text-slate-500">Reserved</span>
+                    <span className="text-xs text-slate-600">{formData.organizerReservedSeats}</span>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </button>
       ) : (
         <button
@@ -282,14 +305,12 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
             setDraftReservedSeats('');
             setIsModalOpen(true);
           }}
-          className="w-full py-4 bg-slate-50 border border-dashed border-slate-300 rounded-lg hover:bg-slate-100 hover:border-slate-400 transition-colors group"
+          className="inline-flex items-center text-sm font-medium text-teal-700 hover:text-teal-800"
         >
-          <div className="flex items-center justify-center text-slate-500 group-hover:text-slate-700">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            <span className="text-sm font-medium">Configure Seating</span>
-          </div>
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          Configure Seating
         </button>
       )}
 
@@ -308,9 +329,9 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
       {/* Venue Layout - Always visible outside modal */}
       <div className="mt-4">
         <label className="block text-sm font-medium text-slate-600 mb-2">
-          Venue Layout <span className="text-xs text-slate-400 font-normal">(optional)</span>
+          Venue Layout
         </label>
-        <p className="text-xs text-slate-500 mb-2">Upload images of venue seating</p>
+        <p className="text-xs text-slate-500 mb-2">Upload JPG/PNG images of seating and venue layouts</p>
         <ImageUploader
           images={formData.seatingLayoutImage || []}
           onImagesChange={onSeatingImagesChange}
@@ -325,42 +346,40 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
           <div className="bg-white w-full sm:max-w-md rounded-lg max-h-[90vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h3 className="text-base font-semibold text-slate-800">Configure Seating</h3>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
             {/* Modal Body - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {/* Seats/Capacity indicator in modal */}
-              {formData.capacity > 0 && (
-                <div className="mb-4 p-2 bg-slate-50 rounded-lg">
-                  <p className="text-xs font-medium">
-                    Seats/Capacity: {(() => {
-                      const totalSeats = getDraftTotalSeats();
-                      const isMatching = totalSeats === Number(formData.capacity);
-                      const seatColor = isMatching ? 'text-green-600' : 'text-red-600';
-                      return (
-                        <>
-                          <span className={seatColor}>{totalSeats}</span>
-                          <span className="text-slate-600">/</span>
-                          <span className={isMatching ? 'text-green-600' : 'text-slate-600'}>{formData.capacity}</span>
-                          {!isMatching && <span className="text-red-600 ml-1">(must match)</span>}
-                        </>
-                      );
-                    })()}
-                  </p>
-                </div>
-              )}
+            <div className="flex-1 overflow-y-auto p-4 pt-4">
+              {/* Seats/Capacity counters in modal */}
+              {formData.capacity > 0 && (() => {
+                const totalSeats = getDraftTotalSeats();
+                const capacity = Number(formData.capacity);
+                const isMatching = totalSeats === capacity;
+                return (
+                  <div className="mb-4 flex items-center gap-4 sm:gap-6 rounded-lg border border-slate-200 p-3">
+                    <div>
+                      <p className="text-xs text-slate-500">Ticket Capacity</p>
+                      <p className="text-lg font-semibold text-slate-800">{capacity}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Seats Configured</p>
+                      <p className={`text-lg font-semibold ${isMatching ? 'text-green-600' : 'text-red-600'}`}>{totalSeats}</p>
+                    </div>
+                    <div className="ml-auto">
+                      {isMatching ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                          Matches
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 text-xs font-medium px-2 py-0.5">
+                          {totalSeats > capacity ? `${totalSeats - capacity} over` : `${capacity - totalSeats} short`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Edit Mode Warning */}
               {isEditMode && originalRowCount > 0 && (
@@ -453,7 +472,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
                           title="Remove row"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
                       )}
@@ -511,19 +530,19 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
             </div>
 
             {/* Modal Footer */}
-            <div className="flex gap-3 p-4 border-t border-slate-200">
+            <div className="flex justify-end gap-4 p-4 border-t border-slate-200">
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                className="text-sm font-medium text-slate-500 hover:text-slate-700"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={reservedSeatsError}
-                className="flex-1 py-2.5 text-sm font-medium text-white bg-teal-700 rounded-lg hover:bg-teal-800 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
+                disabled={reservedSeatsError || (Number(formData.capacity) > 0 && getDraftTotalSeats() !== Number(formData.capacity))}
+                className="text-sm font-medium text-teal-700 hover:text-teal-800 disabled:text-slate-300 disabled:cursor-not-allowed"
               >
                 Save
               </button>
@@ -534,8 +553,8 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
 
       {/* Row Name Instructions Modal */}
       {showInstructions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-50">
-          <div className="bg-white rounded-lg max-w-sm w-full mx-2">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-50" onClick={() => setShowInstructions(false)}>
+          <div className="bg-white rounded-lg max-w-sm w-full mx-2 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="p-4">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-base font-semibold text-slate-800">Row Name Instructions</h3>

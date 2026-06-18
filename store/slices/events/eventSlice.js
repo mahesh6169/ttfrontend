@@ -248,8 +248,8 @@ const createDefaultFormData = () => ({
   communities: [],
   images: [],
 
-  // Coordinators
-  coordinators: [{ name: '', role: '', phone: '', email: '' }],
+  // Coordinators (optional) - start empty; the organiser clicks "Add Coordinator" to add one.
+  coordinators: [],
 
   // Organizer
   organizer: {
@@ -274,14 +274,17 @@ const createDefaultFormData = () => ({
   externalTicketUrl: '', // External ticketing link for promotional events
 
   // Ticketing
-  isPaid: false, // Default to free event
+  isPaid: null, // null = ticket type not chosen yet (user picks RSVP/Paid); /add-paid presets true
   isAdvertiseOnly: false, // For free events that are advertise-only
   capacity: '',
   maxAttendeesPerRegistration: '',
   registrationFields: [],
   
-  // Paid Event Details
-  ticketTypes: [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
+  // Paid Event Details - start empty; the organiser clicks "Add Ticket Type" (paid events still require >=1, enforced at Next).
+  ticketTypes: [],
+  // Discount Codes (Paid Events Only). kind: 'percent' | 'fixed'; appliesToTicketTypes holds
+  // ticket-type NAMES (explicit — no "all by default"). Matches the backend schema exactly.
+  discountCodes: [],
   seatingLayout: [],
   seatingLayoutImage: [],
   organizerReservedSeats: '',
@@ -391,7 +394,34 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
     return processedTicket;
   });
 };
-  
+
+  // 🔧 Convert discount-code validity dates from UTC to local (yyyy-MM-dd) for the form.
+  // Only the OWNER receives full discountCodes from the API (public gets hint-only); in edit
+  // mode this is always the owner. Counters (usedCount/remainingUses) are server-owned and
+  // are NOT put into the form — the backend reconciles them on save.
+  const processDiscountCodesForEdit = (discountCodes, timeZone) => {
+    if (!discountCodes || !Array.isArray(discountCodes)) return [];
+    const toLocal = (d) => {
+      if (!d) return null;
+      if (!timeZone) return d;
+      try { return format(utcToZonedTime(d, timeZone), 'yyyy-MM-dd'); }
+      catch { return d; }
+    };
+    return discountCodes.map((dc) => ({
+      code: dc.code || '',
+      kind: dc.kind === 'fixed' ? 'fixed' : 'percent',
+      value: dc.value ?? null,
+      maxUses: dc.maxUses ?? null,
+      usedCount: dc.usedCount ?? 0, // read-only; carried so the wizard can enforce V4 inline (step 3). NOT sent on save (server owns counters).
+      validFrom: toLocal(dc.validFrom),
+      validUntil: toLocal(dc.validUntil),
+      active: dc.active !== false,
+      appliesToTicketTypes: Array.isArray(dc.appliesToTicketTypes) ? dc.appliesToTicketTypes : [],
+      showHint: dc.showHint === true,
+      existing: true, // loaded from a saved event — code word is immutable; locks/delete-block apply (transient, not sent on save)
+    }));
+  };
+
   return {
     title: eventData.title || '',
     description: eventData.description || '',
@@ -410,9 +440,7 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
     category: eventData.category || '',
     communities: eventData.communities || [],
     images: processImagesForEdit(eventData.images),
-    coordinators: (eventData.coordinators && eventData.coordinators.length > 0) 
-      ? eventData.coordinators 
-      : [{ name: '', role: '', phone: '', email: '' }],
+    coordinators: eventData.coordinators || [],
     organizer: eventData.organizer || {
       name: '',
       website: '',
@@ -436,9 +464,10 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
     capacity: eventData.capacity || '',
     maxAttendeesPerRegistration: eventData.maxAttendeesPerRegistration || '',
     registrationFields: eventData.registrationFields || [],
-    ticketTypes: (eventData.ticketTypes && eventData.ticketTypes.length > 0) 
+    ticketTypes: (eventData.ticketTypes && eventData.ticketTypes.length > 0)
   ? processTicketDatesForEdit(eventData.ticketTypes, eventData.timeZone)
-  : [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }],
+  : [],
+    discountCodes: processDiscountCodesForEdit(eventData.discountCodes, eventData.timeZone),
     seatingLayout: eventData.seatingLayout || [],
     seatingLayoutImage: eventData.seatingLayoutImage || [],
     organizerReservedSeats: eventData.organizerReservedSeats || '',
@@ -719,10 +748,6 @@ deleteError: null,
         state.formData.isAdvertiseOnly = false;
       }
       
-      // Initialize ticket types if switching to paid
-      if (action.payload && state.formData.ticketTypes.length === 0) {
-        state.formData.ticketTypes = [{ name: '', price: null, quantity: 0, startDate: null, expiryDate: null }];
-      }
     },
     toggleAdvertiseOnly: (state, action) => {
       // Only allow for free events
@@ -779,12 +804,54 @@ deleteError: null,
     },
     updateTicketType: (state, action) => {
       const { index, field, value } = action.payload;
+      // Ticket-type cascade (RENAME): discount codes reference ticket types by NAME, so when a
+      // name changes, follow the link — replace the old name with the new one in every code's
+      // appliesToTicketTypes. Keeps discounts pointing at the same ticket. (Past redemptions are
+      // snapshots, unaffected.) See feature-add-discountcode.md "Ticket-type cascade".
+      if (field === 'name') {
+        const oldName = state.formData.ticketTypes[index]?.name;
+        const newName = value;
+        if (oldName && oldName !== newName && Array.isArray(state.formData.discountCodes)) {
+          state.formData.discountCodes.forEach((dc) => {
+            if (Array.isArray(dc.appliesToTicketTypes)) {
+              dc.appliesToTicketTypes = dc.appliesToTicketTypes.map((n) => (n === oldName ? newName : n));
+            }
+          });
+        }
+      }
       state.formData.ticketTypes[index][field] = value;
       state.hasUnsavedChanges = true;
     },
     removeTicketType: (state, action) => {
       const index = action.payload;
       state.formData.ticketTypes = state.formData.ticketTypes.filter((_, i) => i !== index);
+      state.hasUnsavedChanges = true;
+    },
+
+    // Discount Codes (Paid Events Only) — mirror ticket-type reducers.
+    addDiscountCode: (state) => {
+      if (!Array.isArray(state.formData.discountCodes)) state.formData.discountCodes = [];
+      state.formData.discountCodes.push({
+        code: '',
+        kind: 'percent', // 'percent' | 'fixed'
+        value: null,
+        maxUses: null,
+        validFrom: null,
+        validUntil: null,
+        active: true,
+        appliesToTicketTypes: [], // ticket-type NAMES (explicit)
+        showHint: false,
+      });
+      state.hasUnsavedChanges = true;
+    },
+    updateDiscountCode: (state, action) => {
+      const { index, field, value } = action.payload;
+      state.formData.discountCodes[index][field] = value;
+      state.hasUnsavedChanges = true;
+    },
+    removeDiscountCode: (state, action) => {
+      const index = action.payload;
+      state.formData.discountCodes = state.formData.discountCodes.filter((_, i) => i !== index);
       state.hasUnsavedChanges = true;
     },
 
@@ -1291,6 +1358,9 @@ export const {
   addTicketType,
   updateTicketType,
   removeTicketType,
+  addDiscountCode,
+  updateDiscountCode,
+  removeDiscountCode,
 
   // Event Intent & Promotional Settings
   setEventIntent,
