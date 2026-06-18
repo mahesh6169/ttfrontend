@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { FaInfoCircle } from 'react-icons/fa';
 import {
   updateField,
   setExternalTicketUrl,
@@ -25,6 +26,17 @@ import {
 } from '@/store/slices/events/eventSlice';
 import SeatingLayoutSection from './SeatingLayoutSection';
 
+// Day part (yyyy-mm-dd) of a date string/Date, in local terms — used to compare ticket/discount
+// dates against the event day (by day, ignoring time).
+const dayOf = (d) => {
+  if (!d) return '';
+  if (typeof d === 'string') return d.slice(0, 10);
+  try {
+    const x = new Date(d);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  } catch { return ''; }
+};
+
 // Promotional Event Configuration
 const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
   const isPaidSelected = formData.isPaid === true;
@@ -34,7 +46,7 @@ const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
     <div className="space-y-4">
       {/* Free/Paid Selection */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
           Event Type <span className="text-red-500">*</span>
         </label>
         <div className={`inline-grid grid-cols-2 gap-2 ${disabled ? 'opacity-60' : ''}`}>
@@ -72,7 +84,7 @@ const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
 
       {/* External Ticket URL */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
           External Registration Link
           <span className="text-slate-400 font-normal ml-1">(optional)</span>
         </label>
@@ -118,8 +130,10 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Event Capacity */}
         <div>
-          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
-            Capacity
+          <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
+            Capacity {isPaid
+              ? <span className="text-red-500">*</span>
+              : <span className="font-normal text-slate-400 ml-1">(optional)</span>}
           </label>
           <input
             type="number"
@@ -142,16 +156,17 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
             className={getInputClasses(!!errors?.capacity)}
             placeholder="0 = unlimited"
           />
-          {errors?.capacity && (
+          {errors?.capacity ? (
             <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.capacity}</p>
+          ) : (
+            <p className="text-xs text-slate-500 mt-1">0 = unlimited capacity</p>
           )}
-          <p className="text-xs text-slate-500 mt-1">0 = unlimited capacity</p>
         </div>
 
         {/* Booking Limit */}
         <div>
-          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
-            Booking Limit
+          <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
+            Booking Limit <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -178,13 +193,13 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
             className={getInputClasses(!!errors?.maxAttendeesPerRegistration || !!bookingLimitError)}
             placeholder="Max per order"
           />
-          {errors?.maxAttendeesPerRegistration && (
+          {errors?.maxAttendeesPerRegistration ? (
             <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.maxAttendeesPerRegistration}</p>
-          )}
-          {!errors?.maxAttendeesPerRegistration && bookingLimitError && (
+          ) : bookingLimitError ? (
             <p className="text-red-500 text-xs sm:text-sm mt-1">{bookingLimitError}</p>
+          ) : (
+            <p className="text-xs text-slate-500 mt-1">Maximum seats per order</p>
           )}
-          <p className="text-xs text-slate-500 mt-1">Maximum seats per order</p>
         </div>
       </div>
     </div>
@@ -199,6 +214,8 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
   const [errorSnapshot, setErrorSnapshot] = useState({});
   // Which question card is currently expanded (null = all collapsed). Only one expanded at a time.
   const [expandedIndex, setExpandedIndex] = useState(null);
+  // Which question is awaiting delete confirmation (null = none).
+  const [confirmDeleteField, setConfirmDeleteField] = useState(null);
 
   useEffect(() => {
     const regErrors = errors?.registrationFields;
@@ -239,6 +256,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
     } else if (expandedIndex !== null && expandedIndex > index) {
       setExpandedIndex(expandedIndex - 1);
     }
+    setConfirmDeleteField(null);
   };
 
   // Add a new field (text or dropdown) and immediately expand it for editing
@@ -246,6 +264,35 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
     const newIndex = (formData.registrationFields || []).length;
     dispatch(addRegistrationField(opts));
     setExpandedIndex(newIndex);
+  };
+
+  // A question is "empty" when it has no text and no real options.
+  const isEmptyField = (f) =>
+    !f?.fieldName?.trim() && !(f?.fieldOptions || []).some((o) => o?.trim());
+
+  // Done: discard a blank card; validate (name + options) and keep it open if invalid, else collapse.
+  const handleDoneField = (index) => {
+    const f = (formData.registrationFields || [])[index];
+    if (isEmptyField(f)) { handleRemoveField(index); return; }
+    const snap = {};
+    if (!f.fieldName?.trim()) snap[`${index}-name`] = true;
+    if (f.fieldType === 'select') {
+      const opts = f.fieldOptions || [];
+      const lowered = opts.map((o) => (o || '').trim().toLowerCase());
+      const bad = opts.length === 0 || opts.some((o) => !o?.trim()) || new Set(lowered).size !== lowered.length;
+      if (bad) snap[`${index}-options`] = true;
+    }
+    if (Object.keys(snap).length) { setErrorSnapshot((prev) => ({ ...prev, ...snap })); return; } // stays open
+    setErrorSnapshot((prev) => { const n = { ...prev }; delete n[`${index}-name`]; delete n[`${index}-options`]; return n; });
+    setExpandedIndex(null);
+  };
+
+  // Cancel: discard a blank card, else just collapse (keeps typed values).
+  const handleCancelField = (index) => {
+    const f = (formData.registrationFields || [])[index];
+    if (isEmptyField(f)) { handleRemoveField(index); return; }
+    setErrorSnapshot((prev) => { const n = { ...prev }; delete n[`${index}-name`]; delete n[`${index}-options`]; return n; });
+    setExpandedIndex(null);
   };
 
   const getNameError = (field, index) => {
@@ -292,11 +339,11 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
 
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
-      <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-1 text-slate-700">
+      <h3 className="font-medium text-sm sm:text-base mb-1 text-slate-600">
         Attendee Information
       </h3>
       <p className="text-xs text-slate-500 mb-4">
-        Collect additional info (Name & Mobile are collected by default)
+        Collect additional info{!formData.isPaid && ' (Name & Mobile are collected by default)'}
       </p>
 
       {(formData.registrationFields || []).length > 0 && (
@@ -306,7 +353,8 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
             const nameError = getNameError(field, index);
             const optionsError = getOptionsError(field, index);
             const hasAnyError = !!(nameError || optionsError);
-            const isExpanded = expandedIndex === index;
+            const isExpanded = expandedIndex === index || isEmptyField(field)
+              || !!errorSnapshot[`${index}-name`] || !!errorSnapshot[`${index}-options`];
             return (
               <div
                 key={index}
@@ -314,52 +362,8 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                   hasAnyError ? 'border-red-300' : 'border-slate-200'
                 }`}
               >
-                {/* Header — always visible: name (collapsed only) + pencil toggle + remove */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    {!isExpanded && (
-                      <span className="text-sm text-slate-700 truncate block">
-                        {field?.fieldName?.trim() ? (
-                          field.fieldName
-                        ) : (
-                          <span className="italic text-slate-400">Untitled question</span>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedIndex(isExpanded ? null : index)}
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        isExpanded
-                          ? 'text-teal-600 bg-teal-50'
-                          : 'text-slate-400 hover:text-teal-600 hover:bg-teal-50'
-                      }`}
-                      aria-label={isExpanded ? 'Collapse question' : 'Edit question'}
-                      title={isExpanded ? 'Collapse' : 'Edit'}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveField(index)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      aria-label="Remove question"
-                      title="Remove"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Expanded body — name input, options (if dropdown), required */}
-                {isExpanded && (
-                  <div className="mt-3">
+                {isExpanded ? (
+                  <>
                     {/* Question text */}
                     <input
                       type="text"
@@ -409,7 +413,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                                 aria-label="Remove option"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                               </button>
                             </div>
@@ -449,6 +453,80 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                         Required
                       </label>
                     </div>
+
+                    {/* Footer */}
+                    <div className="mt-3 flex justify-end gap-4">
+                      <button
+                        type="button"
+                        onClick={() => handleCancelField(index)}
+                        className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDoneField(index)}
+                        className="text-sm font-medium text-teal-700 hover:text-teal-800"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  /* Collapsed summary: question · type (· Required) + edit/delete */
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1 min-w-0 flex-1 text-sm">
+                      <span className="truncate text-slate-700">
+                        {field?.fieldName?.trim() ? field.fieldName : <span className="italic text-slate-400">Untitled question</span>}
+                      </span>
+                      <span className="shrink-0 font-normal text-slate-400">
+                        · {isDropdown ? 'Dropdown' : 'Text'}{field?.isRequired ? ' · Required' : ''}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {confirmDeleteField === index ? (
+                        <span className="flex items-center gap-2 text-xs text-slate-600">
+                          Delete?
+                          <button
+                            type="button"
+                            onClick={() => { handleRemoveField(index); setConfirmDeleteField(null); }}
+                            className="font-medium text-red-600 hover:text-red-700"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteField(null)}
+                            className="text-slate-500 hover:text-slate-700"
+                          >
+                            No
+                          </button>
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedIndex(index)}
+                            aria-label="Edit question"
+                            className="p-2 text-slate-500 hover:text-teal-700 hover:bg-slate-50 rounded-lg transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteField(index)}
+                            aria-label="Delete question"
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -462,15 +540,15 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
 
       {/* Add buttons — type-specific entry. Disabled when any existing question is incomplete,
           so hosts can't pile up empty cards on top of unfinished ones. */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
         <button
           type="button"
           onClick={() => handleAddField()}
           disabled={hasIncompleteQuestion}
-          className="inline-flex items-center px-3 py-2 text-sm font-medium text-teal-700 bg-white border border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-teal-200"
+          className="inline-flex items-center text-sm font-medium text-teal-700 hover:text-teal-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-teal-700"
         >
-          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h10" />
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Add question
         </button>
@@ -478,10 +556,10 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
           type="button"
           onClick={() => handleAddField({ fieldType: 'select' })}
           disabled={hasIncompleteQuestion}
-          className="inline-flex items-center px-3 py-2 text-sm font-medium text-teal-700 bg-white border border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-teal-200"
+          className="inline-flex items-center text-sm font-medium text-teal-700 hover:text-teal-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-teal-700"
         >
-          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Add dropdown
         </button>
@@ -498,6 +576,11 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
 // Ticket Types Section (for paid events)
 const TicketTypesSection = ({ formData, errors, dispatch }) => {
   const [priceErrors, setPriceErrors] = useState({});
+  // Ticket accordion: which row is expanded (null = none) + per-row errors captured on Done.
+  const [editingTicket, setEditingTicket] = useState(null);
+  const [ticketRowErrors, setTicketRowErrors] = useState({});
+  // Which row is awaiting delete confirmation (null = none).
+  const [confirmDeleteTicket, setConfirmDeleteTicket] = useState(null);
 
   const validatePriceDecimals = (value) => {
     if (!value || value === '') return true;
@@ -508,136 +591,321 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
   };
 
   const getInputClasses = (hasError) => {
-    const base = 'w-full p-3 sm:p-2 text-base sm:text-sm text-slate-700 border rounded-lg focus:outline-none focus:ring-2';
+    const base = 'w-full p-3 sm:p-2 text-base sm:text-sm text-slate-700 bg-white [color-scheme:light] border rounded-lg focus:outline-none focus:ring-2';
     return `${base} ${hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
+  };
+
+  // --- Ticket accordion helpers ---
+  const priceIsEmpty = (p) => p === null || p === undefined || p === '';
+  const isEmptyTicket = (t) =>
+    !t?.name?.trim() && priceIsEmpty(t?.price) && !t?.startDate && !t?.expiryDate;
+
+  const eventDay = dayOf(formData.dateTime);
+
+  // Same rule as the step validator (name + price required, $1 min, 2 decimals) + date window.
+  const validateTicket = (t) => {
+    const errs = {};
+    if (!t?.name?.trim()) errs.name = 'Name is required';
+    if (priceIsEmpty(t?.price)) errs.price = 'Price is required';
+    else if (!validatePriceDecimals(t.price)) errs.price = 'Maximum 2 decimal places allowed';
+    else if (Number(t.price) < 1) errs.price = 'Minimum ticket price is $1';
+    // Date window: start/expiry on or before the event day (by day); expiry on or after start.
+    const start = dayOf(t?.startDate);
+    const expiry = dayOf(t?.expiryDate);
+    if (eventDay && start && start > eventDay) errs.dates = "Start date can't be after the event day";
+    else if (eventDay && expiry && expiry > eventDay) errs.dates = "Expiry date can't be after the event day";
+    else if (start && expiry && expiry < start) errs.dates = 'Expiry must be on or after the start';
+    return errs;
+  };
+
+  // Show the per-row (Done) error first, else the global Next/Submit error, else the live price check.
+  const ticketNameError = (index) => ticketRowErrors[index]?.name || errors?.[`ticketName_${index}`]?.[0];
+  const ticketPriceError = (index) =>
+    ticketRowErrors[index]?.price || errors?.[`ticketPrice_${index}`]?.[0] || priceErrors[index];
+  const ticketDateError = (index) => ticketRowErrors[index]?.dates || errors?.[`ticketDate_${index}`]?.[0];
+
+  // Never collapse a blank or invalid row, so its error is always reachable before Next.
+  const isTicketOpen = (t, index) =>
+    editingTicket === index ||
+    isEmptyTicket(t) ||
+    !!ticketRowErrors[index] ||
+    !!errors?.[`ticketName_${index}`] ||
+    !!errors?.[`ticketPrice_${index}`] ||
+    !!errors?.[`ticketDate_${index}`] ||
+    !!priceErrors[index];
+
+  const clearTicketRowError = (index, field) => {
+    setTicketRowErrors((prev) => {
+      if (!prev[index]?.[field]) return prev;
+      const nextRow = { ...prev[index] };
+      delete nextRow[field];
+      const next = { ...prev };
+      if (Object.keys(nextRow).length) next[index] = nextRow;
+      else delete next[index];
+      return next;
+    });
+  };
+
+  const handleAddTicket = () => {
+    const newIndex = (formData.ticketTypes || []).length;
+    dispatch(addTicketType());
+    setEditingTicket(newIndex); // open the new row
+    if (errors?.ticketTypes) {
+      const next = { ...errors };
+      delete next.ticketTypes;
+      dispatch(setFormErrors(next));
+    }
+  };
+
+  const handleRemoveTicket = (index) => {
+    dispatch(removeTicketType(index));
+    // Indices shift on remove; reset local row state to avoid mismatches.
+    setEditingTicket(null);
+    setTicketRowErrors({});
+    setPriceErrors({});
+  };
+
+  const handleDoneTicket = (index) => {
+    const t = (formData.ticketTypes || [])[index];
+    if (isEmptyTicket(t)) {
+      if ((formData.ticketTypes || []).length > 1) dispatch(removeTicketType(index));
+      setEditingTicket(null);
+      return;
+    }
+    const errs = validateTicket(t);
+    if (Object.keys(errs).length > 0) {
+      setTicketRowErrors((prev) => ({ ...prev, [index]: errs }));
+      setEditingTicket(index); // keep open to show errors
+      return;
+    }
+    setTicketRowErrors((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+    setEditingTicket(null); // valid -> collapse
+  };
+
+  // Cancel = simple close: discard a blank new row, else just collapse (keeps typed values;
+  // the Next/Submit safety net still catches an invalid row).
+  const handleCancelTicket = (index) => {
+    const t = (formData.ticketTypes || [])[index];
+    if (isEmptyTicket(t) && (formData.ticketTypes || []).length > 1) {
+      dispatch(removeTicketType(index));
+    }
+    setTicketRowErrors((prev) => { const next = { ...prev }; delete next[index]; return next; });
+    setPriceErrors((prev) => { const next = { ...prev }; delete next[index]; return next; });
+    setEditingTicket(null);
   };
 
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
-      <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-1 text-slate-700">
-        Ticket Types
+      <h3 className="font-medium text-sm sm:text-base mb-4 text-slate-600">
+        Tickets Configuration <span className="text-red-500">*</span>
       </h3>
-      <p className="text-xs text-slate-500 mb-4">Define pricing tiers for your event</p>
 
       {(formData.ticketTypes || []).length > 0 && (
         <div className="space-y-3 mb-4">
-          {(formData.ticketTypes || []).map((ticket, index) => (
-            <div key={index} className="border border-slate-200 rounded-lg p-3">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-medium text-slate-700">
-                  Ticket {index + 1}{ticket?.name ? `: ${ticket.name}` : ''}
-                </span>
-                {(formData.ticketTypes || []).length > 1 && (
+          {(formData.ticketTypes || []).map((ticket, index) => {
+            // Collapsed summary row: Name · $Price + edit/delete icons.
+            if (!isTicketOpen(ticket, index)) {
+              return (
+                <div
+                  key={index}
+                  className="flex items-center justify-between gap-2 p-3 border border-slate-200 rounded-lg"
+                >
+                  <p className="min-w-0 truncate text-sm font-medium text-slate-700">
+                    {ticket.name}
+                    <span className="font-normal text-slate-500"> · ${Number(ticket.price).toFixed(2)}</span>
+                  </p>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {confirmDeleteTicket === index ? (
+                      <span className="flex items-center gap-2 text-xs text-slate-600">
+                        Delete?
+                        <button
+                          type="button"
+                          onClick={() => { handleRemoveTicket(index); setConfirmDeleteTicket(null); }}
+                          className="font-medium text-red-600 hover:text-red-700"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteTicket(null)}
+                          className="text-slate-500 hover:text-slate-700"
+                        >
+                          No
+                        </button>
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setEditingTicket(index)}
+                          aria-label="Edit ticket type"
+                          className="p-2 text-slate-500 hover:text-teal-700 hover:bg-slate-50 rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        {(formData.ticketTypes || []).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteTicket(index)}
+                            aria-label="Delete ticket type"
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            // Expanded editor.
+            return (
+              <div key={index} className="border border-slate-200 rounded-lg p-3">
+                <div className="mb-3">
+                  <span className="text-sm font-medium text-slate-700">
+                    Ticket {index + 1}{ticket?.name ? `: ${ticket.name}` : ''}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Ticket Name */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">
+                      Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={ticket?.name || ''}
+                      onChange={(e) => {
+                        setEditingTicket(index); // claim this row so it stays open while typing
+                        dispatch(updateTicketType({ index, field: 'name', value: e.target.value }));
+                        if (errors?.[`ticketName_${index}`]) {
+                          const newErrors = { ...errors };
+                          delete newErrors[`ticketName_${index}`];
+                          dispatch(setFormErrors(newErrors));
+                        }
+                        clearTicketRowError(index, 'name');
+                      }}
+                      placeholder="Early Bird"
+                      className={getInputClasses(!!ticketNameError(index))}
+                      maxLength="100"
+                    />
+                    {ticketNameError(index) && (
+                      <p className="text-red-500 text-xs mt-1">{ticketNameError(index)}</p>
+                    )}
+                  </div>
+
+                  {/* Ticket Price */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">
+                      Price <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={ticket.price === undefined || ticket.price === null ? '' : ticket.price}
+                      onChange={(e) => {
+                        setEditingTicket(index); // claim this row so it stays open while typing
+                        const val = e.target.value;
+                        if (!validatePriceDecimals(val)) {
+                          setPriceErrors({ ...priceErrors, [index]: 'Maximum 2 decimal places allowed' });
+                        } else if (val !== '' && Number(val) < 1) {
+                          setPriceErrors({ ...priceErrors, [index]: 'Minimum ticket price is $1' });
+                        } else {
+                          const newErrors = { ...priceErrors };
+                          delete newErrors[index];
+                          setPriceErrors(newErrors);
+                        }
+                        dispatch(updateTicketType({ index, field: 'price', value: val }));
+                        if (errors?.[`ticketPrice_${index}`]) {
+                          const newErrors = { ...errors };
+                          delete newErrors[`ticketPrice_${index}`];
+                          dispatch(setFormErrors(newErrors));
+                        }
+                        clearTicketRowError(index, 'price');
+                      }}
+                      onWheel={(e) => e.target.blur()}
+                      className={getInputClasses(!!ticketPriceError(index))}
+                      placeholder="0.00"
+                    />
+                    {ticketPriceError(index) && (
+                      <p className="text-red-500 text-xs mt-1">{ticketPriceError(index)}</p>
+                    )}
+                  </div>
+
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Start Date <span className="font-normal text-slate-400">(optional)</span></label>
+                    <input
+                      type="date"
+                      value={ticket.startDate ? (ticket.startDate.includes('T') ? ticket.startDate.slice(0, 10) : ticket.startDate) : ''}
+                      onChange={(e) => { setEditingTicket(index); dispatch(updateTicketType({ index, field: 'startDate', value: e.target.value || null })); }}
+                      onWheel={(e) => e.target.blur()}
+                      max={eventDay || undefined}
+                      className={getInputClasses(!!ticketDateError(index))}
+                    />
+                  </div>
+
+                  {/* Expiry Date */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Expiry Date <span className="font-normal text-slate-400">(optional)</span></label>
+                    <input
+                      type="date"
+                      value={ticket.expiryDate ? (ticket.expiryDate.includes('T') ? ticket.expiryDate.slice(0, 10) : ticket.expiryDate) : ''}
+                      onChange={(e) => { setEditingTicket(index); dispatch(updateTicketType({ index, field: 'expiryDate', value: e.target.value || null })); }}
+                      onWheel={(e) => e.target.blur()}
+                      min={dayOf(ticket.startDate) || undefined}
+                      max={eventDay || undefined}
+                      className={getInputClasses(!!ticketDateError(index))}
+                    />
+                  </div>
+                </div>
+                {ticketDateError(index) && (
+                  <p className="text-red-500 text-xs mt-1">{ticketDateError(index)}</p>
+                )}
+
+                <div className="mt-3 flex justify-end gap-4">
                   <button
                     type="button"
-                    onClick={() => dispatch(removeTicketType(index))}
-                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => handleCancelTicket(index)}
+                    className="text-sm font-medium text-slate-500 hover:text-slate-700"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    Cancel
                   </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Ticket Name */}
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">
-                    Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={ticket?.name || ''}
-                    onChange={(e) => {
-                      dispatch(updateTicketType({ index, field: 'name', value: e.target.value }));
-                      if (errors?.[`ticketName_${index}`]) {
-                        const newErrors = { ...errors };
-                        delete newErrors[`ticketName_${index}`];
-                        dispatch(setFormErrors(newErrors));
-                      }
-                    }}
-                    placeholder="Early Bird"
-                    className={getInputClasses(!!errors?.[`ticketName_${index}`])}
-                    maxLength="100"
-                  />
-                  {errors?.[`ticketName_${index}`] && (
-                    <p className="text-red-500 text-xs mt-1">{errors[`ticketName_${index}`][0]}</p>
-                  )}
-                </div>
-
-                {/* Ticket Price */}
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">
-                    Price <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    value={ticket.price === undefined || ticket.price === null ? '' : ticket.price}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (!validatePriceDecimals(val)) {
-                        setPriceErrors({ ...priceErrors, [index]: 'Maximum 2 decimal places allowed' });
-                      } else if (val !== '' && Number(val) < 1) {
-                        setPriceErrors({ ...priceErrors, [index]: 'Minimum ticket price is $1' });
-                      } else {
-                        const newErrors = { ...priceErrors };
-                        delete newErrors[index];
-                        setPriceErrors(newErrors);
-                      }
-                      dispatch(updateTicketType({ index, field: 'price', value: val }));
-                      if (errors?.[`ticketPrice_${index}`]) {
-                        const newErrors = { ...errors };
-                        delete newErrors[`ticketPrice_${index}`];
-                        dispatch(setFormErrors(newErrors));
-                      }
-                    }}
-                    onWheel={(e) => e.target.blur()}
-                    className={getInputClasses(!!errors?.[`ticketPrice_${index}`] || !!priceErrors[index])}
-                    placeholder="0.00"
-                  />
-                  {errors?.[`ticketPrice_${index}`] && (
-                    <p className="text-red-500 text-xs mt-1">{errors[`ticketPrice_${index}`][0]}</p>
-                  )}
-                  {priceErrors[index] && (
-                    <p className="text-red-500 text-xs mt-1">{priceErrors[index]}</p>
-                  )}
-                </div>
-
-                {/* Start Date */}
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    value={ticket.startDate ? (ticket.startDate.includes('T') ? ticket.startDate.slice(0, 10) : ticket.startDate) : ''}
-                    onChange={(e) => dispatch(updateTicketType({ index, field: 'startDate', value: e.target.value || null }))}
-                    onWheel={(e) => e.target.blur()}
-                    className={getInputClasses(false)}
-                  />
-                </div>
-
-                {/* Expiry Date */}
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Expiry Date</label>
-                  <input
-                    type="date"
-                    value={ticket.expiryDate ? (ticket.expiryDate.includes('T') ? ticket.expiryDate.slice(0, 10) : ticket.expiryDate) : ''}
-                    onChange={(e) => dispatch(updateTicketType({ index, field: 'expiryDate', value: e.target.value || null }))}
-                    onWheel={(e) => e.target.blur()}
-                    className={getInputClasses(false)}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => handleDoneTicket(index)}
+                    className="text-sm font-medium text-teal-700 hover:text-teal-800"
+                  >
+                    Done
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+      )}
+
+      {errors?.ticketTypes && (
+        <p className="text-red-500 text-xs sm:text-sm mb-2">
+          {Array.isArray(errors.ticketTypes) ? errors.ticketTypes[0] : errors.ticketTypes}
+        </p>
       )}
 
       <button
         type="button"
-        onClick={() => dispatch(addTicketType())}
+        onClick={handleAddTicket}
         className="inline-flex items-center px-4 py-2 text-sm text-teal-700 hover:text-teal-800 font-medium"
       >
         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -653,8 +921,14 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
 // Mirrors TicketTypesSection. appliesToTicketTypes stores ticket-type NAMES (explicit — no
 // "all by default"). kind is 'percent' | 'fixed' to match the backend enum exactly.
 const DiscountCodesSection = ({ formData, errors, dispatch }) => {
+  // Accordion: which code is expanded (null = none) + per-row errors captured on Done + delete confirm.
+  const [editingDiscount, setEditingDiscount] = useState(null);
+  const [showDiscountInfo, setShowDiscountInfo] = useState(false);
+  const [discountRowErrors, setDiscountRowErrors] = useState({});
+  const [confirmDeleteDiscount, setConfirmDeleteDiscount] = useState(null);
+
   const getInputClasses = (hasError) => {
-    const base = 'w-full p-3 sm:p-2 text-base sm:text-sm text-slate-700 border rounded-lg focus:outline-none focus:ring-2';
+    const base = 'w-full p-3 sm:p-2 text-base sm:text-sm text-slate-700 bg-white [color-scheme:light] border rounded-lg focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed';
     return `${base} ${hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
   };
 
@@ -669,186 +943,437 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
   const codes = formData.discountCodes || [];
   // A code references ticket types by NAME, so only named ticket types can be covered.
   const namedTicketTypes = (formData.ticketTypes || []).filter((t) => (t?.name || '').trim());
+  const eventDay = dayOf(formData.dateTime);
+
+  // Show the per-row (Done) error first, else the global Next/Submit error.
+  const ERR_KEY = { code: 'discountCode', value: 'discountValue', applies: 'discountApplies', dates: 'discountDates', uses: 'discountUses' };
+  const discountFieldError = (index, field) =>
+    discountRowErrors[index]?.[field] || errors?.[`${ERR_KEY[field]}_${index}`]?.[0];
+  const hasGlobalDiscountError = (index) =>
+    Object.values(ERR_KEY).some((k) => errors?.[`${k}_${index}`]);
+
+  const clearDiscountRowError = (index, field) => {
+    setDiscountRowErrors((prev) => {
+      if (!prev[index]?.[field]) return prev;
+      const nextRow = { ...prev[index] };
+      delete nextRow[field];
+      const next = { ...prev };
+      if (Object.keys(nextRow).length) next[index] = nextRow;
+      else delete next[index];
+      return next;
+    });
+  };
+
+  const isEmptyDiscount = (dc) =>
+    !(dc?.code || '').trim() &&
+    (dc?.value === null || dc?.value === undefined || dc?.value === '') &&
+    (dc?.maxUses === null || dc?.maxUses === undefined) &&
+    !dc?.validFrom && !dc?.validUntil &&
+    (dc?.appliesToTicketTypes || []).length === 0;
+
+  // Per-row validation mirrors validateDiscountCodesList in StepManager, so a row can't collapse invalid.
+  const validateDiscount = (dc, index) => {
+    const errs = {};
+    const code = (dc.code || '').trim().toUpperCase();
+    if (!code) errs.code = 'Discount code is required';
+    else if (code.length < 3 || code.length > 20) errs.code = 'Code must be 3-20 characters';
+    else if (codes.some((o, i) => i !== index && (o.code || '').trim().toUpperCase() === code)) {
+      errs.code = 'Duplicate code — each code must be unique';
+    }
+    const val = Number(dc.value);
+    if (dc.value === null || dc.value === undefined || dc.value === '' || isNaN(val)) {
+      errs.value = 'Discount value is required';
+    } else if (dc.kind === 'percent') {
+      if (!Number.isInteger(val) || val < 1 || val > 90) errs.value = 'Percent must be a whole number from 1 to 90';
+    } else if (val <= 0) {
+      errs.value = 'Amount must be greater than 0';
+    } else if (Math.abs(val * 100 - Math.round(val * 100)) > 1e-9) {
+      errs.value = 'Amount can have at most 2 decimal places';
+    }
+    const ticketNames = new Set(namedTicketTypes.map((t) => t.name));
+    const applies = (dc.appliesToTicketTypes || []).filter((n) => ticketNames.has(n));
+    if (dc.active !== false && applies.length === 0) {
+      errs.applies = 'Pick at least one ticket type this code applies to';
+    }
+    const vFrom = dayOf(dc.validFrom);
+    const vUntil = dayOf(dc.validUntil);
+    if (eventDay && vFrom && vFrom > eventDay) errs.dates = "Valid from can't be after the event day";
+    else if (eventDay && vUntil && vUntil > eventDay) errs.dates = "Valid until can't be after the event day";
+    else if (vFrom && vUntil && vFrom > vUntil) errs.dates = '"Valid from" must be on or before "valid until"';
+    const used = dc.usedCount || 0;
+    if (dc.maxUses != null) {
+      if (!Number.isInteger(dc.maxUses) || dc.maxUses < 1) errs.uses = 'Max uses must be a whole number (1 or more)';
+      else if (dc.maxUses < used) errs.uses = `${used} already used — max uses cannot be below ${used}`;
+    }
+    if (applies.length > 0 && !isNaN(val)) {
+      const coveredPrices = (formData.ticketTypes || [])
+        .filter((t) => applies.includes(t.name) && t.price !== null && t.price !== undefined && t.price !== '')
+        .map((t) => Number(t.price)).filter((p) => !isNaN(p));
+      if (coveredPrices.length > 0) {
+        const cheapest = Math.min(...coveredPrices);
+        const after = dc.kind === 'percent' ? cheapest * (1 - val / 100) : cheapest - val;
+        if (Math.round(after * 100) < 100) errs.value = 'This makes a ticket cost under $1. Lower the discount or uncheck that ticket type.';
+      }
+    }
+    return errs;
+  };
+
+  // Never collapse a blank or invalid row, so its error is always reachable before Next.
+  const isDiscountOpen = (dc, index) =>
+    editingDiscount === index || isEmptyDiscount(dc) || !!discountRowErrors[index] || hasGlobalDiscountError(index);
+
+  const handleAddDiscount = () => {
+    const newIndex = codes.length;
+    dispatch(addDiscountCode());
+    setEditingDiscount(newIndex); // open the new row
+  };
+
+  const handleRemoveDiscount = (index) => {
+    dispatch(removeDiscountCode(index));
+    setEditingDiscount(null);
+    setDiscountRowErrors({});
+  };
+
+  const handleDoneDiscount = (index) => {
+    const dc = codes[index];
+    if (isEmptyDiscount(dc)) {
+      dispatch(removeDiscountCode(index)); // discard a blank row
+      setEditingDiscount(null);
+      return;
+    }
+    const errs = validateDiscount(dc, index);
+    if (Object.keys(errs).length > 0) {
+      setDiscountRowErrors((prev) => ({ ...prev, [index]: errs }));
+      setEditingDiscount(index); // keep open to show errors
+      return;
+    }
+    setDiscountRowErrors((prev) => { const next = { ...prev }; delete next[index]; return next; });
+    setEditingDiscount(null); // valid -> collapse
+  };
+
+  const handleCancelDiscount = (index) => {
+    const dc = codes[index];
+    if (isEmptyDiscount(dc)) {
+      dispatch(removeDiscountCode(index)); // nothing entered — discard
+    } else {
+      // Active code left without a ticket type would be invalid — keep it but deactivate it
+      // (an inactive code is valid without a ticket) rather than leave an invalid active code.
+      const ticketNames = new Set(namedTicketTypes.map((t) => t.name));
+      const hasTicket = (dc.appliesToTicketTypes || []).some((n) => ticketNames.has(n));
+      if (dc.active !== false && !hasTicket) {
+        dispatch(updateDiscountCode({ index, field: 'active', value: false }));
+      }
+    }
+    setDiscountRowErrors((prev) => { const next = { ...prev }; delete next[index]; return next; });
+    setEditingDiscount(null);
+  };
 
   const toggleApplies = (index, name, checked) => {
+    setEditingDiscount(index);
     const current = codes[index]?.appliesToTicketTypes || [];
     const updated = checked ? [...new Set([...current, name])] : current.filter((nm) => nm !== name);
     dispatch(updateDiscountCode({ index, field: 'appliesToTicketTypes', value: updated }));
+    // Linkage: selecting a ticket on an inactive code auto-activates it (organiser intent);
+    // unticking the last ticket auto-deactivates it (an active code can't have no ticket).
+    if (checked && codes[index]?.active === false) {
+      dispatch(updateDiscountCode({ index, field: 'active', value: true }));
+    } else if (!checked && updated.length === 0 && codes[index]?.active !== false) {
+      dispatch(updateDiscountCode({ index, field: 'active', value: false }));
+    }
     clearError(`discountApplies_${index}`);
+    clearDiscountRowError(index, 'applies');
   };
+
+  const fmtDiscountValue = (dc) => (dc.kind === 'fixed' ? `$${Number(dc.value).toFixed(2)}` : `${dc.value}%`);
 
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
-      <h3 className="font-semibold sm:font-bold text-base sm:text-lg mb-1 text-slate-700">
-        Discount Codes
-      </h3>
-      <p className="text-xs text-slate-500 mb-4">
-        Optional. Create promo codes buyers apply at checkout. Each code discounts only the ticket types you tick.
-      </p>
+      <div className="mb-4 flex items-center gap-2">
+        <h3 className="font-medium text-sm sm:text-base text-slate-600">
+          Discount Codes
+        </h3>
+        <button
+          type="button"
+          onClick={() => setShowDiscountInfo(true)}
+          aria-label="How discount codes work"
+          className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+          title="How discount codes work"
+        >
+          <FaInfoCircle className="text-lg" />
+        </button>
+      </div>
 
       {codes.length > 0 && (
         <div className="space-y-3 mb-4">
-          {codes.map((dc, index) => (
-            <div key={index} className="border border-slate-200 rounded-lg p-3">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-medium text-slate-700">
-                  Code {index + 1}{dc?.code ? `: ${dc.code}` : ''}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => dispatch(removeDiscountCode(index))}
-                  className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                  aria-label="Remove discount code"
+          {codes.map((dc, index) => {
+            // Edit-mode locks: a saved code's word is immutable; once it's been used, kind/value/
+            // valid-from also lock and it can't be deleted (deactivate instead). See feature doc.
+            const dcUsed = (dc.usedCount || 0) > 0;
+            const lockWord = dc.existing === true;     // saved code → word immutable
+            const lockUsed = lockWord && dcUsed;       // used → kind/value/valid-from locked, no delete
+            // Collapsed summary row: CODE · value (+ Inactive) + edit/delete icons.
+            if (!isDiscountOpen(dc, index)) {
+              return (
+                <div
+                  key={index}
+                  className="flex items-center justify-between gap-2 p-3 border border-slate-200 rounded-lg"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Code */}
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Code <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    value={dc?.code || ''}
-                    onChange={(e) => { dispatch(updateDiscountCode({ index, field: 'code', value: e.target.value.toUpperCase() })); clearError(`discountCode_${index}`); }}
-                    placeholder="SUMMER20"
-                    maxLength="50"
-                    className={getInputClasses(!!errors?.[`discountCode_${index}`])}
-                  />
-                  {errors?.[`discountCode_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`discountCode_${index}`][0]}</p>}
-                </div>
-
-                {/* Type */}
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Type <span className="text-red-500">*</span></label>
-                  <select
-                    value={dc?.kind || 'percent'}
-                    onChange={(e) => dispatch(updateDiscountCode({ index, field: 'kind', value: e.target.value }))}
-                    className={getInputClasses(false)}
-                  >
-                    <option value="percent">Percentage (%)</option>
-                    <option value="fixed">Fixed amount ($)</option>
-                  </select>
-                </div>
-
-                {/* Value */}
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">
-                    {dc?.kind === 'fixed' ? 'Amount ($)' : 'Percent (1–90)'} <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min={dc?.kind === 'fixed' ? '0.01' : '1'}
-                    max={dc?.kind === 'fixed' ? undefined : '90'}
-                    step={dc?.kind === 'fixed' ? '0.01' : '1'}
-                    value={dc.value === null || dc.value === undefined ? '' : dc.value}
-                    onChange={(e) => { const v = e.target.value; dispatch(updateDiscountCode({ index, field: 'value', value: v === '' ? null : Number(v) })); clearError(`discountValue_${index}`); }}
-                    onWheel={(e) => e.target.blur()}
-                    className={getInputClasses(!!errors?.[`discountValue_${index}`])}
-                    placeholder={dc?.kind === 'fixed' ? '5.00' : '10'}
-                  />
-                  {errors?.[`discountValue_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`discountValue_${index}`][0]}</p>}
-                </div>
-
-                {/* Max uses */}
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Max uses (blank = unlimited)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={dc.maxUses === null || dc.maxUses === undefined ? '' : dc.maxUses}
-                    onChange={(e) => { const v = e.target.value; dispatch(updateDiscountCode({ index, field: 'maxUses', value: v === '' ? null : Number(v) })); clearError(`discountUses_${index}`); }}
-                    onWheel={(e) => e.target.blur()}
-                    className={getInputClasses(!!errors?.[`discountUses_${index}`])}
-                    placeholder="Unlimited"
-                  />
-                  {errors?.[`discountUses_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`discountUses_${index}`][0]}</p>}
-                </div>
-
-                {/* Valid from */}
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Valid from</label>
-                  <input
-                    type="date"
-                    value={dc.validFrom ? (dc.validFrom.includes('T') ? dc.validFrom.slice(0, 10) : dc.validFrom) : ''}
-                    onChange={(e) => { dispatch(updateDiscountCode({ index, field: 'validFrom', value: e.target.value || null })); clearError(`discountDates_${index}`); }}
-                    className={getInputClasses(!!errors?.[`discountDates_${index}`])}
-                  />
-                </div>
-
-                {/* Valid until */}
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Valid until</label>
-                  <input
-                    type="date"
-                    value={dc.validUntil ? (dc.validUntil.includes('T') ? dc.validUntil.slice(0, 10) : dc.validUntil) : ''}
-                    onChange={(e) => { dispatch(updateDiscountCode({ index, field: 'validUntil', value: e.target.value || null })); clearError(`discountDates_${index}`); }}
-                    className={getInputClasses(!!errors?.[`discountDates_${index}`])}
-                  />
-                </div>
-              </div>
-
-              {errors?.[`discountDates_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`discountDates_${index}`][0]}</p>}
-
-              {/* Applies to (ticket-type NAMES, explicit) */}
-              <div className="mt-3 pt-3 border-t border-slate-200">
-                <label className="block text-xs font-medium text-slate-600 mb-2">
-                  Applies to <span className="text-red-500">*</span>
-                  <span className="font-normal text-slate-400"> — tick the ticket types this code discounts</span>
-                </label>
-                {namedTicketTypes.length === 0 ? (
-                  <p className="text-xs text-amber-600">Name your ticket types above first, then choose which ones this code applies to.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-3">
-                    {namedTicketTypes.map((t) => (
-                      <label key={t.name} className="flex items-center gap-1.5">
-                        <input
-                          type="checkbox"
-                          checked={(dc.appliesToTicketTypes || []).includes(t.name)}
-                          onChange={(e) => toggleApplies(index, t.name, e.target.checked)}
-                          className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
-                        />
-                        <span className="text-sm text-slate-600">{t.name}</span>
-                      </label>
-                    ))}
+                  <p className="min-w-0 truncate text-sm font-medium text-slate-700">
+                    {dc.code}
+                    <span className="font-normal text-slate-500"> · {fmtDiscountValue(dc)}</span>
+                    {(dc.appliesToTicketTypes || []).length > 0 && (
+                      <span className="font-normal text-slate-500"> · {(dc.appliesToTicketTypes || []).join(', ')}</span>
+                    )}
+                    {dc.active === false && <span className="font-normal text-slate-400"> · Inactive</span>}
+                  </p>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {confirmDeleteDiscount === index ? (
+                      <span className="flex items-center gap-2 text-xs text-slate-600">
+                        Delete?
+                        <button
+                          type="button"
+                          onClick={() => { handleRemoveDiscount(index); setConfirmDeleteDiscount(null); }}
+                          className="font-medium text-red-600 hover:text-red-700"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteDiscount(null)}
+                          className="text-slate-500 hover:text-slate-700"
+                        >
+                          No
+                        </button>
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setEditingDiscount(index)}
+                          aria-label="Edit discount code"
+                          className="p-2 text-slate-500 hover:text-teal-700 hover:bg-slate-50 rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteDiscount(index)}
+                          disabled={lockUsed}
+                          aria-label="Delete discount code"
+                          title={lockUsed ? "This code has been used — switch it off instead of deleting" : undefined}
+                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
                   </div>
-                )}
-                {errors?.[`discountApplies_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`discountApplies_${index}`][0]}</p>}
-              </div>
+                </div>
+              );
+            }
 
-              {/* Active + Show hint */}
-              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={dc?.active !== false}
-                    onChange={(e) => dispatch(updateDiscountCode({ index, field: 'active', value: e.target.checked }))}
-                    className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
-                  />
-                  <span className="text-sm text-slate-600">Active</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={dc?.showHint === true}
-                    onChange={(e) => dispatch(updateDiscountCode({ index, field: 'showHint', value: e.target.checked }))}
-                    className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
-                  />
-                  <span className="text-sm text-slate-600">Show discount code during checkout</span>
-                </label>
+            // Expanded editor.
+            return (
+              <div key={index} className="border border-slate-200 rounded-lg p-3">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-slate-700">
+                    Code {index + 1}{dc?.code ? `: ${dc.code}` : ''}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className={`text-xs ${dc?.active !== false ? 'text-teal-700 font-medium' : 'text-slate-400'}`}>
+                      {dc?.active !== false ? 'Active' : 'Inactive'}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={dc?.active !== false}
+                      disabled={namedTicketTypes.length === 0 && dc?.active === false}
+                      title={namedTicketTypes.length === 0 ? 'Add a named ticket type first' : undefined}
+                      onClick={() => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'active', value: !(dc?.active !== false) })); clearDiscountRowError(index, 'applies'); }}
+                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${dc?.active !== false ? 'bg-teal-700' : 'bg-slate-300'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${dc?.active !== false ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                    </button>
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Code */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Code <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={dc?.code || ''}
+                      onChange={(e) => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'code', value: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') })); clearError(`discountCode_${index}`); clearDiscountRowError(index, 'code'); }}
+                      placeholder="e.g. 10OFF"
+                      maxLength="20"
+                      disabled={lockWord}
+                      title={lockWord ? "A saved code can't be renamed — delete it (if unused) or switch it off and make a new one" : undefined}
+                      className={getInputClasses(!!discountFieldError(index, 'code'))}
+                    />
+                    {discountFieldError(index, 'code') && (
+                      <p className="text-red-500 text-xs mt-1">{discountFieldError(index, 'code')}</p>
+                    )}
+                    <p className="text-xs text-slate-500 mt-1">
+                      {lockWord ? "A saved code can't be renamed." : 'Max 20 characters, letters and numbers only.'}
+                    </p>
+                  </div>
+
+                  {/* Type */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Type <span className="text-red-500">*</span></label>
+                    <select
+                      value={dc?.kind || 'percent'}
+                      onChange={(e) => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'kind', value: e.target.value })); clearDiscountRowError(index, 'value'); }}
+                      disabled={lockUsed}
+                      title={lockUsed ? "Locked — this code has been used" : undefined}
+                      className={getInputClasses(false)}
+                    >
+                      <option value="percent">Percentage (%)</option>
+                      <option value="fixed">Fixed amount ($)</option>
+                    </select>
+                  </div>
+
+                  {/* Value */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">
+                      {dc?.kind === 'fixed' ? 'Amount ($)' : 'Percent (1–90)'} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={dc?.kind === 'fixed' ? '0.01' : '1'}
+                      max={dc?.kind === 'fixed' ? undefined : '90'}
+                      step={dc?.kind === 'fixed' ? '0.01' : '1'}
+                      value={dc.value === null || dc.value === undefined ? '' : dc.value}
+                      onChange={(e) => { setEditingDiscount(index); const v = e.target.value; dispatch(updateDiscountCode({ index, field: 'value', value: v === '' ? null : Number(v) })); clearError(`discountValue_${index}`); clearDiscountRowError(index, 'value'); }}
+                      onWheel={(e) => e.target.blur()}
+                      disabled={lockUsed}
+                      title={lockUsed ? "Locked — this code has been used" : undefined}
+                      className={getInputClasses(!!discountFieldError(index, 'value'))}
+                      placeholder={dc?.kind === 'fixed' ? '5.00' : '10'}
+                    />
+                    {discountFieldError(index, 'value') && <p className="text-red-500 text-xs mt-1">{discountFieldError(index, 'value')}</p>}
+                  </div>
+
+                  {/* Max uses */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Max uses <span className="font-normal text-slate-400">(optional)</span></label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={dc.maxUses === null || dc.maxUses === undefined ? '' : dc.maxUses}
+                      onChange={(e) => { setEditingDiscount(index); const v = e.target.value; dispatch(updateDiscountCode({ index, field: 'maxUses', value: v === '' ? null : Number(v) })); clearError(`discountUses_${index}`); clearDiscountRowError(index, 'uses'); }}
+                      onWheel={(e) => e.target.blur()}
+                      className={getInputClasses(!!discountFieldError(index, 'uses'))}
+                      placeholder="Unlimited"
+                    />
+                    {discountFieldError(index, 'uses') && <p className="text-red-500 text-xs mt-1">{discountFieldError(index, 'uses')}</p>}
+                  </div>
+
+                  {/* Valid from */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Valid from <span className="font-normal text-slate-400">(optional)</span></label>
+                    <input
+                      type="date"
+                      value={dc.validFrom ? (dc.validFrom.includes('T') ? dc.validFrom.slice(0, 10) : dc.validFrom) : ''}
+                      onChange={(e) => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'validFrom', value: e.target.value || null })); clearError(`discountDates_${index}`); clearDiscountRowError(index, 'dates'); }}
+                      max={eventDay || undefined}
+                      disabled={lockUsed}
+                      title={lockUsed ? "Locked — this code has been used" : undefined}
+                      className={getInputClasses(!!discountFieldError(index, 'dates'))}
+                    />
+                  </div>
+
+                  {/* Valid until */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Valid until <span className="font-normal text-slate-400">(optional)</span></label>
+                    <input
+                      type="date"
+                      value={dc.validUntil ? (dc.validUntil.includes('T') ? dc.validUntil.slice(0, 10) : dc.validUntil) : ''}
+                      onChange={(e) => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'validUntil', value: e.target.value || null })); clearError(`discountDates_${index}`); clearDiscountRowError(index, 'dates'); }}
+                      min={dayOf(dc.validFrom) || undefined}
+                      max={eventDay || undefined}
+                      className={getInputClasses(!!discountFieldError(index, 'dates'))}
+                    />
+                  </div>
+                </div>
+
+                {discountFieldError(index, 'dates') && <p className="text-red-500 text-xs mt-1">{discountFieldError(index, 'dates')}</p>}
+
+                {/* Applies to (ticket-type NAMES, explicit) */}
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <label className="block text-xs font-medium text-slate-600 mb-2">
+                    Select ticket types to discount <span className="text-red-500">*</span>
+                  </label>
+                  {namedTicketTypes.length === 0 ? (
+                    <p className="text-xs text-amber-600">Name your ticket types above first, then choose which ones this code applies to.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-3">
+                      {namedTicketTypes.map((t) => (
+                        <label key={t.name} className="flex items-center gap-1.5">
+                          <input
+                            type="checkbox"
+                            checked={(dc.appliesToTicketTypes || []).includes(t.name)}
+                            onChange={(e) => toggleApplies(index, t.name, e.target.checked)}
+                            className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
+                          />
+                          <span className="text-sm text-slate-600">{t.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {discountFieldError(index, 'applies') && <p className="text-red-500 text-xs mt-1">{discountFieldError(index, 'applies')}</p>}
+                </div>
+
+                {/* Advertise at ticket selection — yes/no toggle (only meaningful when the code is active) */}
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={dc?.showHint === true && dc?.active !== false}
+                    disabled={dc?.active === false}
+                    title={dc?.active === false ? 'Activate the code to advertise it' : undefined}
+                    onClick={() => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'showHint', value: !(dc?.showHint === true) })); }}
+                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${(dc?.showHint === true && dc?.active !== false) ? 'bg-teal-700' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${(dc?.showHint === true && dc?.active !== false) ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                  </button>
+                  <span className={`text-sm ${dc?.active === false ? 'text-slate-400' : 'text-slate-600'}`}>
+                    {dc?.code ? `Advertise "${dc.code}" at ticket selection` : 'Advertise this code at ticket selection'}
+                    {dc?.active === false ? ' (activate first)' : ''}
+                  </span>
+                </div>
+
+                <div className="mt-3 flex justify-end gap-4">
+                  <button
+                    type="button"
+                    onClick={() => handleCancelDiscount(index)}
+                    className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDoneDiscount(index)}
+                    className="text-sm font-medium text-teal-700 hover:text-teal-800"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       <button
         type="button"
-        onClick={() => dispatch(addDiscountCode())}
+        onClick={handleAddDiscount}
         className="inline-flex items-center px-4 py-2 text-sm text-teal-700 hover:text-teal-800 font-medium"
       >
         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -856,31 +1381,77 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
         </svg>
         Add Discount Code
       </button>
+
+      {/* How discount codes work — info popup */}
+      {showDiscountInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50" onClick={() => setShowDiscountInfo(false)}>
+          <div className="bg-white w-full sm:max-w-md rounded-lg max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h3 className="text-base font-semibold text-slate-800">How discount codes work</h3>
+              <button
+                type="button"
+                onClick={() => setShowDiscountInfo(false)}
+                aria-label="Close"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto">
+              <ul className="space-y-2 text-sm text-slate-600 list-disc pl-5">
+                <li>Buyers type the code at checkout. Codes are 3–20 letters/numbers, shown in capitals.</li>
+                <li>A code only works when <strong>Active</strong> — and an active code must apply to at least one ticket type (ticking a ticket activates it automatically).</li>
+                <li>The discount is a percentage (1–90%) or a fixed $ amount, and can't bring a ticket under $1.</li>
+                <li><strong>Advertise at ticket selection</strong>: on = the code is shown publicly on the tickets page; off = secret (buyers must know it).</li>
+                <li>Once a code has been used, you can't change its name, type, value or start date, and can't delete it — switch it <strong>off</strong> to stop it.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 // GST Configuration
 const GSTConfiguration = ({ formData, dispatch }) => {
+  const on = formData.gstIncluded || false;
+  // Preview uses the cheapest entered ticket price, else a $100 example.
+  const prices = (formData.ticketTypes || [])
+    .map((t) => Number(t.price))
+    .filter((p) => !isNaN(p) && p > 0);
+  const sampleLabel = `$${(prices.length ? Math.min(...prices) : 100).toFixed(2)}`;
+
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
+      <h3 className="font-medium text-sm sm:text-base mb-3 text-slate-600">GST</h3>
+
       <div className="flex items-start gap-3">
-        <input
-          type="checkbox"
-          id="gstIncluded"
-          checked={formData.gstIncluded || false}
-          onChange={(e) => dispatch(updateGstIncluded(e.target.checked))}
-          className="mt-0.5 w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
-        />
+        <button
+          type="button"
+          role="switch"
+          aria-checked={on}
+          onClick={() => dispatch(updateGstIncluded(!on))}
+          className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-300 ${on ? 'bg-teal-700' : 'bg-slate-300'}`}
+        >
+          <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${on ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+        </button>
         <div className="flex-1">
-          <label htmlFor="gstIncluded" className="block text-sm font-medium text-slate-700 cursor-pointer">
-            Prices include GST
-          </label>
-          {formData.gstIncluded && (
-            <p className="text-xs text-slate-500 mt-1">
-              Prices will display as "$100 (incl GST)"
-            </p>
-          )}
+          <p className="text-sm font-medium text-slate-600">Ticket prices include GST</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Turn on if your ticket prices already include 10% GST.
+          </p>
+
+          {/* Live preview of the checkout total line */}
+          <div className="mt-3 max-w-xs">
+            <p className="text-xs text-slate-500 mb-1">At checkout, the total reads:</p>
+            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+              <span className="text-slate-600">{on ? 'Total (incl. GST)' : 'Total'}</span>
+              <span className="font-medium text-slate-800">{sampleLabel}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -939,19 +1510,19 @@ const RegistrationStep = ({
               />
             )}
 
+            {/* GST Configuration (Paid Only) - sits with ticket pricing, before discounts */}
+            {isPaidEvent && (
+              <GSTConfiguration
+                formData={formData}
+                dispatch={dispatch}
+              />
+            )}
+
             {/* Discount Codes (Paid Only) */}
             {isPaidEvent && (
               <DiscountCodesSection
                 formData={formData}
                 errors={errors}
-                dispatch={dispatch}
-              />
-            )}
-
-            {/* GST Configuration (Paid Only) */}
-            {isPaidEvent && (
-              <GSTConfiguration
-                formData={formData}
                 dispatch={dispatch}
               />
             )}

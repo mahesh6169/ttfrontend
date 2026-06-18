@@ -116,7 +116,7 @@ const AddressInput = ({
 
   return (
     <div>
-      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+      <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
         Address <span className="text-red-500">*</span>
       </label>
       <LoadScriptNext

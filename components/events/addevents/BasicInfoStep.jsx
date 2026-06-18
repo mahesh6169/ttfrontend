@@ -14,6 +14,7 @@ import {
   updateRepeatSchedule,
   removeRepeatSchedule,
   setRecurrenceEndDate,
+  setFormErrors,
 } from '@/store/slices/events/eventSlice';
 import AddressInput from '@/components/events/addevents/AddressInput';
 import ImageUploader from '@/components/events/addevents/ImageUploader';
@@ -38,7 +39,7 @@ const AU_TIMEZONES = [
 // Intent Selection Component - Clean toggle buttons
 const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) => {
   const currentIntent = formData.eventIntent;
-  const isPaid = formData.isPaid || false;
+  const isPaid = formData.isPaid; // can be null (neither RSVP nor Paid chosen yet)
 
   const handleIntentSelect = (intent) => {
     if (disabled || isEditMode) return;
@@ -57,7 +58,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
       {/* Event Type */}
       <div>
         <div className="flex items-baseline gap-4">
-          <label className="font-semibold sm:font-bold text-slate-700 text-sm sm:text-base whitespace-nowrap">
+          <label className="text-sm sm:text-base font-medium text-slate-600 whitespace-nowrap">
             Event Type <span className="text-red-500">*</span>
             {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
           </label>
@@ -100,7 +101,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
       {/* Free/Paid Toggle - Only shown when "Host" is selected */}
       {currentIntent === 'host' && (
         <div className="flex items-baseline gap-4">
-          <label className="font-semibold sm:font-bold text-slate-700 text-sm sm:text-base whitespace-nowrap">
+          <label className="font-medium text-slate-600 text-sm sm:text-base whitespace-nowrap">
             Ticket Type <span className="text-red-500">*</span>
             {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
           </label>
@@ -111,7 +112,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
               onClick={() => handlePaidToggle(false)}
               disabled={isLocked}
               className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
-                !isPaid
+                isPaid === false
                   ? 'text-teal-700 font-semibold border-teal-700'
                   : 'text-slate-500 border-transparent hover:text-slate-700'
               } ${isLocked ? 'cursor-not-allowed' : ''}`}
@@ -124,7 +125,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
               onClick={() => handlePaidToggle(true)}
               disabled={isLocked}
               className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
-                isPaid
+                isPaid === true
                   ? 'text-teal-700 font-semibold border-teal-700'
                   : 'text-slate-500 border-transparent hover:text-slate-700'
               } ${isLocked ? 'cursor-not-allowed' : ''}`}
@@ -156,17 +157,29 @@ const BasicInfoStep = ({
   // Check if recurring is allowed (only for host + free events)
   const isPromotionalEvent = formData.eventIntent === 'promote';
   const isPaidEvent = formData.isPaid || false;
-  const canShowRecurring = formData.eventIntent === 'host' && !isPaidEvent;
+  const canShowRecurring = formData.eventIntent === 'host' && formData.isPaid === false && !isEditMode;
 
   const handleChange = (e) => {
     if (disabled) return;
     const { name, value } = e.target;
     dispatch(updateField({ field: name, value }));
+    // Clear this field's error as soon as the user edits it (re-checked on next Next/Submit).
+    if (errors?.[name]) {
+      const next = { ...errors };
+      delete next[name];
+      dispatch(setFormErrors(next));
+    }
   };
 
   const handleAddressChange = (address) => {
     if (disabled) return;
     dispatch(setAddress(address));
+    // Clear the address error once a new address is picked (re-checked on next Next/Submit).
+    if (errors?.address) {
+      const next = { ...errors };
+      delete next.address;
+      dispatch(setFormErrors(next));
+    }
   };
 
   // Format datetime for input field
@@ -222,6 +235,14 @@ const BasicInfoStep = ({
     return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
   };
 
+  // Recurrence errors come back as one array; split so schedule errors sit by the
+  // schedule rows and end-date errors sit under the End Date field.
+  const recurrenceErrorList = Array.isArray(errors?.recurrence)
+    ? errors.recurrence
+    : (errors?.recurrence ? [errors.recurrence] : []);
+  const scheduleErrors = recurrenceErrorList.filter((e) => /schedule/i.test(e));
+  const endDateRecurrenceErrors = recurrenceErrorList.filter((e) => /end date/i.test(e));
+
   // Recurring event handlers
   const handleRecurringToggle = (e) => {
     if (disabled) return;
@@ -254,7 +275,7 @@ const BasicInfoStep = ({
       maxDate.setMonth(maxDate.getMonth() + 6);
 
       if (selectedDate > maxDate) {
-        setEndDateError('RSVP recurring events are limited to 6 months. Date has been adjusted to the maximum allowed.');
+        setEndDateError('Recurring events max 6 months - adjusted');
         dispatch(setRecurrenceEndDate(maxDate.toISOString().split('T')[0]));
         setTimeout(() => setEndDateError(''), 5000);
         return;
@@ -267,21 +288,24 @@ const BasicInfoStep = ({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Intent Selection - First thing users choose */}
-      <IntentSelection
-        formData={formData}
-        disabled={disabled}
-        dispatch={dispatch}
-        errors={errors}
-        isEditMode={isEditMode}
-      />
+      {/* Intent Selection - First thing users choose. Hidden in edit mode (Event Type +
+          Ticket Type can't be changed; stored values still drive the rest of the form). */}
+      {!isEditMode && (
+        <IntentSelection
+          formData={formData}
+          disabled={disabled}
+          dispatch={dispatch}
+          errors={errors}
+          isEditMode={isEditMode}
+        />
+      )}
 
-      {/* Rest of fields only shown after intent is selected */}
-      {formData.eventIntent && (
+      {/* Rest of fields shown after intent is selected — and, for Host, after a Ticket Type is chosen */}
+      {formData.eventIntent && (formData.eventIntent !== 'host' || formData.isPaid !== null) && (
         <>
           {/* Title */}
           <div>
-            <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
               Event Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -303,7 +327,7 @@ const BasicInfoStep = ({
 
           {/* Category */}
           <div>
-            <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
               Category <span className="text-red-500">*</span>
             </label>
             {disabled ? (
@@ -347,7 +371,7 @@ const BasicInfoStep = ({
 
           {/* Description */}
           <div>
-            <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
               Description <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -378,7 +402,7 @@ const BasicInfoStep = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Time Zone */}
             <div>
-              <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+              <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                 Timezone <span className="text-red-500">*</span>
                 {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-500 ml-2">(Locked)</span>}
               </label>
@@ -407,7 +431,7 @@ const BasicInfoStep = ({
 
             {/* Date & Time */}
             <div>
-              <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+              <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                 Date & Time <span className="text-red-500">*</span>
                 {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-500 ml-2">(Locked)</span>}
               </label>
@@ -430,7 +454,7 @@ const BasicInfoStep = ({
       {canShowRecurring && (
         <div>
           <label className="cursor-pointer">
-            <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+            <span className="block font-medium text-slate-600 text-sm sm:text-base">
               Recurring Event
               {isEditMode && <span className="text-xs font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
             </span>
@@ -504,10 +528,19 @@ const BasicInfoStep = ({
                   <button
                     type="button"
                     onClick={handleAddRepeatSchedule}
-                    className="text-sm text-teal-700 hover:text-teal-800 font-medium"
+                    className="inline-flex items-center px-4 py-2 text-sm text-teal-700 hover:text-teal-800 font-medium"
                   >
-                    + Add Another Day/Time
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Another Day/Time
                   </button>
+                )}
+
+                {scheduleErrors.length > 0 && (
+                  <div className="text-red-500 text-xs sm:text-sm space-y-1 mt-1">
+                    {scheduleErrors.map((err, i) => <p key={i}>{err}</p>)}
+                  </div>
                 )}
               </div>
 
@@ -542,16 +575,13 @@ const BasicInfoStep = ({
                     {Array.isArray(errors.recurrenceEndDate) ? errors.recurrenceEndDate[0] : errors.recurrenceEndDate}
                   </p>
                 )}
+                {endDateRecurrenceErrors.length > 0 && (
+                  <div className="text-red-500 text-xs sm:text-sm space-y-1 mt-1">
+                    {endDateRecurrenceErrors.map((err, i) => <p key={i}>{err}</p>)}
+                  </div>
+                )}
                 <p className="text-xs text-slate-500 mt-1">Maximum 6 months from start date</p>
               </div>
-
-              {errors?.recurrence && (
-                <div className="text-red-500 text-xs sm:text-sm space-y-1">
-                  {Array.isArray(errors.recurrence)
-                    ? errors.recurrence.map((err, i) => <p key={i}>• {err}</p>)
-                    : <p>• {errors.recurrence}</p>}
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -561,7 +591,7 @@ const BasicInfoStep = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Venue */}
         <div>
-          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+          <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
             Venue <span className="text-red-500">*</span>
           </label>
           <input

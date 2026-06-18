@@ -86,10 +86,10 @@ const EditEventPage = ({ params: paramsPromise }) => {
   if (isCheckingPermissions) {
     return (
       <RequireVerifiedAccount>
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
         <div className="flex flex-col items-center justify-center min-h-64">
           <LoadingSpinner size="large" />
-          <p className="mt-4 text-gray-600">Verifying permissions...</p>
+          <p className="mt-4 text-slate-600">Verifying permissions...</p>
         </div>
       </div>
       </RequireVerifiedAccount>
@@ -100,7 +100,7 @@ const EditEventPage = ({ params: paramsPromise }) => {
   if (eventExists === false) {
     return (
       <RequireVerifiedAccount>
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
         <div className="text-center">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <div className="flex flex-col items-center">
@@ -111,12 +111,12 @@ const EditEventPage = ({ params: paramsPromise }) => {
                 Unable to Edit Event
               </h2>
               <p className="text-red-600 mb-4">
-                {!params.id 
+                {!params.id
                   ? 'No event ID provided'
                   : 'Event not found or you do not have permission to edit this event'
                 }
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => router.push('/users/profile/manageevents')}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
@@ -125,7 +125,7 @@ const EditEventPage = ({ params: paramsPromise }) => {
                 </button>
                 <button
                   onClick={() => router.push('/events')}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
                 >
                   Browse Events
                 </button>
@@ -142,7 +142,7 @@ const EditEventPage = ({ params: paramsPromise }) => {
   if (!params.id) {
     return (
       <RequireVerifiedAccount>
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
         <div className="text-center">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
             <h2 className="text-lg font-semibold text-yellow-800 mb-2">Invalid Event ID</h2>

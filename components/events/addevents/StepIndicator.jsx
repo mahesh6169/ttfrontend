@@ -121,9 +121,9 @@ const StepIndicator = ({
 const isStepComplete = (stepNumber) => {
   switch (stepNumber) {
     case 1: // Event Details - Intent, Title, Category, Description, Date/Time, Venue, Address
-      return formData?.eventIntent && formData?.title?.trim() && formData?.category?.trim() && formData?.description?.trim() && formData?.dateTime && formData?.venue?.trim() && formData?.address?.formattedAddress;
-    case 2: // Organiser - Organizer details
-      return formData?.organizer?.name?.trim() && formData?.organizer?.contact?.trim();
+      return formData?.eventIntent && (formData?.eventIntent !== 'host' || formData?.isPaid !== null) && formData?.title?.trim() && formData?.category?.trim() && formData?.description?.trim() && formData?.dateTime && formData?.venue?.trim() && formData?.address?.formattedAddress;
+    case 2: // Organiser - only the organiser name is required (contact is optional)
+      return formData?.organizer?.name?.trim();
     case 3: // Registration - registration config based on intent
       if (formData?.eventIntent === 'promote') {
         // Promotional events need isPaid explicitly set (not null)
