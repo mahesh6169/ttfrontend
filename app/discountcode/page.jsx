@@ -431,7 +431,7 @@ const DiscountCodePage = () => {
         <div className="my-2"></div>
 
         {/* Search Bar with Sort/Filter buttons */}
-        <div className="px-3 mb-3 sm:px-4 sm:mb-4">
+        <div className="mb-3 sm:mb-4">
           <form onSubmit={handleSearchSubmit} className="flex gap-2 mb-3">
             <input
               type="text"
@@ -505,7 +505,7 @@ const DiscountCodePage = () => {
         {/* Active Filters Display */}
         {getActiveFilterCount() > 0 && (
           <div className="bg-gray-50 border-y">
-            <div className="px-3 py-3 sm:px-4 flex items-center gap-3 max-w-full">
+            <div className="py-3 flex items-center gap-3 max-w-full">
               <span className="text-sm text-gray-600 font-medium whitespace-nowrap flex-shrink-0">
                 Active filters:
               </span>
@@ -572,7 +572,7 @@ const DiscountCodePage = () => {
         )}
 
         {/* Promotion Listing */}
-        <div className="px-3 sm:px-4 mt-4">
+        <div className="mt-4">
           {status === 'loading' ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>

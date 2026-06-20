@@ -326,7 +326,7 @@ const DailyDealsPage = () => {
       {/* Main Content */}
       <div className="w-full">
         {/* Hero Section */}
-        <section className="bg-white mx-3 md:mx-4 rounded-xl px-3 py-4 md:px-6 md:py-5 mt-2 md:mt-2 mb-4">
+        <section className="bg-white rounded-xl px-3 py-4 md:px-6 md:py-5 mt-2 md:mt-2 mb-4">
           <div className="md:max-w-4xl md:mx-auto">
             {/* Mobile Layout - Stacked */}
             <div className="flex flex-col gap-2 md:hidden">
@@ -784,7 +784,7 @@ const DailyDealsPage = () => {
         </section>
 
         {/* Page Controls - Sort and Filter */}
-        <div ref={resultsRef} className="bg-white px-3 py-2 sm:px-4 sm:py-3">
+        <div ref={resultsRef} className="bg-white py-2 sm:py-3">
           {/* Filter and Sort buttons */}
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
@@ -842,7 +842,7 @@ const DailyDealsPage = () => {
               {/* Right edge fade - mobile only */}
               <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none z-10 md:hidden"></div>
 
-              <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 sm:px-4">
+              <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 <div className="flex gap-2">
                   {cat && (
                     <span
@@ -917,7 +917,7 @@ const DailyDealsPage = () => {
         )}
 
         {/* Results */}
-        <div className="px-3 sm:px-4 mt-4">
+        <div className="mt-4">
           <DealsGrid deals={deals} dealStatus={status} />
         </div>
 

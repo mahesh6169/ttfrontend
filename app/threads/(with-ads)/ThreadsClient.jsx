@@ -345,7 +345,7 @@ const ThreadsPage = () => {
       {/* Main Content */}
       <div className="w-full">
         {/* Hero Section */}
-        <section className="bg-white mx-3 md:mx-4 rounded-xl px-3 py-4 md:px-6 md:py-5 mt-2 md:mt-2 mb-4">
+        <section className="bg-white rounded-xl px-3 py-4 md:px-6 md:py-5 mt-2 md:mt-2 mb-4">
           <div className="md:max-w-4xl md:mx-auto">
             {/* Mobile Layout - Stacked */}
             <div className="flex flex-col gap-2 md:hidden">
@@ -681,7 +681,7 @@ const ThreadsPage = () => {
         </section>
 
         {/* Page Controls - Sort and Filter */}
-        <div ref={resultsRef} className="bg-white px-3 py-2 sm:px-4 sm:py-3">
+        <div ref={resultsRef} className="bg-white py-2 sm:py-3">
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
               onClick={handleOpenFilters}
@@ -738,7 +738,7 @@ const ThreadsPage = () => {
               <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none z-10 md:hidden"></div>
               <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none z-10 md:hidden"></div>
 
-              <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 sm:px-4">
+              <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 <div className="flex gap-2 items-center">
                   {cat && (
                     <span
@@ -830,7 +830,7 @@ const ThreadsPage = () => {
             <p className="text-slate-500 text-xs sm:text-sm">Please try again later</p>
           </div>
         ) : threads.length > 0 ? (
-          <div className="space-y-3 px-3 sm:px-4 mt-4 min-h-[400px]">
+          <div className="space-y-3 mt-4 min-h-[400px]">
             {threads.map((thread, index) => (
               <React.Fragment key={thread._id}>
                 <Link

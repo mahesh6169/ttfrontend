@@ -63,7 +63,7 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm transition-all duration-300 h-[68px]">
       <div className="container mx-auto py-2 md:py-2.5 text-slate-700 relative">
 
         {/* Top Row */}

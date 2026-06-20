@@ -152,13 +152,13 @@ export default function CampaignViewPage() {
   const buttonConfig = getButtonConfig();
 
   return (
-    <div className="min-h-screen py-2 sm:py-4 px-2 sm:px-3">
+    <div className="min-h-screen py-2 sm:py-4">
       <div className="max-w-2xl mx-auto">
         {/* Back Button */}
         <div className="mb-3">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
+            className="flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
           >
             <span>&lt;</span>
             <span>back</span>

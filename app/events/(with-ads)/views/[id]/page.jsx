@@ -117,9 +117,9 @@ const EventDetail = () => {
   const promoCtaLabel = selectedEvent.isPaid ? 'Get Tickets' : 'Register';
 
   return (
-    <div id="viewsmain" className="flex flex-col gap-2 px-2">
+    <div id="viewsmain" className="flex flex-col gap-2">
       {/* Navigation Bar */}
-      <div className="mt-4 flex justify-between items-center">
+      <div className="flex justify-between items-center">
         {/* Back Button - Smart Navigation */}
         <button
           onClick={() => {

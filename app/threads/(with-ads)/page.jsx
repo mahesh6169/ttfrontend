@@ -49,7 +49,7 @@ export const metadata = {
 export default function ThreadsPage() {
   return (
     <>
-      <header className="px-3 sm:px-4 pt-3 sm:pt-5 pb-2 sm:pb-3">
+      <header className="pt-3 sm:pt-5 pb-2 sm:pb-3">
         <div className="border-y border-teal-100 py-3 sm:py-4 md:w-fit md:mx-auto md:px-8">
           <h1 className="text-center text-base sm:text-xl md:text-2xl font-bold text-teal-900 leading-tight">
             Indian Community Forum: Ask, Share &amp; Discuss
