@@ -1,4 +1,5 @@
 import Footer from '@/components/Footer';
+import BaseContentShell from '@/components/layout/BaseContentShell';
 import { META_DEFAULTS } from '@/utils/slugUtils';
 
 export const metadata = {
@@ -11,8 +12,10 @@ export const metadata = {
 
 const ValidateLayout = ({ children }) => {
   return (
-    <main className="min-h-screen bg-gray-50">
-      {children}
+    <main id="Parent" className="container bg-white my-2 mx-auto md:flex md:flex-col md:min-h-[calc(100vh-5rem)]">
+      <div id="Main" className="flex-1 overflow-hidden">
+        <BaseContentShell>{children}</BaseContentShell>
+      </div>
       <Footer />
     </main>
   );

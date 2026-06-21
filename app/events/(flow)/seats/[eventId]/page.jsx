@@ -193,7 +193,7 @@ const SeatSelectionPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <p className="text-gray-600">Redirecting to ticket selection...</p>
@@ -204,7 +204,7 @@ const SeatSelectionPage = () => {
 
   if (!selectedEvent) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <p className="text-gray-600">Event not found</p>
       </div>
     );
@@ -229,8 +229,8 @@ const SeatSelectionPage = () => {
   const canProceed = reservation && selectedSeats.length === ticketRequirement.total;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="w-full max-w-4xl mx-auto px-3 py-4 sm:px-4 sm:py-6">
+    <div>
+      <div className="w-full">
         {/* Back to Tickets Button - Same as tickets page */}
         <div className="mb-3 sm:mb-6">
           <button

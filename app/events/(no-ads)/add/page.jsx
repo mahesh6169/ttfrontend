@@ -6,7 +6,6 @@ import React, { Suspense, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useQueryStates, parseAsString, parseAsInteger } from 'nuqs';
 import StepManager from '@/components/events/addevents/StepManager';
-import ContentShell from '@/components/events/ContentShell';
 import { setEventIntent, updateField } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -49,17 +48,15 @@ const AddEventContent = () => {
   };
 
   return (
-    <ContentShell>
-      <StepManager
-        mode="add"
-        onComplete={handleEventCreated}
-        allowCancel={true}
-        initialIntent={eventParams.intent}
-        initialType={eventParams.type}
-        initialStep={eventParams.step}
-        onStepChange={handleStepChange}
-      />
-    </ContentShell>
+    <StepManager
+      mode="add"
+      onComplete={handleEventCreated}
+      allowCancel={true}
+      initialIntent={eventParams.intent}
+      initialType={eventParams.type}
+      initialStep={eventParams.step}
+      onStepChange={handleStepChange}
+    />
   );
 };
 

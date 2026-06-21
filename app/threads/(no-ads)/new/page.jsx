@@ -313,7 +313,7 @@ const CreateThreadPage = () => {
   const isMaxImagesReached = preview.length >= 10;
 
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       <RequireVerifiedAccount>
         {showSuccessView && createdThread ? (
           <SuccessView
@@ -322,7 +322,7 @@ const CreateThreadPage = () => {
             onAddAnother={resetForm}
           />
         ) : (
-          <div className="max-w-3xl mx-auto">
+          <div className="w-full">
             {/* Page Header */}
             <div className="mb-8 text-center">
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Create New Topic</h1>

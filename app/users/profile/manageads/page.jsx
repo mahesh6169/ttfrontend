@@ -117,7 +117,7 @@ export default function ProfilePage() {
   // Show loading spinner if adverts are still loading
   if (advertStatus === 'loading') {
     return (
-      <div className="px-2 py-6 sm:px-6 sm:py-8">
+      <div>
         <PageHeader />
         <div className="flex justify-center items-center h-64">
           <LoadingSpinner />
@@ -129,7 +129,7 @@ export default function ProfilePage() {
   // Handle errors
   if (advertStatus === 'failed') {
     return (
-      <div className="px-2 py-6 sm:px-6 sm:py-8">
+      <div>
         <PageHeader />
         <div className="text-center py-12">
           <p className="text-red-600 font-semibold">Error loading listings</p>
@@ -140,7 +140,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       <PageHeader />
 
       {adverts && adverts.length > 0 ? (

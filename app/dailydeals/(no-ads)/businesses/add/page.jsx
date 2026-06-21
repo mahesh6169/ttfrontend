@@ -32,9 +32,9 @@ export default function AddBusinessPage() {
   };
 
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       <RequireVerifiedAccount>
-        <div className="max-w-3xl mx-auto">
+        <div className="w-full">
           {/* Page Header */}
           <div className="mb-8 text-center">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Add Business</h1>

@@ -4,6 +4,7 @@ import ListingsSection from '@/components/home/ListingsSection';
 import EventsSection from '@/components/home/EventsSection';
 import ThreadsSection from '@/components/home/ThreadsSection';
 import Footer from '@/components/Footer';
+import AdsContentShell from '@/components/layout/AdsContentShell';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
@@ -60,23 +61,27 @@ export default async function HomePage() {
 
   return (
     <main className="bg-slate-50">
-      <Suspense>
-        <HeroSection />
-      </Suspense>
+      <div className="container mx-auto">
+        <AdsContentShell>
+          <Suspense>
+            <HeroSection />
+          </Suspense>
 
-      <div id="content" className="w-full md:container md:mx-auto space-y-6 py-6">
-        <div className="bg-white border border-slate-200 rounded-2xl">
-          <ListingsSection listings={listings} />
-        </div>
-        <div className="bg-white border border-slate-200 rounded-2xl">
-          <EventsSection events={events} />
-        </div>
-        <div className="bg-white border border-slate-200 rounded-2xl">
-          <ThreadsSection threads={threads} />
-        </div>
+          <div id="content" className="space-y-6">
+            <div className="bg-white border border-slate-200 rounded-2xl">
+              <ListingsSection listings={listings} />
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl">
+              <EventsSection events={events} />
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl">
+              <ThreadsSection threads={threads} />
+            </div>
+          </div>
+        </AdsContentShell>
+
+        <Footer />
       </div>
-
-      <Footer />
     </main>
   );
 }

@@ -173,7 +173,7 @@ export default function OnboardPage() {
 
   if (checkingStatus) {
     return (
-      <div className="min-h-screen bg-slate-50 px-2 sm:px-4 py-8">
+      <div>
         <div className="max-w-3xl mx-auto">
           <BackButton />
           <div className="animate-pulse">
@@ -187,7 +187,7 @@ export default function OnboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-2 sm:px-4 py-4 md:py-6">
+    <div>
       <div className="max-w-3xl mx-auto">
         <BackButton />
 

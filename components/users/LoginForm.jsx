@@ -128,7 +128,7 @@ const Login = () => {
   
   
   return (
-    <div className="flex my-6 w-full justify-center">
+    <div className="flex w-full justify-center">
       <div className="p-6 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
 

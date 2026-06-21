@@ -356,8 +356,8 @@ const HeroSection = () => {
     'bg-slate-50 rounded-xl ring-1 ring-slate-200/60 p-2.5 sm:p-3 md:p-4';
 
   return (
-    <section className="px-3 sm:px-4 pt-10 pb-6 md:py-12">
-      <div className="w-full md:container md:mx-auto">
+    <section className="pt-10 pb-6 md:py-12">
+      <div className="w-full">
         {/* Headline */}
         <div className="text-center mb-3 sm:mb-8">
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-teal-900">

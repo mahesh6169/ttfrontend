@@ -158,7 +158,7 @@ const ContactForm = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-6">
+    <div className="max-w-xl mx-auto p-6 bg-white rounded shadow">
       <h2 className="text-xl font-bold mb-4">Contact Us</h2>
       <form onSubmit={handleSubmit}>
         {/* Honeypot field (hidden) */}

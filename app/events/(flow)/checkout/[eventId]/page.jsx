@@ -772,7 +772,7 @@ const CheckoutPage = () => {
 
   if (isLoading || reservationLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center py-20">
         <LoadingSpinner />
       </div>
     );
@@ -788,7 +788,7 @@ const CheckoutPage = () => {
   } else if (selectedTickets.length === 0 && !reservationLoading) {
     // Only show the "No Tickets Selected" error if payment was NOT successful
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4">
+      <div className="flex flex-col items-center justify-center py-20">
         <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full">
           <FaExclamationTriangle className="text-amber-500 text-4xl sm:text-5xl mb-4 mx-auto" />
           <h2 className="text-xl sm:text-2xl font-bold text-center mb-4 text-gray-800">
@@ -818,8 +818,8 @@ const CheckoutPage = () => {
   // Success Step - Mobile-first optimized
   if (currentStep === 'complete' || (paymentStatus?.status === 'succeeded' && isPaymentSuccessful)) {
     return (
-      <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
-        <div className="max-w-lg lg:max-w-2xl mx-auto px-3 sm:px-4 space-y-3 sm:space-y-4">
+      <div>
+        <div className="max-w-lg lg:max-w-2xl mx-auto space-y-3 sm:space-y-4">
           {/* Success Modal */}
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8 text-center">
             <FaCheckCircle className="mx-auto text-4xl sm:text-5xl lg:text-6xl text-green-600 mb-3 sm:mb-4 lg:mb-6" />
@@ -910,8 +910,8 @@ const CheckoutPage = () => {
 
   return (
     <RequireLogin>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-2 py-2 sm:px-4 sm:py-4 lg:px-6 lg:py-6">
+      <div>
+        <div>
           {/* Back Button - Smart behavior based on current step */}
           <div className="mb-2 sm:mb-4">
             <button

@@ -1,4 +1,5 @@
 import LoginClient from './LoginClient';
+import BaseContentShell from '@/components/layout/BaseContentShell';
 
 export const metadata = {
   title: 'Login',
@@ -9,5 +10,11 @@ export const metadata = {
 };
 
 export default function LoginPage() {
-  return <LoginClient />;
+  return (
+    <div className="container mx-auto">
+      <BaseContentShell>
+        <LoginClient />
+      </BaseContentShell>
+    </div>
+  );
 }

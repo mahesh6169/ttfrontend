@@ -1,4 +1,5 @@
 import RegisterClient from './RegisterClient';
+import BaseContentShell from '@/components/layout/BaseContentShell';
 
 export const metadata = {
   title: 'Register',
@@ -9,5 +10,11 @@ export const metadata = {
 };
 
 export default function RegisterPage() {
-  return <RegisterClient />;
+  return (
+    <div className="container mx-auto">
+      <BaseContentShell>
+        <RegisterClient />
+      </BaseContentShell>
+    </div>
+  );
 }

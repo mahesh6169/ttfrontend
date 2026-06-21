@@ -360,8 +360,8 @@ const EditThreadPage = () => {
 
   if (isLoading) {
     return (
-      <div className="px-2 py-6 sm:px-6 sm:py-8">
-        <div className="max-w-3xl mx-auto text-center py-12">
+      <div>
+        <div className="w-full text-center py-12">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-700 mx-auto"></div>
           <p className="mt-4 text-slate-500">Loading thread...</p>
         </div>
@@ -370,7 +370,7 @@ const EditThreadPage = () => {
   }
 
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       <RequireVerifiedAccount>
         {showSuccessView && updatedThread ? (
           <SuccessView
@@ -378,7 +378,7 @@ const EditThreadPage = () => {
             mode="edit"
           />
         ) : (
-          <div className="max-w-3xl mx-auto">
+          <div className="w-full">
             {/* Page Header */}
             <div className="mb-8 text-center">
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Edit Topic</h1>
