@@ -152,7 +152,7 @@ export default function CampaignViewPage() {
   const buttonConfig = getButtonConfig();
 
   return (
-    <div className="min-h-screen py-2 sm:py-4">
+    <div className="flex flex-col gap-2">
       <div className="max-w-2xl mx-auto">
         {/* Back Button */}
         <div className="mb-3">

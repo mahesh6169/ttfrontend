@@ -118,7 +118,7 @@ export default function MyCodesPage() {
 
   return (
     <div>
-      <div className="px-3 sm:px-4">
+      <div>
         <BackButton />
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">My Discount Codes</h1>

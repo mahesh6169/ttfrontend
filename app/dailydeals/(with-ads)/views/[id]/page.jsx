@@ -106,7 +106,7 @@ const DealDetailPage = () => {
   const isCuratedDeal = deal.isCuratedDeal || false;
 
   return (
-    <div id="viewsmain" className="flex flex-col gap-2 min-h-screen pb-8">
+    <div id="viewsmain" className="flex flex-col gap-2">
       {/* Navigation Bar */}
       <div className="flex justify-between items-center">
         <button
