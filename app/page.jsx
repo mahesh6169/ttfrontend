@@ -3,8 +3,8 @@ import HeroSection from '@/components/home/HeroSection';
 import ListingsSection from '@/components/home/ListingsSection';
 import EventsSection from '@/components/home/EventsSection';
 import ThreadsSection from '@/components/home/ThreadsSection';
-import Footer from '@/components/Footer';
-import AdsContentShell from '@/components/layout/AdsContentShell';
+import TopAd from '@/components/ads/TopAd';
+import AdsFrame from '@/components/layout/AdsFrame';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
@@ -60,28 +60,22 @@ export default async function HomePage() {
   const { listings, events, threads } = await fetchHomeData();
 
   return (
-    <main className="bg-slate-50">
-      <div className="container mx-auto">
-        <AdsContentShell>
-          <Suspense>
-            <HeroSection />
-          </Suspense>
+    <AdsFrame topAd={<TopAd />}>
+      <Suspense>
+        <HeroSection />
+      </Suspense>
 
-          <div id="content" className="space-y-6">
-            <div className="bg-white border border-slate-200 rounded-2xl">
-              <ListingsSection listings={listings} />
-            </div>
-            <div className="bg-white border border-slate-200 rounded-2xl">
-              <EventsSection events={events} />
-            </div>
-            <div className="bg-white border border-slate-200 rounded-2xl">
-              <ThreadsSection threads={threads} />
-            </div>
-          </div>
-        </AdsContentShell>
-
-        <Footer />
+      <div id="content" className="space-y-6">
+        <div className="bg-white border border-slate-200 rounded-2xl">
+          <ListingsSection listings={listings} />
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl">
+          <EventsSection events={events} />
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl">
+          <ThreadsSection threads={threads} />
+        </div>
       </div>
-    </main>
+    </AdsFrame>
   );
 }
