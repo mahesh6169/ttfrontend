@@ -104,8 +104,8 @@ export default function MyCodesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen py-8">
-        <div className="px-4">
+      <div>
+        <div>
           <BackButton />
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
@@ -117,8 +117,8 @@ export default function MyCodesPage() {
   }
 
   return (
-    <div className="min-h-screen py-4 sm:py-8">
-      <div className="px-3 sm:px-4">
+    <div>
+      <div>
         <BackButton />
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">My Discount Codes</h1>

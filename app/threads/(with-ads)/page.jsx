@@ -49,22 +49,21 @@ export const metadata = {
 export default function ThreadsPage() {
   return (
     <>
-      <header className="px-3 sm:px-4 pt-3 sm:pt-5 pb-2 sm:pb-3">
-        <div className="border-y border-teal-100 py-3 sm:py-4 md:w-fit md:mx-auto md:px-8">
-          <h1 className="text-center text-base sm:text-xl md:text-2xl font-bold text-teal-900 leading-tight">
-            Indian Community Forum: Ask, Share &amp; Discuss
-          </h1>
-        </div>
-        <div className="hidden md:flex justify-center mt-4">
-          <Link
-            href="/threads/new"
-            className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2.5 px-5 rounded-lg shadow-sm transition-colors"
-          >
-            + Ask Question
-          </Link>
-        </div>
-      </header>
-      <ThreadsClient />
+      <ThreadsClient
+        heading={
+          <div className="flex items-center justify-center gap-x-3 sm:gap-x-4 border-y border-teal-100 py-3 sm:py-4 md:w-fit md:mx-auto md:px-8">
+            <h1 className="text-center text-sm sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">
+              Indian Community Forum: Ask, Share &amp; Discuss
+            </h1>
+            <Link
+              href="/threads/new"
+              className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2.5 px-5 rounded-lg shadow-sm transition-colors whitespace-nowrap flex-shrink-0"
+            >
+              + Ask Question
+            </Link>
+          </div>
+        }
+      />
       <SeoFooterBlock />
     </>
   );

@@ -57,8 +57,8 @@ export default function EditBusinessPage() {
 
   if (isLoading) {
     return (
-      <div className="px-2 py-6 sm:px-6 sm:py-8">
-        <div className="max-w-3xl mx-auto">
+      <div>
+        <div className="w-full">
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center">
             <p className="text-slate-500">Loading business...</p>
           </div>
@@ -69,8 +69,8 @@ export default function EditBusinessPage() {
 
   if (!business) {
     return (
-      <div className="px-2 py-6 sm:px-6 sm:py-8">
-        <div className="max-w-3xl mx-auto">
+      <div>
+        <div className="w-full">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <p className="text-red-600">Business not found</p>
           </div>
@@ -80,9 +80,9 @@ export default function EditBusinessPage() {
   }
 
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       <RequireVerifiedAccount>
-        <div className="max-w-3xl mx-auto">
+        <div className="w-full">
           {/* Page Header */}
           <div className="mb-8 text-center">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Edit Business</h1>

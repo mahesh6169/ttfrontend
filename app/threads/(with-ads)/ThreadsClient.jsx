@@ -17,7 +17,7 @@ import { needsCommunityField } from '@/components/threads/categories';
 
 const libraries = ['places'];
 
-const ThreadsPage = () => {
+const ThreadsPage = ({ heading }) => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL;
 
   // URL-based filters (nuqs)
@@ -220,8 +220,6 @@ const ThreadsPage = () => {
     return count;
   };
 
-  const hasFiltersToShow = cat || location || q || getActiveFilterCount() > 0;
-
   // Toggle community in temp filters
   const handleTempCommunityToggle = (communityValue) => {
     const currentCommunities = tempFilters.communities || [];
@@ -344,21 +342,12 @@ const ThreadsPage = () => {
 
       {/* Main Content */}
       <div className="w-full">
-        {/* Hero Section */}
-        <section className="bg-white mx-3 md:mx-4 rounded-xl px-3 py-4 md:px-6 md:py-5 mt-2 md:mt-2 mb-4">
-          <div className="md:max-w-4xl md:mx-auto">
+        {/* Browse hero - one section, single vertical gap (8/12), no card. See layout.md section 1. */}
+        <section className="flex flex-col gap-2 sm:gap-3">
+          {heading}
+          <div className="w-full">
             {/* Mobile Layout - Stacked */}
-            <div className="flex flex-col gap-2 md:hidden">
-              {/* Ask Question Button - Right aligned */}
-              <div className="flex justify-end">
-                <Link
-                  href="/threads/new"
-                  className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors"
-                >
-                  + Ask Question
-                </Link>
-              </div>
-
+            <div className="flex flex-col gap-2 sm:gap-3 max-w-[90%] mx-auto md:hidden">
               {/* Search Input - Applies on Enter */}
               <form onSubmit={handleSearchSubmit} className="relative">
                 <input
@@ -503,42 +492,35 @@ const ThreadsPage = () => {
                   <span className="text-xs text-slate-600 min-w-[40px] text-right">{heroRadius}km</span>
                 </div>
               )}
-
-              {/* Clear Button - Mobile (no Go button) */}
-              {hasFiltersToShow && (
-                <div className="flex gap-2 mt-1">
-                  <button
-                    onClick={handleClearAll}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold py-2 px-4 rounded-full transition-colors"
-                  >
-                    Clear
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Desktop Layout - Inline */}
             <div className="hidden md:block">
-              {/* Search Input - Applies on Enter or blur */}
-              <form onSubmit={handleSearchSubmit} className="relative mb-3">
-                <input
-                  type="text"
-                  placeholder="Search topics... e.g. Visa, Jobs, Housing"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  onBlur={handleSearchSubmit}
-                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
-                />
-                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </form>
+              {/* Category + location + radius share one centered column so they line up */}
+              <div className="max-w-[920px] mx-auto flex flex-col gap-2 sm:gap-3">
+                {/* Filters Row */}
+                <div className="flex items-center gap-3 w-full">
+                {/* Search Input - Applies on Enter or blur */}
+                <div className="flex-1 max-w-[360px]">
+                <form onSubmit={handleSearchSubmit} className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search topics... e.g. Visa, Jobs, Housing"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    onBlur={handleSearchSubmit}
+                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+                  />
+                  <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </form>
+                </div>
 
-              {/* Filters Row */}
-              <div className="flex items-center justify-center gap-3">
                 {/* Category Dropdown - Desktop - Applies immediately */}
+                <div className="flex-1 max-w-[260px]">
                 <Listbox value={cat || ''} onChange={handleCategoryChange}>
-                  <div className="relative flex-1 max-w-[220px]">
+                  <div className="relative">
                     <ListboxButton className="relative w-full pl-9 pr-9 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all cursor-pointer text-left">
                       <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
@@ -609,21 +591,23 @@ const ThreadsPage = () => {
                     </Transition>
                   </div>
                 </Listbox>
+                </div>
 
                 {/* Location Input - Desktop */}
+                <div className="flex-1 max-w-[280px]">
                 <LoadScriptNext
                   googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                   libraries={libraries}
                   onLoad={() => setIsScriptLoaded(true)}
                   loadingElement={
-                    <div className="relative flex-1 max-w-[220px]">
+                    <div className="relative w-full">
                       <div className="w-full pl-9 pr-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg animate-pulse">
                         <div className="h-5 bg-slate-300 rounded w-32"></div>
                       </div>
                     </div>
                   }
                 >
-                  <div className="relative flex-1 max-w-[220px]">
+                  <div className="relative w-full">
                     <Autocomplete
                       onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
                       onPlaceChanged={handleHeroPlaceChanged}
@@ -646,28 +630,20 @@ const ThreadsPage = () => {
                     </svg>
                   </div>
                 </LoadScriptNext>
+                </div>
 
-                {/* Clear Button - Desktop (no Go button) */}
-                {hasFiltersToShow && (
-                  <button
-                    onClick={handleClearAll}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold py-2.5 px-4 rounded-full transition-colors"
-                  >
-                    Clear
-                  </button>
-                )}
               </div>
 
               {/* Radius Slider - Desktop (shown when location selected) */}
               {hasLocation && (
-                <div className="flex items-center gap-2 mt-3 ml-[232px]">
+                <div className="flex items-center gap-2">
                   <input
                     type="range"
                     min="1"
                     max="200"
                     value={heroRadius}
                     onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-                    className="w-[200px] h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
+                    className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
                       [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
                       [&::-moz-range-thumb]:w-1.5 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600
@@ -676,12 +652,12 @@ const ThreadsPage = () => {
                   <span className="text-xs text-slate-600 min-w-[40px] text-right">{heroRadius}km</span>
                 </div>
               )}
+              </div>
             </div>
           </div>
-        </section>
 
         {/* Page Controls - Sort and Filter */}
-        <div ref={resultsRef} className="bg-white px-3 py-2 sm:px-4 sm:py-3">
+        <div ref={resultsRef}>
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
               onClick={handleOpenFilters}
@@ -690,7 +666,7 @@ const ThreadsPage = () => {
               <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
-              <span className="font-medium">Filter</span>
+              <span className="text-slate-900">Filter</span>
             </button>
 
             <div className="relative">
@@ -701,7 +677,7 @@ const ThreadsPage = () => {
                 <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                 </svg>
-                <span className="font-medium">Sort: {getCurrentSortLabel()}</span>
+                <span className="text-slate-900">Sort: {getCurrentSortLabel()}</span>
               </button>
 
               {/* Sort dropdown menu */}
@@ -732,22 +708,33 @@ const ThreadsPage = () => {
 
         {/* Active Filters Display */}
         {getActiveFilterCount() > 0 && (
-          <div className="bg-slate-50">
-            <div className="relative py-2 sm:py-3">
-              {/* Edge fades for mobile */}
-              <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none z-10 md:hidden"></div>
-              <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none z-10 md:hidden"></div>
+          <div>
+            <div>
+              <div className="flex items-center gap-2">
+                {/* Clear - fixed at the left, never scrolls; chips scroll to its right */}
+                <button
+                  onClick={handleClearAll}
+                  className="flex-shrink-0 border border-slate-300 text-slate-600 hover:bg-slate-100 text-[11px] md:text-sm font-medium py-1 px-3 md:py-1.5 md:px-4 rounded-full transition-colors"
+                >
+                  Clear
+                </button>
+                {/* Scrollable chips track - shrinks (min-w-0) so chips scroll instead of pushing Clear off */}
+                <div className="relative flex-1 min-w-0">
+                  {/* Left edge fade - hints chips scrolled off the left */}
+                  <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-white to-transparent pointer-events-none z-10"></div>
+                  {/* Right edge fade - hints more chips to scroll right */}
+                  <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white to-transparent pointer-events-none z-10"></div>
 
-              <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 sm:px-4">
-                <div className="flex gap-2 items-center">
+                  <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <div className="flex gap-2">
                   {cat && (
                     <span
-                      className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
+                      className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
                     >
                       {getCategoryDisplayName(cat)}
                       <button
                         onClick={() => setCat(null)}
-                        className="hover:text-teal-900 font-bold ml-1"
+                        className="hover:text-slate-900 font-bold ml-1"
                       >
                         ×
                       </button>
@@ -755,11 +742,11 @@ const ThreadsPage = () => {
                   )}
 
                   {state && (
-                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
+                    <span className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
                       State: {state}
                       <button
                         onClick={() => setState(null)}
-                        className="hover:text-teal-900 font-bold ml-1"
+                        className="hover:text-slate-900 font-bold ml-1"
                       >
                         ×
                       </button>
@@ -767,14 +754,14 @@ const ThreadsPage = () => {
                   )}
 
                   {location && (
-                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
+                    <span className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
                       {location.radius}km from {location.name.split(',')[0]}
                       <button
                         onClick={handleClearLocation}
-                        className="hover:text-teal-900 font-bold ml-1"
+                        className="hover:text-slate-900 font-bold ml-1"
                       >
                         ×
                       </button>
@@ -782,11 +769,11 @@ const ThreadsPage = () => {
                   )}
 
                   {q && (
-                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm flex-shrink-0">
+                    <span className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm flex-shrink-0">
                       <span className="max-w-[100px] md:max-w-[150px] truncate">Search: "{q}"</span>
                       <button
                         onClick={handleClearSearch}
-                        className="hover:text-teal-900 font-bold ml-1 flex-shrink-0"
+                        className="hover:text-slate-900 font-bold ml-1 flex-shrink-0"
                       >
                         ×
                       </button>
@@ -799,7 +786,7 @@ const ThreadsPage = () => {
                     return (
                       <span
                         key={community}
-                        className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
+                        className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
                       >
                         {communityLabel}
                         <button
@@ -807,18 +794,21 @@ const ThreadsPage = () => {
                             const newCommunities = communities.filter(c => c !== community);
                             setCommunities(newCommunities);
                           }}
-                          className="hover:text-teal-900 font-bold ml-1"
+                          className="hover:text-slate-900 font-bold ml-1"
                         >
                           ×
                         </button>
                       </span>
                     );
                   })}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
+        </section>
 
         {/* Thread Listing with spacing from filters */}
         {status === 'loading' ? (
@@ -830,7 +820,7 @@ const ThreadsPage = () => {
             <p className="text-slate-500 text-xs sm:text-sm">Please try again later</p>
           </div>
         ) : threads.length > 0 ? (
-          <div className="space-y-3 px-3 sm:px-4 mt-4 min-h-[400px]">
+          <div className="space-y-3 mt-4 min-h-[400px]">
             {threads.map((thread, index) => (
               <React.Fragment key={thread._id}>
                 <Link

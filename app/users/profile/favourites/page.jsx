@@ -6,7 +6,7 @@ import EventFavourites from '@/components/users/EventFavourites';
 
 const FavouritesPage = () => {
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       {/* Back Button */}
       <div className="mb-4">
         <Link

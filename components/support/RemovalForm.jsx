@@ -113,7 +113,7 @@ const RemovalForm = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-6">
+    <div className="max-w-xl mx-auto p-6 bg-white rounded shadow">
       <h2 className="text-xl font-bold mb-2">Removal Request</h2>
       <p className="text-slate-600 mb-4">
         <strong>{typeLabel}:</strong> {title}

@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import StepManager from '@/components/events/addevents/StepManager';
-import ContentShell from '@/components/events/ContentShell';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 
@@ -162,16 +161,14 @@ const EditEventPage = ({ params: paramsPromise }) => {
 
   // Render the StepManager for edit mode
   return (
-    <ContentShell>
-      <StepManager
-        mode="edit"
-        eventId={params.id}
-        onComplete={handleEventUpdated}
-        allowCancel={true}
-        customTitle="Edit Event"
-        customDescription="Update your event details below"
-      />
-    </ContentShell>
+    <StepManager
+      mode="edit"
+      eventId={params.id}
+      onComplete={handleEventUpdated}
+      allowCancel={true}
+      customTitle="Edit Event"
+      customDescription="Update your event details below"
+    />
   );
 };
 

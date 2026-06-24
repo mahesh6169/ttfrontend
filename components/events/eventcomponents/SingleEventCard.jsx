@@ -390,13 +390,13 @@ const SingleEventCard = ({ event, chatProps }) => {
           <>
             <button
               onClick={handlePrevImage}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition-colors"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-2 rounded-full shadow hover:bg-white transition-colors"
             >
               <FaChevronLeft />
             </button>
             <button
               onClick={handleNextImage}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-2 rounded-full shadow hover:bg-white transition-colors"
             >
               <FaChevronRight />
             </button>
@@ -451,7 +451,7 @@ const SingleEventCard = ({ event, chatProps }) => {
 
           <button
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-4 right-4 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition"
+            className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-slate-800 p-2 rounded-full shadow hover:bg-white transition"
           >
             <FaTimes size={24} />
           </button>
@@ -460,13 +460,13 @@ const SingleEventCard = ({ event, chatProps }) => {
             <>
               <button
                 onClick={handlePrevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-3 rounded-full shadow hover:bg-amber-400 transition"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-3 rounded-full shadow hover:bg-white transition"
               >
                 <FaChevronLeft />
               </button>
               <button
                 onClick={handleNextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-3 rounded-full shadow hover:bg-amber-400 transition"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-3 rounded-full shadow hover:bg-white transition"
               >
                 <FaChevronRight />
               </button>
@@ -494,7 +494,7 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Title Section */}
       {event.title && (
         <div className="my-2 px-2">
-          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-forest-900 break-words">{event.title}</h1>
+          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-slate-800 break-words">{event.title}</h1>
           {event.eventCode && (
             <p className="text-center text-sm sm:text-base text-slate-700 mt-1">
               (event code: {event.eventCode})
@@ -504,32 +504,32 @@ const SingleEventCard = ({ event, chatProps }) => {
       )}
 
       {/* Main Details Section */}
-      <div className="my-4 mx-2 p-3">
-        <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">Event Details</h3>
+      <div className="my-4 p-3">
+        <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Event Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
           {/* Date */}
           <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
-            <FaCalendarAlt className="text-forest-900 shrink-0" size={13} title="Date" aria-label="Date" />
+            <FaCalendarAlt className="text-slate-500 shrink-0" size={13} title="Date" aria-label="Date" />
             <span>{formattedDate}</span>
           </div>
 
           {/* Time */}
           <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
-            <FaClock className="text-forest-900 shrink-0" size={13} title="Time" aria-label="Time" />
+            <FaClock className="text-slate-500 shrink-0" size={13} title="Time" aria-label="Time" />
             <span>{formattedTime} ({dateTimeZone})</span>
           </div>
 
           {/* Venue */}
           <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
-            <GiTheaterCurtains className="text-forest-900 shrink-0" size={15} title="Venue" aria-label="Venue" />
+            <GiTheaterCurtains className="text-slate-500 shrink-0" size={15} title="Venue" aria-label="Venue" />
             <span>{event.venue}</span>
           </div>
 
           {/* Address - Full width if address exists */}
           {event.address && (
             <div className="flex items-center gap-2 text-sm sm:text-base sm:col-span-2 text-slate-700 min-w-0">
-              <FaMapMarkedAlt className="text-forest-900 shrink-0" size={13} title="Address" aria-label="Address" />
+              <FaMapMarkedAlt className="text-slate-500 shrink-0" size={13} title="Address" aria-label="Address" />
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address.formattedAddress)}`}
                 target="_blank"
@@ -546,16 +546,16 @@ const SingleEventCard = ({ event, chatProps }) => {
           
       {/* Event Organizer Section */}
       {event.organizer && (
-        <div className="my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">Event Organizer</h3>
+        <div className="my-4 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Event Organizer</h3>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
             <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
-              <FaUser className="text-forest-900 shrink-0" size={13} title="Name" aria-label="Name" />
+              <FaUser className="text-slate-500 shrink-0" size={13} title="Name" aria-label="Name" />
               <span className="truncate" title={event.organizer.name}>{event.organizer.name}</span>
             </div>
             {event.organizer.contact && (
               <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
-                <FaPhone className="text-forest-900 shrink-0" size={13} title="Phone" aria-label="Phone" />
+                <FaPhone className="text-slate-500 shrink-0" size={13} title="Phone" aria-label="Phone" />
                 <a href={`tel:${event.organizer.contact}`} className="hover:text-slate-900 underline truncate sm:whitespace-normal">
                   {event.organizer.contact}
                 </a>
@@ -563,7 +563,7 @@ const SingleEventCard = ({ event, chatProps }) => {
             )}
             {event.organizer.email && (
               <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
-                <FaEnvelope className="text-forest-900 shrink-0" size={13} title="Email" aria-label="Email" />
+                <FaEnvelope className="text-slate-500 shrink-0" size={13} title="Email" aria-label="Email" />
                 <a
                   href={`mailto:${event.organizer.email}`}
                   className="hover:text-slate-900 underline break-all"
@@ -574,7 +574,7 @@ const SingleEventCard = ({ event, chatProps }) => {
             )}
             {event.organizer.website && (
               <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
-                <FaGlobe className="text-forest-900 shrink-0" size={13} title="Website" aria-label="Website" />
+                <FaGlobe className="text-slate-500 shrink-0" size={13} title="Website" aria-label="Website" />
                 <a
                   href={event.organizer.website}
                   target="_blank"
@@ -588,7 +588,7 @@ const SingleEventCard = ({ event, chatProps }) => {
             )}
             {event.organizer.socialMedia && event.organizer.socialMedia.length > 0 && (
               <div className="col-span-2 flex items-center gap-2 text-sm sm:text-base text-slate-700 flex-wrap">
-                <FaThumbsUp className="text-forest-900 shrink-0" size={13} title="Follow us" aria-label="Follow us" />
+                <FaThumbsUp className="text-slate-500 shrink-0" size={13} title="Follow us" aria-label="Follow us" />
                 {event.organizer.socialMedia.map((social, index) => (
                   <React.Fragment key={index}>
                     <a
@@ -618,25 +618,25 @@ const SingleEventCard = ({ event, chatProps }) => {
           <div key={index} className={`p-2 space-y-1 ${extraClasses}`}>
             {coordinator.name && (
               <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
-                <FaUser className="text-forest-900 shrink-0" size={13} title="Name" aria-label="Name" />
+                <FaUser className="text-slate-500 shrink-0" size={13} title="Name" aria-label="Name" />
                 <span className="truncate" title={coordinator.name}>{coordinator.name}</span>
               </div>
             )}
             {coordinator.phone && (
               <div className="flex items-center gap-2 text-sm text-slate-600 min-w-0">
-                <FaPhone className="text-forest-900 shrink-0" size={12} title="Phone" aria-label="Phone" />
+                <FaPhone className="text-slate-500 shrink-0" size={12} title="Phone" aria-label="Phone" />
                 <a href={`tel:${coordinator.phone}`} className="hover:text-slate-900 underline truncate">{coordinator.phone}</a>
               </div>
             )}
             {coordinator.role && (
               <div className="flex items-center gap-2 text-sm text-slate-600 min-w-0">
-                <FaUserTie className="text-forest-900 shrink-0" size={12} title="Role" aria-label="Role" />
+                <FaUserTie className="text-slate-500 shrink-0" size={12} title="Role" aria-label="Role" />
                 <span>{coordinator.role}</span>
               </div>
             )}
             {coordinator.email && (
               <div className="flex items-center gap-2 text-sm text-slate-600 min-w-0">
-                <FaEnvelope className="text-forest-900 shrink-0" size={12} title="Email" aria-label="Email" />
+                <FaEnvelope className="text-slate-500 shrink-0" size={12} title="Email" aria-label="Email" />
                 <a href={`mailto:${coordinator.email}`} className="hover:text-slate-900 underline break-all">
                   {coordinator.email}
                 </a>
@@ -646,8 +646,8 @@ const SingleEventCard = ({ event, chatProps }) => {
         );
 
         return (
-          <div className="my-4 mx-2 p-3">
-            <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">Event Coordinators</h3>
+          <div className="my-4 p-3">
+            <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Event Coordinators</h3>
 
             {/* Mobile: vertical slider when >2 coords, otherwise stacked */}
             <div className="md:hidden">
@@ -727,8 +727,8 @@ const SingleEventCard = ({ event, chatProps }) => {
 
       {/* Description Section */}
       {event.description && (
-        <div className="my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">About This Event</h3>
+        <div className="my-4 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">About This Event</h3>
           <div className="relative">
             <div
               ref={descriptionRef}
@@ -756,8 +756,8 @@ const SingleEventCard = ({ event, chatProps }) => {
 
       {/* Available Tickets Section (for paid events) */}
       {event.isPaid && event.ticketTypes?.length > 0 && (
-        <div className="my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">Available Tickets</h3>
+        <div className="my-4 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Available Tickets</h3>
           <div className="space-y-3">
             {event.ticketTypes.map((ticket, index) => (
               <div key={index} className="border border-slate-200 rounded p-3">
@@ -795,8 +795,8 @@ const SingleEventCard = ({ event, chatProps }) => {
 
       {/* Refund Policy Section (for paid events) */}
       {event.isPaid && event.refundPolicy && (
-        <div className="my-4 mx-2 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-forest-900 pb-2 border-b border-slate-200 mb-3">Refund Policy</h3>
+        <div className="my-4 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Refund Policy</h3>
           <div className="text-sm text-slate-700 space-y-2">
             {/* Processing Fee Policy */}
             <p>
@@ -817,7 +817,7 @@ const SingleEventCard = ({ event, chatProps }) => {
 
       {/* Booking Card — capacity + limit + CTA bundled together */}
       {!event.isAdvertiseOnly && (
-        <div className="my-4 mx-2 p-4 border border-slate-200 rounded-lg bg-white shadow-sm">
+        <div className="my-4 p-4 border border-slate-200 rounded-lg bg-white shadow-sm">
           <EventCapacityDisplay
             eventId={event._id}
             isPaid={event.isPaid}

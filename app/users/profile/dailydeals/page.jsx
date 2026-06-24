@@ -156,7 +156,7 @@ export default function ManageDailyDealsPage() {
   };
 
   return (
-    <div className="px-3 sm:px-4 py-6 sm:py-8">
+    <div>
         {/* Page Header */}
         <div className="mb-6">
           <button

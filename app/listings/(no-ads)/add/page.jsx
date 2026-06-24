@@ -112,9 +112,9 @@ const AddAdvertPage = () => {
   }, [success, createStatus, advert]);
 
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       <RequireVerifiedAccount>
-      <div className="max-w-3xl mx-auto">
+      <div className="w-full">
 
       {/* Page Header - only show when not in success state */}
       {!showSuccessModal && (

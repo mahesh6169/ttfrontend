@@ -1,6 +1,7 @@
 'use client';
 
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
+import BaseContentShell from '@/components/layout/BaseContentShell';
 
 /**
  * Profile layout - wraps all profile pages with authentication.
@@ -10,7 +11,7 @@ const ProfileLayout = ({ children }) => {
   return (
     <RequireVerifiedAccount>
       <div className="min-h-screen bg-white container mx-auto">
-        {children}
+        <BaseContentShell>{children}</BaseContentShell>
       </div>
     </RequireVerifiedAccount>
   );

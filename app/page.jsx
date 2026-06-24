@@ -1,9 +1,11 @@
 import { Suspense } from 'react';
+import { HiBuildingStorefront, HiCalendarDays } from 'react-icons/hi2';
 import HeroSection from '@/components/home/HeroSection';
-import ListingsSection from '@/components/home/ListingsSection';
-import EventsSection from '@/components/home/EventsSection';
-import ThreadsSection from '@/components/home/ThreadsSection';
-import Footer from '@/components/Footer';
+import VerticalRail from '@/components/home/VerticalRail';
+import ForumList from '@/components/home/ForumList';
+import ShareStrip from '@/components/home/ShareStrip';
+import TopAd from '@/components/ads/TopAd';
+import AdsFrame from '@/components/layout/AdsFrame';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
@@ -59,24 +61,53 @@ export default async function HomePage() {
   const { listings, events, threads } = await fetchHomeData();
 
   return (
-    <main className="bg-slate-50">
-      <Suspense>
-        <HeroSection />
-      </Suspense>
+    <AdsFrame topAd={<TopAd />}>
+      <div id="content" className="space-y-6">
+        <Suspense>
+          <HeroSection />
+        </Suspense>
 
-      <div id="content" className="w-full md:container md:mx-auto space-y-6 py-6">
-        <div className="bg-white border border-slate-200 rounded-2xl">
-          <ListingsSection listings={listings} />
+        <div className="bg-white border border-slate-200 rounded-2xl w-fit mx-auto">
+          <ShareStrip />
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl">
-          <EventsSection events={events} />
+          <VerticalRail
+            title="Current Listings"
+            viewAllHref="/listings"
+            items={listings}
+            type="listing"
+            cta={{
+              label: 'Post a Listing',
+              href: '/listings/add',
+              icon: HiBuildingStorefront,
+              image:
+                'https://res.cloudinary.com/dtvrbdvkx/image/upload/f_auto,q_auto,w_800/v1782263880/homepage01_syrp0u.png',
+            }}
+          />
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl">
-          <ThreadsSection threads={threads} />
+          <VerticalRail
+            title="Upcoming Events"
+            viewAllHref="/events"
+            items={events}
+            type="event"
+            cta={{
+              label: 'Create Event',
+              href: '/events/add',
+              icon: HiCalendarDays,
+              image:
+                'https://res.cloudinary.com/dtvrbdvkx/image/upload/f_auto,q_auto,w_800/v1782265264/events-home_senrmr.jpg',
+            }}
+          />
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl">
+          <ForumList
+            threads={threads}
+            viewAllHref="/threads"
+            cta={{ label: 'Ask a question', href: '/threads/new' }}
+          />
         </div>
       </div>
-
-      <Footer />
-    </main>
+    </AdsFrame>
   );
 }

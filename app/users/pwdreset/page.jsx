@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import ResetPasswordContent from '@/components/users/Pwdreset';
+import BaseContentShell from '@/components/layout/BaseContentShell';
 
 
 
@@ -14,7 +15,13 @@ const ResetPasswordPage = () => {
 
   if (!mounted) return null;
 
-  return <ResetPasswordContent />;
+  return (
+    <div className="container mx-auto">
+      <BaseContentShell>
+        <ResetPasswordContent />
+      </BaseContentShell>
+    </div>
+  );
 };
 
 export default ResetPasswordPage;

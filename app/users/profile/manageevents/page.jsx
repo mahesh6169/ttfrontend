@@ -116,7 +116,7 @@ const ManageEventsPage = () => {
 
   if (loading) {
     return (
-      <div className="px-2 py-6 sm:px-6 sm:py-8">
+      <div>
         <PageHeader />
         <div className="flex justify-center items-center h-64">
           <LoadingSpinner />
@@ -127,7 +127,7 @@ const ManageEventsPage = () => {
 
   if (error) {
     return (
-      <div className="px-2 py-6 sm:px-6 sm:py-8">
+      <div>
         <PageHeader />
         <div className="text-center py-12">
           <p className="text-red-600 font-semibold">Error loading events</p>
@@ -138,7 +138,7 @@ const ManageEventsPage = () => {
   }
 
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       <PageHeader />
 
       {myEvents.length === 0 ? (

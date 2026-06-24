@@ -111,7 +111,7 @@ const ManageThreads = () => {
 
   if (status === 'loading') {
     return (
-      <div className="px-2 py-6 sm:px-6 sm:py-8">
+      <div>
         <PageHeader />
         <div className="flex justify-center items-center h-64">
           <LoadingSpinner />
@@ -122,7 +122,7 @@ const ManageThreads = () => {
 
   if (error) {
     return (
-      <div className="px-2 py-6 sm:px-6 sm:py-8">
+      <div>
         <PageHeader />
         <div className="text-center py-12">
           <p className="text-red-600 font-semibold">Error loading topics</p>
@@ -133,7 +133,7 @@ const ManageThreads = () => {
   }
 
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       <PageHeader />
 
       {threads.length === 0 ? (

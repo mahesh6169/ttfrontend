@@ -244,7 +244,7 @@ const MyInvoicesPage = () => {
 
   if (loading) {
     return (
-      <div className="p-4">
+      <div>
         <BackButton />
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -256,7 +256,7 @@ const MyInvoicesPage = () => {
 
   if (error) {
     return (
-      <div className="p-4">
+      <div>
         <BackButton />
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-700">Error: {error}</p>
@@ -273,7 +273,7 @@ const MyInvoicesPage = () => {
 
   if (invoices.length === 0) {
     return (
-      <div className="p-4">
+      <div>
         <BackButton />
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">No Invoices Yet</h2>
@@ -287,7 +287,7 @@ const MyInvoicesPage = () => {
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="space-y-6">
       <BackButton />
       {/* Header */}
       <div className="flex items-center justify-between">

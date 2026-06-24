@@ -7,7 +7,6 @@ import { COMMUNITIES } from '@/utils/constants/communities';
 import EventsGrid from '@/components/events/eventcomponents/EventsGrid';
 import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
-import Link from 'next/link';
 import { format, parse } from 'date-fns';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import { getCategoryDisplayName } from '@/constants/categories';
@@ -35,7 +34,7 @@ const generateMonthOptions = () => {
 
 const monthOptions = generateMonthOptions();
 
-const EventsPage = () => {
+const EventsPage = ({ heading }) => {
   // URL-based filters (nuqs)
   const {
     cat,
@@ -77,7 +76,10 @@ const EventsPage = () => {
   const status = isLoading ? 'loading' : isError ? 'failed' : 'success';
 
   // Local state for UI only
-  const [heroAutocomplete, setHeroAutocomplete] = useState(null);
+  // Separate instances per breakpoint (mirrors /listings) so the mobile and
+  // desktop location fields don't clobber a single shared autocomplete.
+  const [heroAutocompleteMobile, setHeroAutocompleteMobile] = useState(null);
+  const [heroAutocompleteDesktop, setHeroAutocompleteDesktop] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [heroLocationInput, setHeroLocationInput] = useState(location?.name || '');
@@ -130,25 +132,27 @@ const EventsPage = () => {
     scrollToResults();
   };
 
-  // Handle location selection from autocomplete
-  const handleHeroPlaceChanged = () => {
-    if (heroAutocomplete) {
-      const place = heroAutocomplete.getPlace();
-      if (place.geometry) {
-        const newLocation = {
-          coordinates: [
-            place.geometry.location.lng(),
-            place.geometry.location.lat()
-          ],
-          radius: heroRadius,
-          name: place.formatted_address || 'Selected Location'
-        };
-        setLocation(newLocation);
-        setHeroLocationInput(place.formatted_address);
-        scrollToResults();
-      }
+  // Commit a selected place to the filters. Each breakpoint passes its own
+  // Autocomplete instance so the two fields never read each other's place.
+  const commitHeroPlace = (autocomplete) => {
+    if (!autocomplete) return;
+    const place = autocomplete.getPlace();
+    if (place?.geometry) {
+      const newLocation = {
+        coordinates: [
+          place.geometry.location.lng(),
+          place.geometry.location.lat()
+        ],
+        radius: heroRadius,
+        name: place.formatted_address || 'Selected Location'
+      };
+      setLocation(newLocation);
+      setHeroLocationInput(place.formatted_address);
+      scrollToResults();
     }
   };
+  const handleHeroPlaceChangedMobile = () => commitHeroPlace(heroAutocompleteMobile);
+  const handleHeroPlaceChangedDesktop = () => commitHeroPlace(heroAutocompleteDesktop);
 
   // Handle radius change
   const handleRadiusChange = (newRadius) => {
@@ -222,8 +226,6 @@ const EventsPage = () => {
     if (eventType) count++;
     return count;
   };
-
-  const hasFiltersToShow = cat || location || getActiveFilterCount() > 0;
 
   const formatMonth = (monthStr) => {
     if (!monthStr) return '';
@@ -403,21 +405,12 @@ const EventsPage = () => {
 
       {/* Main Content */}
       <div className="w-full">
-        {/* Hero Section - Clean White */}
-        <section className="bg-white mx-3 md:mx-4 rounded-xl px-3 py-4 md:px-6 md:py-5 mt-2 md:mt-2 mb-4">
-          <div className="md:max-w-4xl md:mx-auto">
+        {/* Browse hero - one section, single vertical gap (8/12), no card. See layout.md section 1. */}
+        <section className="flex flex-col gap-2 sm:gap-3">
+          {heading}
+          <div className="w-full">
             {/* Mobile Layout - Stacked */}
-            <div className="flex flex-col gap-2 md:hidden">
-              {/* Create Event Button - Right aligned */}
-              <div className="flex justify-end">
-                <Link
-                  href="/events/add"
-                  className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors"
-                >
-                  + Create Event
-                </Link>
-              </div>
-
+            <div className="flex flex-col gap-2 sm:gap-3 max-w-[90%] mx-auto md:hidden">
               {/* Category Dropdown - Applies immediately */}
               <Listbox value={cat || ''} onChange={handleCategoryChange}>
                 <div className="relative">
@@ -507,8 +500,8 @@ const EventsPage = () => {
               >
                 <div className="relative">
                   <Autocomplete
-                    onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
-                    onPlaceChanged={handleHeroPlaceChanged}
+                    onLoad={(autocompleteInstance) => setHeroAutocompleteMobile(autocompleteInstance)}
+                    onPlaceChanged={handleHeroPlaceChangedMobile}
                     options={{
                       componentRestrictions: { country: 'au' },
                       types: ['geocode']
@@ -548,26 +541,18 @@ const EventsPage = () => {
                 </div>
               )}
 
-              {/* Clear Button - Mobile (no Go button) */}
-              {hasFiltersToShow && (
-                <div className="flex gap-2 mt-1">
-                  <button
-                    onClick={handleClearAll}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold py-2 px-4 rounded-full transition-colors"
-                  >
-                    Clear
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Desktop Layout - Inline */}
             <div className="hidden md:block">
-              {/* Filters Row */}
-              <div className="flex items-center justify-center gap-3">
+              {/* Category + location + radius share one centered column so they line up */}
+              <div className="max-w-[920px] mx-auto flex flex-col gap-2 sm:gap-3">
+                {/* Filters Row */}
+                <div className="flex items-center gap-3 w-full">
                 {/* Category Dropdown - Desktop - Applies immediately */}
+                <div className="flex-1 max-w-[400px]">
                 <Listbox value={cat || ''} onChange={handleCategoryChange}>
-                  <div className="relative flex-1 max-w-[220px]">
+                  <div className="relative">
                     <ListboxButton className="relative w-full pl-9 pr-9 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all cursor-pointer text-left">
                       <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
@@ -638,24 +623,26 @@ const EventsPage = () => {
                     </Transition>
                   </div>
                 </Listbox>
+                </div>
 
                 {/* Location Input - Desktop */}
+                <div className="flex-1 max-w-[500px]">
                 <LoadScriptNext
                   googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                   libraries={libraries}
                   onLoad={() => setIsScriptLoaded(true)}
                   loadingElement={
-                    <div className="relative flex-1 max-w-[280px]">
+                    <div className="relative w-full">
                       <div className="w-full pl-9 pr-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg animate-pulse">
                         <div className="h-5 bg-slate-300 rounded w-32"></div>
                       </div>
                     </div>
                   }
                 >
-                  <div className="relative flex-1 max-w-[280px]">
+                  <div className="relative w-full">
                     <Autocomplete
-                      onLoad={(autocompleteInstance) => setHeroAutocomplete(autocompleteInstance)}
-                      onPlaceChanged={handleHeroPlaceChanged}
+                      onLoad={(autocompleteInstance) => setHeroAutocompleteDesktop(autocompleteInstance)}
+                      onPlaceChanged={handleHeroPlaceChangedDesktop}
                       options={{
                         componentRestrictions: { country: 'au' },
                         types: ['geocode']
@@ -675,21 +662,13 @@ const EventsPage = () => {
                     </svg>
                   </div>
                 </LoadScriptNext>
+                </div>
 
-                {/* Clear Button - Desktop (no Go button) */}
-                {hasFiltersToShow && (
-                  <button
-                    onClick={handleClearAll}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold py-2.5 px-4 rounded-full transition-colors"
-                  >
-                    Clear
-                  </button>
-                )}
               </div>
 
               {/* Radius Slider - Desktop (shown when location selected) */}
               {hasLocation && (
-                <div className="flex mt-3 items-center gap-2 max-w-md">
+                <div className="flex items-center gap-2">
                   <input
                     type="range"
                     min="1"
@@ -705,12 +684,11 @@ const EventsPage = () => {
                   <span className="text-xs text-slate-600 min-w-[40px] text-right">{heroRadius}km</span>
                 </div>
               )}
+              </div>
             </div>
           </div>
-        </section>
-
-        {/* Page Controls - Sort and Filter */}
-        <div ref={resultsRef} className="bg-white px-3 py-2 sm:px-4 sm:py-3">
+          {/* Filter + Sort controls (spacing owned by the section's gap) */}
+          <div ref={resultsRef}>
           <div className="flex gap-2 md:gap-3 justify-center">
             <button
               onClick={handleOpenFilters}
@@ -719,7 +697,7 @@ const EventsPage = () => {
               <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
-              <span className="font-medium">Filter</span>
+              <span className="text-slate-900">Filter</span>
             </button>
 
             <div className="relative">
@@ -730,7 +708,7 @@ const EventsPage = () => {
                 <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                 </svg>
-                <span className="font-medium">Sort: {getCurrentSortLabel()}</span>
+                <span className="text-slate-900">Sort: {getCurrentSortLabel()}</span>
               </button>
 
               {/* Sort dropdown menu */}
@@ -761,23 +739,33 @@ const EventsPage = () => {
 
         {/* Active Filters Display */}
         {getActiveFilterCount() > 0 && (
-          <div className="bg-slate-50">
-            <div className="relative py-2 sm:py-3">
-              {/* Left edge fade - mobile only */}
-              <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none z-10 md:hidden"></div>
-              {/* Right edge fade - mobile only */}
-              <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none z-10 md:hidden"></div>
+          <div>
+            <div>
+              <div className="flex items-center gap-2">
+                {/* Clear - fixed at the left, never scrolls; chips scroll to its right */}
+                <button
+                  onClick={handleClearAll}
+                  className="flex-shrink-0 border border-slate-300 text-slate-600 hover:bg-slate-100 text-[11px] md:text-sm font-medium py-1 px-3 md:py-1.5 md:px-4 rounded-full transition-colors"
+                >
+                  Clear
+                </button>
+                {/* Scrollable chips track - shrinks (min-w-0) so chips scroll instead of pushing Clear off */}
+                <div className="relative flex-1 min-w-0">
+                  {/* Left edge fade - hints chips scrolled off the left */}
+                  <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-white to-transparent pointer-events-none z-10"></div>
+                  {/* Right edge fade - hints more chips to scroll right */}
+                  <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white to-transparent pointer-events-none z-10"></div>
 
-              <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 sm:px-4">
-                <div className="flex gap-2">
+                  <div className="overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <div className="flex gap-2">
                   {cat && (
                     <span
-                      className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
+                      className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
                     >
                       {getCategoryDisplayName(cat)}
                       <button
                         onClick={() => setCat(null)}
-                        className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
+                        className="hover:text-slate-900 font-bold p-0.5 -mr-0.5"
                       >
                         ×
                       </button>
@@ -785,11 +773,11 @@ const EventsPage = () => {
                   )}
 
                   {state && (
-                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
+                    <span className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
                       {state}
                       <button
                         onClick={() => setState(null)}
-                        className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
+                        className="hover:text-slate-900 font-bold p-0.5 -mr-0.5"
                       >
                         ×
                       </button>
@@ -797,14 +785,14 @@ const EventsPage = () => {
                   )}
 
                   {location && (
-                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
+                    <span className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
                       <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
                       {location.radius}km {location.name.split(',')[0]}
                       <button
                         onClick={handleClearLocation}
-                        className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
+                        className="hover:text-slate-900 font-bold p-0.5 -mr-0.5"
                       >
                         ×
                       </button>
@@ -812,11 +800,11 @@ const EventsPage = () => {
                   )}
 
                   {month && (
-                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
+                    <span className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
                       {formatMonth(month)}
                       <button
                         onClick={handleClearMonth}
-                        className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
+                        className="hover:text-slate-900 font-bold p-0.5 -mr-0.5"
                       >
                         ×
                       </button>
@@ -824,11 +812,11 @@ const EventsPage = () => {
                   )}
 
                   {eventType && (
-                    <span className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
+                    <span className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0">
                       {eventType === 'free' ? 'RSVP' : 'Paid'}
                       <button
                         onClick={() => setEventType(null)}
-                        className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
+                        className="hover:text-slate-900 font-bold p-0.5 -mr-0.5"
                       >
                         ×
                       </button>
@@ -840,7 +828,7 @@ const EventsPage = () => {
                     return (
                       <span
                         key={community}
-                        className="inline-flex items-center gap-0.5 bg-teal-50 border border-teal-300 text-teal-800 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
+                        className="inline-flex items-center gap-0.5 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[11px] md:text-sm whitespace-nowrap flex-shrink-0"
                       >
                         {communityLabel}
                         <button
@@ -848,21 +836,24 @@ const EventsPage = () => {
                             const newCommunities = communities.filter(c => c !== community);
                             setCommunities(newCommunities);
                           }}
-                          className="hover:text-teal-900 font-bold p-0.5 -mr-0.5"
+                          className="hover:text-slate-900 font-bold p-0.5 -mr-0.5"
                         >
                           ×
                         </button>
                       </span>
                     );
                   })}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
+        </section>
 
-        {/* Event Listing with spacing from filters */}
-        <div className="px-3 sm:px-4 mt-4">
+        {/* Event listing (below the hero cluster) */}
+        <div className="mt-4">
           <EventsGrid events={events} eventStatus={status} />
         </div>
 

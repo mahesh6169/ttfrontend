@@ -19,7 +19,7 @@ export default async function PrivacyPolicyPage() {
   const htmlContent = simpleMarkdownToHtml(markdownContent);
   
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-8">
+    <div className="p-6 bg-white rounded shadow">
       <div 
         className="prose prose-lg max-w-none"
         dangerouslySetInnerHTML={{ __html: htmlContent }}

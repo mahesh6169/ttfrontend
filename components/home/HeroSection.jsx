@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useSelector } from 'react-redux';
 import { useQueryStates, parseAsString } from 'nuqs';
 import {
@@ -14,7 +13,6 @@ import {
   HiTicket,
   HiMapPin,
   HiTag,
-  HiChatBubbleLeftRight,
   HiMegaphone,
   HiGlobeAlt,
   HiQuestionMarkCircle,
@@ -22,15 +20,14 @@ import {
   HiBanknotes,
   HiBriefcase,
   HiBuildingOffice,
+  HiChevronLeft,
+  HiChevronRight,
 } from 'react-icons/hi2';
 import {
   LuCar,
   LuPartyPopper,
   LuUtensilsCrossed,
   LuScissors,
-  LuDrama,
-  LuGift,
-  LuLayoutGrid,
 } from 'react-icons/lu';
 
 // --- Feature Tabs ---
@@ -249,16 +246,15 @@ const FORUM_TILES = [
   },
 ];
 
-const HERO_ROTATIONS = [
-  { text: 'Listings', Icon: LuLayoutGrid },
-  { text: 'Events', Icon: LuDrama },
-  { text: 'Deals', Icon: LuGift },
-];
-
 const heroParsers = {
   tab: parseAsString.withDefault('listings'),
   mode: parseAsString.withDefault('poster'),
 };
+
+// Shared style tokens
+const scrollbarHide = '[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]';
+const chipClass =
+  'flex-shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors cursor-pointer';
 
 const HeroSection = () => {
   const router = useRouter();
@@ -267,22 +263,32 @@ const HeroSection = () => {
   const mode = heroParams.mode;
   const [fadeIn, setFadeIn] = useState(true);
 
-  // Rotating noun in the hero headline ("Discover ___ near you")
-  const [rotationIndex, setRotationIndex] = useState(0);
-  const [rotationVisible, setRotationVisible] = useState(true);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRotationVisible(false);
-      setTimeout(() => {
-        setRotationIndex((i) => (i + 1) % HERO_ROTATIONS.length);
-        setRotationVisible(true);
-      }, 200);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, []);
-
   const { user, tokenValidated } = useSelector((state) => state.user);
   const isLoggedIn = tokenValidated && !!user?._id;
+
+  // Desktop chip-scroll arrows
+  const chipsRef = useRef(null);
+  const [arrows, setArrows] = useState({ left: false, right: false });
+
+  const updateArrows = () => {
+    const el = chipsRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setArrows({
+      left: scrollLeft > 4,
+      right: scrollLeft + clientWidth < scrollWidth - 4,
+    });
+  };
+
+  useEffect(() => {
+    updateArrows();
+    window.addEventListener('resize', updateArrows);
+    return () => window.removeEventListener('resize', updateArrows);
+  }, [activeTab, mode]);
+
+  const scrollChips = (dir) => {
+    chipsRef.current?.scrollBy({ left: dir * 200, behavior: 'smooth' });
+  };
 
   // Tab switch with fade
   const handleTabChange = (tabId) => {
@@ -309,8 +315,8 @@ const HeroSection = () => {
     router.push(target);
   };
 
-  // Listing tile click — handles poster/seeker + params
-  const handleListingTileClick = (tile) => {
+  // Listing / Forum tile click - handles poster/seeker + params
+  const handleToggleTileClick = (tile) => {
     let target = mode === 'poster' ? tile.posterTarget : tile.seekerTarget;
     const params = mode === 'poster' ? tile.posterParams : tile.seekerParams;
     if (params) {
@@ -321,301 +327,154 @@ const HeroSection = () => {
     navigateWithAuth(target, requiresAuth);
   };
 
-  // Simple tile click — single target
+  // Simple tile click - single target
   const handleSimpleTileClick = (tile) => {
     navigateWithAuth(tile.target, tile.requiresAuth);
   };
 
-  // Forum tile click — handles poster/seeker + params
-  const handleForumTileClick = (tile) => {
-    let target = mode === 'poster' ? tile.posterTarget : tile.seekerTarget;
-    const params = mode === 'poster' ? tile.posterParams : tile.seekerParams;
-    if (params) {
-      const searchParams = new URLSearchParams(params);
-      target = `${target}?${searchParams.toString()}`;
+  // Toggle is only meaningful for poster/seeker tabs
+  const showToggle = activeTab === 'listings' || activeTab === 'forum';
+  const toggleLabels =
+    activeTab === 'forum'
+      ? { poster: 'Ask a question', seeker: 'Browse answers' }
+      : { poster: 'I want to…', seeker: "I'm looking for" };
+
+  // Build the chip set for the active tab
+  const getChips = () => {
+    switch (activeTab) {
+      case 'listings':
+        return LISTING_TILES.map((tile, i) => ({
+          key: `l-${i}`,
+          label: mode === 'poster' ? tile.posterLabel : tile.seekerLabel,
+          onClick: () => handleToggleTileClick(tile),
+        }));
+      case 'events':
+        return EVENT_TILES.map((tile, i) => ({
+          key: `e-${i}`,
+          label: tile.label,
+          onClick: () => handleSimpleTileClick(tile),
+        }));
+      case 'deals':
+        return [
+          ...DEALS_TILES.map((tile, i) => ({
+            key: `d-${i}`,
+            label: tile.label,
+            onClick: () => handleSimpleTileClick(tile),
+          })),
+          ...POPULAR_DEAL_CATEGORIES.map((c, i) => ({
+            key: `dc-${i}`,
+            label: c.label,
+            onClick: () =>
+              router.push(
+                `/dailydeals?cat=${encodeURIComponent(c.cat)}&subcat=${encodeURIComponent(c.subcat)}`
+              ),
+          })),
+        ];
+      case 'forum':
+        return FORUM_TILES.map((tile, i) => ({
+          key: `f-${i}`,
+          label: mode === 'poster' ? tile.posterLabel : tile.seekerLabel,
+          onClick: () => handleToggleTileClick(tile),
+        }));
+      default:
+        return [];
     }
-    const requiresAuth = mode === 'poster' && tile.requiresAuth;
-    navigateWithAuth(target, requiresAuth);
   };
 
-  const mainListingTiles = LISTING_TILES.filter((tile) => !tile.isExploreAll);
-  const exploreAllTile = LISTING_TILES.find((tile) => tile.isExploreAll);
-  const mainForumTiles = FORUM_TILES.filter((tile) => !tile.isExploreAll);
-  const exploreAllForumTile = FORUM_TILES.find((tile) => tile.isExploreAll);
-
-  // Shared tile classes — flat tiles on recessed bg, white stands out naturally
-  const tileClass =
-    'flex items-center gap-2 sm:gap-3 md:flex-col md:gap-3 p-2.5 sm:p-3 md:p-5 rounded-xl bg-white border border-slate-200/60 hover:border-slate-300 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 cursor-pointer';
-
-  // Shared grid container classes (2-col mobile with vertical scroll, 3-col desktop)
-  const gridContainerClass =
-    'grid grid-cols-2 gap-2 sm:gap-3 max-h-[160px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] md:grid-cols-3 md:max-h-none md:overflow-visible';
-
-  // Recessed inset panel — visually lower than the card surface
-  const insetPanelClass =
-    'bg-slate-50 rounded-xl ring-1 ring-slate-200/60 p-2.5 sm:p-3 md:p-4';
-
   return (
-    <section className="px-3 sm:px-4 pt-10 pb-6 md:py-12">
-      <div className="w-full md:container md:mx-auto">
-        {/* Headline */}
-        <div className="text-center mb-3 sm:mb-8">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-teal-900">
-            Discover{' '}
-            <span
-              className={`text-xl sm:text-2xl md:text-3xl font-serif italic font-medium inline-flex items-center gap-2 min-w-[8ch] sm:min-w-[10ch] transition-opacity duration-200 ${
-                rotationVisible ? 'opacity-100' : 'opacity-0'
-              }`}
-            >
-              {(() => {
-                const { Icon, text } = HERO_ROTATIONS[rotationIndex];
-                return (
-                  <>
-                    {text}
-                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-teal-700 shrink-0" />
-                  </>
-                );
-              })()}
-            </span>
-          </h1>
-        </div>
+    <section className="relative flex flex-col gap-[30px]">
+      {/* Decorative square dot-grid behind the tabs, softly masked + gentle pulse */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -z-10 -top-6 left-0 right-0 h-36 animate-pulse"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(13,148,136,0.30) 1.5px, transparent 1.5px)',
+          backgroundSize: '14px 14px',
+          maskImage: 'radial-gradient(ellipse 70% 100% at 50% 40%, #000 35%, transparent 75%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 70% 100% at 50% 40%, #000 35%, transparent 75%)',
+        }}
+      />
 
-        {/* Quick Actions Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 sm:p-5 md:p-8">
-
-          {/* Feature Pills */}
-          <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mb-8 sm:mb-8">
-            <div className="flex gap-1.5 sm:gap-2 justify-start md:justify-center">
-              {FEATURE_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 shrink-0 ${
-                    activeTab === tab.id
-                      ? 'bg-teal-700 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tab Content — fade transition */}
-          <div
-            className={`transition-opacity duration-150 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}
+      {/* Row 1 - Vertical tabs (separate pills, content-width on desktop) */}
+      <div className={`flex gap-2 overflow-x-auto md:justify-center ${scrollbarHide}`}>
+        {FEATURE_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => handleTabChange(tab.id)}
+            className={`flex-1 md:flex-none whitespace-nowrap py-2 px-5 rounded-lg text-sm font-semibold border transition-colors ${
+              activeTab === tab.id
+                ? 'bg-teal-700 text-white border-teal-700 shadow-sm'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900'
+            }`}
           >
-            {/* ===== Listings Tab ===== */}
-            {activeTab === 'listings' && (
-              <div>
-                {/* Poster / Seeker Toggle */}
-                <div className="flex justify-center mb-4 sm:mb-5">
-                  <div className="inline-flex bg-slate-100 rounded-full p-0.5 sm:p-1">
-                    <button
-                      onClick={() => setHeroParams({ mode: 'poster' })}
-                      className={`px-3 sm:px-5 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                        mode === 'poster'
-                          ? 'bg-white text-teal-700 shadow-sm'
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      I want to
-                    </button>
-                    <button
-                      onClick={() => setHeroParams({ mode: 'seeker' })}
-                      className={`px-3 sm:px-5 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                        mode === 'seeker'
-                          ? 'bg-white text-teal-700 shadow-sm'
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      I&apos;m looking for
-                    </button>
-                  </div>
-                </div>
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-                {/* Listing Tiles — recessed inset panel */}
-                <div className={insetPanelClass}>
-                  <p className="text-xs italic text-teal-700 mb-2 sm:mb-2.5">Featured categories</p>
-                  <div className={gridContainerClass}>
-                    {mainListingTiles.map((tile, index) => {
-                      const Icon = tile.icon;
-                      const label =
-                        mode === 'poster' ? tile.posterLabel : tile.seekerLabel;
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => handleListingTileClick(tile)}
-                          className={tileClass}
-                        >
-                          <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-slate-100 rounded-xl shrink-0">
-                            <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5 text-teal-700" />
-                          </div>
-                          <span className="font-medium text-xs sm:text-sm md:text-base text-left md:text-center leading-tight text-slate-900">
-                            {label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Explore All — centered below */}
-                {exploreAllTile && (
-                  <div className="flex justify-center mt-3 sm:mt-4">
-                    <button
-                      onClick={() => handleListingTileClick(exploreAllTile)}
-                      className="flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all duration-200 cursor-pointer"
-                    >
-                      <HiMagnifyingGlass className="w-4 h-4 sm:w-5 sm:h-5 text-teal-700" />
-                      <span className="font-medium text-xs sm:text-sm text-slate-700">
-                        {mode === 'poster' ? exploreAllTile.posterLabel : exploreAllTile.seekerLabel}
-                      </span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ===== Events Tab ===== */}
-            {activeTab === 'events' && (
-              <div className={insetPanelClass}>
-                <div className={gridContainerClass}>
-                  {EVENT_TILES.map((tile, index) => {
-                    const Icon = tile.icon;
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => handleSimpleTileClick(tile)}
-                        className={tileClass}
-                      >
-                        <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-slate-100 rounded-xl shrink-0">
-                          <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5 text-teal-700" />
-                        </div>
-                        <span className="font-medium text-xs sm:text-sm md:text-base text-left md:text-center leading-tight text-slate-900">
-                          {tile.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ===== Deals Tab ===== */}
-            {activeTab === 'deals' && (
-              <div className={`${insetPanelClass} md:max-w-md md:mx-auto`}>
-                {/* Action Buttons */}
-                <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-                  {DEALS_TILES.map((tile, index) => {
-                    const Icon = tile.icon;
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => handleSimpleTileClick(tile)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-full bg-white border border-slate-200 hover:border-teal-300 hover:shadow-sm transition-all duration-200"
-                      >
-                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-teal-700" />
-                        <span className="font-medium text-sm sm:text-base text-slate-900">
-                          {tile.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Popular Categories */}
-                <div className="mt-4 pt-3 border-t border-slate-200/60">
-                  <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 sm:gap-x-3">
-                    <span className="text-xs text-slate-500 font-medium">Popular:</span>
-                    {POPULAR_DEAL_CATEGORIES.map((category, index) => (
-                      <Link
-                        key={index}
-                        href={`/dailydeals?cat=${encodeURIComponent(category.cat)}&subcat=${encodeURIComponent(category.subcat)}`}
-                        className="text-xs sm:text-sm text-teal-700 hover:text-teal-800 hover:underline font-medium"
-                      >
-                        {category.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ===== Forum Tab ===== */}
-            {activeTab === 'forum' && (
-              <div>
-                {/* Ask / Browse Toggle */}
-                <div className="flex justify-center mb-4 sm:mb-5">
-                  <div className="inline-flex bg-slate-100 rounded-full p-0.5 sm:p-1">
-                    <button
-                      onClick={() => setHeroParams({ mode: 'poster' })}
-                      className={`px-3 sm:px-5 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                        mode === 'poster'
-                          ? 'bg-white text-teal-700 shadow-sm'
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      Ask a question
-                    </button>
-                    <button
-                      onClick={() => setHeroParams({ mode: 'seeker' })}
-                      className={`px-3 sm:px-5 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                        mode === 'seeker'
-                          ? 'bg-white text-teal-700 shadow-sm'
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      Browse answers
-                    </button>
-                  </div>
-                </div>
-
-                {/* Forum Tiles — recessed inset panel */}
-                <div className={insetPanelClass}>
-                  <p className="text-xs italic text-teal-700 mb-2 sm:mb-2.5">Featured topics</p>
-                  <div className={gridContainerClass}>
-                    {mainForumTiles.map((tile, index) => {
-                      const Icon = tile.icon;
-                      const label =
-                        mode === 'poster' ? tile.posterLabel : tile.seekerLabel;
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => handleForumTileClick(tile)}
-                          className={tileClass}
-                        >
-                          <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-slate-100 rounded-xl shrink-0">
-                            <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5 text-teal-700" />
-                          </div>
-                          <span className="font-medium text-xs sm:text-sm md:text-base text-left md:text-center leading-tight text-slate-900">
-                            {label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Explore All — centered below */}
-                {exploreAllForumTile && (
-                  <div className="flex justify-center mt-3 sm:mt-4">
-                    <button
-                      onClick={() => handleForumTileClick(exploreAllForumTile)}
-                      className="flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all duration-200 cursor-pointer"
-                    >
-                      <HiMagnifyingGlass className="w-4 h-4 sm:w-5 sm:h-5 text-teal-700" />
-                      <span className="font-medium text-xs sm:text-sm text-slate-700">
-                        {mode === 'poster' ? exploreAllForumTile.posterLabel : exploreAllForumTile.seekerLabel}
-                      </span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+      {/* Row 2 - Poster/Seeker toggle (only for Listings + Forum) */}
+      {showToggle && (
+        <div className="flex justify-center gap-2">
+          <button
+            onClick={() => setHeroParams({ mode: 'poster' })}
+            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+              mode === 'poster'
+                ? 'bg-teal-700 text-white border-teal-700 shadow-sm'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900'
+            }`}
+          >
+            {toggleLabels.poster}
+          </button>
+          <button
+            onClick={() => setHeroParams({ mode: 'seeker' })}
+            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+              mode === 'seeker'
+                ? 'bg-teal-700 text-white border-teal-700 shadow-sm'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900'
+            }`}
+          >
+            {toggleLabels.seeker}
+          </button>
         </div>
+      )}
+
+      {/* Row 3 - Category chips (label-only) with desktop scroll arrows */}
+      <div className={`w-full lg:max-w-2xl lg:mx-auto flex items-center gap-1 ${showToggle ? '-mt-[15px]' : ''}`}>
+        <button
+          type="button"
+          onClick={() => scrollChips(-1)}
+          aria-label="Scroll categories left"
+          className={`hidden lg:flex shrink-0 items-center justify-center w-7 h-7 rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:text-teal-700 hover:border-teal-300 ${
+            arrows.left ? '' : 'invisible'
+          }`}
+        >
+          <HiChevronLeft className="w-4 h-4" />
+        </button>
+
+        <div
+          ref={chipsRef}
+          onScroll={updateArrows}
+          className={`flex gap-2 overflow-x-auto min-w-0 flex-1 transition-opacity duration-150 ${
+            fadeIn ? 'opacity-100' : 'opacity-0'
+          } ${scrollbarHide}`}
+        >
+          {getChips().map((chip) => (
+            <button key={chip.key} onClick={chip.onClick} className={chipClass}>
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => scrollChips(1)}
+          aria-label="Scroll categories right"
+          className={`hidden lg:flex shrink-0 items-center justify-center w-7 h-7 rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:text-teal-700 hover:border-teal-300 ${
+            arrows.right ? '' : 'invisible'
+          }`}
+        >
+          <HiChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </section>
   );

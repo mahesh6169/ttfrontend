@@ -138,7 +138,7 @@ const EditAdvertPage = () => {
   const displayData = advert;
 
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       <RequireVerifiedAccount>
 
       {/* Show success view if listing was updated successfully */}

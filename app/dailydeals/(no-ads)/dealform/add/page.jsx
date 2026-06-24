@@ -45,7 +45,7 @@ function AddDealContent() {
   };
 
   return (
-    <div className="px-2 py-6 sm:px-6 sm:py-8">
+    <div>
       <RequireVerifiedAccount>
         {showSuccessView && createdDeal ? (
           <SuccessView
@@ -54,7 +54,7 @@ function AddDealContent() {
             onAddAnother={handleAddAnother}
           />
         ) : (
-          <div className="max-w-3xl mx-auto">
+          <div className="w-full">
             {/* Page Header */}
             <div className="mb-8 text-center">
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Add Deal</h1>
@@ -85,8 +85,8 @@ function AddDealContent() {
 export default function AddDealPage() {
   return (
     <Suspense fallback={
-      <div className="px-2 py-6 sm:px-6 sm:py-8">
-        <div className="max-w-3xl mx-auto">
+      <div>
+        <div className="w-full">
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center">
             <p className="text-slate-500">Loading...</p>
           </div>

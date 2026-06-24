@@ -113,7 +113,7 @@ export default function StripeSetupPage() {
 
   if (checkingStatus) {
     return (
-      <div className="min-h-screen bg-gray-50 px-4 py-8">
+      <div>
         <div>
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
@@ -188,7 +188,7 @@ export default function StripeSetupPage() {
   const buttonConfig = getButtonConfig();
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6">
+    <div>
       <div>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">

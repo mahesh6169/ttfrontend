@@ -1583,7 +1583,7 @@ const handleAddAnother = useCallback(() => {
   // Show loading spinner during initialization
   if (isInitializing) {
     return (
-      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
+      <div className="w-full">
         <RequireVerifiedAccount>
           <div className="flex flex-col items-center justify-center min-h-64">
             <LoadingSpinner size="large" />
@@ -1597,7 +1597,7 @@ const handleAddAnother = useCallback(() => {
   // Show error if initialization failed
   if (initializationError) {
     return (
-      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
+      <div className="w-full">
         <RequireVerifiedAccount>
           <div className="text-center">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -1623,7 +1623,7 @@ const handleAddAnother = useCallback(() => {
 
 
     return (
-      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
+      <div className="w-full">
         <RequireVerifiedAccount>
           <SuccessStep
             event={formData}

@@ -292,7 +292,7 @@ const RsvpPage = () => {
 
   if (isLoadingEvent) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <LoadingSpinner />
       </div>
     );
@@ -300,7 +300,7 @@ const RsvpPage = () => {
 
   if (!selectedEvent || selectedEvent._id !== eventId) {
     return (
-      <div className="min-h-screen bg-slate-50 px-3 py-8">
+      <div>
         <div className="max-w-md mx-auto text-center">
           <p className="text-slate-700 mb-4">Event not found.</p>
           <Link
@@ -320,7 +320,7 @@ const RsvpPage = () => {
   const isPastEvent = eventDate && eventDate < new Date();
 
   return (
-    <div className="min-h-screen bg-white px-3 py-4 sm:px-4 sm:py-6">
+    <div>
       <div className="max-w-3xl mx-auto">
         <div className="mb-3 sm:mb-4">
           <BackButton href={`/events/views/${eventId}`} />

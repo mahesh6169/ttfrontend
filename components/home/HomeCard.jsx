@@ -113,7 +113,7 @@ const HomeCard = ({ type, data, isDemo = false }) => {
     : `/threads/views/${data._id}`;
 
   return (
-    <Link href={linkHref}>
+    <Link href={linkHref} className="block w-full h-full">
       <div className="relative rounded-xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 cursor-pointer transition-all duration-200 h-full overflow-hidden">
         {renderContent(isDemo)}
       </div>

@@ -395,7 +395,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
         )}
     
       {/* Main Details Section */}
-      <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
+      <div className="border border-slate-200 rounded shadow-sm my-4 p-3">
         <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Posted By — show "Desify Team" for curated listings */}
@@ -490,7 +490,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
       {/* Dynamic Fields Section */}
       {advert.fields && Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value).length > 0 && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
+        <div className="border border-slate-200 rounded shadow-sm my-4 p-3">
           <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Additional Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value).map(([key, value]) => (
@@ -505,7 +505,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
       {/* Service Areas Section */}
       {advert.fields?.serviceArea && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3 relative">
+        <div className="border border-slate-200 rounded shadow-sm my-4 p-3 relative">
           <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Service Areas</h3>
           <div ref={serviceAreaRef} className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap overflow-y-auto max-h-[120px] pr-2">
             {advert.fields.serviceArea}
@@ -518,7 +518,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
       {/* Description Section */}
       {advert.description && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3 relative">
+        <div className="border border-slate-200 rounded shadow-sm my-4 p-3 relative">
           <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Description</h3>
           <div
             ref={descriptionRef}
@@ -534,7 +534,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
       {/* Contact Info Section */}
       {advert.contactInfo && (advert.contactInfo.mobile || advert.contactInfo.email || advert.contactInfo.website || (advert.contactInfo.socialMedia && advert.contactInfo.socialMedia.length > 0)) && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2 p-3">
+        <div className="border border-slate-200 rounded shadow-sm my-4 p-3">
           <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Contact Information</h3>
           <div className="space-y-3">
             {/* Mobile */}

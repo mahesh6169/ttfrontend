@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { verifyEmail, sendVerifyOtp } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
+import BaseContentShell from '@/components/layout/BaseContentShell';
 
 export default function EmailVerifyPage() {
   // Form state
@@ -118,8 +119,12 @@ export default function EmailVerifyPage() {
   // If component hasn't mounted yet, show minimal loading state
   if (!isMounted) {
     return (
-      <div className="flex w-full justify-center items-center min-h-[400px]">
-        <div className="animate-pulse text-gray-500">Loading...</div>
+      <div className="container mx-auto">
+      <BaseContentShell>
+        <div className="flex w-full justify-center items-center min-h-[400px]">
+          <div className="animate-pulse text-gray-500">Loading...</div>
+        </div>
+      </BaseContentShell>
       </div>
     );
   }
@@ -127,7 +132,9 @@ export default function EmailVerifyPage() {
   // Success state
   if (verificationState === 'success') {
     return (
-      <div className="flex w-full justify-center pt-8">
+      <div className="container mx-auto">
+      <BaseContentShell>
+        <div className="flex w-full justify-center">
         <div className="p-8 rounded-lg shadow-md w-full max-w-md text-center">
           <div className="mb-6">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -148,12 +155,16 @@ export default function EmailVerifyPage() {
           </div>
         </div>
       </div>
+      </BaseContentShell>
+      </div>
     );
   }
-  
+
   // Main component render
   return (
-    <div className="flex w-full justify-center pt-8">
+    <div className="container mx-auto">
+    <BaseContentShell>
+      <div className="flex w-full justify-center">
       <div className="p-6 rounded-lg shadow-md w-full max-w-md">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold mb-2">
@@ -268,6 +279,8 @@ export default function EmailVerifyPage() {
           </>
         )}
       </div>
+    </div>
+    </BaseContentShell>
     </div>
   );
 }

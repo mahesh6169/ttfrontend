@@ -137,7 +137,7 @@ const ResetPasswordContent = () => {
   // Step 4: Success State
   if (currentStep === 4) {
     return (
-      <div className="flex w-full justify-center pt-8">
+      <div className="flex w-full justify-center">
         <div className="p-8 rounded-lg shadow-md w-full max-w-md text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,7 +159,7 @@ const ResetPasswordContent = () => {
   }
 
   return (
-    <div className="flex w-full justify-center pt-8 px-4">
+    <div className="flex w-full justify-center">
       <div className="p-6 rounded-lg shadow-md w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-6">
