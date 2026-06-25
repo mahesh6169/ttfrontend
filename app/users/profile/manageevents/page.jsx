@@ -6,9 +6,13 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { fetchMyEvents, deleteMyEvent } from '@/store/slices/events/eventSlice';
 import axios from '@/utils/axiosConfig';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import Link from 'next/link';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 const ManageEventsPage = () => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
@@ -85,22 +89,9 @@ const ManageEventsPage = () => {
   };
 
   const PageHeader = () => (
-    <div className="mb-6">
-      {/* Back button */}
-      <Link
-        href="/users/profile"
-        className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors mb-4"
-      >
-        <span>&lt;</span>
-        <span>back</span>
-      </Link>
-
-      {/* Hero section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Manage Events</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Create, edit and manage your events</p>
-        </div>
+    <>
+      <ProfilePageHeading title="Manage Events" description="Create, edit and manage your events" />
+      <div className="flex justify-center mb-6">
         <Link
           href="/events/add"
           onClick={() =>
@@ -111,16 +102,16 @@ const ManageEventsPage = () => {
           + Post New Event
         </Link>
       </div>
-    </div>
+    </>
   );
 
-  if (loading) {
+  const showSkeleton = useDelayedLoading(loading);
+
+  if (loading || showSkeleton) {
     return (
       <div>
         <PageHeader />
-        <div className="flex justify-center items-center h-64">
-          <LoadingSpinner />
-        </div>
+        {showSkeleton && <PageSkeleton variant="card" rows={6} />}
       </div>
     );
   }
@@ -129,10 +120,7 @@ const ManageEventsPage = () => {
     return (
       <div>
         <PageHeader />
-        <div className="text-center py-12">
-          <p className="text-red-600 font-semibold">Error loading events</p>
-          <p className="text-slate-600 text-sm mt-1">{error}</p>
-        </div>
+        <ErrorState onRetry={() => dispatch(fetchMyEvents())} />
       </div>
     );
   }
@@ -142,12 +130,12 @@ const ManageEventsPage = () => {
       <PageHeader />
 
       {myEvents.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-slate-600">You haven't posted any events yet.</p>
-          <p className="text-slate-500 text-sm mt-1">Click "+ Post New Event" to get started.</p>
-        </div>
+        <EmptyState
+          title="No events yet"
+          description="You haven't posted any events yet."
+        />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
           {myEvents.map((event) => {
             const isExpired = new Date() > new Date(event.willExpire);
             const isLive = event.goLive !== false;

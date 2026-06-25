@@ -1,14 +1,17 @@
 'use client';
 
 import React, { useState, useEffect, Fragment } from 'react';
-import Link from 'next/link';
 import { formatInTimeZone } from 'date-fns-tz';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import axios from '@/utils/axiosConfig';
 import { FaClock, FaCalendarAlt, FaMapMarkedAlt, FaUser, FaPhone, FaEnvelope } from 'react-icons/fa';
 import { GiTheaterCurtains } from 'react-icons/gi';
 import VerticalScrollSlider from '@/components/shared/VerticalScrollSlider';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 const DATE_FILTER_OPTIONS = [
   { value: '3months', label: 'Last 3 months' },
@@ -16,16 +19,6 @@ const DATE_FILTER_OPTIONS = [
   { value: '1year', label: 'Last year' },
   { value: 'all', label: 'Show all' },
 ];
-
-const BackButton = () => (
-  <Link
-    href="/users/profile"
-    className="inline-flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-  >
-    <span>&lt;</span>
-    <span>back</span>
-  </Link>
-);
 
 const MyFreeEventRegistrationsPage = () => {
   // Local state (like paid tickets page)
@@ -35,6 +28,7 @@ const MyFreeEventRegistrationsPage = () => {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedEventRegistrations, setSelectedEventRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const showSkeleton = useDelayedLoading(loading);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [expandedRegistrations, setExpandedRegistrations] = useState(new Set());
@@ -283,14 +277,11 @@ const MyFreeEventRegistrationsPage = () => {
   };
 
   // Loading state
-  if (loading) {
+  if (loading || showSkeleton) {
     return (
       <div className="space-y-4">
-        <BackButton />
-        <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2">Loading your registrations...</span>
-        </div>
+        <ProfilePageHeading title="My RSVPs" />
+        {showSkeleton && <PageSkeleton variant="list" rows={6} />}
       </div>
     );
   }
@@ -299,16 +290,8 @@ const MyFreeEventRegistrationsPage = () => {
   if (error) {
     return (
       <div className="space-y-4">
-        <BackButton />
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">Error: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
+        <ProfilePageHeading title="My RSVPs" />
+        <ErrorState onRetry={() => window.location.reload()} />
       </div>
     );
   }
@@ -317,17 +300,13 @@ const MyFreeEventRegistrationsPage = () => {
   if (registrations.length === 0) {
     return (
       <div className="space-y-4">
-        <BackButton />
-        <div className="text-center py-12">
-          <h2 className="text-base sm:text-lg font-bold text-forest-900 mb-2">No registrations yet</h2>
-          <p className="text-sm text-slate-600 mb-6">You haven't registered for any free events.</p>
-          <Link
-            href="/events"
-            className="inline-flex items-center px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded-lg shadow font-semibold text-sm md:text-base transition-colors"
-          >
-            Browse Events
-          </Link>
-        </div>
+        <ProfilePageHeading title="My RSVPs" />
+        <EmptyState
+          title="No registrations yet"
+          description="You haven't registered for any free events."
+          actionLabel="Browse Events"
+          actionHref="/events"
+        />
       </div>
     );
   }
@@ -335,13 +314,7 @@ const MyFreeEventRegistrationsPage = () => {
   // Main render
   return (
     <div className="space-y-2 sm:space-y-3">
-      {/* Top row: back button on left, title centered */}
-      <div className="relative flex items-center">
-        <BackButton />
-        <h2 className="absolute left-1/2 -translate-x-1/2 text-base sm:text-lg font-bold text-forest-900">
-          My RSVPs
-        </h2>
-      </div>
+      <ProfilePageHeading title="My RSVPs" />
 
       {/* Event Selector with Date Filter */}
       <div className="bg-white rounded-lg p-4">

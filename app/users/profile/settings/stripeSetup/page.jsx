@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import axios from '@/utils/axiosConfig';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -111,16 +114,13 @@ export default function StripeSetupPage() {
     }
   };
 
-  if (checkingStatus) {
+  const showSkeleton = useDelayedLoading(checkingStatus);
+
+  if (checkingStatus || showSkeleton) {
     return (
       <div>
-        <div>
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded mb-8"></div>
-            <div className="h-32 bg-gray-200 rounded"></div>
-          </div>
-        </div>
+        <ProfilePageHeading title="Stripe Payout Setup" />
+        {showSkeleton && <PageSkeleton variant="form" rows={4} />}
       </div>
     );
   }
@@ -190,9 +190,10 @@ export default function StripeSetupPage() {
   return (
     <div>
       <div>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold">Stripe Payout Setup</h1>
+        <ProfilePageHeading title="Stripe Payout Setup" />
+
+        {/* Refresh */}
+        <div className="flex items-center justify-end mb-4">
           <button
             onClick={checkAccountStatus}
             className="p-2 text-gray-500 hover:text-gray-700 transition-colors"

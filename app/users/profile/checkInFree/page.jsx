@@ -6,21 +6,11 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Link from 'next/link';
 import jsPDF from 'jspdf';
 import { FaDownload } from 'react-icons/fa';
 import axios from '@/utils/axiosConfig';
-
-// Back button component
-const BackButton = () => (
-  <Link
-    href="/users/profile"
-    className="inline-flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-  >
-    <span>&lt;</span>
-    <span>back</span>
-  </Link>
-);
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
 
 // Components
 import CheckInFree_EventSelector from '@/components/events/checkin/checkInFree_EventSelector';
@@ -201,22 +191,13 @@ const CheckInFreePage = () => {
   if (hasAttemptedLoad && !loading && (!managedEvents || managedEvents.length === 0)) {
     return (
       <div className="space-y-4">
-        <div className="relative flex items-center">
-          <BackButton />
-          <h2 className="absolute left-1/2 -translate-x-1/2 text-base sm:text-lg font-bold text-forest-900">
-            RSVP Events Check-In
-          </h2>
-        </div>
-        <div className="text-center py-12">
-          <h3 className="text-base sm:text-lg font-bold text-forest-900 mb-2">No events to check in</h3>
-          <p className="text-sm text-slate-600 mb-6">You haven't created any RSVP events yet.</p>
-          <Link
-            href="/events/add"
-            className="inline-flex items-center px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded-lg shadow font-semibold text-sm md:text-base transition-colors"
-          >
-            Create an Event
-          </Link>
-        </div>
+        <ProfilePageHeading title="RSVP Events Check-In" />
+        <EmptyState
+          title="No RSVP events yet"
+          description="You haven't created any RSVP events yet."
+          actionLabel="Create an Event"
+          actionHref="/events/add"
+        />
       </div>
     );
   }
@@ -224,13 +205,7 @@ const CheckInFreePage = () => {
   return (
     <>
       <div className="space-y-2 sm:space-y-3">
-        {/* Top row: back button on left, title centered */}
-        <div className="relative flex items-center">
-          <BackButton />
-          <h2 className="absolute left-1/2 -translate-x-1/2 text-base sm:text-lg font-bold text-forest-900">
-            RSVP Events Check-In
-          </h2>
-        </div>
+        <ProfilePageHeading title="RSVP Events Check-In" />
 
         {/* Event Selector - Reduced padding */}
         <div className="bg-white rounded-lg p-3 sm:p-4">

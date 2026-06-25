@@ -70,7 +70,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div>
       {/* Welcome Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">

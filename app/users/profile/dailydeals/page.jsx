@@ -7,6 +7,10 @@ import axios from '@/utils/axiosConfig';
 import { MdLocationOn, MdExpandMore, MdExpandLess, MdEdit, MdDelete, MdAdd } from 'react-icons/md';
 import { format } from 'date-fns';
 import ConfirmModal from '@/components/ConfirmModal';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
 
 const DAYS_SHORT = {
   monday: 'Mon',
@@ -23,6 +27,7 @@ export default function ManageDailyDealsPage() {
   const [businesses, setBusinesses] = useState([]);
   const [deals, setDeals] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const showSkeleton = useDelayedLoading(isLoading);
   const [businessToDelete, setBusinessToDelete] = useState(null);
   const [dealToDelete, setDealToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -158,40 +163,19 @@ export default function ManageDailyDealsPage() {
   return (
     <div>
         {/* Page Header */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors mb-4"
-          >
-            <span>&lt;</span>
-            <span>back</span>
-          </button>
-
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Manage Deals</h1>
-          <p className="text-sm text-slate-500 mt-1">Create and manage promotional deals for your businesses</p>
-        </div>
+        <ProfilePageHeading title="Manage Deals" description="Create and manage promotional deals for your businesses" />
 
       {/* Loading State */}
-      {isLoading ? (
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center">
-          <p className="text-slate-500">Loading your businesses and deals...</p>
-        </div>
+      {(isLoading || showSkeleton) ? (
+        showSkeleton ? <PageSkeleton variant="card" rows={6} /> : null
       ) : businesses.length === 0 ? (
         /* No Businesses State */
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center">
-          <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
-            <MdAdd className="text-slate-400" size={32} />
-          </div>
-          <h3 className="font-semibold text-slate-600 text-sm sm:text-base mb-2">Get started with deals</h3>
-          <p className="text-xs sm:text-sm text-slate-500 mb-4">First, add your business. Then you can create promotional deals for it.</p>
-          <button
-            onClick={navigateToAddBusiness}
-            className="inline-flex items-center justify-center gap-2 bg-teal-700 text-white px-5 py-2 rounded-full hover:bg-teal-800 font-semibold text-sm shadow-sm transition-colors"
-          >
-            <MdAdd size={18} />
-            Add Business
-          </button>
-        </div>
+        <EmptyState
+          title="No businesses yet"
+          description="Add your business to start creating deals."
+          actionLabel="Add Business"
+          actionOnClick={navigateToAddBusiness}
+        />
       ) : (
         /* Businesses with Nested Deals */
         <div className="space-y-8 md:space-y-10">

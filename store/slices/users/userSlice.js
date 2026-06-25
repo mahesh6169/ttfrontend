@@ -583,7 +583,11 @@ const userSlice = createSlice({
           isAccountVerified: payload.user.isAccountVerified,
           role: payload.user.role,
           stripeAccountId: payload.user.stripeAccountId || null,
-            stripeAccountStatus: payload.user.stripeAccountStatus || 'no_account', 
+            stripeAccountStatus: payload.user.stripeAccountStatus || 'no_account',
+          // 🏷️ Host-type flags (see HostTypeFlags.md) - drive the Organiser menu
+          freeHost: payload.user.freeHost || false,
+          paidHost: payload.user.paidHost || false,
+          promoHost: payload.user.promoHost || false,
         };
         state.mutedThreads = payload.user.mutedThreads || [];
       })

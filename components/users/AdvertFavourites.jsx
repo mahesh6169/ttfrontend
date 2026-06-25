@@ -44,22 +44,17 @@ const AdvertFavourites = () => {
     );
   }
 
+  // Empty: render nothing — the page shows one combined empty when BOTH sections are empty.
   if (!advertWishlist || advertWishlist.length === 0) {
-    return (
-      <div className="text-center py-10 border border-gray-300 rounded-lg shadow-md mb-4">
-        <p className="text-base text-teal-700 font-bold mb-2 text-centre">
-          You have no favorites in Listings.
-        </p>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="container mx-auto py-8  ">
+    <div className="py-4">
       <h1 className="text-base text-teal-700 font-bold mb-2 text-centre">
         Your Favourite Listings.
       </h1>
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
         {advertWishlist.map((advert) => (
           <AdvertCard
             key={advert._id}

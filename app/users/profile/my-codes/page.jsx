@@ -1,37 +1,25 @@
 'use client';
 
 import { useEffect, useState, Fragment } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import axios from '@/utils/axiosConfig';
 import CouponCard from '@/components/coupons/couponcomponents/CouponCard';
-import { MdLocalOffer } from 'react-icons/md';
-import Link from 'next/link';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
 ];
 
-// Back button component
-const BackButton = () => (
-  <div className="mb-4">
-    <Link
-      href="/users/profile"
-      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-    >
-      <span>&lt;</span>
-      <span>back</span>
-    </Link>
-  </div>
-);
-
 export default function MyCodesPage() {
-  const router = useRouter();
   const [codes, setCodes] = useState([]);
   const [filteredCampaigns, setFilteredCampaigns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const showSkeleton = useDelayedLoading(isLoading);
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
 
@@ -102,16 +90,11 @@ export default function MyCodesPage() {
     expired: codes.filter(code => getCodeStatus(code) === 'expired').length
   };
 
-  if (isLoading) {
+  if (isLoading || showSkeleton) {
     return (
-      <div>
-        <div>
-          <BackButton />
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-            <p className="mt-4 text-gray-600">Loading your codes...</p>
-          </div>
-        </div>
+      <div className="space-y-4">
+        <ProfilePageHeading title="My Discount Codes" />
+        {showSkeleton && <PageSkeleton variant="list" rows={6} />}
       </div>
     );
   }
@@ -119,28 +102,15 @@ export default function MyCodesPage() {
   return (
     <div>
       <div>
-        <BackButton />
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">My Discount Codes</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">
-            View and manage your discount codes
-          </p>
-        </div>
+        <ProfilePageHeading title="My Discount Codes" />
 
         {codes.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-6 sm:p-12 text-center">
-            <MdLocalOffer className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">No codes yet</h2>
-            <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6">
-              Browse promotions to get your first discount code
-            </p>
-            <button
-              onClick={() => router.push('/deals')}
-              className="bg-teal-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-teal-700 transition-colors"
-            >
-              Browse Promotions
-            </button>
-          </div>
+          <EmptyState
+            title="No codes yet"
+            description="You haven't collected any discount codes yet."
+            actionLabel="Browse Promotions"
+            actionHref="/deals"
+          />
         ) : (
           <>
             {/* Filter and Sort Bar */}

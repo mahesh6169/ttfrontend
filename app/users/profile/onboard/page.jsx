@@ -4,19 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import axios from '@/utils/axiosConfig';
-import Link from 'next/link';
-
-const BackButton = () => (
-  <div className="mb-4">
-    <Link
-      href="/users/profile"
-      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-    >
-      <span>&lt;</span>
-      <span>back</span>
-    </Link>
-  </div>
-);
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
 
 const RefreshIcon = ({ spinning = false }) => (
   <svg className={`w-4 h-4 md:w-5 md:h-5 ${spinning ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,16 +161,14 @@ export default function OnboardPage() {
 
   const statusConfig = getStripeStatusConfig();
 
-  if (checkingStatus) {
+  const showSkeleton = useDelayedLoading(checkingStatus);
+
+  if (checkingStatus || showSkeleton) {
     return (
       <div>
-        <div className="max-w-3xl mx-auto">
-          <BackButton />
-          <div className="animate-pulse">
-            <div className="h-8 bg-slate-200 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-slate-200 rounded mb-8"></div>
-            <div className="h-64 bg-slate-200 rounded-xl"></div>
-          </div>
+        <div>
+          <ProfilePageHeading title="Welcome to Organiser Onboarding" />
+          {showSkeleton && <PageSkeleton variant="form" rows={4} />}
         </div>
       </div>
     );
@@ -188,13 +176,10 @@ export default function OnboardPage() {
 
   return (
     <div>
-      <div className="max-w-3xl mx-auto">
-        <BackButton />
+      <div>
+        <ProfilePageHeading title="Welcome to Organiser Onboarding" />
 
         <div className="mb-4 md:mb-6">
-          <h1 className="text-lg md:text-2xl font-bold text-slate-900 mb-1">
-            Welcome to Organiser Onboarding
-          </h1>
           <p className="text-xs md:text-sm text-slate-600">
             {isStripeFullyActive
               ? "You're ready to sell tickets"

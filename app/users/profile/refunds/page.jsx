@@ -4,21 +4,9 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { formatInTimeZone } from 'date-fns-tz';
 import { toast } from 'react-toastify';
-import Link from 'next/link';
-
-// Back button component
-const BackButton = () => (
-  <div className="mb-4">
-    <Link
-      href="/users/profile"
-      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-    >
-      <span>&lt;</span>
-      <span>back</span>
-    </Link>
-  </div>
-);
-import { 
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
+import {
   fetchOrganizerEvents,
   fetchRefundableTickets,
   setSelectedEvent,
@@ -432,13 +420,7 @@ export default function RefundsPage() {
   return (
     <>
       <div className="space-y-2 sm:space-y-3">
-        {/* Back Button */}
-        <BackButton />
-
-        {/* Page Header - Compact */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Refund Management</h2>
-        </div>
+        <ProfilePageHeading title="Refund Management" />
         {/* Event Selector - Reduced padding */}
         <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
           {events.loading ? (
@@ -841,16 +823,10 @@ export default function RefundsPage() {
               {/* Left Column - Tickets List */}
               <div className="lg:col-span-3 space-y-2 sm:space-y-3">
               {ticketsState.list.length === 0 ? (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                  <IoTicket className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Tickets Yet</h3>
-                  <p className="text-sm text-gray-500">
-                    No tickets have been purchased for this event yet.
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Tickets will appear here once customers make purchases.
-                  </p>
-                </div>
+                <EmptyState
+                  title="No tickets to refund"
+                  description="You don't have any refundable tickets yet."
+                />
               ) : paginatedInvoices.map(([invoiceNumber, tickets]) => (
                 <RefundInvoiceCard
                   key={invoiceNumber}
