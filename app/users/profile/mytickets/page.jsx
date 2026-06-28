@@ -1,12 +1,12 @@
 "use client";
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { generateTicketsPDF } from '../../../../utils/paidEventTicketGenerator';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import axios from '@/utils/axiosConfig';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'react-toastify';
-import { FaQrcode, FaDownload, FaRegCalendarAlt, FaMapMarkerAlt, FaBriefcase, FaRegEnvelope, FaPhoneAlt, FaTicketAlt } from 'react-icons/fa';
+import { FaQrcode, FaDownload, FaRegCalendarAlt, FaMapMarkerAlt, FaBriefcase, FaRegEnvelope, FaPhoneAlt, FaTicketAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import useDelayedLoading from '@/hooks/useDelayedLoading';
 import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
@@ -477,12 +477,10 @@ const EnhancedMyTicketsPage = () => {
             </div>
           </div>
 
-          {/* Data Retention Warning - More compact */}
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
-            <p className="text-xs text-amber-800">
-              <strong>Note:</strong> Please save your tickets. Events older than 2 years will be deleted.
-            </p>
-          </div>
+          {/* Data retention note */}
+          <p className="text-xs text-slate-500 px-1">
+            <span className="font-semibold text-slate-600">Note:</span> Please save your tickets — events older than 2 years are removed.
+          </p>
         </div>
       </div>
 
@@ -619,38 +617,24 @@ const EnhancedMyTicketsPage = () => {
                   
                   {/* Tab Content */}
                   {isExpanded && (
-                    <div className="border-t border-slate-200">
-                      {/* Ticket Details Tab */}
-                      <div className="p-3 sm:p-4 bg-white">
-                        <div className="space-y-2">
-                          {ticketGroup.map((ticket, idx) => {
-                            const isRefunded = ticket.refundStatus === 'full' || ticket.checkInStatus === 'cancelled';
-                            return (
-                              <div key={ticket._id} className={`border-b last:border-0 pb-2 last:pb-0 ${isRefunded ? 'opacity-60' : ''}`}>
-                                <div className="flex justify-between items-start">
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-lg">{isRefunded ? '✗' : '✓'}</span>
-                                    <div>
-                                      <div className="text-sm sm:text-base font-mono font-medium text-slate-900">
-                                        {ticket.ticketNumber}
-                                        {isRefunded && <span className="ml-2 text-xs font-bold text-red-600">[REFUNDED]</span>}
-                                      </div>
-                                      <div className="text-xs sm:text-sm text-slate-600">
-                                        {ticket.ticketType.name}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {ticket.seats?.[0] && (
-                                    <div className="text-xs sm:text-sm text-slate-600">
-                                      Seat: {ticket.seats[0].row}-{ticket.seats[0].seatNumber}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                    <div className="border-t border-slate-200 px-3 sm:px-4 divide-y divide-slate-100">
+                      {ticketGroup.map((ticket) => {
+                        const isRefunded = ticket.refundStatus === 'full' || ticket.checkInStatus === 'cancelled';
+                        return (
+                          <div key={ticket._id} className={`flex items-center justify-between gap-2 py-2 text-xs sm:text-sm ${isRefunded ? 'opacity-60' : ''}`}>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`shrink-0 ${isRefunded ? 'text-red-500' : 'text-teal-600'}`}>{isRefunded ? '✗' : '✓'}</span>
+                              <span className="font-mono font-medium text-slate-800 shrink-0">{ticket.ticketNumber}</span>
+                              <span className="text-slate-300 shrink-0">·</span>
+                              <span className="text-slate-500 truncate">{ticket.ticketType.name}</span>
+                              {isRefunded && <span className="text-[10px] font-bold text-red-600 shrink-0">REFUNDED</span>}
+                            </div>
+                            {ticket.seats?.[0] && (
+                              <span className="text-slate-500 shrink-0 whitespace-nowrap">Seat {ticket.seats[0].row}-{ticket.seats[0].seatNumber}</span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -678,27 +662,24 @@ const EnhancedMyTicketsPage = () => {
 // Tickets Modal Component - Simple ticket style
 const TicketsModal = ({ ticketGroup, onClose }) => {
   const [isDownloading, setIsDownloading] = useState(false);
-  
-  // Get event information from the first ticket
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollRef = useRef(null);
+
+  // Event info (used by the PDF generator)
   const firstTicket = ticketGroup[0];
   const eventInfo = firstTicket.eventSnapshot;
-  
-  // Format event date with timezone support
-  const formatEventDateTime = () => {
-    try {
-      const date = formatInTimeZone(eventInfo.dateTime, eventInfo.timeZone, 'dd/MM/yyyy');
-      const time = formatInTimeZone(eventInfo.dateTime, eventInfo.timeZone, 'h:mm a');
-      return { date, time };
-    } catch (error) {
-      const fallbackDate = new Date(eventInfo.dateTime);
-      return {
-        date: fallbackDate.toLocaleDateString(),
-        time: fallbackDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-    }
+
+  // Track which ticket is centered as the user swipes the carousel
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setActiveIndex(Math.round(el.scrollLeft / el.clientWidth));
   };
 
-  const { date, time } = formatEventDateTime();
+  const goToIndex = (idx) => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' });
+  };
 
   // PDF Download function for tickets
   const downloadTicketsPDF = async () => {
@@ -723,54 +704,53 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] flex flex-col">
-        {/* Close button - Fixed at top */}
-        <div className="flex-shrink-0 flex justify-end p-3 sm:p-4 border-b border-slate-200">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-xs w-full max-h-[calc(100vh-100px)] flex flex-col">
+        {/* Close button */}
+        <div className="flex-shrink-0 flex justify-end p-3 border-b border-slate-200">
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 text-xl"
+            className="text-teal-700 hover:text-teal-800 text-xl font-bold leading-none"
+            aria-label="Close"
           >
             ✕
           </button>
         </div>
 
-        {/* Ticket Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6">
-          {/* Event Details - Centered */}
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-slate-900 mb-1">{eventInfo.title}</h2>
-            <p className="text-sm text-slate-600 font-mono">Event ID: {eventInfo.eventCode}</p>
-          </div>
-
-          {/* Date, Time and Location - Left aligned with spacing */}
-          <div className="mb-6 text-sm text-slate-700">
-            <div className="flex items-center mb-1">
-              <span className="mr-2">📅</span>
-              <span>{date} at {time}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-2">📍</span>
-              <span>{eventInfo.venue}</span>
-            </div>
-          </div>
-
-          {/* Dotted Line Separator */}
-          <div className="border-b-2 border-dotted border-slate-400 mb-6"></div>
-
-          {/* Ticket List - With QR codes */}
-          <div className="space-y-4">
+        {/* QR codes - swipeable carousel (Google Wallet style) */}
+        <div className="flex-1 min-h-0 flex flex-col relative">
+          {/* Desktop arrows (mobile uses swipe) */}
+          {ticketGroup.length > 1 && activeIndex > 0 && (
+            <button
+              type="button"
+              onClick={() => goToIndex(activeIndex - 1)}
+              aria-label="Previous ticket"
+              className="hidden sm:flex absolute left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow text-teal-700 hover:text-teal-800 hover:bg-white transition-colors"
+            >
+              <FaChevronLeft size={14} />
+            </button>
+          )}
+          {ticketGroup.length > 1 && activeIndex < ticketGroup.length - 1 && (
+            <button
+              type="button"
+              onClick={() => goToIndex(activeIndex + 1)}
+              aria-label="Next ticket"
+              className="hidden sm:flex absolute right-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow text-teal-700 hover:text-teal-800 hover:bg-white transition-colors"
+            >
+              <FaChevronRight size={14} />
+            </button>
+          )}
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex-1 flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+          >
             {ticketGroup.map((ticket) => {
               const isRefunded = ticket.refundStatus === 'full' || ticket.checkInStatus === 'cancelled';
               return (
-                <div key={ticket._id} className={`flex flex-col items-center py-3 border-b last:border-0 ${isRefunded ? 'bg-red-50' : ''}`}>
-                  {isRefunded && (
-                    <div className="bg-red-600 text-white px-3 py-1 rounded mb-2 text-sm font-bold">
-                      ⚠️ REFUNDED - NOT VALID FOR ENTRY
-                    </div>
-                  )}
+                <div key={ticket._id} className="shrink-0 w-full snap-center flex flex-col items-center justify-center px-4 py-4">
                   <div className="font-mono text-sm font-medium mb-1">{ticket.ticketNumber}</div>
-                  <div className="text-sm text-slate-600 mb-2">
+                  <div className="text-sm text-slate-600 mb-2 text-center">
                     {ticket.ticketType.name}
                     {ticket.seats?.[0] && (
                       <span className="ml-2">
@@ -779,7 +759,7 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
                     )}
                   </div>
                   <div className={`bg-white p-2 rounded border relative ${isRefunded ? 'border-red-300 opacity-40' : 'border-slate-200'}`}>
-                    <QRCodeSVG 
+                    <QRCodeSVG
                       value={ticket.ticketNumber}
                       size={150}
                       level="H"
@@ -793,41 +773,41 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
                       </div>
                     )}
                   </div>
-                  <div className={`text-xs mt-2 ${isRefunded ? 'text-red-600 font-semibold' : 'text-slate-500'}`}>
-                    {isRefunded ? 'Not valid for entry' : 'Scan at entrance'}
-                  </div>
+                  {isRefunded && (
+                    <div className="text-xs mt-2 text-red-600 font-semibold">
+                      Ticket refunded, not valid for entry
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
 
+          {/* Dots — Wallet-style position indicator */}
+          {ticketGroup.length > 1 && (
+            <div className="flex-shrink-0 flex justify-center items-center gap-1.5 pb-3 pt-1">
+              {ticketGroup.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => goToIndex(idx)}
+                  aria-label={`Go to ticket ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all ${idx === activeIndex ? 'w-6 bg-teal-600' : 'w-1.5 bg-slate-300'}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Download Button - Fixed at bottom */}
-        <div className="flex-shrink-0 p-4 sm:p-6 border-t border-slate-200">
+        {/* Download - text link */}
+        <div className="flex-shrink-0 p-3 border-t border-slate-200 text-center">
           <button
             onClick={downloadTicketsPDF}
             disabled={isDownloading}
-            className={`w-full px-4 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
-              isDownloading
-                ? 'bg-slate-300 cursor-not-allowed'
-                : 'bg-teal-700 hover:bg-teal-800'
-            } text-white`}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 hover:text-teal-800 hover:underline disabled:opacity-50 disabled:no-underline"
           >
-            {isDownloading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <FaDownload />
-                <span>Download QR Codes as PDF</span>
-              </>
-            )}
+            <FaDownload size={13} />
+            {isDownloading ? 'Generating…' : 'Download QR Codes'}
           </button>
         </div>
       </div>

@@ -7,7 +7,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import jsPDF from 'jspdf';
-import { FaDownload } from 'react-icons/fa';
+import { formatInTimeZone } from 'date-fns-tz';
+import { FaDownload, FaRegCalendarAlt, FaMapMarkerAlt, FaUsers } from 'react-icons/fa';
 import axios from '@/utils/axiosConfig';
 import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
 import EmptyState from '@/components/layout/EmptyState';
@@ -38,6 +39,18 @@ const CheckInFreePage = () => {
 
   // Use virtualized list for large datasets
   const useVirtualized = pagination.totalCount > 50;
+
+  // Format event date with timezone support (for the event detail panel)
+  const formatEventDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
+    try {
+      const date = formatInTimeZone(dateTime, timeZone, 'dd/MM/yyyy');
+      const time = formatInTimeZone(dateTime, timeZone, 'h:mm a');
+      return { date, time, combined: `${date} at ${time}` };
+    } catch (error) {
+      const fallbackDate = new Date(dateTime);
+      return { date: fallbackDate.toLocaleDateString(), time: '', combined: fallbackDate.toLocaleString() };
+    }
+  };
 
   // Build a minimalist PDF attendee list for the selected event.
   // One row per attendee; Reg No / Contact / Form info repeat only on the
@@ -207,10 +220,51 @@ const CheckInFreePage = () => {
       <div className="space-y-2 sm:space-y-3">
         <ProfilePageHeading title="RSVP Events Check-In" />
 
-        {/* Event Selector - Reduced padding */}
-        <div className="bg-white rounded-lg p-3 sm:p-4">
+        {/* Event Selector - floating panel (shiny white, no border) */}
+        <div className="bg-white rounded-xl shadow-md p-3 sm:p-4">
           <CheckInFree_EventSelector />
         </div>
+
+        {/* Selected Event Details - Compact (renders what's entered, hides what isn't) */}
+        {selectedEvent && (
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+              <h3 className="text-base sm:text-lg font-bold text-teal-700">
+                {selectedEvent.title}
+              </h3>
+
+              {(selectedEvent.eventCode || selectedEvent._id) && (
+                <span className="text-xs font-mono font-semibold bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full">
+                  {selectedEvent.eventCode || selectedEvent._id}
+                </span>
+              )}
+
+              {selectedEvent.dateTime && (
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <FaRegCalendarAlt className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>
+                    {formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone).combined}
+                    {selectedEvent.timeZone ? ` (${selectedEvent.timeZone})` : ''}
+                  </span>
+                </div>
+              )}
+
+              {selectedEvent.venue && (
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <FaMapMarkerAlt className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>{selectedEvent.venue}</span>
+                </div>
+              )}
+
+              {selectedEvent.capacity > 0 && (
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <FaUsers className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>Capacity: {selectedEvent.capacity}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Statistics - Compact spacing — Save to PDF inlined in the same row (right-aligned desktop, below center on mobile) */}
         {selectedEvent && (
@@ -230,31 +284,31 @@ const CheckInFreePage = () => {
           />
         )}
 
-        {/* Attendee List - Only show when event is selected */}
+        {/* Search Bar - floating panel (shiny white, no border) */}
+        {selectedEvent && (
+          <div className="bg-white rounded-xl shadow-md p-3">
+            <CheckInFree_SearchBar />
+          </div>
+        )}
+
+        {/* Attendee List - cards stand on their own (no outer frame) */}
         {selectedEvent && (
           <div>
-            {/* Search Bar - No header needed */}
-            <div className="p-3">
-              <CheckInFree_SearchBar />
-            </div>
-            
-            <div className="p-0 sm:p-2">
-              {attendees.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-gray-500">
-                    No registrations found for this event
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {useVirtualized ? (
-                    <CheckInFree_VirtualizedAttendeeList />
-                  ) : (
-                    <CheckInFree_AttendeeList />
-                  )}
-                </>
-              )}
-            </div>
+            {attendees.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-slate-500">
+                  No registrations found for this event
+                </p>
+              </div>
+            ) : (
+              <>
+                {useVirtualized ? (
+                  <CheckInFree_VirtualizedAttendeeList />
+                ) : (
+                  <CheckInFree_AttendeeList />
+                )}
+              </>
+            )}
           </div>
         )}
 

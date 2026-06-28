@@ -75,6 +75,15 @@ const CheckInPaid_GroupedAttendeeList = () => {
     }
   };
 
+  // Collapse an expanded invoice when its header is clicked
+  const handleHeaderCollapse = (invoiceNumber) => {
+    setExpandedInvoices(prev => {
+      const next = new Set(prev);
+      next.delete(invoiceNumber);
+      return next;
+    });
+  };
+
   // Handle bulk check-in for all tickets in an invoice
   const handleBulkCheckInInvoice = async (tickets, checkIn) => {
     if (actionLoading || !selectedEvent) return;
@@ -127,7 +136,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
 
   if (!selectedEvent) {
     return (
-      <div className="text-gray-500 text-center py-8">
+      <div className="text-slate-500 text-center py-8">
         Select an event to view attendees
       </div>
     );
@@ -138,7 +147,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
           <div key={i} className="animate-pulse">
-            <div className="h-32 bg-gray-200 rounded-lg"></div>
+            <div className="h-32 bg-slate-200 rounded-xl"></div>
           </div>
         ))}
       </div>
@@ -147,7 +156,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
 
   if (attendees.length === 0) {
     return (
-      <div className="text-gray-500 text-center py-8">
+      <div className="text-slate-500 text-center py-8">
         {searchTerm 
           ? `No tickets found matching "${searchTerm}"`
           : 'No tickets sold for this event yet'
@@ -178,15 +187,18 @@ const CheckInPaid_GroupedAttendeeList = () => {
           return (
             <div 
               key={invoiceNumber} 
-              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+              className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
             >
-              {/* Invoice Header */}
-              <div className="p-3 sm:p-4">
+              {/* Invoice Header — click to collapse when expanded */}
+              <div
+                className={`p-3 sm:p-4 ${isExpanded ? 'cursor-pointer hover:bg-slate-50' : ''}`}
+                onClick={() => isExpanded && handleHeaderCollapse(invoiceNumber)}
+              >
                 {/* Mobile Layout */}
                 <div className="sm:hidden">
                   {/* Row 1: Buyer Name and Action Button */}
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-slate-800">
                       {representative.buyer?.firstName} {representative.buyer?.lastName}
                     </h3>
                     <button
@@ -197,9 +209,9 @@ const CheckInPaid_GroupedAttendeeList = () => {
                       disabled={actionLoading}
                       className={`
                         px-3 py-1 rounded text-xs font-medium transition-colors
-                        ${allCheckedIn 
-                          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                          : 'bg-gray-700 text-white hover:bg-gray-800'
+                        ${allCheckedIn
+                          ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
+                          : 'bg-teal-700 text-white hover:bg-teal-800'
                         }
                         ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
@@ -209,7 +221,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
                   </div>
                   
                   {/* Row 2: Tickets and Checked In Stats */}
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-sm text-slate-600">
                     <span>Tickets: {tickets.length}</span>
                     <span>Checked In: {checkedInAttendees} / {totalAttendees}</span>
                   </div>
@@ -219,7 +231,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
                 <div className="hidden sm:block">
                   {/* Row 1: Buyer Name and Action Button */}
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-slate-800">
                       {representative.buyer?.firstName} {representative.buyer?.lastName}
                     </h3>
                     <button
@@ -230,9 +242,9 @@ const CheckInPaid_GroupedAttendeeList = () => {
                       disabled={actionLoading}
                       className={`
                         px-4 py-2 rounded text-sm font-medium transition-colors
-                        ${allCheckedIn 
-                          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                          : 'bg-gray-700 text-white hover:bg-gray-800'
+                        ${allCheckedIn
+                          ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
+                          : 'bg-teal-700 text-white hover:bg-teal-800'
                         }
                         ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
@@ -242,7 +254,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
                   </div>
                   
                   {/* Row 2: Tickets and Checked In Stats */}
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-sm text-slate-600">
                     <span>Tickets: {tickets.length}</span>
                     <span>Checked In: {checkedInAttendees} / {totalAttendees}</span>
                   </div>
@@ -250,20 +262,19 @@ const CheckInPaid_GroupedAttendeeList = () => {
               </div>
               
               {/* Tab Buttons */}
-              <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
+              <div className="px-2 sm:px-4 py-2">
                 <div className="flex gap-1 sm:gap-2">
                   <button
                     onClick={() => handleTabClick(invoiceNumber, 'tickets')}
                     className={`
                       px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
                       ${isExpanded && (activeTab[invoiceNumber] || 'tickets') === 'tickets'
-                        ? 'bg-gray-200 text-gray-700'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        ? 'bg-teal-700 text-white border border-teal-700'
+                        : 'bg-white text-teal-700 border border-teal-300 hover:bg-teal-50'
                       }
                     `}
                   >
-                    <span className="sm:hidden">Tickets</span>
-                    <span className="hidden sm:inline">View Tickets</span>
+                    Tickets
                   </button>
                   {representative.formResponses && representative.formResponses.length > 0 && (
                     <button
@@ -271,13 +282,12 @@ const CheckInPaid_GroupedAttendeeList = () => {
                       className={`
                         px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
                         ${isExpanded && activeTab[invoiceNumber] === 'attendeeInfo'
-                          ? 'bg-gray-200 text-gray-700'
-                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          ? 'bg-teal-700 text-white border border-teal-700'
+                          : 'bg-white text-teal-700 border border-teal-300 hover:bg-teal-50'
                         }
                       `}
                     >
-                      <span className="sm:hidden">Attendee Info</span>
-                      <span className="hidden sm:inline">View Attendee Info</span>
+                      Attendee Info
                     </button>
                   )}
                   <button
@@ -285,8 +295,8 @@ const CheckInPaid_GroupedAttendeeList = () => {
                     className={`
                       px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
                       ${isExpanded && activeTab[invoiceNumber] === 'buyerInfo'
-                        ? 'bg-gray-200 text-gray-700'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        ? 'bg-teal-700 text-white border border-teal-700'
+                        : 'bg-white text-teal-700 border border-teal-300 hover:bg-teal-50'
                       }
                     `}
                   >
@@ -297,10 +307,10 @@ const CheckInPaid_GroupedAttendeeList = () => {
               
               {/* Tab Content */}
               {isExpanded && (
-                <div className="border-t border-gray-200 mb-4">
+                <div className="border-t border-slate-200 mb-4">
                   {/* Tickets Tab */}
                   {(activeTab[invoiceNumber] || 'tickets') === 'tickets' && (
-                    <div className="bg-gray-50 pb-4">
+                    <div className="pb-4">
                       <div className="p-2 sm:p-3 space-y-1">
                         {tickets.map((ticket) => (
                           <CheckInPaid_SimpleTicketRow 
@@ -319,8 +329,8 @@ const CheckInPaid_GroupedAttendeeList = () => {
                       <div className="space-y-3">
                         {representative.formResponses.map((response, index) => (
                           <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
-                            <div className="font-medium text-gray-700 text-sm mb-1">{response.fieldName}:</div>
-                            <div className="text-gray-600 text-sm whitespace-pre-line break-words pl-4">
+                            <div className="font-medium text-slate-700 text-sm mb-1">{response.fieldName}:</div>
+                            <div className="text-slate-600 text-sm whitespace-pre-line break-words pl-4">
                               {response.response}
                             </div>
                           </div>
@@ -334,20 +344,20 @@ const CheckInPaid_GroupedAttendeeList = () => {
                     <div className="p-3 sm:p-4 bg-white">
                       <div className="space-y-3">
                         <div className="border-b pb-3">
-                          <div className="font-medium text-gray-700 text-sm mb-1">Name:</div>
-                          <div className="text-gray-600 text-sm pl-4">
+                          <div className="font-medium text-slate-700 text-sm mb-1">Name:</div>
+                          <div className="text-slate-600 text-sm pl-4">
                             {representative.buyer?.firstName} {representative.buyer?.lastName}
                           </div>
                         </div>
                         <div className="border-b pb-3">
-                          <div className="font-medium text-gray-700 text-sm mb-1">Email:</div>
-                          <div className="text-gray-600 text-sm pl-4">
+                          <div className="font-medium text-slate-700 text-sm mb-1">Email:</div>
+                          <div className="text-slate-600 text-sm pl-4">
                             {representative.buyer?.email}
                           </div>
                         </div>
                         <div>
-                          <div className="font-medium text-gray-700 text-sm mb-1">Phone:</div>
-                          <div className="text-gray-600 text-sm pl-4">
+                          <div className="font-medium text-slate-700 text-sm mb-1">Phone:</div>
+                          <div className="text-slate-600 text-sm pl-4">
                             {representative.buyer?.phone}
                           </div>
                         </div>
@@ -363,8 +373,8 @@ const CheckInPaid_GroupedAttendeeList = () => {
       
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-          <div className="text-sm text-gray-600 text-center mb-2">
+        <div className="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-3">
+          <div className="text-sm text-slate-600 text-center mb-2">
             Showing {((pagination.currentPage - 1) * pagination.limit) + 1} - {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} tickets
           </div>
           <Pagination

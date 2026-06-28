@@ -4,8 +4,7 @@ import React, { useState, useEffect, Fragment } from 'react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import axios from '@/utils/axiosConfig';
-import { FaClock, FaCalendarAlt, FaMapMarkedAlt, FaUser, FaPhone, FaEnvelope } from 'react-icons/fa';
-import { GiTheaterCurtains } from 'react-icons/gi';
+import { FaRegCalendarAlt, FaMapMarkerAlt, FaBriefcase, FaRegEnvelope, FaPhoneAlt, FaUsers } from 'react-icons/fa';
 import VerticalScrollSlider from '@/components/shared/VerticalScrollSlider';
 import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import useDelayedLoading from '@/hooks/useDelayedLoading';
@@ -313,22 +312,22 @@ const MyFreeEventRegistrationsPage = () => {
 
   // Main render
   return (
-    <div className="space-y-2 sm:space-y-3">
+    <div className="space-y-6">
       <ProfilePageHeading title="My RSVPs" />
 
       {/* Event Selector with Date Filter */}
-      <div className="bg-white rounded-lg p-4">
+      <div className="bg-white rounded-xl shadow-md p-4">
         <div className="space-y-3">
           {/* Combined Date Filter and Event Selector */}
           <div className="flex flex-col sm:flex-row sm:gap-4">
             {/* Date Filter - Compact */}
             <div className="sm:w-1/3">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-teal-700 mb-1">
                 Date Range
               </label>
               <Listbox value={dateFilter} onChange={setDateFilter}>
                 <div className="relative">
-                  <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+                  <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
                     <span className="block truncate text-slate-900">
                       {DATE_FILTER_OPTIONS.find((o) => o.value === dateFilter)?.label}
                     </span>
@@ -373,7 +372,7 @@ const MyFreeEventRegistrationsPage = () => {
 
             {/* Event Selector - Compact */}
             <div className="flex-1 mt-3 sm:mt-0">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-teal-700 mb-1">
                 Select Event
               </label>
               {(() => {
@@ -381,7 +380,7 @@ const MyFreeEventRegistrationsPage = () => {
                 return (
                   <Listbox value={selectedEventId} onChange={setSelectedEventId}>
                     <div className="relative">
-                      <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+                      <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
                         <span className={`block truncate ${selectedEvent ? 'text-slate-900' : 'text-slate-500'}`}>
                           {selectedEvent
                             ? `${selectedEvent.eventCode} - ${selectedEvent.title}`
@@ -458,7 +457,7 @@ const MyFreeEventRegistrationsPage = () => {
               })()}
 
               {filteredEvents.length === 0 && events.length > 0 && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   No events in selected range. Try a different date filter.
                 </p>
               )}
@@ -466,106 +465,96 @@ const MyFreeEventRegistrationsPage = () => {
           </div>
 
           {/* Data retention hint */}
-          <p className="text-xs text-forest-900">
-            Please save your RSVPs. Events older than 2 years will be deleted.
+          <p className="text-xs text-slate-500 px-1">
+            <span className="font-semibold text-slate-600">Note:</span> Please save your RSVPs — events older than 2 years are removed.
           </p>
         </div>
       </div>
 
       {/* Selected Event Details & Registrations */}
       {selectedEventId && selectedEventRegistrations.length > 0 && (
-        <div>
-          {/* Event Info Header */}
+        <div className="space-y-4">
+          {/* Event Info Header — two-card panel */}
           {(() => {
             const selectedEvent = events.find(e => e.id === selectedEventId);
             const firstRegistration = selectedEventRegistrations[0];
             const eventInfo = firstRegistration.eventSnapshot || selectedEvent;
             const timeZone = eventInfo.timeZone;
             const eventDateTime = formatEventDateTime(eventInfo.dateTime, timeZone);
-            
-            return (
-              <div className="p-3 sm:p-4 space-y-3 sm:space-y-2 text-sm">
-                {/* Title + Event Code chip — inline on both mobile and desktop */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                    {eventInfo.title}
-                  </h3>
-                  <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
-                    {eventInfo.eventCode || selectedEvent?.eventCode}
-                  </span>
-                </div>
 
-                {/* Event details — 2-col grid (desktop). Mobile: time+date paired, venue + address each own row. */}
-                {(() => {
-                  const addressText = eventInfo.address
-                    ? (typeof eventInfo.address === 'string'
-                        ? eventInfo.address
-                        : eventInfo.address.formattedAddress ||
-                          `${eventInfo.address.street || ''} ${eventInfo.address.suburb || ''} ${eventInfo.address.state || ''} ${eventInfo.address.postalCode || ''}`.trim())
-                    : null;
-                  return (
-                    <div className="space-y-2 text-slate-700">
-                      {/* Row 1: Time + Date (paired both views) */}
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <FaClock className="text-forest-900 shrink-0" size={13} title="Time" aria-label="Time" />
-                          <span>{eventDateTime.time} ({timeZone})</span>
-                        </div>
-                        <div className="flex items-center gap-2 min-w-0">
-                          <FaCalendarAlt className="text-forest-900 shrink-0" size={13} title="Date" aria-label="Date" />
-                          <span>{eventDateTime.date}</span>
-                        </div>
+            const addressText = eventInfo.address
+              ? (typeof eventInfo.address === 'string'
+                  ? eventInfo.address
+                  : eventInfo.address.formattedAddress ||
+                    `${eventInfo.address.street || ''} ${eventInfo.address.suburb || ''} ${eventInfo.address.state || ''} ${eventInfo.address.postalCode || ''}`.trim())
+              : null;
+
+            const organizerPhone = eventInfo.organizer?.contact || eventInfo.organizer?.phone;
+
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Event details */}
+                <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-xs font-mono font-semibold bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full">
+                      {eventInfo.eventCode || selectedEvent?.eventCode}
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-bold text-teal-700">
+                      {eventInfo.title}
+                    </h3>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-x-10 gap-y-3">
+                    <div className="flex items-start gap-2">
+                      <FaRegCalendarAlt className="text-teal-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">{eventDateTime.date}</p>
+                        <p className="text-xs text-slate-500">Starts at {eventDateTime.time} ({timeZone})</p>
                       </div>
-                      {/* Row 2: Venue + Address (own row mobile, inline desktop hugging content) */}
-                      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-4 sm:gap-y-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <GiTheaterCurtains className="text-forest-900 shrink-0" size={15} title="Venue" aria-label="Venue" />
-                          <span>{eventInfo.venue}</span>
-                        </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <FaMapMarkerAlt className="text-teal-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">{eventInfo.venue}</p>
                         {addressText && (
-                          <div className="flex items-center gap-2 min-w-0">
-                            <FaMapMarkedAlt className="text-forest-900 shrink-0" size={13} title="Address" aria-label="Address" />
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-slate-900 underline break-words"
-                            >
-                              {addressText}
-                            </a>
-                          </div>
+                          <p className="text-xs text-slate-500">{addressText}</p>
                         )}
                       </div>
                     </div>
-                  );
-                })()}
-
-                {/* Organiser block — subtle separator above */}
-                <div className="pt-3 mt-2 border-t border-slate-200 space-y-2">
-                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                    Organiser
                   </div>
-                  {/* Name + Phone paired both views, Email full-width mobile / inline desktop (hugs content) */}
-                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-x-4 gap-y-2 text-slate-700">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <FaUser className="text-forest-900 shrink-0" size={13} title="Organiser" aria-label="Organiser" />
-                      <span className="truncate">{eventInfo.organizer?.name || 'Event Organizer'}</span>
+                </div>
+
+                {/* Organizer contact */}
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5 flex flex-col">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700">
+                    Organizer Contact
+                  </p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                      <FaBriefcase />
                     </div>
-                    {eventInfo.organizer?.phone && (
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FaPhone className="text-forest-900 shrink-0" size={13} title="Phone" aria-label="Phone" />
-                        <a href={`tel:${eventInfo.organizer.phone}`} className="hover:text-slate-900 underline">
-                          {eventInfo.organizer.phone}
-                        </a>
-                      </div>
-                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-700 truncate">{eventInfo.organizer?.name || 'Event Organizer'}</p>
+                      <p className="text-xs text-slate-500">Host Organization</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
                     {eventInfo.organizer?.email && (
-                      <div className="col-span-2 sm:col-auto flex items-center gap-2 min-w-0">
-                        <FaEnvelope className="text-forest-900 shrink-0" size={13} title="Email" aria-label="Email" />
-                        <a href={`mailto:${eventInfo.organizer.email}`} className="hover:text-slate-900 underline break-all">
-                          {eventInfo.organizer.email}
-                        </a>
-                      </div>
+                      <a
+                        href={`mailto:${eventInfo.organizer.email}`}
+                        className="flex items-center gap-2 text-sm text-slate-600 hover:text-teal-700 transition-colors break-all"
+                      >
+                        <FaRegEnvelope className="text-teal-600 shrink-0" />
+                        <span className="truncate">{eventInfo.organizer.email}</span>
+                      </a>
+                    )}
+                    {organizerPhone && (
+                      <a
+                        href={`tel:${organizerPhone}`}
+                        className="flex items-center gap-2 text-sm text-slate-600 hover:text-teal-700 transition-colors"
+                      >
+                        <FaPhoneAlt className="text-teal-600 shrink-0" />
+                        <span>{organizerPhone}</span>
+                      </a>
                     )}
                   </div>
                 </div>
@@ -573,114 +562,72 @@ const MyFreeEventRegistrationsPage = () => {
             );
           })()}
 
-          {/* Registration Details */}
-          <div className="mt-4 sm:mt-6">
-            <div className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Registration Details
-            </div>
-
-            <div className="space-y-3 sm:space-y-4">
-              {selectedEventRegistrations.map((registration, index) => {
+          {/* Registration record cards */}
+          <div className="space-y-3 sm:space-y-4">
+            {selectedEventRegistrations.map((registration, index) => {
               const isExpanded = expandedRegistrations.has(registration._id);
               const hasFormResponses = registration.formResponses && registration.formResponses.length > 0;
-              
-              return (
-                <div key={registration._id} className="overflow-hidden">
-                  {/* Registration Header — no chrome, all rows on the same surface */}
-                  <div className="p-4">
-                    {/* Top row: Reg Number + status pill (left) · Cancel link (right) */}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-slate-900 text-sm sm:text-base">
-                          {registration.registrationNumber}
-                        </span>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-green-50 text-green-700 border-green-200">
-                          {registration.status === 'checkedin' ? '✓ Checked in' : 'Registered'}
-                        </span>
-                      </div>
+              const registeredOn = registration.createdAt
+                ? new Date(registration.createdAt).toLocaleDateString()
+                : null;
 
+              return (
+                <div key={registration._id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                  {/* Slim row: actions (left) + registered date (right) */}
+                  <div className="p-3 sm:p-4 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleTabClick(registration._id, 'attendees')}
+                        className="inline-flex items-center gap-1.5 bg-teal-700 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold hover:bg-teal-800 transition-colors"
+                      >
+                        <FaUsers />
+                        <span>Attendees ({registration.attendees.length})</span>
+                      </button>
                       {registration.status !== 'checkedin' && (
                         <button
                           type="button"
                           onClick={() => setCancelEventId(registration.event)}
                           disabled={actionLoading}
-                          className="text-sm text-red-600 hover:text-red-700 underline disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-red-600 hover:text-red-700 hover:underline px-2 py-1.5 text-xs sm:text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {actionLoading ? 'Cancelling...' : 'Cancel registration'}
+                          {actionLoading ? 'Cancelling…' : 'Cancel'}
                         </button>
                       )}
                     </div>
-
-                  </div>
-
-                  {/* Tab Bar — same surface as header, no separator */}
-                  <div className="px-4 pb-3">
-                    <div className="flex gap-1 sm:gap-2">
-                      <button
-                        onClick={() => handleTabClick(registration._id, 'attendees')}
-                        className={`
-                          px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
-                          ${isExpanded && (activeTab[registration._id] || 'attendees') === 'attendees'
-                            ? 'bg-teal-600 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                          }
-                        `}
-                      >
-                        Attendees ({registration.attendees.length})
-                      </button>
-                      {hasFormResponses && (
-                        <button
-                          onClick={() => handleTabClick(registration._id, 'attendeeInfo')}
-                          className={`
-                            px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
-                            ${isExpanded && activeTab[registration._id] === 'attendeeInfo'
-                              ? 'bg-teal-600 text-white'
-                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                            }
-                          `}
-                        >
-                          Information
-                        </button>
-                      )}
+                    <div className="flex flex-col sm:flex-row sm:gap-1 text-xs sm:text-sm text-slate-600 text-right leading-tight shrink-0">
+                      <span>Registered on</span>
+                      <span>{registeredOn || registration.registrationNumber}</span>
                     </div>
                   </div>
 
-                  {/* Tab Content */}
+                  {/* Expanded attendee list — compact one-line rows */}
                   {isExpanded && (
-                    <div className="mb-4">
-                      {/* Attendees Tab */}
-                      {(activeTab[registration._id] || 'attendees') === 'attendees' && (
-                        <div className="px-4 pb-3">
-                          <VerticalScrollSlider maxHeightClass="max-h-44 md:max-h-60">
-                            <div className="space-y-2">
-                              {registration.attendees.map((attendee, idx) => (
-                                <div key={idx} className="border-b last:border-0 pb-2 last:pb-0">
-                                  <div className="text-sm sm:text-base font-medium text-gray-900">
-                                    {attendee.name}
-                                  </div>
-                                  {attendee.age && (
-                                    <div className="text-xs sm:text-sm text-gray-600">
-                                      Age: {attendee.age}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
+                    <div className="border-t border-slate-200 px-3 sm:px-4">
+                      <VerticalScrollSlider maxHeightClass="max-h-44 md:max-h-60">
+                        <div className="divide-y divide-slate-100">
+                          {registration.attendees.map((attendee, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-2 py-2 text-xs sm:text-sm">
+                              <span className="font-medium text-slate-800 truncate">{attendee.name}</span>
+                              {attendee.age && (
+                                <span className="text-slate-500 shrink-0 whitespace-nowrap">Age {attendee.age}</span>
+                              )}
                             </div>
-                          </VerticalScrollSlider>
+                          ))}
                         </div>
-                      )}
+                      </VerticalScrollSlider>
 
-                      {/* Information Tab */}
-                      {activeTab[registration._id] === 'attendeeInfo' && hasFormResponses && (
-                        <div className="px-4 pb-3">
+                      {/* Attendee information (form responses) — compact */}
+                      {hasFormResponses && (
+                        <div className="border-t border-slate-100 py-2">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700 mb-1">
+                            Information
+                          </p>
                           <VerticalScrollSlider maxHeightClass="max-h-48 md:max-h-64">
-                            <div className="space-y-3 text-sm">
+                            <div className="divide-y divide-slate-100">
                               {registration.formResponses.map((response, idx) => (
-                                <div key={idx} className="border-b last:border-0 pb-3 last:pb-0">
-                                  <div className="font-semibold text-gray-800 mb-1">{response.fieldName}:</div>
-                                  <div className="text-gray-600 whitespace-pre-line break-words pl-4">
-                                    {response.response}
-                                  </div>
+                                <div key={idx} className="py-2 text-xs sm:text-sm">
+                                  <span className="font-semibold text-slate-700">{response.fieldName}: </span>
+                                  <span className="text-slate-600 whitespace-pre-line break-words">{response.response}</span>
                                 </div>
                               ))}
                             </div>
@@ -692,7 +639,6 @@ const MyFreeEventRegistrationsPage = () => {
                 </div>
               );
             })}
-            </div>
           </div>
         </div>
       )}
@@ -706,21 +652,29 @@ const MyFreeEventRegistrationsPage = () => {
           <div
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl"
+            className="relative w-full max-w-xs rounded-xl bg-white p-5 text-center shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold text-slate-900">
+            <button
+              type="button"
+              onClick={() => !actionLoading && setCancelEventId(null)}
+              aria-label="Close"
+              className="absolute top-2.5 right-3 text-teal-700 hover:text-teal-800 text-xl font-bold leading-none"
+            >
+              ✕
+            </button>
+            <h2 className="text-base font-semibold text-slate-900">
               Cancel registration?
             </h2>
             <p className="mt-2 text-sm text-slate-600">
               Are you sure you want to cancel this registration? This action cannot be undone.
             </p>
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-center">
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-center">
               <button
                 type="button"
                 onClick={() => setCancelEventId(null)}
                 disabled={actionLoading}
-                className="w-full sm:w-auto px-4 py-2 rounded-full border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 py-2 rounded-full border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Keep registration
               </button>

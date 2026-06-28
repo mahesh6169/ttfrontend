@@ -44,10 +44,10 @@ const RefundInvoiceCard = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       {/* Invoice Header */}
       <div 
-        className="p-3 sm:p-4 cursor-pointer transition-colors hover:bg-gray-100"
+        className="p-3 sm:p-4 cursor-pointer transition-colors hover:bg-slate-50"
         onClick={handleToggleExpand}
       >
         {/* Desktop Layout */}
@@ -55,8 +55,8 @@ const RefundInvoiceCard = ({
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <IoChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                <h3 className="font-semibold text-gray-900">{invoiceNumber}</h3>
+                <IoChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                <h3 className="font-semibold text-slate-800">{invoiceNumber}</h3>
                 {allTicketsRefunded && (
                   <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
                     Fully Refunded
@@ -68,12 +68,12 @@ const RefundInvoiceCard = ({
                   </span>
                 )}
                 {hasSelectedTickets && (
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full">
                     Selected
                   </span>
                 )}
               </div>
-              <div className="text-sm text-gray-600 ml-6">
+              <div className="text-sm text-slate-600 ml-6">
                 <div>Tickets: {tickets.length} &nbsp;&nbsp; Refunded: {refundedCount} / {tickets.length}</div>
                 <div className="mt-1">
                   {buyer.firstName} {buyer.lastName} • {buyer.email} • {buyer.phone}
@@ -90,7 +90,7 @@ const RefundInvoiceCard = ({
                 e.stopPropagation();
                 handleToggleExpand();
               }}
-              className="px-4 py-1.5 border rounded-md text-sm font-medium transition-colors bg-teal-600 text-white border-teal-600 hover:bg-teal-700"
+              className="px-4 py-1.5 border rounded-md text-sm font-medium transition-colors bg-teal-700 text-white border-teal-700 hover:bg-teal-800"
             >
               {isExpanded ? 'Hide Tickets' : 'View Tickets'}
             </button>
@@ -102,8 +102,8 @@ const RefundInvoiceCard = ({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <IoChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                <h3 className="font-semibold text-gray-900 text-sm">{invoiceNumber}</h3>
+                <IoChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                <h3 className="font-semibold text-slate-800 text-sm">{invoiceNumber}</h3>
                 {allTicketsRefunded && (
                   <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
                     Fully Refunded
@@ -115,7 +115,7 @@ const RefundInvoiceCard = ({
                   </span>
                 )}
               </div>
-              <div className="ml-6 text-xs text-gray-600 space-y-1">
+              <div className="ml-6 text-xs text-slate-600 space-y-1">
                 <div>{buyer.firstName} {buyer.lastName}</div>
                 <div>{buyer.email}</div>
                 <div>{buyer.phone}</div>
@@ -135,7 +135,7 @@ const RefundInvoiceCard = ({
                 e.stopPropagation();
                 handleToggleExpand();
               }}
-              className="w-full px-4 py-2 border rounded-md text-sm font-medium transition-colors bg-teal-600 text-white border-teal-600 hover:bg-teal-700"
+              className="w-full px-4 py-2 border rounded-md text-sm font-medium transition-colors bg-teal-700 text-white border-teal-700 hover:bg-teal-800"
             >
               {isExpanded ? 'Hide Tickets' : 'View Tickets'}
             </button>
@@ -145,7 +145,7 @@ const RefundInvoiceCard = ({
 
       {/* Expanded Content - Tickets */}
       {isExpanded && (
-        <div className="border-t border-gray-200 bg-gray-50">
+        <div className="border-t border-slate-200 bg-slate-50">
           <div className="p-3 sm:p-4 space-y-3">
             {tickets.map((ticket) => {
               const isSelected = selectedTickets.some(t => t.ticketNumber === ticket.ticketNumber);
@@ -160,8 +160,8 @@ const RefundInvoiceCard = ({
                     isFullyRefunded 
                       ? 'border-red-200 bg-red-50' 
                       : isSelected 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-200'
+                      ? 'border-teal-500 bg-teal-50' 
+                      : 'border-slate-200'
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -173,8 +173,8 @@ const RefundInvoiceCard = ({
                         isFullyRefunded
                           ? 'bg-red-100 border-red-300 cursor-not-allowed'
                           : isSelected
-                          ? 'bg-blue-600 border-blue-600 text-white'
-                          : 'border-gray-300 hover:border-gray-400'
+                          ? 'bg-teal-600 border-teal-600 text-white'
+                          : 'border-slate-300 hover:border-slate-400'
                       }`}
                     >
                       {isFullyRefunded ? (
@@ -192,7 +192,7 @@ const RefundInvoiceCard = ({
                           {/* Desktop: All in one line, Mobile: Stacked */}
                           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
                             <span className="font-mono text-sm font-medium">{ticket.ticketNumber}</span>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-slate-500">
                               {ticket.ticketType.name}
                               {ticket.seats?.length > 0 && ` • Seat ${ticket.seats[0].row}${ticket.seats[0].seatNumber}`}
                               {!ticket.seats?.length && ' • GA'}
@@ -209,7 +209,7 @@ const RefundInvoiceCard = ({
                               {ticket.totalRefundedAmount > 0 ? (
                                 <span className="flex flex-col sm:flex-row sm:items-center">
                                   <span className="text-amber-600">Partially Refunded: {formatCurrency(ticket.totalRefundedAmount)}</span>
-                                  <span className="hidden sm:inline mx-2 text-gray-400">•</span>
+                                  <span className="hidden sm:inline mx-2 text-slate-400">•</span>
                                   <span className="text-teal-600">Available: {formatCurrency(maxRefundable)}</span>
                                 </span>
                               ) : (
@@ -226,9 +226,9 @@ const RefundInvoiceCard = ({
 
                       {/* Refund Amount Input */}
                       {isSelected && !isFullyRefunded && (
-                        <div className="mt-3 pt-3 border-t border-gray-200 -mx-3 px-3">
+                        <div className="mt-3 pt-3 border-t border-slate-200 -mx-3 px-3">
                           <div className="flex items-center gap-1">
-                            <label className="text-xs text-gray-700 whitespace-nowrap">Amount:</label>
+                            <label className="text-xs text-slate-700 whitespace-nowrap">Amount:</label>
                             <input
                               type="number"
                               min="0.01"
@@ -252,9 +252,9 @@ const RefundInvoiceCard = ({
                               }}
                               onWheel={(e) => e.target.blur()}
                               placeholder="Leave empty for full refund"
-                              className="flex-1 sm:flex-none sm:w-48 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 placeholder:text-xs"
+                              className="flex-1 sm:flex-none sm:w-48 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 placeholder:text-xs"
                             />
-                            <span className="text-xs text-gray-500 whitespace-nowrap">Max: {formatCurrency(maxRefundable)}</span>
+                            <span className="text-xs text-slate-500 whitespace-nowrap">Max: {formatCurrency(maxRefundable)}</span>
                           </div>
                           {amountWarnings[ticket.ticketNumber] && (
                             <div className="mt-1 text-xs text-amber-600">{amountWarnings[ticket.ticketNumber]}</div>

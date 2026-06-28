@@ -4,7 +4,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import jsPDF from 'jspdf';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import axios from '@/utils/axiosConfig';
-import { FaDownload } from 'react-icons/fa';
+import { FaDownload, FaRegCalendarAlt, FaMapMarkerAlt, FaBriefcase, FaRegEnvelope, FaPhoneAlt } from 'react-icons/fa';
 import Pagination from '@/components/Pagination';
 import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import useDelayedLoading from '@/hooks/useDelayedLoading';
@@ -273,13 +273,13 @@ const MyInvoicesPage = () => {
       <ProfilePageHeading title="My Invoices" />
 
       {/* Event Selector with Date Filter */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+      <div className="bg-white rounded-xl shadow-md p-4">
         <div className="space-y-3">
           {/* Combined Date Filter and Event Selector */}
           <div className="flex flex-col sm:flex-row sm:gap-4">
             {/* Date Filter - Compact */}
             <div className="sm:w-1/3">
-              <label className="block text-xs font-medium text-slate-600 mb-1">
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-teal-700 mb-1">
                 Date Range
               </label>
               <Listbox value={dateFilter} onChange={setDateFilter}>
@@ -329,7 +329,7 @@ const MyInvoicesPage = () => {
 
             {/* Event Selector - Compact */}
             <div className="flex-1 mt-3 sm:mt-0">
-              <label className="block text-xs font-medium text-slate-600 mb-1">
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-teal-700 mb-1">
                 Select Event
               </label>
               {(() => {
@@ -421,162 +421,155 @@ const MyInvoicesPage = () => {
             </div>
           </div>
 
-          {/* Data Retention Warning - More compact */}
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
-            <p className="text-xs text-amber-800">
-              <strong>Note:</strong> Please save your invoices. Events older than 2 years will be deleted.
-            </p>
-          </div>
+          {/* Data retention note */}
+          <p className="text-xs text-slate-500 px-1">
+            <span className="font-semibold text-slate-600">Note:</span> Please save your invoices — events older than 2 years are removed.
+          </p>
         </div>
       </div>
 
       {/* Selected Event Invoices */}
       {selectedEventId && selectedEventInvoices.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
-          {/* Event Info Header */}
+        <div className="space-y-4">
+          {/* Event panel — details + organiser (two cards) */}
           {(() => {
             const selectedEvent = events.find(e => e.id === selectedEventId);
             if (!selectedEvent) return null;
-            const eventDateTime = formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone);
             const timeZone = selectedEvent.timeZone;
-            
+            const eventDateTime = formatEventDateTime(selectedEvent.dateTime, timeZone);
+
             return (
-              <div className="bg-slate-50 border-b border-slate-200 rounded-lg p-3 sm:p-4">
-                <div className="flex flex-wrap items-center gap-3 text-sm">
-                  {/* Event Title */}
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                    {selectedEvent.title}
-                  </h3>
-                  
-                  {/* Event Code */}
-                  <span className="text-xs font-mono bg-slate-200 px-2 py-1 rounded">
-                    {selectedEvent.eventCode}
-                  </span>
-                  
-                  {/* Date & Time */}
-                  <div className="flex items-center gap-1 text-slate-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>{eventDateTime.combined} ({timeZone})</span>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Event details */}
+                <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-xs font-mono font-semibold bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full">
+                      {selectedEvent.eventCode}
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-bold text-teal-700">
+                      {selectedEvent.title}
+                    </h3>
                   </div>
-                  
-                  {/* Venue */}
-                  <div className="flex items-center gap-1 text-slate-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>{selectedEvent.venue}</span>
-                  </div>
-
-                  {/* Address - Full width on new line if exists */}
-                  {selectedEvent.address && (
-                    <div className="w-full flex items-start gap-1 text-slate-600 text-xs sm:text-sm">
-                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span>{selectedEvent.address}</span>
-                    </div>
-                  )}
-
-                  {/* Organizer Info - Full width on new line */}
-                  <div className="w-full border-t border-slate-200 pt-3 mt-2">
-                    <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-600">
+                  <div className="mt-4 flex flex-wrap gap-x-10 gap-y-3">
+                    <div className="flex items-start gap-2">
+                      <FaRegCalendarAlt className="text-teal-600 mt-0.5 shrink-0" />
                       <div>
-                        <span className="font-medium text-slate-700">Organizer:</span> {selectedEvent.organizer?.name || 'Event Organizer'}
+                        <p className="text-sm font-semibold text-slate-700">{eventDateTime.date}</p>
+                        <p className="text-xs text-slate-500">Starts at {eventDateTime.time} ({timeZone})</p>
                       </div>
-                      {(selectedEvent.organizer?.contact || selectedEvent.organizer?.phone) && (
-                        <div>
-                          <span className="font-medium text-slate-700">Contact:</span> {selectedEvent.organizer.contact || selectedEvent.organizer.phone}
-                        </div>
-                      )}
-                      {selectedEvent.organizer?.email && selectedEvent.organizer.email.trim() && (
-                        <div className="break-all">
-                          <span className="font-medium text-slate-700">Email:</span> {selectedEvent.organizer.email}
-                        </div>
-                      )}
-                      {selectedEvent.organizer?.abn && (
-                        <div>
-                          <span className="font-medium text-slate-700">ABN:</span> {selectedEvent.organizer.abn}
-                        </div>
-                      )}
-                      {selectedEvent.organizer?.website && selectedEvent.organizer.website.trim() && (
-                        <div className="break-all">
-                          <span className="font-medium text-slate-700">Website:</span> <a href={selectedEvent.organizer.website} target="_blank" rel="noopener noreferrer" className="text-teal-700 hover:underline">{selectedEvent.organizer.website}</a>
-                        </div>
-                      )}
                     </div>
+                    <div className="flex items-start gap-2">
+                      <FaMapMarkerAlt className="text-teal-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">{selectedEvent.venue}</p>
+                        {selectedEvent.address && (
+                          <p className="text-xs text-slate-500">{selectedEvent.address}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Organizer contact */}
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5 flex flex-col">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700">
+                    Organizer Contact
+                  </p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                      <FaBriefcase />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-700 truncate">{selectedEvent.organizer?.name || 'Event Organizer'}</p>
+                      <p className="text-xs text-slate-500">Host Organization</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {selectedEvent.organizer?.email && selectedEvent.organizer.email.trim() && (
+                      <a
+                        href={`mailto:${selectedEvent.organizer.email}`}
+                        className="flex items-center gap-2 text-sm text-slate-600 hover:text-teal-700 transition-colors break-all"
+                      >
+                        <FaRegEnvelope className="text-teal-600 shrink-0" />
+                        <span className="truncate">{selectedEvent.organizer.email}</span>
+                      </a>
+                    )}
+                    {(selectedEvent.organizer?.contact || selectedEvent.organizer?.phone) && (
+                      <a
+                        href={`tel:${selectedEvent.organizer.contact || selectedEvent.organizer.phone}`}
+                        className="flex items-center gap-2 text-sm text-slate-600 hover:text-teal-700 transition-colors"
+                      >
+                        <FaPhoneAlt className="text-teal-600 shrink-0" />
+                        <span>{selectedEvent.organizer.contact || selectedEvent.organizer.phone}</span>
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
             );
           })()}
 
-          {/* Invoice List */}
-          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-            <h4 className="text-base sm:text-lg font-semibold text-slate-900">Your Invoices</h4>
-            
+          {/* Invoice record cards */}
+          <div className="space-y-3 sm:space-y-4">
             {(() => {
-              const totalInvoicePages = Math.ceil(selectedEventInvoices.length / itemsPerPage);
               const paginatedInvoices = selectedEventInvoices.slice(
                 (eventInvoicePage - 1) * itemsPerPage,
                 eventInvoicePage * itemsPerPage
               );
               return paginatedInvoices;
-            })().map((invoice) => (
-              <div key={invoice.invoiceNumber} className="bg-white rounded-xl shadow-sm border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-                {/* Invoice link row */}
-                <button
-                  onClick={() => handleViewInvoice(invoice)}
-                  className="w-full flex items-center gap-3 px-3 sm:px-4 py-3 text-left hover:bg-slate-50 transition-colors"
-                >
-                  <span className="text-lg shrink-0" aria-hidden>🧾</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-medium text-teal-700 truncate">{invoice.invoiceNumber}</span>
-                    <span className="block text-xs text-slate-500 mt-0.5">{formatDate(invoice.invoiceDate)}</span>
-                  </span>
-                  <span className="shrink-0 font-semibold text-slate-900">${invoice.amounts.total.toFixed(2)}</span>
-                  <svg className="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-
-                {/* Refund link rows — one per refund transaction */}
-                {invoice.refunds && invoice.refunds.length > 0 &&
-                  groupRefundsForList(invoice.refunds).map((g, i) => (
+            })().map((invoice) => {
+              const refundGroups = (invoice.refunds && invoice.refunds.length > 0)
+                ? groupRefundsForList(invoice.refunds)
+                : [];
+              return (
+                <div key={invoice.invoiceNumber} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                  {/* Invoice row: Invoice ID (left) + View Invoice (right) */}
+                  <div className="p-3 sm:p-4 flex items-center justify-between gap-3 text-sm">
+                    <div className="min-w-0 truncate">
+                      <span className="text-slate-500">Invoice </span>
+                      <span className="font-mono font-medium text-slate-800">{invoice.invoiceNumber}</span>
+                    </div>
                     <button
-                      key={g.stripeRefundId || i}
-                      onClick={() => handleViewRefund(invoice, g.stripeRefundId)}
-                      className="w-full flex items-center gap-3 px-3 sm:px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+                      onClick={() => handleViewInvoice(invoice)}
+                      className="text-teal-700 hover:text-teal-800 hover:underline font-semibold shrink-0"
                     >
-                      <span className="text-lg shrink-0 text-red-500" aria-hidden>↩</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-medium text-teal-700 truncate">
-                          {g.refundRequestId || `${invoice.invoiceNumber} · Refund ${i + 1}`}
-                        </span>
-                        <span className="block text-xs text-slate-500 mt-0.5">Refund · {formatDate(g.refundDate)}</span>
-                      </span>
-                      <span className="shrink-0 font-semibold text-red-600">-${g.totalAmount.toFixed(2)}</span>
-                      <svg className="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                      View Invoice
                     </button>
-                  ))}
-              </div>
-            ))}
+                  </div>
+
+                  {/* Refund rows — mimic the invoice row */}
+                  {refundGroups.length > 0 && (
+                    <div className="border-t border-slate-200 divide-y divide-slate-100">
+                      {refundGroups.map((g, i) => (
+                        <div key={g.stripeRefundId || i} className="p-3 sm:p-4 flex items-center justify-between gap-3 text-sm">
+                          <div className="min-w-0 truncate">
+                            <span className="text-slate-500">Refund </span>
+                            <span className="font-mono font-medium text-slate-800">{g.refundRequestId || g.stripeRefundId}</span>
+                          </div>
+                          <button
+                            onClick={() => handleViewRefund(invoice, g.stripeRefundId)}
+                            className="text-teal-700 hover:text-teal-800 hover:underline font-semibold shrink-0"
+                          >
+                            View Refund
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Pagination - Only show when event selected and has multiple pages */}
-          {selectedEventId && (() => {
+          {(() => {
             const totalInvoicePages = Math.ceil(selectedEventInvoices.length / itemsPerPage);
             return totalInvoicePages > 1 ? (
-              <div className="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-3">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
                 <div className="text-sm text-slate-600 text-center mb-2">
                   Showing {((eventInvoicePage - 1) * itemsPerPage) + 1} - {Math.min(eventInvoicePage * itemsPerPage, selectedEventInvoices.length)} of {selectedEventInvoices.length} invoices
                 </div>
-                <Pagination 
+                <Pagination
                   currentPage={eventInvoicePage}
                   totalPages={totalInvoicePages}
                   onPageChange={(page) => setEventInvoicePage(page)}
@@ -1063,21 +1056,22 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     : [];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-[9999] overflow-y-auto">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[85vh] sm:max-h-[90vh] my-auto flex flex-col">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[calc(100vh-100px)] flex flex-col">
         {/* Header - Fixed at top */}
-        <div className="flex-shrink-0 flex justify-between items-center p-4 sm:p-6 border-b">
-          <h3 className="text-lg sm:text-xl font-semibold">{isRefundView ? 'Refund Details' : 'Invoice Details'}</h3>
+        <div className="flex-shrink-0 flex justify-between items-center p-4 border-b border-slate-200">
+          <h3 className="text-lg sm:text-xl font-bold text-teal-700">{isRefundView ? 'Refund Details' : 'Invoice Details'}</h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 text-xl"
+            className="text-teal-700 hover:text-teal-800 text-xl font-bold leading-none"
+            aria-label="Close"
           >
             ✕
           </button>
         </div>
 
         {/* Invoice Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {/* Loading/Error States */}
           {invoiceLoading && (
             <div className="flex items-center justify-center py-12">
@@ -1105,7 +1099,7 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
               <div className="border-b pb-6 mb-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900">{isRefundView ? 'REFUND' : 'INVOICE'}</h2>
+                    <h2 className="text-xl font-bold text-slate-900">{isRefundView ? 'REFUND' : 'INVOICE'}</h2>
                     <p className="text-slate-600 mt-1">
                       {isRefundView
                         ? (targetRefund?.refundRequestId ? `Refund #${targetRefund.refundRequestId}` : 'Refund')
@@ -1336,31 +1330,17 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                 </div>
               )}
 
-              {/* Actions — PDF download (invoice or refund) */}
-              <div className="mt-8 pt-6 border-t">
+              {/* Actions — PDF download (invoice or refund) as a teal text link */}
+              <div className="mt-8 pt-6 border-t border-slate-200 text-center">
                 <button
                   onClick={downloadPDF}
                   disabled={isDownloading}
-                  className={`w-full px-4 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
-                    isDownloading
-                      ? 'bg-slate-300 cursor-not-allowed'
-                      : 'bg-teal-700 hover:bg-teal-800'
-                  } text-white`}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 hover:text-teal-800 hover:underline disabled:opacity-50 disabled:no-underline"
                 >
-                  {isDownloading ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>Generating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaDownload />
-                      <span>{isRefundView ? 'Download Refund' : 'Download Invoice'}</span>
-                    </>
-                  )}
+                  <FaDownload size={13} />
+                  {isDownloading
+                    ? 'Generating…'
+                    : (isRefundView ? 'Download Refund' : 'Download Invoice')}
                 </button>
               </div>
             </>

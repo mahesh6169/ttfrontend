@@ -10,7 +10,6 @@ import { useSelector } from 'react-redux';
 import {
   FaHeart,
   FaCommentDots,
-  FaRocket,
   FaCreditCard,
   FaUserCheck,
   FaQrcode,
@@ -24,6 +23,7 @@ import {
   FaTag,
   FaFileInvoiceDollar,
   FaCog,
+  FaSignOutAlt,
 } from 'react-icons/fa';
 
 const TOP = [
@@ -33,8 +33,7 @@ const TOP = [
 
 // `flag` (when present) gates the item on user[flag] being true. No flag = always shown.
 const ORGANISER = [
-  { label: 'Onboarding', href: '/users/profile/onboard', icon: FaRocket },
-  { label: 'Stripe Setup', href: '/users/profile/settings/stripeSetup', icon: FaCreditCard },
+  { label: 'Stripe Setup', href: '/users/profile/stripeSetup', icon: FaCreditCard },
   { label: 'Check-in RSVP', href: '/users/profile/checkInFree', icon: FaUserCheck, flag: 'freeHost' },
   { label: 'Check-in Paid', href: '/users/profile/checkInPaid', icon: FaQrcode, flag: 'paidHost' },
   { label: 'Refunds', href: '/users/profile/refunds', icon: FaUndo, flag: 'paidHost' },
@@ -62,11 +61,12 @@ const GroupLabel = ({ children }) => (
   </p>
 );
 
-const NavItem = ({ item, active }) => {
+const NavItem = ({ item, active, onNavigate }) => {
   const Icon = item.icon;
   return (
     <Link
       href={item.href}
+      onClick={onNavigate}
       className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
         active
           ? 'bg-teal-50 text-teal-700 font-semibold'
@@ -79,7 +79,7 @@ const NavItem = ({ item, active }) => {
   );
 };
 
-export default function ProfileSidebar({ className = '' }) {
+export default function ProfileSidebar({ className = '', onNavigate, onSignout }) {
   const pathname = usePathname();
   const { user } = useSelector((state) => state.user);
 
@@ -92,6 +92,7 @@ export default function ProfileSidebar({ className = '' }) {
       {/* Identity → profile home */}
       <Link
         href="/users/profile"
+        onClick={onNavigate}
         className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
           isActive('/users/profile') ? 'bg-teal-50' : 'hover:bg-slate-50'
         }`}
@@ -107,33 +108,46 @@ export default function ProfileSidebar({ className = '' }) {
 
       <div className="space-y-0.5">
         {TOP.map((i) => (
-          <NavItem key={i.href} item={i} active={isActive(i.href)} />
+          <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
         ))}
       </div>
 
       <GroupLabel>Organiser</GroupLabel>
       <div className="space-y-0.5">
         {organiserItems.map((i) => (
-          <NavItem key={i.href} item={i} active={isActive(i.href)} />
+          <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
         ))}
       </div>
 
       <GroupLabel>Manage</GroupLabel>
       <div className="space-y-0.5">
         {MANAGE.map((i) => (
-          <NavItem key={i.href} item={i} active={isActive(i.href)} />
+          <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
         ))}
       </div>
 
       <div className="space-y-0.5 mt-4">
         {RECORDS.map((i) => (
-          <NavItem key={i.href} item={i} active={isActive(i.href)} />
+          <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
         ))}
       </div>
 
       <div className="border-t border-slate-200 mt-4 pt-2">
-        <NavItem item={SETTINGS} active={isActive(SETTINGS.href)} />
+        <NavItem item={SETTINGS} active={isActive(SETTINGS.href)} onNavigate={onNavigate} />
       </div>
+
+      {/* Signout — pinned at the bottom in the mobile overlay only (desktop keeps it in the header) */}
+      {onSignout && (
+        <div className="border-t border-slate-200 mt-2 pt-2">
+          <button
+            onClick={onSignout}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm w-full text-left text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors"
+          >
+            <FaSignOutAlt className="text-base shrink-0" />
+            <span>Signout</span>
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

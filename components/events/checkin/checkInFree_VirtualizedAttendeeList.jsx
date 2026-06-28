@@ -132,6 +132,19 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     }
   }, [selectedEvent, actionLoading, dispatch]);
 
+  // Collapse an expanded registration when its header is clicked
+  const handleHeaderCollapse = useCallback((registrationId) => {
+    setExpandedRegistrations(prev => {
+      const next = new Set(prev);
+      next.delete(registrationId);
+      return next;
+    });
+    const index = attendees.findIndex(r => r._id === registrationId);
+    if (index !== -1 && listRef.current) {
+      listRef.current.resetAfterIndex(index);
+    }
+  }, [attendees]);
+
   // Format registration date
   const formatDate = (dateString) => {
     try {
@@ -205,9 +218,12 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     return (
       <div style={style}>
         <div className="px-2 sm:px-4 pb-4">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          {/* Registration Header - New Layout */}
-          <div className="border-b border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          {/* Registration Header — click to collapse when expanded */}
+          <div
+            className={isExpanded ? 'cursor-pointer hover:bg-slate-50' : ''}
+            onClick={() => isExpanded && handleHeaderCollapse(registration._id)}
+          >
             {/* Mobile Layout - Button First */}
             <div className="block sm:hidden p-4 space-y-3">
               {/* Row 1: Check In/Out Button (full width) */}
@@ -221,8 +237,8 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                   className={`
                     w-full px-4 py-2 rounded-md text-sm font-medium transition-colors
                     ${allCheckedIn 
-                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                      : 'bg-teal-600 text-white hover:bg-teal-700'
+                      ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100' 
+                      : 'bg-teal-700 text-white hover:bg-teal-800'
                     }
                     ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
@@ -232,17 +248,17 @@ const CheckInFree_VirtualizedAttendeeList = () => {
               </div>
 
               {/* Row 2: Registration Number */}
-              <div className="font-bold text-gray-900 text-base">
+              <div className="font-bold text-slate-800 text-base">
                 {registration.registrationNumber}
               </div>
 
               {/* Row 3: Name and Email */}
               <div>
-                <div className="font-medium text-gray-800 text-sm">
+                <div className="font-medium text-slate-800 text-sm">
                   {registration.user?.name || registration.userId?.name || 'Former User'}
                 </div>
                 {registration.email && (
-                  <div className="text-gray-600 text-xs break-all mt-1">
+                  <div className="text-slate-600 text-xs break-all mt-1">
                     {registration.email}
                   </div>
                 )}
@@ -251,8 +267,8 @@ const CheckInFree_VirtualizedAttendeeList = () => {
               {/* Row 4: Attendee Count and Status */}
               <div className="flex items-center gap-2 text-xs">
                 <span>{registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}</span>
-                <span className="text-gray-400">•</span>
-                <span className={`font-medium ${allCheckedIn ? 'text-green-600' : showPartialCheckIn ? 'text-yellow-600' : 'text-gray-700'}`}>
+                <span className="text-slate-400">•</span>
+                <span className={`font-medium ${allCheckedIn ? 'text-teal-600' : showPartialCheckIn ? 'text-slate-500' : 'text-slate-700'}`}>
                   Checked In: {registration.attendees.filter(a => a.checkedIn).length}/{registration.attendees.length}
                 </span>
               </div>
@@ -263,13 +279,13 @@ const CheckInFree_VirtualizedAttendeeList = () => {
             <div className="hidden sm:flex items-start justify-between gap-4 p-4">
               <div className="flex-1">
                 {/* Registration Number */}
-                <div className="font-semibold text-gray-900 text-sm sm:text-base mb-1">
+                <div className="font-semibold text-slate-800 text-sm sm:text-base mb-1">
                   {registration.registrationNumber}
                 </div>
                 
                 {/* User Details */}
-                <div className="text-xs sm:text-sm text-gray-600 mb-2">
-                  <span className="font-medium text-gray-700">{registration.user?.name || registration.userId?.name || 'Former User'}</span>
+                <div className="text-xs sm:text-sm text-slate-600 mb-2">
+                  <span className="font-medium text-slate-700">{registration.user?.name || registration.userId?.name || 'Former User'}</span>
                   {registration.user?.phone && (
                     <>
                       <span className="mx-1">•</span>
@@ -289,8 +305,8 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                   <span className="font-medium">
                     {registration.attendees.length} Attendee{registration.attendees.length !== 1 ? 's' : ''}
                   </span>
-                  <span className="text-gray-500">•</span>
-                  <span className={`font-medium ${allCheckedIn ? 'text-green-600' : showPartialCheckIn ? 'text-yellow-600' : 'text-gray-600'}`}>
+                  <span className="text-slate-500">•</span>
+                  <span className={`font-medium ${allCheckedIn ? 'text-teal-600' : showPartialCheckIn ? 'text-slate-500' : 'text-slate-600'}`}>
                     Checked In: {registration.attendees.filter(a => a.checkedIn).length}/{registration.attendees.length}
                   </span>
                 </div>
@@ -306,8 +322,8 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                 className={`
                   px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
                   ${allCheckedIn 
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
-                    : 'bg-teal-600 text-white hover:bg-teal-700'
+                    ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100' 
+                    : 'bg-teal-700 text-white hover:bg-teal-800'
                   }
                   ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
@@ -318,20 +334,19 @@ const CheckInFree_VirtualizedAttendeeList = () => {
           </div>
           
           {/* Tab Buttons */}
-          <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
+          <div className="px-2 sm:px-4 py-2">
             <div className="flex gap-1 sm:gap-2">
               <button
                 onClick={() => handleTabClick(registration._id, 'attendees')}
                 className={`
                   px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
                   ${isExpanded && currentTab === 'attendees'
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    ? 'bg-teal-700 text-white border border-teal-700'
+                    : 'bg-white text-teal-700 border border-teal-300 hover:bg-teal-50'
                   }
                 `}
               >
-                <span className="sm:hidden">Attendees</span>
-                <span className="hidden sm:inline">View Attendees</span>
+                Attendees
               </button>
               {registration.formResponses && registration.formResponses.length > 0 && (
                 <button
@@ -339,13 +354,12 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                   className={`
                     px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
                     ${isExpanded && currentTab === 'attendeeInfo'
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      ? 'bg-teal-700 text-white border border-teal-700'
+                      : 'bg-white text-teal-700 border border-teal-300 hover:bg-teal-50'
                     }
                   `}
                 >
-                  <span className="sm:hidden">Attendee Info</span>
-                  <span className="hidden sm:inline">View Attendee Information</span>
+                  Attendee Info
                 </button>
               )}
             </div>
@@ -353,10 +367,10 @@ const CheckInFree_VirtualizedAttendeeList = () => {
           
           {/* Tab Content */}
           {isExpanded && (
-            <div className="border-t border-gray-200 mb-4">
+            <div className="border-t border-slate-200 mb-4">
               {/* Attendees Tab */}
               {currentTab === 'attendees' && (
-                <div className="bg-gray-50 py-2 px-1 sm:px-2">
+                <div className="py-2 px-1 sm:px-2">
                   <div className="space-y-0.5">
                     {registration.attendees.map((attendee, idx) => (
                       <CheckInFree_SimpleAttendeeRow
@@ -377,8 +391,8 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                   <div className="space-y-3">
                     {registration.formResponses.map((response, index) => (
                       <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
-                        <div className="font-medium text-gray-700 text-sm mb-1">{response.fieldName}:</div>
-                        <div className="text-gray-600 text-sm whitespace-pre-line break-words pl-4">
+                        <div className="font-medium text-slate-700 text-sm mb-1">{response.fieldName}:</div>
+                        <div className="text-slate-600 text-sm whitespace-pre-line break-words pl-4">
                           {response.response}
                         </div>
                       </div>
@@ -398,9 +412,9 @@ const CheckInFree_VirtualizedAttendeeList = () => {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow p-4 animate-pulse mx-4">
-            <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div key={i} className="bg-white rounded-xl shadow p-4 animate-pulse mx-4">
+            <div className="h-4 bg-slate-200 rounded w-1/3 mb-2"></div>
+            <div className="h-4 bg-slate-200 rounded w-1/2"></div>
           </div>
         ))}
       </div>
@@ -409,7 +423,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
 
   if (!selectedEvent) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-slate-500">
         Please select an event to view attendees
       </div>
     );
@@ -418,7 +432,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
   if (attendees.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">
+        <p className="text-slate-500">
           {searchTerm 
             ? `No attendees found matching "${searchTerm}"`
             : 'No registrations found for this event'
@@ -431,7 +445,7 @@ const CheckInFree_VirtualizedAttendeeList = () => {
   return (
     <div>
       {/* Stats summary */}
-      <div className="px-4 pb-2 text-sm text-gray-600">
+      <div className="px-4 pb-2 text-sm text-slate-600">
         {(() => {
           const start = (pagination.currentPage - 1) * pagination.limit + 1;
           const end = Math.min(start + attendees.length - 1, pagination.totalCount);

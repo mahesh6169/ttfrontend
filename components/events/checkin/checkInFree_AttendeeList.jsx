@@ -80,6 +80,15 @@ const CheckInFree_AttendeeList = () => {
     }
   };
 
+  // Collapse an expanded registration when its header is clicked
+  const handleHeaderCollapse = (registrationId) => {
+    setExpandedRegistrations(prev => {
+      const next = new Set(prev);
+      next.delete(registrationId);
+      return next;
+    });
+  };
+
   // Format registration date
   const formatDate = (dateString) => {
     try {
@@ -104,9 +113,9 @@ const CheckInFree_AttendeeList = () => {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow p-4 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div key={i} className="bg-white rounded-xl shadow p-4 animate-pulse">
+            <div className="h-4 bg-slate-200 rounded w-1/3 mb-2"></div>
+            <div className="h-4 bg-slate-200 rounded w-1/2"></div>
           </div>
         ))}
       </div>
@@ -115,7 +124,7 @@ const CheckInFree_AttendeeList = () => {
 
   if (!selectedEvent) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-slate-500">
         Please select an event to view attendees
       </div>
     );
@@ -124,7 +133,7 @@ const CheckInFree_AttendeeList = () => {
   if (displayedAttendees.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">
+        <p className="text-slate-500">
           {searchTerm 
             ? `No attendees found matching "${searchTerm}"`
             : 'No registrations found for this event'
@@ -163,15 +172,18 @@ const CheckInFree_AttendeeList = () => {
         return (
           <div 
             key={registration._id} 
-            className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+            className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
           >
-            {/* Registration Header - New Layout */}
-            <div>
+            {/* Registration Header — click to collapse when expanded */}
+            <div
+              className={isExpanded ? 'cursor-pointer hover:bg-slate-50' : ''}
+              onClick={() => isExpanded && handleHeaderCollapse(registration._id)}
+            >
               {/* Mobile Layout */}
               <div className="block sm:hidden p-4 space-y-3">
                 {/* Row 1: Reg Number + Bulk Action Button */}
                 <div className="flex items-center justify-between gap-3">
-                  <div className="font-bold text-gray-900 text-base">
+                  <div className="font-bold text-slate-800 text-base">
                     {registration.registrationNumber}
                   </div>
                   <button
@@ -183,8 +195,8 @@ const CheckInFree_AttendeeList = () => {
                     className={`
                       px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap
                       ${allCheckedIn
-                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        : 'bg-teal-600 text-white hover:bg-teal-700'
+                        ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
+                        : 'bg-teal-700 text-white hover:bg-teal-800'
                       }
                       ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                     `}
@@ -199,7 +211,7 @@ const CheckInFree_AttendeeList = () => {
               
               {/* Desktop Layout */}
               <div className="hidden sm:flex items-center justify-between gap-4 p-4">
-                <div className="font-semibold text-gray-900 text-sm sm:text-base">
+                <div className="font-semibold text-slate-800 text-sm sm:text-base">
                   {registration.registrationNumber}
                 </div>
 
@@ -213,8 +225,8 @@ const CheckInFree_AttendeeList = () => {
                   className={`
                     px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
                     ${allCheckedIn
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      : 'bg-teal-600 text-white hover:bg-teal-700'
+                      ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
+                      : 'bg-teal-700 text-white hover:bg-teal-800'
                     }
                     ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
@@ -235,8 +247,8 @@ const CheckInFree_AttendeeList = () => {
                     className={`
                       px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
                       ${isExpanded && activeTab[registration._id] === 'booker'
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        ? 'bg-teal-700 text-white border border-teal-700'
+                        : 'bg-white text-teal-700 border border-teal-300 hover:bg-teal-50'
                       }
                     `}
                   >
@@ -248,8 +260,8 @@ const CheckInFree_AttendeeList = () => {
                   className={`
                     px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
                     ${isExpanded && (activeTab[registration._id] || 'attendees') === 'attendees'
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      ? 'bg-teal-700 text-white border border-teal-700'
+                      : 'bg-white text-teal-700 border border-teal-300 hover:bg-teal-50'
                     }
                   `}
                 >
@@ -261,8 +273,8 @@ const CheckInFree_AttendeeList = () => {
                     className={`
                       px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
                       ${isExpanded && activeTab[registration._id] === 'attendeeInfo'
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        ? 'bg-teal-700 text-white border border-teal-700'
+                        : 'bg-white text-teal-700 border border-teal-300 hover:bg-teal-50'
                       }
                     `}
                   >
@@ -281,7 +293,7 @@ const CheckInFree_AttendeeList = () => {
                     {/* Row 1: Name + Phone */}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-700">
                       <div className="flex items-center gap-2 min-w-0">
-                        <FaUser className="text-forest-900 shrink-0" size={13} title="Name" aria-label="Name" />
+                        <FaUser className="text-teal-600 shrink-0" size={13} title="Name" aria-label="Name" />
                         {bookerName ? (
                           <span className="truncate">{bookerName}</span>
                         ) : (
@@ -290,7 +302,7 @@ const CheckInFree_AttendeeList = () => {
                       </div>
                       {registration.mobile && (
                         <div className="flex items-center gap-2 min-w-0">
-                          <FaPhone className="text-forest-900 shrink-0" size={13} title="Phone" aria-label="Phone" />
+                          <FaPhone className="text-teal-600 shrink-0" size={13} title="Phone" aria-label="Phone" />
                           <a href={`tel:${registration.mobile}`} className="hover:text-slate-900 underline">
                             {registration.mobile}
                           </a>
@@ -300,7 +312,7 @@ const CheckInFree_AttendeeList = () => {
                     {/* Row 2: Email */}
                     {registration.email && (
                       <div className="flex items-center gap-2 text-slate-700 min-w-0">
-                        <FaEnvelope className="text-forest-900 shrink-0" size={13} title="Email" aria-label="Email" />
+                        <FaEnvelope className="text-teal-600 shrink-0" size={13} title="Email" aria-label="Email" />
                         <a href={`mailto:${registration.email}`} className="hover:text-slate-900 underline break-all">
                           {registration.email}
                         </a>
@@ -335,8 +347,8 @@ const CheckInFree_AttendeeList = () => {
                       <div className="space-y-3 text-sm">
                         {registration.formResponses.map((response, index) => (
                           <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
-                            <div className="font-semibold text-gray-800 mb-1">{response.fieldName}:</div>
-                            <div className="text-gray-600 whitespace-pre-line break-words pl-4">
+                            <div className="font-semibold text-slate-800 mb-1">{response.fieldName}:</div>
+                            <div className="text-slate-600 whitespace-pre-line break-words pl-4">
                               {response.response}
                             </div>
                           </div>
@@ -354,8 +366,8 @@ const CheckInFree_AttendeeList = () => {
       
       {/* Pagination - Outside of registration list container */}
       {pagination.totalPages > 1 && (
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-          <div className="text-sm text-gray-600 text-center mb-2">
+        <div className="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-3">
+          <div className="text-sm text-slate-600 text-center mb-2">
             Showing {((pagination.currentPage - 1) * pagination.limit) + 1} - {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} registrations
           </div>
           <Pagination

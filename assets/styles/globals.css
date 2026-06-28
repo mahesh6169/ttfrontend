@@ -150,3 +150,12 @@ input[type="number"] {
     animation: none;
   }
 }
+
+/* Hide scrollbar for snap carousels (used by ticket QR carousel, demo events, etc.) */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE / old Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome / Safari */
+}

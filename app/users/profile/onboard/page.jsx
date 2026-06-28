@@ -109,7 +109,7 @@ export default function OnboardPage() {
       }
     } catch (err) {
       console.error('Stripe onboarding error:', err);
-      router.push('/users/profile/settings/stripeSetup?returnTo=/users/profile/onboard');
+      router.push('/users/profile/stripeSetup?returnTo=/users/profile/onboard');
     }
   };
 

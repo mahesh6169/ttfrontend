@@ -6,6 +6,7 @@ import axios from '@/utils/axiosConfig';
 import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import useDelayedLoading from '@/hooks/useDelayedLoading';
 import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import { FaCheckCircle } from 'react-icons/fa';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -118,7 +119,7 @@ export default function StripeSetupPage() {
 
   if (checkingStatus || showSkeleton) {
     return (
-      <div>
+      <div className="max-w-md mx-auto">
         <ProfilePageHeading title="Stripe Payout Setup" />
         {showSkeleton && <PageSkeleton variant="form" rows={4} />}
       </div>
@@ -134,54 +135,54 @@ export default function StripeSetupPage() {
   // Simplified button configuration
   const getButtonConfig = () => {
     if (loading) {
-      return { 
-        text: 'Loading...', 
-        disabled: true, 
-        className: 'bg-gray-400' 
+      return {
+        text: 'Loading...',
+        disabled: true,
+        className: 'bg-slate-300'
       };
     }
 
     // No account yet
     if (status === 'no_account') {
-      return { 
-        text: 'Connect with Stripe', 
-        disabled: false, 
-        className: 'bg-blue-600 hover:bg-blue-700' 
+      return {
+        text: 'Connect with Stripe',
+        disabled: false,
+        className: 'bg-teal-700 hover:bg-teal-800'
       };
     }
     
     // Fully active - can access dashboard
     if (status === 'fully_active') {
-      return { 
-        text: '✅ Open Stripe Dashboard', 
-        disabled: false, 
-        className: 'bg-green-600 hover:bg-green-700' 
+      return {
+        text: 'Open Stripe Dashboard',
+        disabled: false,
+        className: 'bg-teal-700 hover:bg-teal-800'
       };
     }
     
     // Has requirements to complete
     if (hasActionRequired) {
-      return { 
-        text: 'Complete Setup', 
-        disabled: false, 
-        className: 'bg-orange-600 hover:bg-orange-700' 
+      return {
+        text: 'Complete Setup',
+        disabled: false,
+        className: 'bg-teal-700 hover:bg-teal-800'
       };
     }
     
     // Only pending verification
     if (hasPendingOnly) {
-      return { 
-        text: '⏳ Verification in Progress', 
-        disabled: true, 
-        className: 'bg-gray-400' 
+      return {
+        text: 'Verification in Progress',
+        disabled: true,
+        className: 'bg-slate-300'
       };
     }
-    
+
     // Default - continue setup
-    return { 
-      text: 'Continue Setup', 
-      disabled: false, 
-      className: 'bg-blue-600 hover:bg-blue-700' 
+    return {
+      text: 'Continue Setup',
+      disabled: false,
+      className: 'bg-teal-700 hover:bg-teal-800'
     };
   };
 
@@ -189,14 +190,14 @@ export default function StripeSetupPage() {
 
   return (
     <div>
-      <div>
+      <div className="max-w-md mx-auto">
         <ProfilePageHeading title="Stripe Payout Setup" />
 
         {/* Refresh */}
         <div className="flex items-center justify-end mb-4">
           <button
             onClick={checkAccountStatus}
-            className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-2 text-slate-500 hover:text-slate-700 transition-colors"
             disabled={checkingStatus}
           >
             <svg className={`w-5 h-5 ${checkingStatus ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,22 +206,29 @@ export default function StripeSetupPage() {
           </button>
         </div>
 
-        {/* Subtitle */}
-        <p className="text-sm text-gray-600 mb-6">
-          Setup Stripe account to receive payments for your paid events
-        </p>
+        {/* Status line — same slot, message swaps by state */}
+        {hasActionRequired ? (
+          <div className="mb-6">
+            <h2 className="text-base font-bold text-amber-800">Stripe setup is not complete</h2>
+            <p className="text-sm text-slate-600">Please action the items below to start receiving payments.</p>
+          </div>
+        ) : status !== 'fully_active' ? (
+          <p className="text-sm text-slate-600 mb-6">
+            Setup Stripe account to receive payments for your paid events
+          </p>
+        ) : null}
 
 
         {/* Action Required Section */}
         {hasActionRequired && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-            <h2 className="font-semibold text-orange-800 mb-3">Action Required</h2>
-            <div className="space-y-2">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-800 mb-3">Action Required</h3>
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
               {/* Simple list without grouping */}
               {[...new Set(currentlyDue.map(getRequirementLabel))].map((label, idx) => (
                 <div key={idx} className="flex items-start">
-                  <span className="text-orange-500 mr-2">•</span>
-                  <span className="text-sm text-gray-700">{label}</span>
+                  <span className="text-amber-600 mr-2">•</span>
+                  <span className="text-sm text-slate-700">{label}</span>
                 </div>
               ))}
             </div>
@@ -229,20 +237,20 @@ export default function StripeSetupPage() {
 
         {/* Verification in Progress Section */}
         {hasPendingOnly && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <h2 className="font-semibold text-yellow-800 mb-3 flex items-center">
-              <span className="animate-pulse w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-amber-800 mb-3 flex items-center">
+              <span className="animate-pulse w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
               Verification in Progress
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
               {pendingVerification.map((req, idx) => (
                 <div key={idx} className="flex items-start">
-                  <span className="text-yellow-500 mr-2">•</span>
-                  <span className="text-sm text-gray-700">{getRequirementLabel(req)}</span>
+                  <span className="text-amber-600 mr-2">•</span>
+                  <span className="text-sm text-slate-700">{getRequirementLabel(req)}</span>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-yellow-700 mt-3">
+            <p className="text-xs text-slate-500 mt-3">
               Verification typically completes within a few minutes to a few hours
             </p>
           </div>
@@ -250,15 +258,17 @@ export default function StripeSetupPage() {
 
         {/* Success Message */}
         {status === 'fully_active' && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <p className="text-green-800 font-medium">
-              ✅ Your Stripe setup is complete. You can now receive payments for your events.
-            </p>
-            {returnTo && (
-              <p className="text-sm text-green-700 mt-2">
-                Redirecting you back in 2 seconds...
-              </p>
-            )}
+          <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-2.5">
+              <FaCheckCircle className="text-teal-600 mt-0.5 shrink-0" size={18} />
+              <div>
+                <p className="text-sm font-semibold text-teal-800">Your Stripe setup is complete</p>
+                <p className="text-sm text-slate-600 mt-0.5">You can now receive payments for your events.</p>
+                {returnTo && (
+                  <p className="text-xs text-slate-500 mt-2">Redirecting you back in 2 seconds…</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -266,7 +276,7 @@ export default function StripeSetupPage() {
         <button
           onClick={handleAction}
           disabled={buttonConfig.disabled}
-          className={`w-full py-3 px-4 text-white font-medium rounded-lg transition-colors ${buttonConfig.className} ${
+          className={`inline-block py-2 px-5 text-sm text-white font-semibold rounded-lg transition-colors ${buttonConfig.className} ${
             buttonConfig.disabled ? 'cursor-not-allowed' : ''
           }`}
         >
@@ -277,7 +287,7 @@ export default function StripeSetupPage() {
         {returnTo && (
           <button
             onClick={() => router.push(returnTo)}
-            className="w-full mt-3 py-2 text-gray-600 text-sm hover:text-gray-800 transition-colors"
+            className="w-full mt-3 py-2 text-slate-600 text-sm hover:text-slate-800 transition-colors"
           >
             ← Return to {returnTo.includes('event') ? 'event creation' : 'previous page'}
           </button>
@@ -285,7 +295,7 @@ export default function StripeSetupPage() {
 
         {/* Auto-refresh indicator */}
         {hasPendingOnly && (
-          <p className="text-xs text-gray-500 text-center mt-4">
+          <p className="text-xs text-slate-500 text-center mt-4">
             Auto-checking status every 30 seconds...
           </p>
         )}

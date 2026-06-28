@@ -197,6 +197,8 @@ const StepManager = ({
 
   const { user } = useSelector((state) => state.user);
   const originalEventData = useSelector((state) => state.events?.originalEventData || null);
+  // Hosted paid events require a fully-onboarded Stripe account before the host can proceed past step 1.
+  const stripeReady = (user?.stripeAccountStatus || 'no_account') === 'fully_active';
 
   // Local state for image files (can't store File objects in Redux)
   const [localImageFiles, setLocalImageFiles] = useState([]);
@@ -1724,7 +1726,7 @@ const handleAddAnother = useCallback(() => {
               )}
 
               {currentStep < totalSteps ? (
-                (currentStep === 1 && (!formData.eventIntent || (formData.eventIntent === 'host' && formData.isPaid === null))) ? (
+                (currentStep === 1 && (!formData.eventIntent || (formData.eventIntent === 'host' && formData.isPaid === null) || (formData.eventIntent === 'host' && formData.isPaid === true && !stripeReady))) ? (
                   <div></div>
                 ) : (
                   <button
