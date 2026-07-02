@@ -9,6 +9,7 @@ import SendMessage from '@/components/chat/SendMessage';
 import ShareIcons from '@/components/shared/ShareIcons';
 import { buildSlugUrl } from '@/utils/slugUtils';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import BackButton from '@/components/BackButton';
 import Link from 'next/link';
 import ReportLink from '@/components/support/ReportLink';
 import { MdLocationOn, MdPhone, MdEmail, MdLanguage } from 'react-icons/md';
@@ -73,12 +74,7 @@ const DealDetailPage = () => {
     return (
       <div className="text-center py-12">
         <p className="text-red-500 mb-4">{error || 'Failed to load deal'}</p>
-        <button
-          onClick={() => router.back()}
-          className="px-4 py-2 bg-slate-500 text-white rounded hover:bg-slate-600"
-        >
-          Go Back
-        </button>
+        <BackButton label="Go Back" className="mt-4" />
       </div>
     );
   }
@@ -109,13 +105,8 @@ const DealDetailPage = () => {
     <div id="viewsmain" className="flex flex-col gap-2">
       {/* Navigation Bar */}
       <div className="flex justify-between items-center">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-        >
-          <span>&lt;</span>
-          <span>back</span>
-        </button>
+        {/* Back */}
+        <BackButton />
 
         <ReportLink
           type="deal"

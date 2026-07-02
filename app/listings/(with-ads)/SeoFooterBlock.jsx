@@ -8,7 +8,7 @@ export default function SeoFooterBlock() {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <section className="mt-6 sm:mt-8 px-3 sm:px-4 py-2 sm:py-3 border-t border-slate-200 bg-white">
+    <section className="mt-6 sm:mt-8 py-2 sm:py-3 border-t border-slate-200 bg-white">
       {/* Mobile: collapsible (one line + Show more) */}
       <div className="md:hidden">
         <p

@@ -18,16 +18,7 @@ import {
 
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SimpleDropdown from '@/components/shared/SimpleDropdown';
-
-const BackButton = ({ href }) => (
-  <Link
-    href={href}
-    className="inline-flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-  >
-    <span>&lt;</span>
-    <span>back</span>
-  </Link>
-);
+import BackButton from '@/components/BackButton';
 
 const formatEventDate = (dateTime, timeZone) => {
   if (!dateTime) return '';

@@ -230,7 +230,7 @@ const DiscountCodePage = () => {
               </button>
               <button
                 onClick={() => setShowFilters(false)}
-                className="text-xl text-gray-600 hover:text-gray-800 transition-colors"
+                className="text-xl text-teal-700 hover:text-teal-800 font-bold leading-none transition-colors"
               >
                 ×
               </button>

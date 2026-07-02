@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import CodeModal from '@/components/coupons/CodeModal';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ShareIconsCampaign from '@/components/shared/ShareIconsCampaign';
+import BackButton from '@/components/BackButton';
 
 export default function CampaignViewPage() {
   const router = useRouter();
@@ -154,15 +155,9 @@ export default function CampaignViewPage() {
   return (
     <div className="flex flex-col gap-2">
       <div className="max-w-2xl mx-auto">
-        {/* Back Button */}
+        {/* Back */}
         <div className="mb-3">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-          >
-            <span>&lt;</span>
-            <span>back</span>
-          </button>
+          <BackButton />
         </div>
 
         {/* Main Campaign Card */}

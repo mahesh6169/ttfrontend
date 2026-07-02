@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import SingleAdvertCard from '@/components/adverts/advertcomponents/SingleAdvertCard';
 import SendMessage from '@/components/chat/SendMessage';
@@ -9,6 +9,8 @@ import { getAdvertById } from '@/store/slices/adverts/advertSlice';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import BackButton from '@/components/BackButton';
+import { FaShareAlt } from 'react-icons/fa';
 
 const AdvertDetail = () => {
   const { id } = useParams();
@@ -19,6 +21,23 @@ const AdvertDetail = () => {
     (state) => state.advert
   );
   const { user } = useSelector((state) => state.user);
+
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareRef = useRef(null);
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    const handleClickOutside = (e) => {
+      if (shareRef.current && !shareRef.current.contains(e.target)) setShareOpen(false);
+    };
+    const handleEsc = (e) => { if (e.key === 'Escape') setShareOpen(false); };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [shareOpen]);
 
   useEffect(() => {
     dispatch(getAdvertById(id));
@@ -34,14 +53,9 @@ const AdvertDetail = () => {
 
   if (status === 'failed') {
     return (
-      <div className="text-center text-red-500 mt-8">
+      <div className="text-center text-red-600 mt-8">
         <p>{error}</p>
-        <button 
-          onClick={() => router.back()}
-          className="mt-4 px-4 py-2 bg-slate-500 text-white rounded hover:bg-slate-600"
-        >
-          Go Back
-        </button>
+        <BackButton label="Go Back" className="mt-4" />
       </div>
     );
   }
@@ -50,12 +64,7 @@ const AdvertDetail = () => {
     return (
       <div className="text-center text-slate-500 mt-8">
         <p>Listing not found.</p>
-        <button
-          onClick={() => router.back()}
-          className="mt-4 px-4 py-2 bg-slate-500 text-white rounded hover:bg-slate-600"
-        >
-          Go Back
-        </button>
+        <BackButton label="Go Back" className="mt-4" />
       </div>
     );
   }
@@ -67,14 +76,8 @@ const AdvertDetail = () => {
     <div id="viewsmain" className="flex flex-col gap-2">
       {/* Navigation Bar */}
       <div className="flex justify-between items-center">
-        {/* Back to Listings */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-        >
-          <span>&lt;</span>
-          <span>back</span>
-        </button>
+        {/* Back */}
+        <BackButton />
 
         {/* Report this Listing */}
         <ReportLink
@@ -115,14 +118,28 @@ const AdvertDetail = () => {
             listingTitle={advert.title}
           />
 
-          {/* Share Icons - Sticky with sidebar */}
-          <div className="flex items-center justify-center py-3 px-4 border border-slate-200 rounded shadow-sm">
-            <span className="text-sm font-bold text-sky-500 mr-3">Share</span>
-            <ShareIcons
-              type="listing"
-              title={advert.title}
-              id={advert._id}
-            />
+          {/* Share - popover trigger */}
+          <div className="flex justify-center py-3 px-4">
+            <div className="relative" ref={shareRef}>
+              <button
+                onClick={() => setShareOpen((open) => !open)}
+                aria-expanded={shareOpen}
+                aria-haspopup="true"
+                className="flex items-center gap-2 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-4 py-1.5 rounded-full font-semibold text-sm md:text-base transition-colors"
+              >
+                <FaShareAlt size={13} />
+                <span>Share</span>
+              </button>
+              {shareOpen && (
+                <div className="absolute right-0 mt-2 z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-3">
+                  <ShareIcons
+                    type="listing"
+                    title={advert.title}
+                    id={advert._id}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

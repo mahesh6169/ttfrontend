@@ -262,7 +262,7 @@ const ThreadsPage = ({ heading }) => {
               </button>
               <button
                 onClick={() => setShowFilters(false)}
-                className="text-xl text-slate-600 hover:text-slate-800 transition-colors"
+                className="text-xl text-teal-700 hover:text-teal-800 font-bold leading-none transition-colors"
               >
                 ×
               </button>

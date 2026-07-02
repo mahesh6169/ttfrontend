@@ -102,7 +102,7 @@ const SendMessage = ({
 
     return (
       <div className="p-3 w-full border-t lg:border-t-0 lg:border-l border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-900 mb-3">Get in touch</h2>
+        <h2 className="text-sm sm:text-base font-semibold text-slate-900 mb-3">Get in touch</h2>
         <p className="text-sm text-slate-700 mb-4">
           This {resourceLabel} was posted on behalf of the owner. Please use the contact details provided to reach them directly.
         </p>
@@ -135,7 +135,7 @@ const SendMessage = ({
 
   return (
     <div className="p-3 w-full border-t lg:border-t-0 lg:border-l border-slate-200">
-      <p className="flex items-center mb-2 text-sm sm:text-base font-semibold text-forest-900">
+      <p className="flex items-center mb-2 text-sm sm:text-base font-semibold text-slate-900">
         <CgProfile className="mr-2" size={20} />
         <span>Chat with {owner || 'User'}</span>
       </p>

@@ -10,6 +10,7 @@ import SingleEventCard from '@/components/events/eventcomponents/SingleEventCard
 import SendMessage from '@/components/chat/SendMessage';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
+import BackButton from '@/components/BackButton';
 
 
 const EventDetail = () => {
@@ -67,20 +68,7 @@ const EventDetail = () => {
     return (
       <div className="text-center text-red-500 mt-8">
         <p>{error}</p>
-        <button 
-          onClick={() => {
-            const returnUrl = localStorage.getItem('eventViewReturnUrl');
-            if (returnUrl && returnUrl.includes('/listings/views/')) {
-              router.push(returnUrl);
-              localStorage.removeItem('eventViewReturnUrl');
-            } else {
-              router.back();
-            }
-          }}
-          className="mt-4 px-4 py-2 bg-slate-500 text-white rounded hover:bg-slate-600"
-        >
-          Go Back
-        </button>
+        <BackButton label="Go Back" className="mt-4" />
       </div>
     );
   }
@@ -89,20 +77,7 @@ const EventDetail = () => {
     return (
       <div className="text-center text-slate-500 mt-8">
         <p>Event not found.</p>
-        <button 
-          onClick={() => {
-            const returnUrl = localStorage.getItem('eventViewReturnUrl');
-            if (returnUrl && returnUrl.includes('/listings/views/')) {
-              router.push(returnUrl);
-              localStorage.removeItem('eventViewReturnUrl');
-            } else {
-              router.back();
-            }
-          }}
-          className="mt-4 px-4 py-2 bg-slate-500 text-white rounded hover:bg-slate-600"
-        >
-          Go Back
-        </button>
+        <BackButton label="Go Back" className="mt-4" />
       </div>
     );
   }
@@ -120,25 +95,18 @@ const EventDetail = () => {
     <div id="viewsmain" className="flex flex-col gap-2">
       {/* Navigation Bar */}
       <div className="flex justify-between items-center">
-        {/* Back Button - Smart Navigation */}
-        <button
+        {/* Back — smart: return to the originating listing view if we came from one */}
+        <BackButton
           onClick={() => {
-            // Check if we came from a listing view
             const returnUrl = localStorage.getItem('eventViewReturnUrl');
             if (returnUrl && returnUrl.includes('/listings/views/')) {
-              // Go back to the listing view
               router.push(returnUrl);
               localStorage.removeItem('eventViewReturnUrl');
             } else {
-              // Default to events page
               router.back();
             }
           }}
-          className="flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-        >
-          <span>&lt;</span>
-          <span>back</span>
-        </button>
+        />
 
         {/* Report this Event */}
         <ReportLink

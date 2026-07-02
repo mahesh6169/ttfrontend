@@ -31,6 +31,7 @@ import { MdNotificationsActive, MdNotificationsOff, MdDelete } from "react-icons
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
+import BackButton from '@/components/BackButton';
 import { buildSlugUrl } from '@/utils/slugUtils';
 import ThreadConnectionStatus from '@/components/threads/ThreadConnectionStatus';
 import ThreadSocketListener from '@/components/ThreadSocketListener';
@@ -395,14 +396,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       <div id="viewsmain" className="flex flex-col gap-2">
     {/* Navigation Bar */}
     <div className="flex justify-between items-center">
-      {/* Back to Topics */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-      >
-        <span>&lt;</span>
-        <span>back</span>
-      </button>
+      {/* Back */}
+      <BackButton />
     
       {/* Report this Thread */}
       <ReportLink

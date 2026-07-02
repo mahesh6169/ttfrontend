@@ -76,7 +76,7 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
           </h2>
 
           {/* Price Box - Show "Wanted" for wanted ads */}
-          <div className="text-xs font-medium mt-0.5 text-slate-800 h-4">
+          <div className="text-xs font-medium mt-0.5 text-slate-700 h-4">
             {advert.adType === 'wanted' ? 'Wanted' :
              (!(PRICING_CONFIG[advert.category] || PRICING_CONFIG[advert.subcategory]) ? 'Request quote' : (priceLabel || '\u00A0'))}
           </div>

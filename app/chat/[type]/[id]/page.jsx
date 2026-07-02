@@ -20,11 +20,13 @@ import socket from '@/config/socket';
 import { useSearchParams, useParams } from 'next/navigation';
 import { format, isSameDay } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
-import { RiArrowGoBackFill } from "react-icons/ri";
-import { FaTimes, FaReply } from "react-icons/fa";
+import { FaTimes, FaReply, FaChevronRight } from "react-icons/fa";
 import { MdDelete, MdOutlineRemoveRedEye } from "react-icons/md";
 import Link from 'next/link';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import ErrorState from '@/components/layout/ErrorState';
+import EmptyState from '@/components/layout/EmptyState';
+import BackButton from '@/components/BackButton';
 
 const ChatPage = () => {
   const router = useRouter();
@@ -38,6 +40,7 @@ const ChatPage = () => {
   const { activeConversation, status, error, replyingTo } = useSelector((state) => state.messages);
   const [newMessage, setNewMessage] = useState('');
   const [socketConnected, setSocketConnected] = useState(socket.connected);
+  const [connectionFailed, setConnectionFailed] = useState(false); // true after 30s still disconnected
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const messagesEndRef = useRef(null);
@@ -45,10 +48,14 @@ const ChatPage = () => {
   const messageInputRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState(null); // messageId pending delete (confirm modal)
 
   const { resource, participants } = activeConversation || {};
   const { owner, participant } = participants || {};
   const myRole = owner?.id === currentUserId ? 'owner' : participant?.id === currentUserId ? 'participant' : null;
+  // The other person in the thread (vertical-agnostic — no role labels).
+  const otherName = (myRole === 'owner' ? participant?.name : owner?.name) || 'Unknown';
+  const initialOf = (name) => ((name || '?').trim().charAt(0) || '?').toUpperCase();
 
   // Set inActiveChat to true when entering the chat page
   useEffect(() => {
@@ -295,6 +302,17 @@ useEffect(() => {
   }, [activeConversation?.messages, currentUserId, dispatch]);
   
 
+  // Connection messaging: while disconnected show "reconnecting…"; if still down after
+  // 30s, escalate to "refresh / check network". Reset the moment it reconnects.
+  useEffect(() => {
+    if (socketConnected) {
+      setConnectionFailed(false);
+      return;
+    }
+    const t = setTimeout(() => setConnectionFailed(true), 30000);
+    return () => clearTimeout(t);
+  }, [socketConnected]);
+
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
     
@@ -310,10 +328,16 @@ useEffect(() => {
     setNewMessage('');
     dispatch(clearReplyingTo());
     
-    // Immediately scroll to bottom after sending
+    // Immediately scroll to bottom after sending, and keep focus in the input.
     setIsAtBottom(true);
     setShowJumpToBottom(false);
-    setTimeout(() => scrollToBottom(true), 50);
+    setTimeout(() => {
+      scrollToBottom(true);
+      if (messageInputRef.current) {
+        messageInputRef.current.style.height = 'auto'; // reset auto-grown height
+        messageInputRef.current.focus();
+      }
+    }, 50);
   };
 
   const handleReply = (message) => {
@@ -331,9 +355,12 @@ useEffect(() => {
   };
 
   const handleDeleteMessage = (messageId) => {
-    if (window.confirm('Are you sure you want to delete this message?')) {
-      dispatch(deleteMessage(messageId));
-    }
+    setDeleteTarget(messageId);
+  };
+
+  const confirmDeleteMessage = () => {
+    if (deleteTarget) dispatch(deleteMessage(deleteTarget));
+    setDeleteTarget(null);
   };
 
   // Redirect to login if not authenticated (preserve full URL including query params)
@@ -345,93 +372,36 @@ useEffect(() => {
     }
   }, [tokenValidated, currentUserId, authStatus, router]);
 
-  if ((!tokenValidated && authStatus !== 'failed') || !currentUserId) return <div className="flex justify-center mt-8"><LoadingSpinner /></div>;
-  if (status === 'loading') return <div className="text-center mt-8">Loading chat...</div>;
-  if (error) return <div className="text-center text-red-500">{error}</div>;
-  if (!resource) return <div className="text-center text-gray-500">No conversation found.</div>;
+  if ((!tokenValidated && authStatus !== 'failed') || !currentUserId) return <PageSkeleton variant="list" rows={6} />;
+  if (status === 'loading') return <PageSkeleton variant="list" rows={6} />;
+  if (error) return <ErrorState onRetry={() => dispatch(fetchMessages({ resourceId, resourceType, otherUserId }))} />;
+  if (!resource) return <EmptyState title="No conversation found" description="This conversation may have been removed, or the link is invalid." />;
 
   return (
-    <div className="pb-20 md:pb-0">
+    <div className="flex flex-col h-[calc(100dvh_-_160px_-_env(safe-area-inset-bottom))] md:h-auto md:block">
       {/* Navigation Bar */}
-      <div className="mt-2 md:mt-4 flex justify-between items-center">
+      <div className="flex justify-between items-center shrink-0">
         {/* Back Button */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1 md:gap-2 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-2 py-1 md:px-4 md:py-2 rounded shadow font-semibold text-xs md:text-base transition-colors"
-        >
-          <RiArrowGoBackFill className="text-sm md:text-base" />
-          <span className="hidden md:inline">Back</span>
-        </button>
-        
-        {/* View Resource Link */}
-        <Link
-          href={resourceType === 'event' ? `/events/views/${resourceId}` : `/listings/views/${resourceId}`}
-          className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-blue-600 hover:text-blue-800 transition-colors"
-        >
-          <span className="hidden md:inline">View {resourceType === 'event' ? 'Event' : 'Listing'} Details</span>
-          <span className="md:hidden">View Details</span>
-        </Link>
+        <BackButton />
       </div>
       
-      <div className="border rounded shadow-md mt-4 w-full">
-        {/* Header Section - Mobile */}
-        <div className="md:hidden border-b border-gray-300 bg-gray-50 p-3">
-          <Link href={`/${resourceType}s/views/${resourceId}`}>
-            <h1 className="text-base font-bold cursor-pointer hover:text-blue-600 text-gray-800 truncate">
+      <div className="flex-1 md:flex-none min-h-0 flex flex-col overflow-hidden border border-slate-200 rounded-xl shadow-sm mt-4 w-full">
+        {/* Compact header — the title is the clickable link to the listing/event (no thumbnail) */}
+        <Link
+          href={resourceType === 'event' ? `/events/views/${resourceId}` : `/listings/views/${resourceId}`}
+          className="group block border-b border-slate-200 bg-slate-50 p-3 hover:bg-slate-100 transition-colors shrink-0"
+        >
+          <h1 className="flex items-center gap-1.5 text-sm sm:text-base font-bold text-slate-800 group-hover:text-teal-700 group-hover:underline">
+            <span className="truncate">
               {resource.eventCode ? `${resource.eventCode} - ${resource.title}` : resource.title}
-            </h1>
-          </Link>
-        </div>
-
-        {/* Header Section - Desktop */}
-        <div className="hidden md:block border-b border-gray-300 bg-gray-50 p-4">
-          <div className="flex gap-3">
-            {/* Image - spans height of title + date/time */}
-            <Link href={`/${resourceType}s/views/${resourceId}`}>
-              <img 
-                src={resource.image || '/default.jpg'} 
-                alt={resource.title} 
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg cursor-pointer hover:opacity-80 object-cover shadow-sm" 
-              />
-            </Link>
-            
-            {/* Title and Date/Time container */}
-            <div className="flex-1 min-w-0">
-              <Link href={`/${resourceType}s/views/${resourceId}`}>
-                <h1 className="text-lg sm:text-xl font-bold cursor-pointer hover:text-blue-600 text-gray-800">
-                  {resource.eventCode ? `${resource.eventCode} - ${resource.title}` : resource.title}
-                </h1>
-              </Link>
-              
-              {/* Date/Time - only show for events */}
-              {resource.dateTime && (
-                <div className="text-sm text-gray-600 mt-1">
-                  {new Date(resource.dateTime).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                  {' at '}
-                  {new Date(resource.dateTime).toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                  })}
-                  {resource.timeZone && ` (${resource.timeZone})`}
-                </div>
-              )}
-              
-              {/* Chat participants */}
-              <div className="text-xs text-gray-500 mt-2">
-                Chat between <span className="font-medium">{owner?.name || 'Unknown'}</span> and <span className="font-medium">{participant?.name || 'Unknown'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+            </span>
+            <FaChevronRight className="shrink-0 text-[10px] text-slate-400 group-hover:text-teal-700" />
+          </h1>
+          <p className="text-xs text-slate-500 truncate">with {otherName}</p>
+        </Link>
 
         {/* Message Area */}
-        <div className="rounded my-6 bg-white shadow flex flex-col h-[60vh] md:h-[600px] relative">
+        <div className="flex flex-col flex-1 min-h-0 md:h-[600px] md:flex-none relative">
           {/* Jump to Bottom Button */}
           {showJumpToBottom && (
             <div className="relative">
@@ -442,7 +412,7 @@ useEffect(() => {
                     setIsAtBottom(true);
                     setShowJumpToBottom(false);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 text-teal-700 rounded-full shadow-lg hover:bg-yellow-500 transition-all transform hover:scale-105 text-sm"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-700 text-white rounded-full shadow-lg hover:bg-teal-800 transition-all transform hover:scale-105 text-sm"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -457,7 +427,7 @@ useEffect(() => {
           <div 
             ref={messagesContainerRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto pr-1 border-t border-b"
+            className="flex-1 min-h-0 overflow-y-auto py-2 bg-slate-50/40"
             style={{ overscrollBehavior: 'contain' }}
           >
             {activeConversation.messages.length > 0 ? (
@@ -469,20 +439,18 @@ useEffect(() => {
                   const showDateSeparator = !prevMsg || !isSameDay(msgDate, prevMsgDate);
 
                   const isMyMessage = msg.senderRole === myRole;
-                  const alignment = isMyMessage ? 'justify-end' : 'justify-start';
-                  const bubbleColor = isMyMessage
-                    ? 'bg-green-600 text-white'
-                    : 'bg-white text-gray-900 border border-gray-200';
-
+                  // First message of a run (new sender, or after a date break) → show avatar + name.
+                  const isRunStart = showDateSeparator || !prevMsg || prevMsg.senderRole !== msg.senderRole;
                   const senderName = isMyMessage
-                    ? myRole === 'owner' ? owner?.name : participant?.name
-                    : msg.senderRole === 'owner' ? owner?.name : participant?.name;
+                    ? 'You'
+                    : (msg.senderRole === 'owner' ? owner?.name : participant?.name) || 'Unknown';
+                  const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 
                   return [
                     ...acc,
                     showDateSeparator && (
-                      <div key={`date-${msg._id}`} className="flex justify-center my-3 w-full">
-                        <span className="bg-gray-200 text-gray-700 text-xs py-1 px-3 rounded-full">
+                      <div key={`date-${msg._id}`} className="flex justify-center my-3">
+                        <span className="bg-slate-100 text-slate-500 text-[11px] py-1 px-3 rounded-full">
                           {msgDate.toLocaleDateString()}
                         </span>
                       </div>
@@ -490,100 +458,100 @@ useEffect(() => {
                     <div
                       key={msg._id}
                       id={`message-${msg._id}`}
-                      className={`mb-2 flex ${alignment} transition-colors duration-300`}
+                      className={`group flex ${isMyMessage ? 'justify-end' : 'justify-start'} gap-2 px-2 ${isRunStart ? 'mt-3' : 'mt-0.5'} transition-colors duration-300`}
                     >
+                      {/* Other person's initials avatar (run start) / spacer (continuation) */}
+                      {!isMyMessage && (
+                        isRunStart ? (
+                          <div className="w-8 h-8 shrink-0 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-semibold">
+                            {initialOf(senderName)}
+                          </div>
+                        ) : (
+                          <div className="w-8 shrink-0" />
+                        )
+                      )}
+
                       <div
-                        className={`relative max-w-[85%] min-w-[100px] px-3 py-2 rounded-lg shadow-sm break-words ${bubbleColor}`}
+                        className={`relative max-w-[80%] px-3 py-1.5 shadow-sm break-words ${
+                          isMyMessage
+                            ? 'bg-teal-700 text-white rounded-2xl rounded-br-sm'
+                            : 'bg-white text-slate-800 border border-slate-200 border-l-4 border-l-slate-300 rounded-2xl rounded-bl-sm'
+                        }`}
                       >
-                          {/* Reply indicator */}
-                          {msg.replyTo && (
-                            <div 
-                              onClick={() => {
-                                // Handle both cases: replyTo as object or just ID
-                                const replyId = typeof msg.replyTo === 'object' ? msg.replyTo._id : msg.replyTo;
-                                const replyElement = document.getElementById(`message-${replyId}`);
-                                if (replyElement) {
-                                  replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                  replyElement.classList.add('bg-yellow-200');
-                                  setTimeout(() => {
-                                    replyElement.classList.remove('bg-yellow-200');
-                                  }, 1500);
-                                } else {
-                                  // Message not found in current view
-                                  console.log('Reply message not found in current messages');
-                                }
-                              }}
-                              className={`mb-2 p-2 rounded cursor-pointer transition-all ${
-                                isMyMessage
-                                  ? 'bg-green-700 hover:bg-green-800 border-l-4 border-green-400'
-                                  : 'bg-gray-200 hover:bg-gray-300 border-l-4 border-gray-400'
-                              }`}
-                            >
-                              {typeof msg.replyTo === 'object' && msg.replyTo.senderRole ? (
-                                <>
-                                  <p className="text-xs font-semibold opacity-80">
-                                    ↩ {msg.replyTo.senderRole === myRole ? 'You' : 
-                                       msg.replyTo.senderRole === 'owner' ? owner?.name : participant?.name}
-                                  </p>
-                                  <p className="text-xs opacity-70 truncate">
-                                    {msg.replyTo.deletedAt || msg.replyTo.message === '[Message deleted]' ? '[This message was deleted]' : 
-                                     msg.replyTo.message ? `${msg.replyTo.message.substring(0, 50)}...` : '[Message unavailable]'}
-                                  </p>
-                                </>
-                              ) : (
-                                <p className="text-xs opacity-70 italic">Click to view replied message</p>
+                        {/* Reply quote */}
+                        {msg.replyTo && (
+                          <div
+                            onClick={() => {
+                              const replyId = typeof msg.replyTo === 'object' ? msg.replyTo._id : msg.replyTo;
+                              const replyElement = document.getElementById(`message-${replyId}`);
+                              if (replyElement) {
+                                replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                replyElement.classList.add('bg-teal-100');
+                                setTimeout(() => replyElement.classList.remove('bg-teal-100'), 1500);
+                              }
+                            }}
+                            className={`mb-1.5 p-2 rounded cursor-pointer transition-all ${
+                              isMyMessage
+                                ? 'bg-teal-800 hover:bg-teal-900 border-l-4 border-teal-500'
+                                : 'bg-slate-100 hover:bg-slate-200 border-l-4 border-slate-300'
+                            }`}
+                          >
+                            {typeof msg.replyTo === 'object' && msg.replyTo.senderRole ? (
+                              <>
+                                <p className="text-xs font-semibold opacity-80">
+                                  ↩ {msg.replyTo.senderRole === myRole ? 'You' :
+                                     msg.replyTo.senderRole === 'owner' ? owner?.name : participant?.name}
+                                </p>
+                                <p className="text-xs opacity-70 truncate">
+                                  {msg.replyTo.deletedAt || msg.replyTo.message === '[Message deleted]' ? '[This message was deleted]' :
+                                   msg.replyTo.message ? `${msg.replyTo.message.substring(0, 50)}...` : '[Message unavailable]'}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-xs opacity-70 italic">Click to view replied message</p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Sender name — only at the start of a run (time is shown per-message below) */}
+                        {isRunStart && (
+                          <div className="text-[11px] mb-0.5 font-semibold opacity-70">{senderName}</div>
+                        )}
+
+                        <p className="text-sm break-words whitespace-pre-wrap">{msg.message}</p>
+
+                        {/* Actions (left) + time & read receipt (right) — always visible */}
+                        <div className="flex items-center justify-between gap-2 mt-0.5 text-[11px] opacity-70">
+                          {!msg.isDeleted ? (
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => handleReply(msg)}
+                                className={isMyMessage ? 'hover:text-teal-200' : 'hover:text-teal-600'}
+                                title="Reply"
+                              >
+                                <FaReply size={12} />
+                              </button>
+                              {msg.canDelete && (
+                                <button
+                                  onClick={() => handleDeleteMessage(msg._id)}
+                                  className={isMyMessage ? 'hover:text-red-300' : 'hover:text-red-600'}
+                                  title="Delete"
+                                >
+                                  <MdDelete size={14} />
+                                </button>
                               )}
                             </div>
+                          ) : (
+                            <span />
                           )}
-                          
-                          <div className="text-xs mb-1 opacity-75">
-                            <span className="font-semibold">{senderName}</span>
-                            <span className="mx-1">•</span>
-                            <span>{msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-                          </div>
-                          <p className="text-sm break-words whitespace-pre-wrap">{msg.message}</p>
-                          
-                          {/* Action buttons and read indicator on same line */}
-                          <div className="flex items-center justify-between mt-2">
-                            {/* Action buttons */}
-                            {!msg.isDeleted && (
-                              <div className="flex items-center space-x-3">
-                                <button
-                                  onClick={() => handleReply(msg)}
-                                  className={`${
-                                    isMyMessage
-                                      ? 'hover:text-lime-300'
-                                      : 'hover:text-teal-600'
-                                  }`}
-                                  title="Reply"
-                                >
-                                  <FaReply size={14} />
-                                </button>
-                                
-                                {msg.canDelete && (
-                                  <button
-                                    onClick={() => handleDeleteMessage(msg._id)}
-                                    className={`${
-                                      isMyMessage
-                                        ? 'hover:text-red-300'
-                                        : 'hover:text-red-600'
-                                    }`}
-                                    title="Delete"
-                                  >
-                                    <MdDelete size={16} />
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                            
-                            {/* Read indicator - show if message was read by anyone other than sender */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span>{timeStr}</span>
                             {msg.readBy && String(msg.readBy) !== String(currentUserId) && isMyMessage && !msg.isDeleted && (
-                              <div className="opacity-75" title="Read">
-                                <MdOutlineRemoveRedEye size={16} />
-                              </div>
+                              <MdOutlineRemoveRedEye size={14} title="Read" />
                             )}
                           </div>
                         </div>
+                      </div>
                     </div>,
                   ];
                 }, [])}
@@ -591,28 +559,28 @@ useEffect(() => {
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-center p-8">
-                <p className="text-sm text-gray-500">No messages yet. Start the conversation!</p>
+                <p className="text-sm text-slate-500">No messages yet. Start the conversation!</p>
               </div>
             )}
           </div>
           
           {/* Message Input Box at the Bottom */}
-          <div className="border-t bg-white p-3 relative z-10">
+          <div className="border-t border-slate-200 bg-white p-3 relative z-10 shrink-0">
             {/* Reply indicator */}
             {replyingTo && (
-              <div className="mb-2 p-2 bg-gray-100 rounded-lg flex items-center justify-between">
+              <div className="mb-2 p-2 bg-slate-100 rounded-lg flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="text-xs font-semibold text-gray-700">
+                  <p className="text-xs font-semibold text-slate-700">
                     Replying to {replyingTo.senderRole === myRole ? 'yourself' : 
                       (replyingTo.senderRole === 'owner' ? owner?.name : participant?.name)}
                   </p>
-                  <p className="text-xs text-gray-600 truncate">
+                  <p className="text-xs text-slate-600 truncate">
                     {replyingTo.message.substring(0, 80)}...
                   </p>
                 </div>
                 <button
                   onClick={handleCancelReply}
-                  className="ml-2 text-gray-500 hover:text-gray-700"
+                  className="ml-2 text-slate-500 hover:text-slate-700"
                 >
                   <FaTimes />
                 </button>
@@ -630,12 +598,14 @@ useEffect(() => {
                     handleSendMessage();
                   }
                 }}
-                placeholder={socketConnected 
-                  ? "Type your message..." 
-                  : "Connection issue. Please try again in a moment..."}
+                placeholder={socketConnected
+                  ? "Type your message..."
+                  : connectionFailed
+                    ? "Connection lost. Try refreshing the page or check your network connection."
+                    : "Connection lost. Wait a moment, reconnecting…"}
                 disabled={!socketConnected}
-                className={`flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent ${
-                  !socketConnected ? 'bg-gray-100 cursor-not-allowed' : ''
+                className={`flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  !socketConnected ? 'bg-slate-100 cursor-not-allowed' : ''
                 }`}
                 rows={1}
                 style={{
@@ -651,8 +621,8 @@ useEffect(() => {
               <button
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || !socketConnected}
-                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-                title={!socketConnected ? "Connection issue - please wait" : ""}
+                className="px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                title={!socketConnected ? (connectionFailed ? "Connection lost. Try refreshing the page or check your network connection." : "Connection lost. Wait a moment, reconnecting…") : ""}
               >
                 Send
               </button>
@@ -660,6 +630,43 @@ useEffect(() => {
           </div>
         </div>
       </div>
+
+      {/* Delete confirm dialog — replaces window.confirm (style.md §4) */}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50"
+          onClick={() => setDeleteTarget(null)}
+        >
+          <div
+            className="relative w-full max-w-xs p-5 text-center rounded-xl shadow-xl bg-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setDeleteTarget(null)}
+              aria-label="Close"
+              className="absolute top-2.5 right-3 text-teal-700 hover:text-teal-800 text-xl font-bold leading-none"
+            >
+              ✕
+            </button>
+            <h3 className="text-base font-semibold text-slate-900">Delete message?</h3>
+            <p className="text-sm text-slate-600 mt-1">This can't be undone.</p>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-center gap-2 mt-4">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-1.5 text-sm font-semibold"
+              >
+                Keep
+              </button>
+              <button
+                onClick={confirmDeleteMessage}
+                className="rounded-full bg-red-600 text-white hover:bg-red-700 px-4 py-1.5 text-sm font-semibold"
+              >
+                Yes, delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

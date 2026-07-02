@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { FaTimes, FaHeart, FaMobileAlt, FaEnvelope, FaGlobe, FaFacebook, FaInstagram, FaLock, FaCommentDots, FaExternalLinkAlt, FaShareAlt } from 'react-icons/fa';
+import { FaTimes, FaHeart, FaMobileAlt, FaEnvelope, FaGlobe, FaFacebook, FaInstagram, FaLock, FaCommentDots, FaExternalLinkAlt, FaShareAlt, FaMapMarkedAlt, FaThumbsUp } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import { format, differenceInDays } from 'date-fns';
 import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
@@ -84,7 +84,9 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [serviceAreaOverflow, setServiceAreaOverflow] = useState(false);
+  const [serviceAreaExpanded, setServiceAreaExpanded] = useState(false);
   const [descriptionOverflow, setDescriptionOverflow] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
@@ -242,7 +244,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
 
   return (
-    <div id="SingleAdvertCard" className="border rounded shadow-md mx-auto">
+    <div id="SingleAdvertCard" className="mx-auto">
       {/* Image Section */}
       <div
         className="relative w-full mx-auto bg-white rounded h-[200px] sm:h-[300px] md:h-[400px]"
@@ -395,14 +397,14 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
         )}
     
       {/* Main Details Section */}
-      <div className="border border-slate-200 rounded shadow-sm my-4 p-3">
-        <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Details</h3>
+      <div className="my-4 p-3">
+        <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Posted By — show "Desify Team" for curated listings */}
             {advert.postedBy?.name && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-slate-700">Posted By:</span>{' '}
-                <span className="text-slate-600">
+                <span className="text-slate-500">Posted By:</span>{' '}
+                <span className="font-semibold text-slate-700">
                   {chatProps?.isCurated ? 'Desify Team' : advert.postedBy.name}
                 </span>
               </div>
@@ -410,23 +412,23 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
             {/* Posted Date */}
             <div className="text-sm sm:text-base">
-              <span className="font-semibold text-slate-700">Posted:</span>{' '}
-              <span className="text-slate-600">{postedText}</span>
+              <span className="text-slate-500">Posted:</span>{' '}
+              <span className="font-semibold text-slate-700">{postedText}</span>
             </div>
 
             {/* Ad Type */}
             {advert.adType && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-slate-700">Ad Type:</span>{' '}
-                <span className="text-slate-600">{advert.adType === 'wanted' ? 'Wanted' : 'Offered'}</span>
+                <span className="text-slate-500">Ad Type:</span>{' '}
+                <span className="font-semibold text-slate-700">{advert.adType === 'wanted' ? 'Wanted' : 'Offered'}</span>
               </div>
             )}
 
             {/* Category > Subcategory */}
             {(advert.category || advert.subcategory) && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-slate-700">Category:</span>{' '}
-                <span className="text-slate-600">
+                <span className="text-slate-500">Category:</span>{' '}
+                <span className="font-semibold text-slate-700">
                   {advert.category && advert.subcategory
                     ? `${advert.category} > ${advert.subcategory}`
                     : advert.subcategory || advert.category}
@@ -437,8 +439,8 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             {/* Community/Language - Only for eligible subcategories */}
             {needsCommunityField(advert.subcategory) && advert.communities && advert.communities.length > 0 && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-slate-700">Community:</span>{' '}
-                <span className="text-slate-600">
+                <span className="text-slate-500">Community:</span>{' '}
+                <span className="font-semibold text-slate-700">
                   {advert.communities.map(c => {
                     const community = COMMUNITIES.find(comm => comm.value === c);
                     return community ? community.label : c;
@@ -451,14 +453,14 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             {advert.adType !== 'wanted' && (
               !PRICING_CONFIG[advert.subcategory] ? (
                 <div className="text-sm sm:text-base">
-                  <span className="font-semibold text-slate-700">Price:</span>{' '}
-                  <span className="text-slate-600">Request quote</span>
+                  <span className="text-slate-500">Price:</span>{' '}
+                  <span className="font-semibold text-slate-700">Request quote</span>
                 </div>
               ) : (
                 priceLabels && priceLabels.map((price, index) => (
                   <div key={index} className="text-sm sm:text-base">
-                    <span className="font-semibold text-slate-700">{price.label}:</span>{' '}
-                    <span className="text-slate-600">{price.value}</span>
+                    <span className="text-slate-500">{price.label}:</span>{' '}
+                    <span className="font-semibold text-slate-700">{price.value}</span>
                   </div>
                 ))
               )
@@ -467,36 +469,37 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             {/* Condition */}
             {advert.condition && advert.condition !== 'null' && (
               <div className="text-sm sm:text-base">
-                <span className="font-semibold text-slate-700">Condition:</span>{' '}
-                <span className="text-slate-600">{advert.condition}</span>
+                <span className="text-slate-500">Condition:</span>{' '}
+                <span className="font-semibold text-slate-700">{advert.condition}</span>
               </div>
             )}
 
             {/* Location - Full width at the bottom */}
-            {advert.address && (
+            {advert.address && (advert.address.formattedAddress || advert.address.suburb || advert.address.state) && (
               <div className="text-sm sm:text-base col-span-1 sm:col-span-2">
-                <span className="font-semibold text-slate-700">
-                  {advert.address.street ? 'Address:' : 'Location:'}
-                </span>{' '}
-                <span className="text-slate-600">
-                  {advert.address.street
-                    ? advert.address.formattedAddress
-                    : `${advert.address.suburb}${advert.address.state ? ', ' + advert.address.state : ''}`}
-                </span>
+                <FaMapMarkedAlt className="text-slate-500 shrink-0 inline mr-1.5" size={13} title="Location" aria-label="Location" />
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(advert.address.formattedAddress || [advert.address.suburb, advert.address.state].filter(Boolean).join(', '))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-slate-700 hover:text-slate-900 underline"
+                >
+                  {advert.address.formattedAddress || [advert.address.suburb, advert.address.state].filter(Boolean).join(', ')}
+                </a>
               </div>
             )}
           </div>
       </div>
 
       {/* Dynamic Fields Section */}
-      {advert.fields && Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value).length > 0 && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Additional Details</h3>
+      {advert.fields && Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value !== '' && value != null).length > 0 && (
+        <div className="my-4 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Additional Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value).map(([key, value]) => (
+            {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value !== '' && value != null).map(([key, value]) => (
               <div key={key} className="text-sm sm:text-base">
-                <span className="font-semibold text-slate-700">{formatFieldName(key)}:</span>{' '}
-                <span className="text-slate-600">{value}</span>
+                <span className="text-slate-500">{formatFieldName(key)}:</span>{' '}
+                <span className="font-semibold text-slate-700">{value}</span>
               </div>
             ))}
           </div>
@@ -505,50 +508,75 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
 
       {/* Service Areas Section */}
       {advert.fields?.serviceArea && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 p-3 relative">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Service Areas</h3>
-          <div ref={serviceAreaRef} className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap overflow-y-auto max-h-[120px] pr-2">
-            {advert.fields.serviceArea}
+        <div className="my-4 p-3 relative">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Service Areas</h3>
+          <div className="relative">
+            <div
+              ref={serviceAreaRef}
+              className={`text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap ${serviceAreaExpanded ? '' : 'line-clamp-[6]'}`}
+            >
+              {advert.fields.serviceArea}
+            </div>
+            {!serviceAreaExpanded && serviceAreaOverflow && (
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
           </div>
-          {serviceAreaOverflow && (
-            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+          {(serviceAreaOverflow || serviceAreaExpanded) && (
+            <button
+              type="button"
+              onClick={() => setServiceAreaExpanded((e) => !e)}
+              className="mt-2 text-teal-700 hover:text-teal-800 font-semibold text-sm underline"
+            >
+              {serviceAreaExpanded ? 'Read less' : 'Read more'}
+            </button>
           )}
         </div>
       )}
 
       {/* Description Section */}
       {advert.description && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 p-3 relative">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Description</h3>
-          <div
-            ref={descriptionRef}
-            className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap overflow-y-auto min-h-[100px] max-h-[300px] sm:max-h-[400px] pr-2"
-          >
-            {advert.description}
+        <div className="my-4 p-3 relative">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Description</h3>
+          <div className="relative">
+            <div
+              ref={descriptionRef}
+              className={`text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap ${descriptionExpanded ? '' : 'line-clamp-[20]'}`}
+            >
+              {advert.description}
+            </div>
+            {!descriptionExpanded && descriptionOverflow && (
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
           </div>
-          {descriptionOverflow && (
-            <div className="absolute bottom-3 left-3 right-3 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+          {(descriptionOverflow || descriptionExpanded) && (
+            <button
+              type="button"
+              onClick={() => setDescriptionExpanded((e) => !e)}
+              className="mt-2 text-teal-700 hover:text-teal-800 font-semibold text-sm underline"
+            >
+              {descriptionExpanded ? 'Read less' : 'Read more'}
+            </button>
           )}
         </div>
       )}
 
       {/* Contact Info Section */}
-      {advert.contactInfo && (advert.contactInfo.mobile || advert.contactInfo.email || advert.contactInfo.website || (advert.contactInfo.socialMedia && advert.contactInfo.socialMedia.length > 0)) && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Contact Information</h3>
+      {advert.contactInfo && (advert.contactInfo.mobile || advert.contactInfo.email || advert.contactInfo.website || (advert.contactInfo.socialMedia && advert.contactInfo.socialMedia.some((s) => s.url))) && (
+        <div className="my-4 p-3">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Contact Information</h3>
           <div className="space-y-3">
             {/* Mobile */}
             {advert.contactInfo.mobile && (
               <div className="flex items-center gap-3 text-sm sm:text-base">
                 <FaMobileAlt className="text-slate-500 flex-shrink-0" />
                 {user ? (
-                  <a href={`tel:${advert.contactInfo.mobile}`} className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1">
+                  <a href={`tel:${advert.contactInfo.mobile}`} className="text-slate-700 hover:text-slate-900 underline flex items-center gap-1">
                     {advert.contactInfo.mobile}
                     <FaExternalLinkAlt className="text-xs text-slate-400" />
                   </a>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-600">{maskMobile(advert.contactInfo.mobile)}</span>
+                    <span className="font-semibold text-slate-700">{maskMobile(advert.contactInfo.mobile)}</span>
                     <button
                       onClick={handleLoginToReveal}
                       className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
@@ -567,13 +595,13 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
               <div className="flex items-center gap-3 text-sm sm:text-base">
                 <FaEnvelope className="text-slate-500 flex-shrink-0" />
                 {user ? (
-                  <a href={`mailto:${advert.contactInfo.email}`} className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1">
+                  <a href={`mailto:${advert.contactInfo.email}`} className="text-slate-700 hover:text-slate-900 underline flex items-center gap-1">
                     {advert.contactInfo.email}
                     <FaExternalLinkAlt className="text-xs text-slate-400" />
                   </a>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-600">{maskEmail(advert.contactInfo.email)}</span>
+                    <span className="font-semibold text-slate-700">{maskEmail(advert.contactInfo.email)}</span>
                     <button
                       onClick={handleLoginToReveal}
                       className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
@@ -595,7 +623,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
                   href={advert.contactInfo.website.startsWith('http') ? advert.contactInfo.website : `https://${advert.contactInfo.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-slate-700 hover:text-slate-900 hover:underline truncate flex items-center gap-1"
+                  className="text-slate-700 hover:text-slate-900 underline truncate flex items-center gap-1"
                 >
                   {advert.contactInfo.website}
                   <FaExternalLinkAlt className="text-xs text-slate-400 flex-shrink-0" />
@@ -604,10 +632,10 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             )}
 
             {/* Social Media - always visible */}
-            {advert.contactInfo.socialMedia && advert.contactInfo.socialMedia.length > 0 && (
+            {advert.contactInfo.socialMedia && advert.contactInfo.socialMedia.some((s) => s.url) && (
               <div className="flex items-center gap-2 text-sm sm:text-base flex-wrap">
-                <span className="text-slate-700">Follow us:</span>
-                {advert.contactInfo.socialMedia.map((social, index) => {
+                <FaThumbsUp className="text-slate-500 shrink-0" size={13} title="Follow us" aria-label="Follow us" />
+                {advert.contactInfo.socialMedia.filter((s) => s.url).map((social, index, arr) => {
                   const Icon = getSocialIcon(social.platform);
                   return (
                     <a
@@ -619,7 +647,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
                     >
                       <Icon className="text-base" />
                       <span>{social.platform}</span>
-                      {index < advert.contactInfo.socialMedia.length - 1 && <span className="text-slate-400 ml-1">|</span>}
+                      {index < arr.length - 1 && <span className="text-slate-400 ml-1">|</span>}
                     </a>
                   );
                 })}
