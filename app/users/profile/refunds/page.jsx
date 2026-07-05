@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState, useMemo, Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { toast } from 'react-toastify';
@@ -18,6 +19,7 @@ import {
   clearSelectedTickets,
   clearRefundForm,
   clearProcessingState,
+  setCurrentPage,
   selectEvents,
   selectSelectedEvent,
   selectTicketsState,
@@ -54,30 +56,60 @@ export default function RefundsPage() {
 
   const [refundReason, setLocalRefundReason] = useState('');
   const [expandedInvoices, setExpandedInvoices] = useState({});
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [amountWarnings, setAmountWarnings] = useState({});
   const [localAmounts, setLocalAmounts] = useState({});
   const [dateFilter, setDateFilter] = useState('3months'); // Add date filter state
   const [instructionsOpen, setInstructionsOpen] = useState(false); // Add state for collapsible instructions
   const [mobileSummaryOpen, setMobileSummaryOpen] = useState(false); // Mobile review sheet (below lg)
-  const itemsPerPage = 10; // Reduced for less scrolling
 
   // Fetch events on mount
   useEffect(() => {
     dispatch(fetchOrganizerEvents());
   }, [dispatch]);
 
-  // Fetch tickets when event is selected
+  // Fetch first page of invoices when event is selected. Page changes and
+  // search are dispatched imperatively (below), so they stay out of this
+  // effect's deps to avoid double-fetches.
   useEffect(() => {
     if (selectedEvent?._id) {
-      dispatch(fetchRefundableTickets({ 
+      dispatch(fetchRefundableTickets({
         eventId: selectedEvent._id,
         page: 1,
-        limit: 100 // Get all tickets
+        limit: ticketsState.limit,
+        search: '',
       }));
     }
-  }, [selectedEvent?._id, dispatch]);
+  }, [selectedEvent?._id, dispatch, ticketsState.limit]);
+
+  // Change page (server-side): re-fetch the requested page keeping the search.
+  const handlePageChange = (newPage) => {
+    dispatch(setCurrentPage(newPage));
+    dispatch(fetchRefundableTickets({
+      eventId: selectedEvent._id,
+      page: newPage,
+      limit: ticketsState.limit,
+      search: searchTerm,
+    }));
+  };
+
+  // Server-side search, debounced. Always resets to page 1.
+  const debouncedSearch = useMemo(
+    () => debounce((term) => {
+      if (!selectedEvent?._id) return;
+      dispatch(setCurrentPage(1));
+      dispatch(fetchRefundableTickets({
+        eventId: selectedEvent._id,
+        page: 1,
+        limit: ticketsState.limit,
+        search: term,
+      }));
+    }, 500),
+    [dispatch, selectedEvent?._id, ticketsState.limit]
+  );
+
+  // Cancel any pending debounced search on unmount / dep change.
+  useEffect(() => () => debouncedSearch.cancel(), [debouncedSearch]);
 
   // Mobile review sheet: lock body scroll + close on Esc while open.
   useEffect(() => {
@@ -103,6 +135,8 @@ export default function RefundsPage() {
     setExpandedInvoices({});
     setLocalAmounts({});
     setAmountWarnings({});
+    setSearchTerm('');
+    debouncedSearch.cancel();
   };
 
   const toggleInvoiceExpanded = (invoiceNumber) => {
@@ -329,11 +363,12 @@ export default function RefundsPage() {
         dispatch(clearProcessingState());
       }, 3000);
       
-      // Re-fetch tickets to get updated refund amounts
-      dispatch(fetchRefundableTickets({ 
+      // Re-fetch the current page to get updated refund amounts (stay put).
+      dispatch(fetchRefundableTickets({
         eventId: selectedEvent._id,
-        page: 1,
-        limit: 100
+        page: ticketsState.currentPage,
+        limit: ticketsState.limit,
+        search: searchTerm,
       }));
     } catch (error) {
       // Show error toast
@@ -414,7 +449,8 @@ export default function RefundsPage() {
 
   const filteredEvents = getFilteredEvents();
 
-  // Group tickets by invoice
+  // Group the current page's tickets by invoice. The server pages by whole
+  // invoices, so each invoice here already holds all of its tickets.
   const ticketsByInvoice = ticketsState.list.reduce((groups, ticket) => {
     if (!groups[ticket.invoiceNumber]) {
       groups[ticket.invoiceNumber] = [];
@@ -422,28 +458,6 @@ export default function RefundsPage() {
     groups[ticket.invoiceNumber].push(ticket);
     return groups;
   }, {});
-
-  // Filter invoices based on search
-  const filteredInvoices = Object.entries(ticketsByInvoice).filter(([invoiceNumber, tickets]) => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      invoiceNumber.toLowerCase().includes(searchLower) ||
-      tickets.some(ticket => 
-        ticket.ticketNumber.toLowerCase().includes(searchLower) ||
-        ticket.buyer.email.toLowerCase().includes(searchLower) ||
-        `${ticket.buyer.firstName} ${ticket.buyer.lastName}`.toLowerCase().includes(searchLower) ||
-        ticket.ticketType.name.toLowerCase().includes(searchLower)
-      )
-    );
-  });
-
-  // Paginate invoices
-  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
-  const paginatedInvoices = filteredInvoices.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   return (
     <>
@@ -671,8 +685,9 @@ export default function RefundsPage() {
           </div>
         )}
 
-        {/* Statistics - Compact spacing */}
-        {selectedEvent && ticketsState.list.length > 0 && (
+        {/* Statistics - Compact spacing. Event-wide totals (stable across
+            search/paging) come from selectedEvent.stats. */}
+        {selectedEvent?.stats && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-2 sm:p-4">
             <div className="flex items-center justify-around sm:justify-start sm:space-x-6 lg:space-x-8">
               {/* Total Invoices */}
@@ -681,7 +696,7 @@ export default function RefundsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <div className="text-xs sm:text-base">
-                  <span className="font-bold text-teal-700">{Object.keys(ticketsByInvoice).length}</span>
+                  <span className="font-bold text-teal-700">{selectedEvent.stats.totalInvoices ?? 0}</span>
                   <span className="hidden sm:inline text-slate-500 ml-1">Total Invoices</span>
                   <span className="sm:hidden text-slate-500 block text-xs">Invoices</span>
                 </div>
@@ -693,7 +708,7 @@ export default function RefundsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
                 </svg>
                 <div className="text-xs sm:text-base">
-                  <span className="font-bold text-teal-700">{ticketsState.list.length}</span>
+                  <span className="font-bold text-teal-700">{selectedEvent.stats.totalTickets ?? 0}</span>
                   <span className="hidden sm:inline text-slate-500 ml-1">Total Tickets</span>
                   <span className="sm:hidden text-slate-500 block text-xs">Tickets</span>
                 </div>
@@ -706,7 +721,7 @@ export default function RefundsPage() {
                 </svg>
                 <div className="text-xs sm:text-base">
                   <span className="font-bold text-red-600">
-                    {ticketsState.list.filter(t => t.totalRefundedAmount > 0).length}
+                    {(selectedEvent.stats.refundedTickets || 0) + (selectedEvent.stats.partiallyRefundedTickets || 0)}
                   </span>
                   <span className="hidden sm:inline text-slate-500 ml-1">Refunded Tickets</span>
                   <span className="sm:hidden text-slate-500 block text-xs">Refunded</span>
@@ -745,7 +760,7 @@ export default function RefundsPage() {
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    setCurrentPage(1);
+                    debouncedSearch(e.target.value);
                   }}
                   placeholder="Invoice #, Ticket #, Name, Email"
                   className="block w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-2 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
@@ -756,7 +771,14 @@ export default function RefundsPage() {
                   <button
                     onClick={() => {
                       setSearchTerm('');
-                      setCurrentPage(1);
+                      debouncedSearch.cancel();
+                      dispatch(setCurrentPage(1));
+                      dispatch(fetchRefundableTickets({
+                        eventId: selectedEvent._id,
+                        page: 1,
+                        limit: ticketsState.limit,
+                        search: '',
+                      }));
                     }}
                     className="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center"
                     type="button"
@@ -979,10 +1001,12 @@ export default function RefundsPage() {
               <div className="lg:col-span-2 space-y-2 sm:space-y-3">
               {ticketsState.list.length === 0 ? (
                 <EmptyState
-                  title="No tickets to refund"
-                  description="You don't have any refundable tickets yet."
+                  title={searchTerm ? 'No matching invoices' : 'No tickets to refund'}
+                  description={searchTerm
+                    ? `No invoices found matching "${searchTerm}".`
+                    : "You don't have any refundable tickets yet."}
                 />
-              ) : paginatedInvoices.map(([invoiceNumber, tickets]) => (
+              ) : Object.entries(ticketsByInvoice).map(([invoiceNumber, tickets]) => (
                 <RefundInvoiceCard
                   key={invoiceNumber}
                   invoiceNumber={invoiceNumber}
@@ -998,16 +1022,16 @@ export default function RefundsPage() {
                 />
               ))}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
+              {/* Pagination (server-side, by invoice) */}
+              {ticketsState.totalPages > 1 && (
                 <div className="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-3">
                   <div className="text-sm text-slate-600 text-center mb-2">
-                    Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredInvoices.length)} of {filteredInvoices.length} invoices
+                    Showing {((ticketsState.currentPage - 1) * ticketsState.limit) + 1} - {Math.min(ticketsState.currentPage * ticketsState.limit, ticketsState.total)} of {ticketsState.total} invoices
                   </div>
-                  <Pagination 
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={(page) => setCurrentPage(page)}
+                  <Pagination
+                    currentPage={ticketsState.currentPage}
+                    totalPages={ticketsState.totalPages}
+                    onPageChange={handlePageChange}
                   />
                 </div>
               )}

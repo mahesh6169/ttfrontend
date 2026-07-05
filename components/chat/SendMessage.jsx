@@ -102,7 +102,7 @@ const SendMessage = ({
 
     return (
       <div className="p-3 w-full border-t lg:border-t-0 lg:border-l border-slate-200">
-        <h2 className="text-sm sm:text-base font-semibold text-slate-900 mb-3">Get in touch</h2>
+        <h2 className="text-sm sm:text-base font-semibold text-slate-800 mb-3">Get in touch</h2>
         <p className="text-sm text-slate-700 mb-4">
           This {resourceLabel} was posted on behalf of the owner. Please use the contact details provided to reach them directly.
         </p>
@@ -124,18 +124,17 @@ const SendMessage = ({
 
   // Dynamic placeholder based on resource type
   const getPlaceholder = () => {
-    if (!user) return 'Please login to send a message';
-    switch (resourceType) {
-      case 'advert': return 'Enquire about this listing...';
-      case 'event': return 'Enquire about this event...';
-      case 'deal': return 'Enquire about this deal...';
-      default: return 'Type your message...';
-    }
+    const noun = resourceType === 'advert' ? 'listing'
+      : resourceType === 'event' ? 'event'
+      : resourceType === 'deal' ? 'deal'
+      : null;
+    // Placeholder always states the purpose; the "Login to send" button is the login gate.
+    return noun ? `Enquire about this ${noun}...` : 'Type your message...';
   };
 
   return (
     <div className="p-3 w-full border-t lg:border-t-0 lg:border-l border-slate-200">
-      <p className="flex items-center mb-2 text-sm sm:text-base font-semibold text-slate-900">
+      <p className="flex items-center mb-2 text-sm sm:text-base font-semibold text-slate-800">
         <CgProfile className="mr-2" size={20} />
         <span>Chat with {owner || 'User'}</span>
       </p>
@@ -148,7 +147,7 @@ const SendMessage = ({
           onBlur={onTextareaBlur}
           disabled={!user || sending}
           placeholder={getPlaceholder()}
-          className={`w-full border-0 px-3 pt-3 pb-1 resize-none focus:outline-none focus:ring-0 text-base bg-transparent ${
+          className={`w-full border-0 px-3 pt-3 pb-1 resize-none focus:outline-none focus:ring-0 text-base bg-transparent placeholder:text-slate-400 ${
             !user ? 'cursor-not-allowed' : ''
           }`}
           rows={3}

@@ -17,7 +17,6 @@ import {
   FaMinus,
   FaShoppingCart,
   FaExclamationTriangle,
-  FaArrowLeft,
   FaBell,
   FaTag,
 } from 'react-icons/fa';
@@ -25,6 +24,8 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { getEventTicketStatus, getTicketSaleStatus } from '@/utils/events/ticketStatusHelper';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import BackButton from '@/components/BackButton';
+import EmptyState from '@/components/layout/EmptyState';
 import AttendeeInfoSection from '@/components/events/tickets/AttendeeInfoSection';
 import ReservationTimer from '@/components/events/ReservationTimer';
 
@@ -553,22 +554,12 @@ const TicketSelectionPage = () => {
   // Show error if event fetch failed
   if (eventStatus === 'failed' || !selectedEvent) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Event Not Found
-          </h2>
-          <p className="text-gray-600 mb-6">
-            {eventError || 'The event you are looking for does not exist.'}
-          </p>
-          <button
-            onClick={() => router.push('/events')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Browse Events
-          </button>
-        </div>
-      </div>
+      <EmptyState
+        title="Event not found"
+        description={eventError || 'The event you are looking for does not exist.'}
+        actionLabel="Browse events"
+        actionHref="/events"
+      />
     );
   }
 
@@ -579,52 +570,27 @@ const TicketSelectionPage = () => {
       <div className="w-full">
         {/* Back to Events Button */}
         <div className="mb-3 sm:mb-6">
-          <button
-            onClick={handleBack}
-            className="inline-flex items-center px-2.5 py-1 text-xs sm:px-4 sm:py-2 sm:text-base bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md sm:rounded-lg transition-colors"
-          >
-            <FaArrowLeft className="mr-1 sm:mr-2 text-[10px] sm:text-base" />
-            <span className="text-xs sm:text-base">Back</span>
-          </button>
+          <BackButton onClick={handleBack} />
         </div>
 
         {/* Single Column Layout - Full Width */}
-        <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-6">
+        <div>
           {/* Centered Title */}
-          <h1 className="text-lg sm:text-2xl font-semibold sm:font-bold text-gray-900 text-center mb-3 sm:mb-6">
+          <h1 className="text-lg sm:text-2xl font-semibold sm:font-bold text-slate-900 text-center mb-3 sm:mb-6">
             Select Tickets
           </h1>
           
-          {/* Reservation Timer */}
-          {reservation && (
-            <ReservationTimer
-              expiresAt={reservation.expiresAt}
-              eventId={eventId}
-              reservationId={reservation._id}
-              mode="tickets"
-              onExpire={() => {
-                setReservation(null);
-                setSelectedTickets([]);
-                setPurchaseError(''); // Clear any error messages
-                // Refresh capacity to get updated availability
-                fetchCapacity();
-              }}
-              onClear={() => {
-                setReservation(null);
-                setSelectedTickets([]);
-                router.push(`/events/views/${eventId}`);
-              }}
-            />
-          )}
-          {/* Ticket Types */}
-          <div className="space-y-2 sm:space-y-4 mb-3 sm:mb-6">
+          {/* Availability + reservation timer — same row on desktop so the timer appears
+              BESIDE the capacity panel instead of inserting a new row above it (no vertical
+              page-jump when the first ticket is selected). Stacked on mobile: timer above. */}
+          <div className="flex flex-col-reverse md:flex-row md:items-center gap-1.5 sm:gap-3 mb-3 sm:mb-6">
 
-            {/* Event Capacity Info - Enhanced Container */}
-            <div className="mb-2 sm:mb-4">
-              <div className="bg-teal-50 border-2 border-teal-600 rounded-lg p-3 sm:p-4">
+            {/* Availability — borderless, minimal */}
+            <div className="flex-1 min-w-0">
+              <div>
                 <div className="flex items-center text-sm sm:text-base">
-                  <FaUsers className="mr-2 text-base sm:text-lg text-teal-700" />
-                  <span className="font-bold text-teal-800">
+                  <FaUsers className="mr-2 text-base sm:text-lg text-slate-500" />
+                  <span className="font-semibold text-slate-800">
                     {capacityLoading ? (
                       'Loading availability...'
                     ) : eventCapacity?.isUnlimited ? (
@@ -657,7 +623,7 @@ const TicketSelectionPage = () => {
                 {/* Show max booking limit message when user reaches their limit */}
                 {userReservation > 0 && userReservation >= (selectedEvent.maxAttendeesPerRegistration || 10) && (
                   <div className="text-sm mt-2 ml-6 sm:ml-7">
-                    <span className="text-orange-600 font-medium">Max booking limit reached</span>
+                    <span className="text-slate-600 font-medium">Max booking limit reached</span>
                   </div>
                 )}
                 
@@ -667,7 +633,7 @@ const TicketSelectionPage = () => {
                     {eventCapacity?.sold >= eventCapacity?.total ? (
                       <span className="text-red-600">Event is just sold out</span>
                     ) : (
-                      <span className="text-orange-600">Tickets are currently being purchased by other customers. Please try again in a few minutes.</span>
+                      <span className="text-slate-600">Tickets are currently being purchased by other customers. Please try again in a few minutes.</span>
                     )}
                   </div>
                 )}
@@ -681,6 +647,33 @@ const TicketSelectionPage = () => {
               </div>
             </div>
 
+            {/* Reservation Timer — beside capacity on desktop, above it on mobile */}
+            {reservation && (
+              <div className="md:shrink-0">
+                <ReservationTimer
+                  expiresAt={reservation.expiresAt}
+                  eventId={eventId}
+                  reservationId={reservation._id}
+                  mode="tickets"
+                  showClear={false}
+                  onExpire={() => {
+                    setReservation(null);
+                    setSelectedTickets([]);
+                    setPurchaseError(''); // Clear any error messages
+                    fetchCapacity();
+                  }}
+                  onClear={() => {
+                    setReservation(null);
+                    setSelectedTickets([]);
+                    router.push(`/events/views/${eventId}`);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Ticket Types */}
+          <div className="divide-y divide-slate-100">
             {selectedEvent.ticketTypes?.map((ticketType) => {
               // Use backend values for max available
               const maxAvailable = eventCapacity?.canBook === 'unlimited' 
@@ -772,159 +765,88 @@ const TicketSelectionPage = () => {
               return (
                 <div
                   key={ticketType._id}
-                  className={`border rounded-lg p-2 sm:p-4 transition-all ${
-                    isAvailable
-                      ? 'border-gray-200 hover:border-blue-300 hover:shadow-md'
-                      : 'border-gray-100 bg-gray-50 opacity-75'
-                  }`}
+                  className={`flex items-start justify-between gap-3 py-3 ${!isAvailable ? 'opacity-60' : ''}`}
                 >
-                  {/* Mobile Layout - Compact Single Row */}
-                  <div className="flex items-center justify-between sm:hidden">
-                    {/* Left: Name and Price */}
-                    <div className="flex-1 min-w-0 mr-2">
-                      <h4 className="font-medium text-teal-800 text-xs truncate">
-                        {ticketType.name}
-                      </h4>
-                      <p className="text-sm font-bold text-teal-700">
-                        ${ticketType.price?.toFixed(2) || '0.00'}
-                      </p>
-                    </div>
+                  {/* Left: name + status + discount hints */}
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-medium text-slate-800 text-sm sm:text-base truncate">
+                      {ticketType.name}
+                    </h4>
 
-                    {/* Right: Quantity Selector - Always show but disable when not available */}
-                    <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() =>
-                            handleQuantityChange(ticketType._id, -1)
-                          }
-                          disabled={selectedQty === 0 || apiLoading}
-                          className="w-7 h-7 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    {/* Ticket Sale Status */}
+                    {(() => {
+                      const status = getTicketSaleStatus(ticketType, selectedEvent.timeZone, eventCapacity);
+                      if (!status) return null;
+                      return (
+                        <p className={`text-xs mt-0.5 ${status.className}`}>
+                          {status.message}
+                        </p>
+                      );
+                    })()}
+
+                    {/* Sold out — permanent capacity sell-out (kept as an explicit cue) */}
+                    {eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 && (
+                      <p className="mt-0.5 text-[10px] sm:text-xs font-medium text-red-600">Sold out</p>
+                    )}
+
+                    {/* Public discount-code hints (S2). The API only ships redeemable, show-hint
+                        codes to non-owners, so anything present here is safe to display. A code
+                        covers this ticket type when its appliesToTicketTypes includes the NAME. */}
+                    {(selectedEvent.discountCodes || [])
+                      .filter((dc) => (dc.appliesToTicketTypes || []).includes(ticketType.name))
+                      .map((dc) => (
+                        <div
+                          key={dc.code}
+                          className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-teal-50 border border-teal-400 text-teal-800 text-[10px] sm:text-xs"
                         >
-                          <FaMinus className="text-[10px] text-teal-700" />
-                        </button>
-
-                        <span className="w-6 text-center font-semibold text-xs">
-                          {selectedQty}
-                        </span>
-
-                        <button
-                          onClick={() =>
-                            handleQuantityChange(ticketType._id, 1)
-                          }
-                          disabled={
-                            userReservation >= maxPerOrder ||
-                            remainingQty <= 0 ||
-                            eventCapacity?.trueAvailable === 0 ||
-                            apiLoading ||
-                            !isAvailable
-                          }
-                          className="w-7 h-7 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <FaPlus className="text-[10px] text-teal-700" />
-                        </button>
-                      </div>
-                  </div>
-                  
-                  {/* Show capacity limit indicator for mobile - only when event is permanently sold out */}
-                  {eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 && (
-                    <div className="text-[10px] text-red-600 font-medium text-right mt-1 sm:hidden">
-                      Sold out
-                    </div>
-                  )}
-
-                  {/* Desktop Layout - Keep existing */}
-                  <div className="hidden sm:flex sm:items-center sm:justify-between">
-                    {/* Ticket Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-teal-800 text-base">
-                          {ticketType.name}
-                        </h4>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-teal-700">
-                            ${ticketType.price?.toFixed(2) || '0.00'}
-                          </p>
+                          <FaTag className="text-teal-600 w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                          <span>
+                            Use code <span className="font-bold text-teal-700">{dc.code}</span>
+                            {dc.kind === 'fixed'
+                              ? ` for $${Number(dc.value).toFixed(2)} off`
+                              : ` for ${dc.value}% off`}
+                          </span>
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Quantity Selector - Always show but disable when not available */}
-                    <div className="flex items-center space-x-3 ml-6">
-                        <button
-                          onClick={() =>
-                            handleQuantityChange(ticketType._id, -1)
-                          }
-                          disabled={selectedQty === 0 || apiLoading}
-                          className="w-8 h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <FaMinus className="text-xs text-teal-700" />
-                        </button>
-
-                        <span className="w-8 text-center font-semibold">
-                          {selectedQty}
-                        </span>
-
-                        <button
-                          onClick={() =>
-                            handleQuantityChange(ticketType._id, 1)
-                          }
-                          disabled={
-                            userReservation >= maxPerOrder ||
-                            remainingQty <= 0 ||
-                            eventCapacity?.trueAvailable === 0 ||
-                            apiLoading ||
-                            !isAvailable
-                          }
-                          className="w-8 h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <FaPlus className="text-xs text-teal-700" />
-                        </button>
-                      </div>
-                      
-                      {/* Show capacity limit indicator - only when event is permanently sold out */}
-                      {eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 && (
-                        <div className="ml-4 text-xs text-red-600 font-medium">
-                          Sold out
-                        </div>
-                      )}
+                      ))}
                   </div>
 
-                 {/* Ticket Sale Status */}
-                 {(() => {
-                   const status = getTicketSaleStatus(ticketType, selectedEvent.timeZone, eventCapacity);
-
-                   if (!status) return null;
-
-                   return (
-                     <div className={`mt-1 sm:mt-2 text-[10px] sm:text-xs font-medium ${status.className}`}>
-                       <span className="inline-block">{status.icon}</span>
-                       <span className="ml-0.5 sm:ml-1">{status.message}</span>
-                     </div>
-                   );
-                 })()}
-
-                 {/* Public discount-code hints (S2). The API only ships redeemable, show-hint
-                     codes to non-owners, so anything present here is safe to display. A code
-                     covers this ticket type when its appliesToTicketTypes includes the NAME. */}
-                 {(selectedEvent.discountCodes || [])
-                   .filter((dc) => (dc.appliesToTicketTypes || []).includes(ticketType.name))
-                   .map((dc) => (
-                     <div
-                       key={dc.code}
-                       className="mt-1.5 sm:mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-teal-50 border border-teal-400 text-teal-800 text-[10px] sm:text-xs"
-                     >
-                       <FaTag className="text-teal-600 w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
-                       <span>
-                         Use code <span className="font-bold text-teal-700">{dc.code}</span>
-                         {dc.kind === 'fixed'
-                           ? ` for $${Number(dc.value).toFixed(2)} off`
-                           : ` for ${dc.value}% off`}
-                       </span>
-                     </div>
-                   ))}
+                  {/* Right: price + quantity stepper */}
+                  <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                    <p className="text-sm sm:text-base font-semibold text-slate-900 whitespace-nowrap">
+                      ${ticketType.price?.toFixed(2) || '0.00'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleQuantityChange(ticketType._id, -1)}
+                        disabled={selectedQty === 0 || apiLoading}
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label={`Remove one ${ticketType.name}`}
+                      >
+                        <FaMinus className="text-[10px] sm:text-xs text-teal-700" />
+                      </button>
+                      <span className="w-6 sm:w-8 text-center font-semibold text-sm">
+                        {selectedQty}
+                      </span>
+                      <button
+                        onClick={() => handleQuantityChange(ticketType._id, 1)}
+                        disabled={
+                          userReservation >= maxPerOrder ||
+                          remainingQty <= 0 ||
+                          eventCapacity?.trueAvailable === 0 ||
+                          apiLoading ||
+                          !isAvailable
+                        }
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label={`Add one ${ticketType.name}`}
+                      >
+                        <FaPlus className="text-[10px] sm:text-xs text-teal-700" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               );
             })}
-          </div>
+            </div>
 
           {/* Attendee Additional Information */}
           {userReservation > 0 && selectedEvent?.registrationFields?.length > 0 && (
@@ -938,16 +860,16 @@ const TicketSelectionPage = () => {
 
           {/* Proceed Button - Placed right after seating info */}
           {userReservation > 0 && (
-            <div className="mb-3 sm:mb-6">
+            <div className="mb-3 sm:mb-6 flex justify-center">
               <button
                 onClick={handleProceed}
                 disabled={
                   !canProceedToNext || isLoading || apiLoading || !reservation
                 }
-                className={`w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
+                className={`w-full sm:w-auto py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
                   canProceedToNext && !isLoading && !apiLoading && reservation
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-teal-700 hover:bg-teal-800 text-white'
+                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
                 }`}
               >
                 {isLoading || apiLoading ? (
@@ -982,20 +904,16 @@ const TicketSelectionPage = () => {
 
 
           {errors.selection && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-              <div className="flex items-start">
-                <FaExclamationTriangle className="text-red-600 mr-2 sm:mr-3 mt-0.5 sm:mt-1 text-sm sm:text-base flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-red-700 break-words">{errors.selection}</p>
-              </div>
+            <div className="flex items-start gap-2 text-sm text-red-600 mb-4 sm:mb-6">
+              <FaExclamationTriangle className="mt-0.5 shrink-0" />
+              <span className="break-words">{errors.selection}</span>
             </div>
           )}
 
           {errors.general && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-              <div className="flex items-start">
-                <FaExclamationTriangle className="text-red-600 mr-2 sm:mr-3 mt-0.5 sm:mt-1 text-sm sm:text-base flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-red-700 break-words">{errors.general}</p>
-              </div>
+            <div className="flex items-start gap-2 text-sm text-red-600 mb-4 sm:mb-6">
+              <FaExclamationTriangle className="mt-0.5 shrink-0" />
+              <span className="break-words">{errors.general}</span>
             </div>
           )}
         </div>

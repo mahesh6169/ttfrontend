@@ -11,6 +11,8 @@ import ShareIcons from '@/components/shared/ShareIcons';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import BackButton from '@/components/BackButton';
 import { FaShareAlt } from 'react-icons/fa';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 const AdvertDetail = () => {
   const { id } = useParams();
@@ -53,18 +55,23 @@ const AdvertDetail = () => {
 
   if (status === 'failed') {
     return (
-      <div className="text-center text-red-600 mt-8">
-        <p>{error}</p>
-        <BackButton label="Go Back" className="mt-4" />
+      <div className="flex flex-col gap-2">
+        <BackButton className="self-start" />
+        <ErrorState onRetry={() => dispatch(getAdvertById(id))} />
       </div>
     );
   }
 
   if (status === 'succeeded' && !advert) {
     return (
-      <div className="text-center text-slate-500 mt-8">
-        <p>Listing not found.</p>
-        <BackButton label="Go Back" className="mt-4" />
+      <div className="flex flex-col gap-2">
+        <BackButton className="self-start" />
+        <EmptyState
+          title="Listing not found"
+          description="This listing may have been removed, or the link is incorrect."
+          actionLabel="Browse listings"
+          actionHref="/listings"
+        />
       </div>
     );
   }
@@ -77,7 +84,7 @@ const AdvertDetail = () => {
       {/* Navigation Bar */}
       <div className="flex justify-between items-center">
         {/* Back */}
-        <BackButton />
+        <BackButton className="self-start" />
 
         {/* Report this Listing */}
         <ReportLink

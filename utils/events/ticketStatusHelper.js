@@ -11,73 +11,44 @@ import { formatInTimeZone } from 'date-fns-tz';
  */
 export const getTicketSaleStatus = (ticket, eventTimeZone, capacity = null) => {
   const now = new Date();
-  
-  // Check if sold out first - using confirmedAllocations for accurate sold out status
+  const fmt = (d) => formatInTimeZone(new Date(d), eventTimeZone, 'd MMM yyyy');
+
+  // Sold out — needs capacity, so only surfaces on the purchase flow (not the detail list).
   if (capacity && capacity.total > 0 && capacity.confirmedAllocations >= capacity.total) {
-    return {
-      icon: '❌',
-      message: 'Sold out',
-      className: 'text-red-600',
-      priority: 1
-    };
+    return { message: 'Sold out', className: 'text-red-600 font-medium', priority: 1, unavailable: true };
   }
-  
-  // Check if ticket sales haven't started yet
-  if (ticket.startDate) {
-    const startDate = new Date(ticket.startDate);
-    if (now < startDate) {
-      return {
-        icon: '🔔',
-        message: `Available from ${formatInTimeZone(startDate, eventTimeZone, 'MMM d, yyyy')}`,
-        className: 'text-orange-600',
-        priority: 2
-      };
-    }
+
+  // Sales haven't started yet
+  if (ticket.startDate && now < new Date(ticket.startDate)) {
+    return { message: `Sales open ${fmt(ticket.startDate)}`, className: 'text-slate-500', priority: 2 };
   }
-  
-  // Ticket is on sale - check for expiry
+
+  // On sale — check for expiry
   if (ticket.expiryDate) {
     const expiryDate = new Date(ticket.expiryDate);
-    
+
     if (now > expiryDate) {
-      return {
-        icon: '⏰',
-        message: 'Sales ended',
-        className: 'text-gray-600',
-        priority: 1
-      };
+      return { message: 'Sales closed', className: 'text-slate-400', priority: 1, unavailable: true };
     }
-    
-    // Calculate days until expiry
+
     const msPerDay = 24 * 60 * 60 * 1000;
     const daysUntilExpiry = Math.ceil((expiryDate - now) / msPerDay);
-    
-    // Hurry message for less than 5 days
+
+    // Subtle closing-soon nudge (no alarm colour — the shorter window is the signal)
     if (daysUntilExpiry <= 5 && daysUntilExpiry > 0) {
       return {
-        icon: '⚡',
-        message: `Hurry! Only ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''} left`,
-        className: 'text-orange-600',
-        priority: 3
+        message: `${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''} left`,
+        className: 'text-slate-600 font-medium',
+        priority: 3,
       };
     }
-    
-    // On sale with end date
-    return {
-      icon: '✅',
-      message: `On sale now • Until ${formatInTimeZone(expiryDate, eventTimeZone, 'MMM d, yyyy')}`,
-      className: 'text-green-600',
-      priority: 4
-    };
+
+    // On sale with an end date
+    return { message: `Sales end ${fmt(expiryDate)}`, className: 'text-slate-500', priority: 4 };
   }
-  
-  // On sale with no end date
-  return {
-    icon: '✅',
-    message: 'On sale now',
-    className: 'text-green-600',
-    priority: 5
-  };
+
+  // On sale, no end date — nothing to show (keeps the row clean)
+  return null;
 };
 
 /**
@@ -92,13 +63,15 @@ export const getEventTicketStatus = (ticketTypes, eventTimeZone, capacity = null
     return null;
   }
   
-  // Get status for all tickets
-  const statuses = ticketTypes.map(ticket => 
-    getTicketSaleStatus(ticket, eventTimeZone, capacity)
-  );
-  
+  // Get status for all tickets (some may be null — on-sale with no end date)
+  const statuses = ticketTypes
+    .map(ticket => getTicketSaleStatus(ticket, eventTimeZone, capacity))
+    .filter(Boolean);
+
+  if (statuses.length === 0) return null;
+
   // Return the status with highest priority (lowest number)
-  return statuses.reduce((prev, current) => 
+  return statuses.reduce((prev, current) =>
     prev.priority < current.priority ? prev : current
   );
 };

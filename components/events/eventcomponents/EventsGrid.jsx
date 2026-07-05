@@ -2,50 +2,32 @@
 
 import React from 'react';
 import EventCard from '@/components/events/eventcomponents/EventCard';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import SkeletonLoader from '../../SkeletonLoader'; 
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 import BottomAd from '@/components/ads/BottomAd';
-import { FaCalendarAlt } from 'react-icons/fa';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 const EventGrid = ({ events, eventStatus }) => {
   const {
     eventWishlist,
-    eventWishlistStatus,
     isInEventWishlist,
     toggleEventWishlist,
   } = useEventWishlist();
 
- // Loading State
- if (
-  (eventStatus === 'idle' || eventStatus === 'loading' || eventWishlistStatus === 'loading') &&
-  (!events || events.length === 0)
-) {
-  return (
-    <div className="flex justify-center items-center min-h-[300px]">
-      <SkeletonLoader />
-    </div>
-  );
+ // Loading state
+if ((eventStatus === 'idle' || eventStatus === 'loading') && (!events || events.length === 0)) {
+  return <PageSkeleton variant="card" rows={8} />;
 }
 
-// Failed State
+// Failed state
 if (eventStatus === 'failed') {
-  return (
-    <div className="flex items-center justify-center gap-2 text-gray-500 py-6">
-      <FaCalendarAlt className="text-lg" />
-      <span className="text-sm">Unable to load events. Please try again later.</span>
-    </div>
-  );
+  return <ErrorState onRetry={() => window.location.reload()} />;
 }
 
 // No results state
 if (eventStatus === 'success' && (!events || events.length === 0)) {
-  return (
-    <div className="flex items-center justify-center gap-2 text-gray-500 py-6">
-      <FaCalendarAlt className="text-lg" />
-      <span className="text-sm">No events displayed at the moment</span>
-    </div>
-  );
+  return <EmptyState title="No events found" description="Try adjusting your filters or search." />;
 }
 
   // Calculate positions for ad insertion after 2 rows on each screen size

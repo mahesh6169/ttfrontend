@@ -5,12 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEventById, clearSelectedEvent, clearError } from '@/store/slices/events/eventSlice';
 import { FaShareAlt } from 'react-icons/fa';
-import EventDetailSkeleton from '@/components/events/eventcomponents/EventDetailSkeleton';
 import SingleEventCard from '@/components/events/eventcomponents/SingleEventCard';
 import SendMessage from '@/components/chat/SendMessage';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
 import BackButton from '@/components/BackButton';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 
 const EventDetail = () => {
@@ -61,23 +63,37 @@ const EventDetail = () => {
   }, [dispatch, id]);
 
   if ((status === 'idle' || status === 'loading') && !selectedEvent) {
-    return <EventDetailSkeleton />;
+    return (
+      <div className="flex justify-center items-center min-h-[300px]">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (status === 'failed') {
     return (
-      <div className="text-center text-red-500 mt-8">
-        <p>{error}</p>
-        <BackButton label="Go Back" className="mt-4" />
+      <div className="flex flex-col gap-2">
+        <BackButton className="self-start" />
+        <ErrorState
+          onRetry={() => {
+            dispatch(clearError());
+            dispatch(fetchEventById(id));
+          }}
+        />
       </div>
     );
   }
 
   if (status === 'succeeded' && !selectedEvent) {
     return (
-      <div className="text-center text-slate-500 mt-8">
-        <p>Event not found.</p>
-        <BackButton label="Go Back" className="mt-4" />
+      <div className="flex flex-col gap-2">
+        <BackButton className="self-start" />
+        <EmptyState
+          title="Event not found"
+          description="This event may have been removed, or the link is incorrect."
+          actionLabel="Browse events"
+          actionHref="/events"
+        />
       </div>
     );
   }

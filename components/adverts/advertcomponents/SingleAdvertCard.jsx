@@ -89,7 +89,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
-  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
+  const [chatInView, setChatInView] = useState(false);
   const serviceAreaRef = useRef(null);
   const descriptionRef = useRef(null);
   const mobileContactRef = useRef(null);
@@ -165,6 +165,18 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, advert.images?.length]);
+
+  // Fade out the floating buttons once the inline chat scrolls into view (mobile).
+  useEffect(() => {
+    const node = mobileContactRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setChatInView(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [chatProps?.resourceId]);
 
   useEffect(() => {
     checkOverflow(serviceAreaRef, setServiceAreaOverflow);
@@ -576,7 +588,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
                   </a>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-700">{maskMobile(advert.contactInfo.mobile)}</span>
+                    <span className="text-slate-700">{maskMobile(advert.contactInfo.mobile)}</span>
                     <button
                       onClick={handleLoginToReveal}
                       className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
@@ -601,7 +613,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
                   </a>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-700">{maskEmail(advert.contactInfo.email)}</span>
+                    <span className="text-slate-700">{maskEmail(advert.contactInfo.email)}</span>
                     <button
                       onClick={handleLoginToReveal}
                       className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
@@ -660,18 +672,18 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
       {/* Chat Container - Mobile Only (After Additional Details) */}
       {chatProps && (
         <div ref={mobileContactRef} className="block lg:hidden px-2 my-4">
-          <SendMessage
-            {...chatProps}
-            onTextareaFocus={() => setIsTextareaFocused(true)}
-            onTextareaBlur={() => setIsTextareaFocused(false)}
-          />
+          <SendMessage {...chatProps} />
         </div>
       )}
       </div> {/* End of content wrapper */}
 
-      {/* Floating Buttons - Mobile Only */}
-      {!isTextareaFocused && (
-        <div className="lg:hidden fixed bottom-20 right-4 z-40 flex flex-col gap-3">
+      {/* Floating Buttons - Mobile Only. Fade out once the inline chat is in view. */}
+      <div
+        className={`lg:hidden fixed bottom-20 right-4 z-40 flex flex-col gap-3 transition-all duration-200 ${
+          chatInView ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100'
+        }`}
+        aria-hidden={chatInView}
+      >
           {/* Share Button */}
           <button
             onClick={async () => {
@@ -709,7 +721,6 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             </button>
           )}
         </div>
-      )}
     </div>
   );
 };
