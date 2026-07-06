@@ -16,7 +16,6 @@ import { useRouter } from 'next/navigation';
 import { HiOutlineClock } from 'react-icons/hi';
 import { AiOutlineHourglass } from 'react-icons/ai';
 import { FaCheckCircle } from 'react-icons/fa';
-import { MdEventSeat } from 'react-icons/md';
 import axios from '@/utils/axiosConfig';
 
 import SeatButton from './SeatButton';
@@ -29,7 +28,8 @@ const SeatMapSelectionNoRedux = forwardRef(({
   eventId,
   userId,
   existingReservation,  // Reservation from tickets page
-  onSeatsSelected,      // Callback when seats are selected
+  onSeatsSelected,      // Callback when all seats selected / cleared
+  onSelectionChange,    // Display-only: fires on every selection change (page shows the count)
   socketConnected,
   socketJoinedRoom,
   onSocketUpdate
@@ -160,6 +160,11 @@ const SeatMapSelectionNoRedux = forwardRef(({
       setSelectedSeats(existingReservation.seatIds);
     }
   }, [existingReservation]);
+
+  // Display-only: keep the parent's live count in sync on every selection change.
+  useEffect(() => {
+    if (onSelectionChange) onSelectionChange(selectedSeats);
+  }, [selectedSeats, onSelectionChange]);
 
   // REMOVED - We now notify parent only when all seats are selected or cleared
   // useEffect(() => {
@@ -481,65 +486,26 @@ const SeatMapSelectionNoRedux = forwardRef(({
         <div className="flex justify-center items-center py-8">
           <div className="text-center">
             <AiOutlineHourglass className="h-12 w-12 text-teal-600 animate-spin mx-auto mb-2" />
-            <p className="text-sm text-gray-600">Loading seats...</p>
+            <p className="text-sm text-slate-600">Loading seats...</p>
           </div>
         </div>
       )}
       
-      {/* Status Bar - Enhanced */}
-      <div className="bg-white border-2 border-teal-500 rounded-lg p-3 sm:p-4 shadow-md">
-        <div className="flex flex-col gap-2">
-          {/* Selection count - Enhanced */}
-          <div className={`text-sm sm:text-lg font-bold whitespace-nowrap flex items-center gap-2 ${
-            selectedSeats.length === requiredSeats 
-              ? 'text-green-700' 
-              : selectedSeats.length > 0 
-              ? 'text-teal-700' 
-              : 'text-gray-800'
-          }`}>
-            <div className={`w-2 h-2 rounded-full animate-pulse ${
-              selectedSeats.length === requiredSeats 
-                ? 'bg-green-600' 
-                : 'bg-teal-600'
-            }`} />
-            <span className="text-lg sm:text-xl">
-              {selectedSeats.length}/{requiredSeats}
-            </span>
-            <span className="text-sm sm:text-base">
-              Seats Selected
-            </span>
-            {selectedSeats.length === 0 && (
-              <span className="text-xs sm:text-sm text-teal-600 font-normal">
-                (Select your seats below)
-              </span>
-            )}
-          </div>
-          
-          {/* Show seat numbers when seats are selected - wraps on mobile */}
-          {selectedSeats.length > 0 && (
-            <div className="flex items-start gap-1.5 text-xs sm:text-sm font-medium text-teal-800 bg-teal-50 px-2 py-1 rounded-md">
-              <MdEventSeat className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-              <span className="break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                {selectedSeats.join(', ')}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Selection count + reservation timer now live at page level (SeatSelectionPage) */}
 
       {/* Seat Map */}
-      <div className={`relative border border-gray-200 rounded-md sm:rounded-lg max-w-full mx-auto ${
+      <div className={`relative border border-slate-200 rounded-md sm:rounded-lg max-w-full mx-auto ${
         (isLoading || pendingOperation) ? 'opacity-50 pointer-events-none' : ''
       }`}>
         {seatingLayout.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">No seating layout available</p>
+          <div className="text-center py-12 bg-slate-50 rounded-lg">
+            <p className="text-slate-500">No seating layout available</p>
           </div>
         ) : (
           <div>
             {/* Stage indicator */}
             <div className="text-center py-3 sm:py-4 mb-4">
-              <div className="inline-block bg-gray-800 text-white px-8 sm:px-16 py-2 sm:py-3 rounded text-xs sm:text-sm font-semibold tracking-wider">
+              <div className="inline-block bg-slate-800 text-white px-8 sm:px-16 py-2 sm:py-3 rounded text-xs sm:text-sm font-semibold tracking-wider">
                 STAGE
               </div>
             </div>
@@ -572,7 +538,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
                     >
                       {/* Left row label */}
                       <div className="w-8 sm:w-10 flex-shrink-0 text-center sticky left-0 bg-white z-10">
-                        <span className="font-bold text-gray-700 text-xs sm:text-sm bg-white px-1 py-0.5 rounded shadow-sm inline-block">
+                        <span className="font-bold text-slate-700 text-xs sm:text-sm bg-white px-1 py-0.5 rounded shadow-sm inline-block">
                           {row.rowLabel}
                         </span>
                       </div>
@@ -611,7 +577,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
                       
                       {/* Right row label */}
                       <div className="w-8 sm:w-10 flex-shrink-0 text-center sticky right-0 bg-white z-10">
-                        <span className="font-bold text-gray-700 text-xs sm:text-sm bg-white px-1 py-0.5 rounded shadow-sm inline-block">
+                        <span className="font-bold text-slate-700 text-xs sm:text-sm bg-white px-1 py-0.5 rounded shadow-sm inline-block">
                           {row.rowLabel}
                         </span>
                       </div>
@@ -628,7 +594,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
           <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded-lg z-10">
             <div className="text-center p-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-600 font-medium">
+              <p className="mt-2 text-sm text-slate-600 font-medium">
                 {pendingOperation ? 'Processing...' : 'Loading...'}
               </p>
             </div>
@@ -657,11 +623,11 @@ const SeatMapSelectionNoRedux = forwardRef(({
                 </svg>
               </div>
               
-              <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">
+              <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 mb-1 sm:mb-2">
                 Seat Selection Error
               </h3>
               
-              <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 lg:mb-6">
+              <p className="text-slate-600 text-xs sm:text-sm mb-3 sm:mb-4 lg:mb-6">
                 {reserveErrorMessage}
               </p>
               
@@ -670,7 +636,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
                   setShowReserveErrorModal(false);
                   setReserveErrorMessage('');
                 }}
-                className="w-full bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors"
+                className="w-full bg-teal-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium hover:bg-teal-800 transition-colors"
               >
                 OK
               </button>

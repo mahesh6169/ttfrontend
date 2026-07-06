@@ -11,7 +11,8 @@ const SeatMapWithSocket = ({
   eventId,
   userId,
   existingReservation,
-  onSeatsChange
+  onSeatsChange,
+  onSelectionChange
 }) => {
   const [socketConnected, setSocketConnected] = React.useState(false);
   const [socketJoinedRoom, setSocketJoinedRoom] = React.useState(false);
@@ -42,6 +43,7 @@ const SeatMapWithSocket = ({
         userId={userId}
         existingReservation={existingReservation}
         onSeatsSelected={onSeatsChange}
+        onSelectionChange={onSelectionChange}
         socketConnected={socketConnected}
         socketJoinedRoom={socketJoinedRoom}
       />

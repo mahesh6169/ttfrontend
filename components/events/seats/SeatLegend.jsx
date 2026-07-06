@@ -9,19 +9,19 @@ const SeatLegend = () => {
   const legendItems = [
     {
       status: 'available',
-      color: 'bg-green-500 text-white border-green-600',
+      color: 'bg-teal-50 text-teal-700 border-teal-400',
       label: 'Available',
       description: 'Tap to select'
     },
     {
       status: 'selected',
-      color: 'bg-amber-600 text-white border-amber-700',
+      color: 'bg-teal-700 text-white border-teal-800',
       label: 'Selected',
       description: 'Your seats'
     },
     {
       status: 'selected-by-other',
-      color: 'bg-yellow-400 text-yellow-900 border-yellow-500',
+      color: 'bg-amber-400 text-amber-900 border-amber-500',
       label: 'Hold',
       description: 'Being selected'
     },
@@ -33,7 +33,7 @@ const SeatLegend = () => {
     },
     {
       status: 'reserved',
-      color: 'bg-purple-500 text-white border-purple-600',
+      color: 'bg-slate-400 text-white border-slate-500',
       label: 'Reserved',
       description: 'Organizer use'
     }
@@ -42,13 +42,13 @@ const SeatLegend = () => {
   return (
     <div className="w-full">
       {/* Mobile: Grid layout, Desktop: Flex wrap */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-2 sm:gap-3 md:justify-center">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-2 sm:gap-3 md:justify-start">
         {legendItems.map((item) => (
           <div key={item.status} className="flex items-center space-x-1 sm:space-x-1.5 justify-start">
             <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded text-[8px] sm:text-[10px] font-medium border flex items-center justify-center ${item.color}`}>
               <MdEventSeat className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </div>
-            <div className="text-[10px] sm:text-xs font-medium text-gray-700">
+            <div className="text-[10px] sm:text-xs font-medium text-slate-700">
               {item.label}
             </div>
           </div>
