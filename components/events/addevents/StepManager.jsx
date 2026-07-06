@@ -427,6 +427,7 @@ const StepManager = ({
           url: img.url,
           id: img.id,
           name: img.name,
+          originalFilename: img.originalFilename,
           size: img.size,
           type: img.type,
           isExisting: img.isExisting,
@@ -1393,7 +1394,8 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
         submitFormData.append('existingSeatingLayoutImages', JSON.stringify(
           existingSeatingImages.map(img => ({
             url: img.url,
-            publicId: img.publicId
+            publicId: img.publicId,
+            originalFilename: img.originalFilename
           }))
         ));
       }
@@ -1643,24 +1645,28 @@ const handleAddAnother = useCallback(() => {
     <div className="w-full">
       <RequireVerifiedAccount message="You must be logged in to manage events.">
 
-        {/* Page Title — row 1 of the Content Shell (centered) */}
-        <h1 className="text-center text-xl sm:text-2xl font-bold text-slate-800 mb-3">
-          {customTitle || 'Create Event'}
-        </h1>
-
-        {/* Top Toolbar — row 2: Cancel (left). Single exit for the wizard. */}
+        {/* Top Toolbar — Cancel (left), above the title. Single exit for the wizard. */}
         {!isViewMode && allowCancel && (
-          <div className="mb-4 sm:mb-6 flex items-center">
+          <div className="mb-4 flex items-center">
             <button
               type="button"
               onClick={handleCancel}
               disabled={isLoading}
-              className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 bg-teal-700 text-white hover:bg-teal-800 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ✕ Cancel
             </button>
           </div>
         )}
+
+        {/* Page Title — centered, below the toolbar. Font/typography matched to
+            ProfilePageHeading (the profile/manage pages standard). */}
+        <div className="text-center mb-6">
+          <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">
+            {customTitle || 'Create Event'}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">Add your event details below</p>
+        </div>
 
         {/* Step Indicator */}
         <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />

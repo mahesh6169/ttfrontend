@@ -136,12 +136,9 @@ const ReservationTimer = ({
         {isExpired ? (
           <span className="font-medium text-red-600">Reservation expired</span>
         ) : (
-          <>
-            <span className="text-slate-500">Time remaining: </span>
-            <span className={`font-semibold tabular-nums ${isWarning ? 'text-red-600' : 'text-slate-900'}`}>
-              {formatTime(timeRemaining)}
-            </span>
-          </>
+          <span className={`font-semibold tabular-nums ${isWarning ? 'text-red-600' : 'text-slate-900'}`}>
+            {formatTime(timeRemaining)}
+          </span>
         )}
       </div>
 

@@ -83,17 +83,21 @@ export default function EditBusinessPage() {
     <div>
       <RequireVerifiedAccount>
         <div className="w-full">
-          {/* Page Header */}
-          <div className="mb-8 text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Edit Business</h1>
-            <p className="text-sm text-slate-500 mt-1">Update your business details</p>
+          {/* Top Toolbar — Cancel (left), above the title */}
+          <div className="mb-4 flex items-center">
             <button
+              type="button"
               onClick={handleCancel}
-              className="mt-4 inline-flex items-center justify-center bg-amber-400 text-teal-800
-                hover:bg-amber-500 hover:text-teal-900 px-5 py-2 rounded-full shadow font-semibold text-sm transition-colors"
+              className="inline-flex items-center gap-1 bg-teal-700 text-white hover:bg-teal-800 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors"
             >
-              Cancel
+              ✕ Cancel
             </button>
+          </div>
+
+          {/* Page Title — centered, below the toolbar (forms.md standard) */}
+          <div className="text-center mb-6">
+            <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">Edit Business</h1>
+            <p className="mt-1 text-sm text-slate-500">Update your business details</p>
           </div>
 
           {/* Form */}

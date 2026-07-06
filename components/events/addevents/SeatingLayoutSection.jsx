@@ -331,7 +331,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
         <label className="block text-sm font-medium text-slate-600 mb-2">
           Venue Layout
         </label>
-        <p className="text-xs text-slate-500 mb-2">Upload JPG/PNG images of seating and venue layouts</p>
+        <p className="text-xs text-slate-500 mb-2">Upload seating / venue layout images</p>
         <ImageUploader
           images={formData.seatingLayoutImage || []}
           onImagesChange={onSeatingImagesChange}

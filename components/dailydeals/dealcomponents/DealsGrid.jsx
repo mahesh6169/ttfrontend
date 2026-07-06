@@ -1,9 +1,10 @@
 'use client';
 
 import DealCard from './DealCard';
-import SkeletonLoader from '../../SkeletonLoader';
 import BottomAd from '@/components/ads/BottomAd';
-import { FaGift } from 'react-icons/fa';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 const DealsGrid = ({ deals, dealStatus }) => {
   // Loading State
@@ -11,32 +12,17 @@ const DealsGrid = ({ deals, dealStatus }) => {
     (dealStatus === 'idle' || dealStatus === 'loading') &&
     (!deals || deals.length === 0)
   ) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <SkeletonLoader />
-      </div>
-    );
+    return <PageSkeleton variant="card" rows={8} />;
   }
 
   // Failed State
   if (dealStatus === 'failed') {
-    return (
-      <div className="flex items-center justify-center gap-2 text-slate-500 py-6 min-h-[400px]">
-        <FaGift className="text-lg" />
-        <span className="text-sm">Unable to load deals. Please try again later.</span>
-      </div>
-    );
+    return <ErrorState onRetry={() => window.location.reload()} />;
   }
 
   // No results state
   if (dealStatus === 'success' && (!deals || deals.length === 0)) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 text-slate-500 py-12 min-h-[400px]">
-        <FaGift className="text-2xl" />
-        <p className="text-lg">No deals found</p>
-        <p className="text-sm text-slate-400">Try adjusting your filters</p>
-      </div>
-    );
+    return <EmptyState title="No deals found" description="Try adjusting your filters or search." />;
   }
 
   // Calculate positions for ad insertion after 2 rows on each screen size

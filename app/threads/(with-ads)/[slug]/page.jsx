@@ -1,5 +1,4 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
-import LoadingSpinner from '@/components/LoadingSpinner';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -109,22 +108,31 @@ export default async function ThreadSlugPage({ params }) {
   const threadId = extractIdFromSlug(slug);
   
   if (!threadId) {
+    // Container shell matches /threads/views/[id] so the state sits in the same
+    // vertical slot on both pages — avoids the spinner "jumping" position when the
+    // slug page hands off to the views page via meta-refresh.
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
         <div className="text-center">
-          <p className="text-gray-600">Topic not found</p>
-          <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
+          <p className="text-slate-700">Topic not found</p>
+          <p className="text-sm text-slate-500 mt-2">Redirecting...</p>
         </div>
         <meta httpEquiv="refresh" content="3; url=/threads" />
       </div>
     );
   }
 
-  // Use meta refresh instead of JavaScript redirect
-  // This allows crawlers to read the meta tags before following the redirect
+  // Use meta refresh instead of JavaScript redirect so crawlers can read meta tags
+  // before following the redirect. Minimal spinner (not a skeleton) — this page
+  // redirects away, so no real content ever loads here. See goldstandard/stylelistings.md B8.
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <LoadingSpinner />
+    <div className="flex flex-col items-center justify-center gap-3 min-h-[calc(100vh-9rem)]">
+      <div
+        className="h-8 w-8 rounded-full border-2 border-teal-100 border-t-teal-600 animate-spin"
+        role="status"
+        aria-label="Redirecting"
+      ></div>
+      <p className="text-sm text-slate-500">Redirecting...</p>
       <meta httpEquiv="refresh" content={`3; url=/threads/views/${threadId}`} />
     </div>
   );

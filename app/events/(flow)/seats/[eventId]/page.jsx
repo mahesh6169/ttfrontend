@@ -14,7 +14,7 @@ import EmptyState from '@/components/layout/EmptyState';
 import SeatMapWithSocket from '@/components/events/seats/SeatMapWithSocket';
 import SeatLegend from '@/components/events/seats/SeatLegend';
 import ReservationTimer from '@/components/events/ReservationTimer';
-import { FaShoppingCart, FaTimes, FaSearchPlus } from 'react-icons/fa';
+import { FaShoppingCart, FaTimes, FaUsers } from 'react-icons/fa';
 import { MdEventSeat } from 'react-icons/md';
 
 // Helper function to get optimized image URL (same pattern as SingleEventCard)
@@ -256,24 +256,18 @@ const SeatSelectionPage = () => {
             Select Seats
           </h1>
           
-          {/* Seats selected + reservation timer — one row on desktop (mirrors /tickets) */}
-          <div className="flex flex-col-reverse md:flex-row md:items-center gap-1.5 sm:gap-3 mb-3 sm:mb-6">
+          {/* Seat legend — centered */}
+          <div className="flex justify-center mb-3 sm:mb-6">
+            <SeatLegend />
+          </div>
+
+          {/* Seats selected + reservation timer — spread (left/right) on mobile, centered on desktop (matches /tickets) */}
+          <div className="flex items-center justify-between md:justify-center gap-3 md:gap-x-6 mb-3 sm:mb-6">
             {/* Seats selected */}
-            <div className="flex-1 min-w-0">
-              <div className={`text-sm sm:text-lg font-bold whitespace-nowrap flex items-center gap-2 ${
-                liveSeats.length === ticketRequirement.total && ticketRequirement.total > 0
-                  ? 'text-teal-800'
-                  : liveSeats.length > 0
-                  ? 'text-teal-700'
-                  : 'text-slate-700'
-              }`}>
-                <div className={`w-2 h-2 rounded-full animate-pulse ${
-                  liveSeats.length === ticketRequirement.total && ticketRequirement.total > 0
-                    ? 'bg-teal-700'
-                    : 'bg-teal-600'
-                }`} />
-                <span className="text-lg sm:text-xl">{liveSeats.length}/{ticketRequirement.total}</span>
-                <span className="text-sm sm:text-base">Seats Selected</span>
+            <div className="min-w-0">
+              <div className="flex items-center text-sm sm:text-base whitespace-nowrap">
+                <FaUsers className="mr-2 text-base sm:text-lg text-slate-500" />
+                <span className="font-semibold text-slate-800">{liveSeats.length}/{ticketRequirement.total} Seats Selected</span>
               </div>
               {liveSeats.length > 0 && (
                 <div className="mt-1 flex w-fit max-w-full items-start gap-1.5 text-xs sm:text-sm font-medium text-teal-800 bg-teal-50 px-2 py-1 rounded-md">
@@ -287,7 +281,7 @@ const SeatSelectionPage = () => {
 
             {/* Reservation timer — no Clear (deselect on the map to change seats) */}
             {reservation && (
-              <div className="md:shrink-0">
+              <div>
                 <ReservationTimer
                   expiresAt={reservation.expiresAt}
                   eventId={selectedEvent._id}
@@ -306,45 +300,6 @@ const SeatSelectionPage = () => {
             )}
           </div>
 
-          {/* Legend + venue layout — one row on desktop */}
-          <div className="flex flex-col md:flex-row md:items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
-            <div className="flex-1 min-w-0">
-              <SeatLegend />
-            </div>
-            {selectedEvent?.seatingLayoutImage && selectedEvent.seatingLayoutImage.length > 0 && (
-              <div className="flex items-center gap-2 md:shrink-0">
-                <h2 className="text-sm sm:text-base font-medium text-slate-700">
-                  Venue Layout:
-                </h2>
-                <div className="flex flex-col items-center gap-1">
-                  <div
-                    className="relative group cursor-pointer rounded overflow-hidden border border-slate-300 hover:border-teal-400 transition-all"
-                    onClick={() => {
-                      setCurrentImageIndex(0);
-                      setIsFullscreen(true);
-                    }}
-                  >
-                    <img
-                      src={getOptimizedImageUrl(selectedEvent.seatingLayoutImage[0])}
-                      alt="Venue Seating Layout"
-                      className="w-16 h-12 sm:w-20 sm:h-14 object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity duration-200 flex items-center justify-center">
-                      <FaSearchPlus className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs" />
-                    </div>
-                  </div>
-                  <span className="text-xs text-slate-500">Click to enlarge</span>
-                  {selectedEvent.seatingLayoutImage.length > 1 && (
-                    <span className="text-xs text-slate-500">
-                      ({selectedEvent.seatingLayoutImage.length} images)
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-          
           {/* Seat Map */}
           <div className="mb-3 sm:mb-6">
             <SeatMapWithSocket
@@ -355,6 +310,8 @@ const SeatSelectionPage = () => {
               existingReservation={reservation}
               onSeatsChange={handleSeatsUpdated}
               onSelectionChange={setLiveSeats}
+              hasVenueLayout={selectedEvent?.seatingLayoutImage?.length > 0}
+              onVenueClick={() => { setCurrentImageIndex(0); setIsFullscreen(true); }}
             />
           </div>
           
@@ -364,7 +321,7 @@ const SeatSelectionPage = () => {
             <button
               onClick={handleProceedToCheckout}
               disabled={!canProceed}
-              className={`w-full sm:w-auto py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
+              className={`w-auto py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
                 canProceed
                   ? 'bg-teal-700 hover:bg-teal-800 text-white'
                   : 'bg-slate-300 text-slate-500 cursor-not-allowed'

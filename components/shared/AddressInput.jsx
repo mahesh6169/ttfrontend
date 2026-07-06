@@ -148,10 +148,10 @@ const AddressInput = ({
 
   return (
     <div>
-      <label className="block font-bold mb-2 text-gray-700">
+      <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
         Location <span className="text-red-500">*</span>
       </label>
-      <p className="text-xs text-gray-500 mb-2">
+      <p className="text-xs text-slate-500 mb-2">
         This helps users to find you by state/suburb.<br className="sm:hidden" />
         <span className="block sm:inline"> List suburb only if you are not operating from a business address.</span>
       </p>

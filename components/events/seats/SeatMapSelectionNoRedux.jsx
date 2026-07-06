@@ -30,6 +30,8 @@ const SeatMapSelectionNoRedux = forwardRef(({
   existingReservation,  // Reservation from tickets page
   onSeatsSelected,      // Callback when all seats selected / cleared
   onSelectionChange,    // Display-only: fires on every selection change (page shows the count)
+  hasVenueLayout,       // whether the event has a venue-layout image
+  onVenueClick,         // opens the venue-layout fullscreen (state lives on the page)
   socketConnected,
   socketJoinedRoom,
   onSocketUpdate
@@ -503,8 +505,17 @@ const SeatMapSelectionNoRedux = forwardRef(({
           </div>
         ) : (
           <div>
-            {/* Stage indicator */}
-            <div className="text-center py-3 sm:py-4 mb-4">
+            {/* Stage indicator — Venue Layout link on the left, STAGE centered */}
+            <div className="relative flex items-center justify-center py-3 sm:py-4 mb-4">
+              {hasVenueLayout && (
+                <button
+                  type="button"
+                  onClick={onVenueClick}
+                  className="absolute left-0 text-xs sm:text-sm font-medium text-teal-700 hover:text-teal-800 underline"
+                >
+                  Venue Layout
+                </button>
+              )}
               <div className="inline-block bg-slate-800 text-white px-8 sm:px-16 py-2 sm:py-3 rounded text-xs sm:text-sm font-semibold tracking-wider">
                 STAGE
               </div>

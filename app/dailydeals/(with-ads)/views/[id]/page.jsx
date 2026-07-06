@@ -12,10 +12,11 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import BackButton from '@/components/BackButton';
 import Link from 'next/link';
 import ReportLink from '@/components/support/ReportLink';
-import { MdLocationOn, MdPhone, MdEmail, MdLanguage } from 'react-icons/md';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 import { FaFacebook, FaInstagram } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
-import { FaCommentDots, FaShareAlt, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaCommentDots, FaShareAlt, FaExternalLinkAlt, FaMobileAlt, FaEnvelope, FaGlobe, FaMapMarkedAlt, FaThumbsUp } from 'react-icons/fa';
 
 const SOCIAL_ICONS = {
   Facebook: FaFacebook,
@@ -29,8 +30,9 @@ const DealDetailPage = () => {
   const router = useRouter();
 
   const { deal, fetchStatus, error } = useSelector((state) => state.deal);
-  const [showFloatingButtons, setShowFloatingButtons] = useState(true);
-  const lastScrollY = useRef(0);
+  const [chatInView, setChatInView] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareRef = useRef(null);
 
   useEffect(() => {
     if (id) {
@@ -42,25 +44,33 @@ const DealDetailPage = () => {
     };
   }, [dispatch, id]);
 
-  // Hide floating buttons on scroll down, show on scroll up (mobile only)
+  // Fade out the mobile floating buttons once the inline chat scrolls into view,
+  // so they never cover the chat's Send button (B6).
   useEffect(() => {
-    const handleWindowScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollDiff = currentScrollY - lastScrollY.current;
+    const node = document.getElementById('mobile-chat');
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setChatInView(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [deal?._id]);
 
-      if (Math.abs(scrollDiff) > 10) {
-        if (scrollDiff > 0) {
-          setShowFloatingButtons(false);
-        } else {
-          setShowFloatingButtons(true);
-        }
-        lastScrollY.current = currentScrollY;
-      }
+  // Close the share popover on outside-click / Esc (B5).
+  useEffect(() => {
+    if (!shareOpen) return;
+    const handleClickOutside = (e) => {
+      if (shareRef.current && !shareRef.current.contains(e.target)) setShareOpen(false);
     };
-
-    window.addEventListener('scroll', handleWindowScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleWindowScroll);
-  }, []);
+    const handleEsc = (e) => { if (e.key === 'Escape') setShareOpen(false); };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [shareOpen]);
 
   if (fetchStatus === 'loading' || (fetchStatus === 'idle' && !deal)) {
     return (
@@ -72,23 +82,23 @@ const DealDetailPage = () => {
 
   if (fetchStatus === 'failed') {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-500 mb-4">{error || 'Failed to load deal'}</p>
-        <BackButton label="Go Back" className="mt-4" />
+      <div className="flex flex-col gap-2">
+        <BackButton className="self-start" />
+        <ErrorState onRetry={() => dispatch(getDealById(id))} />
       </div>
     );
   }
 
   if (!deal) {
     return (
-      <div className="text-center py-12">
-        <p className="text-slate-500 mb-4">Deal not found</p>
-        <Link
-          href="/dailydeals"
-          className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
-        >
-          Browse Deals
-        </Link>
+      <div className="flex flex-col gap-2">
+        <BackButton className="self-start" />
+        <EmptyState
+          title="Deal not found"
+          description="This deal may have been removed, or the link is incorrect."
+          actionLabel="Browse deals"
+          actionHref="/dailydeals"
+        />
       </div>
     );
   }
@@ -106,7 +116,7 @@ const DealDetailPage = () => {
       {/* Navigation Bar */}
       <div className="flex justify-between items-center">
         {/* Back */}
-        <BackButton />
+        <BackButton className="self-start" />
 
         <ReportLink
           type="deal"
@@ -135,10 +145,10 @@ const DealDetailPage = () => {
           />
 
           {/* Browse More Link */}
-          <div className="text-center py-4">
+          <div className="text-center pt-8 pb-4">
             <Link
               href="/dailydeals"
-              className="text-teal-600 hover:text-teal-700 text-sm font-medium hover:underline"
+              className="text-teal-700 hover:text-teal-800 text-sm font-medium hover:underline"
             >
               ← Browse More Deals
             </Link>
@@ -157,19 +167,33 @@ const DealDetailPage = () => {
             listingTitle={deal.dealTitle}
           />
 
-          {/* Share Icons */}
-          <div className="flex items-center justify-center py-3 px-4 border border-slate-200 rounded shadow-sm">
-            <span className="text-sm font-bold text-sky-500 mr-3">Share</span>
-            <ShareIcons
-              type="deal"
-              title={deal.dealTitle}
-              id={deal._id}
-            />
+          {/* Share - popover trigger */}
+          <div className="flex justify-center py-3 px-4">
+            <div className="relative" ref={shareRef}>
+              <button
+                onClick={() => setShareOpen((open) => !open)}
+                aria-expanded={shareOpen}
+                aria-haspopup="true"
+                className="flex items-center gap-2 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-4 py-1.5 rounded-full font-semibold text-sm md:text-base transition-colors"
+              >
+                <FaShareAlt size={13} />
+                <span>Share</span>
+              </button>
+              {shareOpen && (
+                <div className="absolute right-0 mt-2 z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-3">
+                  <ShareIcons
+                    type="deal"
+                    title={deal.dealTitle}
+                    id={deal._id}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Offered By - Desktop Sidebar */}
           <div className="border border-slate-200 rounded shadow-sm p-3">
-            <h3 className="text-sm font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">
+            <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">
               Offered By
             </h3>
 
@@ -195,20 +219,20 @@ const DealDetailPage = () => {
             <div className="space-y-1.5 text-xs">
               {partner?.isNationwide ? (
                 <div className="flex items-center text-slate-600">
-                  <MdLocationOn className="mr-1.5 text-sm flex-shrink-0" />
+                  <FaMapMarkedAlt className="text-slate-500 mr-1.5 flex-shrink-0" size={13} />
                   <span>Available Nationwide</span>
                 </div>
               ) : partner?.address?.formattedAddress && (
                 <div className="flex items-start text-slate-600">
-                  <MdLocationOn className="mr-1.5 text-sm mt-0.5 flex-shrink-0" />
+                  <FaMapMarkedAlt className="text-slate-500 mr-1.5 mt-0.5 flex-shrink-0" size={13} />
                   <span className="line-clamp-2">{partner.address.formattedAddress}</span>
                 </div>
               )}
 
               {partner?.contactInfo?.phone && (
                 <div className="flex items-center gap-1.5">
-                  <MdPhone className="text-slate-500 flex-shrink-0 text-sm" />
-                  <a href={`tel:${partner.contactInfo.phone}`} className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1">
+                  <FaMobileAlt className="text-slate-500 flex-shrink-0" size={13} />
+                  <a href={`tel:${partner.contactInfo.phone}`} className="text-slate-700 hover:text-slate-900 underline flex items-center gap-1">
                     {partner.contactInfo.phone}
                     <FaExternalLinkAlt className="text-[9px] text-slate-400" />
                   </a>
@@ -217,8 +241,8 @@ const DealDetailPage = () => {
 
               {partner?.contactInfo?.email && (
                 <div className="flex items-center gap-1.5">
-                  <MdEmail className="text-slate-500 flex-shrink-0 text-sm" />
-                  <a href={`mailto:${partner.contactInfo.email}`} className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1 truncate">
+                  <FaEnvelope className="text-slate-500 flex-shrink-0" size={13} />
+                  <a href={`mailto:${partner.contactInfo.email}`} className="text-slate-700 hover:text-slate-900 underline flex items-center gap-1 truncate">
                     {partner.contactInfo.email}
                     <FaExternalLinkAlt className="text-[9px] text-slate-400 flex-shrink-0" />
                   </a>
@@ -227,12 +251,12 @@ const DealDetailPage = () => {
 
               {partner?.contactInfo?.website && (
                 <div className="flex items-center gap-1.5">
-                  <MdLanguage className="text-slate-500 flex-shrink-0 text-sm" />
+                  <FaGlobe className="text-slate-500 flex-shrink-0" size={13} />
                   <a
                     href={partner.contactInfo.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1 truncate"
+                    className="text-slate-700 hover:text-slate-900 underline flex items-center gap-1 truncate"
                   >
                     {partner.contactInfo.website.replace(/^https?:\/\//, '')}
                     <FaExternalLinkAlt className="text-[9px] text-slate-400 flex-shrink-0" />
@@ -242,7 +266,7 @@ const DealDetailPage = () => {
 
               {partner?.contactInfo?.socialMedia?.length > 0 && (
                 <div className="flex items-center gap-2 pt-1 flex-wrap">
-                  <span className="text-slate-700">Follow us:</span>
+                  <FaThumbsUp className="text-slate-500 flex-shrink-0" size={13} title="Follow us" aria-label="Follow us" />
                   {partner.contactInfo.socialMedia.map((social, index) => {
                     const Icon = SOCIAL_ICONS[social.platform];
                     if (!Icon || !social.url) return null;
@@ -267,9 +291,13 @@ const DealDetailPage = () => {
         </div>
       </div>
 
-      {/* Mobile Floating Buttons */}
-      {showFloatingButtons && (
-        <div className="lg:hidden fixed bottom-20 right-4 z-40 flex flex-col gap-3 transition-opacity duration-200">
+      {/* Mobile Floating Buttons - fade out once the inline chat is in view */}
+      <div
+        className={`lg:hidden fixed bottom-20 right-4 z-40 flex flex-col gap-3 transition-all duration-200 ${
+          chatInView ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100'
+        }`}
+        aria-hidden={chatInView}
+      >
           {/* Share Button */}
           <button
             onClick={async () => {
@@ -317,7 +345,6 @@ const DealDetailPage = () => {
             <span>Chat</span>
           </button>
         </div>
-      )}
     </div>
   );
 };

@@ -12,10 +12,10 @@ const ImageUploader = ({
   formData,
   setFormData,
   resetTrigger = false,
-  maxImages = 5
+  maxImages = 10
 }) => {
   const fileInputRef = useRef(null);
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   const maxSize = 10 * 1024 * 1024; // 10MB
   const isEditMode = mode === 'edit';  // CHANGED: Now uses the mode prop
 
@@ -26,7 +26,7 @@ const ImageUploader = ({
 
     for (const file of files) {
       if (!allowedTypes.includes(file.type)) {
-        errors.push(`${file.name}: Invalid image type. Only JPEG and PNG are allowed`);
+        errors.push(`${file.name}: Invalid image type. Only JPEG, PNG & WebP are allowed`);
       } else if (file.size > maxSize) {
         errors.push(`${file.name}: File size exceeds 10MB`);
       } else {
@@ -111,11 +111,11 @@ const ImageUploader = ({
   return (
     <div>
       {/* Header */}
-      <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+      <span className="block font-medium text-slate-600 text-sm sm:text-base">
         Upload Images
       </span>
       <p className="text-xs text-slate-500 mt-1 mb-3">
-        JPEG & PNG only · Max {maxImages} images · {totalImages}/{maxImages} uploaded
+        JPEG, PNG & WebP · Max {maxImages} · Up to 10MB each · {totalImages}/{maxImages} uploaded
       </p>
 
       {/* Choose Files Button */}

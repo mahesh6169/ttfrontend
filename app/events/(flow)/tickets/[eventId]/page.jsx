@@ -580,13 +580,11 @@ const TicketSelectionPage = () => {
             Select Tickets
           </h1>
           
-          {/* Availability + reservation timer — same row on desktop so the timer appears
-              BESIDE the capacity panel instead of inserting a new row above it (no vertical
-              page-jump when the first ticket is selected). Stacked on mobile: timer above. */}
-          <div className="flex flex-col-reverse md:flex-row md:items-center gap-1.5 sm:gap-3 mb-3 sm:mb-6">
+          {/* Availability + reservation timer — spread (left/right) on mobile, centered on desktop */}
+          <div className="flex items-center justify-between md:justify-center gap-3 md:gap-x-6 mb-3 sm:mb-6">
 
             {/* Availability — borderless, minimal */}
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0">
               <div>
                 <div className="flex items-center text-sm sm:text-base">
                   <FaUsers className="mr-2 text-base sm:text-lg text-slate-500" />
@@ -866,7 +864,7 @@ const TicketSelectionPage = () => {
                 disabled={
                   !canProceedToNext || isLoading || apiLoading || !reservation
                 }
-                className={`w-full sm:w-auto py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
+                className={`w-auto py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
                   canProceedToNext && !isLoading && !apiLoading && reservation
                     ? 'bg-teal-700 hover:bg-teal-800 text-white'
                     : 'bg-slate-300 text-slate-500 cursor-not-allowed'

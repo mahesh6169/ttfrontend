@@ -1,6 +1,5 @@
 import { extractIdFromSlug, META_DEFAULTS } from '@/utils/slugUtils';
 import { format } from 'date-fns';
-import LoadingSpinner from '@/components/LoadingSpinner';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -136,20 +135,26 @@ export default async function DealSlugPage({ params }) {
 
   if (!dealId) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
         <div className="text-center">
-          <p className="text-gray-600">Deal not found</p>
-          <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
+          <p className="text-slate-700">Deal not found</p>
+          <p className="text-sm text-slate-500 mt-2">Redirecting...</p>
         </div>
         <meta httpEquiv="refresh" content="3; url=/dailydeals" />
       </div>
     );
   }
 
-  // Redirect to views page after meta tags are read by crawlers
+  // Use meta refresh instead of a JavaScript redirect
+  // This lets crawlers read the meta tags before following the redirect
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <LoadingSpinner />
+    <div className="flex flex-col items-center justify-center gap-3 min-h-[calc(100vh-9rem)]">
+      <div
+        className="h-8 w-8 rounded-full border-2 border-teal-100 border-t-teal-600 animate-spin"
+        role="status"
+        aria-label="Redirecting"
+      ></div>
+      <p className="text-sm text-slate-500">Redirecting...</p>
       <meta httpEquiv="refresh" content={`3; url=/dailydeals/views/${dealId}`} />
     </div>
   );

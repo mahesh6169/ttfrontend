@@ -78,14 +78,14 @@ const CreateThreadPage = () => {
       return;
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
     const validFiles = files.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        toast.error(`Unsupported file type: ${file.name}. Only JPEG, PNG, WebP, and GIF formats are allowed.`);
+        toast.error(`Unsupported file type: ${file.name}. Only JPEG, PNG, and WebP formats are allowed.`);
         return false;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} is too large. Each image must be under 5MB.`);
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Each image must be under 10MB.`);
         return false;
       }
       return true;
@@ -228,6 +228,7 @@ const CreateThreadPage = () => {
     // Show page errors and stop if any validation failed
     if (Object.keys(newErrors).length > 0 || !authorValid) {
       setErrors(newErrors);
+      toast.error('Form Errors — please fix the highlighted fields.');
       return;
     }
 
@@ -323,24 +324,28 @@ const CreateThreadPage = () => {
           />
         ) : (
           <div className="w-full">
-            {/* Page Header */}
-            <div className="mb-8 text-center">
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Create New Topic</h1>
-              <p className="text-sm text-slate-500 mt-1">Start a discussion or ask a question</p>
+            {/* Top Toolbar — Cancel (left), above the title */}
+            <div className="mb-4 flex items-center">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="mt-4 inline-flex items-center justify-center bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-5 py-2 rounded-full shadow font-semibold text-sm transition-colors"
+                className="inline-flex items-center gap-1 bg-teal-700 text-white hover:bg-teal-800 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors"
               >
-                Cancel
+                ✕ Cancel
               </button>
             </div>
 
+            {/* Page Title — centered, below the toolbar (forms.md standard) */}
+            <div className="text-center mb-6">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">Create New Topic</h1>
+              <p className="mt-1 text-sm text-slate-500">Start a discussion or ask a question</p>
+            </div>
+
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            <form onSubmit={handleSubmit} className="bg-white p-3 sm:p-6 rounded-lg shadow-md border border-slate-200 space-y-4 sm:space-y-6">
               {/* Title */}
               <div>
-                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                   Title <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -359,7 +364,7 @@ const CreateThreadPage = () => {
 
               {/* Question/Description */}
               <div>
-                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                   Description <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -378,7 +383,7 @@ const CreateThreadPage = () => {
                       <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.question}</p>
                     )}
                   </div>
-                  <span className="text-xs text-slate-400 whitespace-nowrap">
+                  <span className="text-xs text-slate-500 whitespace-nowrap">
                     {(formData.question || '').length}/15000
                   </span>
                 </div>
@@ -386,7 +391,7 @@ const CreateThreadPage = () => {
 
               {/* Category */}
               <div>
-                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                   Category <span className="text-red-500">*</span>
                 </label>
                 <CategorySelector
@@ -423,7 +428,7 @@ const CreateThreadPage = () => {
 
               {/* Location */}
               <div>
-                <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+                <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                   Location <span className="text-red-500">*</span>
                 </label>
                 <LoadScriptNext
@@ -475,11 +480,11 @@ const CreateThreadPage = () => {
 
               {/* Images */}
               <div className="border-t border-slate-200 pt-4 sm:pt-6">
-                <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+                <span className="block font-medium text-slate-600 text-sm sm:text-base">
                   Upload Images
                 </span>
                 <p className="text-xs text-slate-500 mt-1 mb-3">
-                  JPEG, PNG, WebP & GIF only · Max 10 images · {preview.length}/10 uploaded
+                  JPEG, PNG & WebP · Max 10 · Up to 10MB each · {preview.length}/10 uploaded
                 </p>
 
                 <div>
@@ -519,6 +524,11 @@ const CreateThreadPage = () => {
                           alt={`Preview ${idx + 1}`}
                           className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg"
                         />
+                        {formData.images[idx]?.name && (
+                          <p className="text-[10px] text-slate-500 mt-1 truncate w-20 sm:w-24" title={formData.images[idx].name}>
+                            {formData.images[idx].name}
+                          </p>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleRemoveImage(idx)}

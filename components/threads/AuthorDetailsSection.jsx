@@ -316,7 +316,7 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
         />
         <div className="flex-1">
           <label htmlFor="showAuthorDetails" className="cursor-pointer">
-            <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+            <span className="block font-medium text-slate-600 text-sm sm:text-base">
               Author Details <span className="text-slate-400 font-normal text-xs">(Optional)</span>
             </span>
             <p className="text-xs text-slate-500 mt-1">
@@ -330,7 +330,7 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
         <div className="space-y-4 p-4 rounded-lg border border-slate-200">
           {/* Author Name - Always visible */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-slate-600 mb-1">
               Author Name <span className="text-xs text-slate-500">(defaults to username)</span>
             </label>
             <input
@@ -401,7 +401,7 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
               {activeFields.aboutMyself && (
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm font-medium text-slate-700">About Myself</label>
+                    <label className="text-sm font-medium text-slate-600">About Myself</label>
                     <button
                       type="button"
                       onClick={() => clearField('aboutMyself')}
@@ -436,7 +436,7 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
               {activeFields.contact && (
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm font-medium text-slate-700">Mobile Number</label>
+                    <label className="text-sm font-medium text-slate-600">Mobile Number</label>
                     <button
                       type="button"
                       onClick={() => clearField('contact')}
@@ -464,7 +464,7 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
               {activeFields.email && (
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm font-medium text-slate-700">Email Address</label>
+                    <label className="text-sm font-medium text-slate-600">Email Address</label>
                     <button
                       type="button"
                       onClick={() => clearField('email')}
@@ -496,7 +496,7 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
               {activeFields.website && (
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm font-medium text-slate-700">Website</label>
+                    <label className="text-sm font-medium text-slate-600">Website</label>
                     <button
                       type="button"
                       onClick={() => clearField('website')}

@@ -5,7 +5,7 @@ import ReportForm from '@/components/support/ReportForm';
 
 const ReportPage = () => {
   return (
-    <Suspense fallback={<div>Loading registration form...</div>}>
+    <Suspense fallback={<div>Loading report form...</div>}>
       <ReportForm />
     </Suspense>
   );

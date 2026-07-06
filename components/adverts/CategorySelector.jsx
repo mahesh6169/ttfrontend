@@ -68,7 +68,7 @@ const CategorySelector = ({
     <div className="space-y-3">
       {/* Category Dropdown */}
       <div ref={categoryDropdownRef} className="relative">
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
           Category <span className="text-red-500">*</span>
           {disabled && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
         </label>
@@ -121,7 +121,7 @@ const CategorySelector = ({
       {/* Subcategory Dropdown - only show when category is selected */}
       {category && (
         <div ref={subcategoryDropdownRef} className="relative">
-          <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+          <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
             Subcategory
           </label>
           <button

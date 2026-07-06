@@ -831,7 +831,7 @@ const ThreadsPage = ({ heading }) => {
                     {/* Left content - Text section */}
                     <div className="flex-1 min-w-0">
                       {/* Title */}
-                      <h2 className="text-sm sm:text-base font-bold text-slate-800 mb-1">{thread.title}</h2>
+                      <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-1">{thread.title}</h2>
 
                       {/* Question/Description */}
                       <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 mb-2">{thread.question}</p>

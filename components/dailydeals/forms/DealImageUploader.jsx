@@ -20,7 +20,7 @@ export default function DealImageUploader({
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 10 * 1024 * 1024; // 10MB
     const remainingSlots = MAX_DEAL_IMAGES - totalImages;
 
     if (remainingSlots <= 0) {
@@ -54,7 +54,7 @@ export default function DealImageUploader({
     }
 
     if (hasInvalidSize) {
-      toast.error('Some files skipped: Maximum file size is 5MB', {
+      toast.error('Some files skipped: Maximum file size is 10MB', {
         position: 'top-right',
         autoClose: 4000
       });
@@ -96,11 +96,11 @@ export default function DealImageUploader({
   return (
     <div>
       {/* Label */}
-      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+      <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
         Deal Images
       </label>
       <p className="text-xs sm:text-sm text-slate-500 mb-3">
-        JPEG, PNG, WebP · Max 5MB each · {totalImages}/{MAX_DEAL_IMAGES} uploaded
+        JPEG, PNG & WebP · Max {MAX_DEAL_IMAGES} · Up to 10MB each · {totalImages}/{MAX_DEAL_IMAGES} uploaded
       </p>
 
       {/* Choose Files Button */}
@@ -139,7 +139,7 @@ export default function DealImageUploader({
             <div key={img.publicId || index} className="relative group">
               <img
                 src={img.url}
-                alt={`Existing ${index + 1}`}
+                alt={img.originalFilename || `Existing ${index + 1}`}
                 className="w-full h-24 object-cover rounded-lg border border-slate-200"
               />
               <button
@@ -149,9 +149,14 @@ export default function DealImageUploader({
               >
                 ×
               </button>
-              <span className="absolute top-1 left-1 bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded">
+              <span className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded">
                 Saved
               </span>
+              {img.originalFilename && (
+                <p className="text-[10px] text-slate-500 mt-1 truncate" title={img.originalFilename}>
+                  {img.originalFilename}
+                </p>
+              )}
             </div>
           ))}
 
@@ -160,7 +165,7 @@ export default function DealImageUploader({
             <div key={img.id} className="relative group">
               <img
                 src={img.preview}
-                alt={`New ${index + 1}`}
+                alt={img.file?.name || `New ${index + 1}`}
                 className="w-full h-24 object-cover rounded-lg border border-slate-200"
               />
               <button
@@ -170,9 +175,14 @@ export default function DealImageUploader({
               >
                 ×
               </button>
-              <span className="absolute top-1 left-1 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded">
+              <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded">
                 New
               </span>
+              {img.file?.name && (
+                <p className="text-[10px] text-slate-500 mt-1 truncate" title={img.file.name}>
+                  {img.file.name}
+                </p>
+              )}
             </div>
           ))}
         </div>

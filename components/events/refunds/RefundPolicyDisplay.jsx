@@ -22,17 +22,17 @@ export default function RefundPolicyDisplay({
         };
       case 'compact':
         return {
-          container: 'bg-gray-50 border border-gray-200 rounded-md p-2 sm:p-3',
-          icon: 'text-gray-500 w-3 h-3 sm:w-4 sm:h-4',
-          title: 'text-[10px] sm:text-xs font-medium text-gray-700',
-          text: 'text-[10px] sm:text-xs text-gray-600'
+          container: 'bg-slate-50 border border-slate-200 rounded-md p-2 sm:p-3',
+          icon: 'text-slate-500 w-3 h-3 sm:w-4 sm:h-4',
+          title: 'text-[10px] sm:text-xs font-medium text-slate-700',
+          text: 'text-[10px] sm:text-xs text-slate-600'
         };
       default:
         return {
-          container: 'bg-blue-50 border border-blue-200 rounded-md sm:rounded-lg p-2 sm:p-3 lg:p-4',
-          icon: 'text-blue-600 w-4 h-4 sm:w-5 sm:h-5',
-          title: 'text-xs sm:text-sm font-medium text-blue-900',
-          text: 'text-xs sm:text-sm text-blue-700'
+          container: 'bg-teal-50 border border-teal-200 rounded-md sm:rounded-lg p-2 sm:p-3 lg:p-4',
+          icon: 'text-teal-600 w-4 h-4 sm:w-5 sm:h-5',
+          title: 'text-xs sm:text-sm font-medium text-teal-900',
+          text: 'text-xs sm:text-sm text-teal-700'
         };
     }
   };

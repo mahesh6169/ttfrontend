@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
-import { MdLocationOn, MdPhone, MdEmail, MdLanguage, MdChevronLeft, MdChevronRight, MdClose } from 'react-icons/md';
-import { FaFacebook, FaInstagram, FaWhatsapp, FaExternalLinkAlt } from 'react-icons/fa';
+import { MdChevronLeft, MdChevronRight, MdClose } from 'react-icons/md';
+import { FaFacebook, FaInstagram, FaWhatsapp, FaExternalLinkAlt, FaMobileAlt, FaEnvelope, FaGlobe, FaMapMarkedAlt, FaThumbsUp } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import SendMessage from '@/components/chat/SendMessage';
 
@@ -41,6 +41,22 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [termsExpanded, setTermsExpanded] = useState(false);
   const [storeDescExpanded, setStoreDescExpanded] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [descriptionOverflow, setDescriptionOverflow] = useState(false);
+  const descriptionRef = useRef(null);
+
+  // Detect whether the description overflows its clamp, so Read more only shows when needed (B4).
+  useEffect(() => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    const check = () => {
+      const { scrollHeight, clientHeight, scrollTop } = el;
+      setDescriptionOverflow(scrollHeight > clientHeight && scrollHeight - scrollTop - clientHeight >= 1);
+    };
+    check();
+    el.addEventListener('scroll', check);
+    return () => el.removeEventListener('scroll', check);
+  }, [deal.description]);
 
   const displayImages = deal.images?.length > 0 ? deal.images : [{ url: FALLBACK_IMAGE }];
 
@@ -69,9 +85,9 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
     new Date(deal.featured.endDate) >= now;
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div id="SingleDealCard" className="mx-auto">
       {/* Image Section */}
-      <div className="relative w-full mx-auto bg-slate-100 h-[200px] sm:h-[300px] md:h-[400px]">
+      <div className="relative w-full mx-auto bg-slate-100 rounded h-[200px] sm:h-[300px] md:h-[400px]">
         <img
           src={displayImages[currentImageIndex]?.url || FALLBACK_IMAGE}
           alt={deal.dealTitle || 'Deal Image'}
@@ -217,7 +233,7 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
         )}
 
         {/* Title - Centered */}
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 text-center mb-4">
+        <h1 className="text-base sm:text-lg font-bold text-slate-900 text-center mb-4 break-words">
           {deal.dealTitle}
         </h1>
 
@@ -235,11 +251,28 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
 
         {/* Description */}
         {deal.description && (
-          <div className="border border-slate-200 rounded shadow-sm my-4 p-3">
-            <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Description</h3>
-            <div className="text-sm sm:text-base text-slate-700 whitespace-pre-wrap overflow-y-auto max-h-[200px] sm:max-h-[300px]">
-              {deal.description}
+          <div className="my-4 p-3 relative">
+            <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Description</h3>
+            <div className="relative">
+              <div
+                ref={descriptionRef}
+                className={`text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap ${descriptionExpanded ? '' : 'line-clamp-[20]'}`}
+              >
+                {deal.description}
+              </div>
+              {!descriptionExpanded && descriptionOverflow && (
+                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+              )}
             </div>
+            {(descriptionOverflow || descriptionExpanded) && (
+              <button
+                type="button"
+                onClick={() => setDescriptionExpanded((e) => !e)}
+                className="mt-2 text-teal-700 hover:text-teal-800 font-semibold text-sm underline"
+              >
+                {descriptionExpanded ? 'Read less' : 'Read more'}
+              </button>
+            )}
           </div>
         )}
 
@@ -253,8 +286,8 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 border border-teal-600 text-teal-700 hover:bg-teal-50 px-3 py-1.5 rounded text-sm font-medium transition-colors"
               >
-                <MdLanguage className="text-base" />
-                View Deal
+                More Details
+                <FaExternalLinkAlt className="text-xs" />
               </a>
             )}
             {deal.whatsappOrders && deal.whatsappNumber && (
@@ -273,31 +306,32 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
 
         {/* Terms */}
         {deal.terms && (
-          <div className="border border-slate-200 rounded shadow-sm my-4 p-3">
-            <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">Terms & Conditions</h3>
+          <div className="my-4 p-3 relative">
+            <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Terms &amp; Conditions</h3>
             <div className="relative">
-              <div className={`text-sm text-slate-700 whitespace-pre-wrap overflow-hidden ${termsExpanded ? '' : 'max-h-24'}`}>
+              <div className={`text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap ${termsExpanded ? '' : 'line-clamp-[6]'}`}>
                 {deal.terms}
               </div>
               {!termsExpanded && deal.terms.length > 200 && (
-                <div className="absolute bottom-6 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
-              )}
-              {deal.terms.length > 200 && (
-                <button
-                  onClick={() => setTermsExpanded(!termsExpanded)}
-                  className="text-teal-600 hover:text-teal-700 text-sm font-medium mt-2"
-                >
-                  {termsExpanded ? 'Show less' : 'Show more'}
-                </button>
+                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
               )}
             </div>
+            {deal.terms.length > 200 && (
+              <button
+                type="button"
+                onClick={() => setTermsExpanded(!termsExpanded)}
+                className="mt-2 text-teal-700 hover:text-teal-800 font-semibold text-sm underline"
+              >
+                {termsExpanded ? 'Read less' : 'Read more'}
+              </button>
+            )}
           </div>
         )}
       </div>
 
       {/* Offered By Section - Mobile Only */}
-      <div className="lg:hidden border border-slate-200 rounded shadow-sm my-4 p-3">
-        <h3 className="text-sm sm:text-base font-semibold text-slate-900 pb-2 border-b border-slate-100 mb-3">
+      <div className="lg:hidden my-4 p-3">
+        <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">
           Offered By
         </h3>
           {/* Two Column Layout on Desktop */}
@@ -343,22 +377,22 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
           <div className="flex-1 space-y-2">
             {/* Location */}
             {partner?.isNationwide ? (
-              <div className="flex items-center text-slate-600">
-                <MdLocationOn className="mr-2 text-lg flex-shrink-0" />
-                <span className="text-sm">Available Nationwide</span>
+              <div className="flex items-center text-slate-600 text-sm">
+                <FaMapMarkedAlt className="text-slate-500 mr-2 flex-shrink-0" size={13} />
+                <span>Available Nationwide</span>
               </div>
             ) : partner?.address?.formattedAddress && (
-              <div className="flex items-start text-slate-600">
-                <MdLocationOn className="mr-2 text-lg mt-0.5 flex-shrink-0" />
-                <span className="text-sm">{partner.address.formattedAddress}</span>
+              <div className="flex items-start text-slate-600 text-sm">
+                <FaMapMarkedAlt className="text-slate-500 mr-2 mt-0.5 flex-shrink-0" size={13} />
+                <span>{partner.address.formattedAddress}</span>
               </div>
             )}
 
             {/* Phone */}
             {partner?.contactInfo?.phone && (
               <div className="flex items-center gap-3 text-sm">
-                <MdPhone className="text-slate-500 flex-shrink-0" />
-                <a href={`tel:${partner.contactInfo.phone}`} className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1">
+                <FaMobileAlt className="text-slate-500 flex-shrink-0" size={13} />
+                <a href={`tel:${partner.contactInfo.phone}`} className="text-slate-700 hover:text-slate-900 underline flex items-center gap-1">
                   {partner.contactInfo.phone}
                   <FaExternalLinkAlt className="text-xs text-slate-400" />
                 </a>
@@ -368,8 +402,8 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
             {/* Email */}
             {partner?.contactInfo?.email && (
               <div className="flex items-center gap-3 text-sm">
-                <MdEmail className="text-slate-500 flex-shrink-0" />
-                <a href={`mailto:${partner.contactInfo.email}`} className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1">
+                <FaEnvelope className="text-slate-500 flex-shrink-0" size={13} />
+                <a href={`mailto:${partner.contactInfo.email}`} className="text-slate-700 hover:text-slate-900 underline flex items-center gap-1">
                   {partner.contactInfo.email}
                   <FaExternalLinkAlt className="text-xs text-slate-400" />
                 </a>
@@ -379,12 +413,12 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
             {/* Website */}
             {partner?.contactInfo?.website && (
               <div className="flex items-center gap-3 text-sm">
-                <MdLanguage className="text-slate-500 flex-shrink-0" />
+                <FaGlobe className="text-slate-500 flex-shrink-0" size={13} />
                 <a
                   href={partner.contactInfo.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1"
+                  className="text-slate-700 hover:text-slate-900 underline flex items-center gap-1"
                 >
                   {partner.contactInfo.website.replace(/^https?:\/\//, '')}
                   <FaExternalLinkAlt className="text-xs text-slate-400 flex-shrink-0" />
@@ -395,7 +429,7 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
             {/* Social Media */}
             {partner?.contactInfo?.socialMedia?.length > 0 && (
               <div className="flex items-center gap-2 text-sm flex-wrap pt-1">
-                <span className="text-slate-700">Follow us:</span>
+                <FaThumbsUp className="text-slate-500 flex-shrink-0" size={13} title="Follow us" aria-label="Follow us" />
                 {partner.contactInfo.socialMedia.map((social, index) => {
                   const Icon = SOCIAL_ICONS[social.platform];
                   if (!Icon || !social.url) return null;

@@ -14,7 +14,6 @@ import {
   FaEnvelope,
   FaPhone,
   FaExclamationTriangle,
-  FaArrowLeft,
   FaSpinner,
   FaCheckCircle,
   FaChair,
@@ -22,6 +21,7 @@ import {
   FaChevronUp,
   FaChevronDown,
   FaDownload,
+  FaReceipt,
   FaTag,
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -29,6 +29,7 @@ import { generateTicketsPDF } from '@/utils/paidEventTicketGenerator';
 import { toast } from 'react-toastify';
 import RequireLogin from '@/components/Auth/RequireLogin';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import BackButton from '@/components/BackButton';
 import StripePaymentForm from '@/components/payments/StripePaymentForm';
 import PaymentSummary from '@/components/payments/PaymentSummary';
 import RefundPolicyDisplay from '@/components/events/refunds/RefundPolicyDisplay';
@@ -791,22 +792,22 @@ const CheckoutPage = () => {
       <div className="flex flex-col items-center justify-center py-20">
         <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full">
           <FaExclamationTriangle className="text-amber-500 text-4xl sm:text-5xl mb-4 mx-auto" />
-          <h2 className="text-xl sm:text-2xl font-bold text-center mb-4 text-gray-800">
+          <h2 className="text-xl sm:text-2xl font-bold text-center mb-4 text-slate-800">
             No Tickets Selected
           </h2>
-          <p className="text-gray-600 text-center mb-6 text-sm sm:text-base">
+          <p className="text-slate-600 text-center mb-6 text-sm sm:text-base">
             {reservation ? 
               'Your reservation exists but no ticket data was found. Please try selecting tickets again.' :
               'Please select tickets before proceeding to checkout.'}
           </p>
           {reservation && (
-            <p className="text-xs text-gray-500 text-center mb-4">
+            <p className="text-xs text-slate-500 text-center mb-4">
               Reservation ID: {reservation._id}
             </p>
           )}
           <button
             onClick={() => router.push(`/events/tickets/${params.eventId}`)}
-            className="w-full bg-emerald-600 text-white py-2.5 sm:py-3 rounded-md sm:rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm sm:text-base"
+            className="w-full bg-teal-600 text-white py-2.5 sm:py-3 rounded-md sm:rounded-lg hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base"
           >
             Back to Ticket Selection
           </button>
@@ -822,34 +823,34 @@ const CheckoutPage = () => {
         <div className="max-w-lg lg:max-w-2xl mx-auto space-y-3 sm:space-y-4">
           {/* Success Modal */}
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8 text-center">
-            <FaCheckCircle className="mx-auto text-4xl sm:text-5xl lg:text-6xl text-green-600 mb-3 sm:mb-4 lg:mb-6" />
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-3 lg:mb-4">
+            <FaCheckCircle className="mx-auto text-4xl sm:text-5xl lg:text-6xl text-teal-600 mb-3 sm:mb-4 lg:mb-6" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mb-2 sm:mb-3 lg:mb-4">
               Payment Successful!
             </h1>
-            <p className="text-sm sm:text-base lg:text-lg text-gray-600 mb-3 sm:mb-4 lg:mb-6">
+            <p className="text-sm sm:text-base lg:text-lg text-slate-600 mb-3 sm:mb-4 lg:mb-6">
               Your tickets have been purchased successfully.
             </p>
 
-            <div className="bg-green-50 rounded-md sm:rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 lg:mb-6">
-              <h3 className="font-semibold text-green-800 mb-1.5 sm:mb-2 text-sm sm:text-base">
+            <div className="bg-teal-50 rounded-md sm:rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 lg:mb-6">
+              <h3 className="font-semibold text-teal-800 mb-1.5 sm:mb-2 text-sm sm:text-base">
                 What's Next?
               </h3>
-              <ul className="text-green-700 space-y-0.5 sm:space-y-1 text-xs sm:text-sm lg:text-base text-left">
-                <li className="flex items-start">
-                  <span className="mr-1.5 flex-shrink-0">📧</span>
+              <ul className="text-teal-700 space-y-1 text-xs sm:text-sm lg:text-base text-left">
+                <li className="flex items-start gap-1.5">
+                  <FaEnvelope className="mt-0.5 flex-shrink-0 text-teal-600" />
                   <span>An email is on the way with your event, invoice, and ticket details</span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-1.5 flex-shrink-0">🎫</span>
-                  <span>View tickets at <a href="/users/profile/mytickets" className="underline hover:text-green-800">My Tickets</a></span>
+                <li className="flex items-start gap-1.5">
+                  <FaTicketAlt className="mt-0.5 flex-shrink-0 text-teal-600" />
+                  <span>View tickets at <a href="/users/profile/mytickets" className="underline hover:text-teal-800">My Tickets</a></span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-1.5 flex-shrink-0">🧾</span>
-                  <span>View invoices at <a href="/users/profile/myinvoices" className="underline hover:text-green-800">My Invoices</a></span>
+                <li className="flex items-start gap-1.5">
+                  <FaReceipt className="mt-0.5 flex-shrink-0 text-teal-600" />
+                  <span>View invoices at <a href="/users/profile/myinvoices" className="underline hover:text-teal-800">My Invoices</a></span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-1.5 flex-shrink-0">🧑‍💼</span>
-                  <span>Enquiries? Visit <a href={`/events/views/${params.eventId}`} className="underline hover:text-green-800">Event page</a> to contact organiser</span>
+                <li className="flex items-start gap-1.5">
+                  <FaUser className="mt-0.5 flex-shrink-0 text-teal-600" />
+                  <span>Enquiries? Visit <a href={`/events/views/${params.eventId}`} className="underline hover:text-teal-800">Event page</a> to contact organiser</span>
                 </li>
               </ul>
             </div>
@@ -859,8 +860,8 @@ const CheckoutPage = () => {
               disabled={isDownloadingTickets}
               className={`w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 rounded-md sm:rounded-lg transition-colors text-sm sm:text-base font-medium flex items-center justify-center gap-2 ${
                 isDownloadingTickets 
-                  ? 'bg-emerald-400 cursor-not-allowed' 
-                  : 'bg-emerald-600 hover:bg-emerald-700'
+                  ? 'bg-teal-400 cursor-not-allowed' 
+                  : 'bg-teal-600 hover:bg-teal-700'
               } text-white`}
             >
               {isDownloadingTickets ? (
@@ -899,7 +900,7 @@ const CheckoutPage = () => {
               setPaymentStatus({ status: null, clientSecret: null, amount: 0 });
               router.replace('/events');
             }}
-            className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-gray-200 text-gray-800 rounded-md sm:rounded-lg hover:bg-gray-300 transition-colors text-sm sm:text-base font-medium"
+            className="w-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 lg:py-3 bg-slate-200 text-slate-800 rounded-md sm:rounded-lg hover:bg-slate-300 transition-colors text-sm sm:text-base font-medium"
           >
             Back to Events
           </button>
@@ -914,7 +915,7 @@ const CheckoutPage = () => {
         <div>
           {/* Back Button - Smart behavior based on current step */}
           <div className="mb-2 sm:mb-4">
-            <button
+            <BackButton
               onClick={() => {
                 if (currentStep === 'payment') {
                   // If on payment step, go back to details step
@@ -924,26 +925,22 @@ const CheckoutPage = () => {
                   hasSeatingLayout ? router.push(`/events/seats/${params.eventId}`) : router.push(`/events/tickets/${params.eventId}`);
                 }
               }}
-              className="inline-flex items-center px-2 py-1 text-xs sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md transition-colors"
-            >
-              <FaArrowLeft className="mr-1 text-[10px] sm:text-xs lg:text-sm" />
-              <span className="text-xs sm:text-sm">Back</span>
-            </button>
+            />
           </div>
           
-          {/* Step Indicator */}
-          <div className="bg-white rounded-lg shadow-sm p-2 sm:p-3 lg:p-4 mb-2 sm:mb-4">
+          {/* Step Indicator — flat, no box */}
+          <div className="mb-4 sm:mb-6">
             <div className="flex items-center justify-center">
               <div
                 className={`flex items-center ${
-                  currentStep === 'details' ? 'text-emerald-600' : 'text-green-600'
+                  currentStep === 'details' ? 'text-teal-700' : 'text-teal-600'
                 }`}
               >
                 <div
                   className={`w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center ${
                     currentStep === 'details'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-green-600 text-white'
+                      ? 'bg-teal-700 text-white'
+                      : 'bg-teal-600 text-white'
                   }`}
                 >
                   {currentStep === 'payment' ? (
@@ -957,20 +954,20 @@ const CheckoutPage = () => {
 
               <div
                 className={`w-8 sm:w-12 lg:w-16 h-0.5 sm:h-1 mx-2 sm:mx-3 lg:mx-4 ${
-                  currentStep === 'payment' ? 'bg-emerald-600' : 'bg-gray-200'
+                  currentStep === 'payment' ? 'bg-teal-600' : 'bg-slate-200'
                 }`}
               ></div>
 
               <div
                 className={`flex items-center ${
-                  currentStep === 'payment' ? 'text-emerald-600' : 'text-gray-400'
+                  currentStep === 'payment' ? 'text-teal-700' : 'text-slate-400'
                 }`}
               >
                 <div
                   className={`w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center ${
                     currentStep === 'payment'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-gray-200 text-gray-600'
+                      ? 'bg-teal-700 text-white'
+                      : 'bg-slate-200 text-slate-600'
                   }`}
                 >
                   <span className="text-xs sm:text-sm lg:text-base">2</span>
@@ -982,21 +979,24 @@ const CheckoutPage = () => {
 
           {/* Timer and Status */}
           {reservation && (
-            <ReservationTimer
-              expiresAt={reservation.expiresAt}
-              eventId={params.eventId}
-              reservationId={reservation._id}
-              mode="checkout"
-              hasSeatingLayout={hasSeatingLayout}
-              onExpire={() => {
-                router.push(`/events/tickets/${params.eventId}`);
-              }}
-              onClear={() => {
-                // Navigate first to avoid showing "No Tickets" modal
-                router.push(`/events/views/${params.eventId}`);
-                // State will be cleared by the ReservationTimer's handleClearReservation
-              }}
-            />
+            <div className="mb-4 sm:mb-6">
+              <ReservationTimer
+                expiresAt={reservation.expiresAt}
+                eventId={params.eventId}
+                reservationId={reservation._id}
+                mode="checkout"
+                showClear={false}
+                hasSeatingLayout={hasSeatingLayout}
+                onExpire={() => {
+                  router.push(`/events/tickets/${params.eventId}`);
+                }}
+                onClear={() => {
+                  // Navigate first to avoid showing "No Tickets" modal
+                  router.push(`/events/views/${params.eventId}`);
+                  // State will be cleared by the ReservationTimer's handleClearReservation
+                }}
+              />
+            </div>
           )}
 
           {/* Socket Listener */}
@@ -1007,22 +1007,22 @@ const CheckoutPage = () => {
           />
 
           {/* Mobile Order Summary - Show above main content on mobile */}
-          <div className="lg:hidden mb-2">
+          <div className="lg:hidden mb-4 sm:mb-6">
             <button
               onClick={() => setShowMobileOrderSummary(!showMobileOrderSummary)}
-              className="w-full bg-white border border-gray-200 rounded-lg p-2 flex items-center justify-between shadow-sm hover:bg-gray-50 transition-colors"
+              className="w-full bg-white border border-slate-200 rounded-lg p-3 flex items-center justify-between shadow-sm hover:bg-slate-50 transition-colors"
             >
               <div className="flex items-center">
-                <FaTicketAlt className="text-green-600 mr-1.5 w-3.5 h-3.5" />
-                <span className="font-medium text-xs">Order Summary</span>
-                <span className="ml-1.5 text-gray-600 text-xs">({totals.totalQuantity || 0} items)</span>
+                <FaTicketAlt className="text-teal-600 mr-2 w-4 h-4" />
+                <span className="font-semibold text-sm">Order Summary</span>
+                <span className="ml-1.5 text-slate-600 text-sm">({totals.totalQuantity || 0} items)</span>
               </div>
               <div className="flex items-center">
-                <span className="font-bold text-green-600 text-xs mr-1.5">${totals.total?.toFixed(2)}</span>
+                <span className="font-bold text-teal-600 text-sm mr-1.5">${totals.total?.toFixed(2)}</span>
                 {showMobileOrderSummary ? (
-                  <FaChevronUp className="w-3 h-3 text-gray-500" />
+                  <FaChevronUp className="w-4 h-4 text-slate-500" />
                 ) : (
-                  <FaChevronDown className="w-3 h-3 text-gray-500" />
+                  <FaChevronDown className="w-4 h-4 text-slate-500" />
                 )}
               </div>
             </button>
@@ -1052,10 +1052,59 @@ const CheckoutPage = () => {
               {currentStep === 'details' ? (
                 /* Details Step */
                 <>
+                  {/* Discount Code (S3) — top of the form; it relates to the order total */}
+                  <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-slate-200">
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
+                      Discount code
+                    </label>
+                    {appliedDiscount ? (
+                      <div className="flex items-center justify-between gap-2 rounded-md border border-teal-300 bg-teal-50 px-3 py-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FaTag className="text-teal-700 w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="text-xs sm:text-sm text-teal-800 truncate">
+                            <span className="font-bold">{appliedDiscount.code}</span> applied
+                            {totals.discountScopeLabel ? ` to ${totals.discountScopeLabel}` : ''}
+                            {appliedDiscount.discountAmount > 0 && (
+                              <span className="text-teal-700"> — you save ${appliedDiscount.discountAmount.toFixed(2)}</span>
+                            )}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveDiscount}
+                          className="text-xs sm:text-sm text-red-600 hover:text-red-700 font-medium flex-shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 sm:max-w-xs">
+                        <input
+                          type="text"
+                          value={discountCodeInput}
+                          onChange={(e) => { setDiscountCodeInput(e.target.value.toUpperCase()); if (discountError) setDiscountError(null); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyDiscount(); } }}
+                          placeholder="Enter code"
+                          maxLength={50}
+                          className="flex-1 px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300 uppercase"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyDiscount}
+                          disabled={discountLoading || !discountCodeInput.trim()}
+                          className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium text-white ${discountLoading || !discountCodeInput.trim() ? 'bg-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'}`}
+                        >
+                          {discountLoading ? 'Checking…' : 'Apply'}
+                        </button>
+                      </div>
+                    )}
+                    {discountError && <p className="text-red-500 text-xs mt-1">{discountError}</p>}
+                  </div>
+
                   {/* Buyer Information Form */}
-                  <div className="bg-white rounded-lg shadow-sm border p-2 sm:p-4 lg:p-6">
+                  <div>
                     <h2 className="text-sm sm:text-lg lg:text-xl font-semibold mb-2 sm:mb-4 flex items-center">
-                      <FaUser className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2 text-emerald-600" />
+                      <FaUser className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2 text-teal-600" />
                       Buyer Information
                     </h2>
                     
@@ -1063,7 +1112,7 @@ const CheckoutPage = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
                         {/* First Name */}
                         <div>
-                          <label className="block text-xs sm:text-sm lg:text-base font-medium text-gray-700 mb-1 sm:mb-1.5">
+                          <label className="block text-xs sm:text-sm lg:text-base font-medium text-slate-700 mb-1 sm:mb-1.5">
                             First Name *
                           </label>
                           <input
@@ -1071,8 +1120,8 @@ const CheckoutPage = () => {
                             name="firstName"
                             value={buyerInfo.firstName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-3 py-2 sm:px-3 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                              errors.firstName ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                            className={`w-full px-3 py-2 sm:px-3 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                              errors.firstName ? 'border-red-500 bg-red-50' : 'border-slate-300'
                             }`}
                             placeholder="First name"
                           />
@@ -1083,7 +1132,7 @@ const CheckoutPage = () => {
                         
                         {/* Last Name */}
                         <div>
-                          <label className="block text-xs sm:text-sm lg:text-base font-medium text-gray-700 mb-1 sm:mb-1.5">
+                          <label className="block text-xs sm:text-sm lg:text-base font-medium text-slate-700 mb-1 sm:mb-1.5">
                             Last Name *
                           </label>
                           <input
@@ -1091,8 +1140,8 @@ const CheckoutPage = () => {
                             name="lastName"
                             value={buyerInfo.lastName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-3 py-2 sm:px-3 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                              errors.lastName ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                            className={`w-full px-3 py-2 sm:px-3 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                              errors.lastName ? 'border-red-500 bg-red-50' : 'border-slate-300'
                             }`}
                             placeholder="Last name"
                           />
@@ -1102,20 +1151,22 @@ const CheckoutPage = () => {
                         </div>
                       </div>
 
+                      {/* Email + Phone - side by side on desktop */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
                       {/* Email */}
                       <div>
-                        <label className="block text-xs sm:text-sm lg:text-base font-medium text-gray-700 mb-1 sm:mb-1.5">
-                          Email Address *
+                        <label className="block text-xs sm:text-sm lg:text-base font-medium text-slate-700 mb-1 sm:mb-1.5">
+                          Email *
                         </label>
                         <div className="relative">
-                          <FaEnvelope className="absolute left-3 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <FaEnvelope className="absolute left-3 sm:left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           <input
                             type="email"
                             name="email"
                             value={buyerInfo.email || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-3 py-2 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                              errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                            className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-3 py-2 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                              errors.email ? 'border-red-500 bg-red-50' : 'border-slate-300'
                             }`}
                             placeholder="Email address"
                           />
@@ -1127,18 +1178,18 @@ const CheckoutPage = () => {
 
                       {/* Phone */}
                       <div>
-                        <label className="block text-xs sm:text-sm lg:text-base font-medium text-gray-700 mb-1 sm:mb-1.5">
-                          Phone Number *
+                        <label className="block text-xs sm:text-sm lg:text-base font-medium text-slate-700 mb-1 sm:mb-1.5">
+                          Phone *
                         </label>
                         <div className="relative">
-                          <FaPhone className="absolute left-3 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <FaPhone className="absolute left-3 sm:left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           <input
                             type="tel"
                             name="phone"
                             value={buyerInfo.phone || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-3 py-2 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                              errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                            className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-3 py-2 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                              errors.phone ? 'border-red-500 bg-red-50' : 'border-slate-300'
                             }`}
                             placeholder="Phone number"
                           />
@@ -1147,7 +1198,8 @@ const CheckoutPage = () => {
                           <p className="mt-0.5 text-[10px] sm:text-xs text-red-600">{errors.phone}</p>
                         )}
                       </div>
-                      
+                      </div>
+
                       {/* Terms Agreement */}
                       <div className="flex items-start">
                         <input
@@ -1155,14 +1207,14 @@ const CheckoutPage = () => {
                           name="agreeToTerms"
                           checked={buyerInfo.agreeToTerms || false}
                           onChange={handleInputChange}
-                          className="mt-1 sm:mt-1 w-4 h-4 sm:w-4 sm:h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                          className="mt-1 sm:mt-1 w-4 h-4 sm:w-4 sm:h-4 accent-teal-600 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
                         />
-                        <label className="ml-2 sm:ml-2 text-xs sm:text-sm lg:text-sm text-gray-600">
+                        <label className="ml-2 sm:ml-2 text-xs sm:text-sm lg:text-sm text-slate-600">
                           I agree to the{' '}
                           <a
                             href="/support/terms"
                             target="_blank"
-                            className="text-emerald-600 hover:underline"
+                            className="text-teal-600 hover:underline"
                           >
                             Terms
                           </a>{' '}
@@ -1170,7 +1222,7 @@ const CheckoutPage = () => {
                           <a
                             href="/support/privacy"
                             target="_blank"
-                            className="text-emerald-600 hover:underline"
+                            className="text-teal-600 hover:underline"
                           >
                             Privacy Policy
                           </a>
@@ -1191,9 +1243,9 @@ const CheckoutPage = () => {
                               name="refundPolicyAccepted"
                               checked={refundPolicyAccepted || false}
                               onChange={(e) => setRefundPolicyAccepted(e.target.checked)}
-                              className="mt-1 sm:mt-1 w-4 h-4 sm:w-4 sm:h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                              className="mt-1 sm:mt-1 w-4 h-4 sm:w-4 sm:h-4 accent-teal-600 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
                             />
-                            <label className="ml-2 sm:ml-2 text-xs sm:text-sm lg:text-sm text-gray-600">
+                            <label className="ml-2 sm:ml-2 text-xs sm:text-sm lg:text-sm text-slate-600">
                               I accept the organiser refund policy below *
                             </label>
                           </div>
@@ -1216,63 +1268,15 @@ const CheckoutPage = () => {
                         </div>
                       )}
 
-                      {/* Discount Code (S3) */}
-                      <div className="mt-3 sm:mt-4 border-t pt-3 sm:pt-4">
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
-                          Discount code
-                        </label>
-                        {appliedDiscount ? (
-                          <div className="flex items-center justify-between gap-2 rounded-md border border-teal-300 bg-teal-50 px-3 py-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <FaTag className="text-teal-700 w-3.5 h-3.5 flex-shrink-0" />
-                              <span className="text-xs sm:text-sm text-teal-800 truncate">
-                                <span className="font-bold">{appliedDiscount.code}</span> applied
-                                {totals.discountScopeLabel ? ` to ${totals.discountScopeLabel}` : ''}
-                                {appliedDiscount.discountAmount > 0 && (
-                                  <span className="text-teal-700"> — you save ${appliedDiscount.discountAmount.toFixed(2)}</span>
-                                )}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={handleRemoveDiscount}
-                              className="text-xs sm:text-sm text-red-600 hover:text-red-700 font-medium flex-shrink-0"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={discountCodeInput}
-                              onChange={(e) => { setDiscountCodeInput(e.target.value.toUpperCase()); if (discountError) setDiscountError(null); }}
-                              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyDiscount(); } }}
-                              placeholder="Enter code"
-                              maxLength={50}
-                              className="flex-1 px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300 uppercase"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleApplyDiscount}
-                              disabled={discountLoading || !discountCodeInput.trim()}
-                              className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium text-white ${discountLoading || !discountCodeInput.trim() ? 'bg-gray-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'}`}
-                            >
-                              {discountLoading ? 'Checking…' : 'Apply'}
-                            </button>
-                          </div>
-                        )}
-                        {discountError && <p className="text-red-500 text-xs mt-1">{discountError}</p>}
-                      </div>
-
                       {/* Proceed to Payment Button */}
+                      <div className="mt-3 sm:mt-4 flex justify-center">
                       <button
                         onClick={handleProceedToPayment}
                         disabled={isProcessing || shouldDisableProceed()}
-                        className={`w-full mt-3 sm:mt-4 py-2 sm:py-2.5 lg:py-3 px-3 sm:px-4 rounded-md sm:rounded-lg font-medium sm:font-semibold text-xs sm:text-sm lg:text-base text-white transition-all flex items-center justify-center ${
+                        className={`w-auto py-2 sm:py-2.5 lg:py-3 px-6 sm:px-8 rounded-md sm:rounded-lg font-medium sm:font-semibold text-xs sm:text-sm lg:text-base text-white transition-all flex items-center justify-center ${
                           isProcessing || shouldDisableProceed()
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-emerald-600 hover:bg-emerald-700'
+                            ? 'bg-slate-400 cursor-not-allowed'
+                            : 'bg-teal-600 hover:bg-teal-700'
                         }`}
                       >
                         {isProcessing ? (
@@ -1281,26 +1285,27 @@ const CheckoutPage = () => {
                             Processing...
                           </>
                         ) : (
-                          'Proceed to Payment'
+                          'Continue to Payment'
                         )}
                       </button>
-                      
+                      </div>
+
                     </div>
                   </div>
                 </>
               ) : (
                 /* Payment Step */
                 <>
-                  <div className="bg-white rounded-lg shadow-sm border p-2 sm:p-4 lg:p-6 relative">
+                  <div className="relative">
                     {/* Loading overlay during payment processing */}
                     {isProcessing && (
                       <div className="absolute inset-0 bg-white bg-opacity-90 z-50 flex items-center justify-center rounded-lg">
                         <div className="text-center">
-                          <FaSpinner className="animate-spin mx-auto text-3xl sm:text-4xl text-emerald-600 mb-3" />
-                          <p className="text-sm sm:text-base font-semibold text-gray-800">
+                          <FaSpinner className="animate-spin mx-auto text-3xl sm:text-4xl text-teal-600 mb-3" />
+                          <p className="text-sm sm:text-base font-semibold text-slate-800">
                             Processing Payment...
                           </p>
-                          <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                          <p className="text-xs sm:text-sm text-slate-600 mt-1">
                             Please do not close this page
                           </p>
                         </div>
@@ -1348,10 +1353,10 @@ const CheckoutPage = () => {
                       // Error state when payment initialization failed
                       <div className="text-center py-6 sm:py-8 lg:py-12">
                         <FaExclamationTriangle className="mx-auto text-4xl sm:text-5xl text-red-500 mb-3 sm:mb-4" />
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
+                        <h3 className="text-lg sm:text-xl font-semibold text-slate-800 mb-2">
                           Payment Processing Error
                         </h3>
-                        <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6 max-w-md mx-auto">
+                        <p className="text-slate-600 text-sm sm:text-base mb-4 sm:mb-6 max-w-md mx-auto">
                           {errors.payment}
                         </p>
 
@@ -1383,7 +1388,7 @@ const CheckoutPage = () => {
                               // Always go to tickets page to start fresh
                               router.push(`/events/tickets/${params.eventId}`);
                             }}
-                            className="px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm sm:text-base"
+                            className="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base"
                           >
                             Try Again
                           </button>
@@ -1407,7 +1412,7 @@ const CheckoutPage = () => {
                               sessionStorage.removeItem(`selectedTickets_${params.eventId}`);
                               router.push('/support/contact');
                             }}
-                            className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm sm:text-base"
+                            className="px-5 py-2.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-sm sm:text-base"
                           >
                             Contact Support
                           </a>
@@ -1416,11 +1421,11 @@ const CheckoutPage = () => {
                     ) : (
                       // Loading state while payment intent is being created
                       <div className="text-center py-6 sm:py-8 lg:py-12">
-                        <FaSpinner className="animate-spin mx-auto text-2xl sm:text-3xl lg:text-4xl text-emerald-600 mb-2 sm:mb-3 lg:mb-4" />
-                        <p className="text-gray-600 text-sm sm:text-base lg:text-lg">
+                        <FaSpinner className="animate-spin mx-auto text-2xl sm:text-3xl lg:text-4xl text-teal-600 mb-2 sm:mb-3 lg:mb-4" />
+                        <p className="text-slate-600 text-sm sm:text-base lg:text-lg">
                           Preparing secure payment...
                         </p>
-                        <p className="text-gray-500 text-xs sm:text-sm mt-1 sm:mt-2">
+                        <p className="text-slate-500 text-xs sm:text-sm mt-1 sm:mt-2">
                           This usually takes just a few seconds
                         </p>
                       </div>
@@ -1433,17 +1438,17 @@ const CheckoutPage = () => {
               {isPaymentSuccessful && (
                 <div className="bg-white rounded-lg shadow-md p-6 sm:p-8 text-center">
                   <div className="mb-4">
-                    <FaCheckCircle className="text-green-500 text-5xl sm:text-6xl mx-auto" />
+                    <FaCheckCircle className="text-teal-500 text-5xl sm:text-6xl mx-auto" />
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">
                     Payment Successful!
                   </h2>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-slate-600 mb-6">
                     Your tickets have been purchased successfully.
                   </p>
                   <button
                     onClick={() => router.push('/profile/tickets')}
-                    className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                    className="bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors font-medium"
                   >
                     View My Tickets
                   </button>
@@ -1453,7 +1458,7 @@ const CheckoutPage = () => {
 
             {/* Right Column - Order Summary (Desktop Only) */}
             <div className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-4">
+              <div className="sticky top-4 lg:border-l lg:border-slate-200 lg:pl-4 xl:pl-6">
                 <PaymentSummary
                   event={event}
                   selectedTickets={formattedTickets}

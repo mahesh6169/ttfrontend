@@ -105,7 +105,7 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Accepted Cards */}
-      <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600">
+      <div className="flex items-center space-x-2 text-xs sm:text-sm text-slate-600">
         <span>Accepted cards (Australian only):</span>
         <div className="flex items-center space-x-2">
           <SiVisa className="text-xl sm:text-2xl text-[#1A1F71]" />
@@ -115,7 +115,7 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
 
       {/* Card Input Section */}
       <div className="space-y-1.5 sm:space-y-2">
-        <label className="block text-xs sm:text-sm font-medium text-gray-700">
+        <label className="block text-xs sm:text-sm font-medium text-slate-700">
           Card Information *
         </label>
         
@@ -123,19 +123,19 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
           cardError 
             ? 'border-red-500 bg-red-50' 
             : cardComplete 
-            ? 'border-green-500 bg-green-50' 
+            ? 'border-teal-500 bg-teal-50' 
             : cardFocused 
-            ? 'border-blue-500 bg-blue-50' 
-            : 'border-gray-300 bg-white'
+            ? 'border-teal-500 bg-teal-50' 
+            : 'border-slate-300 bg-white'
         }`}>
           {/* Status Icon */}
           <div className="absolute right-2.5 sm:right-3 top-1/2 transform -translate-y-1/2 z-10">
             {cardError ? (
               <FaExclamationCircle className="text-sm sm:text-base text-red-500" />
             ) : cardComplete ? (
-              <FaCheckCircle className="text-sm sm:text-base text-green-500" />
+              <FaCheckCircle className="text-sm sm:text-base text-teal-500" />
             ) : (
-              <FaLock className="text-sm sm:text-base text-gray-400" />
+              <FaLock className="text-sm sm:text-base text-slate-400" />
             )}
           </div>
 
@@ -161,7 +161,7 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
 
         {/* Card Success Message */}
         {cardComplete && !cardError && (
-          <p className="text-xs sm:text-sm text-green-600 flex items-center">
+          <p className="text-xs sm:text-sm text-teal-600 flex items-center">
             <FaCheckCircle className="mr-1 w-3 h-3 sm:w-4 sm:h-4" />
             Card details are valid
           </p>
@@ -170,23 +170,23 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
 
       {/* Test Card Information (Development Only) */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-blue-50 border border-blue-200 rounded-md sm:rounded-lg">
-          <h4 className="text-xs sm:text-sm font-medium text-blue-800 mb-1.5 sm:mb-2">Australian Test Cards:</h4>
-          <div className="grid grid-cols-1 gap-1 sm:gap-2 text-xs sm:text-sm text-blue-700">
+        <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-md sm:rounded-lg">
+          <h4 className="text-xs sm:text-sm font-medium text-slate-800 mb-1.5 sm:mb-2">Australian Test Cards:</h4>
+          <div className="grid grid-cols-1 gap-1 sm:gap-2 text-xs sm:text-sm text-slate-700">
             <div className="flex items-center">
               <span className="font-mono text-[10px] sm:text-xs">4000 0003 6000 0006</span>
-              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-blue-600">AU Visa</span>
+              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-slate-600">AU Visa</span>
             </div>
             <div className="flex items-center">
               <span className="font-mono text-[10px] sm:text-xs">5555 5536 0000 0008</span>
-              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-blue-600">AU Mastercard</span>
+              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs text-slate-600">AU Mastercard</span>
             </div>
             <div className="flex items-center text-red-600">
               <span className="font-mono text-[10px] sm:text-xs line-through opacity-50">3782 822463 10005</span>
               <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs">AMEX (Not Accepted)</span>
             </div>
           </div>
-          <p className="text-[10px] sm:text-xs text-blue-600 mt-1.5 sm:mt-2">
+          <p className="text-[10px] sm:text-xs text-slate-600 mt-1.5 sm:mt-2">
             Use any future date and 3-digit CVC. International cards will be rejected.
           </p>
         </div>
