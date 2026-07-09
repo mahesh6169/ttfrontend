@@ -277,6 +277,22 @@ export const sendResetOtp = createAsyncThunk(
   }
 );
 
+//Thunk to Verify Reset OTP (step 2 — validates the code without resetting)
+export const verifyResetOtp = createAsyncThunk(
+  'user/verifyResetOtp',
+  async ({ email, otp }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/verifyResetOtp`, { email, otp });
+
+      return response.data; // { success: true, message: 'OTP verified' }
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred while verifying the code.'
+      );
+    }
+  }
+);
+
 //Thunk to Reset Password
 export const resetPassword = createAsyncThunk(
   'user/resetPassword',

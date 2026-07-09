@@ -32,6 +32,8 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
 import BackButton from '@/components/BackButton';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 import { buildSlugUrl } from '@/utils/slugUtils';
 import ThreadConnectionStatus from '@/components/threads/ThreadConnectionStatus';
 import ThreadSocketListener from '@/components/ThreadSocketListener';
@@ -396,15 +398,38 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     if ((threadStatus === 'idle' || threadStatus === 'loading') && !thread._id) {
       return (
-        <div className="flex justify-center items-center min-h-[300px]">
-          <LoadingSpinner />
+        <div id="viewsmain" className="flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <BackButton />
+          </div>
+          <div className="flex justify-center items-center min-h-[calc(100vh-16rem)]">
+            <LoadingSpinner />
+          </div>
+        </div>
+      );
+    }
+    if (threadStatus === 'failed' && !thread._id) {
+      return (
+        <div id="viewsmain" className="flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <BackButton />
+          </div>
+          <ErrorState onRetry={() => dispatch(fetchThreads())} />
         </div>
       );
     }
     if (threadStatus === 'success' && !thread._id) {
       return (
-        <div className="flex justify-center items-center text-center p-8">
-          <p className="text-xs sm:text-sm text-slate-800">No Thread Found</p>
+        <div id="viewsmain" className="flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <BackButton />
+          </div>
+          <EmptyState
+            title="Thread not found"
+            description="This thread may have been removed, or the link is incorrect."
+            actionLabel="Browse threads"
+            actionHref="/threads"
+          />
         </div>
       );
     }    

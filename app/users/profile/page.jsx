@@ -117,7 +117,7 @@ const GetStarted = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <StarterTile icon={FaCalendarAlt} title="Events" desc="Host an event or find one to attend." href="/events" />
       <StarterTile icon={FaBoxOpen} title="Listings" desc="Post a listing or find local listings." href="/listings" />
-      <StarterTile icon={FaTags} title="Deals" desc="Post a deal or find local deals." href="/dailydeals" />
+      <StarterTile icon={FaTags} title="Deals" desc="Post a deal or find local deals." href="/deals" />
       <StarterTile icon={FaComments} title="Forum" desc="Browse topics or create one." href="/threads" />
     </div>
   </div>

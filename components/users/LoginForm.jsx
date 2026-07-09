@@ -13,11 +13,13 @@ import {
   validateAuthForm,
 } from '@/utils/forms/validation';
 import { isHoneypotTriggered, isFormSubmittedTooQuickly } from '@/utils/forms/antiBot';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const [submitCount, setSubmitCount] = useState(0);
   const [lastSubmitTime, setLastSubmitTime] = useState(0);
   const honeypotRef = useRef(null);
@@ -128,10 +130,13 @@ const Login = () => {
   
   
   return (
-    <div className="flex w-full justify-center">
-      <div className="p-6 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
+    <>
+      {/* Page title — centered (forms.md §2, matches Contact) */}
+      <div className="text-center mb-6">
+        <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">Login</h1>
+      </div>
 
+      <div className="mx-auto max-w-[300px]">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email */}
           <div>
@@ -144,7 +149,7 @@ const Login = () => {
               type="email"
               value={credentials.email}
               onChange={handleChange}
-              className={`w-full p-2 border ${
+              className={`w-full px-3 py-1.5 text-sm border ${
                 errors.email ? 'border-red-500' : 'border-gray-300'
               } rounded`}
               placeholder="Enter your email"
@@ -161,19 +166,30 @@ const Login = () => {
             <label htmlFor="password" className="block font-medium">
               Password
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={credentials.password}
-              onChange={handleChange}
-              className={`w-full p-2 border ${
-                errors.password ? 'border-red-500' : 'border-gray-300'
-              } rounded`}
-              placeholder="Enter your password"
-              required
-              autoComplete="current-password"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={credentials.password}
+                onChange={handleChange}
+                className={`w-full px-3 py-1.5 pr-10 text-sm border ${
+                  errors.password ? 'border-red-500' : 'border-gray-300'
+                } rounded`}
+                placeholder="Enter your password"
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-700"
+              >
+                {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">{errors.password}</p>
             )}
@@ -215,7 +231,7 @@ const Login = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100 py-2  transition"
+            className="mx-auto block bg-teal-700 text-white hover:bg-teal-800 rounded-full px-10 py-2 text-sm font-semibold transition-colors disabled:opacity-60"
             disabled={isLoading}
           >
             {isLoading ? 'Logging in...' : 'Login'}
@@ -261,7 +277,7 @@ const Login = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

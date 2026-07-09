@@ -25,7 +25,7 @@ const AdvertsPage = ({ heading }) => {
   } = useListingFilters();
 
   // TanStack Query — fetches listings based on current URL filters
-  const { data, isLoading, isError, error, isPlaceholderData } = useSearchListings({
+  const { data, isLoading, isError, error, isPlaceholderData, refetch } = useSearchListings({
     cat, sub, state: stateFilter, adType, q, sort, page, location, communities,
   });
 
@@ -789,22 +789,26 @@ const AdvertsPage = ({ heading }) => {
 
               </div>
 
-              {/* Radius Slider - Desktop */}
+              {/* Radius Slider - Desktop - width matched to the location field */}
               {hasLocation && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min="1"
-                    max="200"
-                    value={params.radius}
-                    onChange={(e) => setRadius(parseInt(e.target.value))}
-                    className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
-                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
-                      [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
-                      [&::-moz-range-thumb]:w-1.5 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600
-                      [&::-moz-range-thumb]:rounded-sm [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
-                  />
-                  <span className="text-xs text-slate-600 min-w-[40px] text-right">{params.radius}km</span>
+                <div className="flex items-center gap-3 w-full">
+                  <div className="flex-1 max-w-[280px]" aria-hidden="true"></div>
+                  <div className="flex-1 max-w-[280px]" aria-hidden="true"></div>
+                  <div className="flex-1 max-w-[320px] flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="1"
+                      max="200"
+                      value={params.radius}
+                      onChange={(e) => setRadius(parseInt(e.target.value))}
+                      className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
+                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
+                        [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-moz-range-thumb]:w-1.5 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600
+                        [&::-moz-range-thumb]:rounded-sm [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                    />
+                    <span className="text-xs text-slate-600 min-w-[40px] text-right">{params.radius}km</span>
+                  </div>
                 </div>
               )}
               </div>
@@ -994,7 +998,7 @@ const AdvertsPage = ({ heading }) => {
 
         {/* Advert Listing */}
         <div className="mt-4">
-          <AdvertList adverts={adverts} advertStatus={status} />
+          <AdvertList adverts={adverts} advertStatus={status} onRetry={() => refetch()} />
         </div>
 
         {/* Pagination */}

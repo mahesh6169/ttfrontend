@@ -59,7 +59,7 @@ const EventsPage = ({ heading }) => {
   } = useEventFilters();
 
   // TanStack Query for fetching events
-  const { data, isLoading, isError } = useSearchEvents({
+  const { data, isLoading, isError, refetch } = useSearchEvents({
     cat,
     communities,
     state,
@@ -666,22 +666,25 @@ const EventsPage = ({ heading }) => {
 
               </div>
 
-              {/* Radius Slider - Desktop (shown when location selected) */}
+              {/* Radius Slider - Desktop - width matched to the location field */}
               {hasLocation && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min="1"
-                    max="200"
-                    value={heroRadius}
-                    onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-                    className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
-                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
-                      [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
-                      [&::-moz-range-thumb]:w-1.5 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600
-                      [&::-moz-range-thumb]:rounded-sm [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
-                  />
-                  <span className="text-xs text-slate-600 min-w-[40px] text-right">{heroRadius}km</span>
+                <div className="flex items-center gap-3 w-full">
+                  <div className="flex-1 max-w-[400px]" aria-hidden="true"></div>
+                  <div className="flex-1 max-w-[500px] flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="1"
+                      max="200"
+                      value={heroRadius}
+                      onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
+                      className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
+                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
+                        [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-moz-range-thumb]:w-1.5 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600
+                        [&::-moz-range-thumb]:rounded-sm [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                    />
+                    <span className="text-xs text-slate-600 min-w-[40px] text-right">{heroRadius}km</span>
+                  </div>
                 </div>
               )}
               </div>
@@ -854,7 +857,7 @@ const EventsPage = ({ heading }) => {
 
         {/* Event listing (below the hero cluster) */}
         <div className="mt-4">
-          <EventsGrid events={events} eventStatus={status} />
+          <EventsGrid events={events} eventStatus={status} onRetry={() => refetch()} />
         </div>
 
         {/* Pagination - only show when there are events */}

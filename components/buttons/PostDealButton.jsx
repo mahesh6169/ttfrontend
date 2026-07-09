@@ -14,18 +14,18 @@ const PostDealButton = ({ className = '' }) => {
     if (!isLoggedIn) {
       e.preventDefault();
       // Save intended destination
-      localStorage.setItem('redirectAfterLogin', '/dailydeals/manage');
+      localStorage.setItem('redirectAfterLogin', '/deals/manage');
       // Redirect to login
       router.push('/login?preserveRedirect=true');
     } else {
       // Save where we came from for Cancel button
-      localStorage.setItem('cancelRedirectUrl', '/dailydeals');
+      localStorage.setItem('cancelRedirectUrl', '/deals');
     }
   };
 
   return (
     <Link
-      href="/dailydeals/manage"
+      href="/deals/manage"
       onClick={handleClick}
       className={className || "bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white px-4 py-2 text-sm md:text-base rounded-md shadow-md hover:shadow-lg font-semibold transition-all"}
     >

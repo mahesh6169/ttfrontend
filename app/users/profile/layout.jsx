@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import BaseContentShell from '@/components/layout/BaseContentShell';
 import ProfileSidebar from '@/components/layout/ProfileSidebar';
+import Footer from '@/components/Footer';
 
 /**
  * Profile layout - wraps all profile pages with authentication.
@@ -29,6 +30,7 @@ const ProfileLayout = ({ children }) => {
             <div className="flex-1 min-w-0">{children}</div>
           </div>
         </BaseContentShell>
+        <Footer />
       </div>
     </RequireVerifiedAccount>
   );

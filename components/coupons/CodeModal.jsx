@@ -73,7 +73,7 @@ export default function CodeModal({ code, campaign, store, onClose }) {
               }}
               className="text-teal-600 hover:text-teal-700 font-medium text-sm underline"
             >
-              My Discount Codes →
+              My Coupons →
             </button>
           </div>
         </div>

@@ -6,7 +6,7 @@ import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import EmptyState from '@/components/layout/EmptyState';
 import ErrorState from '@/components/layout/ErrorState';
 
-const DealsGrid = ({ deals, dealStatus }) => {
+const DealsGrid = ({ deals, dealStatus, onRetry }) => {
   // Loading State
   if (
     (dealStatus === 'idle' || dealStatus === 'loading') &&
@@ -17,7 +17,7 @@ const DealsGrid = ({ deals, dealStatus }) => {
 
   // Failed State
   if (dealStatus === 'failed') {
-    return <ErrorState onRetry={() => window.location.reload()} />;
+    return <ErrorState onRetry={onRetry} />;
   }
 
   // No results state

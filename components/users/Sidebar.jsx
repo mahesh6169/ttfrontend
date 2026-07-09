@@ -28,7 +28,7 @@ const Sidebar = ({ onLinkClick }) => {
     { label: 'Manage Listings', href: '/users/profile/manageads', icon: <FaAd /> },
     { label: 'Manage Events', href: '/users/profile/manageevents', icon: <FaCalendarAlt /> },
     { label: 'Manage Topics', href: '/users/profile/managethreads', icon: <BsChatText /> },
-    { label: 'Manage Daily Deals', href: '/users/profile/dailydeals', icon: <FaPercent /> },
+    { label: 'Manage Daily Deals', href: '/users/profile/deals', icon: <FaPercent /> },
 
     // Divider
     { type: 'divider' },

@@ -6,7 +6,7 @@
 export const DEAL_CATEGORIES = [
   {
     label: 'Food & Dining',
-    subcategories: ['Restaurants', 'Catering', 'Cakes', 'Sweets & Snacks', 'Chat & Street Food'],
+    subcategories: ['Restaurants & Cafes', 'Catering', 'Cakes', 'Chat & Street Food', 'Sweets & Snacks'],
   },
   {
     label: 'Fashion',
@@ -53,8 +53,8 @@ export const DEAL_CATEGORIES = [
     subcategories: ['Accounting & Taxation', 'Legal & Immigration', 'Finance', 'Insurance'],
   },
   {
-    label: 'Groceries',
-    subcategories: ['Indian Groceries', 'Fruit & Veg', 'Dairy'],
+    label: 'Groceries & Shops',
+    subcategories: ['Indian Groceries', 'Fruit & Veg', 'Butchers', 'Dairy'],
   },
   {
     label: 'Travel & Tourism',

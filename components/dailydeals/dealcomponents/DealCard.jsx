@@ -26,7 +26,7 @@ const DealCard = ({ deal }) => {
     new Date(deal.featured.endDate) >= now;
 
   return (
-    <Link href={`/dailydeals/views/${deal._id}`}>
+    <Link href={`/deals/views/${deal._id}`}>
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full flex flex-col">
         {/* Image */}
         <div className="relative w-full h-40 sm:h-48 bg-slate-100">

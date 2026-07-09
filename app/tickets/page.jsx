@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import PostPaidEventButton from '@/components/buttons/PostPaidEventButton';
+import Footer from '@/components/Footer';
 
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
@@ -378,6 +379,8 @@ export default function TicketsPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

@@ -62,54 +62,22 @@ const EventDetail = () => {
     };
   }, [dispatch, id]);
 
-  if ((status === 'idle' || status === 'loading') && !selectedEvent) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  if (status === 'failed') {
-    return (
-      <div className="flex flex-col gap-2">
-        <BackButton className="self-start" />
-        <ErrorState
-          onRetry={() => {
-            dispatch(clearError());
-            dispatch(fetchEventById(id));
-          }}
-        />
-      </div>
-    );
-  }
-
-  if (status === 'succeeded' && !selectedEvent) {
-    return (
-      <div className="flex flex-col gap-2">
-        <BackButton className="self-start" />
-        <EmptyState
-          title="Event not found"
-          description="This event may have been removed, or the link is incorrect."
-          actionLabel="Browse events"
-          actionHref="/events"
-        />
-      </div>
-    );
-  }
+  const isLoading = (status === 'idle' || status === 'loading') && !selectedEvent;
+  const isFailed = status === 'failed';
+  const isNotFound = status === 'succeeded' && !selectedEvent;
 
   // Curated event — posted by a Desify curator on behalf of the organiser
-  const isCuratedEvent = selectedEvent.isCuratedEvent || false;
+  const isCuratedEvent = selectedEvent?.isCuratedEvent || false;
 
   // Check if this is a promotional event (external registration link)
-  const isPromotionalEvent = selectedEvent.eventIntent === 'promote' || selectedEvent.isAdvertiseOnly;
+  const isPromotionalEvent = selectedEvent?.eventIntent === 'promote' || selectedEvent?.isAdvertiseOnly;
 
   // Dynamic CTA label based on free/paid for promotional events
-  const promoCtaLabel = selectedEvent.isPaid ? 'Get Tickets' : 'Register';
+  const promoCtaLabel = selectedEvent?.isPaid ? 'Get Tickets' : 'Register';
 
   return (
     <div id="viewsmain" className="flex flex-col gap-2">
-      {/* Navigation Bar */}
+      {/* Navigation Bar — always visible through every state */}
       <div className="flex justify-between items-center">
         {/* Back — smart: return to the originating listing view if we came from one */}
         <BackButton
@@ -124,16 +92,37 @@ const EventDetail = () => {
           }}
         />
 
-        {/* Report this Event */}
-        <ReportLink
-          type="event"
-          id={id}
-          title={selectedEvent.title}
-          returnUrl={`/events/views/${id}`}
-        />
+        {/* Report this Event — only once the event has loaded */}
+        {selectedEvent && (
+          <ReportLink
+            type="event"
+            id={id}
+            title={selectedEvent.title}
+            returnUrl={`/events/views/${id}`}
+          />
+        )}
       </div>
 
-      {/* Layout: Card + Chat */}
+      {/* Content slot — swaps by state; the frame above stays put */}
+      {isLoading ? (
+        <div className="flex justify-center items-center min-h-[calc(100vh-16rem)]">
+          <LoadingSpinner />
+        </div>
+      ) : isFailed ? (
+        <ErrorState
+          onRetry={() => {
+            dispatch(clearError());
+            dispatch(fetchEventById(id));
+          }}
+        />
+      ) : isNotFound ? (
+        <EmptyState
+          title="Event not found"
+          description="This event may have been removed, or the link is incorrect."
+          actionLabel="Browse events"
+          actionHref="/events"
+        />
+      ) : (
       <div className="flex flex-col lg:flex-row lg:items-start gap-4">
         {/* Event Details */}
         <div className="flex-[7] bg-white w-full">
@@ -211,6 +200,7 @@ const EventDetail = () => {
         </div>
       </div>
       
+      )}
     </div>
   );
 };

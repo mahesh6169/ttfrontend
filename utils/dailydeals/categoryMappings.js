@@ -18,7 +18,7 @@ export const SUGGESTED_SEARCH_TERMS = [
 // components/dailydeals/dealCategories.js. Search matches either field.
 const CATEGORY_MAPPINGS = {
   // Food & Dining
-  'Restaurants': ['restaurants', 'restaurant', 'food', 'dining'],
+  'Restaurants & Cafes': ['restaurants', 'restaurant', 'cafe', 'cafes', 'coffee', 'food', 'dining'],
   'Catering': ['catering', 'caterer'],
   'Cakes': ['cake', 'cupcakes', 'macarons', 'donuts', 'cookies'],
   'Sweets & Snacks': ['sweets', 'snacks', 'pani', 'puri', 'samosa'],
@@ -54,6 +54,7 @@ const CATEGORY_MAPPINGS = {
 
   // Home Services
   'Landscaping & Gardening': ['landscaping', 'gardening', 'garden', 'lawn'],
+  'Air Conditioning & Refrigeration': ['refrigeration', 'fridge', 'refrigerator'],
   'Cleaning & Maintenance': ['cleaning', 'cleaner', 'maintenance'],
   'Pest Control': ['pest'],
 
@@ -84,9 +85,10 @@ const CATEGORY_MAPPINGS = {
   'Finance': ['finance', 'financial'],
   'Insurance': ['insurance'],
 
-  // Groceries
+  // Groceries & Shops
   'Indian Groceries': ['groceries', 'grocery'],
   'Fruit & Veg': ['fruit', 'vegetables', 'produce'],
+  'Butchers': ['butcher', 'butchers', 'meat', 'halal'],
   'Dairy': ['dairy', 'milk'],
 
   // Travel & Tourism

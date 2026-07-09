@@ -9,7 +9,7 @@ import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import EmptyState from '@/components/layout/EmptyState';
 import ErrorState from '@/components/layout/ErrorState';
 
-const AdvertList = ({ adverts, advertStatus }) => {
+const AdvertList = ({ adverts, advertStatus, onRetry }) => {
   const {
     user,
     status: userStatus,
@@ -28,7 +28,7 @@ if ((advertStatus === 'idle' || advertStatus === 'loading') && (!adverts || adve
 
 // Failed state
 if (advertStatus === 'failed') {
-  return <ErrorState onRetry={() => window.location.reload()} />;
+  return <ErrorState onRetry={onRetry} />;
 }
 
 // No results state

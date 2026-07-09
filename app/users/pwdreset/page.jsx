@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import ResetPasswordContent from '@/components/users/Pwdreset';
 import BaseContentShell from '@/components/layout/BaseContentShell';
+import Footer from '@/components/Footer';
 
 
 
@@ -20,6 +21,7 @@ const ResetPasswordPage = () => {
       <BaseContentShell>
         <ResetPasswordContent />
       </BaseContentShell>
+      <Footer />
     </div>
   );
 };

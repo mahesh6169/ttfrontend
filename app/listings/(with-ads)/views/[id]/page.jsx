@@ -45,111 +45,101 @@ const AdvertDetail = () => {
     dispatch(getAdvertById(id));
   }, [dispatch, id]);
 
-  if ((status === 'idle' || status === 'loading') && !advert) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  const isLoading = (status === 'idle' || status === 'loading') && !advert;
+  const isFailed = status === 'failed';
+  const isNotFound = status === 'succeeded' && !advert;
 
-  if (status === 'failed') {
-    return (
-      <div className="flex flex-col gap-2">
+  // Curated listing — posted by a Desify curator on behalf of the owner
+  const isCuratedListing = advert?.isCuratedListing || false;
+
+  return (
+    <div id="viewsmain" className="flex flex-col gap-2">
+      {/* Navigation Bar — always visible, through every state */}
+      <div className="flex justify-between items-center">
+        {/* Back */}
         <BackButton className="self-start" />
+
+        {/* Report this Listing — only once the listing has loaded */}
+        {advert && (
+          <ReportLink
+            type="listing"
+            id={id}
+            title={advert.title}
+            returnUrl={`/listings/views/${id}`}
+          />
+        )}
+      </div>
+
+      {/* Content slot — swaps by state; the frame above stays put */}
+      {isLoading ? (
+        <div className="flex justify-center items-center min-h-[calc(100vh-16rem)]">
+          <LoadingSpinner />
+        </div>
+      ) : isFailed ? (
         <ErrorState onRetry={() => dispatch(getAdvertById(id))} />
-      </div>
-    );
-  }
-
-  if (status === 'succeeded' && !advert) {
-    return (
-      <div className="flex flex-col gap-2">
-        <BackButton className="self-start" />
+      ) : isNotFound ? (
         <EmptyState
           title="Listing not found"
           description="This listing may have been removed, or the link is incorrect."
           actionLabel="Browse listings"
           actionHref="/listings"
         />
-      </div>
-    );
-  }
+      ) : (
+        <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+          {/* Primary Content */}
+          <div className="flex-[7] bg-white w-full">
+            <SingleAdvertCard
+              advert={advert}
+              chatProps={{
+                resourceId: id,
+                resourceType: 'advert',
+                participantId: advert.postedBy?._id,
+                owner: advert.postedBy?.name,
+                preserveRedirectUrl: `/listings/views/${id}`,
+                isCurated: isCuratedListing,
+                listingTitle: advert.title,
+              }}
+            />
+          </div>
 
-  // Curated listing — posted by a Desify curator on behalf of the owner
-  const isCuratedListing = advert.isCuratedListing || false;
+          {/* Secondary Content - Desktop Only (Sticky Sidebar) */}
+          <div className="hidden lg:block flex-[3] sticky top-20 self-start space-y-4">
+            <SendMessage
+              resourceId={id}
+              resourceType="advert"
+              participantId={advert.postedBy?._id}
+              owner={advert.postedBy?.name}
+              preserveRedirectUrl={`/listings/views/${id}`}
+              isCurated={isCuratedListing}
+              listingTitle={advert.title}
+            />
 
-  return (
-    <div id="viewsmain" className="flex flex-col gap-2">
-      {/* Navigation Bar */}
-      <div className="flex justify-between items-center">
-        {/* Back */}
-        <BackButton className="self-start" />
-
-        {/* Report this Listing */}
-        <ReportLink
-          type="listing"
-          id={id}
-          title={advert.title}
-          returnUrl={`/listings/views/${id}`}
-        />
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-        {/* Primary Content */}
-        <div className="flex-[7] bg-white w-full">
-          <SingleAdvertCard
-            advert={advert}
-            chatProps={{
-              resourceId: id,
-              resourceType: 'advert',
-              participantId: advert.postedBy?._id,
-              owner: advert.postedBy?.name,
-              preserveRedirectUrl: `/listings/views/${id}`,
-              isCurated: isCuratedListing,
-              listingTitle: advert.title,
-            }}
-          />
-        </div>
-
-        {/* Secondary Content - Desktop Only (Sticky Sidebar) */}
-        <div className="hidden lg:block flex-[3] sticky top-20 self-start space-y-4">
-          <SendMessage
-            resourceId={id}
-            resourceType="advert"
-            participantId={advert.postedBy?._id}
-            owner={advert.postedBy?.name}
-            preserveRedirectUrl={`/listings/views/${id}`}
-            isCurated={isCuratedListing}
-            listingTitle={advert.title}
-          />
-
-          {/* Share - popover trigger */}
-          <div className="flex justify-center py-3 px-4">
-            <div className="relative" ref={shareRef}>
-              <button
-                onClick={() => setShareOpen((open) => !open)}
-                aria-expanded={shareOpen}
-                aria-haspopup="true"
-                className="flex items-center gap-2 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-4 py-1.5 rounded-full font-semibold text-sm md:text-base transition-colors"
-              >
-                <FaShareAlt size={13} />
-                <span>Share</span>
-              </button>
-              {shareOpen && (
-                <div className="absolute right-0 mt-2 z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-3">
-                  <ShareIcons
-                    type="listing"
-                    title={advert.title}
-                    id={advert._id}
-                  />
-                </div>
-              )}
+            {/* Share - popover trigger */}
+            <div className="flex justify-center py-3 px-4">
+              <div className="relative" ref={shareRef}>
+                <button
+                  onClick={() => setShareOpen((open) => !open)}
+                  aria-expanded={shareOpen}
+                  aria-haspopup="true"
+                  className="flex items-center gap-2 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-4 py-1.5 rounded-full font-semibold text-sm md:text-base transition-colors"
+                >
+                  <FaShareAlt size={13} />
+                  <span>Share</span>
+                </button>
+                {shareOpen && (
+                  <div className="absolute right-0 mt-2 z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-3">
+                    <ShareIcons
+                      type="listing"
+                      title={advert.title}
+                      id={advert._id}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

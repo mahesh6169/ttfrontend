@@ -91,6 +91,7 @@ export async function generateMetadata({ params }) {
     return {
       title: `${title} - ${META_DEFAULTS.siteName}`,
       description,
+      alternates: { canonical: url },
       openGraph: {
         title, // No branding for WhatsApp
         description,

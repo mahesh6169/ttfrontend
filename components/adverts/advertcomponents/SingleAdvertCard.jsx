@@ -709,8 +709,8 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             <span>Share</span>
           </button>
 
-          {/* Chat Button */}
-          {chatProps && (
+          {/* Chat Button - hidden on curated listings (no chat box to jump to) */}
+          {chatProps && !chatProps.isCurated && (
             <button
               onClick={handleContactClick}
               className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-colors"

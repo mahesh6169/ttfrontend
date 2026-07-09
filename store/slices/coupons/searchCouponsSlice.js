@@ -33,6 +33,9 @@ export const searchCoupons = createAsyncThunk(
       if (filters.categories.length > 0) {
         params.category = filters.categories.join(',');
       }
+      if (filters.subcategories.length > 0) {
+        params.subcategory = filters.subcategories.join(',');
+      }
       if (filters.state) {
         params.state = filters.state;
       }
@@ -61,6 +64,15 @@ export const searchCoupons = createAsyncThunk(
         }));
       });
 
+      // Client-side sort: "Latest" (newest added) by default, or "Expiring soon"
+      const sortBy = filters.sortBy || 'latest';
+      allCampaigns.sort((a, b) => {
+        if (sortBy === 'expiring') {
+          return new Date(a.expiryDate) - new Date(b.expiryDate); // soonest expiry first
+        }
+        return new Date(b.createdAt) - new Date(a.createdAt); // newest added first
+      });
+
       return {
         campaigns: allCampaigns,
         totalCount: response.data.totalCount || 0,
@@ -84,10 +96,11 @@ const initialState = {
   // Filter state (NO communities/language filters for coupons)
   filters: {
     categories: [],
+    subcategories: [],
     location: null, // { coordinates: [lng, lat], radius: 10, name: 'Address' }
     state: '', // Australian state code (NSW, VIC, etc.)
     searchText: '',
-    sortBy: 'newest'
+    sortBy: 'latest'
   },
   
   // Pagination state
@@ -110,7 +123,8 @@ const initialState = {
 
   // Filter options (fetched from backend)
   filterOptions: {
-    categories: []
+    categories: [],
+    subcategories: []
   }
 };
 
@@ -129,10 +143,11 @@ const searchCouponsSlice = createSlice({
     clearAllFilters: (state) => {
       state.filters = {
         categories: [],
+        subcategories: [],
         location: null,
         state: '',
         searchText: '',
-        sortBy: 'newest'
+        sortBy: 'latest'
       };
       state.pagination.page = 1;
     },

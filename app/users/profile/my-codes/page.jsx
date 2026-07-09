@@ -93,7 +93,7 @@ export default function MyCodesPage() {
   if (isLoading || showSkeleton) {
     return (
       <div className="space-y-4">
-        <ProfilePageHeading title="My Discount Codes" />
+        <ProfilePageHeading title="My Coupons" />
         {showSkeleton && <PageSkeleton variant="list" rows={6} />}
       </div>
     );
@@ -102,14 +102,12 @@ export default function MyCodesPage() {
   return (
     <div>
       <div>
-        <ProfilePageHeading title="My Discount Codes" />
+        <ProfilePageHeading title="My Coupons" />
 
         {codes.length === 0 ? (
           <EmptyState
             title="No codes yet"
-            description="You haven't collected any discount codes yet."
-            actionLabel="Browse Promotions"
-            actionHref="/deals"
+            description="You haven't collected any coupons yet."
           />
         ) : (
           <>

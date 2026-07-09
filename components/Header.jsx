@@ -16,6 +16,7 @@ import { LiaSignInAltSolid, LiaSignOutAltSolid } from 'react-icons/lia';
 import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { MdLocalOffer } from 'react-icons/md';
+import { HiReceiptPercent } from 'react-icons/hi2';
 import { toast } from 'react-toastify';
 import {
   setInActiveChat,
@@ -170,9 +171,15 @@ const Header = () => {
                 pathname={pathname}
               />
               <NavLink
-                href="/dailydeals"
+                href="/deals"
                 icon={<MdLocalOffer size={20} />}
                 text="Deals"
+                pathname={pathname}
+              />
+              <NavLink
+                href="/coupons"
+                icon={<HiReceiptPercent size={20} />}
+                text="Coupons"
                 pathname={pathname}
               />
               <NavLink

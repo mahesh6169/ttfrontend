@@ -16,7 +16,7 @@ const TYPE_LABELS = {
   event: 'Event',
   thread: 'Thread',
   deal: 'Deal',
-  discount: 'Discount Code',
+  discount: 'Coupon',
   advert: 'Listing', // backward compatibility
 };
 
@@ -25,8 +25,8 @@ const VIEW_URL_PATHS = {
   listing: '/listings/views',
   event: '/events/views',
   thread: '/threads/views',
-  deal: '/dailydeals/views',
-  discount: '/discountcode/views',
+  deal: '/deals/views',
+  discount: '/coupons/views',
   advert: '/listings/views', // backward compatibility
 };
 

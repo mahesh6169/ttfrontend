@@ -182,7 +182,7 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
   
-  'Restaurants': {
+  'Restaurants & Cafes': {
     hiddenSections: [],
     hiddenFields: [],
     optionalFields: []
@@ -303,6 +303,12 @@ export const WANTED_FIELDS_CONFIG = {
   },
   
   'Indian Groceries': {
+    hiddenSections: [],
+    hiddenFields: [],
+    optionalFields: []
+  },
+
+  'Fruit & Veg': {
     hiddenSections: [],
     hiddenFields: [],
     optionalFields: []

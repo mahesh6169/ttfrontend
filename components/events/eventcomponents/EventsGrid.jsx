@@ -8,7 +8,7 @@ import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import EmptyState from '@/components/layout/EmptyState';
 import ErrorState from '@/components/layout/ErrorState';
 
-const EventGrid = ({ events, eventStatus }) => {
+const EventGrid = ({ events, eventStatus, onRetry }) => {
   const {
     eventWishlist,
     isInEventWishlist,
@@ -22,7 +22,7 @@ if ((eventStatus === 'idle' || eventStatus === 'loading') && (!events || events.
 
 // Failed state
 if (eventStatus === 'failed') {
-  return <ErrorState onRetry={() => window.location.reload()} />;
+  return <ErrorState onRetry={onRetry} />;
 }
 
 // No results state

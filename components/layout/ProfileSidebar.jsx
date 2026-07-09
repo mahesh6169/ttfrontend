@@ -42,7 +42,7 @@ const ORGANISER = [
 const MANAGE = [
   { label: 'Listings', href: '/users/profile/manageads', icon: FaBoxOpen },
   { label: 'Events', href: '/users/profile/manageevents', icon: FaCalendarAlt },
-  { label: 'Deals', href: '/users/profile/dailydeals', icon: FaTags },
+  { label: 'Deals', href: '/users/profile/deals', icon: FaTags },
   { label: 'Forum', href: '/users/profile/managethreads', icon: FaComments },
 ];
 

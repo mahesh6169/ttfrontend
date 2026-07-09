@@ -13,6 +13,7 @@ import {
   HiTicket,
   HiMapPin,
   HiTag,
+  HiReceiptPercent,
   HiMegaphone,
   HiGlobeAlt,
   HiQuestionMarkCircle,
@@ -35,6 +36,7 @@ const FEATURE_TABS = [
   { id: 'listings', label: 'Listings' },
   { id: 'events', label: 'Events' },
   { id: 'deals', label: 'Deals' },
+  { id: 'coupons', label: 'Coupons' },
   { id: 'forum', label: 'Forum' },
 ];
 
@@ -154,23 +156,25 @@ const DEALS_TILES = [
   {
     label: 'Browse Deals',
     icon: HiMagnifyingGlass,
-    target: '/dailydeals',
+    target: '/deals',
     requiresAuth: false,
   },
   {
     label: 'Post a Deal',
     icon: HiTag,
-    target: '/users/profile/dailydeals',
+    target: '/users/profile/deals',
     requiresAuth: true,
   },
 ];
 
-// Popular deal categories for quick links
-const POPULAR_DEAL_CATEGORIES = [
-  { label: 'Restaurants', cat: 'Food & Dining', subcat: 'Restaurants' },
-  { label: 'Catering', cat: 'Food & Dining', subcat: 'Catering' },
-  { label: 'Cakes', cat: 'Food & Dining', subcat: 'Cakes' },
-  { label: 'Hair & Makeup', cat: 'Beauty & Wellness', subcat: 'Hair, Makeup & Waxing' },
+// --- Coupons Tab Tiles ---
+const COUPONS_TILES = [
+  {
+    label: 'Browse Coupons',
+    icon: HiReceiptPercent,
+    target: '/coupons',
+    requiresAuth: false,
+  },
 ];
 
 // --- Forum Tab Tiles ---
@@ -254,7 +258,7 @@ const heroParsers = {
 // Shared style tokens
 const scrollbarHide = '[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]';
 const chipClass =
-  'flex-shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors cursor-pointer';
+  'inline-flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs md:text-sm font-medium bg-white border border-slate-200 text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors cursor-pointer';
 
 const HeroSection = () => {
   const router = useRouter();
@@ -346,34 +350,35 @@ const HeroSection = () => {
         return LISTING_TILES.map((tile, i) => ({
           key: `l-${i}`,
           label: mode === 'poster' ? tile.posterLabel : tile.seekerLabel,
+          icon: tile.icon,
           onClick: () => handleToggleTileClick(tile),
         }));
       case 'events':
         return EVENT_TILES.map((tile, i) => ({
           key: `e-${i}`,
           label: tile.label,
+          icon: tile.icon,
           onClick: () => handleSimpleTileClick(tile),
         }));
       case 'deals':
-        return [
-          ...DEALS_TILES.map((tile, i) => ({
-            key: `d-${i}`,
-            label: tile.label,
-            onClick: () => handleSimpleTileClick(tile),
-          })),
-          ...POPULAR_DEAL_CATEGORIES.map((c, i) => ({
-            key: `dc-${i}`,
-            label: c.label,
-            onClick: () =>
-              router.push(
-                `/dailydeals?cat=${encodeURIComponent(c.cat)}&subcat=${encodeURIComponent(c.subcat)}`
-              ),
-          })),
-        ];
+        return DEALS_TILES.map((tile, i) => ({
+          key: `d-${i}`,
+          label: tile.label,
+          icon: tile.icon,
+          onClick: () => handleSimpleTileClick(tile),
+        }));
+      case 'coupons':
+        return COUPONS_TILES.map((tile, i) => ({
+          key: `c-${i}`,
+          label: tile.label,
+          icon: tile.icon,
+          onClick: () => handleSimpleTileClick(tile),
+        }));
       case 'forum':
         return FORUM_TILES.map((tile, i) => ({
           key: `f-${i}`,
           label: mode === 'poster' ? tile.posterLabel : tile.seekerLabel,
+          icon: tile.icon,
           onClick: () => handleToggleTileClick(tile),
         }));
       default:
@@ -383,25 +388,23 @@ const HeroSection = () => {
 
   return (
     <section className="relative flex flex-col gap-[30px]">
-      {/* Decorative square dot-grid behind the tabs, softly masked + gentle pulse */}
+      {/* Soft teal glow behind the tabs - subtle depth, no motion */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -z-10 -top-6 left-0 right-0 h-36 animate-pulse"
+        className="pointer-events-none absolute -z-10 -top-10 left-1/2 -translate-x-1/2 w-[min(680px,100%)] h-48 rounded-full blur-3xl"
         style={{
-          backgroundImage: 'radial-gradient(rgba(13,148,136,0.30) 1.5px, transparent 1.5px)',
-          backgroundSize: '14px 14px',
-          maskImage: 'radial-gradient(ellipse 70% 100% at 50% 40%, #000 35%, transparent 75%)',
-          WebkitMaskImage: 'radial-gradient(ellipse 70% 100% at 50% 40%, #000 35%, transparent 75%)',
+          background:
+            'radial-gradient(ellipse at center, rgba(13,148,136,0.18) 0%, rgba(13,148,136,0.07) 42%, transparent 70%)',
         }}
       />
 
       {/* Row 1 - Vertical tabs (separate pills, content-width on desktop) */}
-      <div className={`flex gap-2 overflow-x-auto md:justify-center ${scrollbarHide}`}>
+      <div className="flex justify-center gap-1.5 md:gap-2">
         {FEATURE_TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleTabChange(tab.id)}
-            className={`flex-1 md:flex-none whitespace-nowrap py-2 px-5 rounded-lg text-sm font-semibold border transition-colors ${
+            className={`flex-1 md:flex-none min-w-0 text-center whitespace-nowrap py-2 px-2 md:px-5 rounded-lg text-xs md:text-sm font-semibold border transition-colors ${
               activeTab === tab.id
                 ? 'bg-teal-700 text-white border-teal-700 shadow-sm'
                 : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900'
@@ -417,7 +420,7 @@ const HeroSection = () => {
         <div className="flex justify-center gap-2">
           <button
             onClick={() => setHeroParams({ mode: 'poster' })}
-            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold border transition-colors ${
               mode === 'poster'
                 ? 'bg-teal-700 text-white border-teal-700 shadow-sm'
                 : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900'
@@ -427,7 +430,7 @@ const HeroSection = () => {
           </button>
           <button
             onClick={() => setHeroParams({ mode: 'seeker' })}
-            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold border transition-colors ${
               mode === 'seeker'
                 ? 'bg-teal-700 text-white border-teal-700 shadow-sm'
                 : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900'
@@ -458,11 +461,15 @@ const HeroSection = () => {
             fadeIn ? 'opacity-100' : 'opacity-0'
           } ${scrollbarHide}`}
         >
-          {getChips().map((chip) => (
-            <button key={chip.key} onClick={chip.onClick} className={chipClass}>
-              {chip.label}
-            </button>
-          ))}
+          {getChips().map((chip) => {
+            const Icon = chip.icon;
+            return (
+              <button key={chip.key} onClick={chip.onClick} className={chipClass}>
+                {Icon && <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
+                {chip.label}
+              </button>
+            );
+          })}
         </div>
 
         <button
