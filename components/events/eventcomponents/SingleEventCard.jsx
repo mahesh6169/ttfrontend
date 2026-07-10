@@ -19,13 +19,14 @@ import {
   FaClock,
   FaMapMarkerAlt,
   FaUser,
-  FaPhone,
+  FaMobileAlt,
   FaEnvelope,
   FaCalendarAlt,
   FaTag,
   FaUserFriends,
   FaShoppingCart,
   FaShareAlt,
+  FaCommentDots,
   FaExternalLinkAlt,
   FaGlobe,
   FaThumbsUp,
@@ -280,6 +281,16 @@ const SingleEventCard = ({ event, chatProps }) => {
     toggleEventWishlist(event._id);
   };
 
+  // Floating Chat pill → scroll the inline chat into view and focus its textarea.
+  const handleContactClick = () => {
+    if (chatRef.current) {
+      chatRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => {
+        chatRef.current?.querySelector('textarea')?.focus();
+      }, 500);
+    }
+  };
+
   // Swipe handlers
   const onTouchStart = (e) => {
     setTouchEnd(null);
@@ -494,7 +505,7 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Title Section */}
       {event.title && (
         <div className="my-2 px-2">
-          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-slate-800 break-words">{event.title}</h1>
+          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-slate-900 break-words">{event.title}</h1>
           {event.eventCode && (
             <p className="text-center text-sm sm:text-base text-slate-700 mt-1">
               (event code: {event.eventCode})
@@ -555,7 +566,7 @@ const SingleEventCard = ({ event, chatProps }) => {
             </div>
             {event.organizer.contact && (
               <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
-                <FaPhone className="text-slate-500 shrink-0" size={13} title="Phone" aria-label="Phone" />
+                <FaMobileAlt className="text-slate-500 shrink-0" size={13} title="Phone" aria-label="Phone" />
                 <a href={`tel:${event.organizer.contact}`} className="hover:text-slate-900 underline truncate sm:whitespace-normal">
                   {event.organizer.contact}
                 </a>
@@ -624,7 +635,7 @@ const SingleEventCard = ({ event, chatProps }) => {
             )}
             {coordinator.phone && (
               <div className="flex items-center gap-2 text-sm text-slate-600 min-w-0">
-                <FaPhone className="text-slate-500 shrink-0" size={12} title="Phone" aria-label="Phone" />
+                <FaMobileAlt className="text-slate-500 shrink-0" size={12} title="Phone" aria-label="Phone" />
                 <a href={`tel:${coordinator.phone}`} className="hover:text-slate-900 underline truncate">{coordinator.phone}</a>
               </div>
             )}
@@ -732,7 +743,7 @@ const SingleEventCard = ({ event, chatProps }) => {
           <div className="relative">
             <div
               ref={descriptionRef}
-              className={`text-sm sm:text-base text-slate-700 leading-snug whitespace-pre-wrap ${
+              className={`text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap ${
                 descriptionExpanded ? '' : 'line-clamp-[20]'
               }`}
             >
@@ -754,42 +765,57 @@ const SingleEventCard = ({ event, chatProps }) => {
         </div>
       )}
 
-      {/* Available Tickets Section (for paid events) */}
+      {/* Tickets — capacity + ticket types + purchase, in sequence (paid events) */}
       {event.isPaid && event.ticketTypes?.length > 0 && (
         <div className="my-4 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Available Tickets</h3>
-          <div className="space-y-3">
-            {event.ticketTypes.map((ticket, index) => (
-              <div key={index} className="border border-slate-200 rounded p-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="text-sm sm:text-base font-semibold text-slate-700">{ticket.name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm sm:text-base font-bold text-slate-700">${ticket.price}</p>
-                    {event.applyGST && (
-                      <p className="text-xs text-slate-500">incl. GST</p>
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Tickets</h3>
+
+          {/* Capacity + max per registration */}
+          {!event.isAdvertiseOnly && (
+            <div className="mb-3">
+              <EventCapacityDisplay
+                eventId={event._id}
+                isPaid={event.isPaid}
+                context="viewing"
+                maxPerRegistration={event.maxAttendeesPerRegistration}
+              />
+            </div>
+          )}
+
+          {/* Ticket types — borderless, compact; scrolls vertically when there are many */}
+          <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+            {event.ticketTypes.map((ticket, index) => {
+              // Capacity is event-level, not per-ticket, so the list only reflects sale-window status.
+              const status = event.timeZone ? getTicketSaleStatus(ticket, event.timeZone, null) : null;
+              return (
+                <div
+                  key={index}
+                  className={`flex items-baseline justify-between gap-3 py-2.5 ${status?.unavailable ? 'opacity-60' : ''}`}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm sm:text-base font-medium text-slate-800 truncate">{ticket.name}</p>
+                    {status && (
+                      <p className={`text-xs mt-0.5 ${status.className}`}>{status.message}</p>
                     )}
                   </div>
+                  <p className="text-sm sm:text-base font-semibold text-slate-900 shrink-0">${ticket.price}</p>
                 </div>
-
-                {/* Dynamic Ticket Status */}
-                {(() => {
-                  if (!event.timeZone) return null;
-
-                  const status = getTicketSaleStatus(ticket, event.timeZone, null); // Capacity only needed for PAID events
-
-                  if (!status) return null;
-
-                  return (
-                    <div className={`text-xs mt-2 font-medium ${status.className}`}>
-                      {status.icon} {status.message}
-                    </div>
-                  );
-                })()}
-              </div>
-            ))}
+              );
+            })}
           </div>
+
+          {/* Purchase CTA */}
+          {!event.isAdvertiseOnly && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={handlePurchaseTickets}
+                className="w-full sm:w-auto bg-teal-700 text-white hover:bg-teal-800 px-8 py-3 rounded-lg shadow font-semibold text-sm md:text-base transition-colors flex items-center justify-center"
+              >
+                <FaShoppingCart className="mr-2" />
+                Purchase Tickets
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -815,8 +841,8 @@ const SingleEventCard = ({ event, chatProps }) => {
         </div>
       )}
 
-      {/* Booking Card — capacity + limit + CTA bundled together */}
-      {!event.isAdvertiseOnly && (
+      {/* Booking Card — capacity + RSVP CTA (free events; paid events use the Tickets section above) */}
+      {!event.isAdvertiseOnly && !event.isPaid && (
         <div className="my-4 p-4 border border-slate-200 rounded-lg bg-white shadow-sm">
           <EventCapacityDisplay
             eventId={event._id}
@@ -826,16 +852,7 @@ const SingleEventCard = ({ event, chatProps }) => {
           />
           <div className="border-t border-slate-200 my-4"></div>
           <div className="flex justify-center">
-            {event.isPaid ? (
-              <button
-                onClick={handlePurchaseTickets}
-                className="w-full sm:w-auto bg-teal-700 text-white hover:bg-teal-800 px-8 py-3 rounded-lg shadow font-semibold text-sm md:text-base transition-colors flex items-center justify-center"
-              >
-                <FaShoppingCart className="mr-2" />
-                Purchase Tickets
-              </button>
-            ) : (
-              isCheckedIn ? (
+            {isCheckedIn ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-full sm:w-auto bg-green-50 text-green-700 border border-green-200 px-8 py-3 rounded-lg font-semibold text-sm md:text-base flex items-center justify-center gap-2">
                     <FaCheckCircle />
@@ -898,7 +915,7 @@ const SingleEventCard = ({ event, chatProps }) => {
                   }
                 </button>
               )
-            )}
+            }
           </div>
         </div>
       )}
@@ -950,33 +967,49 @@ const SingleEventCard = ({ event, chatProps }) => {
 
       {/* Registration modal removed — RSVP is now a full page at /events/rsvp/[eventId]. */}
 
-      {/* Floating Share Button - Mobile Only */}
-      <button
-        onClick={async () => {
-          if (navigator.share) {
-            try {
-              const slugUrl = buildSlugUrl('event', event.title, event._id);
-              const shareUrl = `${window.location.origin}${slugUrl}?v=${Date.now()}`;
-              await navigator.share({
-                title: event.title,
-                text: event.title,
-                url: shareUrl
-              });
-            } catch (err) {
-              if (err.name !== 'AbortError') console.error('Share failed:', err);
-            }
-          }
-        }}
-        className={`lg:hidden fixed bottom-20 right-4 z-40 bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-all duration-200 ${
+      {/* Floating Buttons - Mobile Only. Fade out once the inline chat is in view. */}
+      <div
+        className={`lg:hidden fixed bottom-20 right-4 z-40 flex flex-col gap-3 transition-all duration-200 ${
           chatInView ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100'
         }`}
-        aria-label="Share event"
         aria-hidden={chatInView}
-        tabIndex={chatInView ? -1 : 0}
       >
-        <FaShareAlt size={16} />
-        <span>Share</span>
-      </button>
+        {/* Share Button */}
+        <button
+          onClick={async () => {
+            if (navigator.share) {
+              try {
+                const slugUrl = buildSlugUrl('event', event.title, event._id);
+                const shareUrl = `${window.location.origin}${slugUrl}?v=${Date.now()}`;
+                await navigator.share({
+                  title: event.title,
+                  text: event.title,
+                  url: shareUrl
+                });
+              } catch (err) {
+                if (err.name !== 'AbortError') console.error('Share failed:', err);
+              }
+            }
+          }}
+          className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-colors"
+          aria-label="Share event"
+        >
+          <FaShareAlt size={16} />
+          <span>Share</span>
+        </button>
+
+        {/* Chat Button — enquiry events only (curated events have no chat) */}
+        {chatProps && !chatProps.isCuratedEvent && (
+          <button
+            onClick={handleContactClick}
+            className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-colors"
+            aria-label="Chat with organiser"
+          >
+            <FaCommentDots size={16} />
+            <span>Chat</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 };

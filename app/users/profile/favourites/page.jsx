@@ -1,26 +1,41 @@
 'use client';
 import React from 'react';
-import Link from 'next/link';
+import { useSelector } from 'react-redux';
 import AdvertFavourites from '@/components/users/AdvertFavourites';
 import EventFavourites from '@/components/users/EventFavourites';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
+import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
+import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 
 const FavouritesPage = () => {
+  // Shared wishlist state (same sources the two sections read from)
+  const { advertWishlistStatus } = useSelector((state) => state.user);
+  const { advertWishlist } = useAdvertWishlist();
+  const { eventWishlist, eventWishlistStatus } = useEventWishlist();
+
+  // A status is "settled" once it's no longer idle/loading (success or failed).
+  const settled = (s) => Boolean(s) && s !== 'idle' && s !== 'loading';
+  const bothSettled = settled(advertWishlistStatus) && settled(eventWishlistStatus);
+  const bothEmpty =
+    (advertWishlist?.length ?? 0) === 0 && (eventWishlist?.length ?? 0) === 0;
+
   return (
     <div>
-      {/* Back Button */}
-      <div className="mb-4">
-        <Link
-          href="/users/profile"
-          className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-        >
-          <span>&lt;</span>
-          <span>back</span>
-        </Link>
-      </div>
-
-      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center text-teal-700">Your Favourites</h1>
-      <AdvertFavourites />
-      <EventFavourites />
+      <ProfilePageHeading title="Your Favourites" />
+      {bothSettled && bothEmpty ? (
+        // One page-level empty when nothing is favourited (listings or events).
+        <EmptyState
+          title="No favourites yet"
+          description="Listings and events you save will show up here."
+        />
+      ) : (
+        // Otherwise keep the two sections (each shows its own list / per-section state).
+        <>
+          <AdvertFavourites />
+          <EventFavourites />
+        </>
+      )}
     </div>
   );
 };

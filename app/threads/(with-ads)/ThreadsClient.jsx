@@ -8,8 +8,10 @@ import Pagination from '@/components/Pagination';
 import { LoadScriptNext, Autocomplete } from '@react-google-maps/api';
 import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
-import { FaFrown } from 'react-icons/fa';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 import BottomAd from '@/components/ads/BottomAd';
 import { getCategoryDisplayName } from '@/constants/categories';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
@@ -42,7 +44,7 @@ const ThreadsPage = ({ heading }) => {
   } = useThreadFilters();
 
   // TanStack Query for fetching threads
-  const { data, isLoading, isError } = useSearchThreads({
+  const { data, isLoading, isError, refetch } = useSearchThreads({
     cat,
     communities,
     state,
@@ -262,7 +264,7 @@ const ThreadsPage = ({ heading }) => {
               </button>
               <button
                 onClick={() => setShowFilters(false)}
-                className="text-xl text-slate-600 hover:text-slate-800 transition-colors"
+                className="text-xl text-teal-700 hover:text-teal-800 font-bold leading-none transition-colors"
               >
                 ×
               </button>
@@ -634,22 +636,26 @@ const ThreadsPage = ({ heading }) => {
 
               </div>
 
-              {/* Radius Slider - Desktop (shown when location selected) */}
+              {/* Radius Slider - Desktop - width matched to the location field */}
               {hasLocation && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min="1"
-                    max="200"
-                    value={heroRadius}
-                    onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-                    className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
-                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
-                      [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
-                      [&::-moz-range-thumb]:w-1.5 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600
-                      [&::-moz-range-thumb]:rounded-sm [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
-                  />
-                  <span className="text-xs text-slate-600 min-w-[40px] text-right">{heroRadius}km</span>
+                <div className="flex items-center gap-3 w-full">
+                  <div className="flex-1 max-w-[360px]" aria-hidden="true"></div>
+                  <div className="flex-1 max-w-[260px]" aria-hidden="true"></div>
+                  <div className="flex-1 max-w-[280px] flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="1"
+                      max="200"
+                      value={heroRadius}
+                      onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
+                      className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer
+                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:h-4
+                        [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-moz-range-thumb]:w-1.5 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-teal-600
+                        [&::-moz-range-thumb]:rounded-sm [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+                    />
+                    <span className="text-xs text-slate-600 min-w-[40px] text-right">{heroRadius}km</span>
+                  </div>
                 </div>
               )}
               </div>
@@ -812,13 +818,9 @@ const ThreadsPage = ({ heading }) => {
 
         {/* Thread Listing with spacing from filters */}
         {status === 'loading' ? (
-          <div className="text-center p-4 min-h-[400px] flex items-center justify-center">Loading threads...</div>
+          <PageSkeleton variant="mediaRow" rows={6} className="mt-4" />
         ) : status === 'failed' ? (
-          <div className="flex flex-col justify-center items-center text-center p-8 min-h-[400px]">
-            <FaFrown className="text-slate-400 text-4xl sm:text-5xl mb-4" />
-            <p className="text-slate-600 text-sm sm:text-base mb-2">Something went wrong</p>
-            <p className="text-slate-500 text-xs sm:text-sm">Please try again later</p>
-          </div>
+          <ErrorState onRetry={() => refetch()} />
         ) : threads.length > 0 ? (
           <div className="space-y-3 mt-4 min-h-[400px]">
             {threads.map((thread, index) => (
@@ -831,7 +833,7 @@ const ThreadsPage = ({ heading }) => {
                     {/* Left content - Text section */}
                     <div className="flex-1 min-w-0">
                       {/* Title */}
-                      <h2 className="text-sm sm:text-base font-bold text-slate-800 mb-1">{thread.title}</h2>
+                      <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-1">{thread.title}</h2>
 
                       {/* Question/Description */}
                       <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 mb-2">{thread.question}</p>
@@ -876,9 +878,7 @@ const ThreadsPage = ({ heading }) => {
             ))}
           </div>
         ) : (
-          <div className="text-center p-8 min-h-[400px] flex items-center justify-center">
-            <p className="text-xs sm:text-sm text-slate-800">No threads available. Start a new discussion!</p>
-          </div>
+          <EmptyState title="No threads available" description="Start a new discussion!" />
         )}
 
         {/* Pagination */}

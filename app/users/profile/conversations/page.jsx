@@ -10,11 +10,15 @@ import {
 } from '@/store/slices/shared/messageSlice';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { toast } from 'react-toastify';
 import socket from '@/config/socket';
 import { MdRepeat } from 'react-icons/md';
-import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle, FaRegTrashAlt } from 'react-icons/fa';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 
 const ConversationsPage = () => {
@@ -79,63 +83,41 @@ const [pendingDelete, setPendingDelete] = useState(null);
   
   
 
-  const BackButton = () => (
-    <div className="mb-4">
-      <Link
-        href="/users/profile"
-        className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-      >
-        <span>&lt;</span>
-        <span>back</span>
-      </Link>
-    </div>
-  );
+  const showSkeleton = useDelayedLoading(status === 'loading');
 
-  if (status === 'loading') return (
-    <div className="p-4">
-      <BackButton />
-      <div>Loading conversations...</div>
+  if (status === 'loading' || showSkeleton) return (
+    <div className="space-y-4">
+      <ProfilePageHeading title="Chat Messages" />
+      {showSkeleton && <PageSkeleton variant="list" rows={6} />}
     </div>
   );
 
   if (error) return (
-    <div className="p-4">
-      <BackButton />
-      <div>Error: {error}</div>
+    <div className="space-y-4">
+      <ProfilePageHeading title="Chat Messages" />
+      <ErrorState onRetry={() => window.location.reload()} />
     </div>
   );
 
   if (!conversations.length)
     return (
-      <div className="p-4">
-        <BackButton />
-        <div className="text-xl font-bold text-gray-800 p-14">
-          No conversations found.
-        </div>
+      <div className="space-y-4">
+        <ProfilePageHeading title="Chat Messages" />
+        <EmptyState
+          title="No messages yet"
+          description="You don't have any conversations yet."
+        />
       </div>
     );
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <BackButton />
+    <div>
+      <ProfilePageHeading title="Chat Messages" />
 
-      <h1 className="text-lg md:text-2xl font-bold mb-4 text-center text-teal-700">
-        Chat Messages
-      </h1>
-
-      <ul className="space-y-4">
+      <ul className="space-y-2">
         {conversations.map((conv) => {
            if (!conv.otherUser) return null;
-           
-           // Debug log to check conversation data
-           console.log('Conversation data:', {
-             title: conv.title,
-             resourceType: conv.resourceType,
-             recurrence: conv.recurrence,
-             isRecurringInstance: conv.isRecurringInstance,
-             dateTime: conv.dateTime
-           });
-           
+
            // Determine if the current user needs to respond
            const isOwner = user._id === conv.ownerId;
            const myRole = isOwner ? 'owner' : 'participant';
@@ -144,107 +126,66 @@ const [pendingDelete, setPendingDelete] = useState(null);
            return (
 <li
   key={`${conv.resourceId}-${conv.otherUser.id}`}
-  className={`px-3 py-3 border rounded-md shadow-sm w-full cursor-pointer transition-colors ${
-    needsResponse 
-      ? 'bg-amber-50 border-amber-300 hover:bg-amber-100' 
-      : 'hover:bg-lime-50'
-  }`}
   onClick={() =>
     router.push(
       `/chat/${conv.resourceType}/${conv.resourceId}?otherUser=${conv.otherUser.id}`
     )
   }
+  className={`group flex items-start gap-3 px-3 py-2.5 rounded-xl border border-slate-200 cursor-pointer transition-colors hover:bg-slate-50 ${
+    needsResponse ? 'border-l-[3px] border-l-teal-500' : ''
+  }`}
 >
-  <div className="flex flex-col gap-3">
-    {/* Row 1: Image and Title/Date */}
-    <div className="flex gap-3">
-      {/* Image - spans height of title + date/time */}
-      {conv.image ? (
-        <img
-          src={conv.image}
-          alt={conv.title}
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-md object-cover shrink-0"
-        />
-      ) : (
-        <FaUserCircle className="w-12 h-12 sm:w-14 sm:h-14 text-gray-400 shrink-0" />
+  {/* Thumbnail */}
+  {conv.image ? (
+    <img
+      src={conv.image}
+      alt={conv.title}
+      className="w-11 h-11 rounded-lg object-cover shrink-0"
+    />
+  ) : (
+    <FaUserCircle className="w-11 h-11 text-slate-300 shrink-0" />
+  )}
+
+  {/* Body */}
+  <div className="flex-1 min-w-0">
+    {/* Title */}
+    <h3 className="text-sm font-semibold text-slate-900 truncate flex items-center gap-1">
+      <span className="truncate">
+        {conv.eventCode ? `${conv.eventCode} - ${conv.title}` : conv.title}
+      </span>
+      {conv.resourceType === 'event' && conv.recurrence?.isRecurring && (
+        <MdRepeat className="text-slate-400 shrink-0" size={13} title="Recurring event" />
       )}
-      
-      {/* Title and Date/Time container */}
-      <div className="flex-1 min-w-0">
-        {/* Title with recurring icon */}
-        <h2 className="text-xs sm:text-sm font-medium text-gray-800 truncate flex items-center">
-          <span className="truncate">
-            {conv.eventCode ? `${conv.eventCode} - ${conv.title}` : conv.title}
-          </span>
-          {conv.resourceType === 'event' && conv.recurrence?.isRecurring && (
-            <MdRepeat className="ml-1 text-gray-600 flex-shrink-0" size={14} title="Recurring event" />
-          )}
-        </h2>
-        
-        {/* Date/Time for events */}
-        {conv.resourceType === 'event' && conv.dateTime && (
-          <div className="text-xs text-gray-500 mt-1">
-            {conv.recurrence?.isRecurring && (
-              <span className="block">
-                <span className="text-purple-600 font-semibold">Recurring Event:</span>
-                <span className="text-gray-500"> This chat is for event on</span>
-              </span>
-            )}
-            <span className={conv.recurrence?.isRecurring ? 'font-medium' : ''}>
-              {new Date(conv.dateTime).toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-              {' at '}
-              {new Date(conv.dateTime).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              })}
-              {conv.timeZone && ` (${conv.timeZone})`}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
+    </h3>
 
-    {/* Row 2: Message Preview */}
-    <div className="w-full">
-      <p className="text-xs text-gray-600 truncate">
-        {conv.lastMessage.text}
-      </p>
-    </div>
+    {/* Message preview */}
+    <p className="text-xs text-slate-500 truncate mt-0.5">{conv.lastMessage.text}</p>
 
-    {/* Row 3: Chat with user and Delete button */}
-    <div className="flex justify-between items-center">
-      <div className="flex items-center gap-2">
-        <p className="text-xs sm:text-sm text-teal-700">
-          Chat with {conv.resourceType === 'deal' && conv.businessName ? conv.businessName : conv.otherUser.name}
-        </p>
-        {needsResponse && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-            Awaiting reply
-          </span>
-        )}
-      </div>
-      
-      <button
-        onClick={(e) => {
-          e.stopPropagation(); // 🛑 Prevent click from triggering parent
-          handleDeleteConversation(
-            conv.resourceId,
-            conv.otherUser.id,
-            conv.resourceType
-          );
-        }}
-        className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-      >
-        Delete
-      </button>
+    {/* With whom + status */}
+    <div className="flex items-center gap-2 mt-1">
+      <span className="text-[11px] text-slate-400 truncate">
+        with {conv.resourceType === 'deal' && conv.businessName ? conv.businessName : conv.otherUser.name}
+      </span>
+      {needsResponse && (
+        <span className="text-[10px] font-medium text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
+          Awaiting reply
+        </span>
+      )}
     </div>
   </div>
+
+  {/* Delete */}
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      handleDeleteConversation(conv.resourceId, conv.otherUser.id, conv.resourceType);
+    }}
+    className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors"
+    title="Delete conversation"
+    aria-label="Delete conversation"
+  >
+    <FaRegTrashAlt size={13} />
+  </button>
 </li>
 
 
@@ -254,8 +195,8 @@ const [pendingDelete, setPendingDelete] = useState(null);
 
       <ConfirmModal
   isOpen={isModalOpen}
-  title={<span className="text-xs text-gray-800 font-bold">Confirm Deletion</span>}
-  message={<span className="text-xs text-gray-800">Are you sure you want to delete this conversation?</span>}
+  title={<span className="text-xs text-slate-800 font-bold">Confirm Deletion</span>}
+  message={<span className="text-xs text-slate-800">Are you sure you want to delete this conversation?</span>}
   onCancel={() => setIsModalOpen(false)}
   onConfirm={() => {
     if (pendingDelete) {

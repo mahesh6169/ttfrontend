@@ -52,18 +52,19 @@ const ImageUploader = ({
 
     // Validate file types and sizes
     const validFiles = [];
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      
-      if (!file.type.startsWith('image/')) {
-        toast.error(`${file.name} is not a valid image file.`);
+
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`${file.name}: only JPEG, PNG & WebP are allowed.`);
         continue;
       }
       
       if (file.size > maxSize) {
-        toast.error(`${file.name} is too large. Maximum size is 5MB.`);
+        toast.error(`${file.name} is too large. Maximum size is 10MB.`);
         continue;
       }
       
@@ -158,13 +159,13 @@ const ImageUploader = ({
             {label}
           </span>
           <p className="text-xs text-slate-500 mt-1 mb-3">
-            JPEG & PNG only · Max {maxImages} images · {images.length}/{maxImages} uploaded
+            JPEG, PNG & WebP · Max {maxImages} · Up to 10MB each · {images.length}/{maxImages} uploaded
           </p>
         </>
       )}
       {!showLabel && (
         <p className="text-xs text-slate-500 mb-2">
-          {images.length}/{maxImages} uploaded
+          JPEG, PNG & WebP · Max {maxImages} · Up to 10MB each · {images.length}/{maxImages} uploaded
         </p>
       )}
 
@@ -259,6 +260,13 @@ const ImageUploader = ({
                   <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded">
                     New
                   </span>
+                )}
+
+                {/* Filename */}
+                {image.name && (
+                  <p className="text-[10px] text-slate-500 mt-1 truncate w-20 sm:w-24" title={image.name}>
+                    {image.name}
+                  </p>
                 )}
 
                 {/* Remove Button */}

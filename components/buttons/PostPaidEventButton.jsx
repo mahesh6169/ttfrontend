@@ -13,7 +13,7 @@ const PostPaidEventButton = ({ className = '' }) => {
   const handleClick = (e) => {
     if (!isLoggedIn) {
       e.preventDefault();
-      localStorage.setItem('redirectAfterLogin', '/users/profile/onboard');
+      localStorage.setItem('redirectAfterLogin', '/users/profile/stripeSetup');
       router.push('/login?preserveRedirect=true');
     } else {
       localStorage.setItem('cancelRedirectUrl', '/events');
@@ -22,7 +22,7 @@ const PostPaidEventButton = ({ className = '' }) => {
 
   return (
     <Link
-      href="/users/profile/onboard"
+      href="/users/profile/stripeSetup"
       onClick={handleClick}
       className={className || "bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white px-4 py-2 text-sm md:text-base rounded-md shadow-md hover:shadow-lg font-semibold transition-all"}
     >

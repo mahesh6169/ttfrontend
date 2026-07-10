@@ -14,8 +14,12 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import ConfirmModal from '@/components/ConfirmModal';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import { MdNotifications, MdNotificationsOff } from 'react-icons/md';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 const ManageThreads = () => {
   const dispatch = useDispatch();
@@ -80,22 +84,9 @@ const ManageThreads = () => {
   };
 
   const PageHeader = () => (
-    <div className="mb-6">
-      {/* Back button */}
-      <Link
-        href="/users/profile"
-        className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors mb-4"
-      >
-        <span>&lt;</span>
-        <span>back</span>
-      </Link>
-
-      {/* Hero section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Manage Topics</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Create, edit and manage your discussion topics</p>
-        </div>
+    <>
+      <ProfilePageHeading title="Manage Topics" description="Create, edit and manage your discussion topics" />
+      <div className="flex justify-center mb-6">
         <Link
           href="/threads/new"
           onClick={() =>
@@ -106,16 +97,16 @@ const ManageThreads = () => {
           + Post New Topic
         </Link>
       </div>
-    </div>
+    </>
   );
 
-  if (status === 'loading') {
+  const showSkeleton = useDelayedLoading(status === 'loading');
+
+  if (status === 'loading' || showSkeleton) {
     return (
       <div>
         <PageHeader />
-        <div className="flex justify-center items-center h-64">
-          <LoadingSpinner />
-        </div>
+        {showSkeleton && <PageSkeleton variant="card" rows={6} />}
       </div>
     );
   }
@@ -124,10 +115,7 @@ const ManageThreads = () => {
     return (
       <div>
         <PageHeader />
-        <div className="text-center py-12">
-          <p className="text-red-600 font-semibold">Error loading topics</p>
-          <p className="text-slate-600 text-sm mt-1">{error}</p>
-        </div>
+        <ErrorState onRetry={() => dispatch(fetchUserThreads())} />
       </div>
     );
   }
@@ -137,10 +125,10 @@ const ManageThreads = () => {
       <PageHeader />
 
       {threads.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-slate-600">You haven't posted any topics yet.</p>
-          <p className="text-slate-500 text-sm mt-1">Click "+ Post New Topic" to start a discussion.</p>
-        </div>
+        <EmptyState
+          title="No topics yet"
+          description="You haven't posted any topics yet."
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {threads.map((thread) => {

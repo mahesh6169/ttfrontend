@@ -115,3 +115,47 @@ input[type="number"] {
     display: none;
   }
 }
+
+/* Skeleton loading — see designGuides/02-Frontend-GUI/ProfileUnification.md (T3).
+   Shimmer sweeps a gradient via transform (GPU/compositor-only, not background-position). */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: #e2e8f0; /* slate-200 */
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Respect reduced-motion: hold a static base, no sweep */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+/* Hide scrollbar for snap carousels (used by ticket QR carousel, demo events, etc.) */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE / old Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome / Safari */
+}

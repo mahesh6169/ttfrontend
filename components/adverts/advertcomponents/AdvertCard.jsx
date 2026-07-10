@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { FaHeart } from 'react-icons/fa';
 import { MdLocationOn } from 'react-icons/md';
 import { BsChatRightDots } from 'react-icons/bs';
@@ -6,9 +9,25 @@ import { format, differenceInDays } from 'date-fns';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
 
+// Odd-shape thresholds: wider than 2.2:1 or taller than ~1:1.5 → show whole (contain).
+// Everything in between (normal photos / flyers) fills the box (cover).
+const WIDE = 2.2;
+const TALL = 0.65;
+
 const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
   const postedByName = advert.user?.name || 'Guest';
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_ADVERT_IMAGE_URL;
+  const imageUrl = advert.images?.[0]?.url || FALLBACK_IMAGE;
+
+  // Per-image fit: default cover (the common case), switch to contain once an
+  // odd-shaped image reports its real dimensions on load.
+  const [fit, setFit] = useState('cover');
+  const handleImageLoad = (e) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+    if (!w || !h) return;
+    const r = w / h;
+    setFit(r > WIDE || r < TALL ? 'contain' : 'cover');
+  };
 
   const postedDaysAgo = differenceInDays(new Date(), new Date(advert.createdAt));
   const postedText = postedDaysAgo <= 15
@@ -59,12 +78,25 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
       </button>
 
       <Link href={`/listings/views/${advert._id}`}>
-        {/* Image Box (50% height, full width) */}
-        <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-t-xl overflow-hidden">
+        {/* Image Box (50% height, full width) — per-image cover/contain.
+            Odd shapes show whole on a soft blurred backdrop instead of being cropped. */}
+        <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-t-xl overflow-hidden bg-slate-100">
+          {fit === 'contain' && (
+            <>
+              <img
+                src={imageUrl}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl opacity-70"
+              />
+              <div className="absolute inset-0 bg-white/20" />
+            </>
+          )}
           <img
-            src={advert.images?.[0]?.url || FALLBACK_IMAGE}
+            src={imageUrl}
             alt={advert.title}
-            className="w-full h-full object-cover"
+            onLoad={handleImageLoad}
+            className={`relative w-full h-full ${fit === 'cover' ? 'object-cover' : 'object-contain'}`}
           />
         </div>
 
@@ -76,7 +108,7 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
           </h2>
 
           {/* Price Box - Show "Wanted" for wanted ads */}
-          <div className="text-xs font-medium mt-0.5 text-slate-800 h-4">
+          <div className="text-xs font-medium mt-0.5 text-slate-700 h-4">
             {advert.adType === 'wanted' ? 'Wanted' :
              (!(PRICING_CONFIG[advert.category] || PRICING_CONFIG[advert.subcategory]) ? 'Request quote' : (priceLabel || '\u00A0'))}
           </div>

@@ -1,13 +1,17 @@
 "use client";
-import React, { useState, useEffect, Fragment } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { generateTicketsPDF } from '../../../../utils/paidEventTicketGenerator';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import axios from '@/utils/axiosConfig';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'react-toastify';
-import { FaQrcode, FaDownload } from 'react-icons/fa';
+import { FaQrcode, FaDownload, FaRegCalendarAlt, FaMapMarkerAlt, FaBriefcase, FaRegEnvelope, FaPhoneAlt, FaTicketAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 const DATE_FILTER_OPTIONS = [
   { value: '3months', label: 'Last 3 months' },
@@ -15,18 +19,6 @@ const DATE_FILTER_OPTIONS = [
   { value: '1year', label: 'Last year' },
   { value: 'all', label: 'Show all' },
 ];
-
-const BackButton = () => (
-  <div className="mb-4">
-    <Link
-      href="/users/profile"
-      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-    >
-      <span>&lt;</span>
-      <span>back</span>
-    </Link>
-  </div>
-);
 
 const EnhancedMyTicketsPage = () => {
   const [tickets, setTickets] = useState([]);
@@ -41,6 +33,8 @@ const EnhancedMyTicketsPage = () => {
   const [dateFilter, setDateFilter] = useState('3months'); // Default to 3 months
   const [expandedPurchases, setExpandedPurchases] = useState(new Set());
   const [activeTab, setActiveTab] = useState({}); // { invoiceNumber: 'tickets' | 'details' }
+  // Anti-flash skeleton gate — see designGuides/02-Frontend-GUI/ProfileUnification.md (T3)
+  const showSkeleton = useDelayedLoading(loading);
 
   // Fetch all user tickets
   useEffect(() => {
@@ -298,14 +292,11 @@ const EnhancedMyTicketsPage = () => {
   };
 
 
-  if (loading) {
+  if (loading || showSkeleton) {
     return (
-      <div>
-        <BackButton />
-        <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2">Loading your tickets...</span>
-        </div>
+      <div className="space-y-6">
+        <ProfilePageHeading title="My Tickets" />
+        {showSkeleton && <PageSkeleton variant="list" rows={6} />}
       </div>
     );
   }
@@ -313,16 +304,8 @@ const EnhancedMyTicketsPage = () => {
   if (error) {
     return (
       <div>
-        <BackButton />
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">Error: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
+        <ProfilePageHeading title="My Tickets" />
+        <ErrorState onRetry={() => window.location.reload()} />
       </div>
     );
   }
@@ -330,39 +313,34 @@ const EnhancedMyTicketsPage = () => {
   if (tickets.length === 0) {
     return (
       <div>
-        <BackButton />
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">No Tickets Yet</h2>
-          <p className="text-gray-600 mb-4">You haven't purchased any tickets yet.</p>
-          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Browse Events
-          </button>
-        </div>
+        <ProfilePageHeading title="My Tickets" />
+        <EmptyState
+          title="No tickets yet"
+          description="You haven't purchased any tickets yet."
+          actionLabel="Browse Events"
+          actionHref="/events"
+        />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <BackButton />
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900">Paid Events - My Tickets</h2>
-      </div>
+      <ProfilePageHeading title="My Tickets" />
 
       {/* Event Selector with Date Filter */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
+      <div className="bg-white rounded-xl shadow-md p-4">
         <div className="space-y-3">
           {/* Combined Date Filter and Event Selector */}
           <div className="flex flex-col sm:flex-row sm:gap-4">
             {/* Date Filter - Compact */}
             <div className="sm:w-1/3">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-teal-700 mb-1">
                 Date Range
               </label>
               <Listbox value={dateFilter} onChange={setDateFilter}>
                 <div className="relative">
-                  <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+                  <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
                     <span className="block truncate text-slate-900">
                       {DATE_FILTER_OPTIONS.find((o) => o.value === dateFilter)?.label}
                     </span>
@@ -407,7 +385,7 @@ const EnhancedMyTicketsPage = () => {
 
             {/* Event Selector - Compact */}
             <div className="flex-1 mt-3 sm:mt-0">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-teal-700 mb-1">
                 Select Event
               </label>
               {(() => {
@@ -415,7 +393,7 @@ const EnhancedMyTicketsPage = () => {
                 return (
                   <Listbox value={selectedEventId} onChange={setSelectedEventId}>
                     <div className="relative">
-                      <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+                      <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
                         <span className={`block truncate ${selectedEvent ? 'text-slate-900' : 'text-slate-500'}`}>
                           {selectedEvent
                             ? `${selectedEvent.eventCode} - ${selectedEvent.title}`
@@ -492,25 +470,23 @@ const EnhancedMyTicketsPage = () => {
               })()}
 
               {filteredEvents.length === 0 && events.length > 0 && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   No events in selected range. Try a different date filter.
                 </p>
               )}
             </div>
           </div>
 
-          {/* Data Retention Warning - More compact */}
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
-            <p className="text-xs text-amber-800">
-              <strong>Note:</strong> Please save your tickets. Events older than 2 years will be deleted.
-            </p>
-          </div>
+          {/* Data retention note */}
+          <p className="text-xs text-slate-500 px-1">
+            <span className="font-semibold text-slate-600">Note:</span> Please save your tickets — events older than 2 years are removed.
+          </p>
         </div>
       </div>
 
       {/* Selected Event Tickets */}
       {selectedEventId && selectedEventTickets.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="space-y-4">
           {/* Event Info Header */}
           {(() => {
             const selectedEvent = events.find(e => e.id === selectedEventId);
@@ -528,73 +504,70 @@ const EnhancedMyTicketsPage = () => {
             const eventDateTime = formatEventDateTime(eventInfo.dateTime, timeZone);
             
             return (
-              <div className="bg-gray-50 border-b border-gray-200 rounded-lg p-3 sm:p-4">
-                <div className="flex flex-wrap items-center gap-3 text-sm">
-                  {/* Event Title */}
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                    {eventInfo.title}
-                  </h3>
-                  
-                  {/* Event Code */}
-                  <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
-                    {eventInfo.eventCode}
-                  </span>
-                  
-                  {/* Date & Time */}
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>{eventDateTime.combined} ({timeZone})</span>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Event details */}
+                <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-xs font-mono font-semibold bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full">
+                      {eventInfo.eventCode}
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-bold text-teal-700">
+                      {eventInfo.title}
+                    </h3>
                   </div>
-                  
-                  {/* Venue */}
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>{eventInfo.venue}</span>
-                  </div>
-
-                  {/* Address - Full width on new line if exists */}
-                  {eventInfo.address && (
-                    <div className="w-full flex items-start gap-1 text-gray-600 text-xs sm:text-sm">
-                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span>{eventInfo.address}</span>
-                    </div>
-                  )}
-
-                  {/* Organizer Info - Full width on new line */}
-                  <div className="w-full border-t border-gray-200 pt-3 mt-2">
-                    <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
+                  <div className="mt-4 flex flex-wrap gap-x-10 gap-y-3">
+                    <div className="flex items-start gap-2">
+                      <FaRegCalendarAlt className="text-teal-600 mt-0.5 shrink-0" />
                       <div>
-                        <span className="font-medium text-gray-700">Organizer:</span> {eventInfo.organizer?.name || 'Event Organizer'}
+                        <p className="text-sm font-semibold text-slate-700">{eventDateTime.date}</p>
+                        <p className="text-xs text-slate-500">Starts at {eventDateTime.time} ({timeZone})</p>
                       </div>
-                      {(eventInfo.organizer?.contact || eventInfo.organizer?.phone) && (
-                        <div>
-                          <span className="font-medium text-gray-700">Contact:</span> {eventInfo.organizer.contact || eventInfo.organizer.phone}
-                        </div>
-                      )}
-                      {eventInfo.organizer?.email && eventInfo.organizer.email.trim() && (
-                        <div className="break-all">
-                          <span className="font-medium text-gray-700">Email:</span> {eventInfo.organizer.email}
-                        </div>
-                      )}
-                      {eventInfo.organizer?.abn && (
-                        <div>
-                          <span className="font-medium text-gray-700">ABN:</span> {eventInfo.organizer.abn}
-                        </div>
-                      )}
-                      {eventInfo.organizer?.website && eventInfo.organizer.website.trim() && (
-                        <div className="break-all">
-                          <span className="font-medium text-gray-700">Website:</span> <a href={eventInfo.organizer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{eventInfo.organizer.website}</a>
-                        </div>
-                      )}
                     </div>
+                    <div className="flex items-start gap-2">
+                      <FaMapMarkerAlt className="text-teal-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">{eventInfo.venue}</p>
+                        {eventInfo.address && (
+                          <p className="text-xs text-slate-500">{eventInfo.address}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Organizer contact */}
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5 flex flex-col">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700">
+                    Organizer Contact
+                  </p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                      <FaBriefcase />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-700 truncate">{eventInfo.organizer?.name || 'Event Organizer'}</p>
+                      <p className="text-xs text-slate-500">Host Organization</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {eventInfo.organizer?.email && (
+                      <a
+                        href={`mailto:${eventInfo.organizer.email}`}
+                        className="flex items-center gap-2 text-sm text-slate-600 hover:text-teal-700 transition-colors break-all"
+                      >
+                        <FaRegEnvelope className="text-teal-600 shrink-0" />
+                        <span className="truncate">{eventInfo.organizer.email}</span>
+                      </a>
+                    )}
+                    {(eventInfo.organizer?.contact || eventInfo.organizer?.phone) && (
+                      <a
+                        href={`tel:${eventInfo.organizer.contact || eventInfo.organizer.phone}`}
+                        className="flex items-center gap-2 text-sm text-slate-600 hover:text-teal-700 transition-colors"
+                      >
+                        <FaPhoneAlt className="text-teal-600 shrink-0" />
+                        <span>{eventInfo.organizer.contact || eventInfo.organizer.phone}</span>
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -602,7 +575,7 @@ const EnhancedMyTicketsPage = () => {
           })()}
 
           {/* Ticket Purchase Groups */}
-          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             
             {selectedEventTickets.map((ticketGroup, index) => {
               const representative = ticketGroup[0];
@@ -614,81 +587,54 @@ const EnhancedMyTicketsPage = () => {
               const typeGroups = groupTicketsByType(ticketGroup);
               
               return (
-                <div key={`${invoiceNumber}-${index}`} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                  {/* Purchase Header */}
-                  <div className="p-3 sm:p-4 bg-gray-50">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-700">
-                          Purchased on {new Date(representative.createdAt).toLocaleDateString()}
-                        </span>
-                        {refundStatus && (
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${refundStatus.type === 'full' ? 'text-red-600 bg-red-100' : 'text-orange-600 bg-orange-100'}`}>
-                            {refundStatus.text}
-                          </span>
-                        )}
-                      </div>
+                <div key={`${invoiceNumber}-${index}`} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                  {/* Slim row: actions (left) + booked date (right) */}
+                  <div className="p-3 sm:p-4 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleTabClick(invoiceNumber, 'tickets')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-teal-700 text-white hover:bg-teal-800 transition-colors"
+                      >
+                        <FaTicketAlt />
+                        <span>Tickets</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedTicketGroup(ticketGroup);
+                          setShowTicketsModal(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors"
+                      >
+                        <FaQrcode />
+                        <span>QR Code</span>
+                      </button>
                     </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 border-t border-gray-200">
-                    <button
-                      onClick={() => handleTabClick(invoiceNumber, 'tickets')}
-                      className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                        isExpanded && (activeTab[invoiceNumber] || 'tickets') === 'tickets'
-                          ? 'bg-gray-200 text-gray-700'
-                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      View Tickets
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedTicketGroup(ticketGroup);
-                        setShowTicketsModal(true);
-                      }}
-                      className="flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 whitespace-nowrap flex items-center justify-center gap-1"
-                    >
-                      <FaQrcode className="text-sm" />
-                      <span>View QR Codes</span>
-                    </button>
+                    <div className="flex flex-col sm:flex-row sm:gap-1 text-xs sm:text-sm text-slate-600 text-right leading-tight shrink-0">
+                      <span>Booked on</span>
+                      <span>{new Date(representative.createdAt).toLocaleDateString()}</span>
+                    </div>
                   </div>
                   
                   {/* Tab Content */}
                   {isExpanded && (
-                    <div className="border-t border-gray-200">
-                      {/* Ticket Details Tab */}
-                      <div className="p-3 sm:p-4 bg-white">
-                        <div className="space-y-2">
-                          {ticketGroup.map((ticket, idx) => {
-                            const isRefunded = ticket.refundStatus === 'full' || ticket.checkInStatus === 'cancelled';
-                            return (
-                              <div key={ticket._id} className={`border-b last:border-0 pb-2 last:pb-0 ${isRefunded ? 'opacity-60' : ''}`}>
-                                <div className="flex justify-between items-start">
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-lg">{isRefunded ? '✗' : '✓'}</span>
-                                    <div>
-                                      <div className="text-sm sm:text-base font-mono font-medium text-gray-900">
-                                        {ticket.ticketNumber}
-                                        {isRefunded && <span className="ml-2 text-xs font-bold text-red-600">[REFUNDED]</span>}
-                                      </div>
-                                      <div className="text-xs sm:text-sm text-gray-600">
-                                        {ticket.ticketType.name}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {ticket.seats?.[0] && (
-                                    <div className="text-xs sm:text-sm text-gray-600">
-                                      Seat: {ticket.seats[0].row}-{ticket.seats[0].seatNumber}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                    <div className="border-t border-slate-200 px-3 sm:px-4 divide-y divide-slate-100">
+                      {ticketGroup.map((ticket) => {
+                        const isRefunded = ticket.refundStatus === 'full' || ticket.checkInStatus === 'cancelled';
+                        return (
+                          <div key={ticket._id} className={`flex items-center justify-between gap-2 py-2 text-xs sm:text-sm ${isRefunded ? 'opacity-60' : ''}`}>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`shrink-0 ${isRefunded ? 'text-red-500' : 'text-teal-600'}`}>{isRefunded ? '✗' : '✓'}</span>
+                              <span className="font-mono font-medium text-slate-800 shrink-0">{ticket.ticketNumber}</span>
+                              <span className="text-slate-300 shrink-0">·</span>
+                              <span className="text-slate-500 truncate">{ticket.ticketType.name}</span>
+                              {isRefunded && <span className="text-[10px] font-bold text-red-600 shrink-0">REFUNDED</span>}
+                            </div>
+                            {ticket.seats?.[0] && (
+                              <span className="text-slate-500 shrink-0 whitespace-nowrap">Seat {ticket.seats[0].row}-{ticket.seats[0].seatNumber}</span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -716,27 +662,24 @@ const EnhancedMyTicketsPage = () => {
 // Tickets Modal Component - Simple ticket style
 const TicketsModal = ({ ticketGroup, onClose }) => {
   const [isDownloading, setIsDownloading] = useState(false);
-  
-  // Get event information from the first ticket
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollRef = useRef(null);
+
+  // Event info (used by the PDF generator)
   const firstTicket = ticketGroup[0];
   const eventInfo = firstTicket.eventSnapshot;
-  
-  // Format event date with timezone support
-  const formatEventDateTime = () => {
-    try {
-      const date = formatInTimeZone(eventInfo.dateTime, eventInfo.timeZone, 'dd/MM/yyyy');
-      const time = formatInTimeZone(eventInfo.dateTime, eventInfo.timeZone, 'h:mm a');
-      return { date, time };
-    } catch (error) {
-      const fallbackDate = new Date(eventInfo.dateTime);
-      return {
-        date: fallbackDate.toLocaleDateString(),
-        time: fallbackDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-    }
+
+  // Track which ticket is centered as the user swipes the carousel
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setActiveIndex(Math.round(el.scrollLeft / el.clientWidth));
   };
 
-  const { date, time } = formatEventDateTime();
+  const goToIndex = (idx) => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' });
+  };
 
   // PDF Download function for tickets
   const downloadTicketsPDF = async () => {
@@ -761,54 +704,53 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] flex flex-col">
-        {/* Close button - Fixed at top */}
-        <div className="flex-shrink-0 flex justify-end p-3 sm:p-4 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-xs w-full max-h-[calc(100vh-100px)] flex flex-col">
+        {/* Close button */}
+        <div className="flex-shrink-0 flex justify-end p-3 border-b border-slate-200">
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl"
+            className="text-teal-700 hover:text-teal-800 text-xl font-bold leading-none"
+            aria-label="Close"
           >
             ✕
           </button>
         </div>
 
-        {/* Ticket Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6">
-          {/* Event Details - Centered */}
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">{eventInfo.title}</h2>
-            <p className="text-sm text-gray-600 font-mono">Event ID: {eventInfo.eventCode}</p>
-          </div>
-
-          {/* Date, Time and Location - Left aligned with spacing */}
-          <div className="mb-6 text-sm text-gray-700">
-            <div className="flex items-center mb-1">
-              <span className="mr-2">📅</span>
-              <span>{date} at {time}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-2">📍</span>
-              <span>{eventInfo.venue}</span>
-            </div>
-          </div>
-
-          {/* Dotted Line Separator */}
-          <div className="border-b-2 border-dotted border-gray-400 mb-6"></div>
-
-          {/* Ticket List - With QR codes */}
-          <div className="space-y-4">
+        {/* QR codes - swipeable carousel (Google Wallet style) */}
+        <div className="flex-1 min-h-0 flex flex-col relative">
+          {/* Desktop arrows (mobile uses swipe) */}
+          {ticketGroup.length > 1 && activeIndex > 0 && (
+            <button
+              type="button"
+              onClick={() => goToIndex(activeIndex - 1)}
+              aria-label="Previous ticket"
+              className="hidden sm:flex absolute left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow text-teal-700 hover:text-teal-800 hover:bg-white transition-colors"
+            >
+              <FaChevronLeft size={14} />
+            </button>
+          )}
+          {ticketGroup.length > 1 && activeIndex < ticketGroup.length - 1 && (
+            <button
+              type="button"
+              onClick={() => goToIndex(activeIndex + 1)}
+              aria-label="Next ticket"
+              className="hidden sm:flex absolute right-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white/90 shadow text-teal-700 hover:text-teal-800 hover:bg-white transition-colors"
+            >
+              <FaChevronRight size={14} />
+            </button>
+          )}
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex-1 flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+          >
             {ticketGroup.map((ticket) => {
               const isRefunded = ticket.refundStatus === 'full' || ticket.checkInStatus === 'cancelled';
               return (
-                <div key={ticket._id} className={`flex flex-col items-center py-3 border-b last:border-0 ${isRefunded ? 'bg-red-50' : ''}`}>
-                  {isRefunded && (
-                    <div className="bg-red-600 text-white px-3 py-1 rounded mb-2 text-sm font-bold">
-                      ⚠️ REFUNDED - NOT VALID FOR ENTRY
-                    </div>
-                  )}
+                <div key={ticket._id} className="shrink-0 w-full snap-center flex flex-col items-center justify-center px-4 py-4">
                   <div className="font-mono text-sm font-medium mb-1">{ticket.ticketNumber}</div>
-                  <div className="text-sm text-gray-600 mb-2">
+                  <div className="text-sm text-slate-600 mb-2 text-center">
                     {ticket.ticketType.name}
                     {ticket.seats?.[0] && (
                       <span className="ml-2">
@@ -816,8 +758,8 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
                       </span>
                     )}
                   </div>
-                  <div className={`bg-white p-2 rounded border relative ${isRefunded ? 'border-red-300 opacity-40' : 'border-gray-200'}`}>
-                    <QRCodeSVG 
+                  <div className={`bg-white p-2 rounded border relative ${isRefunded ? 'border-red-300 opacity-40' : 'border-slate-200'}`}>
+                    <QRCodeSVG
                       value={ticket.ticketNumber}
                       size={150}
                       level="H"
@@ -831,41 +773,41 @@ const TicketsModal = ({ ticketGroup, onClose }) => {
                       </div>
                     )}
                   </div>
-                  <div className={`text-xs mt-2 ${isRefunded ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
-                    {isRefunded ? 'Not valid for entry' : 'Scan at entrance'}
-                  </div>
+                  {isRefunded && (
+                    <div className="text-xs mt-2 text-red-600 font-semibold">
+                      Ticket refunded, not valid for entry
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
 
+          {/* Dots — Wallet-style position indicator */}
+          {ticketGroup.length > 1 && (
+            <div className="flex-shrink-0 flex justify-center items-center gap-1.5 pb-3 pt-1">
+              {ticketGroup.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => goToIndex(idx)}
+                  aria-label={`Go to ticket ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all ${idx === activeIndex ? 'w-6 bg-teal-600' : 'w-1.5 bg-slate-300'}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Download Button - Fixed at bottom */}
-        <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200">
+        {/* Download - text link */}
+        <div className="flex-shrink-0 p-3 border-t border-slate-200 text-center">
           <button
             onClick={downloadTicketsPDF}
             disabled={isDownloading}
-            className={`w-full px-4 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
-              isDownloading 
-                ? 'bg-blue-400 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700'
-            } text-white`}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 hover:text-teal-800 hover:underline disabled:opacity-50 disabled:no-underline"
           >
-            {isDownloading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <FaDownload />
-                <span>Download QR Codes as PDF</span>
-              </>
-            )}
+            <FaDownload size={13} />
+            {isDownloading ? 'Generating…' : 'Download QR Codes'}
           </button>
         </div>
       </div>

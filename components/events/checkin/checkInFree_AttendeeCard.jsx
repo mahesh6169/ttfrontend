@@ -108,9 +108,9 @@ const CheckInFree_AttendeeCard = ({
   return (
     <div
       className={`
-        bg-white rounded-lg shadow-sm border transition-all duration-200
-        ${isHighlighted ? 'border-teal-500 bg-teal-50' : 'border-gray-200'}
-        ${attendee.checkedIn ? 'bg-green-50 border-green-300' : ''}
+        bg-white rounded-xl shadow-sm border transition-all duration-200
+        ${isHighlighted ? 'border-teal-500 bg-teal-50' : 'border-slate-200'}
+        ${attendee.checkedIn ? 'bg-teal-50 border-teal-200' : ''}
         ${swipeOffset !== 0 ? 'transform' : ''}
       `}
       style={{
@@ -126,15 +126,15 @@ const CheckInFree_AttendeeCard = ({
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h4 className="font-medium text-gray-900">{attendee.name}</h4>
+              <h4 className="font-medium text-slate-800">{attendee.name}</h4>
               {attendee.checkedIn && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
                   Checked In
                 </span>
               )}
             </div>
             
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="text-sm text-slate-500 mt-1">
               Reg #: {registrationNumber}
               {attendee.checkedIn && attendee.checkInTime && (
                 <span className="ml-2">
@@ -149,10 +149,10 @@ const CheckInFree_AttendeeCard = ({
             onClick={handleCheckInToggle}
             disabled={actionLoading}
             className={`
-              px-4 py-2 rounded-lg font-medium transition-colors min-w-[100px]
-              ${attendee.checkedIn 
-                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                : 'bg-teal-600 text-white hover:bg-teal-700'
+              px-4 py-2 rounded-xl font-medium transition-colors min-w-[100px]
+              ${attendee.checkedIn
+                ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
+                : 'bg-teal-700 text-white hover:bg-teal-800'
               }
               ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
             `}
@@ -190,11 +190,11 @@ const CheckInFree_AttendeeCard = ({
             
             {/* Form Responses */}
             {showFormResponses && (
-              <div className="mt-2 p-3 bg-gray-50 rounded-lg space-y-2">
+              <div className="mt-2 p-3 bg-slate-50 rounded-xl space-y-2">
                 {formResponses.map((response, index) => (
                   <div key={index} className="text-sm">
-                    <span className="font-medium text-gray-700">{response.fieldName}:</span>
-                    <span className="ml-2 text-gray-600 whitespace-pre-line">{response.response}</span>
+                    <span className="font-medium text-slate-700">{response.fieldName}:</span>
+                    <span className="ml-2 text-slate-600 whitespace-pre-line">{response.response}</span>
                   </div>
                 ))}
               </div>
@@ -204,7 +204,7 @@ const CheckInFree_AttendeeCard = ({
         
         {/* Swipe Hint */}
         {enableSwipe && (
-          <p className="text-xs text-gray-400 mt-2 text-center">
+          <p className="text-xs text-slate-400 mt-2 text-center">
             Swipe left or right to check in/out
           </p>
         )}

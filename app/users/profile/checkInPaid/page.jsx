@@ -2,26 +2,14 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { formatInTimeZone } from 'date-fns-tz';
 import { BsQrCodeScan } from 'react-icons/bs';
-import Link from 'next/link';
-
-// Back button component
-const BackButton = () => (
-  <div className="mb-4">
-    <Link
-      href="/users/profile"
-      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-    >
-      <span>&lt;</span>
-      <span>back</span>
-    </Link>
-  </div>
-);
+import { FaRegCalendarAlt, FaMapMarkerAlt, FaUsers } from 'react-icons/fa';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
 
 // Components
 import CheckInPaid_EventSelector from '@/components/events/checkin/checkInPaid_EventSelector';
@@ -38,7 +26,50 @@ const CheckInPaidPage = () => {
   const dispatch = useDispatch();
   const { selectedEvent, attendees, pagination } = useSelector((state) => state.checkInPaid);
   const [showScanner, setShowScanner] = useState(false);
-  
+
+  // Draggable Scan-QR FAB (hold & move; a plain tap still opens the scanner)
+  const fabRef = useRef(null);
+  const [fabPos, setFabPos] = useState(null); // {x, y} px once dragged; null = default corner
+  const fabDrag = useRef({ dragging: false, moved: false, startX: 0, startY: 0, offsetX: 0, offsetY: 0 });
+
+  const handleFabPointerDown = (e) => {
+    const rect = fabRef.current.getBoundingClientRect();
+    fabDrag.current = {
+      dragging: true,
+      moved: false,
+      startX: e.clientX,
+      startY: e.clientY,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+    };
+    fabRef.current.setPointerCapture?.(e.pointerId);
+  };
+
+  const handleFabPointerMove = (e) => {
+    const s = fabDrag.current;
+    if (!s.dragging) return;
+    // ignore micro-movement so a tap isn't treated as a drag
+    if (!s.moved && Math.hypot(e.clientX - s.startX, e.clientY - s.startY) < 5) return;
+    s.moved = true;
+    const size = 80;
+    const x = Math.max(4, Math.min(e.clientX - s.offsetX, window.innerWidth - size - 4));
+    const y = Math.max(4, Math.min(e.clientY - s.offsetY, window.innerHeight - size - 4));
+    setFabPos({ x, y });
+  };
+
+  const handleFabPointerUp = (e) => {
+    fabDrag.current.dragging = false;
+    fabRef.current?.releasePointerCapture?.(e.pointerId);
+  };
+
+  const handleFabClick = () => {
+    if (fabDrag.current.moved) {
+      fabDrag.current.moved = false; // it was a drag, not a tap — don't open
+      return;
+    }
+    setShowScanner(true);
+  };
+
   // Use virtualized list for large datasets
   const useVirtualized = pagination.totalCount > 50;
 
@@ -69,55 +100,43 @@ const CheckInPaidPage = () => {
   return (
     <>
       <div className="space-y-2 sm:space-y-3">
-        {/* Back Button */}
-        <BackButton />
+        <ProfilePageHeading title="Paid Event Check-In" />
 
-        {/* Page Header - Compact */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Paid Event Check-In</h2>
-        </div>
-
-        {/* Event Selector - Reduced padding */}
-        <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+        {/* Event Selector - floating panel (shiny white, no border) */}
+        <div className="bg-white rounded-xl shadow-md p-3 sm:p-4">
           <CheckInPaid_EventSelector />
         </div>
 
         {/* Selected Event Details - Compact */}
         {selectedEvent && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
-            <div className="flex flex-wrap items-center gap-3 text-sm">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
               {/* Event Title */}
-              <h3 className="text-base sm:text-lg font-bold text-gray-900">
+              <h3 className="text-base sm:text-lg font-bold text-teal-700">
                 {selectedEvent.title}
               </h3>
-              
+
               {/* Event Code */}
-              <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
+              <span className="text-xs font-mono font-semibold bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full">
                 {selectedEvent.eventCode || selectedEvent._id}
               </span>
-              
-             
-              
+
               {/* Date & Time */}
-              <div className="flex items-center gap-1 text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+              <div className="flex items-center gap-1.5 text-slate-600">
+                <FaRegCalendarAlt className="w-4 h-4 text-teal-600 shrink-0" />
                 <span>{formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone).combined} ({selectedEvent.timeZone})</span>
               </div>
-              
+
               {/* Venue */}
-              <div className="flex items-center gap-1 text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+              <div className="flex items-center gap-1.5 text-slate-600">
+                <FaMapMarkerAlt className="w-4 h-4 text-teal-600 shrink-0" />
                 <span>{selectedEvent.venue}</span>
               </div>
-              
+
               {/* Capacity if available */}
               {selectedEvent.capacity > 0 && (
-                <div className="text-gray-600">
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <FaUsers className="w-4 h-4 text-teal-600 shrink-0" />
                   <span>Capacity: {selectedEvent.capacity}</span>
                 </div>
               )}
@@ -130,31 +149,54 @@ const CheckInPaidPage = () => {
           <CheckInPaid_CheckInStats />
         )}
 
-        {/* Attendee List - Only show when event is selected */}
+        {/* Mobile: inline Scan QR tile (desktop uses the draggable FAB) */}
         {selectedEvent && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            {/* Search Bar - No header needed */}
-            <div className="p-3 border-b bg-gray-50">
-              <CheckInPaid_SearchBar />
-            </div>
-            
-            <div className="p-0 sm:p-2">
-              {attendees.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-gray-500">
-                    No tickets found for this event
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {useVirtualized ? (
-                    <CheckInPaid_VirtualizedAttendeeList />
-                  ) : (
-                    <CheckInPaid_GroupedAttendeeList />
-                  )}
-                </>
-              )}
-            </div>
+          <div className="sm:hidden pt-4">
+            <button
+              onClick={() => setShowScanner(true)}
+              className="w-full h-28 bg-teal-700 hover:bg-teal-800 text-white rounded-xl shadow-sm flex flex-col items-center justify-center gap-1.5"
+              aria-label="Scan QR Code"
+            >
+              <BsQrCodeScan className="text-3xl" />
+              <span className="text-xs font-semibold">Scan QR</span>
+            </button>
+          </div>
+        )}
+
+        {/* Mobile: "or check in manually" divider between scan tile and search */}
+        {selectedEvent && (
+          <div className="sm:hidden flex items-center gap-3">
+            <span className="h-px flex-1 bg-slate-200"></span>
+            <span className="text-xs text-slate-500">or check in manually</span>
+            <span className="h-px flex-1 bg-slate-200"></span>
+          </div>
+        )}
+
+        {/* Search Bar - floating panel (shiny white, no border) */}
+        {selectedEvent && (
+          <div className="bg-white rounded-xl shadow-md p-3">
+            <CheckInPaid_SearchBar />
+          </div>
+        )}
+
+        {/* Attendee List - cards stand on their own (no outer frame) */}
+        {selectedEvent && (
+          <div>
+            {attendees.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-slate-500">
+                  No tickets found for this event
+                </p>
+              </div>
+            ) : (
+              <>
+                {useVirtualized ? (
+                  <CheckInPaid_VirtualizedAttendeeList />
+                ) : (
+                  <CheckInPaid_GroupedAttendeeList />
+                )}
+              </>
+            )}
           </div>
         )}
       </div>
@@ -162,8 +204,13 @@ const CheckInPaidPage = () => {
       {/* FAB Button for QR Scanner */}
       {selectedEvent && !showScanner && (
         <button
-          onClick={() => setShowScanner(true)}
-          className="fixed bottom-20 right-6 w-16 h-16 bg-teal-600 rounded-full shadow-lg flex flex-col items-center justify-center text-white z-30 hover:bg-teal-700 transition-colors"
+          ref={fabRef}
+          onPointerDown={handleFabPointerDown}
+          onPointerMove={handleFabPointerMove}
+          onPointerUp={handleFabPointerUp}
+          onClick={handleFabClick}
+          style={fabPos ? { left: fabPos.x, top: fabPos.y, right: 'auto', bottom: 'auto' } : undefined}
+          className={`fixed ${fabPos ? '' : 'bottom-20 right-10'} w-20 h-20 bg-teal-700 rounded-xl shadow-lg hidden sm:flex flex-col items-center justify-center text-white z-30 hover:bg-teal-800 transition-colors touch-none select-none cursor-grab active:cursor-grabbing`}
           aria-label="Scan QR Code"
         >
           <BsQrCodeScan className="text-2xl" />

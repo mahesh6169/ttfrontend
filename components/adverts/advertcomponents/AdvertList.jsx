@@ -2,14 +2,14 @@
 
 import React from 'react';
 import AdvertCard from './AdvertCard';
-import LoadingSpinner from '../../LoadingSpinner';
-import SkeletonLoader from '../../SkeletonLoader'; 
 import { useSelector } from 'react-redux';
 import { useAdvertWishlist } from '@/utils/helpers/adverts/userAdvertWishlist';
 import BottomAd from '@/components/ads/BottomAd';
-import { FaFrown } from 'react-icons/fa';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
-const AdvertList = ({ adverts, advertStatus }) => {
+const AdvertList = ({ adverts, advertStatus, onRetry }) => {
   const {
     user,
     status: userStatus,
@@ -23,31 +23,17 @@ const AdvertList = ({ adverts, advertStatus }) => {
 
  // Loading state
 if ((advertStatus === 'idle' || advertStatus === 'loading') && (!adverts || adverts.length === 0)) {
-  return (
-    <div className="flex justify-center items-center min-h-[300px]">
-      <SkeletonLoader />
-    </div>
-  );
+  return <PageSkeleton variant="card" rows={8} />;
 }
 
 // Failed state
 if (advertStatus === 'failed') {
-  return (
-    <div className="flex flex-col justify-center items-center text-center p-8 min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-      <FaFrown className="text-slate-400 text-4xl sm:text-5xl mb-4" />
-      <p className="text-slate-600 text-sm sm:text-base mb-2">Something went wrong</p>
-      <p className="text-slate-500 text-xs sm:text-sm">Please try again later</p>
-    </div>
-  );
+  return <ErrorState onRetry={onRetry} />;
 }
 
 // No results state
 if (advertStatus === 'success' && (!adverts || adverts.length === 0)) {
-  return (
-    <div className="flex justify-center items-center text-center p-8 min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-      <p className="text-xs sm:text-sm text-slate-700">No Adverts Listed</p>
-    </div>
-  );
+  return <EmptyState title="No listings found" description="Try adjusting your filters or search." />;
 }
 
 

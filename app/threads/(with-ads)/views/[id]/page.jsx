@@ -31,6 +31,9 @@ import { MdNotificationsActive, MdNotificationsOff, MdDelete } from "react-icons
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
+import BackButton from '@/components/BackButton';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 import { buildSlugUrl } from '@/utils/slugUtils';
 import ThreadConnectionStatus from '@/components/threads/ThreadConnectionStatus';
 import ThreadSocketListener from '@/components/ThreadSocketListener';
@@ -79,8 +82,8 @@ const ThreadChatPage = () => {
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const [showFloatingButtons, setShowFloatingButtons] = useState(true);
-  const lastScrollY = useRef(0);
+  const [chatInView, setChatInView] = useState(false);
+  const chatRef = useRef(null);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const lastMessageCountRef = useRef(0);
@@ -93,6 +96,41 @@ const ThreadChatPage = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
 const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentUsefulIndex, setCurrentUsefulIndex] = useState(0);
+
+  // Topic Description read-more (mirrors events' SingleEventCard: line-clamp + fade + teal toggle)
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [descriptionOverflow, setDescriptionOverflow] = useState(false);
+  const descriptionRef = useRef(null);
+
+  // Share popover (matches listings/events B5: teal Share button → popover, closes on click-away/Esc)
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareRef = useRef(null);
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    const handleClickOutside = (e) => {
+      if (shareRef.current && !shareRef.current.contains(e.target)) setShareOpen(false);
+    };
+    const handleEsc = (e) => { if (e.key === 'Escape') setShareOpen(false); };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [shareOpen]);
+
+  useEffect(() => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    const check = () => {
+      setDescriptionOverflow(el.scrollHeight > el.clientHeight + 1);
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [thread?.question, descriptionExpanded]);
   
 
   // ✅ Visitor Sender-Side Assignment..
@@ -113,20 +151,6 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       dispatch(fetchThreads());
     }
   }, [dispatch, threadId, thread._id]);
-
-  // Click outside handler for delete confirmation
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (deleteConfirmId && !e.target.closest('.delete-popover')) {
-        setDeleteConfirmId(null);
-      }
-    };
-
-    if (deleteConfirmId) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [deleteConfirmId]);
 
   // Set active thread and fetch messages
   useEffect(() => {
@@ -229,28 +253,18 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     setTimeout(() => scrollToBottom(false), 100);
   }, [threadId]);
 
-  // Hide floating buttons on scroll down, show on scroll up (mobile only)
+  // Hide floating buttons once the conversation/chat area scrolls into view (mobile only)
+  // Matches listings/events B6: watch the chat's visibility, not scroll direction.
   useEffect(() => {
-    const handleWindowScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollDiff = currentScrollY - lastScrollY.current;
-
-      // Only trigger if scroll difference is significant (>10px)
-      if (Math.abs(scrollDiff) > 10) {
-        if (scrollDiff > 0) {
-          // Scrolling down - hide buttons
-          setShowFloatingButtons(false);
-        } else {
-          // Scrolling up - show buttons
-          setShowFloatingButtons(true);
-        }
-        lastScrollY.current = currentScrollY;
-      }
-    };
-
-    window.addEventListener('scroll', handleWindowScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleWindowScroll);
-  }, []);
+    const node = chatRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setChatInView(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [thread?._id]);
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
@@ -270,7 +284,16 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       );
       setNewMessage('');
       dispatch(clearReplyingTo());
-      
+
+      // After sending: shrink the composer back to one line AND keep focus in it so the
+      // user can keep typing without re-tapping the field (mirrors /chat/[type]/[id]).
+      setTimeout(() => {
+        if (messageInputRef.current) {
+          messageInputRef.current.style.height = 'auto';
+          messageInputRef.current.focus();
+        }
+      }, 50);
+
       // Force scroll to bottom after sending
       setIsAtBottom(true);
       setShowJumpToBottom(false);
@@ -375,15 +398,38 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     if ((threadStatus === 'idle' || threadStatus === 'loading') && !thread._id) {
       return (
-        <div className="flex justify-center items-center min-h-[300px]">
-          <LoadingSpinner />
+        <div id="viewsmain" className="flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <BackButton />
+          </div>
+          <div className="flex justify-center items-center min-h-[calc(100vh-16rem)]">
+            <LoadingSpinner />
+          </div>
+        </div>
+      );
+    }
+    if (threadStatus === 'failed' && !thread._id) {
+      return (
+        <div id="viewsmain" className="flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <BackButton />
+          </div>
+          <ErrorState onRetry={() => dispatch(fetchThreads())} />
         </div>
       );
     }
     if (threadStatus === 'success' && !thread._id) {
       return (
-        <div className="flex justify-center items-center text-center p-8">
-          <p className="text-xs sm:text-sm text-slate-800">No Thread Found</p>
+        <div id="viewsmain" className="flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <BackButton />
+          </div>
+          <EmptyState
+            title="Thread not found"
+            description="This thread may have been removed, or the link is incorrect."
+            actionLabel="Browse threads"
+            actionHref="/threads"
+          />
         </div>
       );
     }    
@@ -395,14 +441,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       <div id="viewsmain" className="flex flex-col gap-2">
     {/* Navigation Bar */}
     <div className="flex justify-between items-center">
-      {/* Back to Topics */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-      >
-        <span>&lt;</span>
-        <span>back</span>
-      </button>
+      {/* Back */}
+      <BackButton />
     
       {/* Report this Thread */}
       <ReportLink
@@ -417,7 +457,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     <div className="flex flex-col lg:flex-row lg:items-start gap-4 mt-4">
       {/* Primary Content */}
       <div className="flex-[7] bg-white w-full">
-        <div className="border rounded shadow-md w-full"> 
+        <div className="w-full">
 
       {/* Image Section */}
       <div className="relative w-full mx-auto bg-white overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]">
@@ -443,13 +483,13 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             <>
               <button
                 onClick={handlePrevImage}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition"
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-2 rounded-full shadow hover:bg-white transition"
               >
                 <FaChevronLeft />
               </button>
               <button
                 onClick={handleNextImage}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-2 rounded-full shadow hover:bg-white transition"
               >
                 <FaChevronRight />
               </button>
@@ -459,10 +499,10 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-all ${
+                    className={`h-2 rounded-full transition-all duration-300 ${
                       index === currentImageIndex
-                        ? 'bg-amber-400 w-4'
-                        : 'bg-white/70 hover:bg-white'
+                        ? 'w-6 bg-teal-600'
+                        : 'w-2 bg-slate-300 hover:bg-slate-400'
                     }`}
                   />
                 ))}
@@ -507,7 +547,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
           <button
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-4 right-4 bg-amber-300 text-teal-700 p-2 rounded-full shadow hover:bg-amber-400 transition"
+            className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-slate-800 p-2 rounded-full shadow hover:bg-white transition"
           >
             <FaTimes size={24} />
           </button>
@@ -516,13 +556,13 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             <>
               <button
                 onClick={handlePrevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-3 rounded-full shadow hover:bg-amber-400 transition"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-3 rounded-full shadow hover:bg-white transition"
               >
                 <FaChevronLeft size={20} />
               </button>
               <button
                 onClick={handleNextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-amber-300 text-teal-700 p-3 rounded-full shadow hover:bg-amber-400 transition"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-3 rounded-full shadow hover:bg-white transition"
               >
                 <FaChevronRight size={20} />
               </button>
@@ -532,10 +572,10 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`w-2.5 h-2.5 rounded-full transition-all ${
+                    className={`h-2.5 rounded-full transition-all duration-300 ${
                       index === currentImageIndex
-                        ? 'bg-amber-400 w-6'
-                        : 'bg-white/70 hover:bg-white'
+                        ? 'w-8 bg-teal-500'
+                        : 'w-2.5 bg-slate-400 hover:bg-slate-300'
                     }`}
                   />
                 ))}
@@ -548,7 +588,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       {/* Title Section */}
       {thread.title && (
         <div className="my-2 px-2">
-          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-slate-800 break-words">{thread.title}</h1>
+          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-slate-900 break-words">{thread.title}</h1>
           <div className="flex justify-center mt-1">
             <ThreadConnectionStatus />
           </div>
@@ -556,12 +596,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       )}
 
       {/* Thread Details Section */}
-      <div className="border border-slate-200 rounded shadow-sm my-4 mx-2">
-        <div className="px-3 py-2 border-b border-slate-100">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-900">Topic Details</h3>
-        </div>
-        <div className="p-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="my-4 mx-2">
+        <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Topic Details</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {thread.category && (
               <div className="text-sm sm:text-base">
                 <span className="font-semibold text-slate-700">Category:</span>{' '}
@@ -586,7 +623,6 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 <span className="text-slate-600">{thread.suburb?.name}</span>
               </div>
             )}
-          </div>
         </div>
       </div>
 
@@ -597,7 +633,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             onClick={handleToggleMute}
             className={`flex items-center gap-2 text-xs px-3 py-1 rounded-full border ${
               isMuted
-                ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                ? 'bg-red-600 text-white border-red-700 hover:bg-red-700'
                 : 'bg-slate-200 text-slate-800 border-slate-300 hover:bg-slate-300'
             } transition-colors duration-200`}
           >
@@ -619,21 +655,30 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
       {/* Topic Description Section */}
       {thread.question && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2">
-          <div className="px-3 py-2 border-b border-slate-100">
-            <h3 className="text-sm sm:text-base font-semibold text-slate-900">Topic Description</h3>
-          </div>
-          <div className="p-3 relative">
+        <div className="my-4 mx-2">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Topic Description</h3>
+          <div className="relative">
             <div
-              className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap overflow-y-auto max-h-[200px] sm:max-h-[300px] pr-2"
-              style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#cbd5e0 #f7fafc'
-              }}
+              ref={descriptionRef}
+              className={`text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap ${
+                descriptionExpanded ? '' : 'line-clamp-[20]'
+              }`}
             >
               {thread.question}
             </div>
+            {!descriptionExpanded && descriptionOverflow && (
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
           </div>
+          {(descriptionOverflow || descriptionExpanded) && (
+            <button
+              type="button"
+              onClick={() => setDescriptionExpanded((e) => !e)}
+              className="mt-2 text-teal-700 hover:text-teal-800 font-semibold text-sm underline"
+            >
+              {descriptionExpanded ? 'Read less' : 'Read more'}
+            </button>
+          )}
         </div>
       )}
 
@@ -641,14 +686,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       {thread.author && (thread.author.name || thread.author.website || thread.author.contact ||
        thread.author.email || thread.author.aboutMyself ||
        (thread.author.socialMedia && thread.author.socialMedia.length > 0)) && (
-        <div className="border border-slate-200 rounded shadow-sm my-4 mx-2">
-          <div className="px-3 py-2 border-b border-slate-100">
-            <h3 className="text-sm sm:text-base font-semibold text-slate-900 flex items-center gap-2">
-              <FaUser className="text-slate-600" />
-              <span>About {thread.author.name || 'Author'}</span>
-            </h3>
-          </div>
-          <div className="p-3 space-y-2">
+        <div className="my-4 mx-2">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-200 mb-3">
+            <FaUser className="text-slate-600" />
+            <span>About {thread.author.name || 'Author'}</span>
+          </h3>
+          <div className="space-y-2">
             {thread.author.aboutMyself && (
               <div className="flex items-start">
                 <span className="text-sm font-medium text-slate-600 w-24 shrink-0">About:</span>
@@ -726,11 +769,11 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
       {/* Useful Answers Section */}
       {usefulAnswers.length > 0 ? (
-        <div className="border border-slate-200 rounded-lg shadow-sm my-4 mx-2">
-          <div className="px-2.5 py-1.5 border-b border-slate-100">
+        <div className="my-4 mx-2">
+          <div className="pb-2 border-b border-slate-200 mb-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-slate-900">Useful Comments</h3>
+                <h3 className="text-sm font-semibold text-slate-800">Useful Comments</h3>
               </div>
               {/* Navigation Buttons in Header */}
               {usefulAnswers.length > 1 && (
@@ -754,7 +797,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               )}
             </div>
           </div>
-          <div className="p-1.5 relative">
+          <div className="relative">
             <div className="min-h-[60px] max-h-[120px] relative">
               {/* Current Useful Comment */}
               {usefulAnswers[currentUsefulIndex] && (
@@ -784,9 +827,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                         onClick={() => handleUnlike(usefulAnswers[currentUsefulIndex]._id)}
                         className={`flex items-center space-x-0.5 ${
                           usefulAnswers[currentUsefulIndex].dislikedBy?.includes(currentUser?._id)
-                            ? 'text-red-500'
+                            ? 'text-red-600'
                             : ''
-                        } hover:text-red-500 focus:outline-none`}
+                        } hover:text-red-600 focus:outline-none`}
                       >
                         👎 {usefulAnswers[currentUsefulIndex].dislikes || 0}
                       </button>
@@ -816,11 +859,11 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           </div>
         </div>
       ) : (
-        <div className="border border-slate-200 rounded-lg shadow-sm my-4 mx-2">
-          <div className="px-2.5 py-1.5 border-b border-slate-100">
-            <h3 className="text-sm font-semibold text-slate-900">Useful Comments</h3>
+        <div className="my-4 mx-2">
+          <div className="pb-2 border-b border-slate-200 mb-3">
+            <h3 className="text-sm font-semibold text-slate-800">Useful Comments</h3>
           </div>
-          <div className="p-3 flex items-center justify-center">
+          <div className="flex items-center justify-center">
             <p className="text-xs text-slate-400">No useful comments yet — be the first to 👍 one!</p>
           </div>
         </div>
@@ -829,7 +872,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
 
 {/* Message Area */}
-<div id="conversation-area" className="border border-slate-200 rounded shadow-sm my-4 mx-2 bg-white flex flex-col" style={{ maxHeight: '70vh' }}>
+<div ref={chatRef} id="conversation-area" className="border border-slate-200 rounded shadow-sm my-4 mx-2 bg-white flex flex-col" style={{ maxHeight: '70vh' }}>
 
   {/* Jump to Bottom Button */}
   {showJumpToBottom && (
@@ -841,7 +884,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             setIsAtBottom(true);
             setShowJumpToBottom(false);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400/70 backdrop-blur-sm text-teal-800 rounded-full shadow hover:bg-amber-400 transition-all text-xs font-medium"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-700/80 backdrop-blur-sm text-white rounded-full shadow hover:bg-teal-700 transition-all text-xs font-medium"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -875,6 +918,16 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           isRightSide = senderSides[senderId] === 'right';
         }
 
+        // Group consecutive messages from the same sender into a "run": show the
+        // avatar + name only at the run start, tighten spacing for continuations.
+        const senderName = msg.sender?.name || 'Former Member';
+        // Own messages read "You" (only for a logged-in user's real messages, not a
+        // visitor's visually right-aligned bubbles) — mirrors /chat/[type]/[id].
+        const displayName = (currentUser && msg.sender?._id === currentUser?._id) ? 'You' : senderName;
+        const thisSenderId = msg.sender?._id || msg.sender?.name;
+        const prevSenderId = prevMsg ? (prevMsg.sender?._id || prevMsg.sender?.name) : null;
+        const isRunStart = showDateSeparator || !prevMsg || prevSenderId !== thisSenderId;
+
         return [
           ...acc,
           showDateSeparator && (
@@ -882,7 +935,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               key={`date-${msg._id}`}
               className="flex justify-center my-3 w-full"
             >
-              <span className="bg-slate-700 text-white text-xs py-1 px-3 rounded-full shadow ">
+              <span className="bg-slate-100 text-slate-500 text-[11px] py-1 px-3 rounded-full">
                 {msgDate.toLocaleDateString()}
               </span>
             </div>
@@ -890,24 +943,25 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           <div
             key={msg._id}
             id={`message-${msg._id}`}
-            className={`mb-2 flex ${
+            className={`flex ${
               isRightSide ? 'justify-end' : 'justify-start'
-            } transition-colors duration-300`}
+            } ${isRunStart ? 'mt-3' : 'mt-0.5'} transition-colors duration-300`}
           >
             <div
-              className={`relative max-w-[70%] min-w-[80px] px-2.5 py-1.5 rounded-lg break-words
-                ${
-                  currentUser
-                    ? isRightSide
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-white text-slate-800 border border-slate-200'
-                    : 'bg-white text-slate-800 border border-slate-200'
-                }`}
+              className={`relative max-w-[85%] min-w-[80px] px-2.5 py-1.5 shadow-sm break-words rounded-2xl ${
+                isRightSide ? 'rounded-br-sm' : 'rounded-bl-sm'
+              } ${
+                currentUser && isRightSide
+                  ? 'bg-teal-600 text-white'
+                  : `bg-white text-slate-800 border border-slate-200 ${!isRightSide ? 'border-l-4 border-l-slate-300' : ''}`
+              }`}
             >
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-sm font-semibold">
-                  {msg.sender?.name || 'Former Member'}
-                </p>
+              <div className="flex justify-between items-center gap-2 mb-1">
+                {isRunStart ? (
+                  <p className="text-sm font-semibold">{displayName}</p>
+                ) : (
+                  <span />
+                )}
                 <span className="text-xs opacity-75 ml-2">
                   {msgDate.toLocaleTimeString([], {
                     hour: '2-digit',
@@ -984,54 +1038,20 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 )}
 
                 {currentUser && msg.sender?._id === currentUser._id && !msg.deletedAt && (
-                  <div className="relative inline-block">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteMessage(msg._id);
-                      }}
-                      className={`${
-                        isRightSide
-                          ? 'hover:opacity-100'
-                          : 'hover:text-red-600'
-                      }`}
-                      title="Delete"
-                    >
-                      <MdDelete size={14} />
-                    </button>
-                    
-                    {deleteConfirmId === msg._id && (
-                      <div className="delete-popover absolute bottom-full right-0 mb-2 z-50">
-                        <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg p-3 text-sm">
-                          <div className="flex flex-col gap-2">
-                            <p className="text-slate-700 dark:text-slate-300 whitespace-nowrap">Delete message?</p>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  confirmDelete(msg._id);
-                                }}
-                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs font-medium"
-                              >
-                                Yes
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  cancelDelete();
-                                }}
-                                className="px-3 py-1 bg-slate-300 text-slate-700 rounded hover:bg-slate-400 text-xs font-medium"
-                              >
-                                No
-                              </button>
-                            </div>
-                          </div>
-                          {/* Arrow pointing down */}
-                          <div className="absolute -bottom-2 right-2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white dark:border-t-gray-800"></div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteMessage(msg._id);
+                    }}
+                    className={`${
+                      isRightSide
+                        ? 'hover:opacity-100'
+                        : 'hover:text-red-600'
+                    }`}
+                    title="Delete"
+                  >
+                    <MdDelete size={14} />
+                  </button>
                 )}
               </div>
             </div>
@@ -1100,7 +1120,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           }}
           onInput={(e) => {
             e.target.style.height = 'auto';
-            e.target.style.height = `${e.target.scrollHeight}px`;
+            e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`; // cap at maxHeight (8rem)
           }}
         />
         <button
@@ -1125,7 +1145,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               `/threads/views/${threadId}`
             );
           }}
-          className="inline-block px-6 py-2 text-sm sm:text-base bg-teal-600 text-lime-100 rounded hover:bg-teal-700"
+          className="inline-block px-6 py-2 text-sm sm:text-base bg-teal-600 text-white rounded hover:bg-teal-700"
         >
           Login
         </Link>
@@ -1165,20 +1185,38 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           </button>
         </div>
 
-        {/* Share Icons */}
-        <div className="flex items-center justify-center py-3 px-4 border border-slate-200 rounded shadow-sm">
-          <span className="text-sm font-bold text-sky-500 mr-3">Share</span>
-          <ShareIcons
-            type="thread"
-            title={thread.title}
-            id={thread._id}
-          />
+        {/* Share - popover trigger */}
+        <div className="flex justify-center py-3 px-4">
+          <div className="relative" ref={shareRef}>
+            <button
+              onClick={() => setShareOpen((open) => !open)}
+              aria-expanded={shareOpen}
+              aria-haspopup="true"
+              className="flex items-center gap-2 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-4 py-1.5 rounded-full font-semibold text-sm md:text-base transition-colors"
+            >
+              <FaShareAlt size={13} />
+              <span>Share</span>
+            </button>
+            {shareOpen && (
+              <div className="absolute right-0 mt-2 z-20 bg-white border border-slate-200 rounded-lg shadow-lg p-3">
+                <ShareIcons
+                  type="thread"
+                  title={thread.title}
+                  id={thread._id}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Mobile Floating Buttons - hide when input focused or scrolling down */}
-      {!isInputFocused && showFloatingButtons && (
-      <div className="lg:hidden fixed bottom-20 right-4 z-40 flex flex-col gap-3 transition-opacity duration-200">
+      {/* Mobile Floating Buttons — fade out once the conversation/chat area is in view (B6) */}
+      <div
+        className={`lg:hidden fixed bottom-20 right-4 z-40 flex flex-col gap-3 transition-all duration-200 ${
+          chatInView || isInputFocused ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100'
+        }`}
+        aria-hidden={chatInView || isInputFocused}
+      >
         {/* Share Button */}
         <button
           onClick={async () => {
@@ -1226,6 +1264,42 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           <span>Comment</span>
         </button>
       </div>
+
+      {/* Delete confirm dialog — centered modal (mirrors /chat/[type]/[id], style.md §4) */}
+      {deleteConfirmId && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50"
+          onClick={cancelDelete}
+        >
+          <div
+            className="relative w-full max-w-xs p-5 text-center rounded-xl shadow-xl bg-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={cancelDelete}
+              aria-label="Close"
+              className="absolute top-2.5 right-3 text-teal-700 hover:text-teal-800 text-xl font-bold leading-none"
+            >
+              ✕
+            </button>
+            <h3 className="text-base font-semibold text-slate-900">Delete message?</h3>
+            <p className="text-sm text-slate-600 mt-1">This can't be undone.</p>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-center gap-2 mt-4">
+              <button
+                onClick={cancelDelete}
+                className="rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-1.5 text-sm font-semibold"
+              >
+                Keep
+              </button>
+              <button
+                onClick={() => confirmDelete(deleteConfirmId)}
+                className="rounded-full bg-red-600 text-white hover:bg-red-700 px-4 py-1.5 text-sm font-semibold"
+              >
+                Yes, delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
     </div>

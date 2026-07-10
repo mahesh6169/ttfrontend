@@ -19,11 +19,16 @@ export default async function PrivacyPolicyPage() {
   const htmlContent = simpleMarkdownToHtml(markdownContent);
   
   return (
-    <div className="p-6 bg-white rounded shadow">
-      <div 
-        className="prose prose-lg max-w-none"
+    <>
+      <div className="text-center mb-6">
+        <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">
+          Privacy Policy
+        </h1>
+      </div>
+      <div
+        className="prose prose-sm sm:prose-base lg:prose-lg max-w-none [&>h1:first-of-type]:hidden prose-headings:text-teal-900 prose-p:text-slate-600 prose-li:text-slate-600 prose-a:text-teal-700 hover:prose-a:text-teal-800"
         dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
-    </div>
+    </>
   );
 }

@@ -47,14 +47,14 @@ const CheckInPaid_SimpleTicketRow = ({ ticket, eventId }) => {
     : null;
 
   return (
-    <div className="flex items-center justify-between py-2 px-3 hover:bg-gray-100 rounded">
+    <div className="flex items-center justify-between py-2 px-3 hover:bg-slate-50 rounded-lg">
       {/* Desktop: horizontal layout, Mobile: stacked layout */}
       <div className="flex-1 mr-2">
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
-          <span className="font-mono text-sm text-gray-700">
+          <span className="font-mono text-sm text-slate-700">
             {ticket.ticketNumber}
           </span>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-xs text-gray-500">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-xs text-slate-500">
             <span>{ticket.ticketType?.name || 'Standard'}</span>
             {seatInfo && (
               <span className="sm:before:content-['•'] sm:before:mx-1">{seatInfo}</span>
@@ -67,10 +67,10 @@ const CheckInPaid_SimpleTicketRow = ({ ticket, eventId }) => {
         onClick={handleCheckIn}
         disabled={actionLoading}
         className={`
-          px-4 py-1 rounded text-sm font-medium transition-colors shrink-0
-          ${isCheckedIn 
-            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-            : 'bg-teal-600 text-white hover:bg-teal-700'
+          px-4 py-1 rounded-lg text-sm font-medium transition-colors shrink-0
+          ${isCheckedIn
+            ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
+            : 'bg-teal-700 text-white hover:bg-teal-800'
           }
           ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
         `}

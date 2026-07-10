@@ -145,8 +145,8 @@ export const ALLOWED_EMAIL_DOMAINS = [
     // Message
     if (!formData.message?.trim()) {
       errors.message = 'Message is required';
-    } else if (formData.message.length > 1000) {
-      errors.message = 'Message should not exceed 1000 characters';
+    } else if (formData.message.length > 2000) {
+      errors.message = 'Message should not exceed 2000 characters';
     }
   
     // Mobile (optional but validated if provided)

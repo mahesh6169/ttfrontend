@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { sendResetOtp, resetPassword } from '@/store/slices/users/userSlice';
+import { sendResetOtp, verifyResetOtp, resetPassword } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
 
 const ResetPasswordContent = () => {
@@ -55,13 +55,23 @@ const ResetPasswordContent = () => {
     }
   };
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     if (!otp.trim()) {
       setErrors({ otp: 'Please enter the verification code' });
       return;
     }
-    setCurrentStep(3);
+
+    setIsSubmitting(true);
     setErrors({});
+
+    try {
+      await dispatch(verifyResetOtp({ email, otp })).unwrap();
+      setCurrentStep(3);
+    } catch (err) {
+      setErrors({ otp: err || 'Invalid or expired code' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleResetPassword = async () => {
@@ -138,7 +148,7 @@ const ResetPasswordContent = () => {
   if (currentStep === 4) {
     return (
       <div className="flex w-full justify-center">
-        <div className="p-8 rounded-lg shadow-md w-full max-w-md text-center">
+        <div className="p-8 w-full max-w-md text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -160,11 +170,11 @@ const ResetPasswordContent = () => {
 
   return (
     <div className="flex w-full justify-center">
-      <div className="p-6 rounded-lg shadow-md w-full max-w-md">
+      <div className="p-6 w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold mb-2">Reset Password</h1>
-          <p className="text-gray-600 text-sm">
+          <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">Reset Password</h1>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
             {currentStep === 1 && "Enter your email to receive a verification code"}
             {currentStep === 2 && "Enter the code sent to your email"}
             {currentStep === 3 && "Create your new password"}
@@ -176,9 +186,9 @@ const ResetPasswordContent = () => {
           {[1, 2, 3].map((step) => (
             <React.Fragment key={step}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                step <= currentStep 
-                  ? 'bg-teal-600 text-white' 
-                  : 'bg-gray-200 text-gray-500'
+                step <= currentStep
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-slate-200 text-slate-500'
               }`}>
                 {step < currentStep ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,7 +198,7 @@ const ResetPasswordContent = () => {
               </div>
               {step < 3 && (
                 <div className={`w-12 h-1 mx-2 ${
-                  step < currentStep ? 'bg-teal-600' : 'bg-gray-200'
+                  step < currentStep ? 'bg-teal-600' : 'bg-slate-200'
                 }`} />
               )}
             </React.Fragment>
@@ -230,11 +240,7 @@ const ResetPasswordContent = () => {
               type="button"
               onClick={handleSendOtp}
               disabled={isSubmitting || !email.trim()}
-              className={`w-full py-3 rounded-lg font-medium transition-all ${
-                isSubmitting || !email.trim()
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-teal-600 hover:bg-teal-700 text-white'
-              }`}
+              className="mx-auto block bg-slate-500 text-white hover:bg-slate-600 rounded-full px-10 py-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center">
@@ -279,38 +285,34 @@ const ResetPasswordContent = () => {
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex justify-center gap-3">
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                className="border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-full px-8 py-2 text-sm font-semibold transition-colors"
               >
                 Back
               </button>
               <button
                 type="button"
                 onClick={handleVerifyOtp}
-                disabled={!otp.trim()}
-                className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-                  !otp.trim()
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-teal-600 hover:bg-teal-700 text-white'
-                }`}
+                disabled={isSubmitting || !otp.trim()}
+                className="bg-slate-500 text-white hover:bg-slate-600 rounded-full px-8 py-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Verify Code
+                {isSubmitting ? 'Verifying...' : 'Verify Code'}
               </button>
             </div>
 
-            <div className="text-center pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600 mb-3">Didn't receive the code?</p>
+            <div className="text-center pt-4 border-t border-slate-200">
+              <p className="text-sm text-slate-500 mb-2">Didn't receive the code?</p>
               <button
                 type="button"
                 onClick={handleResendOtp}
                 disabled={resendDisabled}
-                className={`text-sm font-medium py-2 px-4 rounded-lg transition ${
+                className={`text-sm font-semibold transition-colors ${
                   resendDisabled
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                    ? 'text-slate-400 cursor-not-allowed'
+                    : 'text-teal-700 hover:text-teal-800 hover:underline'
                 }`}
               >
                 {resendDisabled ? `Resend in ${timer}s` : 'Send New Code'}
@@ -436,11 +438,11 @@ const ResetPasswordContent = () => {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex justify-center gap-3">
               <button
                 type="button"
                 onClick={() => setCurrentStep(2)}
-                className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                className="border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-full px-8 py-2 text-sm font-semibold transition-colors"
               >
                 Back
               </button>
@@ -448,11 +450,7 @@ const ResetPasswordContent = () => {
                 type="button"
                 onClick={handleResetPassword}
                 disabled={isSubmitting || !newPassword || !confirmPassword}
-                className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-                  isSubmitting || !newPassword || !confirmPassword
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
+                className="bg-slate-500 text-white hover:bg-slate-600 rounded-full px-8 py-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center">

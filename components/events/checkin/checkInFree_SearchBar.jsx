@@ -56,10 +56,10 @@ const CheckInFree_SearchBar = () => {
       <div className="relative">
         {/* Search Icon */}
         <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
-          <svg 
-            className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path 
@@ -77,7 +77,7 @@ const CheckInFree_SearchBar = () => {
           value={localSearchTerm}
           onChange={(e) => setLocalSearchTerm(e.target.value)}
           placeholder="Reg No., Attendee Name, Email"
-          className="block w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+          className="block w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-2 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
         />
         
         {/* Clear Button */}
@@ -88,7 +88,7 @@ const CheckInFree_SearchBar = () => {
             type="button"
           >
             <svg 
-              className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600" 
+              className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 hover:text-slate-600"
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"

@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import StoreAddressInput from '../StoreAddressInput';
-import { STORE_CATEGORIES } from '../storeCategories';
+import { getAllParentCategories, getSubcategories } from '../storeCategories';
 import StoreImageUploader from './StoreImageUploader';
 
 export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     storeName: initialData?.storeName || '',
     category: initialData?.category || '',
+    subcategory: initialData?.subcategory || '',
     address: initialData?.address || {
       formattedAddress: '',
       streetNumber: '',
@@ -48,7 +49,9 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: type === 'checkbox' ? checked : value
+        [name]: type === 'checkbox' ? checked : value,
+        // Reset subcategory whenever the parent category changes
+        ...(name === 'category' ? { subcategory: '' } : {})
       }));
     }
   };
@@ -64,6 +67,10 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
 
     if (!formData.category) {
       newErrors.category = 'Category is required';
+    }
+
+    if (!formData.subcategory) {
+      newErrors.subcategory = 'Subcategory is required';
     }
 
     if (!formData.isNationwide && (!formData.address?.formattedAddress || 
@@ -88,6 +95,7 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
       const submitData = new FormData();
       submitData.append('storeName', formData.storeName);
       submitData.append('category', formData.category);
+      submitData.append('subcategory', formData.subcategory);
       submitData.append('address', JSON.stringify(formData.address));
       submitData.append('contactInfo', JSON.stringify(formData.contactInfo));
       submitData.append('description', formData.description);
@@ -143,12 +151,34 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
         >
           <option value="">Select category</option>
-          {STORE_CATEGORIES.map(cat => (
+          {getAllParentCategories().map(cat => (
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
         {errors.category && (
           <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+        )}
+      </div>
+
+      {/* Subcategory */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Subcategory *
+        </label>
+        <select
+          name="subcategory"
+          value={formData.subcategory}
+          onChange={handleChange}
+          disabled={!formData.category}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+        >
+          <option value="">{formData.category ? 'Select subcategory' : 'Select category first'}</option>
+          {getSubcategories(formData.category).map(sub => (
+            <option key={sub} value={sub}>{sub}</option>
+          ))}
+        </select>
+        {errors.subcategory && (
+          <p className="text-red-500 text-sm mt-1">{errors.subcategory}</p>
         )}
       </div>
 

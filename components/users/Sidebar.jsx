@@ -28,7 +28,7 @@ const Sidebar = ({ onLinkClick }) => {
     { label: 'Manage Listings', href: '/users/profile/manageads', icon: <FaAd /> },
     { label: 'Manage Events', href: '/users/profile/manageevents', icon: <FaCalendarAlt /> },
     { label: 'Manage Topics', href: '/users/profile/managethreads', icon: <BsChatText /> },
-    { label: 'Manage Daily Deals', href: '/users/profile/dailydeals', icon: <FaPercent /> },
+    { label: 'Manage Daily Deals', href: '/users/profile/deals', icon: <FaPercent /> },
 
     // Divider
     { type: 'divider' },
@@ -38,7 +38,6 @@ const Sidebar = ({ onLinkClick }) => {
       label: 'Event Organiser',
       icon: <FaCalendarAlt />,
       children: [
-        { label: 'Onboarding', href: '/users/profile/onboard', icon: <FaMoneyCheckAlt /> },
         { label: 'Manage Refunds', href: '/users/profile/refunds', icon: <FaMoneyCheckAlt /> },
         
       ]

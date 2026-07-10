@@ -2,25 +2,11 @@
 
 import React from 'react';
 import CouponCard from './CouponCard';
-import SkeletonLoader from '../../SkeletonLoader';
 import PromotionBottomAd from '@/components/ads/promotions/PromotionBottomAd';
 
 const CouponGrid = ({ campaigns, campaignStatus, onGenerateCode }) => {
-  if ((campaignStatus === 'idle' || campaignStatus === 'loading') && (!campaigns || campaigns.length === 0)) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <SkeletonLoader />
-      </div>
-    );
-  }
-
-  if (campaignStatus === 'success' && (!campaigns || campaigns.length === 0)) {
-    return (
-      <div className="flex justify-center items-center text-center p-8 min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-        <p className="text-xs sm:text-sm text-gray-800">No Promotions Listed</p>
-      </div>
-    );
-  }
+  // Loading / empty / error states are handled by the parent page
+  // (PageSkeleton / EmptyState / ErrorState); the grid only renders items.
 
   const adPosition = 4;
 

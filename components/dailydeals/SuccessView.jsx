@@ -83,7 +83,7 @@ const SuccessView = ({
       {/* Action Links */}
       <div className="flex flex-col items-center gap-3">
         <button
-          onClick={() => router.push(`/dailydeals/views/${dealId}`)}
+          onClick={() => router.push(`/deals/views/${dealId}`)}
           className="text-teal-700 hover:text-teal-800 font-medium text-sm"
         >
           View deal page →
@@ -91,7 +91,7 @@ const SuccessView = ({
 
         {isEdit ? (
           <button
-            onClick={() => router.push('/users/profile/dailydeals')}
+            onClick={() => router.push('/users/profile/deals')}
             className="text-slate-600 hover:text-slate-700 font-medium text-sm"
           >
             Manage my deals →
@@ -105,7 +105,7 @@ const SuccessView = ({
               Create another deal →
             </button>
             <button
-              onClick={() => router.push('/users/profile/dailydeals')}
+              onClick={() => router.push('/users/profile/deals')}
               className="text-slate-600 hover:text-slate-700 font-medium text-sm"
             >
               Manage my deals →

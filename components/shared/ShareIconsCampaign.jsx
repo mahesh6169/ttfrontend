@@ -16,7 +16,7 @@ const ShareIconsCampaign = ({ slug, title, storeName, className = '', compact = 
   const getShareUrl = () => {
     if (!slug) return null;
     const timestamp = Date.now();
-    return `${window.location.origin}/discountcode/${slug}?v=${timestamp}`;
+    return `${window.location.origin}/coupons/${slug}?v=${timestamp}`;
   };
 
   const handleCopyLink = async () => {
@@ -70,8 +70,8 @@ const ShareIconsCampaign = ({ slug, title, storeName, className = '', compact = 
 
     const encodedUrl = encodeURIComponent(url);
     const text = title && storeName 
-      ? `Check out this discount: ${title} at ${storeName}`
-      : 'Check out this discount';
+      ? `Check out this coupon: ${title} at ${storeName}`
+      : 'Check out this coupon';
     const encodedText = encodeURIComponent(text);
     
     const shareUrls = {
@@ -93,11 +93,11 @@ const ShareIconsCampaign = ({ slug, title, storeName, className = '', compact = 
 
     const text = title && storeName
       ? `Check out this discount: ${title} at ${storeName}`
-      : 'Check out this discount';
+      : 'Check out this coupon';
 
     try {
       await navigator.share({
-        title: title || 'Discount Code',
+        title: title || 'Coupon',
         text: text,
         url: url
       });

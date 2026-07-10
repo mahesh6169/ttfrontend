@@ -19,13 +19,16 @@ export default async function TermsPage() {
   const htmlContent = simpleMarkdownToHtml(markdownContent);
   
   return (
-    <div className="w-full bg-white rounded-lg shadow-lg">
-      <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div 
-            className="prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
-          />
-        </div>
-    </div>
+    <>
+      <div className="text-center mb-6">
+        <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">
+          Terms and Conditions
+        </h1>
+      </div>
+      <div
+        className="prose prose-sm sm:prose-base lg:prose-lg max-w-none [&>h1:first-of-type]:hidden prose-headings:text-teal-900 prose-p:text-slate-600 prose-li:text-slate-600 prose-a:text-teal-700 hover:prose-a:text-teal-800"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+    </>
   );
 }

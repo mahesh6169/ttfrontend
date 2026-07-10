@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 import { FaFacebook, FaInstagram, FaPlus, FaTimes } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import PartnerStoreAddressInput from '../PartnerStoreAddressInput';
@@ -167,7 +168,10 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validate()) return;
+    if (!validate()) {
+      toast.error('Form Errors — please fix the highlighted fields.');
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -188,17 +192,17 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
 
       await onSubmit(submitData);
     } catch (error) {
-      setErrors({ submit: error.message });
+      toast.error(error.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+    <form onSubmit={handleSubmit} className="bg-white p-3 sm:p-6 rounded-lg shadow-md border border-slate-200 space-y-4 sm:space-y-6">
       {/* Business Name */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
           Business Name <span className="text-red-500">*</span>
         </label>
         <input
@@ -206,7 +210,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
           name="businessName"
           value={formData.businessName}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="Enter business name"
         />
         {errors.businessName && (
@@ -216,7 +220,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
 
       {/* Category (parent group) */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
           Category <span className="text-red-500">*</span>
         </label>
         <SimpleDropdown
@@ -232,7 +236,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
 
       {/* Subcategory (depends on selected parent) */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
           Subcategory <span className="text-red-500">*</span>
         </label>
         <SimpleDropdown
@@ -265,7 +269,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
       {/* Nationwide Checkbox */}
       <div>
         <label className="cursor-pointer">
-          <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">Nationwide Business</span>
+          <span className="block font-medium text-slate-600 text-sm sm:text-base">Nationwide Business</span>
           <p className="text-xs text-slate-500 mt-1 mb-2">Check this to appear in all location searches across Australia</p>
           <input
             type="checkbox"
@@ -279,7 +283,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
 
       {/* Contact Phone */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
           Contact Phone
         </label>
         <input
@@ -287,7 +291,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
           name="contactInfo.phone"
           value={formData.contactInfo.phone}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="0412345678"
         />
         {errors.phone && (
@@ -297,7 +301,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
 
       {/* Contact Email */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
           Contact Email
         </label>
         <input
@@ -305,7 +309,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
           name="contactInfo.email"
           value={formData.contactInfo.email}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="email@example.com"
         />
         {errors.email && (
@@ -315,7 +319,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
 
       {/* Website */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
           Website
           <span className="block text-xs font-normal text-slate-500">Must be a valid URL starting with https://</span>
         </label>
@@ -324,7 +328,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
           name="contactInfo.website"
           value={formData.contactInfo.website}
           onChange={handleChange}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
+          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
           placeholder="https://example.com"
         />
         {errors.website && (
@@ -334,7 +338,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
 
       {/* Social Media Links */}
       <div>
-        <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
           Social Media Links
           <span className="text-xs font-normal text-slate-500 ml-1">(max 3)</span>
         </label>
@@ -344,7 +348,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
             <select
               value={social.platform}
               onChange={(e) => handleSocialMediaChange(index, 'platform', e.target.value)}
-              className="w-full sm:w-36 p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
+              className="w-full sm:w-36 p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
             >
               <option value="">Select</option>
               {getAvailablePlatforms(index).map(p => (
@@ -362,7 +366,7 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
                 value={social.url}
                 onChange={(e) => handleSocialMediaChange(index, 'url', e.target.value)}
                 placeholder="https://facebook.com/yourpage"
-                className="flex-1 p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg sm:rounded focus:outline-none focus:ring-2 focus:ring-teal-300"
+                className="flex-1 p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
               <button
                 type="button"
@@ -401,13 +405,6 @@ export default function PartnerStoreForm({ initialData = null, onSubmit, isLoadi
         formData={formData}
         setFormData={setFormData}
       />
-
-      {/* Submit Error */}
-      {errors.submit && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4">
-          <p className="text-red-600 text-sm sm:text-base">{errors.submit}</p>
-        </div>
-      )}
 
       {/* Submit Button */}
       <div className="text-center pt-4">

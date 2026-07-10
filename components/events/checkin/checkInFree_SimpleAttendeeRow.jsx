@@ -65,13 +65,13 @@ const CheckInFree_SimpleAttendeeRow = ({
   };
 
   return (
-    <div className="flex items-center justify-between py-1.5 px-2 sm:px-3 hover:bg-gray-100">
+    <div className="flex items-center justify-between py-1.5 px-2 sm:px-3 hover:bg-slate-50 rounded-lg">
       {/* Mobile: Stacked layout, Desktop: Horizontal layout */}
       <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-        <span className="text-sm font-medium text-gray-900 sm:min-w-[150px]">
+        <span className="text-sm font-medium text-slate-800 sm:min-w-[150px]">
           {attendee.name}
         </span>
-        <span className="text-xs sm:text-sm text-gray-500 font-mono">
+        <span className="text-xs sm:text-sm text-slate-500 font-mono">
           {registrationNumber}
         </span>
       </div>
@@ -80,10 +80,10 @@ const CheckInFree_SimpleAttendeeRow = ({
         onClick={handleCheckInToggle}
         disabled={actionLoading}
         className={`
-          ml-2 px-3 py-1 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
-          ${attendee.checkedIn 
-            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-            : 'bg-teal-600 text-white hover:bg-teal-700'
+          ml-2 px-3 py-1 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
+          ${attendee.checkedIn
+            ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
+            : 'bg-teal-700 text-white hover:bg-teal-800'
           }
           ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
         `}

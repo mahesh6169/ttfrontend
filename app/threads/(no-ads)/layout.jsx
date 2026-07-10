@@ -4,8 +4,8 @@ import FormsContentShell from '@/components/layout/FormsContentShell';
 
 const ThreadsNoAdsLayout = ({ children }) => {
   return (
-    <main id="Parent" className="container bg-white my-2 mx-auto">
-      <div id="Main" className="flex-1 overflow-hidden">
+    <main id="Parent" className="container my-2 mx-auto">
+      <div id="Main" className="flex-1 min-w-0">
         <Suspense>
           <FormsContentShell>{children}</FormsContentShell>
         </Suspense>

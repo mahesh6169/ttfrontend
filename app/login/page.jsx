@@ -1,5 +1,6 @@
 import LoginClient from './LoginClient';
 import BaseContentShell from '@/components/layout/BaseContentShell';
+import Footer from '@/components/Footer';
 
 export const metadata = {
   title: 'Login',
@@ -15,6 +16,7 @@ export default function LoginPage() {
       <BaseContentShell>
         <LoginClient />
       </BaseContentShell>
+      <Footer />
     </div>
   );
 }

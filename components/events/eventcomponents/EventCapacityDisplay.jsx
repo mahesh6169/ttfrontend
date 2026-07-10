@@ -86,12 +86,26 @@ const EventCapacityDisplay = ({
     }
     
     const timer = setInterval(() => {
+      // Don't poll while the tab is backgrounded — a timer that fires on a
+      // suspended/locked device hits a dead network and errors out.
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       console.log(`🔄 EventCapacityDisplay: Polling capacity for ${eventId} (${context} mode)`);
       fetchCapacity();
     }, interval);
 
     return () => clearInterval(timer);
   }, [eventId, context, isPaid, refreshInterval, fetchCapacity]);
+
+  // Refetch when the page returns to the foreground (e.g. phone unlocked) so a
+  // stale value refreshes promptly without waiting for the next poll tick.
+  useEffect(() => {
+    if (!eventId) return;
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchCapacity();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [eventId, fetchCapacity]);
 
   // Refresh capacity when registration/unregistration succeeds
   useEffect(() => {
@@ -101,18 +115,21 @@ const EventCapacityDisplay = ({
     }
   }, [registrationStatus, eventId, fetchCapacity]);
 
-  // ✅ Loading state
-  if (isLoading) {
+  // ✅ Loading state — only on first load. A background refresh keeps the
+  // last-known value on screen instead of flashing the skeleton.
+  if (isLoading && !capacity) {
     return (
       <div className="animate-pulse grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-        <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+        <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+        <div className="h-4 bg-slate-200 rounded w-3/4"></div>
       </div>
     );
   }
 
-  // ✅ Error state
-  if (error) {
+  // ✅ Error state — only when we have nothing to show. A failed *refresh*
+  // (e.g. a network blip when the phone wakes from lock) keeps the last-known
+  // capacity on screen and retries quietly, instead of blanking to an error.
+  if (error && !capacity) {
     return (
       <div className="text-sm text-red-600">
         Unable to load capacity information
@@ -203,37 +220,36 @@ const EventCapacityDisplay = ({
 
   return (
     <div>
-      {/* Summary display for both paid and free events - consistent format */}
-      {consistentDisplayText && (
-        <div className="text-sm sm:text-base font-semibold text-forest-900 mb-3">
-          <FaUsers className="inline-block mr-2" />
-          {consistentDisplayText}
-        </div>
-      )}
+      {/* Capacity + max on one row (both mobile and desktop) */}
+      <div className="flex items-center justify-between gap-3 text-sm sm:text-base">
+        {/* Capacity summary */}
+        {consistentDisplayText && (
+          <span className="inline-flex items-center font-semibold text-slate-800 min-w-0">
+            <FaUsers className="mr-2 text-slate-500 shrink-0" size={13} />
+            <span className="truncate">{consistentDisplayText}</span>
+          </span>
+        )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Booking Limit */}
         {typeof maxPerRegistration === 'number' && (
-          <div className="text-sm sm:text-base">
-            <span className="font-semibold text-forest-900">
-              Max:
-            </span>{' '}
-            <span className="text-slate-600">
+          <span className="shrink-0 whitespace-nowrap">
+            <span className="text-slate-500">Max:</span>{' '}
+            <span className="font-semibold text-slate-700">
               {maxPerRegistration} per registration
             </span>
-          </div>
-        )}
-
-        {/* Status: Only show when full */}
-        {isFull && (
-          <div className="text-sm sm:text-base">
-            <span className="font-semibold text-forest-900">Status:</span>{' '}
-            <span className="text-red-600 font-semibold">
-              {isPaid ? 'Sold Out' : 'Fully Booked'}
-            </span>
-          </div>
+          </span>
         )}
       </div>
+
+      {/* Status: Only show when full */}
+      {isFull && (
+        <div className="text-sm sm:text-base mt-2">
+          <span className="text-slate-500">Status:</span>{' '}
+          <span className="text-red-600 font-semibold">
+            {isPaid ? 'Sold Out' : 'Fully Booked'}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

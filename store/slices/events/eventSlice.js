@@ -325,9 +325,11 @@ const processImagesForEdit = (images) => {
       // Object with properties
       return {
         url: img.url || img.src || img.path,
+        publicId: img.publicId,
         isExisting: true,
         id: img.id || img._id || `existing_${index}_${Date.now()}`,
-        name: img.name || img.filename || img.originalName || 'image',
+        name: img.originalFilename || img.name || img.filename || img.originalName || 'image',
+        originalFilename: img.originalFilename,
         size: img.size || 0,
         type: img.type || img.mimetype || 'image/*'
       };
@@ -469,7 +471,7 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
   : [],
     discountCodes: processDiscountCodesForEdit(eventData.discountCodes, eventData.timeZone),
     seatingLayout: eventData.seatingLayout || [],
-    seatingLayoutImage: eventData.seatingLayoutImage || [],
+    seatingLayoutImage: processImagesForEdit(eventData.seatingLayoutImage),
     organizerReservedSeats: eventData.organizerReservedSeats || '',
     stripeAccountId: eventData.stripeAccountId || '',
     refundPolicy: eventData.refundPolicy || {

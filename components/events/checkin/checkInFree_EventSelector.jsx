@@ -185,12 +185,12 @@ const CheckInFree_EventSelector = () => {
       <div className="flex flex-col sm:flex-row sm:gap-4">
         {/* Date Filter - Compact on mobile */}
         <div className="sm:w-1/3">
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-slate-600 mb-1">
             Date Range
           </label>
           <Listbox value={dateFilter} onChange={setDateFilter}>
             <div className="relative">
-              <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+              <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
                 <span className="block truncate text-slate-900">
                   {DATE_FILTER_OPTIONS.find((o) => o.value === dateFilter)?.label}
                 </span>
@@ -235,12 +235,12 @@ const CheckInFree_EventSelector = () => {
 
         {/* Event Selector - Optimized for mobile */}
         <div className="flex-1 mt-3 sm:mt-0">
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-slate-600 mb-1">
             Select Event
           </label>
           <Listbox value={selectedEvent?._id || ''} onChange={handleEventChange}>
             <div className="relative">
-              <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+              <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
                 <span className={`block truncate ${selectedEvent ? 'text-slate-900' : 'text-slate-500'}`}>
                   {selectedEvent
                     ? `${selectedEvent.eventCode} - ${selectedEvent.title}`
@@ -297,16 +297,16 @@ const CheckInFree_EventSelector = () => {
           </Listbox>
 
           {filteredCount === 0 && managedEvents.length > 0 && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               No events in selected range. Try a different date filter.
             </p>
           )}
         </div>
       </div>
 
-      {/* Data retention hint */}
-      <p className="text-xs text-forest-900">
-        Events older than 2 years will be deleted.
+      {/* Data retention note - calm slate, no background */}
+      <p className="text-xs text-slate-500">
+        <strong className="font-semibold text-slate-600">Note:</strong> Events older than 2 years will be deleted.
       </p>
     </div>
   );

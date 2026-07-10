@@ -9,8 +9,8 @@ export async function GET() {
     { url: '/tickets', priority: '0.9', changefreq: 'weekly' },  // landing — high conversion
     { url: '/events', priority: '0.85', changefreq: 'daily' },   // rank 2 vertical
     { url: '/threads', priority: '0.8', changefreq: 'daily' },   // rank 4 vertical
-    { url: '/dailydeals', priority: '0.75', changefreq: 'daily' }, // rank 5 vertical
-    { url: '/discountcode', priority: '0.7', changefreq: 'weekly' }, // rank 6 vertical
+    { url: '/deals', priority: '0.75', changefreq: 'daily' }, // rank 5 vertical
+    { url: '/coupons', priority: '0.7', changefreq: 'weekly' }, // rank 6 vertical
     { url: '/support/contact', priority: '0.4', changefreq: 'yearly' },
     { url: '/support/terms', priority: '0.3', changefreq: 'yearly' },
     { url: '/support/privacy', priority: '0.3', changefreq: 'yearly' },

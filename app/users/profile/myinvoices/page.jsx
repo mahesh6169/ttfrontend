@@ -1,12 +1,16 @@
 "use client";
 import React, { useState, useEffect, Fragment } from 'react';
-import Link from 'next/link';
 import { formatInTimeZone } from 'date-fns-tz';
 import jsPDF from 'jspdf';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import axios from '@/utils/axiosConfig';
-import { FaDownload } from 'react-icons/fa';
+import { FaDownload, FaRegCalendarAlt, FaMapMarkerAlt, FaBriefcase, FaRegEnvelope, FaPhoneAlt } from 'react-icons/fa';
 import Pagination from '@/components/Pagination';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 const DATE_FILTER_OPTIONS = [
   { value: '3months', label: 'Last 3 months' },
@@ -15,17 +19,6 @@ const DATE_FILTER_OPTIONS = [
   { value: 'all', label: 'Show all' },
 ];
 
-const BackButton = () => (
-  <div className="mb-4">
-    <Link
-      href="/users/profile"
-      className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-    >
-      <span>&lt;</span>
-      <span>back</span>
-    </Link>
-  </div>
-);
 
 const MyInvoicesPage = () => {
   const [invoices, setInvoices] = useState([]);
@@ -34,6 +27,7 @@ const MyInvoicesPage = () => {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedEventInvoices, setSelectedEventInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const showSkeleton = useDelayedLoading(loading);
   const [error, setError] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -242,14 +236,11 @@ const MyInvoicesPage = () => {
     }
   }, [selectedEventId, invoices]);
 
-  if (loading) {
+  if (loading || showSkeleton) {
     return (
-      <div>
-        <BackButton />
-        <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2">Loading your invoices...</span>
-        </div>
+      <div className="space-y-6">
+        <ProfilePageHeading title="My Invoices" />
+        {showSkeleton && <PageSkeleton variant="list" rows={6} />}
       </div>
     );
   }
@@ -257,16 +248,8 @@ const MyInvoicesPage = () => {
   if (error) {
     return (
       <div>
-        <BackButton />
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">Error: {error}</p>
-          <button
-            onClick={fetchInvoices}
-            className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
+        <ProfilePageHeading title="My Invoices" />
+        <ErrorState onRetry={fetchInvoices} />
       </div>
     );
   }
@@ -274,39 +257,34 @@ const MyInvoicesPage = () => {
   if (invoices.length === 0) {
     return (
       <div>
-        <BackButton />
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">No Invoices Yet</h2>
-          <p className="text-gray-600 mb-4">You haven't purchased any tickets yet.</p>
-          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Browse Events
-          </button>
-        </div>
+        <ProfilePageHeading title="My Invoices" />
+        <EmptyState
+          title="No invoices yet"
+          description="You don't have any invoices yet."
+          actionLabel="Browse Events"
+          actionHref="/events"
+        />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <BackButton />
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900">Paid Events - My Invoices</h2>
-      </div>
+      <ProfilePageHeading title="My Invoices" />
 
       {/* Event Selector with Date Filter */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
+      <div className="bg-white rounded-xl shadow-md p-4">
         <div className="space-y-3">
           {/* Combined Date Filter and Event Selector */}
           <div className="flex flex-col sm:flex-row sm:gap-4">
             {/* Date Filter - Compact */}
             <div className="sm:w-1/3">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-teal-700 mb-1">
                 Date Range
               </label>
               <Listbox value={dateFilter} onChange={setDateFilter}>
                 <div className="relative">
-                  <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+                  <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
                     <span className="block truncate text-slate-900">
                       {DATE_FILTER_OPTIONS.find((o) => o.value === dateFilter)?.label}
                     </span>
@@ -351,7 +329,7 @@ const MyInvoicesPage = () => {
 
             {/* Event Selector - Compact */}
             <div className="flex-1 mt-3 sm:mt-0">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-teal-700 mb-1">
                 Select Event
               </label>
               {(() => {
@@ -359,7 +337,7 @@ const MyInvoicesPage = () => {
                 return (
                   <Listbox value={selectedEventId} onChange={setSelectedEventId}>
                     <div className="relative">
-                      <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+                      <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
                         <span className={`block truncate ${selectedEvent ? 'text-slate-900' : 'text-slate-500'}`}>
                           {selectedEvent
                             ? `${selectedEvent.eventCode} - ${selectedEvent.title}`
@@ -436,169 +414,162 @@ const MyInvoicesPage = () => {
               })()}
 
               {filteredEvents.length === 0 && events.length > 0 && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   No events in selected range. Try a different date filter.
                 </p>
               )}
             </div>
           </div>
 
-          {/* Data Retention Warning - More compact */}
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
-            <p className="text-xs text-amber-800">
-              <strong>Note:</strong> Please save your invoices. Events older than 2 years will be deleted.
-            </p>
-          </div>
+          {/* Data retention note */}
+          <p className="text-xs text-slate-500 px-1">
+            <span className="font-semibold text-slate-600">Note:</span> Please save your invoices — events older than 2 years are removed.
+          </p>
         </div>
       </div>
 
       {/* Selected Event Invoices */}
       {selectedEventId && selectedEventInvoices.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-          {/* Event Info Header */}
+        <div className="space-y-4">
+          {/* Event panel — details + organiser (two cards) */}
           {(() => {
             const selectedEvent = events.find(e => e.id === selectedEventId);
             if (!selectedEvent) return null;
-            const eventDateTime = formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone);
             const timeZone = selectedEvent.timeZone;
-            
+            const eventDateTime = formatEventDateTime(selectedEvent.dateTime, timeZone);
+
             return (
-              <div className="bg-gray-50 border-b border-gray-200 rounded-lg p-3 sm:p-4">
-                <div className="flex flex-wrap items-center gap-3 text-sm">
-                  {/* Event Title */}
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                    {selectedEvent.title}
-                  </h3>
-                  
-                  {/* Event Code */}
-                  <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded">
-                    {selectedEvent.eventCode}
-                  </span>
-                  
-                  {/* Date & Time */}
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>{eventDateTime.combined} ({timeZone})</span>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Event details */}
+                <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-xs font-mono font-semibold bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full">
+                      {selectedEvent.eventCode}
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-bold text-teal-700">
+                      {selectedEvent.title}
+                    </h3>
                   </div>
-                  
-                  {/* Venue */}
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>{selectedEvent.venue}</span>
-                  </div>
-
-                  {/* Address - Full width on new line if exists */}
-                  {selectedEvent.address && (
-                    <div className="w-full flex items-start gap-1 text-gray-600 text-xs sm:text-sm">
-                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span>{selectedEvent.address}</span>
-                    </div>
-                  )}
-
-                  {/* Organizer Info - Full width on new line */}
-                  <div className="w-full border-t border-gray-200 pt-3 mt-2">
-                    <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
+                  <div className="mt-4 flex flex-wrap gap-x-10 gap-y-3">
+                    <div className="flex items-start gap-2">
+                      <FaRegCalendarAlt className="text-teal-600 mt-0.5 shrink-0" />
                       <div>
-                        <span className="font-medium text-gray-700">Organizer:</span> {selectedEvent.organizer?.name || 'Event Organizer'}
+                        <p className="text-sm font-semibold text-slate-700">{eventDateTime.date}</p>
+                        <p className="text-xs text-slate-500">Starts at {eventDateTime.time} ({timeZone})</p>
                       </div>
-                      {(selectedEvent.organizer?.contact || selectedEvent.organizer?.phone) && (
-                        <div>
-                          <span className="font-medium text-gray-700">Contact:</span> {selectedEvent.organizer.contact || selectedEvent.organizer.phone}
-                        </div>
-                      )}
-                      {selectedEvent.organizer?.email && selectedEvent.organizer.email.trim() && (
-                        <div className="break-all">
-                          <span className="font-medium text-gray-700">Email:</span> {selectedEvent.organizer.email}
-                        </div>
-                      )}
-                      {selectedEvent.organizer?.abn && (
-                        <div>
-                          <span className="font-medium text-gray-700">ABN:</span> {selectedEvent.organizer.abn}
-                        </div>
-                      )}
-                      {selectedEvent.organizer?.website && selectedEvent.organizer.website.trim() && (
-                        <div className="break-all">
-                          <span className="font-medium text-gray-700">Website:</span> <a href={selectedEvent.organizer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{selectedEvent.organizer.website}</a>
-                        </div>
-                      )}
                     </div>
+                    <div className="flex items-start gap-2">
+                      <FaMapMarkerAlt className="text-teal-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">{selectedEvent.venue}</p>
+                        {selectedEvent.address && (
+                          <p className="text-xs text-slate-500">{selectedEvent.address}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Organizer contact */}
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5 flex flex-col">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700">
+                    Organizer Contact
+                  </p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                      <FaBriefcase />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-700 truncate">{selectedEvent.organizer?.name || 'Event Organizer'}</p>
+                      <p className="text-xs text-slate-500">Host Organization</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {selectedEvent.organizer?.email && selectedEvent.organizer.email.trim() && (
+                      <a
+                        href={`mailto:${selectedEvent.organizer.email}`}
+                        className="flex items-center gap-2 text-sm text-slate-600 hover:text-teal-700 transition-colors break-all"
+                      >
+                        <FaRegEnvelope className="text-teal-600 shrink-0" />
+                        <span className="truncate">{selectedEvent.organizer.email}</span>
+                      </a>
+                    )}
+                    {(selectedEvent.organizer?.contact || selectedEvent.organizer?.phone) && (
+                      <a
+                        href={`tel:${selectedEvent.organizer.contact || selectedEvent.organizer.phone}`}
+                        className="flex items-center gap-2 text-sm text-slate-600 hover:text-teal-700 transition-colors"
+                      >
+                        <FaPhoneAlt className="text-teal-600 shrink-0" />
+                        <span>{selectedEvent.organizer.contact || selectedEvent.organizer.phone}</span>
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
             );
           })()}
 
-          {/* Invoice List */}
-          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-            <h4 className="text-base sm:text-lg font-semibold text-gray-900">Your Invoices</h4>
-            
+          {/* Invoice record cards */}
+          <div className="space-y-3 sm:space-y-4">
             {(() => {
-              const totalInvoicePages = Math.ceil(selectedEventInvoices.length / itemsPerPage);
               const paginatedInvoices = selectedEventInvoices.slice(
                 (eventInvoicePage - 1) * itemsPerPage,
                 eventInvoicePage * itemsPerPage
               );
               return paginatedInvoices;
-            })().map((invoice) => (
-              <div key={invoice.invoiceNumber} className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100 overflow-hidden">
-                {/* Invoice link row */}
-                <button
-                  onClick={() => handleViewInvoice(invoice)}
-                  className="w-full flex items-center gap-3 px-3 sm:px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-lg shrink-0" aria-hidden>🧾</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-medium text-blue-700 truncate">{invoice.invoiceNumber}</span>
-                    <span className="block text-xs text-gray-500 mt-0.5">{formatDate(invoice.invoiceDate)}</span>
-                  </span>
-                  <span className="shrink-0 font-semibold text-gray-900">${invoice.amounts.total.toFixed(2)}</span>
-                  <svg className="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-
-                {/* Refund link rows — one per refund transaction */}
-                {invoice.refunds && invoice.refunds.length > 0 &&
-                  groupRefundsForList(invoice.refunds).map((g, i) => (
+            })().map((invoice) => {
+              const refundGroups = (invoice.refunds && invoice.refunds.length > 0)
+                ? groupRefundsForList(invoice.refunds)
+                : [];
+              return (
+                <div key={invoice.invoiceNumber} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                  {/* Invoice row: Invoice ID (left) + View Invoice (right) */}
+                  <div className="p-3 sm:p-4 flex items-center justify-between gap-3 text-sm">
+                    <div className="min-w-0 truncate">
+                      <span className="text-slate-500">Invoice </span>
+                      <span className="font-mono font-medium text-slate-800">{invoice.invoiceNumber}</span>
+                    </div>
                     <button
-                      key={g.stripeRefundId || i}
-                      onClick={() => handleViewRefund(invoice, g.stripeRefundId)}
-                      className="w-full flex items-center gap-3 px-3 sm:px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                      onClick={() => handleViewInvoice(invoice)}
+                      className="text-teal-700 hover:text-teal-800 hover:underline font-semibold shrink-0"
                     >
-                      <span className="text-lg shrink-0 text-red-500" aria-hidden>↩</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-medium text-blue-700 truncate">
-                          {g.refundRequestId || `${invoice.invoiceNumber} · Refund ${i + 1}`}
-                        </span>
-                        <span className="block text-xs text-gray-500 mt-0.5">Refund · {formatDate(g.refundDate)}</span>
-                      </span>
-                      <span className="shrink-0 font-semibold text-red-600">-${g.totalAmount.toFixed(2)}</span>
-                      <svg className="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                      View Invoice
                     </button>
-                  ))}
-              </div>
-            ))}
+                  </div>
+
+                  {/* Refund rows — mimic the invoice row */}
+                  {refundGroups.length > 0 && (
+                    <div className="border-t border-slate-200 divide-y divide-slate-100">
+                      {refundGroups.map((g, i) => (
+                        <div key={g.stripeRefundId || i} className="p-3 sm:p-4 flex items-center justify-between gap-3 text-sm">
+                          <div className="min-w-0 truncate">
+                            <span className="text-slate-500">Refund </span>
+                            <span className="font-mono font-medium text-slate-800">{g.refundRequestId || g.stripeRefundId}</span>
+                          </div>
+                          <button
+                            onClick={() => handleViewRefund(invoice, g.stripeRefundId)}
+                            className="text-teal-700 hover:text-teal-800 hover:underline font-semibold shrink-0"
+                          >
+                            View Refund
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Pagination - Only show when event selected and has multiple pages */}
-          {selectedEventId && (() => {
+          {(() => {
             const totalInvoicePages = Math.ceil(selectedEventInvoices.length / itemsPerPage);
             return totalInvoicePages > 1 ? (
-              <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-                <div className="text-sm text-gray-600 text-center mb-2">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
+                <div className="text-sm text-slate-600 text-center mb-2">
                   Showing {((eventInvoicePage - 1) * itemsPerPage) + 1} - {Math.min(eventInvoicePage * itemsPerPage, selectedEventInvoices.length)} of {selectedEventInvoices.length} invoices
                 </div>
-                <Pagination 
+                <Pagination
                   currentPage={eventInvoicePage}
                   totalPages={totalInvoicePages}
                   onPageChange={(page) => setEventInvoicePage(page)}
@@ -1085,25 +1056,26 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
     : [];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-[9999] overflow-y-auto">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[85vh] sm:max-h-[90vh] my-auto flex flex-col">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[calc(100vh-100px)] flex flex-col">
         {/* Header - Fixed at top */}
-        <div className="flex-shrink-0 flex justify-between items-center p-4 sm:p-6 border-b">
-          <h3 className="text-lg sm:text-xl font-semibold">{isRefundView ? 'Refund Details' : 'Invoice Details'}</h3>
+        <div className="flex-shrink-0 flex justify-between items-center p-4 border-b border-slate-200">
+          <h3 className="text-lg sm:text-xl font-bold text-teal-700">{isRefundView ? 'Refund Details' : 'Invoice Details'}</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl"
+            className="text-teal-700 hover:text-teal-800 text-xl font-bold leading-none"
+            aria-label="Close"
           >
             ✕
           </button>
         </div>
 
         {/* Invoice Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {/* Loading/Error States */}
           {invoiceLoading && (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
               <span className="ml-2">Loading invoice details...</span>
             </div>
           )}
@@ -1127,8 +1099,8 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
               <div className="border-b pb-6 mb-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{isRefundView ? 'REFUND' : 'INVOICE'}</h2>
-                    <p className="text-gray-600 mt-1">
+                    <h2 className="text-xl font-bold text-slate-900">{isRefundView ? 'REFUND' : 'INVOICE'}</h2>
+                    <p className="text-slate-600 mt-1">
                       {isRefundView
                         ? (targetRefund?.refundRequestId ? `Refund #${targetRefund.refundRequestId}` : 'Refund')
                         : `Invoice #${invoiceData.invoiceNumber}`}
@@ -1137,14 +1109,14 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                   <div className="text-right">
                     {isRefundView ? (
                       <>
-                        <p className="text-sm text-gray-600">Refund Date</p>
+                        <p className="text-sm text-slate-600">Refund Date</p>
                         <p className="font-medium">{targetRefund?.refundDate ? formatDate(targetRefund.refundDate) : '—'}</p>
-                        <p className="text-sm text-gray-600 mt-2">Invoice Reference</p>
+                        <p className="text-sm text-slate-600 mt-2">Invoice Reference</p>
                         <p className="font-medium">{invoiceData.invoiceNumber}</p>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm text-gray-600">Issue Date</p>
+                        <p className="text-sm text-slate-600">Issue Date</p>
                         <p className="font-medium">{formatDate(invoiceData.invoiceDate)}</p>
                       </>
                     )}
@@ -1155,46 +1127,46 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
               {/* Organizer and Buyer Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">From</h4>
+                  <h4 className="font-semibold text-slate-900 mb-3">From</h4>
                   <div className="text-sm space-y-1">
                     <p className="font-medium">{invoiceData.event.organizer?.name || 'Event Organizer'}</p>
                     {invoiceData.event.organizer?.abn && (
-                      <p className="text-gray-600">ABN: {invoiceData.event.organizer.abn}</p>
+                      <p className="text-slate-600">ABN: {invoiceData.event.organizer.abn}</p>
                     )}
-                    <p className="text-gray-600">{invoiceData.event.organizer?.email || 'N/A'}</p>
+                    <p className="text-slate-600">{invoiceData.event.organizer?.email || 'N/A'}</p>
                     {invoiceData.event.organizer?.phone && (
-                      <p className="text-gray-600">{invoiceData.event.organizer.phone}</p>
+                      <p className="text-slate-600">{invoiceData.event.organizer.phone}</p>
                     )}
                   </div>
                 </div>
                 
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Bill To</h4>
+                  <h4 className="font-semibold text-slate-900 mb-3">Bill To</h4>
                   <div className="text-sm space-y-1">
                     <p className="font-medium">{invoiceData.buyer.firstName} {invoiceData.buyer.lastName}</p>
-                    <p className="text-gray-600">{invoiceData.buyer.email}</p>
+                    <p className="text-slate-600">{invoiceData.buyer.email}</p>
                     {invoiceData.buyer.phone && (
-                      <p className="text-gray-600">{invoiceData.buyer.phone}</p>
+                      <p className="text-slate-600">{invoiceData.buyer.phone}</p>
                     )}
                   </div>
                 </div>
               </div>
 
               {/* Event Details */}
-              <div className="bg-gray-50 rounded-lg p-6 mb-8">
-                <h4 className="font-semibold text-gray-900 mb-4">Event Information</h4>
+              <div className="bg-slate-50 rounded-lg p-6 mb-8">
+                <h4 className="font-semibold text-slate-900 mb-4">Event Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="font-medium text-gray-700">Event Title</p>
-                    <p className="text-gray-900">{invoiceData.event.title}</p>
+                    <p className="font-medium text-slate-700">Event Title</p>
+                    <p className="text-slate-900">{invoiceData.event.title}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-700">Event Code</p>
-                    <p className="text-gray-900 font-mono">{invoiceData.event.eventCode}</p>
+                    <p className="font-medium text-slate-700">Event Code</p>
+                    <p className="text-slate-900 font-mono">{invoiceData.event.eventCode}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-700">Date & Time</p>
-                    <p className="text-gray-900">
+                    <p className="font-medium text-slate-700">Date & Time</p>
+                    <p className="text-slate-900">
                       {(() => {
                         try {
                           const date = formatInTimeZone(invoiceData.event.dateTime, invoiceData.event.timeZone, 'dd/MM/yyyy');
@@ -1205,16 +1177,16 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                         }
                       })()}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Timezone: {invoiceData.event.timeZone}</p>
+                    <p className="text-xs text-slate-500 mt-1">Timezone: {invoiceData.event.timeZone}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-700">Venue</p>
-                    <p className="text-gray-900">{invoiceData.event.venue}</p>
+                    <p className="font-medium text-slate-700">Venue</p>
+                    <p className="text-slate-900">{invoiceData.event.venue}</p>
                   </div>
                   {invoiceData.event.address && (
                     <div className="md:col-span-2">
-                      <p className="font-medium text-gray-700">Address</p>
-                      <p className="text-gray-900">{invoiceData.event.address}</p>
+                      <p className="font-medium text-slate-700">Address</p>
+                      <p className="text-slate-900">{invoiceData.event.address}</p>
                     </div>
                   )}
                 </div>
@@ -1223,29 +1195,29 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
               {/* Purchase Details Table with timestamp — invoice view only */}
               {!isRefundView && (
               <div className="mb-8">
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
                   {/* Table scrolls sideways on small screens if columns don't fit */}
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-slate-50">
                         <tr>
-                          <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Ticket Type</th>
-                          <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-medium text-gray-700">Quantity</th>
-                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Price</th>
-                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Discount</th>
-                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Amount</th>
+                          <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-slate-700">Ticket Type</th>
+                          <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-medium text-slate-700">Quantity</th>
+                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-slate-700">Price</th>
+                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-slate-700">Discount</th>
+                          <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-slate-700">Amount</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white">
                         {groupLineItemsByType(invoiceData.lineItems).map((group, index) => (
-                          <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm border-t border-gray-100 whitespace-nowrap">{group.name}</td>
-                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-center border-t border-gray-100">{group.quantity}</td>
-                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-gray-100 whitespace-nowrap">${group.price.toFixed(2)}</td>
-                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-gray-100 text-teal-700 whitespace-nowrap">
+                          <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm border-t border-slate-100 whitespace-nowrap">{group.name}</td>
+                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-center border-t border-slate-100">{group.quantity}</td>
+                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-slate-100 whitespace-nowrap">${group.price.toFixed(2)}</td>
+                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-slate-100 text-teal-700 whitespace-nowrap">
                               {group.discount > 0 ? `-$${group.discount.toFixed(2)}` : '—'}
                             </td>
-                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-gray-100 font-medium whitespace-nowrap">${group.amount.toFixed(2)}</td>
+                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-slate-100 font-medium whitespace-nowrap">${group.amount.toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1253,19 +1225,19 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                   </div>
 
                   {/* Total Paid — outside the table so it stays visible on mobile (never clipped by table overflow) */}
-                  <div className="bg-gray-50 border-t border-gray-300 px-3 sm:px-4 py-3 text-right text-sm font-bold text-gray-900">
+                  <div className="bg-slate-50 border-t border-slate-300 px-3 sm:px-4 py-3 text-right text-sm font-bold text-slate-900">
                     Total Paid: ${invoiceData.amounts.total.toFixed(2)}{invoiceData.gstIncluded && ' (incl. GST)'}
                   </div>
 
                   {/* Notes Below Table — discount code (informational) + Terms & Conditions (refund policy) */}
                   {((invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0) || invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
-                    <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-600 space-y-2">
+                    <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 space-y-2">
                       {invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0 && (
                         <p>* Discount code {invoiceData.amounts.discount.code} applied{discountedTypeNames.length ? ` to ${discountedTypeNames.join(', ')}` : ''}</p>
                       )}
                       {(invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
                         <div className="space-y-1">
-                          <p className="font-semibold text-gray-700">Terms and Conditions:</p>
+                          <p className="font-semibold text-slate-700">Terms and Conditions:</p>
                           {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
                             <p>* Processing fees are non-refundable</p>
                           )}
@@ -1291,16 +1263,16 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                       .filter((g) => !targetRefundId || g.stripeRefundId === targetRefundId);
                     return refundGroups.map((refundGroup, groupIndex) => (
                       <div key={refundGroup.stripeRefundId} className="mb-6">
-                        <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="border border-slate-200 rounded-lg overflow-hidden">
                           {/* Table scrolls sideways on small screens if columns don't fit */}
                           <div className="overflow-x-auto">
                             <table className="w-full">
-                              <thead className="bg-gray-50">
+                              <thead className="bg-slate-50">
                                 <tr>
-                                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Ticket Type</th>
-                                  <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-medium text-gray-700">Quantity</th>
-                                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Amount</th>
-                                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Refund Amount</th>
+                                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-slate-700">Ticket Type</th>
+                                  <th className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm font-medium text-slate-700">Quantity</th>
+                                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-slate-700">Amount</th>
+                                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-slate-700">Refund Amount</th>
                                 </tr>
                               </thead>
                               <tbody className="bg-white">
@@ -1327,11 +1299,11 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                                   }, {});
 
                                   return Object.values(refundTicketsByType).map((group, index) => (
-                                    <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm border-t border-gray-100 whitespace-nowrap">{group.name}</td>
-                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-center border-t border-gray-100">{group.quantity}</td>
-                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-gray-100 whitespace-nowrap">${group.amount.toFixed(2)}</td>
-                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-gray-100 font-medium whitespace-nowrap">${group.refundAmount.toFixed(2)}</td>
+                                    <tr key={group.name} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm border-t border-slate-100 whitespace-nowrap">{group.name}</td>
+                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-center border-t border-slate-100">{group.quantity}</td>
+                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-slate-100 whitespace-nowrap">${group.amount.toFixed(2)}</td>
+                                      <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right border-t border-slate-100 font-medium whitespace-nowrap">${group.refundAmount.toFixed(2)}</td>
                                     </tr>
                                   ));
                                 })()}
@@ -1341,8 +1313,8 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
 
                           {/* Terms and Conditions (refund policy) */}
                           {(invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
-                            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-600 space-y-1">
-                              <p className="font-semibold text-gray-700">Terms and Conditions:</p>
+                            <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 space-y-1">
+                              <p className="font-semibold text-slate-700">Terms and Conditions:</p>
                               {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
                                 <p>* Processing fees are non-refundable</p>
                               )}
@@ -1358,31 +1330,17 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                 </div>
               )}
 
-              {/* Actions — PDF download (invoice or refund) */}
-              <div className="mt-8 pt-6 border-t">
+              {/* Actions — PDF download (invoice or refund) as a teal text link */}
+              <div className="mt-8 pt-6 border-t border-slate-200 text-center">
                 <button
                   onClick={downloadPDF}
                   disabled={isDownloading}
-                  className={`w-full px-4 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
-                    isDownloading
-                      ? 'bg-blue-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white`}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 hover:text-teal-800 hover:underline disabled:opacity-50 disabled:no-underline"
                 >
-                  {isDownloading ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>Generating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaDownload />
-                      <span>{isRefundView ? 'Download Refund' : 'Download Invoice'}</span>
-                    </>
-                  )}
+                  <FaDownload size={13} />
+                  {isDownloading
+                    ? 'Generating…'
+                    : (isRefundView ? 'Download Refund' : 'Download Invoice')}
                 </button>
               </div>
             </>

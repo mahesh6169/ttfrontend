@@ -5,10 +5,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { fetchuserProfile } from '@/store/slices/users/userSlice';
 import { fetchMyAdverts, deleteUserAdvert, renewUserAdvert } from '@/store/slices/adverts/userAdvertsSlice';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import PageSkeleton from '@/components/skeleton/PageSkeleton';
+import useDelayedLoading from '@/hooks/useDelayedLoading';
+import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 export default function ProfilePage() {
   const dispatch = useDispatch();
@@ -85,22 +89,9 @@ export default function ProfilePage() {
   
 
   const PageHeader = () => (
-    <div className="mb-6">
-      {/* Back button */}
-      <Link
-        href="/users/profile"
-        className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors mb-4"
-      >
-        <span>&lt;</span>
-        <span>back</span>
-      </Link>
-
-      {/* Hero section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Manage Listings</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Create, edit and manage your listings</p>
-        </div>
+    <>
+      <ProfilePageHeading title="Manage Listings" description="Create, edit and manage your listings" />
+      <div className="flex justify-center mb-6">
         <Link
           href="/listings/add"
           onClick={() =>
@@ -111,17 +102,17 @@ export default function ProfilePage() {
           + Post New Listing
         </Link>
       </div>
-    </div>
+    </>
   );
 
   // Show loading spinner if adverts are still loading
-  if (advertStatus === 'loading') {
+  const showSkeleton = useDelayedLoading(advertStatus === 'loading');
+
+  if (advertStatus === 'loading' || showSkeleton) {
     return (
       <div>
         <PageHeader />
-        <div className="flex justify-center items-center h-64">
-          <LoadingSpinner />
-        </div>
+        {showSkeleton && <PageSkeleton variant="card" rows={6} />}
       </div>
     );
   }
@@ -131,10 +122,7 @@ export default function ProfilePage() {
     return (
       <div>
         <PageHeader />
-        <div className="text-center py-12">
-          <p className="text-red-600 font-semibold">Error loading listings</p>
-          <p className="text-slate-600 text-sm mt-1">{advertError}</p>
-        </div>
+        <ErrorState onRetry={() => dispatch(fetchMyAdverts())} />
       </div>
     );
   }
@@ -144,7 +132,7 @@ export default function ProfilePage() {
       <PageHeader />
 
       {adverts && adverts.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
           {adverts.map((advert) => {
             const expiryTime = new Date(advert.expiresAt).getTime();
             const daysLeft = Math.floor((expiryTime - Date.now()) / (1000 * 60 * 60 * 24));
@@ -224,10 +212,10 @@ export default function ProfilePage() {
           })}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <p className="text-slate-600">You have no listings posted.</p>
-          <p className="text-slate-500 text-sm mt-1">Click "Post New Listing" to get started.</p>
-        </div>
+        <EmptyState
+          title="No listings yet"
+          description="You haven't posted any listings yet."
+        />
       )}
 
 

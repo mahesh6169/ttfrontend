@@ -25,7 +25,7 @@ const ReportLink = ({ type, id, title, returnUrl }) => {
           localStorage.setItem('reportReturnUrl', returnUrl);
         }
       }}
-      className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
+      className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 transition-colors"
     >
       <MdReport className="text-lg" />
       <span className="hidden sm:inline">Report this {label}</span>

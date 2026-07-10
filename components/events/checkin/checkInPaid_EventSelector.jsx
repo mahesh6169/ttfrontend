@@ -260,12 +260,10 @@ const CheckInPaid_EventSelector = () => {
         </div>
       </div>
 
-      {/* Data Retention Warning - More compact */}
-      <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
-        <p className="text-xs text-amber-800">
-          <strong>Note:</strong> Events older than 2 years will be deleted.
-        </p>
-      </div>
+      {/* Data Retention note - calm slate, no background */}
+      <p className="text-xs text-slate-500">
+        <strong className="font-semibold text-slate-600">Note:</strong> Events older than 2 years will be deleted.
+      </p>
     </div>
   );
 };

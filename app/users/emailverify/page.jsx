@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { verifyEmail, sendVerifyOtp } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
 import BaseContentShell from '@/components/layout/BaseContentShell';
+import Footer from '@/components/Footer';
 
 export default function EmailVerifyPage() {
   // Form state
@@ -122,9 +123,10 @@ export default function EmailVerifyPage() {
       <div className="container mx-auto">
       <BaseContentShell>
         <div className="flex w-full justify-center items-center min-h-[400px]">
-          <div className="animate-pulse text-gray-500">Loading...</div>
+          <div className="animate-pulse text-slate-500">Loading...</div>
         </div>
       </BaseContentShell>
+      <Footer />
       </div>
     );
   }
@@ -135,7 +137,7 @@ export default function EmailVerifyPage() {
       <div className="container mx-auto">
       <BaseContentShell>
         <div className="flex w-full justify-center">
-        <div className="p-8 rounded-lg shadow-md w-full max-w-md text-center">
+        <div className="p-8 w-full max-w-md text-center">
           <div className="mb-6">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,17 +147,18 @@ export default function EmailVerifyPage() {
             <h1 className="text-2xl font-bold text-green-600 mb-2">
               Account Verified!
             </h1>
-            <p className="text-gray-600">
+            <p className="text-slate-500">
               Your email has been successfully verified. Redirecting you now...
             </p>
           </div>
-          
-          <div className="animate-pulse text-sm text-gray-500">
+
+          <div className="animate-pulse text-sm text-slate-500">
             Redirecting in 2 seconds...
           </div>
         </div>
       </div>
       </BaseContentShell>
+      <Footer />
       </div>
     );
   }
@@ -165,13 +168,13 @@ export default function EmailVerifyPage() {
     <div className="container mx-auto">
     <BaseContentShell>
       <div className="flex w-full justify-center">
-      <div className="p-6 rounded-lg shadow-md w-full max-w-md">
+      <div className="p-6 w-full max-w-md">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold mb-2">
+          <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">
             Verify Your Email
           </h1>
-          <p className="text-gray-600 text-sm">
-            We've sent a verification code to your email address. 
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
+            We've sent a verification code to your email address.
             Please enter it below to activate your account.
           </p>
         </div>
@@ -221,22 +224,18 @@ export default function EmailVerifyPage() {
               
               {/* Verification Status Display */}
               {verificationState === 'verifying' && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                   <div className="flex items-center">
-                    <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full mr-2"></div>
-                    <p className="text-blue-700 text-sm">Verifying your code...</p>
+                    <div className="animate-spin w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full mr-2"></div>
+                    <p className="text-slate-600 text-sm">Verifying your code...</p>
                   </div>
                 </div>
               )}
-              
+
               <button
                 type="button"
                 onClick={handleSubmit}
-                className={`w-full py-3 rounded-lg font-medium transition-all ${
-                  verificationState === 'verifying'
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-teal-600 hover:bg-teal-700 text-white'
-                }`}
+                className="mx-auto block bg-slate-500 text-white hover:bg-slate-600 rounded-full px-10 py-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={verificationState === 'verifying' || !otp.trim()}
               >
                 {verificationState === 'verifying' ? (
@@ -250,37 +249,36 @@ export default function EmailVerifyPage() {
               </button>
             </div>
             
-            <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="mt-6 pt-4 border-t border-slate-200">
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-slate-500 mb-2">
                   Didn't receive the code?
                 </p>
                 <button
                   onClick={resendOtp}
                   disabled={resendDisabled}
-                  className={`text-sm font-medium py-2 px-4 rounded-lg transition ${
+                  className={`text-sm font-semibold transition-colors ${
                     resendDisabled
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-green-600 text-white hover:bg-green-700'
+                      ? 'text-slate-400 cursor-not-allowed'
+                      : 'text-teal-700 hover:text-teal-800 hover:underline'
                   }`}
                 >
                   {resendDisabled ? `Resend in ${timer}s` : 'Send New Code'}
                 </button>
               </div>
             </div>
-            
+
             {/* Help Text */}
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-600">
-                💡 Check your spam folder if you don't see the email. 
-                The verification code expires in 15 minutes.
-              </p>
-            </div>
+            <p className="mt-4 text-center text-xs text-slate-500">
+              Check your spam folder if you don't see the email.
+              The verification code expires in 15 minutes.
+            </p>
           </>
         )}
       </div>
     </div>
     </BaseContentShell>
+    <Footer />
     </div>
   );
 }

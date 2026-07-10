@@ -5,11 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEventById, clearSelectedEvent, clearError } from '@/store/slices/events/eventSlice';
 import { FaShareAlt } from 'react-icons/fa';
-import EventDetailSkeleton from '@/components/events/eventcomponents/EventDetailSkeleton';
 import SingleEventCard from '@/components/events/eventcomponents/SingleEventCard';
 import SendMessage from '@/components/chat/SendMessage';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
+import BackButton from '@/components/BackButton';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import EmptyState from '@/components/layout/EmptyState';
+import ErrorState from '@/components/layout/ErrorState';
 
 
 const EventDetail = () => {
@@ -59,97 +62,67 @@ const EventDetail = () => {
     };
   }, [dispatch, id]);
 
-  if ((status === 'idle' || status === 'loading') && !selectedEvent) {
-    return <EventDetailSkeleton />;
-  }
-
-  if (status === 'failed') {
-    return (
-      <div className="text-center text-red-500 mt-8">
-        <p>{error}</p>
-        <button 
-          onClick={() => {
-            const returnUrl = localStorage.getItem('eventViewReturnUrl');
-            if (returnUrl && returnUrl.includes('/listings/views/')) {
-              router.push(returnUrl);
-              localStorage.removeItem('eventViewReturnUrl');
-            } else {
-              router.back();
-            }
-          }}
-          className="mt-4 px-4 py-2 bg-slate-500 text-white rounded hover:bg-slate-600"
-        >
-          Go Back
-        </button>
-      </div>
-    );
-  }
-
-  if (status === 'succeeded' && !selectedEvent) {
-    return (
-      <div className="text-center text-slate-500 mt-8">
-        <p>Event not found.</p>
-        <button 
-          onClick={() => {
-            const returnUrl = localStorage.getItem('eventViewReturnUrl');
-            if (returnUrl && returnUrl.includes('/listings/views/')) {
-              router.push(returnUrl);
-              localStorage.removeItem('eventViewReturnUrl');
-            } else {
-              router.back();
-            }
-          }}
-          className="mt-4 px-4 py-2 bg-slate-500 text-white rounded hover:bg-slate-600"
-        >
-          Go Back
-        </button>
-      </div>
-    );
-  }
+  const isLoading = (status === 'idle' || status === 'loading') && !selectedEvent;
+  const isFailed = status === 'failed';
+  const isNotFound = status === 'succeeded' && !selectedEvent;
 
   // Curated event — posted by a Desify curator on behalf of the organiser
-  const isCuratedEvent = selectedEvent.isCuratedEvent || false;
+  const isCuratedEvent = selectedEvent?.isCuratedEvent || false;
 
   // Check if this is a promotional event (external registration link)
-  const isPromotionalEvent = selectedEvent.eventIntent === 'promote' || selectedEvent.isAdvertiseOnly;
+  const isPromotionalEvent = selectedEvent?.eventIntent === 'promote' || selectedEvent?.isAdvertiseOnly;
 
   // Dynamic CTA label based on free/paid for promotional events
-  const promoCtaLabel = selectedEvent.isPaid ? 'Get Tickets' : 'Register';
+  const promoCtaLabel = selectedEvent?.isPaid ? 'Get Tickets' : 'Register';
 
   return (
     <div id="viewsmain" className="flex flex-col gap-2">
-      {/* Navigation Bar */}
+      {/* Navigation Bar — always visible through every state */}
       <div className="flex justify-between items-center">
-        {/* Back Button - Smart Navigation */}
-        <button
+        {/* Back — smart: return to the originating listing view if we came from one */}
+        <BackButton
           onClick={() => {
-            // Check if we came from a listing view
             const returnUrl = localStorage.getItem('eventViewReturnUrl');
             if (returnUrl && returnUrl.includes('/listings/views/')) {
-              // Go back to the listing view
               router.push(returnUrl);
               localStorage.removeItem('eventViewReturnUrl');
             } else {
-              // Default to events page
               router.back();
             }
           }}
-          className="flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-        >
-          <span>&lt;</span>
-          <span>back</span>
-        </button>
-
-        {/* Report this Event */}
-        <ReportLink
-          type="event"
-          id={id}
-          title={selectedEvent.title}
-          returnUrl={`/events/views/${id}`}
         />
+
+        {/* Report this Event — only once the event has loaded */}
+        {selectedEvent && (
+          <ReportLink
+            type="event"
+            id={id}
+            title={selectedEvent.title}
+            returnUrl={`/events/views/${id}`}
+          />
+        )}
       </div>
 
-      {/* Layout: Card + Chat */}
+      {/* Content slot — swaps by state; the frame above stays put */}
+      {isLoading ? (
+        <div className="flex justify-center items-center min-h-[calc(100vh-16rem)]">
+          <LoadingSpinner />
+        </div>
+      ) : isFailed ? (
+        <ErrorState
+          onRetry={() => {
+            dispatch(clearError());
+            dispatch(fetchEventById(id));
+          }}
+        />
+      ) : isNotFound ? (
+        <EmptyState
+          title="Event not found"
+          description="This event may have been removed, or the link is incorrect."
+          actionLabel="Browse events"
+          actionHref="/events"
+        />
+      ) : (
       <div className="flex flex-col lg:flex-row lg:items-start gap-4">
         {/* Event Details */}
         <div className="flex-[7] bg-white w-full">
@@ -227,6 +200,7 @@ const EventDetail = () => {
         </div>
       </div>
       
+      )}
     </div>
   );
 };

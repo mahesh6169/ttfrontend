@@ -277,6 +277,22 @@ export const sendResetOtp = createAsyncThunk(
   }
 );
 
+//Thunk to Verify Reset OTP (step 2 — validates the code without resetting)
+export const verifyResetOtp = createAsyncThunk(
+  'user/verifyResetOtp',
+  async ({ email, otp }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/verifyResetOtp`, { email, otp });
+
+      return response.data; // { success: true, message: 'OTP verified' }
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || 'An unexpected error occurred while verifying the code.'
+      );
+    }
+  }
+);
+
 //Thunk to Reset Password
 export const resetPassword = createAsyncThunk(
   'user/resetPassword',
@@ -583,7 +599,11 @@ const userSlice = createSlice({
           isAccountVerified: payload.user.isAccountVerified,
           role: payload.user.role,
           stripeAccountId: payload.user.stripeAccountId || null,
-            stripeAccountStatus: payload.user.stripeAccountStatus || 'no_account', 
+            stripeAccountStatus: payload.user.stripeAccountStatus || 'no_account',
+          // 🏷️ Host-type flags (see HostTypeFlags.md) - drive the Organiser menu
+          freeHost: payload.user.freeHost || false,
+          paidHost: payload.user.paidHost || false,
+          promoHost: payload.user.promoHost || false,
         };
         state.mutedThreads = payload.user.mutedThreads || [];
       })

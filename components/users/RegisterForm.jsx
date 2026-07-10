@@ -336,10 +336,14 @@ const Register = () => {
   
 
   return (
-    <div className="flex w-full justify-center">
-      <div className="p-6 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">Register</h1>
-        
+    <>
+      {/* Page title — centered (forms.md §2, matches Contact) */}
+      <div className="text-center mb-6">
+        <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">Register</h1>
+      </div>
+
+      <div className="mx-auto max-w-[300px]">
+
         {/* Honeypot field - hidden from real users, but bots will fill it */}
         <input
           type="text"
@@ -368,7 +372,7 @@ const Register = () => {
               type="text"
               value={formData.name}
               onChange={handleChange}
-              className={`w-full p-2 border rounded ${
+              className={`w-full px-3 py-1.5 text-sm border rounded ${
                 errors.name ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Enter your name"
@@ -390,7 +394,7 @@ const Register = () => {
               type="email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full p-2 border rounded ${
+              className={`w-full px-3 py-1.5 text-sm border rounded ${
                 errors.email ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Enter your email"
@@ -426,7 +430,7 @@ const Register = () => {
                 onChange={handleChange}
                 onFocus={() => setShowPasswordHint(true)}
                 onBlur={() => setShowPasswordHint(false)}
-                className={`w-full p-2 pr-10 border rounded ${
+                className={`w-full px-3 py-1.5 pr-10 text-sm border rounded ${
                   errors.password ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Enter your password"
@@ -489,7 +493,7 @@ const Register = () => {
                 onChange={handleChange}
                 onFocus={() => setShowPasswordHint(true)}
                 onBlur={() => setShowPasswordHint(false)}
-                className={`w-full p-2 pr-10 border rounded ${
+                className={`w-full px-3 py-1.5 pr-10 text-sm border rounded ${
                   errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Confirm your password"
@@ -547,7 +551,7 @@ const Register = () => {
                 <input
                   type="text"
                   placeholder="Enter your suburb"
-                  className={`w-full p-2 border rounded ${
+                  className={`w-full px-3 py-1.5 text-sm border rounded ${
                     errors.suburb || suburbValidationError ? 'border-red-500' : 'border-gray-300'
                   }`}
                   onChange={(e) => {
@@ -605,7 +609,7 @@ const Register = () => {
               type="tel"
               value={formData.mobile}
               onChange={handleChange}
-              className={`w-full p-2 border rounded ${
+              className={`w-full px-3 py-1.5 text-sm border rounded ${
                 errors.mobile ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="(e.g., 0412 345 678)"
@@ -683,7 +687,7 @@ const Register = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-teal-600  text-lime-100 hover:bg-teal-700 hover:text-lime-100  py-2 transition"
+            className="mx-auto block bg-teal-700 text-white hover:bg-teal-800 rounded-full px-10 py-2 text-sm font-semibold transition-colors disabled:opacity-60"
             disabled={loading || isSubmitting}
           >
             {loading || isSubmitting ? 'Registering...' : 'Register'}
@@ -726,7 +730,7 @@ const Register = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

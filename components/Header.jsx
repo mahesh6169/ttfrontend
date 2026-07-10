@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { logoutUser } from '@/store/slices/users/userSlice';
 import {
   FaChevronRight,
+  FaBars,
 } from 'react-icons/fa';
 import { MdOutlineGroups2 } from "react-icons/md";
 import { RiAdvertisementFill } from "react-icons/ri";
@@ -15,17 +16,22 @@ import { LiaSignInAltSolid, LiaSignOutAltSolid } from 'react-icons/lia';
 import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { MdLocalOffer } from 'react-icons/md';
+import { HiReceiptPercent } from 'react-icons/hi2';
 import { toast } from 'react-toastify';
-import { 
-  setInActiveChat, 
-  recalculateUnreadStatus 
+import {
+  setInActiveChat,
+  recalculateUnreadStatus
 } from '@/store/slices/shared/messageSlice';
+import ProfileSidebar from '@/components/layout/ProfileSidebar';
 
 const Header = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const pathname = usePathname();
   const [openDropdown, setOpenDropdown] = useState(null);
+  // Mobile/tablet profile drawer (below lg). The burger replaces Signout there; the
+  // overlay is the ProfileSidebar with Signout pinned at the bottom. See ProfilePageUX.md.
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { tokenValidated, user, status } = useSelector((state) => state.user);
   const isAuthenticated = tokenValidated && !!user?._id;
@@ -53,6 +59,23 @@ const Header = () => {
     dispatch(recalculateUnreadStatus({ currentUserId: user._id }));
   }, [pathname, isAuthenticated, user, dispatch]);
 
+  // Close the drawer whenever the route changes (backstop to per-link close).
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
+
+  // While the drawer is open: close on Esc and lock body scroll.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e) => e.key === 'Escape' && setDrawerOpen(false);
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [drawerOpen]);
+
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser()).unwrap();
@@ -63,6 +86,7 @@ const Header = () => {
   };
 
   return (
+    <>
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm transition-all duration-300 h-[68px]">
       <div className="container mx-auto py-2 md:py-2.5 text-slate-700 relative">
 
@@ -102,12 +126,14 @@ const Header = () => {
                   <span className="text-[10px] text-slate-700">Chat</span>
                 </Link>
                 <button
-                  onClick={handleLogout}
+                  onClick={() => setDrawerOpen(true)}
                   className="flex flex-col items-center p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                  title="Signout"
+                  title="Menu"
+                  aria-label="Open menu"
+                  aria-expanded={drawerOpen}
                 >
-                  <LiaSignOutAltSolid size={22} className="text-slate-700" />
-                  <span className="text-[10px] text-slate-700">Signout</span>
+                  <FaBars size={22} className="text-slate-700" />
+                  <span className="text-[10px] text-slate-700">Menu</span>
                 </button>
               </>
             ) : (
@@ -145,9 +171,15 @@ const Header = () => {
                 pathname={pathname}
               />
               <NavLink
-                href="/dailydeals"
+                href="/deals"
                 icon={<MdLocalOffer size={20} />}
                 text="Deals"
+                pathname={pathname}
+              />
+              <NavLink
+                href="/coupons"
+                icon={<HiReceiptPercent size={20} />}
+                text="Coupons"
                 pathname={pathname}
               />
               <NavLink
@@ -194,9 +226,20 @@ const Header = () => {
                     pathname={pathname}
                     showIconOnly="md"
                   />
+                  {/* Below lg the sidebar is hidden → burger opens the profile drawer.
+                      At lg+ the static sidebar is present, so Signout stays in the header. */}
+                  <button
+                    onClick={() => setDrawerOpen(true)}
+                    className="lg:hidden flex items-center gap-2 px-2 md:px-3 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300"
+                    title="Menu"
+                    aria-label="Open menu"
+                    aria-expanded={drawerOpen}
+                  >
+                    <FaBars size={22} />
+                  </button>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300"
+                    className="hidden lg:flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300"
                     title="Signout"
                   >
                     <LiaSignOutAltSolid size={22} />
@@ -223,6 +266,43 @@ const Header = () => {
         </div>
       </div>
     </header>
+
+    {/* Mobile/tablet profile drawer (below lg) — left slide-in overlay. See ProfilePageUX.md. */}
+    {isAuthenticated && (
+      <div
+        className={`lg:hidden fixed inset-0 z-[60] ${drawerOpen ? '' : 'pointer-events-none'}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!drawerOpen}
+      >
+        {/* Dim backdrop */}
+        <div
+          className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${drawerOpen ? 'opacity-100' : 'opacity-0'}`}
+          onClick={() => setDrawerOpen(false)}
+        />
+        {/* Sliding panel */}
+        <div
+          className={`absolute inset-y-0 left-0 w-72 max-w-[70%] bg-white/85 backdrop-blur-md shadow-xl flex flex-col transition-transform duration-300 ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        >
+          <div className="flex items-center justify-end px-2 pt-2 shrink-0">
+            <button
+              onClick={() => setDrawerOpen(false)}
+              aria-label="Close menu"
+              className="p-2 text-teal-700 hover:text-teal-800 text-xl font-bold leading-none"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 pb-4">
+            <ProfileSidebar
+              onNavigate={() => setDrawerOpen(false)}
+              onSignout={() => { setDrawerOpen(false); handleLogout(); }}
+            />
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

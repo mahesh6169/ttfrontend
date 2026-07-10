@@ -247,43 +247,43 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
 
     return (
       <div style={style} className="px-2 sm:px-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {/* Invoice Header */}
           <div 
-            className="p-3 sm:p-4 cursor-pointer hover:bg-gray-50"
+            className="p-3 sm:p-4 cursor-pointer hover:bg-slate-50"
             onClick={() => toggleInvoice(invoiceNumber)}
           >
             {/* Mobile Layout */}
             <div className="sm:hidden">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-gray-900">
+                <h3 className="font-semibold text-slate-800">
                   {invoiceNumber}
                 </h3>
                 {showPartialCheckIn && (
-                  <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                  <span className="px-2 py-1 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
                     Partial
                   </span>
                 )}
                 {allCheckedIn && (
-                  <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                  <span className="px-2 py-1 text-xs font-medium bg-teal-100 text-teal-700 rounded-full">
                     All In
                   </span>
                 )}
               </div>
               
-              <div className="text-sm text-gray-900 mb-1">
+              <div className="text-sm text-slate-800 mb-1">
                 {representative.buyer?.firstName} {representative.buyer?.lastName}
               </div>
               
-              <div className="text-sm text-gray-600 mb-1">
+              <div className="text-sm text-slate-600 mb-1">
                 {representative.buyer?.email}
               </div>
               
-              <div className="text-sm text-gray-600 mb-2">
+              <div className="text-sm text-slate-600 mb-2">
                 {representative.buyer?.phone}
               </div>
               
-              <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+              <div className="flex items-center justify-between text-sm text-slate-600 mb-2">
                 <span>Tickets: {tickets.length}</span>
                 <span className="font-medium">Checked In: {checkedInAttendees}/{totalAttendees}</span>
               </div>
@@ -298,8 +298,8 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
                   className={`
                     px-4 py-2 rounded font-medium text-sm transition-colors flex-1 mr-2
                     ${allCheckedIn 
-                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                      : 'bg-teal-600 text-white hover:bg-teal-700'
+                      ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100' 
+                      : 'bg-teal-700 text-white hover:bg-teal-800'
                     }
                     ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
@@ -307,7 +307,7 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
                   {actionLoading ? 'Processing...' : (allCheckedIn ? 'Check Out All' : 'Check In All')}
                 </button>
                 <svg 
-                  className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                  className={`w-5 h-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -321,22 +321,22 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
             <div className="hidden sm:flex justify-between items-center">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-slate-800">
                     {invoiceNumber}
                   </h3>
                   {showPartialCheckIn && (
-                    <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                    <span className="px-2 py-1 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
                       Partial Check-in
                     </span>
                   )}
                   {allCheckedIn && (
-                    <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                    <span className="px-2 py-1 text-xs font-medium bg-teal-100 text-teal-700 rounded-full">
                       All Checked In
                     </span>
                   )}
                 </div>
                 
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                <div className="flex flex-wrap gap-4 text-sm text-slate-600">
                   <div>
                     <span className="font-medium">Tickets:</span> {tickets.length}
                   </div>
@@ -346,7 +346,7 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
                 </div>
                 
                 <div className="flex items-center mt-2">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-slate-600">
                     {representative.buyer?.firstName} {representative.buyer?.lastName} • {representative.buyer?.email} • {representative.buyer?.phone}
                   </span>
                 </div>
@@ -362,8 +362,8 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
                   className={`
                     px-3 py-1 rounded text-sm font-medium transition-colors
                     ${allCheckedIn 
-                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                      : 'bg-teal-100 text-teal-700 hover:bg-teal-200'
+                      ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100' 
+                      : 'bg-teal-700 text-white hover:bg-teal-800'
                     }
                     ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
@@ -372,7 +372,7 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
                 </button>
                 
                 <svg 
-                  className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                  className={`w-5 h-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -384,20 +384,19 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
           </div>
           
           {/* Tab Buttons */}
-          <div className="border-t border-gray-200 bg-gray-50 px-2 sm:px-4 py-2">
+          <div className="px-2 sm:px-4 py-2">
             <div className="flex gap-1 sm:gap-2">
               <button
                 onClick={() => handleTabClick(invoiceNumber, 'tickets')}
                 className={`
                   px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
                   ${isExpanded && (activeTab[invoiceNumber] || 'tickets') === 'tickets'
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    ? 'bg-teal-700 text-white border border-teal-700'
+                    : 'bg-white text-teal-700 border border-teal-300 hover:bg-teal-50'
                   }
                 `}
               >
-                <span className="sm:hidden">Tickets</span>
-                <span className="hidden sm:inline">View Tickets</span>
+                Tickets
               </button>
               {representative.formResponses && representative.formResponses.length > 0 && (
                 <button
@@ -405,13 +404,12 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
                   className={`
                     px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-1 sm:flex-none
                     ${isExpanded && activeTab[invoiceNumber] === 'attendeeInfo'
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      ? 'bg-teal-700 text-white border border-teal-700'
+                      : 'bg-white text-teal-700 border border-teal-300 hover:bg-teal-50'
                     }
                   `}
                 >
-                  <span className="sm:hidden">Attendee Info</span>
-                  <span className="hidden sm:inline">View Attendee Information</span>
+                  Attendee Info
                 </button>
               )}
             </div>
@@ -419,10 +417,10 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
           
           {/* Tab Content */}
           {isExpanded && (
-            <div className="border-t border-gray-200 mb-4">
+            <div className="border-t border-slate-200 mb-4">
               {/* Tickets Tab */}
               {(activeTab[invoiceNumber] || 'tickets') === 'tickets' && (
-                <div className="bg-gray-50 pb-4">
+                <div className="pb-4">
                   <div className="p-2 sm:p-3 space-y-1">
                     {tickets.map((ticket) => (
                       <CheckInPaid_SimpleTicketRow 
@@ -441,8 +439,8 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
                   <div className="space-y-3">
                     {representative.formResponses.map((response, index) => (
                       <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
-                        <div className="font-medium text-gray-700 text-sm mb-1">{response.fieldName}:</div>
-                        <div className="text-gray-600 text-sm whitespace-pre-line break-words pl-4">
+                        <div className="font-medium text-slate-700 text-sm mb-1">{response.fieldName}:</div>
+                        <div className="text-slate-600 text-sm whitespace-pre-line break-words pl-4">
                           {response.response}
                         </div>
                       </div>
@@ -459,7 +457,7 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
 
   if (!selectedEvent) {
     return (
-      <div className="text-gray-500 text-center py-8">
+      <div className="text-slate-500 text-center py-8">
         Select an event to view ticket holders
       </div>
     );
@@ -470,7 +468,7 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
           <div key={i} className="animate-pulse">
-            <div className="h-32 bg-gray-200 rounded-lg"></div>
+            <div className="h-32 bg-slate-200 rounded-xl"></div>
           </div>
         ))}
       </div>
@@ -479,7 +477,7 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
 
   if (attendees.length === 0) {
     return (
-      <div className="text-gray-500 text-center py-8">
+      <div className="text-slate-500 text-center py-8">
         {searchTerm 
           ? `No tickets found matching "${searchTerm}"`
           : 'No tickets sold for this event yet'
@@ -491,7 +489,7 @@ const CheckInPaid_VirtualizedAttendeeList = () => {
   return (
     <div>
       {/* Stats summary */}
-      <div className="px-4 pb-2 text-sm text-gray-600">
+      <div className="px-4 pb-2 text-sm text-slate-600">
         {(() => {
           const start = (pagination.currentPage - 1) * pagination.limit + 1;
           const end = Math.min(start + attendees.length - 1, pagination.totalCount);

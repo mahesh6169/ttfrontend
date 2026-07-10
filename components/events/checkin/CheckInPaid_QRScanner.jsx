@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { FaChevronLeft } from 'react-icons/fa';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { useDispatch, useSelector } from 'react-redux';
 import { checkInByQR, updateLocalQRCheckIn } from '@/store/slices/events/checkInPaidSlice';
@@ -22,6 +23,7 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
   const qrReaderRef = useRef(null);
   const audioRef = useRef(null);
   const initializedRef = useRef(false);
+  const observerRef = useRef(null);
 
   useEffect(() => {
     if (!qrReaderRef.current || initializedRef.current) return;
@@ -126,11 +128,34 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
         }
       `;
       document.head.appendChild(style);
+
+      // The library labels its permission button "Request Camera Permissions".
+      // Relabel it (and keep it relabelled if the library re-renders the button).
+      const relabelPermissionButton = () => {
+        const root = qrReaderRef.current;
+        if (!root) return;
+        const btn =
+          root.querySelector('#html5-qrcode-button-camera-permission') ||
+          Array.from(root.querySelectorAll('button')).find((b) =>
+            /request camera permissions/i.test(b.textContent)
+          );
+        if (btn && btn.textContent.trim() !== 'Allow Access To Camera') {
+          btn.textContent = 'Allow Access To Camera';
+        }
+      };
+      relabelPermissionButton();
+      observerRef.current = new MutationObserver(relabelPermissionButton);
+      if (qrReaderRef.current) {
+        observerRef.current.observe(qrReaderRef.current, { childList: true, subtree: true });
+      }
     };
 
     setTimeout(initScanner, 100);
 
     return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
       if (scannerRef.current) {
         scannerRef.current.clear().catch(error => {
           console.error("Failed to clear scanner:", error);
@@ -297,12 +322,13 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
         <div className="flex items-center justify-between">
           <button
             onClick={onClose}
-            className="text-white text-2xl px-2"
+            className="flex items-center gap-1.5 text-teal-400 hover:text-teal-300 font-semibold px-2 py-1 -ml-2"
           >
-            ✕
+            <FaChevronLeft className="text-sm" />
+            Back
           </button>
           <h2 className="text-white text-lg font-semibold">Scan QR Code</h2>
-          <div className="w-8"></div>
+          <div className="w-14"></div>
         </div>
       </div>
 

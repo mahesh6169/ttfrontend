@@ -1,7 +1,7 @@
 'use client';
 
 import { MdLocationOn, MdStore } from 'react-icons/md';
-import { FaClock, FaTicketAlt } from 'react-icons/fa';
+import { FaClock, FaTicketAlt, FaShareAlt } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -10,7 +10,6 @@ import axios from '@/utils/axiosConfig';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import CodeModal from '../CodeModal';
-import ShareIconsCampaign from '@/components/shared/ShareIconsCampaign';
 
 export default function CampaignCard({ campaign, onGenerateCode }) {
   const router = useRouter();
@@ -51,7 +50,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
   const handleButtonClick = async () => {
     if (!isLoggedIn) {
-      localStorage.setItem('redirectAfterLogin', '/discountcode');
+      localStorage.setItem('redirectAfterLogin', '/coupons');
       router.push('/login?preserveRedirect=true');
       return;
     }
@@ -68,11 +67,35 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
       await onGenerateCode(campaign._id);
     } catch (error) {
       if (error?.response?.status === 401) {
-        localStorage.setItem('redirectAfterLogin', '/discountcode');
+        localStorage.setItem('redirectAfterLogin', '/coupons');
         router.push('/login?preserveRedirect=true');
       }
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!campaign.slug) return;
+    const url = `${window.location.origin}/coupons/${campaign.slug}`;
+    const shareData = {
+      title: campaign.store?.storeName || 'Coupon',
+      text: `${campaign.discount} ${campaign.discountProduct}`,
+      url
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error('Share failed:', err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard!');
+      } catch {
+        toast.error('Unable to share');
+      }
     }
   };
 
@@ -81,7 +104,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
       const isRedeemed = campaign.userCodeRedeemed || false;
       return {
         text: loadingCode ? 'LOADING...' : (isRedeemed ? 'REDEEMED' : 'VIEW YOUR CODE'),
-        className: isRedeemed ? 'bg-gray-500 hover:bg-gray-600 text-white' : 'bg-teal-600 hover:bg-teal-700 text-white',
+        className: isRedeemed ? 'bg-slate-500 text-white' : 'bg-teal-700 hover:bg-teal-800 text-white',
         disabled: loadingCode
       };
     }
@@ -89,7 +112,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
     if (isExpired) {
       return {
         text: 'EXPIRED',
-        className: 'bg-gray-300 text-gray-600 cursor-not-allowed',
+        className: 'bg-slate-200 text-slate-500 cursor-not-allowed',
         disabled: true
       };
     }
@@ -97,14 +120,14 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
     if (isLimitReached) {
       return {
         text: 'SOLD OUT',
-        className: 'bg-gray-300 text-gray-600 cursor-not-allowed',
+        className: 'bg-slate-200 text-slate-500 cursor-not-allowed',
         disabled: true
       };
     }
 
     return {
       text: isGenerating ? 'GENERATING...' : 'GET CODE',
-      className: 'bg-teal-600 hover:bg-teal-700 text-white',
+      className: 'bg-teal-700 hover:bg-teal-800 text-white',
       disabled: isGenerating
     };
   };
@@ -115,15 +138,15 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
 
   return (
-    <div className={`relative h-full flex flex-col rounded-lg shadow-md bg-white hover:bg-gray-50 transition-all`}>
+    <div className={`relative h-full flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition-all`}>
       {/* Top Section: Store Name + Discount | Logo */}
       <div className="flex gap-3 p-3 pb-2">
         {/* Column 1: Store Name + Discount */}
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-teal-800 mb-1 line-clamp-2 uppercase tracking-tight">
+          <h2 className="text-sm font-semibold text-slate-900 mb-1 line-clamp-2">
             {campaign.store?.storeName}
           </h2>
-          <p className="text-sm sm:text-base font-bold text-teal-800 line-clamp-2 leading-snug">
+          <p className="text-sm font-semibold text-slate-700 line-clamp-2 leading-snug">
             {campaign.discount} {campaign.discountProduct}
           </p>
         </div>
@@ -138,8 +161,8 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
                 className="w-full h-full object-contain p-2"
               />
             ) : (
-              <div className="h-full w-full flex items-center justify-center">
-                <MdStore className="text-4xl text-teal-300" />
+              <div className="h-full w-full flex items-center justify-center bg-slate-50">
+                <MdStore className="text-4xl text-slate-400" />
               </div>
             )}
           </div>
@@ -154,7 +177,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
         {/* Bottom Details */}
         <div className="space-y-1">
           {/* Expiry Date and Redemption Count */}
-          <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
+          <div className="flex items-center gap-1 text-xs text-slate-500">
             <FaClock className="flex-shrink-0" />
             <span>
               Valid until {format(new Date(campaign.expiryDate), 'dd MMM yyyy')}
@@ -171,7 +194,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
           {/* Location */}
           {campaign.store?.address?.formattedAddress && (
-            <div className="flex items-center gap-1 text-xs font-medium text-gray-600 truncate">
+            <div className="flex items-center gap-1 text-xs text-slate-500 truncate">
               <MdLocationOn className="flex-shrink-0" />
               <span className="truncate">
                 {campaign.store.address.suburb || campaign.store.address.state ? 
@@ -193,21 +216,23 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
               </button>
               {campaign._id && (
                 <Link
-                  href={`/discountcode/views/${campaign._id}`}
-                  className="text-xs text-teal-600 hover:text-teal-700 underline"
+                  href={`/coupons/views/${campaign._id}`}
+                  className="text-xs text-teal-700 hover:text-teal-800 underline"
                 >
                   More details & terms
                 </Link>
               )}
             </div>
 
-            {/* Share Icons */}
             {campaign.slug && (
-              <ShareIconsCampaign 
-                slug={campaign.slug}
-                title={`${campaign.discount} on ${campaign.discountProduct}`}
-                storeName={campaign.store?.storeName}
-              />
+              <button
+                onClick={handleShare}
+                title="Share"
+                aria-label="Share"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-teal-700 hover:bg-teal-50 transition-colors flex-shrink-0"
+              >
+                <FaShareAlt className="w-4 h-4" />
+              </button>
             )}
           </div>
         </div>

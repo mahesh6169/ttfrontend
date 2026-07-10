@@ -9,10 +9,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import axios from '@/utils/axiosConfig';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import BackButton from '@/components/BackButton';
+import EmptyState from '@/components/layout/EmptyState';
 import SeatMapWithSocket from '@/components/events/seats/SeatMapWithSocket';
 import SeatLegend from '@/components/events/seats/SeatLegend';
 import ReservationTimer from '@/components/events/ReservationTimer';
-import { FaShoppingCart, FaArrowLeft, FaTimes } from 'react-icons/fa';
+import { FaShoppingCart, FaTimes, FaUsers } from 'react-icons/fa';
+import { MdEventSeat } from 'react-icons/md';
 
 // Helper function to get optimized image URL (same pattern as SingleEventCard)
 const getOptimizedImageUrl = (imageObj) => {
@@ -47,6 +50,9 @@ const SeatSelectionPage = () => {
   const [ticketTotals, setTicketTotals] = useState({ totalQuantity: 0, totalPrice: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  // Live seat selection (display only) — the map reports every change so the
+  // page can show the count/list on the same row as the timer.
+  const [liveSeats, setLiveSeats] = useState([]);
 
   // Calculate ticket requirement
   const ticketRequirement = {
@@ -188,15 +194,19 @@ const SeatSelectionPage = () => {
 
   // Handle loading states
   if (eventStatus === 'loading' || isLoading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <p className="text-gray-600">Redirecting to ticket selection...</p>
+          <p className="text-red-600 mb-2">{error}</p>
+          <p className="text-sm text-slate-500">Redirecting to ticket selection...</p>
         </div>
       </div>
     );
@@ -204,9 +214,12 @@ const SeatSelectionPage = () => {
 
   if (!selectedEvent) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-gray-600">Event not found</p>
-      </div>
+      <EmptyState
+        title="Event not found"
+        description="This event may have been removed, or the link is incorrect."
+        actionLabel="Browse events"
+        actionHref="/events"
+      />
     );
   }
 
@@ -231,82 +244,62 @@ const SeatSelectionPage = () => {
   return (
     <div>
       <div className="w-full">
-        {/* Back to Tickets Button - Same as tickets page */}
+        {/* Back to Tickets */}
         <div className="mb-3 sm:mb-6">
-          <button
-            onClick={handleBackToTickets}
-            className="inline-flex items-center px-2.5 py-1 text-xs sm:px-4 sm:py-2 sm:text-base bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-md sm:rounded-lg transition-colors"
-          >
-            <FaArrowLeft className="mr-1 sm:mr-2 text-[10px] sm:text-base" />
-            <span className="text-xs sm:text-base">Back</span>
-          </button>
+          <BackButton onClick={handleBackToTickets} />
         </div>
 
-        {/* Single Column Layout - Full Width */}
-        <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-6">
+        {/* Flat — no outer card */}
+        <div>
           {/* Centered Title */}
-          <h1 className="text-lg sm:text-2xl font-semibold sm:font-bold text-gray-900 text-center mb-3 sm:mb-6">
+          <h1 className="text-lg sm:text-2xl font-semibold sm:font-bold text-slate-900 text-center mb-3 sm:mb-6">
             Select Seats
           </h1>
           
-          {/* Seat Legend - Horizontal layout */}
-          <div className="mb-3 sm:mb-6">
+          {/* Seat legend — centered */}
+          <div className="flex justify-center mb-3 sm:mb-6">
             <SeatLegend />
           </div>
-          
-          {/* Reservation Timer */}
-          {reservation && (
-            <ReservationTimer
-              expiresAt={reservation.expiresAt}
-              eventId={selectedEvent._id}
-              reservationId={reservation._id}
-              mode="seats"
-              onExpire={() => {
-                router.push(`/events/tickets/${eventId}`);
-              }}
-              onClear={() => {
-                setSelectedSeats([]);
-                router.push(`/events/tickets/${eventId}`);
-              }}
-            />
-          )}
-          
-          {/* Venue Seating Layout - Small Thumbnail with Click to Enlarge */}
-          {selectedEvent?.seatingLayoutImage && selectedEvent.seatingLayoutImage.length > 0 && (
-            <div className="mb-3 sm:mb-6">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-medium text-gray-700">
-                  Venue Layout:
-                </h2>
-                <div 
-                  className="relative group cursor-pointer rounded overflow-hidden border border-gray-300 hover:border-blue-500 transition-all"
-                  onClick={() => {
-                    setCurrentImageIndex(0);
-                    setIsFullscreen(true);
-                  }}
-                >
-                  <img
-                    src={getOptimizedImageUrl(selectedEvent.seatingLayoutImage[0])}
-                    alt="Venue Seating Layout"
-                    className="w-16 h-12 sm:w-20 sm:h-14 object-cover"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity duration-200 flex items-center justify-center">
-                    <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs">
-                      🔍
-                    </span>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-500">Click to enlarge</span>
-                {selectedEvent.seatingLayoutImage.length > 1 && (
-                  <span className="text-xs text-gray-500">
-                    ({selectedEvent.seatingLayoutImage.length} images)
-                  </span>
-                )}
+
+          {/* Seats selected + reservation timer — spread (left/right) on mobile, centered on desktop (matches /tickets) */}
+          <div className="flex items-center justify-between md:justify-center gap-3 md:gap-x-6 mb-3 sm:mb-6">
+            {/* Seats selected */}
+            <div className="min-w-0">
+              <div className="flex items-center text-sm sm:text-base whitespace-nowrap">
+                <FaUsers className="mr-2 text-base sm:text-lg text-slate-500" />
+                <span className="font-semibold text-slate-800">{liveSeats.length}/{ticketRequirement.total} Seats Selected</span>
               </div>
+              {liveSeats.length > 0 && (
+                <div className="mt-1 flex w-fit max-w-full items-start gap-1.5 text-xs sm:text-sm font-medium text-teal-800 bg-teal-50 px-2 py-1 rounded-md">
+                  <MdEventSeat className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
+                  <span className="break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                    {liveSeats.join(', ')}
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-          
+
+            {/* Reservation timer — no Clear (deselect on the map to change seats) */}
+            {reservation && (
+              <div>
+                <ReservationTimer
+                  expiresAt={reservation.expiresAt}
+                  eventId={selectedEvent._id}
+                  reservationId={reservation._id}
+                  mode="seats"
+                  showClear={false}
+                  onExpire={() => {
+                    router.push(`/events/tickets/${eventId}`);
+                  }}
+                  onClear={() => {
+                    setSelectedSeats([]);
+                    router.push(`/events/tickets/${eventId}`);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
           {/* Seat Map */}
           <div className="mb-3 sm:mb-6">
             <SeatMapWithSocket
@@ -316,23 +309,28 @@ const SeatSelectionPage = () => {
               userId={user?._id}
               existingReservation={reservation}
               onSeatsChange={handleSeatsUpdated}
+              onSelectionChange={setLiveSeats}
+              hasVenueLayout={selectedEvent?.seatingLayoutImage?.length > 0}
+              onVenueClick={() => { setCurrentImageIndex(0); setIsFullscreen(true); }}
             />
           </div>
           
           
-          {/* Proceed to Checkout Button - Same style as tickets page */}
-          <button
-            onClick={handleProceedToCheckout}
-            disabled={!canProceed}
-            className={`w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
-              canProceed
-                ? 'bg-green-600 hover:bg-green-700 text-white'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            <FaShoppingCart className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
-            <span className="text-sm sm:text-base">Proceed to Payment</span>
-          </button>
+          {/* Proceed to Payment */}
+          <div className="flex justify-center">
+            <button
+              onClick={handleProceedToCheckout}
+              disabled={!canProceed}
+              className={`w-auto py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
+                canProceed
+                  ? 'bg-teal-700 hover:bg-teal-800 text-white'
+                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+              }`}
+            >
+              <FaShoppingCart className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
+              <span className="text-sm sm:text-base">Proceed to Payment</span>
+            </button>
+          </div>
         </div>
       </div>
       
@@ -359,7 +357,7 @@ const SeatSelectionPage = () => {
                 onClick={() => setCurrentImageIndex((prev) => 
                   prev === 0 ? selectedEvent.seatingLayoutImage.length - 1 : prev - 1
                 )}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 p-2 rounded-full shadow-lg transition-all"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-slate-800 p-2 rounded-full shadow-lg transition-all"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -370,7 +368,7 @@ const SeatSelectionPage = () => {
                 onClick={() => setCurrentImageIndex((prev) => 
                   (prev + 1) % selectedEvent.seatingLayoutImage.length
                 )}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 p-2 rounded-full shadow-lg transition-all"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-slate-800 p-2 rounded-full shadow-lg transition-all"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -382,7 +380,7 @@ const SeatSelectionPage = () => {
           {/* Close button */}
           <button
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-4 right-4 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 p-2 rounded-full shadow-lg transition-all"
+            className="absolute top-4 right-4 bg-white bg-opacity-80 hover:bg-opacity-100 text-slate-800 p-2 rounded-full shadow-lg transition-all"
           >
             <FaTimes size={24} />
           </button>

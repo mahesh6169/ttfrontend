@@ -2,7 +2,8 @@
 // Step 1: Intent Selection + Basic event information - Title, Date/Time, Venue, Address, Images
 
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import Link from 'next/link';
 import {
   updateField,
   setAddress,
@@ -152,6 +153,13 @@ const BasicInfoStep = ({
   const isViewMode = mode === 'view';
   const disabled = readOnly || isViewMode;
 
+  // Hosted paid events require a fully-onboarded Stripe account. When it isn't ready we show a
+  // setup prompt here and hide the rest of step 1 (Next is also hidden in StepManager), instead
+  // of letting the host fill in a form they can't submit. Promotional paid events don't need this.
+  const { user } = useSelector((s) => s.user);
+  const stripeReady = (user?.stripeAccountStatus || 'no_account') === 'fully_active';
+  const needsStripeSetup = formData.eventIntent === 'host' && formData.isPaid === true && !stripeReady;
+
   // Check if this is a recurring event (affects timezone/datetime editability)
   const isRecurringEvent = formData.recurrence?.isRecurring || false;
   // Check if recurring is allowed (only for host + free events)
@@ -300,8 +308,25 @@ const BasicInfoStep = ({
         />
       )}
 
-      {/* Rest of fields shown after intent is selected — and, for Host, after a Ticket Type is chosen */}
-      {formData.eventIntent && (formData.eventIntent !== 'host' || formData.isPaid !== null) && (
+      {/* Paid event chosen but Stripe payouts aren't set up — prompt to finish setup instead of
+          showing the form. Mirrors the backend gate in addPaidEvent; keeps the host on this page. */}
+      {needsStripeSetup && (
+        <div>
+          <p className="text-sm text-slate-700">
+            Set up your Stripe payouts before creating a paid event so you can receive payments.
+          </p>
+          <Link
+            href="/users/profile/stripeSetup"
+            className="mt-3 inline-flex items-center justify-center py-2 px-4 text-sm bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg transition-colors"
+          >
+            Set up Stripe payouts →
+          </Link>
+        </div>
+      )}
+
+      {/* Rest of fields shown after intent is selected — and, for Host, after a Ticket Type is chosen.
+          Hidden for a paid event until Stripe payouts are set up (see needsStripeSetup above). */}
+      {!needsStripeSetup && formData.eventIntent && (formData.eventIntent !== 'host' || formData.isPaid !== null) && (
         <>
           {/* Title */}
           <div>

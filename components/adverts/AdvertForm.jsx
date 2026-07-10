@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 import AddressInput from '../shared/AddressInput';
 import ImageUploader from '../shared/ImageUploader';
 import CategorySelector from './CategorySelector';
@@ -51,10 +52,21 @@ const AdvertForm = ({
 
   const [formSections, setFormSections] = useState([]);
   const [preview, setPreview] = useState([]);
-  const [localErrors, setLocalErrors] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
   const [selectedPriceType, setSelectedPriceType] = useState('');
   const [existingImages, setExistingImages] = useState(initialData?.existingImages || []);
+
+  // Clear any stale toasts on mount
+  useEffect(() => {
+    toast.dismiss();
+  }, []);
+
+  // Surface backend/API errors as toasts (replaces the old red summary box)
+  useEffect(() => {
+    if (errors && errors.length > 0) {
+      errors.forEach((msg) => toast.error(msg));
+    }
+  }, [errors]);
 
   // Handle initial data - only on first load
   useEffect(() => {
@@ -204,7 +216,7 @@ const AdvertForm = ({
   // Render a field based on its type
   const renderField = (field) => {
     const value = formData.fields[field.id] || '';
-    const hasError = localErrors.some(err => err.includes(field.label));
+    const hasError = !!fieldErrors[field.id];
     const baseClasses = `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
       hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
     }`;
@@ -371,10 +383,8 @@ const renderPricingInputs = (pricingOptions) => {
 
 const handleSubmit = (e) => {
   e.preventDefault();
-  setLocalErrors([]);
   setFieldErrors({});
   
-  const validationErrors = [];
   const newFieldErrors = {};
   
   // Cleaner title validation
@@ -436,7 +446,7 @@ const handleSubmit = (e) => {
         // Only require pricing if pricing options are available and it's marked as required
         const pricingConfig = section.pricingConfig || {};
         if (pricingConfig.required !== false && formData.pricing.length === 0) {
-          validationErrors.push('At least one pricing option is required');
+          newFieldErrors.pricing = 'At least one pricing option is required';
         } else if (formData.pricing.length > 0) {
           formData.pricing.forEach(price => {
             // Check if price amount is empty
@@ -449,7 +459,7 @@ const handleSubmit = (e) => {
             }
             
             if (section.pricingOptions[price.priceType]?.units && !price.unit) {
-              // Don't add to validationErrors, put in field errors instead
+              // Field-specific: show the unit error inline under the dropdown
               newFieldErrors[`pricing_${price.priceType}_unit`] = `Please select a unit`;
             }
           });
@@ -482,10 +492,11 @@ const handleSubmit = (e) => {
     }
   });
   
-  // Return early if validation fails
-  if (validationErrors.length > 0 || Object.keys(newFieldErrors).length > 0) {
-    setLocalErrors(validationErrors);
+  // Return early if validation fails — inline errors carry the specifics,
+  // the toast is just a generic attention-grabber (matches the events form).
+  if (Object.keys(newFieldErrors).length > 0) {
     setFieldErrors(newFieldErrors);
+    toast.error('Form Errors — please fix the highlighted fields.');
     return;
   }
   
@@ -538,10 +549,10 @@ const handleSubmit = (e) => {
 };
 
 return (
-  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+  <form onSubmit={handleSubmit} className="bg-white p-3 sm:p-6 rounded-lg shadow-md border border-slate-200 space-y-4 sm:space-y-6">
     {/* Common fields - always show these */}
     <div>
-      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+      <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
         Title <span className="text-red-500">*</span>
       </label>
       <input
@@ -566,15 +577,15 @@ return (
 
     {/* Ad Type */}
     <div>
-      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+      <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
         Ad Type
         {initialData && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
       </label>
-      <div className="grid grid-cols-2 gap-2 sm:gap-0 sm:flex sm:border sm:border-slate-300 rounded-lg overflow-hidden">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
         <button
           type="button"
           disabled={!!initialData}
-          className={`py-2 px-3 sm:p-3 sm:flex-1 text-sm sm:text-base rounded-lg sm:rounded-none border sm:border-0 ${
+          className={`px-2 sm:px-4 py-2.5 sm:py-2 border rounded-lg text-sm sm:text-base ${
             formData.adType === 'offered'
               ? 'bg-teal-700 text-white border-teal-700'
               : 'bg-white text-slate-700 border-slate-300'
@@ -590,7 +601,7 @@ return (
         <button
           type="button"
           disabled={!!initialData}
-          className={`py-2 px-3 sm:p-3 sm:flex-1 text-sm sm:text-base rounded-lg sm:rounded-none border sm:border-0 ${
+          className={`px-2 sm:px-4 py-2.5 sm:py-2 border rounded-lg text-sm sm:text-base ${
             formData.adType === 'wanted'
               ? 'bg-teal-700 text-white border-teal-700'
               : 'bg-white text-slate-700 border-slate-300'
@@ -689,6 +700,7 @@ return (
                   onClick={() => {
                     if (!initialData) {
                       handlePricingTypeSelect(type, config);
+                      setFieldErrors(prev => ({ ...prev, pricing: null }));
                     }
                   }}
                 >
@@ -697,6 +709,11 @@ return (
               ))}
             </div>
             
+            {/* Pricing "none added" error (folded from the old summary box) */}
+            {fieldErrors.pricing && (
+              <p className="text-red-500 text-xs sm:text-sm mt-1 mb-1">{fieldErrors.pricing}</p>
+            )}
+
             {/* Render the pricing inputs */}
             {renderPricingInputs(section.pricingOptions)}
             {/* Show unit selection error if exists */}
@@ -714,7 +731,7 @@ return (
           
           return (
             <div className="mb-4">
-              <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+              <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                 {conditionField.label}
                 {conditionField.required && <span className="text-red-500 ml-1">*</span>}
               </label>
@@ -737,7 +754,7 @@ return (
           
           return (
             <div key={field.id} className="mb-4">
-              <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+              <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                 {field.label}
                 {field.required && <span className="text-red-500 ml-1">*</span>}
                 {isVehicleTypeLocked && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
@@ -752,7 +769,7 @@ return (
 
     {/* Description - always show this */}
     <div>
-      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+      <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
         Description <span className="text-red-500">*</span>
       </label>
       <textarea
@@ -778,7 +795,7 @@ return (
             <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.description}</p>
           )}
         </div>
-        <span className="text-xs text-slate-400 whitespace-nowrap">
+        <span className="text-xs text-slate-500 whitespace-nowrap">
           {(formData.description || '').length}/15000
         </span>
       </div>
@@ -826,7 +843,7 @@ return (
     {/* Nationwide visibility */}
     <div>
       <label className="cursor-pointer">
-        <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">Advertise this Ad Nationwide</span>
+        <span className="block font-medium text-slate-600 text-sm sm:text-base">Advertise this Ad Nationwide</span>
         <p className="text-xs text-slate-500 mt-1 mb-2">Your ad will appear when users search in any state</p>
         <input
           type="checkbox"
@@ -841,7 +858,7 @@ return (
     {formData.adType === 'offered' && formData.subcategory && isServiceSubcategory(formData.subcategory) && (
       <div>
         <label className="cursor-pointer">
-          <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">Notify me when wanted ads are posted</span>
+          <span className="block font-medium text-slate-600 text-sm sm:text-base">Notify me when wanted ads are posted</span>
           <p className="text-xs text-slate-500 mt-1 mb-2">Get notified when someone posts a wanted ad matching your service category and location</p>
           <input
             type="checkbox"
@@ -864,21 +881,6 @@ return (
       existingImages={formData.existingImages || []}
       setExistingImages={setExistingImages}
     />
-
-    {/* Errors - Only show general errors that aren't field-specific */}
-    {(localErrors.length > 0 || errors.length > 0) && (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4">
-        <p className="font-semibold sm:font-bold text-red-700 mb-2 text-sm sm:text-base">Please fix the following errors:</p>
-        <ul className="list-disc list-inside space-y-1">
-          {localErrors.map((error, index) => (
-            <li key={`local-${error}-${index}`} className="text-red-600 text-xs sm:text-sm">{error}</li>
-          ))}
-          {errors.map((error, index) => (
-            <li key={`backend-${error}-${index}`} className="text-red-600 text-xs sm:text-sm">{error}</li>
-          ))}
-        </ul>
-      </div>
-    )}
 
     {/* Submit */}
     <div className="text-center">

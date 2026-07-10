@@ -47,14 +47,14 @@ const AdminSidebar = ({ onLinkClick }) => {
     },
     {
       label: 'Daily Deals',
-      href: '/admin/profile/dailydeals',
+      href: '/admin/profile/deals',
       icon: <MdLocalOffer />,
       hasDropdown: true,
       isOpen: dailyDealsOpen,
       setIsOpen: setDailyDealsOpen,
       subItems: [
-        { label: 'Partner Stores', href: '/admin/profile/dailydeals/partners', icon: <FaBuilding /> },
-        { label: 'Manage Deals', href: '/admin/profile/dailydeals', icon: <MdCategory /> },
+        { label: 'Partner Stores', href: '/admin/profile/deals/partners', icon: <FaBuilding /> },
+        { label: 'Manage Deals', href: '/admin/profile/deals', icon: <MdCategory /> },
       ]
     },
     { label: 'Renewal Adverts', href: '/admin/profile/adverts/renewals', icon: <FaAd /> },
@@ -72,7 +72,7 @@ const AdminSidebar = ({ onLinkClick }) => {
     if (pathname.startsWith('/admin/profile/stores') || pathname.startsWith('/admin/profile/campaigns')) {
       setCouponsOpen(true);
     }
-    if (pathname.startsWith('/admin/profile/dailydeals')) {
+    if (pathname.startsWith('/admin/profile/deals')) {
       setDailyDealsOpen(true);
     }
   }, [pathname]);

@@ -591,7 +591,7 @@ fields: {
     ]
   },
 
-  'Restaurants': {
+  'Restaurants & Cafes': {
     sections: [
       {
         id: 'serviceDetailsSection',
@@ -792,6 +792,16 @@ fields: {
   },
 
   'Indian Groceries': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: []
+      }
+    ]
+  },
+
+  'Fruit & Veg': {
     sections: [
       {
         id: 'serviceDetailsSection',

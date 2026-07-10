@@ -81,12 +81,12 @@ const PartnerStoreImageUploader = ({
   return (
     <div>
       {/* Label */}
-      <label className="block font-semibold sm:font-bold mb-2 text-slate-700 text-sm sm:text-base">
+      <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
         {hasLogo ? 'Replace Logo' : 'Upload Logo'}
         <span className="text-xs font-normal text-slate-500 ml-1">(optional)</span>
       </label>
       <p className="text-xs sm:text-sm text-slate-500 mb-3">
-        PNG, JPEG, WebP · Max 2MB · Recommended: 800×400px
+        JPEG, PNG & WebP · Max 2MB · Recommended 800×400px
       </p>
 
       {/* Existing Logo (Edit Mode) */}
@@ -102,7 +102,7 @@ const PartnerStoreImageUploader = ({
                 e.target.src = 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1744016068/No_Image_Available_mq5h6q.jpg';
               }}
             />
-            <span className="absolute top-1 left-1 bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded">
+            <span className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded">
               Saved
             </span>
             <button
@@ -113,6 +113,11 @@ const PartnerStoreImageUploader = ({
             >
               ×
             </button>
+            {existingLogo.originalFilename && (
+              <p className="text-[10px] text-slate-500 mt-1 truncate w-32" title={existingLogo.originalFilename}>
+                {existingLogo.originalFilename}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -124,10 +129,10 @@ const PartnerStoreImageUploader = ({
           <div className="relative inline-block">
             <img
               src={preview}
-              alt="Logo preview"
+              alt={formData.logo?.name || 'Logo preview'}
               className="w-32 h-32 object-contain border border-slate-200 rounded-lg bg-white p-2"
             />
-            <span className="absolute top-1 left-1 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded">
+            <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded">
               New
             </span>
             <button
@@ -138,6 +143,11 @@ const PartnerStoreImageUploader = ({
             >
               ×
             </button>
+            {formData.logo?.name && (
+              <p className="text-[10px] text-slate-500 mt-1 truncate w-32" title={formData.logo.name}>
+                {formData.logo.name}
+              </p>
+            )}
           </div>
         </div>
       )}

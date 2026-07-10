@@ -17,10 +17,10 @@ const VerticalRail = ({ title, viewAllHref, items = [], type, cta }) => {
     <section className="py-4 px-3 sm:py-6 sm:px-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-teal-800">{title}</h2>
+        <h2 className="text-base sm:text-2xl font-bold text-teal-800">{title}</h2>
         <Link
           href={viewAllHref}
-          className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+          className="text-xs sm:text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
         >
           View All <FaArrowRight className="w-3 h-3" />
         </Link>

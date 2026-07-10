@@ -59,7 +59,7 @@ export const CATEGORIES = [
   {
     label: 'Food & Catering',
     subcategories: [
-      'Restaurants',
+      'Restaurants & Cafes',
       'Catering',
       'Cakes',
       'Chat & Street Food',
@@ -85,6 +85,15 @@ export const CATEGORIES = [
       'Dance Lessons',
       'Art Classes',
       'Sports Coaching',
+    ],
+  },
+  {
+    label: 'Groceries & Shops',
+    subcategories: [
+      'Indian Groceries',
+      'Fruit & Veg',
+      'Butchers',
+      'Plant Nursery',
     ],
   },
   {
@@ -115,14 +124,6 @@ export const CATEGORIES = [
       'Computer & Mobile Repairs',
       'Business IT',
       'Website Design',
-    ],
-  },
-  {
-    label: 'Retail & Local Businesses',
-    subcategories: [
-      'Indian Groceries',
-      'Butchers',
-      'Plant Nursery',
     ],
   },
   {
@@ -176,7 +177,7 @@ const NON_SERVICE_SUBCATEGORIES = [
   'Casual',
   'Part Time',
   // Food & Catering (fixed location - customers come to them)
-  'Restaurants',
+  'Restaurants & Cafes',
 ];
 
 // Get all parent category names

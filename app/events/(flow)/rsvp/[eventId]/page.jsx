@@ -18,16 +18,8 @@ import {
 
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SimpleDropdown from '@/components/shared/SimpleDropdown';
-
-const BackButton = ({ href }) => (
-  <Link
-    href={href}
-    className="inline-flex items-center gap-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 px-3 py-1 md:px-4 md:py-2 rounded-full font-semibold text-xs md:text-base transition-colors"
-  >
-    <span>&lt;</span>
-    <span>back</span>
-  </Link>
-);
+import BackButton from '@/components/BackButton';
+import EmptyState from '@/components/layout/EmptyState';
 
 const formatEventDate = (dateTime, timeZone) => {
   if (!dateTime) return '';
@@ -300,18 +292,12 @@ const RsvpPage = () => {
 
   if (!selectedEvent || selectedEvent._id !== eventId) {
     return (
-      <div>
-        <div className="max-w-md mx-auto text-center">
-          <p className="text-slate-700 mb-4">Event not found.</p>
-          <Link
-            href="/events"
-            className="inline-flex items-center gap-1 bg-amber-400 text-teal-800 hover:bg-amber-500 hover:text-teal-900 px-3 py-1 md:px-4 md:py-2 rounded-full shadow font-semibold text-xs md:text-sm transition-colors"
-          >
-            <span>&lt;</span>
-            <span>Browse events</span>
-          </Link>
-        </div>
-      </div>
+      <EmptyState
+        title="Event not found"
+        description="This event may have been removed, or the link is incorrect."
+        actionLabel="Browse events"
+        actionHref="/events"
+      />
     );
   }
 
@@ -326,12 +312,12 @@ const RsvpPage = () => {
           <BackButton href={`/events/views/${eventId}`} />
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 sm:p-6">
+        <div>
           {/* Title + event summary — hidden when registration is complete or on a revisit
               (the registered card stands alone with its own actions). */}
           {!justRegistered && !isRegistered && (
             <>
-              <h1 className="text-lg sm:text-2xl font-bold text-forest-900 text-center mb-1">
+              <h1 className="text-lg sm:text-2xl font-bold text-slate-900 text-center mb-1">
                 {selectedEvent.title}
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 text-center mb-4 sm:mb-6">
@@ -344,8 +330,8 @@ const RsvpPage = () => {
               just the message differs. Both flows end with the same two actions. */}
           {(justRegistered || isRegistered) && !submitting && (
             <div className="text-center py-6">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-green-100 flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-teal-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -511,24 +497,22 @@ const RsvpPage = () => {
 
               {/* Server-side error (returned by the registerForFreeEvent thunk) */}
               {registrationError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-red-700">{registrationError}</p>
-                </div>
+                <p className="text-sm text-red-600 mb-4">{registrationError}</p>
               )}
 
               {/* Action footer */}
-              <div className="flex sm:justify-center gap-2 sm:gap-4 pt-4 sm:pt-6 border-t border-slate-200 mt-6">
+              <div className="flex justify-center gap-2 sm:gap-4 pt-4 sm:pt-6 border-t border-slate-200 mt-6">
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="flex-1 sm:flex-none px-4 sm:px-8 py-2 sm:py-3 text-sm md:text-base border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg shadow font-semibold transition-colors"
+                  className="px-6 sm:px-8 py-2 sm:py-3 text-sm md:text-base border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg shadow font-semibold transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={registrationStatus === 'loading'}
-                  className="flex-1 sm:flex-none px-4 sm:px-8 py-2 sm:py-3 text-sm md:text-base bg-teal-700 hover:bg-teal-800 text-white rounded-lg shadow font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 sm:px-8 py-2 sm:py-3 text-sm md:text-base bg-teal-700 hover:bg-teal-800 text-white rounded-lg shadow font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {registrationStatus === 'loading' ? 'Registering...' : 'Register'}
                 </button>

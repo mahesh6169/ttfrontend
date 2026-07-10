@@ -179,10 +179,10 @@ const initialState = {
   // Tickets management
   tickets: {
     list: [],
-    total: 0,
+    total: 0, // total matching INVOICES (pagination is by invoice group)
     currentPage: 1,
     totalPages: 1,
-    limit: 20,
+    limit: 10, // invoices per page
     loading: false,
     error: null,
   },
@@ -431,7 +431,7 @@ const refundSlice = createSlice({
       .addCase(fetchRefundableTickets.fulfilled, (state, action) => {
         state.tickets.loading = false;
         state.tickets.list = action.payload.tickets || [];
-        state.tickets.total = action.payload.pagination?.totalTickets || 0;
+        state.tickets.total = action.payload.pagination?.totalInvoices || 0;
         state.tickets.currentPage = action.payload.pagination?.currentPage || 1;
         state.tickets.totalPages = action.payload.pagination?.totalPages || 1;
         state.tickets.error = null;

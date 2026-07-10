@@ -78,19 +78,19 @@ const SeatButton = ({
 
     switch (status) {
       case 'selected':
-        return `${baseStyles} bg-amber-600 text-white border-amber-700 shadow-md`;
+        return `${baseStyles} bg-teal-700 text-white border-teal-800 shadow-md`;
       case 'available':
-        return `${baseStyles} bg-green-500 text-white border-green-600 hover:bg-green-600 hover:border-green-700 hover:shadow-sm`;
+        return `${baseStyles} bg-teal-50 text-teal-700 border-teal-400 hover:bg-teal-100 hover:border-teal-500 hover:shadow-sm`;
       case 'selected-by-other':
-        return `${baseStyles} bg-yellow-400 text-yellow-900 border-yellow-500 cursor-not-allowed`;
+        return `${baseStyles} bg-amber-400 text-amber-900 border-amber-500 cursor-not-allowed`;
       case 'booked':
         return `${baseStyles} bg-red-500 text-white border-red-600 cursor-not-allowed`;
       case 'reserved':
-        return `${baseStyles} bg-purple-500 text-white border-purple-600 cursor-not-allowed`;
+        return `${baseStyles} bg-slate-400 text-white border-slate-500 cursor-not-allowed`;
       case 'disabled':
-        return `${baseStyles} bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50`;
+        return `${baseStyles} bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50`;
       default:
-        return `${baseStyles} bg-gray-100 text-gray-600 border-gray-300`;
+        return `${baseStyles} bg-slate-100 text-slate-600 border-slate-300`;
     }
   };
 
@@ -214,34 +214,34 @@ const SeatButton = ({
         )}
         
         {status === 'reserved' && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full"></div>
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-slate-400 rounded-full"></div>
         )}
       </button>
 
       {/* ✅ MOBILE ENHANCED: Improved tooltip with better mobile positioning */}
-      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20 max-w-xs shadow-lg">
+      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20 max-w-xs shadow-lg">
         <div className="font-medium text-center">{getTooltipText()}</div>
         
         {/* Additional info for certain statuses */}
         {status === 'selected-by-other' && safeSeat.reservedUntil && (
-          <div className="text-gray-300 text-xs mt-1 text-center">
+          <div className="text-slate-300 text-xs mt-1 text-center">
             Reserved until {new Date(safeSeat.reservedUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
         )}
         
         {status === 'booked' && (
-          <div className="text-gray-300 text-xs mt-1 text-center">
+          <div className="text-slate-300 text-xs mt-1 text-center">
             Already sold
           </div>
         )}
 
         {/* Tooltip arrow */}
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-slate-900"></div>
       </div>
 
       {/* ✅ NEW: Debug info (only in development) */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
           {safeSeat.seatId}
         </div>
       )}

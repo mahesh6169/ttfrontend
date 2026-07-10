@@ -137,13 +137,14 @@ const PaymentForm = ({
 
 
       {/* Submit Button */}
+      <div className="flex justify-center">
       <button
         type="submit"
         disabled={!stripe || isProcessing || disabled || !isCardValid}
-        className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center ${
+        className={`w-auto py-3 px-6 sm:px-8 rounded-lg font-semibold text-white transition-all flex items-center justify-center ${
           isProcessing || disabled || !isCardValid
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
+            ? 'bg-slate-400 cursor-not-allowed'
+            : 'bg-teal-700 hover:bg-teal-800 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2'
         }`}
       >
         {isProcessing ? (
@@ -158,9 +159,10 @@ const PaymentForm = ({
           </>
         )}
       </button>
+      </div>
 
       {/* Security Notice */}
-      <div className="flex items-center justify-center text-sm text-gray-500">
+      <div className="flex items-center justify-center text-sm text-slate-500">
         <FaLock className="mr-2" />
         <span>Your payment information is secure and encrypted</span>
       </div>

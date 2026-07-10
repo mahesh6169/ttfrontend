@@ -185,7 +185,7 @@ const ContactInfoInput = ({ value = {}, onChange, errors = {} }) => {
   return (
     <div>
       {/* Header */}
-      <span className="block font-semibold sm:font-bold text-slate-700 text-sm sm:text-base">
+      <span className="block font-medium text-slate-600 text-sm sm:text-base">
         Contact Information <span className="text-slate-400 font-normal text-xs">(Optional)</span>
       </span>
       <p className="text-xs text-slate-500 mt-1 mb-3">
@@ -254,7 +254,7 @@ const ContactInfoInput = ({ value = {}, onChange, errors = {} }) => {
           {activeFields.mobile && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-sm font-medium text-slate-700">Mobile Number</label>
+                <label className="text-sm font-medium text-slate-600">Mobile Number</label>
                 <button
                   type="button"
                   onClick={() => clearField('mobile')}
@@ -292,7 +292,7 @@ const ContactInfoInput = ({ value = {}, onChange, errors = {} }) => {
           {activeFields.email && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-sm font-medium text-slate-700">Email Address</label>
+                <label className="text-sm font-medium text-slate-600">Email Address</label>
                 <button
                   type="button"
                   onClick={() => clearField('email')}
@@ -327,7 +327,7 @@ const ContactInfoInput = ({ value = {}, onChange, errors = {} }) => {
           {activeFields.website && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-sm font-medium text-slate-700">Website</label>
+                <label className="text-sm font-medium text-slate-600">Website</label>
                 <button
                   type="button"
                   onClick={() => clearField('website')}
