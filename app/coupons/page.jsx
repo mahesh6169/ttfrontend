@@ -21,6 +21,7 @@ import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import EmptyState from '@/components/layout/EmptyState';
 import ErrorState from '@/components/layout/ErrorState';
 import { getParentForSubcategory } from '@/components/coupons/storeCategories';
+import SeoFooterBlock from './SeoFooterBlock';
 
 const libraries = ['places'];
 
@@ -541,6 +542,8 @@ const DiscountCodePage = () => {
           />
         </div>
       </section>
+
+      <SeoFooterBlock />
     </div>
   );
 };

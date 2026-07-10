@@ -1,11 +1,28 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { MdLocationOn, MdStorefront } from 'react-icons/md';
 
+// Odd-shape thresholds: wider than 2.2:1 or taller than ~1:1.5 → show whole (contain).
+// Everything in between (normal photos / flyers) fills the box (cover).
+const WIDE = 2.2;
+const TALL = 0.65;
+
 const DealCard = ({ deal }) => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL;
+  const imageUrl = deal.images?.[0]?.url || FALLBACK_IMAGE;
+
+  // Per-image fit: default cover (the common case), switch to contain once an
+  // odd-shaped image reports its real dimensions on load.
+  const [fit, setFit] = useState('cover');
+  const handleImageLoad = (e) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+    if (!w || !h) return;
+    const r = w / h;
+    setFit(r > WIDE || r < TALL ? 'contain' : 'cover');
+  };
 
   const daysUntilEnd = differenceInCalendarDays(new Date(deal.endDate), new Date());
   const isEndingSoon = daysUntilEnd <= 3 && daysUntilEnd >= 0;
@@ -28,12 +45,25 @@ const DealCard = ({ deal }) => {
   return (
     <Link href={`/deals/views/${deal._id}`}>
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full flex flex-col">
-        {/* Image */}
-        <div className="relative w-full h-40 sm:h-48 bg-slate-100">
+        {/* Image — per-image cover/contain.
+            Odd shapes show whole on a soft blurred backdrop instead of being cropped. */}
+        <div className="relative w-full h-40 sm:h-48 md:h-56 bg-slate-100 overflow-hidden">
+          {fit === 'contain' && (
+            <>
+              <img
+                src={imageUrl}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl opacity-70"
+              />
+              <div className="absolute inset-0 bg-white/20" />
+            </>
+          )}
           <img
-            src={deal.images?.[0]?.url || FALLBACK_IMAGE}
+            src={imageUrl}
             alt={deal.dealTitle}
-            className="w-full h-full object-cover"
+            onLoad={handleImageLoad}
+            className={`relative w-full h-full ${fit === 'cover' ? 'object-cover' : 'object-contain'}`}
             onError={(e) => {
               e.target.src = FALLBACK_IMAGE;
             }}

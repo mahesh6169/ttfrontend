@@ -1,14 +1,56 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { MdLocationOn } from 'react-icons/md';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { BsChatDots } from 'react-icons/bs';
 import { format } from 'date-fns';
 
+// Odd-shape thresholds: wider than 2.2:1 or taller than ~1:1.5 → show whole (contain).
+// Everything in between (normal photos / flyers) fills the box (cover).
+const WIDE = 2.2;
+const TALL = 0.65;
+
 const HomeCard = ({ type, data, isDemo = false }) => {
+  // Per-image fit — declared before any early return (rules of hooks).
+  const [fit, setFit] = useState('cover');
+  const handleImageLoad = (e) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+    if (!w || !h) return;
+    const r = w / h;
+    setFit(r > WIDE || r < TALL ? 'contain' : 'cover');
+  };
+
   if (!data) return null;
 
   const FALLBACK_LISTING_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_ADVERT_IMAGE_URL;
   const FALLBACK_EVENT_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
+
+  // Shared image box: per-image cover/contain; odd shapes show whole on a soft
+  // blurred backdrop instead of being cropped.
+  const imageBox = (src, alt, badge = null) => (
+    <div className="relative w-full h-40 sm:h-48 md:h-56 bg-slate-100 rounded-t-xl overflow-hidden">
+      {badge}
+      {fit === 'contain' && (
+        <>
+          <img
+            src={src}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl opacity-70"
+          />
+          <div className="absolute inset-0 bg-white/20" />
+        </>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        onLoad={handleImageLoad}
+        className={`relative w-full h-full ${fit === 'cover' ? 'object-cover' : 'object-contain'}`}
+      />
+    </div>
+  );
 
   const renderContent = (showDemoBadge = false) => {
     const DemoBadge = () => (
@@ -21,13 +63,7 @@ const HomeCard = ({ type, data, isDemo = false }) => {
       case 'listing':
         return (
           <>
-            <div className="relative w-full h-40 sm:h-48 md:h-56 bg-slate-100 rounded-t-xl overflow-hidden">
-              <img
-                src={data.image || FALLBACK_LISTING_IMAGE}
-                alt={data.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            {imageBox(data.image || FALLBACK_LISTING_IMAGE, data.title)}
 
             <div className="py-2 px-2">
               <h2 className="text-xs sm:text-sm text-center font-medium truncate text-slate-900">
@@ -47,14 +83,7 @@ const HomeCard = ({ type, data, isDemo = false }) => {
       case 'event':
         return (
           <>
-            <div className="relative w-full h-40 sm:h-48 md:h-56 bg-slate-100 rounded-t-xl overflow-hidden">
-              {showDemoBadge && <DemoBadge />}
-              <img
-                src={data.image || FALLBACK_EVENT_IMAGE}
-                alt={data.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            {imageBox(data.image || FALLBACK_EVENT_IMAGE, data.title, showDemoBadge ? <DemoBadge /> : null)}
 
             <div className="py-2 px-2">
               <h2 className="text-xs sm:text-sm text-center font-medium truncate text-slate-900">

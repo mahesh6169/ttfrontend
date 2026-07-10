@@ -20,6 +20,10 @@ const ManageEventsPage = () => {
   const router = useRouter();
 
   const { myEvents, status, error, deleteStatus, formStatus } = useSelector((state) => state.events);
+  const { user } = useSelector((state) => state.user);
+  // A paid event can only go live if the organizer's Stripe is fully set up (can accept payments +
+  // receive payouts) — same bar as creating a paid event. Reset to 'no_account' on Stripe disconnect.
+  const stripeReady = (user?.stripeAccountStatus || 'no_account') === 'fully_active';
   const loading = status === 'loading';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
@@ -139,6 +143,8 @@ const ManageEventsPage = () => {
           {myEvents.map((event) => {
             const isExpired = new Date() > new Date(event.willExpire);
             const isLive = event.goLive !== false;
+            // Block re-listing a paid event when Stripe isn't ready (e.g. after disconnect).
+            const blockGoLive = event.isPaid && !stripeReady && !isLive;
 
             return (
               <div
@@ -205,8 +211,13 @@ const ManageEventsPage = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleToggleGoLive(event)}
-                      className="text-teal-700 hover:text-teal-900 active:underline font-semibold py-1"
+                      onClick={() => !blockGoLive && handleToggleGoLive(event)}
+                      disabled={blockGoLive}
+                      className={`font-semibold py-1 active:underline ${
+                        blockGoLive
+                          ? 'text-slate-400'
+                          : 'text-teal-700 hover:text-teal-900'
+                      }`}
                     >
                       {isLive ? 'Offline' : 'Go Live'}
                     </button>
@@ -218,6 +229,21 @@ const ManageEventsPage = () => {
                       Delete
                     </button>
                   </div>
+
+                  {/* Paid event can't go live until Stripe payouts are set up */}
+                  {blockGoLive && (
+                    <div className="mt-2">
+                      <p className="text-[11px] text-slate-500">
+                        Set up Stripe payouts to make this paid event live.
+                      </p>
+                      <Link
+                        href="/users/profile/stripeSetup"
+                        className="text-[11px] font-semibold text-teal-700 hover:text-teal-900"
+                      >
+                        Set up Stripe payouts →
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             );
