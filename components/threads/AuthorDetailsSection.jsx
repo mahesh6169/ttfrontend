@@ -90,10 +90,16 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
       }
     });
 
-    // Clear error when user types
-    if (fieldErrors[field]) {
-      setFieldErrors(prev => ({ ...prev, [field]: null }));
-    }
+    // Clear errors when user types
+    setFieldErrors(prev => {
+      const next = { ...prev };
+      if (next[field]) next[field] = null;
+      // Clear the "add at least one detail" error once a qualifying field has a value
+      if (next.atLeastOne && ['aboutMyself', 'contact', 'email', 'website'].includes(field) && value?.trim()) {
+        next.atLeastOne = null;
+      }
+      return next;
+    });
   };
 
   const toggleField = (field) => {
@@ -283,6 +289,16 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
       });
     }
 
+    // At least one contact detail is required when Author Details is opted in
+    const hasAtLeastOneDetail =
+      !!author.aboutMyself?.trim() ||
+      !!author.contact?.trim() ||
+      !!author.email?.trim() ||
+      !!author.website?.trim();
+    if (!hasAtLeastOneDetail) {
+      newErrors.atLeastOne = 'Add at least one detail — About, Mobile, Email, or Website.';
+    }
+
     setFieldErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -392,6 +408,9 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
                 <span>Social</span>
               </button>
             </div>
+            {fieldErrors.atLeastOne && (
+              <p className="text-xs text-red-500 mt-2">{fieldErrors.atLeastOne}</p>
+            )}
           </div>
 
           {/* Dynamic Input Fields */}

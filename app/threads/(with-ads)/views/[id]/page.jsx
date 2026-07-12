@@ -435,6 +435,95 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     }    
     
 
+  // Author "About" block — rendered inline on mobile, and as a sidebar card on desktop (under Share).
+  const hasAuthorDetails =
+    thread.author && (thread.author.name || thread.author.website || thread.author.contact ||
+      thread.author.email || thread.author.aboutMyself ||
+      (thread.author.socialMedia && thread.author.socialMedia.length > 0));
+
+  const authorHeading = (
+    <h3 className="text-sm sm:text-base font-semibold text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-200 mb-3">
+      <FaUser className="text-slate-600" />
+      <span>About {thread.author?.name || 'Author'}</span>
+    </h3>
+  );
+
+  const authorRows = (
+    <div className="space-y-2">
+      {thread.author?.aboutMyself && (
+        <div className="flex items-start">
+          <span className="text-sm font-medium text-slate-600 w-24 shrink-0">About:</span>
+          <span className="text-sm text-slate-800">{thread.author.aboutMyself}</span>
+        </div>
+      )}
+
+      {thread.author?.website && (
+        <div className="flex items-start">
+          <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Website:</span>
+          <a
+            href={thread.author.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-slate-700 hover:text-slate-900 hover:underline break-all inline-flex items-center gap-1"
+          >
+            {thread.author.website}
+            <FaExternalLinkAlt className="text-xs text-slate-400 flex-shrink-0" />
+          </a>
+        </div>
+      )}
+
+      {thread.author?.contact && (
+        <div className="flex items-start">
+          <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Contact:</span>
+          <a
+            href={`tel:${thread.author.contact}`}
+            className="text-sm text-slate-700 hover:text-slate-900 hover:underline inline-flex items-center gap-1"
+          >
+            {thread.author.contact}
+            <FaExternalLinkAlt className="text-xs text-slate-400" />
+          </a>
+        </div>
+      )}
+
+      {thread.author?.email && (
+        <div className="flex items-start">
+          <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Email:</span>
+          <a
+            href={`mailto:${thread.author.email}`}
+            className="text-sm text-slate-700 hover:text-slate-900 hover:underline break-all inline-flex items-center gap-1"
+          >
+            {thread.author.email}
+            <FaExternalLinkAlt className="text-xs text-slate-400 flex-shrink-0" />
+          </a>
+        </div>
+      )}
+
+      {thread.author?.socialMedia && thread.author.socialMedia.length > 0 && (
+        <div className="flex items-start">
+          <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Follow us:</span>
+          <div className="flex flex-wrap gap-2">
+            {thread.author.socialMedia.map((social, index) => (
+              social.platform && social.url && (
+                <a
+                  key={index}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 transition-colors"
+                >
+                  <span>{social.platform}</span>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              )
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <ThreadSocketListener />
@@ -608,7 +697,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             {thread.owner?.name && (
               <div className="text-sm sm:text-base">
                 <span className="font-semibold text-slate-700">Posted By:</span>{' '}
-                <span className="text-slate-600">{thread.owner?.name}</span>
+                <span className="text-slate-600">{thread.isCuratedThread ? 'Desify Team' : thread.owner?.name}</span>
               </div>
             )}
             {thread.createdAt && (
@@ -683,196 +772,102 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       )}
 
       {/* Author Details Section */}
-      {thread.author && (thread.author.name || thread.author.website || thread.author.contact ||
-       thread.author.email || thread.author.aboutMyself ||
-       (thread.author.socialMedia && thread.author.socialMedia.length > 0)) && (
-        <div className="my-4 mx-2">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-200 mb-3">
-            <FaUser className="text-slate-600" />
-            <span>About {thread.author.name || 'Author'}</span>
-          </h3>
-          <div className="space-y-2">
-            {thread.author.aboutMyself && (
-              <div className="flex items-start">
-                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">About:</span>
-                <span className="text-sm text-slate-800">{thread.author.aboutMyself}</span>
-              </div>
-            )}
-            
-            {thread.author.website && (
-              <div className="flex items-start">
-                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Website:</span>
-                <a
-                  href={thread.author.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-slate-700 hover:text-slate-900 hover:underline break-all inline-flex items-center gap-1"
-                >
-                  {thread.author.website}
-                  <FaExternalLinkAlt className="text-xs text-slate-400 flex-shrink-0" />
-                </a>
-              </div>
-            )}
-
-            {thread.author.contact && (
-              <div className="flex items-start">
-                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Contact:</span>
-                <a
-                  href={`tel:${thread.author.contact}`}
-                  className="text-sm text-slate-700 hover:text-slate-900 hover:underline inline-flex items-center gap-1"
-                >
-                  {thread.author.contact}
-                  <FaExternalLinkAlt className="text-xs text-slate-400" />
-                </a>
-              </div>
-            )}
-
-            {thread.author.email && (
-              <div className="flex items-start">
-                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Email:</span>
-                <a
-                  href={`mailto:${thread.author.email}`}
-                  className="text-sm text-slate-700 hover:text-slate-900 hover:underline break-all inline-flex items-center gap-1"
-                >
-                  {thread.author.email}
-                  <FaExternalLinkAlt className="text-xs text-slate-400 flex-shrink-0" />
-                </a>
-              </div>
-            )}
-
-            {thread.author.socialMedia && thread.author.socialMedia.length > 0 && (
-              <div className="flex items-start">
-                <span className="text-sm font-medium text-slate-600 w-24 shrink-0">Follow us:</span>
-                <div className="flex flex-wrap gap-2">
-                  {thread.author.socialMedia.map((social, index) => (
-                    social.platform && social.url && (
-                      <a
-                        key={index}
-                        href={social.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 transition-colors"
-                      >
-                        <span>{social.platform}</span>
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
-                    )
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+      {/* About Author — mobile only (desktop shows it in the sidebar under Share) */}
+      {hasAuthorDetails && (
+        <div className="mt-4 mb-6 mx-2 lg:hidden">
+          {authorHeading}
+          {authorRows}
         </div>
       )}
 
-      {/* Useful Answers Section */}
-      {usefulAnswers.length > 0 ? (
-        <div className="my-4 mx-2">
-          <div className="pb-2 border-b border-slate-200 mb-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-slate-800">Useful Comments</h3>
-              </div>
-              {/* Navigation Buttons in Header */}
-              {usefulAnswers.length > 1 && (
-                <div className="flex items-center space-x-1 flex-shrink-0">
-                  <button
-                    onClick={() => setCurrentUsefulIndex((prev) => (prev === 0 ? usefulAnswers.length - 1 : prev - 1))}
-                    className="text-slate-400 hover:text-teal-600 hover:bg-slate-100 p-1 rounded transition focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                  >
-                    <FaChevronLeft size={10} />
-                  </button>
-                  <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
-                    {currentUsefulIndex + 1}/{usefulAnswers.length}
-                  </span>
-                  <button
-                    onClick={() => setCurrentUsefulIndex((prev) => (prev + 1) % usefulAnswers.length)}
-                    className="text-slate-400 hover:text-teal-600 hover:bg-slate-100 p-1 rounded transition focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                  >
-                    <FaChevronRight size={10} />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="relative">
-            <div className="min-h-[60px] max-h-[120px] relative">
-              {/* Current Useful Comment */}
-              {usefulAnswers[currentUsefulIndex] && (
-                <div className="px-2 py-1.5 h-full overflow-y-auto">
-                  <div className="flex justify-between items-center mb-1">
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <span className="font-medium text-slate-700">
-                        {usefulAnswers[currentUsefulIndex].sender?.name || 'Former Member'}
-                      </span>
-                      <span className="text-slate-400">·</span>
-                      <span className="text-slate-400">
-                        {format(new Date(usefulAnswers[currentUsefulIndex].createdAt), 'dd MMM')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-1.5 text-xs text-slate-400">
-                      <button
-                        onClick={() => handleLike(usefulAnswers[currentUsefulIndex]._id)}
-                        className={`flex items-center space-x-0.5 ${
-                          usefulAnswers[currentUsefulIndex].likedBy?.includes(currentUser?._id)
-                            ? 'text-teal-600'
-                            : ''
-                        } hover:text-teal-600 focus:outline-none`}
-                      >
-                        👍 {usefulAnswers[currentUsefulIndex].likes || 0}
-                      </button>
-                      <button
-                        onClick={() => handleUnlike(usefulAnswers[currentUsefulIndex]._id)}
-                        className={`flex items-center space-x-0.5 ${
-                          usefulAnswers[currentUsefulIndex].dislikedBy?.includes(currentUser?._id)
-                            ? 'text-red-600'
-                            : ''
-                        } hover:text-red-600 focus:outline-none`}
-                      >
-                        👎 {usefulAnswers[currentUsefulIndex].dislikes || 0}
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600 leading-snug line-clamp-3">
-                    {usefulAnswers[currentUsefulIndex].message}
-                  </p>
-                </div>
-              )}
-
-              {/* Carousel Indicators */}
-              {usefulAnswers.length > 1 && (
-                <div className="flex justify-center mt-2 space-x-1">
-                  {usefulAnswers.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentUsefulIndex(index)}
-                      className={`h-1 rounded-full transition-all focus:outline-none ${
-                        index === currentUsefulIndex ? 'bg-teal-500 w-4' : 'bg-slate-300 w-1'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="my-4 mx-2">
-          <div className="pb-2 border-b border-slate-200 mb-3">
-            <h3 className="text-sm font-semibold text-slate-800">Useful Comments</h3>
-          </div>
-          <div className="flex items-center justify-center">
-            <p className="text-xs text-slate-400">No useful comments yet — be the first to 👍 one!</p>
-          </div>
-        </div>
-      )}
-
-
-
-{/* Message Area */}
+{/* Message Area — Useful Comments pinned at the top, then the live chat */}
 <div ref={chatRef} id="conversation-area" className="border border-slate-200 rounded shadow-sm my-4 mx-2 bg-white flex flex-col" style={{ maxHeight: '70vh' }}>
+
+  {/* Useful Comments — highlighted band inside the conversation (hidden until a comment is liked) */}
+  {usefulAnswers.length > 0 && (
+    <div className="bg-slate-50 border-b border-slate-200 rounded-t px-3 py-2">
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span aria-hidden="true">👍</span>
+          <h3 className="text-sm font-semibold text-slate-800">Useful Comments</h3>
+        </div>
+        {usefulAnswers.length > 1 && (
+          <div className="flex items-center space-x-1 flex-shrink-0">
+            <button
+              onClick={() => setCurrentUsefulIndex((prev) => (prev === 0 ? usefulAnswers.length - 1 : prev - 1))}
+              className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+            >
+              <FaChevronLeft size={10} />
+            </button>
+            <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
+              {currentUsefulIndex + 1}/{usefulAnswers.length}
+            </span>
+            <button
+              onClick={() => setCurrentUsefulIndex((prev) => (prev + 1) % usefulAnswers.length)}
+              className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+            >
+              <FaChevronRight size={10} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {usefulAnswers[currentUsefulIndex] && (
+        <div className="bg-white border border-slate-200 rounded-md px-2 py-1.5">
+          <div className="flex justify-between items-center mb-1">
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="font-medium text-slate-700">
+                {usefulAnswers[currentUsefulIndex].sender?.name || 'Former Member'}
+              </span>
+              <span className="text-slate-400">·</span>
+              <span className="text-slate-400">
+                {format(new Date(usefulAnswers[currentUsefulIndex].createdAt), 'dd MMM')}
+              </span>
+            </div>
+            <div className="flex items-center space-x-1.5 text-xs text-slate-400">
+              <button
+                onClick={() => handleLike(usefulAnswers[currentUsefulIndex]._id)}
+                className={`flex items-center space-x-0.5 ${
+                  usefulAnswers[currentUsefulIndex].likedBy?.includes(currentUser?._id)
+                    ? 'text-teal-600'
+                    : ''
+                } hover:text-teal-600 focus:outline-none`}
+              >
+                👍 {usefulAnswers[currentUsefulIndex].likes || 0}
+              </button>
+              <button
+                onClick={() => handleUnlike(usefulAnswers[currentUsefulIndex]._id)}
+                className={`flex items-center space-x-0.5 ${
+                  usefulAnswers[currentUsefulIndex].dislikedBy?.includes(currentUser?._id)
+                    ? 'text-red-600'
+                    : ''
+                } hover:text-red-600 focus:outline-none`}
+              >
+                👎 {usefulAnswers[currentUsefulIndex].dislikes || 0}
+              </button>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600 leading-snug line-clamp-3">
+            {usefulAnswers[currentUsefulIndex].message}
+          </p>
+        </div>
+      )}
+
+      {usefulAnswers.length > 1 && (
+        <div className="flex justify-center mt-2 space-x-1">
+          {usefulAnswers.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentUsefulIndex(index)}
+              className={`h-1 rounded-full transition-all focus:outline-none ${
+                index === currentUsefulIndex ? 'bg-slate-500 w-4' : 'bg-slate-300 w-1'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )}
 
   {/* Jump to Bottom Button */}
   {showJumpToBottom && (
@@ -1134,9 +1129,15 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       </div>
     </div>
   ) : (
-    <div className="border-t bg-slate-50 p-4">
-      <div className="text-center">
-        <p className="text-slate-600 mb-3">Login to join the conversation</p>
+    <div className="border-t bg-slate-50 p-3">
+      <div className="flex items-end gap-2">
+        <textarea
+          rows={1}
+          disabled
+          placeholder="Login to join the conversation..."
+          className="flex-1 border rounded-lg outline-none resize-none p-2 text-sm sm:text-base bg-slate-50 text-slate-500 cursor-not-allowed placeholder:text-slate-400"
+          style={{ minHeight: '2.5rem', maxHeight: '8rem' }}
+        />
         <Link
           href={`/login?preserveRedirect=true`}
           onClick={() => {
@@ -1145,7 +1146,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               `/threads/views/${threadId}`
             );
           }}
-          className="inline-block px-6 py-2 text-sm sm:text-base bg-teal-600 text-white rounded hover:bg-teal-700"
+          className="px-4 py-2 bg-teal-600 text-white hover:bg-teal-700 rounded-lg font-medium transition-colors whitespace-nowrap"
         >
           Login
         </Link>
@@ -1208,6 +1209,14 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             )}
           </div>
         </div>
+
+        {/* About Author — desktop sidebar card (under Share) */}
+        {hasAuthorDetails && (
+          <div className="border border-slate-200 p-4 rounded shadow-md w-full">
+            {authorHeading}
+            {authorRows}
+          </div>
+        )}
       </div>
 
       {/* Mobile Floating Buttons — fade out once the conversation/chat area is in view (B6) */}

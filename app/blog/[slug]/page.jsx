@@ -136,20 +136,20 @@ export default async function BlogPostPage({ params }) {
         <img
           src={hero}
           alt={meta.title || ''}
-          className="w-full h-56 sm:h-72 md:h-80 object-cover rounded-lg mb-6"
+          className="w-full aspect-[1200/630] object-cover rounded-lg mb-6"
         />
       ) : (
-        <div className="w-full h-56 sm:h-72 md:h-80 rounded-lg mb-6 bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-center text-slate-400 text-sm px-4">
+        <div className="w-full aspect-[1200/630] rounded-lg mb-6 bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-center text-slate-400 text-sm px-4">
           Hero image goes here — set <code className="mx-1">heroImage</code> in the .md file
         </div>
       )}
 
-      <h1 className="text-balance text-lg sm:text-2xl md:text-3xl font-bold text-teal-900 text-center leading-tight mb-6">
+      <h1 className="text-balance text-lg sm:text-2xl md:text-3xl font-bold text-slate-900 text-center leading-tight mb-6">
         {meta.title}
       </h1>
 
       <div
-        className="prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:text-teal-900 prose-p:text-slate-600 prose-li:text-slate-600 prose-a:text-teal-700 hover:prose-a:text-teal-800"
+        className="prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:text-slate-800 prose-headings:font-semibold prose-p:text-slate-700 prose-li:text-slate-700 prose-a:text-teal-700 hover:prose-a:text-teal-800"
         dangerouslySetInnerHTML={{ __html: html }}
       />
 
