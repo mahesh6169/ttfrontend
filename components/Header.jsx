@@ -37,10 +37,8 @@ const Header = () => {
   const isAuthenticated = tokenValidated && !!user?._id;
   // Show loading during initial state or when actively validating
   const isInitialLoad = status === 'idle' && !tokenValidated && !user;
-  // Smart profile path based on user role
-  const isAdmin = user?.role === 'admin';
-  const baseProfilePath = isAdmin ? '/admin/profile' : '/users/profile';
-  const profileLink = baseProfilePath;
+  // Profile button always goes to the user profile — admins reach the console via /admin/login.
+  const profileLink = '/users/profile';
   
   // Get both unreadExists and inActiveChat from state
   const { unreadExists, inActiveChat } = useSelector((state) => state.messages);
