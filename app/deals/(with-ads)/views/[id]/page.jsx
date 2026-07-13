@@ -29,7 +29,7 @@ const DealDetailPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { deal, fetchStatus, error } = useSelector((state) => state.deal);
+  const { deal, fetchStatus, error, notFound } = useSelector((state) => state.deal);
   const [chatInView, setChatInView] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const shareRef = useRef(null);
@@ -73,8 +73,9 @@ const DealDetailPage = () => {
   }, [shareOpen]);
 
   const isLoading = fetchStatus === 'loading' || (fetchStatus === 'idle' && !deal);
-  const isFailed = fetchStatus === 'failed';
-  const isNotFound = !isLoading && !isFailed && !deal;
+  // A 404 (inactive/removed deal) is "not found", not a retryable error.
+  const isNotFound = notFound || (!isLoading && fetchStatus !== 'failed' && !deal);
+  const isFailed = fetchStatus === 'failed' && !notFound;
 
   // Get the deal poster for messaging
   const partner = deal?.partnerstoreId;

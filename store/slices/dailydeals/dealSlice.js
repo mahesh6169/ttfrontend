@@ -9,7 +9,10 @@ export const getDealById = createAsyncThunk(
       const response = await axios.get(`/dailydeals/view/${id}`);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch deal');
+      return rejectWithValue({
+        status: error.response?.status,
+        message: error.response?.data?.message || 'Failed to fetch deal',
+      });
     }
   }
 );
@@ -19,13 +22,15 @@ const dealSlice = createSlice({
   initialState: {
     deal: null,
     fetchStatus: 'idle',
-    error: null
+    error: null,
+    notFound: false // true when the deal 404s (inactive/removed) — show "not found", not a retry error
   },
   reducers: {
     clearDeal(state) {
       state.deal = null;
       state.fetchStatus = 'idle';
       state.error = null;
+      state.notFound = false;
     }
   },
   extraReducers: (builder) => {
@@ -33,14 +38,17 @@ const dealSlice = createSlice({
       .addCase(getDealById.pending, (state) => {
         state.fetchStatus = 'loading';
         state.error = null;
+        state.notFound = false;
       })
       .addCase(getDealById.fulfilled, (state, action) => {
         state.fetchStatus = 'succeeded';
         state.deal = action.payload.deal;
+        state.notFound = false;
       })
       .addCase(getDealById.rejected, (state, action) => {
         state.fetchStatus = 'failed';
-        state.error = action.payload;
+        state.error = action.payload?.message || 'Failed to fetch deal';
+        state.notFound = action.payload?.status === 404;
       });
   }
 });

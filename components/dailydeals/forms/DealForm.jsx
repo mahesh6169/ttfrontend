@@ -34,7 +34,8 @@ export default function DealForm({ initialData = null, onSubmit, partnersEndpoin
       startDate: initialData?.featured?.startDate ? initialData.featured.startDate.split('T')[0] : '',
       endDate: initialData?.featured?.endDate ? initialData.featured.endDate.split('T')[0] : ''
     },
-    isActive: initialData?.isActive !== false
+    isActive: initialData?.isActive !== false,
+    isOnline: initialData?.isOnline !== false
   });
 
   const [images, setImages] = useState([]);
@@ -171,6 +172,7 @@ export default function DealForm({ initialData = null, onSubmit, partnersEndpoin
       submitData.append('endDate', formData.endDate);
       submitData.append('featured', JSON.stringify(formData.featured));
       submitData.append('isActive', formData.isActive);
+      submitData.append('isOnline', formData.isOnline);
 
       // Handle images
       if (initialData) {
@@ -433,6 +435,30 @@ export default function DealForm({ initialData = null, onSubmit, partnersEndpoin
           <label className="text-sm sm:text-base text-slate-600">
             Deal is active
           </label>
+        </div>
+      )}
+
+      {/* Online/Offline - Admin Only. Offline hides the deal from browse/search but
+          keeps its direct link working, so you can preview it with a customer before launch. */}
+      {isAdmin && (
+        <div>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              name="isOnline"
+              checked={formData.isOnline}
+              onChange={handleChange}
+              className="mr-2 w-5 h-5 sm:w-4 sm:h-4"
+            />
+            <label className="text-sm sm:text-base text-slate-600">
+              Deal is online (visible on the site)
+            </label>
+          </div>
+          {!formData.isOnline && (
+            <p className="text-xs text-slate-500 mt-1 ml-7">
+              Offline: hidden from browse &amp; search, but the direct link still works for previewing.
+            </p>
+          )}
         </div>
       )}
 
