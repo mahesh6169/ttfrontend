@@ -177,7 +177,7 @@ const ManageEventsPage = () => {
                     isExpired
                       ? 'text-red-600 font-medium'
                       : isLive
-                      ? 'text-green-600'
+                      ? 'text-teal-700'
                       : 'text-slate-500'
                   }`}>
                     {isExpired ? 'Expired' : isLive ? 'Live' : 'Offline'}
@@ -219,7 +219,7 @@ const ManageEventsPage = () => {
                           : 'text-teal-700 hover:text-teal-900'
                       }`}
                     >
-                      {isLive ? 'Offline' : 'Go Live'}
+                      {isLive ? 'Go Offline' : 'Go Live'}
                     </button>
                     <button
                       type="button"
