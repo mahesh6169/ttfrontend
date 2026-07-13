@@ -1,7 +1,7 @@
 ---
 title: Tradie or Handyman? Grow Your Business on Desify
 description: Join Desify free and get discovered by local customers, matched to Wanted Ads, and win more paid work in your community.
-heroImage: https://res.cloudinary.com/dtvrbdvkx/image/upload/v1783925214/tradie-v1_me5unh.png
+heroImage: https://res.cloudinary.com/dtvrbdvkx/image/upload/v1783928578/tradie-v3_ztn5uy.jpg
 ctaText: Register FREE
 ctaLink: /register
 ---
