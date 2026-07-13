@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { simpleMarkdownToHtml } from '@/utils/markdownToHtml';
 import { parseFrontmatter } from '@/utils/parseFrontmatter';
 import { META_DEFAULTS } from '@/utils/slugUtils';
+import { FaFacebookF, FaWhatsapp, FaShareAlt } from 'react-icons/fa';
 
 // Placeholder the author leaves in a .md file until they paste a real image URL.
 const IMAGE_PLACEHOLDER = 'PASTE_CLOUDINARY_IMAGE_URL_HERE';
@@ -132,6 +133,12 @@ export default async function BlogPostPage({ params }) {
   const ctaText = meta.ctaText || 'Explore Desify';
   const ctaLink = meta.ctaLink || '/';
 
+  // Share the post's own canonical /blog/<slug> URL (built from the site URL,
+  // never window.location) so shared links always point at production.
+  const shareUrl = `${META_DEFAULTS.siteUrl}/blog/${slug}`;
+  const iconBtn =
+    'w-7 h-7 p-1 rounded-full flex items-center justify-center transition-colors duration-200';
+
   return (
     <article>
       {hero ? (
@@ -147,9 +154,33 @@ export default async function BlogPostPage({ params }) {
         </div>
       )}
 
-      <h1 className="text-balance text-lg sm:text-2xl md:text-3xl font-bold text-slate-900 text-center leading-tight mb-6">
+      <h1 className="text-balance text-lg sm:text-2xl md:text-3xl font-bold text-slate-900 text-center leading-tight mb-4">
         {meta.title}
       </h1>
+
+      <div className="mb-6 flex justify-center">
+        <div className="flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3 py-2">
+          <FaShareAlt className="w-3.5 h-3.5 text-slate-500 mr-0.5" aria-hidden="true" />
+          <a
+            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Share on Facebook"
+            className={`${iconBtn} bg-[#1877F2] hover:bg-[#166FE5] text-white`}
+          >
+            <FaFacebookF className="w-3.5 h-3.5" />
+          </a>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(`${meta.title}\n${shareUrl}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Share on WhatsApp"
+            className={`${iconBtn} bg-[#25D366] hover:bg-[#20BA5A] text-white`}
+          >
+            <FaWhatsapp className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      </div>
 
       <div
         className="prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:text-slate-800 prose-headings:font-semibold prose-p:text-slate-700 prose-li:text-slate-700 prose-a:text-teal-700 hover:prose-a:text-teal-800"
