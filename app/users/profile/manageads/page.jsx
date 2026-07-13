@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { fetchuserProfile } from '@/store/slices/users/userSlice';
-import { fetchMyAdverts, deleteUserAdvert, renewUserAdvert } from '@/store/slices/adverts/userAdvertsSlice';
+import { fetchMyAdverts, deleteUserAdvert, renewUserAdvert, toggleAdvertGoLive } from '@/store/slices/adverts/userAdvertsSlice';
 import ConfirmModal from '@/components/ConfirmModal';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
@@ -77,6 +77,19 @@ export default function ProfilePage() {
     }
   };
 
+  const handleToggleGoLive = async (advert) => {
+    try {
+      const isLive = advert.status !== 'inactive';
+      const result = await dispatch(
+        toggleAdvertGoLive({ id: advert._id, goLive: !isLive })
+      ).unwrap();
+      toast.success(isLive ? 'Listing is now Offline' : 'Listing is now Live');
+      dispatch(fetchMyAdverts());
+    } catch (error) {
+      toast.error(error || 'Failed to update listing visibility.');
+    }
+  };
+
   const handleRenew = async (advertId) => {
     try {
       const result = await dispatch(renewUserAdvert(advertId)).unwrap();
@@ -138,6 +151,7 @@ export default function ProfilePage() {
             const daysLeft = Math.floor((expiryTime - Date.now()) / (1000 * 60 * 60 * 24));
             const isExpired = daysLeft < 0;
             const canRenew = daysLeft <= 14;
+            const isLive = advert.status !== 'inactive';
 
             return (
               <div
@@ -165,15 +179,17 @@ export default function ProfilePage() {
                     {advert.title}
                   </h3>
 
-                  {/* Days left */}
+                  {/* Status line: Offline overrides, else expiry countdown */}
                   <p className={`text-xs mt-0.5 ${
-                    isExpired
+                    !isLive
+                      ? 'text-slate-500'
+                      : isExpired
                       ? 'text-red-600 font-medium'
                       : daysLeft <= 7
                       ? 'text-amber-600'
                       : 'text-slate-500'
                   }`}>
-                    {isExpired ? 'Expired' : `${daysLeft}d left`}
+                    {!isLive ? 'Offline' : isExpired ? 'Expired' : `${daysLeft}d left`}
                   </p>
 
                   {/* Actions - larger touch targets */}
@@ -204,6 +220,17 @@ export default function ProfilePage() {
                       className="text-red-600 hover:text-red-700 active:underline font-semibold py-1"
                     >
                       Delete
+                    </button>
+                  </div>
+
+                  {/* Live/Offline toggle on its own row */}
+                  <div className="flex justify-center mt-1 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleGoLive(advert)}
+                      className="text-teal-700 hover:text-teal-900 active:underline font-semibold py-1"
+                    >
+                      {isLive ? 'Go Offline' : 'Go Live'}
                     </button>
                   </div>
                 </div>

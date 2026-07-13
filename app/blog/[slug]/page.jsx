@@ -27,19 +27,22 @@ async function getPost(slug) {
       fs.readFile(filePath, 'utf-8'),
       fs.stat(filePath),
     ]);
-    const { meta, body } = parseFrontmatter(raw);
+    // Strip HTML comments (<!-- ... -->) so author notes in the .md never render.
+    const cleaned = raw.replace(/<!--[\s\S]*?-->/g, '');
+    const { meta, body } = parseFrontmatter(cleaned);
     return { meta, body, mtime: stat.mtimeMs };
   } catch {
     return null;
   }
 }
 
-// Cloudinary delivery tuning for hero / social images: crop to exactly 1200x630
-// (the social-card size), smart-compress (~200 KB, under WhatsApp's 600 KB cap),
-// and force JPG — f_auto could serve WebP, which WhatsApp/FB reject for og:image
-// (see designGuides/SEO/Social-SEO.md). Injected after `/upload/` so an author
-// can paste a plain Cloudinary URL and never think about size or format.
-const CLOUDINARY_TRANSFORM = 'w_1200,h_630,c_fill,q_auto:good,f_jpg';
+// Cloudinary delivery tuning for hero / social images: cap width at 1200px and
+// keep the image's own aspect ratio (c_limit = scale down, never crop, never
+// upscale) so designed banners keep their logo/CTA intact; smart-compress
+// (~200 KB, under WhatsApp's 600 KB cap); force JPG — f_auto could serve WebP,
+// which WhatsApp/FB reject for og:image (see designGuides/SEO/Social-SEO.md).
+// Injected after `/upload/` so an author can paste a plain Cloudinary URL.
+const CLOUDINARY_TRANSFORM = 'w_1200,c_limit,q_auto:good,f_jpg';
 
 function optimizeCloudinaryUrl(url) {
   if (!url || !url.includes('res.cloudinary.com') || !url.includes('/upload/')) {
@@ -136,7 +139,7 @@ export default async function BlogPostPage({ params }) {
         <img
           src={hero}
           alt={meta.title || ''}
-          className="w-full aspect-[1200/630] object-cover rounded-lg mb-6"
+          className="w-full h-auto rounded-lg mb-6"
         />
       ) : (
         <div className="w-full aspect-[1200/630] rounded-lg mb-6 bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-center text-slate-400 text-sm px-4">

@@ -37,6 +37,25 @@ export const renewUserAdvert = createAsyncThunk(
   }
 );
 
+// Toggle a listing's Live/Offline visibility
+export const toggleAdvertGoLive = createAsyncThunk(
+  'userAdverts/toggleAdvertGoLive',
+  async ({ id, goLive }, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(
+        `${API_BASE_URL}/${id}/toggle-golive`,
+        { goLive },
+        { withCredentials: true }
+      );
+      return response.data.advert; // Return the updated advert
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to update listing visibility.'
+      );
+    }
+  }
+);
+
 // Add this thunk at the top with the other createAsyncThunk calls
 export const fetchMyAdverts = createAsyncThunk(
   'userAdverts/fetchMyAdverts',

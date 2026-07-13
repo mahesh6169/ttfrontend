@@ -6,6 +6,8 @@ ctaText: List for free on Desify
 ctaLink: /listings
 ---
 
+<!-- Live URL: https://desify.com.au/blog/give-your-clothes-a-second-home -->
+
 You loved it once. The lehenga from a wedding two seasons ago. The sherwani worn for one big day. The saree that was perfect for that one function, and the kids' festival outfits they've already grown out of. Beautiful pieces, barely worn, sitting folded at the back of the wardrobe.
 
 Someone near you is looking for exactly that.
