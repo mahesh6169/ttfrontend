@@ -93,15 +93,27 @@ export const metadata = {
   
   // WEBSITE CATEGORY - Helps search engines understand your site type
   category: 'community',
+
+  // PWA MANIFEST - Explicitly link the manifest so Chrome detects the app as installable.
+  manifest: '/manifest.webmanifest',
   
   // FAVICON - Icon shown in browser tabs and Google search results
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
-      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+      { url: '/fav192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/fav512.png', type: 'image/png', sizes: '512x512' },
     ],
     shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png', // iPhone home-screen icon (180x180)
+  },
+
+  // iPhone HOME-SCREEN LABEL - iOS ignores the manifest short_name and uses this;
+  // without it, the icon label falls back to the long page title.
+  appleWebApp: {
+    title: siteName,       // shows "Desify" under the icon on iPhone
+    capable: true,         // opens fullscreen (no Safari bar) when launched from home screen
+    statusBarStyle: 'default',
   },
 };
 

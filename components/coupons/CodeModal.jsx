@@ -4,13 +4,16 @@ import { QRCodeSVG } from 'qrcode.react';
 import { MdClose, MdContentCopy, MdStore, MdLocalOffer } from 'react-icons/md';
 import { FaClock } from 'react-icons/fa';
 import { format } from 'date-fns';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 
 export default function CodeModal({ code, campaign, store, onClose }) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const userCode = code.fullCode.split('-')[1];
 
@@ -24,9 +27,11 @@ export default function CodeModal({ code, campaign, store, onClose }) {
   const isExpired = new Date(campaign.expiryDate) < new Date();
   const isRedeemed = code.isRedeemed;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-xs w-full max-h-[90vh] overflow-y-auto">
         {/* Header with close button */}
         <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-end">
           <button
@@ -38,12 +43,12 @@ export default function CodeModal({ code, campaign, store, onClose }) {
         </div>
 
         {/* Content */}
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-3">
           {/* QR Code */}
-          <div className="flex justify-center bg-gray-50 p-4 rounded-lg">
+          <div className="flex justify-center">
             <QRCodeSVG
               value={userCode}
-              size={200}
+              size={120}
               level="H"
               includeMargin={true}
             />
@@ -78,6 +83,7 @@ export default function CodeModal({ code, campaign, store, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
