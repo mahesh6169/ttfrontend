@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import axios from '@/utils/axiosConfig';
 import QRScanner from '@/components/coupons/QRScanner';
-import { MdStore, MdCancel, MdEdit, MdCheckCircle, MdKeyboardArrowDown, MdKeyboardArrowUp } from 'react-icons/md';
+import { MdStore, MdCancel, MdEdit, MdCheckCircle, MdKeyboardArrowDown, MdKeyboardArrowUp, MdClose } from 'react-icons/md';
+import { formatValidDays, formatValidHours } from '@/utils/couponSchedule';
 
 export default function ValidationPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [storeId, setStoreId] = useState('');
   const [storeInfo, setStoreInfo] = useState(null);
@@ -194,11 +197,19 @@ export default function ValidationPage() {
 
   return (
     <div className="max-w-lg mx-auto">
-      {/* Page header */}
-      <div className="mb-5 sm:mb-6 text-center">
-        <h1 className="text-lg sm:text-xl font-bold text-teal-900">Validate a Discount Code</h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">Verify a customer's code by scanning the QR or entering it manually.</p>
+      {/* Top bar — title + close to home */}
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3 mb-3">
+        <h1 className="text-base sm:text-lg font-bold text-teal-900">Validate a Discount Code</h1>
+        <button
+          onClick={() => router.push('/')}
+          aria-label="Cancel"
+          className="flex-shrink-0 flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full px-3 py-1.5 -mr-1 transition-colors"
+        >
+          Cancel
+          <MdClose size={18} />
+        </button>
       </div>
+      <p className="text-xs sm:text-sm text-slate-500 mb-5 sm:mb-6">Verify a customer's code by scanning the QR or entering it manually.</p>
 
       {step === 1 && (
         <div className="text-center">
@@ -320,6 +331,12 @@ export default function ValidationPage() {
                       <p><span className="font-semibold">Discount:</span> {validationResult.discount}</p>
                       <p><span className="font-semibold">Product:</span> {validationResult.discountProduct}</p>
                       <p><span className="font-semibold">Expires:</span> {new Date(validationResult.expiryDate).toLocaleDateString()}</p>
+                      {formatValidDays(validationResult.validDays) && (
+                        <p><span className="font-semibold">Valid days:</span> {formatValidDays(validationResult.validDays)}</p>
+                      )}
+                      {formatValidHours(validationResult.validHours) && (
+                        <p><span className="font-semibold">Hours:</span> {formatValidHours(validationResult.validHours)}</p>
+                      )}
                       {validationResult.termsConditions && (
                         <div>
                           <p className="font-semibold mb-1">Terms &amp; Conditions:</p>

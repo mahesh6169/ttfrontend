@@ -1,7 +1,8 @@
 'use client';
 
-import { MdLocationOn, MdStore } from 'react-icons/md';
+import { MdLocationOn, MdStore, MdSchedule, MdCalendarMonth } from 'react-icons/md';
 import { FaClock, FaTicketAlt, FaShareAlt } from 'react-icons/fa';
+import { formatValidDays, formatValidHours } from '@/utils/couponSchedule';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -134,78 +135,92 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
   const buttonConfig = getButtonConfig();
 
+  const daysLabel = formatValidDays(campaign.validDays);
+  const hoursLabel = formatValidHours(campaign.validHours);
+
   // Border class removed
 
 
   return (
     <div className={`relative h-full flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition-all`}>
-      {/* Top Section: Store Name + Discount | Logo */}
-      <div className="flex gap-3 p-3 pb-2">
-        {/* Column 1: Store Name + Discount */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h2 className="text-sm font-semibold text-slate-900 mb-1 line-clamp-2">
-            {campaign.store?.storeName}
-          </h2>
-          <p className="text-sm font-semibold text-slate-700 line-clamp-2 leading-snug">
-            {campaign.discount} {campaign.discountProduct}
-          </p>
-        </div>
-
-        {/* Column 2: Logo */}
-        <div className="flex-1 md:max-w-[192px] flex-shrink-0">
-          <div className="relative w-full h-24 bg-white rounded-lg overflow-hidden flex items-center justify-center shadow-sm">
+      {/* Top Section — Row 1: Logo + Store Name · Row 2: Discount heading */}
+      <div className="p-3 pb-2">
+        {/* Row 1: Logo + Store Name */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-14 h-14 flex-shrink-0 bg-white rounded-lg overflow-hidden flex items-center justify-center shadow-sm">
             {campaign.store?.logo?.url ? (
-              <img 
-                src={campaign.store.logo.url} 
+              <img
+                src={campaign.store.logo.url}
                 alt={campaign.store.storeName}
-                className="w-full h-full object-contain p-2"
+                className="w-full h-full object-contain p-1"
               />
             ) : (
               <div className="h-full w-full flex items-center justify-center bg-slate-50">
-                <MdStore className="text-4xl text-slate-400" />
+                <MdStore className="text-2xl text-slate-400" />
               </div>
             )}
           </div>
+          <h2 className="flex-1 min-w-0 text-base font-bold text-slate-900 line-clamp-2 leading-tight">
+            {campaign.store?.storeName}
+          </h2>
         </div>
+
+        {/* Row 2: Discount heading — fixed 2-line height so the divider aligns across cards */}
+        <p className="mt-2.5 text-base font-bold text-slate-900 line-clamp-2 leading-snug min-h-[2.75rem]">
+          {campaign.discount} {campaign.discountProduct}
+        </p>
       </div>
 
       {/* Column 3: Full Width Details */}
       <div className="flex flex-col flex-1 px-3 pb-3">
-        {/* Spacer to push button to bottom */}
-        <div className="flex-1"></div>
-
-        {/* Bottom Details */}
-        <div className="space-y-1">
-          {/* Expiry Date and Redemption Count */}
+        {/* Metadata — anchored under the headline so the divider aligns across cards */}
+        <div className="space-y-1 border-t border-slate-100 pt-2">
+          {/* Availability: valid until · codes left */}
           <div className="flex items-center gap-1 text-xs text-slate-500">
             <FaClock className="flex-shrink-0" />
-            <span>
-              Valid until {format(new Date(campaign.expiryDate), 'dd MMM yyyy')}
-            </span>
-            {campaign.maxRedemptions > 0 && campaign.maxRedemptions !== Infinity && (
-              <>
-                <FaTicketAlt className="flex-shrink-0 ml-2" />
-                <span>
-                  {campaign.maxRedemptions - campaign.totalGenerated} left
-                </span>
-              </>
-            )}
+            <span>Valid until {format(new Date(campaign.expiryDate), 'dd MMM yyyy')}</span>
           </div>
+
+          {campaign.maxRedemptions > 0 && campaign.maxRedemptions !== Infinity && (
+            <div className="flex items-center gap-1 text-xs text-slate-500">
+              <FaTicketAlt className="flex-shrink-0" />
+              <span>{campaign.maxRedemptions - campaign.totalGenerated} left</span>
+            </div>
+          )}
+
+          {/* Schedule: days · hours (when set) */}
+          {daysLabel && (
+            <div className="flex items-center gap-1 text-xs text-slate-500 truncate">
+              <MdCalendarMonth className="flex-shrink-0" />
+              <span className="truncate">{daysLabel}</span>
+            </div>
+          )}
+
+          {hoursLabel && (
+            <div className="flex items-center gap-1 text-xs text-slate-500 truncate">
+              <MdSchedule className="flex-shrink-0" />
+              <span className="truncate">{hoursLabel}</span>
+            </div>
+          )}
 
           {/* Location */}
           {campaign.store?.address?.formattedAddress && (
             <div className="flex items-center gap-1 text-xs text-slate-500 truncate">
               <MdLocationOn className="flex-shrink-0" />
               <span className="truncate">
-                {campaign.store.address.suburb || campaign.store.address.state ? 
+                {campaign.store.address.suburb || campaign.store.address.state ?
                   [campaign.store.address.suburb, campaign.store.address.state].filter(Boolean).join(', ') :
                   campaign.store.address.formattedAddress}
               </span>
             </div>
           )}
+        </div>
 
-          {/* Action Button and Share Icons */}
-          <div className="flex items-center justify-between gap-2 mt-2">
+        {/* Spacer pushes the action row to the bottom */}
+        <div className="flex-1"></div>
+
+        {/* Action Button and Share Icons */}
+        <div className="flex items-center justify-between gap-2 mt-2">
             <div className="flex flex-col gap-1">
               <button
                 onClick={handleButtonClick}
@@ -235,7 +250,6 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
               </button>
             )}
           </div>
-        </div>
       </div>
 
       {showModal && userCode && (

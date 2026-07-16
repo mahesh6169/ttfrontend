@@ -1,4 +1,3 @@
-import Footer from '@/components/Footer';
 import BaseContentShell from '@/components/layout/BaseContentShell';
 import { META_DEFAULTS } from '@/utils/slugUtils';
 
@@ -16,7 +15,6 @@ const ValidateLayout = ({ children }) => {
       <div id="Main" className="flex-1 overflow-hidden">
         <BaseContentShell>{children}</BaseContentShell>
       </div>
-      <Footer />
     </main>
   );
 };

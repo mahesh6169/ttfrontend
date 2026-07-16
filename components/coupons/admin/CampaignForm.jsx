@@ -1,6 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { FaPlus, FaTimes } from 'react-icons/fa';
+
+const DAYS = [
+  { value: 'monday', label: 'Mon' },
+  { value: 'tuesday', label: 'Tue' },
+  { value: 'wednesday', label: 'Wed' },
+  { value: 'thursday', label: 'Thu' },
+  { value: 'friday', label: 'Fri' },
+  { value: 'saturday', label: 'Sat' },
+  { value: 'sunday', label: 'Sun' }
+];
+
+const MAX_HOURS = 2;
 
 export default function CampaignForm({ initialData = null, onSubmit, onCancel, isEditing = false }) {
   const [formData, setFormData] = useState({
@@ -8,10 +21,12 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
     discount: initialData?.discount || '',
     discountProduct: initialData?.discountProduct || '',
     termsConditions: initialData?.termsConditions || '',
-    expiryDate: initialData?.expiryDate 
-      ? new Date(initialData.expiryDate).toISOString().split('T')[0] 
+    expiryDate: initialData?.expiryDate
+      ? new Date(initialData.expiryDate).toISOString().split('T')[0]
       : '',
     maxRedemptions: initialData?.maxRedemptions || 0,
+    validDays: initialData?.validDays || [],
+    validHours: initialData?.validHours?.map(w => ({ start: w.start || '', end: w.end || '' })) || [],
     isHidden: initialData?.isHidden || false,
     isActive: initialData?.isActive ?? true
   });
@@ -24,6 +39,36 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleDayToggle = (day) => {
+    setFormData(prev => ({
+      ...prev,
+      validDays: prev.validDays.includes(day)
+        ? prev.validDays.filter(d => d !== day)
+        : [...prev.validDays, day]
+    }));
+  };
+
+  const handleHourChange = (index, key, value) => {
+    setFormData(prev => {
+      const validHours = [...prev.validHours];
+      validHours[index] = { ...validHours[index], [key]: value };
+      return { ...prev, validHours };
+    });
+  };
+
+  const addHourWindow = () => {
+    setFormData(prev => prev.validHours.length >= MAX_HOURS
+      ? prev
+      : { ...prev, validHours: [...prev.validHours, { start: '', end: '' }] });
+  };
+
+  const removeHourWindow = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      validHours: prev.validHours.filter((_, i) => i !== index)
     }));
   };
 
@@ -62,6 +107,14 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
       }
     }
 
+    // Valid hours: each window needs both a start and end (or remove it)
+    const incompleteHours = formData.validHours.some(
+      w => (w.start && !w.end) || (!w.start && w.end)
+    );
+    if (incompleteHours) {
+      newErrors.validHours = 'Complete or remove the time window (both start and end)';
+    }
+
     // Validate maxRedemptions if editing
     if (isEditing && initialData?.totalGenerated) {
       const newMax = parseInt(formData.maxRedemptions) || 0;
@@ -82,7 +135,9 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
     setIsSubmitting(true);
 
     try {
-      await onSubmit(formData);
+      // Drop any fully-empty window rows before saving.
+      const cleanHours = formData.validHours.filter(w => w.start && w.end);
+      await onSubmit({ ...formData, validHours: cleanHours });
     } catch (error) {
       setErrors({ submit: error.message });
     } finally {
@@ -178,6 +233,81 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
         />
         {errors.expiryDate && (
           <p className="text-red-500 text-sm mt-1">{errors.expiryDate}</p>
+        )}
+      </div>
+
+      {/* Valid Days */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Valid Days <span className="text-xs font-normal text-gray-500">(optional)</span>
+        </label>
+        <p className="text-xs text-gray-500 mb-2">Leave all off to allow every day. A code won't redeem on a day that's off.</p>
+        <div className="flex flex-wrap gap-2">
+          {DAYS.map(day => (
+            <button
+              key={day.value}
+              type="button"
+              onClick={() => handleDayToggle(day.value)}
+              className={`px-4 py-2 sm:px-3 sm:py-1 rounded-full text-sm font-medium transition-colors ${
+                formData.validDays.includes(day.value)
+                  ? 'bg-teal-700 text-white'
+                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+              }`}
+            >
+              {day.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Valid Hours */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Valid Hours <span className="text-xs font-normal text-gray-500">(optional, max {MAX_HOURS})</span>
+        </label>
+        <p className="text-xs text-gray-500 mb-2">
+          Shown to customers only (e.g. happy hour) — not enforced. Same hours apply to every valid day.
+        </p>
+
+        {formData.validHours.map((window, index) => (
+          <div key={index} className="flex items-center gap-2 mb-2">
+            <input
+              type="time"
+              value={window.start}
+              onChange={(e) => handleHourChange(index, 'start', e.target.value)}
+              className="p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+            <span className="text-gray-400">to</span>
+            <input
+              type="time"
+              value={window.end}
+              onChange={(e) => handleHourChange(index, 'end', e.target.value)}
+              className="p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+            <button
+              type="button"
+              onClick={() => removeHourWindow(index)}
+              className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg"
+              aria-label="Remove time window"
+            >
+              <FaTimes />
+            </button>
+          </div>
+        ))}
+
+        {formData.validHours.length < MAX_HOURS && (
+          <button
+            type="button"
+            onClick={addHourWindow}
+            className="flex items-center gap-2 text-sm text-teal-700 hover:text-teal-800 font-medium mt-1"
+          >
+            <FaPlus className="text-xs" />
+            Add time window
+          </button>
+        )}
+
+        {errors.validHours && (
+          <p className="text-red-500 text-sm mt-1">{errors.validHours}</p>
         )}
       </div>
 

@@ -243,7 +243,7 @@ const SingleDealCard = ({ deal, chatProps, isCurated = false }) => {
             Valid until {format(new Date(deal.endDate), 'do MMM yyyy')}
           </p>
           {deal.validDays && deal.validDays.length > 0 && deal.validDays.length < 7 && (
-            <p className="text-slate-500 text-xs">
+            <p className="text-slate-700 font-semibold text-sm">
               Available: {formatValidDays(deal.validDays)} only
             </p>
           )}
