@@ -249,7 +249,7 @@ export default function CouponDetail({ campaign, onCampaignChange }) {
               {hoursLabel && (
                 <div className="flex items-center gap-2 text-slate-700">
                   <MdSchedule className="text-slate-500 flex-shrink-0" />
-                  <span>Hours <span className="font-semibold">{hoursLabel}</span></span>
+                  <span>Valid <span className="font-semibold">{hoursLabel}</span></span>
                 </div>
               )}
             </div>
