@@ -388,7 +388,7 @@ useEffect(() => {
       <div className="flex-1 md:flex-none min-h-0 flex flex-col overflow-hidden border border-slate-200 rounded-xl shadow-sm mt-4 w-full">
         {/* Compact header — the title is the clickable link to the listing/event (no thumbnail) */}
         <Link
-          href={resourceType === 'event' ? `/events/views/${resourceId}` : `/listings/views/${resourceId}`}
+          href={resourceType === 'event' ? `/events/views/${resourceId}` : `/listings/${resourceId}`}
           className="group block border-b border-slate-200 bg-slate-50 p-3 hover:bg-slate-100 transition-colors shrink-0"
         >
           <h1 className="flex items-center gap-1.5 text-sm sm:text-base font-bold text-slate-800 group-hover:text-teal-700 group-hover:underline">

@@ -22,12 +22,12 @@ const TYPE_LABELS = {
 
 // Map type param to view URL path
 const VIEW_URL_PATHS = {
-  listing: '/listings/views',
+  listing: '/listings', // resolves by id (backward-compat) on the server-rendered page
   event: '/events/views',
   thread: '/threads/views',
   deal: '/deals/views',
   discount: '/coupons/views',
-  advert: '/listings/views', // backward compatibility
+  advert: '/listings', // backward compatibility
 };
 
 const REPORT_REASONS = [

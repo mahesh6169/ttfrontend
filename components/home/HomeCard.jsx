@@ -6,6 +6,7 @@ import { MdLocationOn } from 'react-icons/md';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { BsChatDots } from 'react-icons/bs';
 import { format } from 'date-fns';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 // Odd-shape thresholds: wider than 2.2:1 or taller than ~1:1.5 → show whole (contain).
 // Everything in between (normal photos / flyers) fills the box (cover).
@@ -136,7 +137,7 @@ const HomeCard = ({ type, data, isDemo = false }) => {
   };
 
   const linkHref = type === 'listing'
-    ? `/listings/views/${data._id}`
+    ? buildSlugUrl('listing', data.title, data._id)
     : type === 'event'
     ? `/events/views/${data._id}`
     : `/threads/views/${data._id}`;

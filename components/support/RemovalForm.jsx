@@ -11,7 +11,7 @@ import { sanitizeInput, validateRemovalForm } from '@/utils/forms/validation';
 
 // Map type param to view URL path
 const VIEW_URL_PATHS = {
-  listing: '/listings/views',
+  listing: '/listings', // resolves by id (backward-compat) on the server-rendered page
   event: '/events/views',
   deal: '/deals/views',
 };

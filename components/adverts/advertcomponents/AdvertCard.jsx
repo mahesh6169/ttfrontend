@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 // Odd-shape thresholds: wider than 2.2:1 or taller than ~1:1.5 → show whole (contain).
 // Everything in between (normal photos / flyers) fills the box (cover).
@@ -77,7 +78,7 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
         <FaHeart className={`text-xs sm:text-sm ${isInWishlist ? 'text-white' : 'text-slate-700'}`} />
       </button>
 
-      <Link href={`/listings/views/${advert._id}`}>
+      <Link href={buildSlugUrl('listing', advert.title, advert._id)}>
         {/* Image Box (50% height, full width) — per-image cover/contain.
             Odd shapes show whole on a soft blurred backdrop instead of being cropped. */}
         <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-t-xl overflow-hidden bg-slate-100">

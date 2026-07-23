@@ -11,6 +11,7 @@ import Link from 'next/link';
 import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import useDelayedLoading from '@/hooks/useDelayedLoading';
 import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
+import { buildSlugUrl } from '@/utils/slugUtils';
 import EmptyState from '@/components/layout/EmptyState';
 import ErrorState from '@/components/layout/ErrorState';
 
@@ -161,7 +162,7 @@ export default function ProfilePage() {
                 {/* Image */}
                 <div
                   className="w-full h-32 sm:h-40 rounded-t-xl overflow-hidden cursor-pointer"
-                  onClick={() => router.push(`/listings/views/${advert._id}`)}
+                  onClick={() => router.push(buildSlugUrl('listing', advert.title, advert._id))}
                 >
                   <img
                     src={advert.images?.[0]?.url || FALLBACK_IMAGE}
@@ -174,7 +175,7 @@ export default function ProfilePage() {
                 <div className="p-2 pt-1.5">
                   <h3
                     className="text-sm font-semibold text-slate-900 line-clamp-2 min-h-[2.5rem] cursor-pointer hover:text-teal-700"
-                    onClick={() => router.push(`/listings/views/${advert._id}`)}
+                    onClick={() => router.push(buildSlugUrl('listing', advert.title, advert._id))}
                   >
                     {advert.title}
                   </h3>
