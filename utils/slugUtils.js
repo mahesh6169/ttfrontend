@@ -15,14 +15,17 @@ export const generateSlug = (title, maxLength = MAX_SLUG_LENGTH) => {
   
   // Convert to lowercase and trim
   let slug = title.toLowerCase().trim();
-  
-  // Replace special characters and spaces
+
+  // 3-step slugify (keeps words apart instead of gluing them):
+  //   1) strip apostrophes so "mum's" -> "mums" (not "mum-s")
+  //   2) turn every other non-alphanumeric run into a single dash, so
+  //      "fish&chips" -> "fish-chips" and "chicken/veg/mutton" -> "chicken-veg-mutton"
+  //   3) trim dashes off the ends
   slug = slug
-    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
-    .replace(/\s+/g, '-')     // Replace spaces with hyphens
-    .replace(/-+/g, '-')      // Replace multiple hyphens with single hyphen
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
-  
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
   // Handle empty result after cleaning
   if (!slug) return 'untitled';
   

@@ -9,6 +9,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import AdvertForm from '@/components/adverts/AdvertForm';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import SuccessModal from '@/components/adverts/SuccessModal';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 const EditAdvertPage = () => {
   const dispatch = useDispatch();
@@ -146,7 +147,7 @@ const EditAdvertPage = () => {
         <SuccessModal
           mode="edit"
           onViewListing={() => {
-            router.push(`/listings/views/${displayData._id || id}`);
+            router.push(buildSlugUrl('listing', displayData.title, displayData._id || id));
             dispatch(clearAdvert());
           }}
           onManageListings={() => {

@@ -1,5 +1,7 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
 import { headers } from 'next/headers';
+import AdvertDetailContent from '@/components/adverts/advertcomponents/AdvertDetailContent';
+import { buildListingJsonLd } from '@/utils/helpers/adverts/listingJsonLd';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -124,33 +126,59 @@ export async function generateMetadata({ params }) {
   }
 }
 
+// Simple not-found view (server-rendered, no redirect)
+function ListingNotFound() {
+  return (
+    <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
+      <div className="text-center">
+        <p className="text-slate-700">Listing not found</p>
+        <a href="/listings" className="text-sm text-teal-700 hover:text-teal-800 mt-2 inline-block">
+          Browse listings
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default async function ListingSlugPage({ params }) {
   const { slug } = await params;
   const listingId = extractIdFromSlug(slug);
-  
-  if (!listingId) {
-    return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
-        <div className="text-center">
-          <p className="text-slate-700">Listing not found</p>
-          <p className="text-sm text-slate-500 mt-2">Redirecting...</p>
-        </div>
-        <meta httpEquiv="refresh" content="3; url=/listings" />
-      </div>
-    );
+
+  if (!listingId || !API_BASE_URL) {
+    return <ListingNotFound />;
   }
-  
-  // Use meta refresh instead of JavaScript redirect
-  // This allows crawlers to read the meta tags before following the redirect
+
+  // Fetch the listing on the server so its content is in the HTML (SEO).
+  // Same public endpoint + revalidate as generateMetadata, so the two fetches dedupe.
+  let advert = null;
+  try {
+    const response = await fetch(`${API_BASE_URL}/adverts/byid/${listingId}`, {
+      next: { revalidate: 3600, tags: [`listing-${listingId}`] },
+    });
+    if (response.ok) {
+      const json = await response.json();
+      advert = json?.data?.advert || json?.advert || null;
+    }
+  } catch (error) {
+    console.error('Error fetching listing:', error);
+  }
+
+  if (!advert) {
+    return <ListingNotFound />;
+  }
+
+  // Structured data (LocalBusiness for services/businesses, Product for items)
+  const jsonLd = buildListingJsonLd(advert, `${META_DEFAULTS.siteUrl}/listings/${slug}`);
+
   return (
-    <div className="flex flex-col items-center justify-center gap-3 min-h-[calc(100vh-9rem)]">
-      <div
-        className="h-8 w-8 rounded-full border-2 border-teal-100 border-t-teal-600 animate-spin"
-        role="status"
-        aria-label="Redirecting"
-      ></div>
-      <p className="text-sm text-slate-500">Redirecting...</p>
-      <meta httpEquiv="refresh" content={`3; url=/listings/views/${listingId}`} />
-    </div>
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <AdvertDetailContent advert={advert} />
+    </>
   );
 }

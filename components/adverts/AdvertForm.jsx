@@ -13,6 +13,7 @@ import FieldSystem from './fieldSystem';
 import { getSharedField } from './fieldSystem/FieldRegistry';
 import { needsCommunityField, isServiceSubcategory } from './fieldSystem/Categories';
 import ContactInfoInput from './ContactInfoInput';
+import { validateTitle, TITLE_MAX } from '@/utils/validateTitle';
 
 const AdvertForm = ({
   initialData = null,
@@ -387,10 +388,10 @@ const handleSubmit = (e) => {
   
   const newFieldErrors = {};
   
-  // Cleaner title validation
-  const titleTrimmed = (formData.title || '').trim();
-  if (titleTrimmed === '') {
-    newFieldErrors.title = 'Title is required';
+  // Title validation — shared rules (see utils/validateTitle.js)
+  const { error: titleError } = validateTitle(formData.title);
+  if (titleError) {
+    newFieldErrors.title = titleError;
   }
   
   // Category validation
@@ -548,6 +549,11 @@ const handleSubmit = (e) => {
   onSubmit(submitData);
 };
 
+// Live, non-blocking title warnings (shown only once the user has typed something)
+const titleWarnings = (formData.title || '').trim()
+  ? validateTitle(formData.title).warnings
+  : [];
+
 return (
   <form onSubmit={handleSubmit} className="bg-white p-3 sm:p-6 rounded-lg shadow-md border border-slate-200 space-y-4 sm:space-y-6">
     {/* Common fields - always show these */}
@@ -559,19 +565,28 @@ return (
         type="text"
         value={formData.title}
         onChange={(e) => {
-          handleChange('title', e.target.value);
-          // Clear error when user types
-          if (fieldErrors.title) {
-            setFieldErrors(prev => ({ ...prev, title: null }));
-          }
+          const value = e.target.value;
+          handleChange('title', value);
+          // Live block-error feedback — quiet while the box is empty (no nagging
+          // an untouched field); "required" still fires on submit.
+          const { error } = validateTitle(value);
+          setFieldErrors(prev => ({ ...prev, title: value.trim() === '' ? null : error }));
         }}
         className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
           fieldErrors.title ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
         }`}
         placeholder="Enter a descriptive title"
+        maxLength={TITLE_MAX}
       />
       {fieldErrors.title && (
         <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.title}</p>
+      )}
+      {!fieldErrors.title && titleWarnings.length > 0 && (
+        <ul className="mt-1 space-y-0.5">
+          {titleWarnings.map((w, i) => (
+            <li key={i} className="text-amber-600 text-xs sm:text-sm">{w}</li>
+          ))}
+        </ul>
       )}
     </div>
 
