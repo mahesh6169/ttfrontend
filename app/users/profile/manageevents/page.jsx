@@ -13,6 +13,7 @@ import useDelayedLoading from '@/hooks/useDelayedLoading';
 import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
 import EmptyState from '@/components/layout/EmptyState';
 import ErrorState from '@/components/layout/ErrorState';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 const ManageEventsPage = () => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
@@ -154,7 +155,7 @@ const ManageEventsPage = () => {
                 {/* Image */}
                 <div
                   className="w-full h-32 sm:h-40 rounded-t-xl overflow-hidden cursor-pointer"
-                  onClick={() => router.push(`/events/views/${event._id}`)}
+                  onClick={() => router.push(buildSlugUrl('event', event.title, event._id))}
                 >
                   <img
                     src={event.images?.[0]?.url || FALLBACK_IMAGE}
@@ -167,7 +168,7 @@ const ManageEventsPage = () => {
                 <div className="p-2 pt-1.5">
                   <h3
                     className="text-sm font-semibold text-slate-900 line-clamp-2 min-h-[2.5rem] cursor-pointer hover:text-teal-700"
-                    onClick={() => router.push(`/events/views/${event._id}`)}
+                    onClick={() => router.push(buildSlugUrl('event', event.title, event._id))}
                   >
                     {event.title}
                   </h3>

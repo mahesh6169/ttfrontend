@@ -1,5 +1,7 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
 import { format } from 'date-fns';
+import EventDetailContent from '@/components/events/eventcomponents/EventDetailContent';
+import { buildEventJsonLd } from '@/utils/helpers/events/eventJsonLd';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -140,37 +142,60 @@ export async function generateMetadata({ params }) {
   }
 }
 
+// Simple not-found view (server-rendered, no redirect)
+function EventNotFound() {
+  return (
+    <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
+      <div className="text-center">
+        <p className="text-slate-700">Event not found</p>
+        <a href="/events" className="text-sm text-teal-700 hover:text-teal-800 mt-2 inline-block">
+          Browse events
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default async function EventSlugPage({ params }) {
   const { slug } = await params;
   const eventId = extractIdFromSlug(slug);
-  
-  if (!eventId) {
-    // Container shell matches /events/views/[id] so the loading state sits in the
-    // same vertical slot on both pages — avoids the spinner "jumping" position
-    // when the slug page hands off to the views page via meta-refresh.
-    return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
-        <div className="text-center">
-          <p className="text-slate-700">Event not found</p>
-          <p className="text-sm text-slate-500 mt-2">Redirecting...</p>
-        </div>
-        <meta httpEquiv="refresh" content="3; url=/events" />
-      </div>
-    );
+
+  if (!eventId || !API_BASE_URL) {
+    return <EventNotFound />;
   }
 
-  // Use meta refresh instead of JavaScript redirect so crawlers can read meta tags
-  // before following the redirect. Minimal spinner (not a skeleton) — this page
-  // redirects away, so no real content ever loads here. See goldstandard/stylelistings.md B8.
+  // Fetch the event on the server so its content is in the HTML (SEO).
+  // Same public endpoint + revalidate as generateMetadata, so the two fetches dedupe.
+  // fetchEventById returns the event object directly.
+  let event = null;
+  try {
+    const response = await fetch(`${API_BASE_URL}/events/views/${eventId}`, {
+      next: { revalidate: 3600, tags: [`event-${eventId}`] },
+    });
+    if (response.ok) {
+      const json = await response.json();
+      event = json?._id ? json : (json?.event || null);
+    }
+  } catch (error) {
+    console.error('Error fetching event:', error);
+  }
+
+  if (!event) {
+    return <EventNotFound />;
+  }
+
+  // Structured data — Event JSON-LD (Google rich event results)
+  const jsonLd = buildEventJsonLd(event, `${META_DEFAULTS.siteUrl}/events/${slug}`);
+
   return (
-    <div className="flex flex-col items-center justify-center gap-3 min-h-[calc(100vh-9rem)]">
-      <div
-        className="h-8 w-8 rounded-full border-2 border-teal-100 border-t-teal-600 animate-spin"
-        role="status"
-        aria-label="Redirecting"
-      ></div>
-      <p className="text-sm text-slate-500">Redirecting...</p>
-      <meta httpEquiv="refresh" content={`3; url=/events/views/${eventId}`} />
-    </div>
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <EventDetailContent event={event} />
+    </>
   );
 }

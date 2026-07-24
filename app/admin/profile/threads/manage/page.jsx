@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 const ManageThreads = () => {
   const dispatch = useDispatch();
@@ -77,7 +78,7 @@ const ManageThreads = () => {
               className="border rounded-lg p-4 flex justify-between items-center hover:bg-gray-100 transition-all duration-200"
             >
               <div
-                onClick={() => router.push(`/threads/views/${thread._id}`)}
+                onClick={() => router.push(buildSlugUrl('thread', thread.title, thread._id))}
                 className="cursor-pointer flex-1"
               >
                 <h2 className="text-lg font-semibold text-blue-600 hover:underline">

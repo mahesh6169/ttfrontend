@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { useSelector } from 'react-redux';
 import ShareIcons from '@/components/shared/ShareIcons';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 const SuccessStep = ({
   event = {},
@@ -107,7 +108,7 @@ const SuccessStep = ({
       <div className="flex flex-col items-center gap-3">
         {eventId && (
           <Link
-            href={`/events/views/${eventId}`}
+            href={buildSlugUrl('event', eventTitle, eventId)}
             className="text-sm text-teal-700 hover:text-teal-800 hover:underline"
           >
             View event page →

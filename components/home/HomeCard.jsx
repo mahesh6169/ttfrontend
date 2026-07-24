@@ -139,8 +139,8 @@ const HomeCard = ({ type, data, isDemo = false }) => {
   const linkHref = type === 'listing'
     ? buildSlugUrl('listing', data.title, data._id)
     : type === 'event'
-    ? `/events/views/${data._id}`
-    : `/threads/views/${data._id}`;
+    ? buildSlugUrl('event', data.title, data._id)
+    : buildSlugUrl('thread', data.title, data._id);
 
   return (
     <Link href={linkHref} className="block w-full h-full">

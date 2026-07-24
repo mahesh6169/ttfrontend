@@ -13,7 +13,7 @@ import { sanitizeInput, validateRemovalForm } from '@/utils/forms/validation';
 const VIEW_URL_PATHS = {
   listing: '/listings', // resolves by id (backward-compat) on the server-rendered page
   event: '/events/views',
-  deal: '/deals/views',
+  deal: '/deals', // resolves by id (backward-compat) on the server-rendered page
 };
 
 const RemovalForm = () => {

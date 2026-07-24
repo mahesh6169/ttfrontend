@@ -1576,8 +1576,8 @@ const handleAddAnother = useCallback(() => {
 
   const handleViewEvent = useCallback(() => {
   if (editingEventId) {
-    // Navigate to the event view page
-    router.push(`/events/views/${editingEventId}`);
+    // Navigate to the event page (id-only URL resolves via backward-compat)
+    router.push(`/events/${editingEventId}`);
   } else {
     console.warn('No event ID available for navigation');
     toast.error('Unable to navigate to event page');

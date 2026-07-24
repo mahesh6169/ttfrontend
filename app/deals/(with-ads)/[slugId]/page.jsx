@@ -1,5 +1,7 @@
 import { extractIdFromSlug, META_DEFAULTS } from '@/utils/slugUtils';
 import { format } from 'date-fns';
+import DealDetailContent from '@/components/dailydeals/dealcomponents/DealDetailContent';
+import { buildDealJsonLd } from '@/utils/helpers/dailydeals/dealJsonLd';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -130,33 +132,59 @@ export async function generateMetadata({ params }) {
   }
 }
 
+// Simple not-found view (server-rendered, no redirect)
+function DealNotFound() {
+  return (
+    <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
+      <div className="text-center">
+        <p className="text-slate-700">Deal not found</p>
+        <a href="/deals" className="text-sm text-teal-700 hover:text-teal-800 mt-2 inline-block">
+          Browse deals
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default async function DealSlugPage({ params }) {
   const { slugId } = await params;
   const dealId = extractIdFromSlug(slugId);
 
-  if (!dealId) {
-    return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
-        <div className="text-center">
-          <p className="text-slate-700">Deal not found</p>
-          <p className="text-sm text-slate-500 mt-2">Redirecting...</p>
-        </div>
-        <meta httpEquiv="refresh" content="3; url=/deals" />
-      </div>
-    );
+  if (!dealId || !API_BASE_URL) {
+    return <DealNotFound />;
   }
 
-  // Use meta refresh instead of a JavaScript redirect
-  // This lets crawlers read the meta tags before following the redirect
+  // Fetch the deal on the server so its content is in the HTML (SEO).
+  // Same public endpoint + revalidate as generateMetadata, so the two fetches dedupe.
+  let deal = null;
+  try {
+    const response = await fetch(`${API_BASE_URL}/dailydeals/view/${dealId}`, {
+      next: { revalidate: 3600, tags: [`deal-${dealId}`] },
+    });
+    if (response.ok) {
+      const json = await response.json();
+      deal = json?.deal || null;
+    }
+  } catch (error) {
+    console.error('Error fetching deal:', error);
+  }
+
+  if (!deal) {
+    return <DealNotFound />;
+  }
+
+  // Structured data — Offer JSON-LD (seller = partner store LocalBusiness)
+  const jsonLd = buildDealJsonLd(deal, `${META_DEFAULTS.siteUrl}/deals/${slugId}`);
+
   return (
-    <div className="flex flex-col items-center justify-center gap-3 min-h-[calc(100vh-9rem)]">
-      <div
-        className="h-8 w-8 rounded-full border-2 border-teal-100 border-t-teal-600 animate-spin"
-        role="status"
-        aria-label="Redirecting"
-      ></div>
-      <p className="text-sm text-slate-500">Redirecting...</p>
-      <meta httpEquiv="refresh" content={`3; url=/deals/views/${dealId}`} />
-    </div>
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <DealDetailContent deal={deal} />
+    </>
   );
 }
