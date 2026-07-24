@@ -9,6 +9,7 @@ import { format, differenceInDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { MdRepeat } from 'react-icons/md';
 import { FaMoneyBillWave, FaClipboardList, FaBullhorn, FaExternalLinkAlt } from 'react-icons/fa';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 // Odd-shape thresholds: wider than 2.2:1 or taller than ~1:1.5 → show whole (contain).
 // Everything in between (normal photos / flyers) fills the box (cover).
@@ -100,12 +101,12 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
       </button>
 
       {/* Main Card */}
-      <Link 
-        href={`/events/views/${event._id}`} 
+      <Link
+        href={buildSlugUrl('event', event.title, event._id)}
         className="block"
         onClick={() => {
-          // Save the current URL if we're coming from a listing view
-          if (typeof window !== 'undefined' && window.location.pathname.includes('/listings/views/')) {
+          // Save the current URL if we're coming from a listing detail page
+          if (typeof window !== 'undefined' && window.location.pathname.includes('/listings/')) {
             localStorage.setItem('eventViewReturnUrl', window.location.pathname);
           }
         }}

@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import ShareIcons from '@/components/shared/ShareIcons';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 const SuccessView = ({
   thread,
@@ -58,7 +59,7 @@ const SuccessView = ({
       {/* Action Links */}
       <div className="flex flex-col items-center gap-3">
         <button
-          onClick={() => router.push(`/threads/views/${threadId}`)}
+          onClick={() => router.push(buildSlugUrl('thread', thread?.title, threadId))}
           className="text-teal-700 hover:text-teal-800 font-medium text-sm"
         >
           View topic page →

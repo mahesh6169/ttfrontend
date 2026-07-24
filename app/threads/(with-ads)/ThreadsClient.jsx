@@ -16,6 +16,7 @@ import BottomAd from '@/components/ads/BottomAd';
 import { getCategoryDisplayName } from '@/constants/categories';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import { needsCommunityField } from '@/components/threads/categories';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 const libraries = ['places'];
 
@@ -826,7 +827,7 @@ const ThreadsPage = ({ heading }) => {
             {threads.map((thread, index) => (
               <React.Fragment key={thread._id}>
                 <Link
-                  href={`/threads/views/${thread._id}`}
+                  href={buildSlugUrl('thread', thread.title, thread._id)}
                   className="block bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200"
                 >
                   <div className="flex gap-3 p-3">

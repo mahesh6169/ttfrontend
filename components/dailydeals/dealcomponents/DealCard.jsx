@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { MdLocationOn, MdStorefront } from 'react-icons/md';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 // Odd-shape thresholds: wider than 2.2:1 or taller than ~1:1.5 → show whole (contain).
 // Everything in between (normal photos / flyers) fills the box (cover).
@@ -43,7 +44,7 @@ const DealCard = ({ deal }) => {
     new Date(deal.featured.endDate) >= now;
 
   return (
-    <Link href={`/deals/views/${deal._id}`}>
+    <Link href={buildSlugUrl('deal', deal.dealTitle, deal._id)}>
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full flex flex-col">
         {/* Image — per-image cover/contain.
             Odd shapes show whole on a soft blurred backdrop instead of being cropped. */}

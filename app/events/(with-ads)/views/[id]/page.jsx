@@ -83,7 +83,7 @@ const EventDetail = () => {
         <BackButton
           onClick={() => {
             const returnUrl = localStorage.getItem('eventViewReturnUrl');
-            if (returnUrl && returnUrl.includes('/listings/views/')) {
+            if (returnUrl && returnUrl.includes('/listings/')) {
               router.push(returnUrl);
               localStorage.removeItem('eventViewReturnUrl');
             } else {

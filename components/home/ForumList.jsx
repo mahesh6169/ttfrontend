@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { HiChatBubbleLeftRight, HiPlus } from 'react-icons/hi2';
 import { FaArrowRight } from 'react-icons/fa';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 // Forum on the home page is a compact text list (not an image-card rail) - thread
 // titles are text, so a list reads better and varies the page rhythm.
@@ -27,7 +28,7 @@ const ForumList = ({ threads = [], viewAllHref = '/threads', cta }) => {
           {shown.map((t) => (
             <li key={t._id}>
               <Link
-                href={`/threads/views/${t._id}`}
+                href={buildSlugUrl('thread', t.title, t._id)}
                 className="flex items-center gap-3 px-2 -mx-2 py-2.5 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-teal-50 text-teal-700 shrink-0">

@@ -20,6 +20,7 @@ import useDelayedLoading from '@/hooks/useDelayedLoading';
 import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
 import EmptyState from '@/components/layout/EmptyState';
 import ErrorState from '@/components/layout/ErrorState';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 const ManageThreads = () => {
   const dispatch = useDispatch();
@@ -142,7 +143,7 @@ const ManageThreads = () => {
                 {/* Title */}
                 <h3
                   className="text-sm font-semibold text-slate-900 line-clamp-2 min-h-[2.5rem] cursor-pointer hover:text-teal-700"
-                  onClick={() => router.push(`/threads/views/${thread._id}`)}
+                  onClick={() => router.push(buildSlugUrl('thread', thread.title, thread._id))}
                 >
                   {thread.title}
                 </h3>

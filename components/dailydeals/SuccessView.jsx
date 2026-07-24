@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import ShareIcons from '@/components/shared/ShareIcons';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
 const SuccessView = ({
   deal,
@@ -83,7 +84,7 @@ const SuccessView = ({
       {/* Action Links */}
       <div className="flex flex-col items-center gap-3">
         <button
-          onClick={() => router.push(`/deals/views/${dealId}`)}
+          onClick={() => router.push(buildSlugUrl('deal', dealTitle, dealId))}
           className="text-teal-700 hover:text-teal-800 font-medium text-sm"
         >
           View deal page →

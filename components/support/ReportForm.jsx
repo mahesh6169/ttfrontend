@@ -24,8 +24,8 @@ const TYPE_LABELS = {
 const VIEW_URL_PATHS = {
   listing: '/listings', // resolves by id (backward-compat) on the server-rendered page
   event: '/events/views',
-  thread: '/threads/views',
-  deal: '/deals/views',
+  thread: '/threads', // resolves by id (backward-compat) on the server-rendered page
+  deal: '/deals', // resolves by id (backward-compat) on the server-rendered page
   discount: '/coupons/views',
   advert: '/listings', // backward compatibility
 };

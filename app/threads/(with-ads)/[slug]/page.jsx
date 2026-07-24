@@ -1,4 +1,6 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
+import ThreadDetailContent from '@/components/threads/ThreadDetailContent';
+import { buildThreadJsonLd } from '@/utils/helpers/threads/threadJsonLd';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -104,37 +106,61 @@ export async function generateMetadata({ params }) {
   }
 }
 
+// Simple not-found view (server-rendered, no redirect)
+function ThreadNotFound() {
+  return (
+    <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
+      <div className="text-center">
+        <p className="text-slate-700">Topic not found</p>
+        <a href="/threads" className="text-sm text-teal-700 hover:text-teal-800 mt-2 inline-block">
+          Browse threads
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default async function ThreadSlugPage({ params }) {
   const { slug } = await params;
   const threadId = extractIdFromSlug(slug);
-  
-  if (!threadId) {
-    // Container shell matches /threads/views/[id] so the state sits in the same
-    // vertical slot on both pages — avoids the spinner "jumping" position when the
-    // slug page hands off to the views page via meta-refresh.
-    return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
-        <div className="text-center">
-          <p className="text-slate-700">Topic not found</p>
-          <p className="text-sm text-slate-500 mt-2">Redirecting...</p>
-        </div>
-        <meta httpEquiv="refresh" content="3; url=/threads" />
-      </div>
-    );
+
+  if (!threadId || !API_BASE_URL) {
+    return <ThreadNotFound />;
   }
 
-  // Use meta refresh instead of JavaScript redirect so crawlers can read meta tags
-  // before following the redirect. Minimal spinner (not a skeleton) — this page
-  // redirects away, so no real content ever loads here. See goldstandard/stylelistings.md B8.
+  // Fetch the thread on the server so its title + question are in the HTML (SEO).
+  // Same public endpoint + revalidate as generateMetadata, so the two fetches dedupe.
+  let thread = null;
+  try {
+    const response = await fetch(`${API_BASE_URL}/threads/public/${threadId}`, {
+      next: { revalidate: 3600, tags: [`thread-${threadId}`] },
+    });
+    if (response.ok) {
+      const json = await response.json();
+      thread = json?.thread || null;
+    }
+  } catch (error) {
+    console.error('Error fetching thread:', error);
+  }
+
+  if (!thread) {
+    return <ThreadNotFound />;
+  }
+
+  // Structured data — DiscussionForumPosting JSON-LD (forum content)
+  const jsonLd = buildThreadJsonLd(thread, `${META_DEFAULTS.siteUrl}/threads/${slug}`);
+
+  // Seed the client detail component with the server-fetched thread; live replies
+  // load client-side.
   return (
-    <div className="flex flex-col items-center justify-center gap-3 min-h-[calc(100vh-9rem)]">
-      <div
-        className="h-8 w-8 rounded-full border-2 border-teal-100 border-t-teal-600 animate-spin"
-        role="status"
-        aria-label="Redirecting"
-      ></div>
-      <p className="text-sm text-slate-500">Redirecting...</p>
-      <meta httpEquiv="refresh" content={`3; url=/threads/views/${threadId}`} />
-    </div>
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <ThreadDetailContent threadId={threadId} initialThread={thread} />
+    </>
   );
 }
