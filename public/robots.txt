@@ -4,5 +4,10 @@
 User-agent: *
 Allow: /
 
+# Private messaging — auth-gated, client-rendered (can't carry a noindex tag), so block here.
+# (Other utility pages — support, event flows, validate, login/register, users, admin — use a
+#  noindex meta tag instead, so Google can crawl, see noindex, and drop them.)
+Disallow: /chat
+
 # Sitemap location
 Sitemap: https://desify.com.au/sitemap.xml

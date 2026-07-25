@@ -25,6 +25,9 @@ const SendMessage = ({
   const router = useRouter();
 
   const user = useSelector((state) => state.user.user);
+  // Guests attend only; chat stays login-only (a guest with chat is a spam vector).
+  // Treat a guest exactly like a logged-out visitor here. See featureplans/events-guest-attendee.md.
+  const canChat = !!user && user.role !== 'guest';
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -139,21 +142,21 @@ const SendMessage = ({
         <span>Chat with {owner || 'User'}</span>
       </p>
 
-      <div className={`border border-slate-200 rounded-lg overflow-hidden focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all ${!user ? 'bg-slate-50' : 'bg-white'}`}>
+      <div className={`border border-slate-200 rounded-lg overflow-hidden focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all ${!canChat ? 'bg-slate-50' : 'bg-white'}`}>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onFocus={onTextareaFocus}
           onBlur={onTextareaBlur}
-          disabled={!user || sending}
+          disabled={!canChat || sending}
           placeholder={getPlaceholder()}
           className={`w-full border-0 px-3 pt-3 pb-1 resize-none focus:outline-none focus:ring-0 text-base bg-transparent placeholder:text-slate-400 ${
-            !user ? 'cursor-not-allowed' : ''
+            !canChat ? 'cursor-not-allowed' : ''
           }`}
           rows={3}
         />
         <div className="flex justify-end items-center px-2 pb-2">
-          {user ? (
+          {canChat ? (
             <button
               onClick={handleSendMessage}
               disabled={sending || !message.trim()}

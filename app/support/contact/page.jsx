@@ -15,8 +15,8 @@ export const metadata = {
     canonical: `${siteUrl}/support/contact`,
   },
 
-  // Explicit robots (indexable utility page)
-  robots: { index: true, follow: true },
+  // Utility page — kept out of search (inherits the support layout's noindex).
+  robots: { index: false, follow: true },
 
   // OG / Twitter tags deliberately omitted — utility page not optimised for social sharing.
   // Falls back to layout defaults if shared.

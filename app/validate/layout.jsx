@@ -6,7 +6,9 @@ export const metadata = {
   description: 'Validate discount codes for store workers',
   alternates: {
     canonical: `${META_DEFAULTS.siteUrl}/validate`
-  }
+  },
+  // Store-worker utility — keep out of search.
+  robots: { index: false, follow: true },
 };
 
 const ValidateLayout = ({ children }) => {

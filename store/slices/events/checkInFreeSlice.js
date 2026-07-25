@@ -110,6 +110,24 @@ export const bulkCheckInRegistration = createAsyncThunk(
   }
 );
 
+// Organiser cancels a whole registration (guest or member) from the console.
+export const cancelRegistration = createAsyncThunk(
+  'checkInFree/cancelRegistration',
+  async ({ eventId, ticketId }, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(
+        `${API_BASE_URL}/events/${eventId}/free/registration/${ticketId}`,
+        { withCredentials: true }
+      );
+      return { ticketId, data: response.data };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to cancel registration'
+      );
+    }
+  }
+);
+
 const initialState = {
   managedEvents: [],
   selectedEvent: null,
@@ -270,6 +288,18 @@ const checkInFreeSlice = createSlice({
         // Update will be handled by updateLocalBulkCheckIn
       })
       .addCase(bulkCheckInRegistration.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
+      })
+
+      // Cancel registration (organiser). The component refetches on success.
+      .addCase(cancelRegistration.pending, (state) => {
+        state.actionLoading = true;
+      })
+      .addCase(cancelRegistration.fulfilled, (state) => {
+        state.actionLoading = false;
+      })
+      .addCase(cancelRegistration.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
       });

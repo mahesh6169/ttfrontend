@@ -1,6 +1,12 @@
 import Footer from '@/components/Footer';
 import BaseContentShell from '@/components/layout/BaseContentShell';
 
+// Event flow (checkout / rsvp / seats / tickets) — transactional/auth pages, kept
+// out of search.
+export const metadata = {
+  robots: { index: false, follow: true },
+};
+
 // Events flow group (checkout / rsvp / seats / tickets) - transactional pages.
 // Own layout so they use BaseContentShell (1152), separate from the (no-ads)
 // forms group which uses FormsContentShell (768). URLs are unchanged (route group).

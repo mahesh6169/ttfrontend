@@ -43,6 +43,7 @@ import ShareIcons from '@/components/shared/ShareIcons';
 import { buildSlugUrl } from '@/utils/slugUtils';
 // Modal removed — RSVP now lives at /events/rsvp/[eventId] as a full page.
 import EventCapacityDisplay from './EventCapacityDisplay';
+import EventAttendAuthModal from './EventAttendAuthModal';
 import { formatInTimeZone } from 'date-fns-tz';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
 
@@ -220,12 +221,20 @@ const SingleEventCard = ({ event, chatProps }) => {
     el.scrollTo({ top: target, behavior: 'smooth' });
   };
 
-  const { isInEventWishlist, toggleEventWishlist, isAuthenticated } = useEventWishlist();
+  const { isInEventWishlist, toggleEventWishlist, isAuthenticated, canWishlist } = useEventWishlist();
   const isInWishlist = isInEventWishlist(event?._id);
+
+  // Fork dialog for logged-out visitors: Log in / Register / Continue as guest.
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
   const isRegistered = !!currentRegistration && currentRegistration.status === 'registered';
   const isCheckedIn = !!currentRegistration && currentRegistration.status === 'checkedin';
+
+  // Guests get everything by email - no online RSVP viewing or self-cancel (changes go
+  // through the organiser). Hide member-only actions. See featureplans/events-guest-attendee.md.
+  const currentUser = useSelector((state) => state.user.user);
+  const isGuest = currentUser?.role === 'guest';
 
   useEffect(() => {
     if (event?._id) {
@@ -274,7 +283,7 @@ const SingleEventCard = ({ event, chatProps }) => {
   };
 
   const handleWishlistToggle = () => {
-    if (!isAuthenticated) {
+    if (!canWishlist) {
       alert('Please log in to use the wishlist feature.');
       return;
     }
@@ -339,15 +348,9 @@ const SingleEventCard = ({ event, chatProps }) => {
   // Handle ticket purchase navigation
   const handlePurchaseTickets = () => {
     if (!isAuthenticated) {
-      // Save intended destination
-      localStorage.setItem('redirectAfterLogin', `/events/tickets/${event._id}`);
-      // Don't overwrite eventViewReturnUrl if it already exists
-      // This preserves the original navigation path
-      if (!localStorage.getItem('eventViewReturnUrl')) {
-        localStorage.setItem('eventViewReturnUrl', '/events');
-      }
-      // Redirect to login with preserve redirect flag
-      router.push('/login?preserveRedirect=true');
+      // Logged-out visitor: offer Log in / Register / Continue as guest.
+      // The dialog owns the redirect-preservation and guest-session logic.
+      setAuthModalOpen(true);
       return;
     }
     // Navigate to the ticket selection page
@@ -858,12 +861,14 @@ const SingleEventCard = ({ event, chatProps }) => {
                     <FaCheckCircle />
                     Checked In
                   </div>
-                  <Link
-                    href="/users/profile/myregistrations"
-                    className="text-sm text-teal-700 hover:text-teal-800 underline"
-                  >
-                    View my RSVPs
-                  </Link>
+                  {!isGuest && (
+                    <Link
+                      href="/users/profile/myregistrations"
+                      className="text-sm text-teal-700 hover:text-teal-800 underline"
+                    >
+                      View my RSVPs
+                    </Link>
+                  )}
                 </div>
               ) : isRegistered ? (
                 <div className="flex flex-col items-center gap-3">
@@ -871,35 +876,32 @@ const SingleEventCard = ({ event, chatProps }) => {
                     <FaCheckCircle />
                     Already Registered
                   </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <Link
-                      href="/users/profile/myregistrations"
-                      className="text-teal-700 hover:text-teal-800 underline"
-                    >
-                      View my RSVPs
-                    </Link>
-                    <span className="text-slate-300">·</span>
-                    <button
-                      type="button"
-                      onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
-                      disabled={registrationStatus === 'loading'}
-                      className="text-red-600 hover:text-red-700 underline disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {registrationStatus === 'loading' ? 'Cancelling...' : 'Cancel registration'}
-                    </button>
-                  </div>
+                  {!isGuest && (
+                    <div className="flex items-center gap-4 text-sm">
+                      <Link
+                        href="/users/profile/myregistrations"
+                        className="text-teal-700 hover:text-teal-800 underline"
+                      >
+                        View my RSVPs
+                      </Link>
+                      <span className="text-slate-300">·</span>
+                      <button
+                        type="button"
+                        onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
+                        disabled={registrationStatus === 'loading'}
+                        className="text-red-600 hover:text-red-700 underline disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {registrationStatus === 'loading' ? 'Cancelling...' : 'Cancel registration'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button
                   onClick={() => {
                     if (!isAuthenticated) {
-                      // After login, land directly on the RSVP page (not back on event view).
-                      localStorage.setItem('redirectAfterLogin', `/events/rsvp/${event._id}`);
-                      localStorage.setItem('eventRegistrationPending', event._id);
-                      if (!localStorage.getItem('eventViewReturnUrl')) {
-                        localStorage.setItem('eventViewReturnUrl', '/events');
-                      }
-                      router.push('/login?preserveRedirect=true');
+                      // Logged-out visitor: offer Log in / Register / Continue as guest.
+                      setAuthModalOpen(true);
                       return;
                     }
                     router.push(`/events/rsvp/${event._id}`);
@@ -909,9 +911,7 @@ const SingleEventCard = ({ event, chatProps }) => {
                 >
                   {registrationStatus === 'loading'
                     ? 'Processing...'
-                    : !isAuthenticated
-                      ? 'Login to Register'
-                      : 'Register for Event'
+                    : 'Register for Event'
                   }
                 </button>
               )
@@ -919,6 +919,13 @@ const SingleEventCard = ({ event, chatProps }) => {
           </div>
         </div>
       )}
+
+      {/* Fork dialog for logged-out visitors (free Register + paid Purchase). */}
+      <EventAttendAuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        event={event}
+      />
 
       {/* External registration / tickets button — shown after event details */}
       {chatProps?.isPromotionalEvent && event.externalTicketUrl && (

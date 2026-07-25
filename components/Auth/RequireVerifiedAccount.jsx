@@ -36,7 +36,15 @@ const RequireVerifiedAccount = ({ children }) => {
       router.replace('/login');
       return;
     }
-    
+
+    // Guests attend only - they must never reach the member area, regardless of the
+    // verified flag (a guest could otherwise self-verify via OTP, or be flipped by hand).
+    // See featureplans/events-guest-attendee.md.
+    if (user.role === 'guest') {
+      router.replace('/');
+      return;
+    }
+
     // Check if account is verified
     if (user && (user.isAccountVerified === false || user.isAccountVerified === null)) {
       router.replace('/users/emailverify');
@@ -52,8 +60,8 @@ const RequireVerifiedAccount = ({ children }) => {
     );
   }
 
-  // Don't render children if not authenticated or verified
-  if (!tokenValidated || !user || user.isAccountVerified === false || user.isAccountVerified === null) {
+  // Don't render children if not authenticated, a guest, or not verified
+  if (!tokenValidated || !user || user.role === 'guest' || user.isAccountVerified === false || user.isAccountVerified === null) {
     return null;
   }
 

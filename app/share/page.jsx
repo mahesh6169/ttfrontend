@@ -5,6 +5,8 @@ export async function generateMetadata() {
   return {
     title: `${siteName} - Your Local Marketplace`,
     description: `Buy and sell items locally on ${siteName}. Find great deals on furniture, electronics, cars, real estate, jobs and more in your area.`,
+    // Thin redirect-to-homepage page — keep out of search (don't compete with the homepage).
+    robots: { index: false, follow: true },
     openGraph: {
       title: 'Your Local Marketplace',
       description: 'Buy and sell items locally. Find great deals in your area.',

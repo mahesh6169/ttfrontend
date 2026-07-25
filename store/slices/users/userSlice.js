@@ -121,6 +121,33 @@ export const loginUser = createAsyncThunk(
 );
 
 
+// Thunk for starting a guest session (event RSVP / checkout without an account).
+// Mirrors loginUser: on success the guest is stored like any signed-in user, so
+// existing flow endpoints work. A 409 carries code 'ACCOUNT_EXISTS' so the caller
+// can redirect a real account to login instead of attaching to it.
+export const continueAsGuest = createAsyncThunk(
+  'user/continueAsGuest',
+  async ({ email, captchaToken, formLoadTime, timeElapsed }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/guest`,
+        { email, captchaToken, formLoadTime, timeElapsed },
+        {
+          withCredentials: true, // Include cookies in the request
+        }
+      );
+
+      return response.data; // guest basics: _id, name, email, role, isAccountVerified
+    } catch (err) {
+      return rejectWithValue({
+        code: err.response?.data?.code || null,
+        message: err.response?.data?.message || 'Could not continue as guest. Please try again.',
+      });
+    }
+  }
+);
+
+
 // Thunk for validating token
 export const validateToken = createAsyncThunk(
   'user/validateToken',
@@ -547,6 +574,28 @@ const userSlice = createSlice({
       .addCase(loginUser.rejected, (state, { payload }) => {
         state.status = 'failed';
         state.error = payload;
+      })
+
+      // Continue-as-guest cases (guest stored like a login; see thunk above)
+      .addCase(continueAsGuest.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(continueAsGuest.fulfilled, (state, { payload }) => {
+        state.status = 'success';
+        state.tokenValidated = true;
+        state.user = {
+          _id: payload._id,
+          name: payload.name,
+          email: payload.email,
+          role: payload.role,
+          isAccountVerified: payload.isAccountVerified,
+        };
+        state.error = null;
+      })
+      .addCase(continueAsGuest.rejected, (state, { payload }) => {
+        state.status = 'failed';
+        state.error = payload?.message || 'Could not continue as guest.';
       })
 
       // Fetch profile cases
