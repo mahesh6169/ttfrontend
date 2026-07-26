@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -16,6 +16,7 @@ import { sanitizeInput } from '@/utils/forms/validation';
 const EventAttendAuthModal = ({ isOpen, onClose, event }) => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const currentUser = useSelector((state) => state.user.user);
 
   const isPaid = !!event?.isPaid;
   const eventId = event?._id;
@@ -33,7 +34,8 @@ const EventAttendAuthModal = ({ isOpen, onClose, event }) => {
   useEffect(() => {
     if (isOpen) {
       setShowGuest(false);
-      setEmail('');
+      // Prefill the email for a live guest re-forking (no re-typing); blank otherwise.
+      setEmail(currentUser?.role === 'guest' ? (currentUser.email || '') : '');
       setEmailError(null);
       setSubmitting(false);
       setCaptchaToken(null);
@@ -152,7 +154,7 @@ const EventAttendAuthModal = ({ isOpen, onClose, event }) => {
           ) : (
             <form onSubmit={handleGuestSubmit} className="space-y-3">
               <p className="text-xs text-slate-500">
-                No account needed - we will email your {isPaid ? 'tickets' : 'registration'} to this address.
+                Please enter your email address to receive your {isPaid ? 'ticket' : 'registration'} details.
               </p>
               <div>
                 <input

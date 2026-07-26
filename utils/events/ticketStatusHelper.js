@@ -1,6 +1,7 @@
 // utils/events/ticketStatusHelper.js
 
 import { formatInTimeZone } from 'date-fns-tz';
+import { FaRegClock, FaHourglassHalf, FaRegCalendarAlt, FaLock, FaBan } from 'react-icons/fa';
 
 /**
  * Get ticket sale status with appropriate icon and message
@@ -15,12 +16,12 @@ export const getTicketSaleStatus = (ticket, eventTimeZone, capacity = null) => {
 
   // Sold out — needs capacity, so only surfaces on the purchase flow (not the detail list).
   if (capacity && capacity.total > 0 && capacity.confirmedAllocations >= capacity.total) {
-    return { message: 'Sold out', className: 'text-red-600 font-medium', priority: 1, unavailable: true };
+    return { message: 'Sold out', className: 'text-red-600 font-medium', icon: FaBan, priority: 1, unavailable: true };
   }
 
-  // Sales haven't started yet
+  // Sales haven't started yet — upcoming, informational (sky + clock).
   if (ticket.startDate && now < new Date(ticket.startDate)) {
-    return { message: `Sales open ${fmt(ticket.startDate)}`, className: 'text-slate-500', priority: 2 };
+    return { message: `Sales open ${fmt(ticket.startDate)}`, className: 'text-sky-600', icon: FaRegClock, priority: 2 };
   }
 
   // On sale — check for expiry
@@ -28,23 +29,24 @@ export const getTicketSaleStatus = (ticket, eventTimeZone, capacity = null) => {
     const expiryDate = new Date(ticket.expiryDate);
 
     if (now > expiryDate) {
-      return { message: 'Sales closed', className: 'text-slate-400', priority: 1, unavailable: true };
+      return { message: 'Sales closed', className: 'text-rose-500', icon: FaLock, priority: 1, unavailable: true };
     }
 
     const msPerDay = 24 * 60 * 60 * 1000;
     const daysUntilExpiry = Math.ceil((expiryDate - now) / msPerDay);
 
-    // Subtle closing-soon nudge (no alarm colour — the shorter window is the signal)
+    // Closing-soon nudge — amber + hourglass so the time pressure actually reads.
     if (daysUntilExpiry <= 5 && daysUntilExpiry > 0) {
       return {
         message: `${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''} left`,
-        className: 'text-slate-600 font-medium',
+        className: 'text-amber-600 font-medium',
+        icon: FaHourglassHalf,
         priority: 3,
       };
     }
 
-    // On sale with an end date
-    return { message: `Sales end ${fmt(expiryDate)}`, className: 'text-slate-500', priority: 4 };
+    // On sale with an end date — calm neutral (slate + calendar).
+    return { message: `Sales end ${fmt(expiryDate)}`, className: 'text-slate-500', icon: FaRegCalendarAlt, priority: 4 };
   }
 
   // On sale, no end date — nothing to show (keeps the row clean)

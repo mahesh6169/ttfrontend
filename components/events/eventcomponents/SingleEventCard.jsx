@@ -227,14 +227,19 @@ const SingleEventCard = ({ event, chatProps }) => {
   // Fork dialog for logged-out visitors: Log in / Register / Continue as guest.
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
-  const isRegistered = !!currentRegistration && currentRegistration.status === 'registered';
-  const isCheckedIn = !!currentRegistration && currentRegistration.status === 'checkedin';
-
-  // Guests get everything by email - no online RSVP viewing or self-cancel (changes go
-  // through the organiser). Hide member-only actions. See featureplans/events-guest-attendee.md.
+  // Guests are treated as logged out on the event page: they see the Register/Purchase CTA
+  // (same as a paid event), never the registered/checked-in state - their proof is the email.
+  // Members keep it. See featureplans/events-guest-attendee.md.
   const currentUser = useSelector((state) => state.user.user);
   const isGuest = currentUser?.role === 'guest';
+
+  const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
+  // currentRegistration is a single global value, so only trust it when it belongs to THIS
+  // event; and never show the registered/checked-in state to a guest.
+  const registrationForThisEvent =
+    !isGuest && !!currentRegistration && String(currentRegistration.event) === String(event?._id);
+  const isRegistered = registrationForThisEvent && currentRegistration.status === 'registered';
+  const isCheckedIn = registrationForThisEvent && currentRegistration.status === 'checkedin';
 
   useEffect(() => {
     if (event?._id) {
@@ -347,9 +352,11 @@ const SingleEventCard = ({ event, chatProps }) => {
 
   // Handle ticket purchase navigation
   const handlePurchaseTickets = () => {
-    if (!isAuthenticated) {
-      // Logged-out visitor: offer Log in / Register / Continue as guest.
-      // The dialog owns the redirect-preservation and guest-session logic.
+    // Fork for a logged-out visitor AND for a live guest starting a new attend action:
+    // each event re-offers Log in / Register / Continue as guest (the guest is treated as
+    // logged out everywhere, so the CTA must ask again). The dialog owns the redirect and
+    // guest-session logic. See featureplans/events-guest-attendee.md.
+    if (!isAuthenticated || isGuest) {
       setAuthModalOpen(true);
       return;
     }
@@ -771,54 +778,66 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Tickets — capacity + ticket types + purchase, in sequence (paid events) */}
       {event.isPaid && event.ticketTypes?.length > 0 && (
         <div className="my-4 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Tickets</h3>
+          {/* Two columns: ticket types take most of the width (column 1); capacity + purchase sit
+              in a narrow column 2 (only the width they need). Stacks on mobile. No heading. */}
+          <div className="flex flex-col lg:flex-row lg:items-start gap-4">
 
-          {/* Capacity + max per registration */}
-          {!event.isAdvertiseOnly && (
-            <div className="mb-3">
-              <EventCapacityDisplay
-                eventId={event._id}
-                isPaid={event.isPaid}
-                context="viewing"
-                maxPerRegistration={event.maxAttendeesPerRegistration}
-              />
+            {/* Column 1 — ticket types. ONE bordered card, rows divided by a subtle line; 5+ types
+                scroll inside the card so it stays compact. */}
+            <div className="flex-1 min-w-0">
+              <div className={`rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 ${event.ticketTypes.length > 4 ? 'max-h-72 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full' : ''}`}>
+                {event.ticketTypes.map((ticket, index) => {
+                  // Capacity is event-level, not per-ticket, so the list only reflects sale-window status.
+                  const status = event.timeZone ? getTicketSaleStatus(ticket, event.timeZone, null) : null;
+                  const StatusIcon = status?.icon;
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-start justify-between gap-4 px-4 py-3 ${status?.unavailable ? 'opacity-60' : ''}`}
+                    >
+                      {/* Name, note and status all wrap in this first column; the price sits
+                          top-aligned in its own narrow column, so a long note stays left. */}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm sm:text-base font-semibold text-slate-800 truncate">{ticket.name}</p>
+                        {ticket.note && (
+                          <p className="text-xs mt-0.5 text-slate-500">{ticket.note}</p>
+                        )}
+                        {status && (
+                          <p className={`flex items-center gap-1 text-xs mt-0.5 ${status.className}`}>
+                            {StatusIcon && <StatusIcon size={12} className="shrink-0" />}
+                            {status.message}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-base sm:text-lg font-bold text-teal-700 shrink-0">${ticket.price}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          )}
 
-          {/* Ticket types — borderless, compact; scrolls vertically when there are many */}
-          <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
-            {event.ticketTypes.map((ticket, index) => {
-              // Capacity is event-level, not per-ticket, so the list only reflects sale-window status.
-              const status = event.timeZone ? getTicketSaleStatus(ticket, event.timeZone, null) : null;
-              return (
-                <div
-                  key={index}
-                  className={`flex items-baseline justify-between gap-3 py-2.5 ${status?.unavailable ? 'opacity-60' : ''}`}
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm sm:text-base font-medium text-slate-800 truncate">{ticket.name}</p>
-                    {status && (
-                      <p className={`text-xs mt-0.5 ${status.className}`}>{status.message}</p>
-                    )}
-                  </div>
-                  <p className="text-sm sm:text-base font-semibold text-slate-900 shrink-0">${ticket.price}</p>
+            {/* Column 2 — capacity then purchase, only the width it needs. */}
+            {!event.isAdvertiseOnly && (
+              <div className="w-full lg:w-56 shrink-0 space-y-4">
+                <EventCapacityDisplay
+                  eventId={event._id}
+                  isPaid={event.isPaid}
+                  context="viewing"
+                  maxPerRegistration={event.maxAttendeesPerRegistration}
+                  stack
+                />
+                <div className="flex justify-center lg:justify-start">
+                  <button
+                    onClick={handlePurchaseTickets}
+                    className="inline-flex items-center gap-2 bg-teal-700 text-white hover:bg-teal-800 px-5 py-2 rounded-full shadow-sm font-semibold text-sm transition-colors"
+                  >
+                    <FaShoppingCart />
+                    Purchase Tickets
+                  </button>
                 </div>
-              );
-            })}
+              </div>
+            )}
           </div>
-
-          {/* Purchase CTA */}
-          {!event.isAdvertiseOnly && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={handlePurchaseTickets}
-                className="w-full sm:w-auto bg-teal-700 text-white hover:bg-teal-800 px-8 py-3 rounded-lg shadow font-semibold text-sm md:text-base transition-colors flex items-center justify-center"
-              >
-                <FaShoppingCart className="mr-2" />
-                Purchase Tickets
-              </button>
-            </div>
-          )}
         </div>
       )}
 
@@ -861,14 +880,12 @@ const SingleEventCard = ({ event, chatProps }) => {
                     <FaCheckCircle />
                     Checked In
                   </div>
-                  {!isGuest && (
-                    <Link
-                      href="/users/profile/myregistrations"
-                      className="text-sm text-teal-700 hover:text-teal-800 underline"
-                    >
-                      View my RSVPs
-                    </Link>
-                  )}
+                  <Link
+                    href="/users/profile/myregistrations"
+                    className="text-sm text-teal-700 hover:text-teal-800 underline"
+                  >
+                    View my RSVPs
+                  </Link>
                 </div>
               ) : isRegistered ? (
                 <div className="flex flex-col items-center gap-3">
@@ -876,31 +893,30 @@ const SingleEventCard = ({ event, chatProps }) => {
                     <FaCheckCircle />
                     Already Registered
                   </div>
-                  {!isGuest && (
-                    <div className="flex items-center gap-4 text-sm">
-                      <Link
-                        href="/users/profile/myregistrations"
-                        className="text-teal-700 hover:text-teal-800 underline"
-                      >
-                        View my RSVPs
-                      </Link>
-                      <span className="text-slate-300">·</span>
-                      <button
-                        type="button"
-                        onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
-                        disabled={registrationStatus === 'loading'}
-                        className="text-red-600 hover:text-red-700 underline disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {registrationStatus === 'loading' ? 'Cancelling...' : 'Cancel registration'}
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-4 text-sm">
+                    <Link
+                      href="/users/profile/myregistrations"
+                      className="text-teal-700 hover:text-teal-800 underline"
+                    >
+                      View my RSVPs
+                    </Link>
+                    <span className="text-slate-300">·</span>
+                    <button
+                      type="button"
+                      onClick={() => dispatch(unregisterFromFreeEvent(event._id))}
+                      disabled={registrationStatus === 'loading'}
+                      className="text-red-600 hover:text-red-700 underline disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {registrationStatus === 'loading' ? 'Cancelling...' : 'Cancel registration'}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button
                   onClick={() => {
-                    if (!isAuthenticated) {
-                      // Logged-out visitor: offer Log in / Register / Continue as guest.
+                    // Fork for a logged-out visitor AND a live guest starting a new attend
+                    // action (re-offers Log in / Register / Continue as guest per event).
+                    if (!isAuthenticated || isGuest) {
                       setAuthModalOpen(true);
                       return;
                     }

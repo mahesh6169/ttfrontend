@@ -801,7 +801,7 @@ deleteError: null,
     },
 
     addTicketType: (state) => {
-      state.formData.ticketTypes.push({ name: '', price: null, quantity: 0, startDate: null, expiryDate: null });
+      state.formData.ticketTypes.push({ name: '', price: null, quantity: 0, startDate: null, expiryDate: null, note: '' });
       state.hasUnsavedChanges = true;
     },
     updateTicketType: (state, action) => {

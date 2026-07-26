@@ -8,7 +8,7 @@ const ConfirmModal = ({ isOpen, onConfirm, onCancel, title, message, isLoading =
       <div className="bg-white w-full max-w-sm rounded-xl shadow-xl">
         <div className="p-4">
           <h2 className="text-base font-semibold text-slate-900">{title || "Confirm Action"}</h2>
-          <p className="text-sm text-slate-600 mt-1">{message || "Are you sure you want to proceed?"}</p>
+          {message && <p className="text-sm text-slate-600 mt-1">{message}</p>}
         </div>
         <div className="flex border-t border-slate-200">
           <button

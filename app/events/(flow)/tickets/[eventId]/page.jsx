@@ -771,12 +771,19 @@ const TicketSelectionPage = () => {
                       {ticketType.name}
                     </h4>
 
+                    {/* Optional display-only organiser note */}
+                    {ticketType.note && (
+                      <p className="text-xs mt-0.5 text-slate-500">{ticketType.note}</p>
+                    )}
+
                     {/* Ticket Sale Status */}
                     {(() => {
                       const status = getTicketSaleStatus(ticketType, selectedEvent.timeZone, eventCapacity);
                       if (!status) return null;
+                      const StatusIcon = status.icon;
                       return (
-                        <p className={`text-xs mt-0.5 ${status.className}`}>
+                        <p className={`flex items-center gap-1 text-xs mt-0.5 ${status.className}`}>
+                          {StatusIcon && <StatusIcon size={12} className="shrink-0" />}
                           {status.message}
                         </p>
                       );

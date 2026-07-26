@@ -432,8 +432,7 @@ const CheckInFree_AttendeeList = () => {
         onConfirm={confirmCancelRegistration}
         onCancel={() => setPendingCancel(null)}
         isLoading={actionLoading}
-        title="Cancel this registration?"
-        message={pendingCancel ? `This cancels registration ${pendingCancel.registrationNumber || ''} and frees ${pendingCancel.attendees?.length || 0} spot${(pendingCancel.attendees?.length || 0) === 1 ? '' : 's'}. This cannot be undone.` : ''}
+        title="Are you sure?"
         confirmText="Cancel registration"
         cancelText="Keep it"
       />

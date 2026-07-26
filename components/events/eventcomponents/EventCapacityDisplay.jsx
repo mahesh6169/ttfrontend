@@ -11,6 +11,7 @@ const EventCapacityDisplay = ({
   showInTicketSection = false, 
   maxPerRegistration,
   context = 'viewing', // 'viewing' | 'purchasing'
+  stack = false, // when true, put "Max" on its own line under the capacity (for narrow columns)
   onCapacityUpdate, // Callback when capacity changes
   refreshInterval // Custom refresh interval (ms)
 }) => {
@@ -215,13 +216,13 @@ const EventCapacityDisplay = ({
 
   // Create consistent display text for free events if not provided
   const consistentDisplayText = displayText || (!isPaid && !isUnlimited 
-    ? `${remainingCapacity} of ${totalCapacity} available`
+    ? `${remainingCapacity} of ${totalCapacity} spots left`
     : isUnlimited ? 'Unlimited capacity' : displayText);
 
   return (
     <div>
-      {/* Capacity + max on one row (both mobile and desktop) */}
-      <div className="flex items-center justify-between gap-3 text-sm sm:text-base">
+      {/* Capacity + max: one row by default, or stacked (Max under the count) when stack is set. */}
+      <div className={`${stack ? 'flex flex-col items-start gap-1' : 'flex items-center justify-between gap-3'} text-sm sm:text-base`}>
         {/* Capacity summary */}
         {consistentDisplayText && (
           <span className="inline-flex items-center font-semibold text-slate-800 min-w-0">
@@ -233,9 +234,9 @@ const EventCapacityDisplay = ({
         {/* Booking Limit */}
         {typeof maxPerRegistration === 'number' && (
           <span className="shrink-0 whitespace-nowrap">
-            <span className="text-slate-500">Max:</span>{' '}
+            <span className="text-slate-500">Max</span>{' '}
             <span className="font-semibold text-slate-700">
-              {maxPerRegistration} per registration
+              {maxPerRegistration} per {isPaid ? 'order' : 'registration'}
             </span>
           </span>
         )}

@@ -875,6 +875,22 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                   <p className="text-red-500 text-xs mt-1">{ticketDateError(index)}</p>
                 )}
 
+                {/* Optional display-only note shown to buyers while choosing (e.g. "Includes dinner"). */}
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Note <span className="font-normal text-slate-400">(optional, shown to buyers)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={ticket.note || ''}
+                    onChange={(e) => { setEditingTicket(index); dispatch(updateTicketType({ index, field: 'note', value: e.target.value })); }}
+                    placeholder="e.g. Includes dinner, 18+ only"
+                    maxLength="120"
+                    className={getInputClasses(false)}
+                  />
+                  <p className="text-xs text-slate-400 mt-1 text-right">{(ticket.note || '').length}/120</p>
+                </div>
+
                 <div className="mt-3 flex justify-end gap-4">
                   <button
                     type="button"
