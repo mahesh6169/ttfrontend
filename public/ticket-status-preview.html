@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ticket status - icon + colour preview</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; background:#f8fafc; color:#1e293b; margin:0; padding:32px; }
+  h1 { font-size:16px; color:#334155; text-align:center; margin:0 0 4px; }
+  p.sub { font-size:12px; color:#64748b; text-align:center; margin:0 0 24px; }
+  .card { max-width:448px; margin:0 auto 28px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 16px; border-bottom:1px solid #f1f5f9; }
+  .row:last-child { border-bottom:0; }
+  .row.dim { opacity:0.6; }
+  .name { font-weight:600; font-size:15px; color:#1e293b; }
+  .status { display:flex; align-items:center; gap:6px; font-size:12px; margin-top:3px; }
+  .status svg { width:14px; height:14px; flex:0 0 auto; }
+  .price { font-weight:700; font-size:18px; color:#0f766e; flex:0 0 auto; }
+  /* status colours */
+  .c-open   { color:#0284c7; }              /* sky-600  - upcoming */
+  .c-soon   { color:#d97706; font-weight:600; } /* amber-600 - urgency */
+  .c-onsale { color:#64748b; }              /* slate-500 - neutral */
+  .c-closed { color:#f43f5e; }              /* rose-500  - unavailable */
+  .c-sold   { color:#dc2626; font-weight:600; } /* red-600  - hard stop */
+  .legend { max-width:448px; margin:0 auto; font-size:12px; color:#64748b; }
+  .legend div { margin:4px 0; }
+</style>
+</head>
+<body>
+  <h1>Tickets</h1>
+  <p class="sub">icon + colour proposal (open on any browser)</p>
+
+  <div class="card">
+    <!-- Sales open (upcoming) -->
+    <div class="row">
+      <div>
+        <div class="name">General</div>
+        <div class="status c-open">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Sales open 5 Sep 2026
+        </div>
+      </div>
+      <div class="price">$10</div>
+    </div>
+
+    <!-- Days left (urgency) -->
+    <div class="row">
+      <div>
+        <div class="name">Early Bird</div>
+        <div class="status c-soon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 4h12M6 20h12M8 4v3l4 5 4-5V4M8 20v-3l4-5 4 5v3"/></svg>
+          3 days left
+        </div>
+      </div>
+      <div class="price">$15</div>
+    </div>
+
+    <!-- Sales end date (on sale) -->
+    <div class="row">
+      <div>
+        <div class="name">Standard</div>
+        <div class="status c-onsale">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 8.25h18M4.5 5.25h15A1.5 1.5 0 0121 6.75v12A1.5 1.5 0 0119.5 20.25h-15A1.5 1.5 0 013 18.75v-12A1.5 1.5 0 014.5 5.25z"/></svg>
+          Sales end 20 Aug 2026
+        </div>
+      </div>
+      <div class="price">$20</div>
+    </div>
+
+    <!-- Sales closed (ended) -->
+    <div class="row dim">
+      <div>
+        <div class="name">VIP</div>
+        <div class="status c-closed">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75M6.75 21.75h10.5a1.5 1.5 0 001.5-1.5v-6.75a1.5 1.5 0 00-1.5-1.5H6.75a1.5 1.5 0 00-1.5 1.5v6.75a1.5 1.5 0 001.5 1.5z"/></svg>
+          Sales closed
+        </div>
+      </div>
+      <div class="price">$50</div>
+    </div>
+
+    <!-- Sold out (purchase flow only) -->
+    <div class="row dim">
+      <div>
+        <div class="name">Group</div>
+        <div class="status c-sold">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 12.728A9 9 0 005.636 5.636zM5.636 5.636l12.728 12.728"/></svg>
+          Sold out
+        </div>
+      </div>
+      <div class="price">$40</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div><strong>Legend</strong></div>
+    <div>Sales open [date] - sky blue, clock (upcoming, not yet on sale)</div>
+    <div>N days left - amber, hourglass (closing soon - the one that pops)</div>
+    <div>Sales end [date] - slate grey, calendar (on sale, calm info)</div>
+    <div>Sales closed - rose, lock (ended, row dimmed)</div>
+    <div>Sold out - red, no-entry (purchase flow only; not on the event detail list)</div>
+  </div>
+</body>
+</html>

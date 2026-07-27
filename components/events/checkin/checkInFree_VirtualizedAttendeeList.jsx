@@ -11,10 +11,12 @@ import {
   bulkCheckInRegistration,
   updateLocalBulkCheckIn,
   fetchEventAttendees,
+  cancelRegistration,
   setCurrentPage
 } from '@/store/slices/events/checkInFreeSlice';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const CheckInFree_VirtualizedAttendeeList = () => {
   const dispatch = useDispatch();
@@ -30,6 +32,30 @@ const CheckInFree_VirtualizedAttendeeList = () => {
   const [expandedRegistrations, setExpandedRegistrations] = useState(new Set());
   const [activeTab, setActiveTab] = useState({}); // { registrationId: 'attendees' | 'attendeeInfo' }
   const [windowHeight, setWindowHeight] = useState(600);
+  // Registration pending organiser cancellation (drives the confirm modal).
+  const [pendingCancel, setPendingCancel] = useState(null);
+
+  // Organiser cancels a whole registration, then refresh the list, stats and capacity.
+  const confirmCancelRegistration = async () => {
+    if (!pendingCancel) return;
+    try {
+      await dispatch(cancelRegistration({
+        eventId: selectedEvent._id,
+        ticketId: pendingCancel._id,
+      })).unwrap();
+      toast.success('Registration cancelled');
+      setPendingCancel(null);
+      dispatch(fetchEventAttendees({
+        eventId: selectedEvent._id,
+        page: pagination.currentPage,
+        limit: pagination.limit,
+        search: searchTerm,
+      }));
+    } catch (err) {
+      toast.error(err || 'Failed to cancel registration');
+      setPendingCancel(null);
+    }
+  };
   const listRef = useRef();
 
   // Calculate window height for virtualization and detect mobile/desktop changes
@@ -246,6 +272,15 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                   {allCheckedIn ? 'Check Out All' : 'Check In All'}
                 </button>
               </div>
+              {!someCheckedIn && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setPendingCancel(registration); }}
+                  disabled={actionLoading}
+                  className="w-full px-4 py-2 rounded-md text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel registration
+                </button>
+              )}
 
               {/* Row 2: Registration Number */}
               <div className="font-bold text-slate-800 text-base">
@@ -312,24 +347,35 @@ const CheckInFree_VirtualizedAttendeeList = () => {
                 </div>
               </div>
               
-              {/* Check In All Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleBulkCheckIn(registration._id, !allCheckedIn);
-                }}
-                disabled={actionLoading}
-                className={`
-                  px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
-                  ${allCheckedIn 
-                    ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100' 
-                    : 'bg-teal-700 text-white hover:bg-teal-800'
-                  }
-                  ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
-              >
-                {allCheckedIn ? 'Check Out All' : 'Check In All'}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Check In All Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleBulkCheckIn(registration._id, !allCheckedIn);
+                  }}
+                  disabled={actionLoading}
+                  className={`
+                    px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
+                    ${allCheckedIn
+                      ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
+                      : 'bg-teal-700 text-white hover:bg-teal-800'
+                    }
+                    ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  {allCheckedIn ? 'Check Out All' : 'Check In All'}
+                </button>
+                {!someCheckedIn && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setPendingCancel(registration); }}
+                    disabled={actionLoading}
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           
@@ -476,6 +522,17 @@ const CheckInFree_VirtualizedAttendeeList = () => {
           />
         </div>
       )}
+
+      {/* Organiser cancel confirmation */}
+      <ConfirmModal
+        isOpen={!!pendingCancel}
+        onConfirm={confirmCancelRegistration}
+        onCancel={() => setPendingCancel(null)}
+        isLoading={actionLoading}
+        title="Are you sure?"
+        confirmText="Cancel registration"
+        cancelText="Keep it"
+      />
     </div>
   );
 };

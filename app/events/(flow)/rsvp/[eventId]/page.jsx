@@ -47,6 +47,9 @@ const RsvpPage = () => {
   } = useSelector((state) => state.freeEvents);
 
   const isAuthenticated = tokenValidated && !!user?._id;
+  // Guests get everything by email and cannot view RSVPs online (the member page
+  // redirects a guest out), so hide member-only links for them. See featureplans/events-guest-attendee.md.
+  const isGuest = user?.role === 'guest';
   const isRegistered =
     !!currentRegistration && currentRegistration.status === 'registered';
 
@@ -345,14 +348,31 @@ const RsvpPage = () => {
               )}
               {!justRegistered && <div className="mb-6" />}
 
+              {/* Guest came back to manage: registering with the same email upgrades the
+                  guest record, attaching this RSVP so they can manage it. Organiser contact
+                  is already in their email and on the event page. Not shown on fresh success. */}
+              {isGuest && !justRegistered && (
+                <p className="text-sm text-slate-600 max-w-md mx-auto mb-4">
+                  To change or cancel, contact the event organiser. Alternatively,{' '}
+                  <Link href="/register" className="text-teal-700 hover:text-teal-800 underline">
+                    register with {user?.email}
+                  </Link>{' '}
+                  to manage your RSVPs online.
+                </p>
+              )}
+
               <div className="flex items-center justify-center gap-4 text-sm">
-                <Link
-                  href="/users/profile/myregistrations"
-                  className="text-teal-700 hover:text-teal-800 underline"
-                >
-                  View my RSVPs
-                </Link>
-                <span className="text-slate-300">·</span>
+                {!isGuest && (
+                  <>
+                    <Link
+                      href="/users/profile/myregistrations"
+                      className="text-teal-700 hover:text-teal-800 underline"
+                    >
+                      View my RSVPs
+                    </Link>
+                    <span className="text-slate-300">·</span>
+                  </>
+                )}
                 <Link
                   href="/events"
                   className="text-teal-700 hover:text-teal-800 underline"

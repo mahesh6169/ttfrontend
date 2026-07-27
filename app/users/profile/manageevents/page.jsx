@@ -58,6 +58,23 @@ const ManageEventsPage = () => {
     }
   };
 
+  const handleToggleWaitlist = async (event) => {
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const response = await axios.patch(
+        `${API_BASE_URL}/events/${event._id}/toggle-waitlist`,
+        { enabled: !event.waitlistEnabled },
+        { withCredentials: true }
+      );
+      if (response.data.success) {
+        toast.success(response.data.message);
+        dispatch(fetchMyEvents());
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update waitlist');
+    }
+  };
+
   const confirmDelete = (event) => {
     setEventToDelete(event);
     setIsModalOpen(true);
@@ -243,6 +260,27 @@ const ManageEventsPage = () => {
                       >
                         Set up Stripe payouts →
                       </Link>
+                    </div>
+                  )}
+
+                  {/* Waitlist toggle + demand meter (organiser only; promo events have no waitlist). */}
+                  {!event.isAdvertiseOnly && (
+                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleWaitlist(event)}
+                        className="text-xs font-semibold text-teal-700 hover:text-teal-900 active:underline"
+                      >
+                        {event.waitlistEnabled ? 'Disable Waitlist' : 'Enable Waitlist'}
+                      </button>
+                      {event.waitlistEnabled && event.waitlistCount > 0 && (
+                        <Link
+                          href={`/users/profile/eventWaitlist/${event._id}`}
+                          className="text-xs font-semibold text-teal-700 hover:text-teal-900 active:underline"
+                        >
+                          {event.waitlistCount} on the waitlist
+                        </Link>
+                      )}
                     </div>
                   )}
                 </div>

@@ -22,6 +22,12 @@ const SuccessStep = ({
   const eventTitle = createdEvent?.title || event.title || 'Untitled Event';
   const isRecurringEvent = event.recurrence?.isRecurring || false;
 
+  // Prefer the saved event's date (like id/title above); guard against an unparseable value so
+  // the success screen shows "Not set" instead of crashing on an invalid time value.
+  const rawDate = createdEvent?.dateTime || event.dateTime;
+  const parsedDate = rawDate ? new Date(rawDate) : null;
+  const dateValid = parsedDate && !isNaN(parsedDate.getTime());
+
   const getRecurringScheduleText = () => {
     if (!isRecurringEvent || !event.recurrence?.repeatSchedule?.length) return '';
     const schedules = event.recurrence.repeatSchedule;
@@ -74,7 +80,7 @@ const SuccessStep = ({
           <div className="flex justify-between">
             <span className="text-slate-500">Date</span>
             <span className="text-slate-700">
-              {event.dateTime ? format(new Date(event.dateTime), 'PPp') : 'Not set'}
+              {dateValid ? format(parsedDate, 'PPp') : 'Not set'}
             </span>
           </div>
 

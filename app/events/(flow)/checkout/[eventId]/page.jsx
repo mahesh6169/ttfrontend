@@ -40,6 +40,9 @@ const CheckoutPage = () => {
   const params = useParams();
   const router = useRouter();
   const { user } = useSelector((state) => state.user);
+  // Guests get everything by email and cannot reach the member profile pages (the gate
+  // redirects them out), so hide member-only links on the success screen for a guest.
+  const isGuest = user?.role === 'guest';
 
   // State from reservation API
   const [reservation, setReservation] = useState(null);
@@ -840,14 +843,18 @@ const CheckoutPage = () => {
                   <FaEnvelope className="mt-0.5 flex-shrink-0 text-teal-600" />
                   <span>An email is on the way with your event, invoice, and ticket details</span>
                 </li>
-                <li className="flex items-start gap-1.5">
-                  <FaTicketAlt className="mt-0.5 flex-shrink-0 text-teal-600" />
-                  <span>View tickets at <a href="/users/profile/mytickets" className="underline hover:text-teal-800">My Tickets</a></span>
-                </li>
-                <li className="flex items-start gap-1.5">
-                  <FaReceipt className="mt-0.5 flex-shrink-0 text-teal-600" />
-                  <span>View invoices at <a href="/users/profile/myinvoices" className="underline hover:text-teal-800">My Invoices</a></span>
-                </li>
+                {!isGuest && (
+                  <>
+                    <li className="flex items-start gap-1.5">
+                      <FaTicketAlt className="mt-0.5 flex-shrink-0 text-teal-600" />
+                      <span>View tickets at <a href="/users/profile/mytickets" className="underline hover:text-teal-800">My Tickets</a></span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <FaReceipt className="mt-0.5 flex-shrink-0 text-teal-600" />
+                      <span>View invoices at <a href="/users/profile/myinvoices" className="underline hover:text-teal-800">My Invoices</a></span>
+                    </li>
+                  </>
+                )}
                 <li className="flex items-start gap-1.5">
                   <FaUser className="mt-0.5 flex-shrink-0 text-teal-600" />
                   <span>Enquiries? Visit <a href={`/events/views/${params.eventId}`} className="underline hover:text-teal-800">Event page</a> to contact organiser</span>

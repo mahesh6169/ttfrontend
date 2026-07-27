@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -43,6 +43,10 @@ import ShareIcons from '@/components/shared/ShareIcons';
 import { buildSlugUrl } from '@/utils/slugUtils';
 // Modal removed — RSVP now lives at /events/rsvp/[eventId] as a full page.
 import EventCapacityDisplay from './EventCapacityDisplay';
+import EventAttendAuthModal from './EventAttendAuthModal';
+import WaitlistJoinModal from './WaitlistJoinModal';
+import axios from '@/utils/axiosConfig';
+import { toast } from 'react-toastify';
 import { formatInTimeZone } from 'date-fns-tz';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
 
@@ -112,7 +116,9 @@ const SingleEventCard = ({ event, chatProps }) => {
   const [touchEnd, setTouchEnd] = useState(null);
   const descriptionRef = useRef(null);
   const chatRef = useRef(null);
-  const [chatInView, setChatInView] = useState(false);
+  // Ticket box (paid) / booking card (free): the floating pills hide from here down.
+  const actionRef = useRef(null);
+  const [pillsHidden, setPillsHidden] = useState(false);
   const coordSliderRef = useRef(null);
   const [coordActivePage, setCoordActivePage] = useState(0);
   const [coordTotalPages, setCoordTotalPages] = useState(1);
@@ -131,15 +137,17 @@ const SingleEventCard = ({ event, chatProps }) => {
   const useCoordMobileSlider = filteredCoords.length > 2;
 
   useEffect(() => {
-    const node = chatRef.current;
+    const node = actionRef.current;
     if (!node) return;
+    // Hide the floating pills once the action zone is in view OR has scrolled above the
+    // viewport, so they stay gone from the ticket box (or booking card) down through the chat.
     const observer = new IntersectionObserver(
-      ([entry]) => setChatInView(entry.isIntersecting),
-      { threshold: 0.1 }
+      ([entry]) => setPillsHidden(entry.isIntersecting || entry.boundingClientRect.top < 0),
+      { threshold: 0 }
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [chatProps?.resourceId]);
+  }, [event?._id, event?.isPaid, event?.isAdvertiseOnly]);
 
   useEffect(() => {
     if (!useCoordSlider) return;
@@ -220,12 +228,44 @@ const SingleEventCard = ({ event, chatProps }) => {
     el.scrollTo({ top: target, behavior: 'smooth' });
   };
 
-  const { isInEventWishlist, toggleEventWishlist, isAuthenticated } = useEventWishlist();
+  const { isInEventWishlist, toggleEventWishlist, isAuthenticated, canWishlist } = useEventWishlist();
   const isInWishlist = isInEventWishlist(event?._id);
 
+  // Fork dialog for logged-out visitors: Log in / Register / Continue as guest.
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  // Waitlist: capacityFull comes from EventCapacityDisplay's callback (no second capacity fetch).
+  const [capacityFull, setCapacityFull] = useState(false);
+  const [waitlistJoined, setWaitlistJoined] = useState(false);
+  const [waitlistModalOpen, setWaitlistModalOpen] = useState(false);
+  // Live waitlist flag: seeded from the (possibly cached) event prop, then corrected by the live
+  // capacity endpoint below so a stale slug-page cache can never hide/show the CTA wrongly.
+  const [waitlistEnabledLive, setWaitlistEnabledLive] = useState(!!event?.waitlistEnabled);
+
+  // Stable handler so EventCapacityDisplay's effect does not re-fetch every render. The child
+  // already fetches capacity for its "N of M spots left" line; we reuse that result here instead
+  // of a second fetch. 'sold-out' status => the event is full. The same LIVE response also carries
+  // waitlistEnabled, so both signals the CTA needs come from the uncached endpoint.
+  const handleCapacityUpdate = useCallback((cap) => {
+    setCapacityFull(cap?.status === 'sold-out');
+    if (cap && typeof cap.waitlistEnabled === 'boolean') {
+      setWaitlistEnabledLive(cap.waitlistEnabled);
+    }
+  }, []);
+
+  // Guests are treated as logged out on the event page: they see the Register/Purchase CTA
+  // (same as a paid event), never the registered/checked-in state - their proof is the email.
+  // Members keep it. See featureplans/events-guest-attendee.md.
+  const currentUser = useSelector((state) => state.user.user);
+  const isGuest = currentUser?.role === 'guest';
+
   const { currentRegistration, registrationStatus } = useSelector((state) => state.freeEvents);
-  const isRegistered = !!currentRegistration && currentRegistration.status === 'registered';
-  const isCheckedIn = !!currentRegistration && currentRegistration.status === 'checkedin';
+  // currentRegistration is a single global value, so only trust it when it belongs to THIS
+  // event; and never show the registered/checked-in state to a guest.
+  const registrationForThisEvent =
+    !isGuest && !!currentRegistration && String(currentRegistration.event) === String(event?._id);
+  const isRegistered = registrationForThisEvent && currentRegistration.status === 'registered';
+  const isCheckedIn = registrationForThisEvent && currentRegistration.status === 'checkedin';
 
   useEffect(() => {
     if (event?._id) {
@@ -274,7 +314,7 @@ const SingleEventCard = ({ event, chatProps }) => {
   };
 
   const handleWishlistToggle = () => {
-    if (!isAuthenticated) {
+    if (!canWishlist) {
       alert('Please log in to use the wishlist feature.');
       return;
     }
@@ -338,21 +378,56 @@ const SingleEventCard = ({ event, chatProps }) => {
 
   // Handle ticket purchase navigation
   const handlePurchaseTickets = () => {
-    if (!isAuthenticated) {
-      // Save intended destination
-      localStorage.setItem('redirectAfterLogin', `/events/tickets/${event._id}`);
-      // Don't overwrite eventViewReturnUrl if it already exists
-      // This preserves the original navigation path
-      if (!localStorage.getItem('eventViewReturnUrl')) {
-        localStorage.setItem('eventViewReturnUrl', '/events');
-      }
-      // Redirect to login with preserve redirect flag
-      router.push('/login?preserveRedirect=true');
+    // Fork for a logged-out visitor AND for a live guest starting a new attend action:
+    // each event re-offers Log in / Register / Continue as guest (the guest is treated as
+    // logged out everywhere, so the CTA must ask again). The dialog owns the redirect and
+    // guest-session logic. See featureplans/events-guest-attendee.md.
+    if (!isAuthenticated || isGuest) {
+      setAuthModalOpen(true);
       return;
     }
     // Navigate to the ticket selection page
     router.push(`/events/tickets/${event._id}`);
   };
+
+  // Show the waitlist CTA only when the event is genuinely full, the organiser turned the
+  // waitlist on, and it is a real (non-promo) event. Server re-validates all of this on join.
+  const showWaitlist = capacityFull && waitlistEnabledLive && !event.isAdvertiseOnly;
+
+  // Join in one tap for a live session (member or guest email); logged-out visitors get the
+  // email + reCAPTCHA modal. Server decides the real outcome (see featureplans/events-waitlist.md).
+  const handleJoinWaitlist = async () => {
+    if (!isAuthenticated) {
+      setWaitlistModalOpen(true);
+      return;
+    }
+    try {
+      const { data } = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${event._id}/waitlist/join`,
+        {},
+        { withCredentials: true }
+      );
+      setWaitlistJoined(true);
+      toast.success(data?.message || 'You are on the waitlist.');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Could not join the waitlist. Please try again.');
+    }
+  };
+
+  // Green joined state, or the Join button. Reused by both the paid and free action areas.
+  const waitlistBlock = waitlistJoined ? (
+    <div className="w-full sm:w-auto bg-green-50 text-green-700 border border-green-200 px-6 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2">
+      <FaCheckCircle />
+      You are on the waitlist
+    </div>
+  ) : (
+    <button
+      onClick={handleJoinWaitlist}
+      className="inline-flex items-center gap-2 bg-teal-700 text-white hover:bg-teal-800 px-5 py-2 rounded-full shadow-sm font-semibold text-sm transition-colors"
+    >
+      Join the waitlist
+    </button>
+  );
 
   // Use timezone-aware formatting
   const dateTimeZone = event.timeZone || 'Australia/Sydney';
@@ -767,55 +842,72 @@ const SingleEventCard = ({ event, chatProps }) => {
 
       {/* Tickets — capacity + ticket types + purchase, in sequence (paid events) */}
       {event.isPaid && event.ticketTypes?.length > 0 && (
-        <div className="my-4 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Tickets</h3>
+        <div ref={actionRef} className="my-4 p-3">
+          {/* Two columns: ticket types take most of the width (column 1); capacity + purchase sit
+              in a narrow column 2 (only the width they need). Stacks on mobile. No heading. */}
+          <div className="flex flex-col lg:flex-row lg:items-start gap-4">
 
-          {/* Capacity + max per registration */}
-          {!event.isAdvertiseOnly && (
-            <div className="mb-3">
-              <EventCapacityDisplay
-                eventId={event._id}
-                isPaid={event.isPaid}
-                context="viewing"
-                maxPerRegistration={event.maxAttendeesPerRegistration}
-              />
+            {/* Column 1 — ticket types. ONE bordered card, rows divided by a subtle line; 5+ types
+                scroll inside the card so it stays compact. */}
+            <div className="flex-1 min-w-0">
+              <div className={`rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 transition-opacity ${capacityFull ? 'opacity-50' : ''} ${event.ticketTypes.length > 4 ? 'max-h-72 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full' : ''}`}>
+                {event.ticketTypes.map((ticket, index) => {
+                  // Capacity is event-level, not per-ticket, so the list only reflects sale-window status.
+                  const status = event.timeZone ? getTicketSaleStatus(ticket, event.timeZone, null) : null;
+                  const StatusIcon = status?.icon;
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-start justify-between gap-4 px-4 py-3 ${status?.unavailable ? 'opacity-60' : ''}`}
+                    >
+                      {/* Name, note and status all wrap in this first column; the price sits
+                          top-aligned in its own narrow column, so a long note stays left. */}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm sm:text-base font-semibold text-slate-800 truncate">{ticket.name}</p>
+                        {ticket.note && (
+                          <p className="text-xs mt-0.5 text-slate-500">{ticket.note}</p>
+                        )}
+                        {status && (
+                          <p className={`flex items-center gap-1 text-xs mt-0.5 ${status.className}`}>
+                            {StatusIcon && <StatusIcon size={12} className="shrink-0" />}
+                            {status.message}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-base sm:text-lg font-bold text-teal-700 shrink-0">${ticket.price}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          )}
 
-          {/* Ticket types — borderless, compact; scrolls vertically when there are many */}
-          <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
-            {event.ticketTypes.map((ticket, index) => {
-              // Capacity is event-level, not per-ticket, so the list only reflects sale-window status.
-              const status = event.timeZone ? getTicketSaleStatus(ticket, event.timeZone, null) : null;
-              return (
-                <div
-                  key={index}
-                  className={`flex items-baseline justify-between gap-3 py-2.5 ${status?.unavailable ? 'opacity-60' : ''}`}
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm sm:text-base font-medium text-slate-800 truncate">{ticket.name}</p>
-                    {status && (
-                      <p className={`text-xs mt-0.5 ${status.className}`}>{status.message}</p>
-                    )}
-                  </div>
-                  <p className="text-sm sm:text-base font-semibold text-slate-900 shrink-0">${ticket.price}</p>
+            {/* Column 2 — capacity then purchase, only the width it needs. */}
+            {!event.isAdvertiseOnly && (
+              <div className="w-full lg:w-56 shrink-0 space-y-4">
+                <EventCapacityDisplay
+                  eventId={event._id}
+                  isPaid={event.isPaid}
+                  context="viewing"
+                  maxPerRegistration={event.maxAttendeesPerRegistration}
+                  onCapacityUpdate={handleCapacityUpdate}
+                  stack
+                />
+                <div className="flex justify-center lg:justify-start">
+                  {showWaitlist ? (
+                    waitlistBlock
+                  ) : (
+                    <button
+                      onClick={handlePurchaseTickets}
+                      className="inline-flex items-center gap-2 bg-teal-700 text-white hover:bg-teal-800 px-5 py-2 rounded-full shadow-sm font-semibold text-sm transition-colors"
+                    >
+                      <FaShoppingCart />
+                      Purchase Tickets
+                    </button>
+                  )}
                 </div>
-              );
-            })}
+              </div>
+            )}
           </div>
-
-          {/* Purchase CTA */}
-          {!event.isAdvertiseOnly && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={handlePurchaseTickets}
-                className="w-full sm:w-auto bg-teal-700 text-white hover:bg-teal-800 px-8 py-3 rounded-lg shadow font-semibold text-sm md:text-base transition-colors flex items-center justify-center"
-              >
-                <FaShoppingCart className="mr-2" />
-                Purchase Tickets
-              </button>
-            </div>
-          )}
         </div>
       )}
 
@@ -843,12 +935,13 @@ const SingleEventCard = ({ event, chatProps }) => {
 
       {/* Booking Card — capacity + RSVP CTA (free events; paid events use the Tickets section above) */}
       {!event.isAdvertiseOnly && !event.isPaid && (
-        <div className="my-4 p-4 border border-slate-200 rounded-lg bg-white shadow-sm">
+        <div ref={actionRef} className="my-4 p-4 border border-slate-200 rounded-lg bg-white shadow-sm">
           <EventCapacityDisplay
             eventId={event._id}
             isPaid={event.isPaid}
             context="viewing"
             maxPerRegistration={event.maxAttendeesPerRegistration}
+            onCapacityUpdate={handleCapacityUpdate}
           />
           <div className="border-t border-slate-200 my-4"></div>
           <div className="flex justify-center">
@@ -889,17 +982,15 @@ const SingleEventCard = ({ event, chatProps }) => {
                     </button>
                   </div>
                 </div>
+              ) : showWaitlist ? (
+                waitlistBlock
               ) : (
                 <button
                   onClick={() => {
-                    if (!isAuthenticated) {
-                      // After login, land directly on the RSVP page (not back on event view).
-                      localStorage.setItem('redirectAfterLogin', `/events/rsvp/${event._id}`);
-                      localStorage.setItem('eventRegistrationPending', event._id);
-                      if (!localStorage.getItem('eventViewReturnUrl')) {
-                        localStorage.setItem('eventViewReturnUrl', '/events');
-                      }
-                      router.push('/login?preserveRedirect=true');
+                    // Fork for a logged-out visitor AND a live guest starting a new attend
+                    // action (re-offers Log in / Register / Continue as guest per event).
+                    if (!isAuthenticated || isGuest) {
+                      setAuthModalOpen(true);
                       return;
                     }
                     router.push(`/events/rsvp/${event._id}`);
@@ -909,9 +1000,7 @@ const SingleEventCard = ({ event, chatProps }) => {
                 >
                   {registrationStatus === 'loading'
                     ? 'Processing...'
-                    : !isAuthenticated
-                      ? 'Login to Register'
-                      : 'Register for Event'
+                    : 'Register for Event'
                   }
                 </button>
               )
@@ -919,6 +1008,21 @@ const SingleEventCard = ({ event, chatProps }) => {
           </div>
         </div>
       )}
+
+      {/* Fork dialog for logged-out visitors (free Register + paid Purchase). */}
+      <EventAttendAuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        event={event}
+      />
+
+      {/* Logged-out waitlist join (email + reCAPTCHA). Session visitors join in one tap instead. */}
+      <WaitlistJoinModal
+        isOpen={waitlistModalOpen}
+        onClose={() => setWaitlistModalOpen(false)}
+        event={event}
+        onJoined={() => setWaitlistJoined(true)}
+      />
 
       {/* External registration / tickets button — shown after event details */}
       {chatProps?.isPromotionalEvent && event.externalTicketUrl && (
@@ -970,9 +1074,9 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Floating Buttons - Mobile Only. Fade out once the inline chat is in view. */}
       <div
         className={`lg:hidden fixed bottom-20 right-4 z-40 flex flex-col gap-3 transition-all duration-200 ${
-          chatInView ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100'
+          pillsHidden ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100'
         }`}
-        aria-hidden={chatInView}
+        aria-hidden={pillsHidden}
       >
         {/* Share Button */}
         <button

@@ -34,7 +34,10 @@ const Header = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { tokenValidated, user, status } = useSelector((state) => state.user);
-  const isAuthenticated = tokenValidated && !!user?._id;
+  // Guests get a real session so RSVP/checkout works, but the chrome must read as
+  // logged out for them: show Login/Register, not the member menu. See featureplans/
+  // shared-header-guest-state.md.
+  const isAuthenticated = tokenValidated && !!user?._id && user?.role !== 'guest';
   // Show loading during initial state or when actively validating
   const isInitialLoad = status === 'idle' && !tokenValidated && !user;
   // Profile button always goes to the user profile — admins reach the console via /admin/login.

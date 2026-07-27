@@ -12,10 +12,12 @@ import {
   bulkCheckInRegistration,
   updateLocalBulkCheckIn,
   fetchEventAttendees,
+  cancelRegistration,
   setCurrentPage
 } from '@/store/slices/events/checkInFreeSlice';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const CheckInFree_AttendeeList = () => {
   const dispatch = useDispatch();
@@ -30,6 +32,8 @@ const CheckInFree_AttendeeList = () => {
   
   const [expandedRegistrations, setExpandedRegistrations] = useState(new Set());
   const [activeTab, setActiveTab] = useState({}); // { registrationId: 'attendees' | 'attendeeInfo' }
+  // Registration pending organiser cancellation (drives the confirm modal).
+  const [pendingCancel, setPendingCancel] = useState(null);
 
   // No client-side filtering needed - server handles search
   const displayedAttendees = attendees;
@@ -146,12 +150,34 @@ const CheckInFree_AttendeeList = () => {
   // Handle page change
   const handlePageChange = (newPage) => {
     dispatch(setCurrentPage(newPage));
-    dispatch(fetchEventAttendees({ 
-      eventId: selectedEvent._id, 
-      page: newPage, 
+    dispatch(fetchEventAttendees({
+      eventId: selectedEvent._id,
+      page: newPage,
       limit: pagination.limit,
-      search: searchTerm 
+      search: searchTerm
     }));
+  };
+
+  // Organiser cancels a whole registration, then refresh the list, stats and capacity.
+  const confirmCancelRegistration = async () => {
+    if (!pendingCancel) return;
+    try {
+      await dispatch(cancelRegistration({
+        eventId: selectedEvent._id,
+        ticketId: pendingCancel._id,
+      })).unwrap();
+      toast.success('Registration cancelled');
+      setPendingCancel(null);
+      dispatch(fetchEventAttendees({
+        eventId: selectedEvent._id,
+        page: pagination.currentPage,
+        limit: pagination.limit,
+        search: searchTerm,
+      }));
+    } catch (err) {
+      toast.error(err || 'Failed to cancel registration');
+      setPendingCancel(null);
+    }
   };
 
   return (
@@ -186,6 +212,48 @@ const CheckInFree_AttendeeList = () => {
                   <div className="font-bold text-slate-800 text-base">
                     {registration.registrationNumber}
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBulkCheckIn(registration._id, !allCheckedIn);
+                      }}
+                      disabled={actionLoading}
+                      className={`
+                        px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap
+                        ${allCheckedIn
+                          ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
+                          : 'bg-teal-700 text-white hover:bg-teal-800'
+                        }
+                        ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                      `}
+                    >
+                      {allCheckedIn
+                        ? `Check Out${hasMultipleAttendees ? ` All (${checkedInCount}/${registration.attendees.length})` : ''}`
+                        : `Check In${hasMultipleAttendees ? ` All (${checkedInCount}/${registration.attendees.length})` : ''}`}
+                    </button>
+                    {!someCheckedIn && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setPendingCancel(registration); }}
+                        disabled={actionLoading}
+                        className="px-3 py-1.5 rounded-md text-xs font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+              
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex items-center justify-between gap-4 p-4">
+                <div className="font-semibold text-slate-800 text-sm sm:text-base">
+                  {registration.registrationNumber}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Check In All Button */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -193,7 +261,7 @@ const CheckInFree_AttendeeList = () => {
                     }}
                     disabled={actionLoading}
                     className={`
-                      px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap
+                      px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
                       ${allCheckedIn
                         ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
                         : 'bg-teal-700 text-white hover:bg-teal-800'
@@ -205,36 +273,16 @@ const CheckInFree_AttendeeList = () => {
                       ? `Check Out${hasMultipleAttendees ? ` All (${checkedInCount}/${registration.attendees.length})` : ''}`
                       : `Check In${hasMultipleAttendees ? ` All (${checkedInCount}/${registration.attendees.length})` : ''}`}
                   </button>
+                  {!someCheckedIn && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setPendingCancel(registration); }}
+                      disabled={actionLoading}
+                      className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                  )}
                 </div>
-
-              </div>
-              
-              {/* Desktop Layout */}
-              <div className="hidden sm:flex items-center justify-between gap-4 p-4">
-                <div className="font-semibold text-slate-800 text-sm sm:text-base">
-                  {registration.registrationNumber}
-                </div>
-
-                {/* Check In All Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleBulkCheckIn(registration._id, !allCheckedIn);
-                  }}
-                  disabled={actionLoading}
-                  className={`
-                    px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
-                    ${allCheckedIn
-                      ? 'bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100'
-                      : 'bg-teal-700 text-white hover:bg-teal-800'
-                    }
-                    ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
-                  `}
-                >
-                  {allCheckedIn
-                    ? `Check Out${hasMultipleAttendees ? ` All (${checkedInCount}/${registration.attendees.length})` : ''}`
-                    : `Check In${hasMultipleAttendees ? ` All (${checkedInCount}/${registration.attendees.length})` : ''}`}
-                </button>
               </div>
             </div>
             
@@ -377,6 +425,17 @@ const CheckInFree_AttendeeList = () => {
           />
         </div>
       )}
+
+      {/* Organiser cancel confirmation */}
+      <ConfirmModal
+        isOpen={!!pendingCancel}
+        onConfirm={confirmCancelRegistration}
+        onCancel={() => setPendingCancel(null)}
+        isLoading={actionLoading}
+        title="Are you sure?"
+        confirmText="Cancel registration"
+        cancelText="Keep it"
+      />
     </>
   );
 };
