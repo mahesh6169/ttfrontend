@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { FaUsers } from 'react-icons/fa';
+import { FaUsers, FaFire } from 'react-icons/fa';
 import axios from '@/utils/axiosConfig';
 
 const EventCapacityDisplay = ({ 
@@ -214,10 +214,27 @@ const EventCapacityDisplay = ({
   // Use confirmedAllocations for accurate sold out display
   const isFull = totalCapacity > 0 && (confirmedAllocations || registeredCount) >= totalCapacity;
 
+  // Scarcity "hype": when only a few spots remain (and not sold out), the capacity line turns
+  // urgent (fire icon + bold orange) so low availability reads as "hurry" instead of a calm
+  // grey line. Above the threshold it stays the normal calm style.
+  const spotsRemaining = typeof remainingCapacity === 'number' ? remainingCapacity : null;
+  const isScarce = !isUnlimited && !isFull && spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining <= 10;
+
   // Create consistent display text for free events if not provided
-  const consistentDisplayText = displayText || (!isPaid && !isUnlimited 
+  const consistentDisplayText = displayText || (!isPaid && !isUnlimited
     ? `${remainingCapacity} of ${totalCapacity} spots left`
     : isUnlimited ? 'Unlimited capacity' : displayText);
+
+  // Sold-out / fully-booked: a single clean line. No point repeating it as a summary AND a
+  // status, and Max-per-order is irrelevant once nothing is available.
+  if (isFull) {
+    return (
+      <div className="inline-flex items-center gap-2 text-sm sm:text-base font-semibold text-red-600">
+        <FaUsers className="shrink-0 text-red-500" size={13} />
+        {isPaid ? 'Sold Out' : 'Fully Booked'}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -225,10 +242,17 @@ const EventCapacityDisplay = ({
       <div className={`${stack ? 'flex flex-col items-start gap-1' : 'flex items-center justify-between gap-3'} text-sm sm:text-base`}>
         {/* Capacity summary */}
         {consistentDisplayText && (
-          <span className="inline-flex items-center font-semibold text-slate-800 min-w-0">
-            <FaUsers className="mr-2 text-slate-500 shrink-0" size={13} />
-            <span className="truncate">{consistentDisplayText}</span>
-          </span>
+          isScarce ? (
+            <span className="inline-flex items-center gap-1.5 font-bold text-orange-600 min-w-0">
+              <FaFire className="shrink-0 animate-pulse" size={14} />
+              <span className="truncate">{consistentDisplayText}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center font-semibold text-slate-800 min-w-0">
+              <FaUsers className="mr-2 text-slate-500 shrink-0" size={13} />
+              <span className="truncate">{consistentDisplayText}</span>
+            </span>
+          )
         )}
 
         {/* Booking Limit */}
@@ -241,16 +265,6 @@ const EventCapacityDisplay = ({
           </span>
         )}
       </div>
-
-      {/* Status: Only show when full */}
-      {isFull && (
-        <div className="text-sm sm:text-base mt-2">
-          <span className="text-slate-500">Status:</span>{' '}
-          <span className="text-red-600 font-semibold">
-            {isPaid ? 'Sold Out' : 'Fully Booked'}
-          </span>
-        </div>
-      )}
     </div>
   );
 };

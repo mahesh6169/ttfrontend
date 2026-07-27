@@ -567,7 +567,7 @@ const TicketSelectionPage = () => {
 
   return (
     <div>
-      <div className="w-full">
+      <div className="w-full max-w-3xl mx-auto">
         {/* Back to Events Button */}
         <div className="mb-3 sm:mb-6">
           <BackButton onClick={handleBack} />
@@ -670,8 +670,9 @@ const TicketSelectionPage = () => {
             )}
           </div>
 
-          {/* Ticket Types */}
-          <div className="divide-y divide-slate-100">
+          {/* Ticket Types — one bordered card, rows divided by a subtle line (matches the event
+              detail card). */}
+          <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
             {selectedEvent.ticketTypes?.map((ticketType) => {
               // Use backend values for max available
               const maxAvailable = eventCapacity?.canBook === 'unlimited' 
@@ -760,93 +761,131 @@ const TicketSelectionPage = () => {
                 trueAvailable: eventCapacity?.trueAvailable
               });
 
+              // Row pieces defined once, arranged differently for mobile vs desktop.
+              const nameEl = (
+                <h4 className="font-medium text-slate-800 text-sm sm:text-base truncate">
+                  {ticketType.name}
+                </h4>
+              );
+
+              // The note (row 3, full width) and the status (rides with the discount) are separate
+              // pieces so they can be placed independently in the mobile and desktop layouts.
+              const noteEl = ticketType.note ? (
+                <p className="text-xs mt-0.5 text-slate-500">{ticketType.note}</p>
+              ) : null;
+
+              const statusEl = (
+                <>
+                  {/* Ticket Sale Status */}
+                  {(() => {
+                    const status = getTicketSaleStatus(ticketType, selectedEvent.timeZone, eventCapacity);
+                    if (!status) return null;
+                    const StatusIcon = status.icon;
+                    return (
+                      <p className={`flex items-center gap-1 text-xs mt-0.5 ${status.className}`}>
+                        {StatusIcon && <StatusIcon size={12} className="shrink-0" />}
+                        {status.message}
+                      </p>
+                    );
+                  })()}
+
+                  {/* Sold out — permanent capacity sell-out (kept as an explicit cue) */}
+                  {eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 && (
+                    <p className="mt-0.5 text-[10px] sm:text-xs font-medium text-red-600">Sold out</p>
+                  )}
+                </>
+              );
+
+              // Public discount-code hints (S2). The API only ships redeemable, show-hint codes
+              // to non-owners, so anything present here is safe to display. A code covers this
+              // ticket type when its appliesToTicketTypes includes the NAME.
+              const discountEl = (selectedEvent.discountCodes || [])
+                .filter((dc) => (dc.appliesToTicketTypes || []).includes(ticketType.name))
+                .map((dc) => (
+                  <div
+                    key={dc.code}
+                    className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-teal-50 border border-teal-400 text-teal-800 text-[10px] sm:text-xs"
+                  >
+                    <FaTag className="text-teal-600 w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                    <span>
+                      Use code <span className="font-bold text-teal-700">{dc.code}</span>
+                      {dc.kind === 'fixed'
+                        ? ` for $${Number(dc.value).toFixed(2)} off`
+                        : ` for ${dc.value}% off`}
+                    </span>
+                  </div>
+                ));
+
+              const priceEl = (
+                <p className="text-sm sm:text-base font-semibold text-slate-900 whitespace-nowrap">
+                  ${ticketType.price?.toFixed(2) || '0.00'}
+                </p>
+              );
+
+              const stepperEl = (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleQuantityChange(ticketType._id, -1)}
+                    disabled={selectedQty === 0 || apiLoading}
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label={`Remove one ${ticketType.name}`}
+                  >
+                    <FaMinus className="text-[10px] sm:text-xs text-teal-700" />
+                  </button>
+                  <span className="w-6 sm:w-8 text-center font-semibold text-sm">
+                    {selectedQty}
+                  </span>
+                  <button
+                    onClick={() => handleQuantityChange(ticketType._id, 1)}
+                    disabled={
+                      userReservation >= maxPerOrder ||
+                      remainingQty <= 0 ||
+                      eventCapacity?.trueAvailable === 0 ||
+                      apiLoading ||
+                      !isAvailable
+                    }
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label={`Add one ${ticketType.name}`}
+                  >
+                    <FaPlus className="text-[10px] sm:text-xs text-teal-700" />
+                  </button>
+                </div>
+              );
+
               return (
                 <div
                   key={ticketType._id}
-                  className={`flex items-start justify-between gap-3 py-3 ${!isAvailable ? 'opacity-60' : ''}`}
+                  className={`px-4 py-3 ${!isAvailable ? 'opacity-60' : ''}`}
                 >
-                  {/* Left: name + status + discount hints */}
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-medium text-slate-800 text-sm sm:text-base truncate">
-                      {ticketType.name}
-                    </h4>
-
-                    {/* Optional display-only organiser note */}
-                    {ticketType.note && (
-                      <p className="text-xs mt-0.5 text-slate-500">{ticketType.note}</p>
-                    )}
-
-                    {/* Ticket Sale Status */}
-                    {(() => {
-                      const status = getTicketSaleStatus(ticketType, selectedEvent.timeZone, eventCapacity);
-                      if (!status) return null;
-                      const StatusIcon = status.icon;
-                      return (
-                        <p className={`flex items-center gap-1 text-xs mt-0.5 ${status.className}`}>
-                          {StatusIcon && <StatusIcon size={12} className="shrink-0" />}
-                          {status.message}
-                        </p>
-                      );
-                    })()}
-
-                    {/* Sold out — permanent capacity sell-out (kept as an explicit cue) */}
-                    {eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 && (
-                      <p className="mt-0.5 text-[10px] sm:text-xs font-medium text-red-600">Sold out</p>
-                    )}
-
-                    {/* Public discount-code hints (S2). The API only ships redeemable, show-hint
-                        codes to non-owners, so anything present here is safe to display. A code
-                        covers this ticket type when its appliesToTicketTypes includes the NAME. */}
-                    {(selectedEvent.discountCodes || [])
-                      .filter((dc) => (dc.appliesToTicketTypes || []).includes(ticketType.name))
-                      .map((dc) => (
-                        <div
-                          key={dc.code}
-                          className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-teal-50 border border-teal-400 text-teal-800 text-[10px] sm:text-xs"
-                        >
-                          <FaTag className="text-teal-600 w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
-                          <span>
-                            Use code <span className="font-bold text-teal-700">{dc.code}</span>
-                            {dc.kind === 'fixed'
-                              ? ` for $${Number(dc.value).toFixed(2)} off`
-                              : ` for ${dc.value}% off`}
-                          </span>
-                        </div>
-                      ))}
+                  {/* Mobile: name | price (row 1), discount + status | stepper (row 2), note full-width
+                      (row 3). Right column fits the stepper; the left column takes the rest. */}
+                  <div className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 sm:hidden">
+                    <div className="min-w-0">{nameEl}</div>
+                    <div className="justify-self-center self-start">{priceEl}</div>
+                    <div className="min-w-0 self-center">{discountEl}{statusEl}</div>
+                    <div className="justify-self-center self-center">{stepperEl}</div>
+                    <div className="col-span-2 min-w-0">{noteEl}</div>
                   </div>
 
-                  {/* Right: price + quantity stepper */}
-                  <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                    <p className="text-sm sm:text-base font-semibold text-slate-900 whitespace-nowrap">
-                      ${ticketType.price?.toFixed(2) || '0.00'}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleQuantityChange(ticketType._id, -1)}
-                        disabled={selectedQty === 0 || apiLoading}
-                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        aria-label={`Remove one ${ticketType.name}`}
-                      >
-                        <FaMinus className="text-[10px] sm:text-xs text-teal-700" />
-                      </button>
-                      <span className="w-6 sm:w-8 text-center font-semibold text-sm">
-                        {selectedQty}
-                      </span>
-                      <button
-                        onClick={() => handleQuantityChange(ticketType._id, 1)}
-                        disabled={
-                          userReservation >= maxPerOrder ||
-                          remainingQty <= 0 ||
-                          eventCapacity?.trueAvailable === 0 ||
-                          apiLoading ||
-                          !isAvailable
-                        }
-                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        aria-label={`Add one ${ticketType.name}`}
-                      >
-                        <FaPlus className="text-[10px] sm:text-xs text-teal-700" />
-                      </button>
+                  {/* Desktop: name + status | price + stepper (row 1), discount (row 2),
+                      note full-width (row 3). */}
+                  <div className="hidden sm:block">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1 flex items-center gap-2">
+                        {nameEl}
+                        {statusEl}
+                      </div>
+                      <div className="flex items-center gap-4 shrink-0">
+                        {priceEl}
+                        {stepperEl}
+                      </div>
                     </div>
+                    {discountEl.length > 0 && (
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        {discountEl}
+                      </div>
+                    )}
+                    {noteEl}
                   </div>
                 </div>
               );
