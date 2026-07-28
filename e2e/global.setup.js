@@ -1,0 +1,31 @@
+// Playwright setup project: seed the test DB (via the backend seed script) and save a logged-in
+// member storage state that authenticated specs reuse. Runs after the webServers are up.
+import { test as setup, expect } from '@playwright/test';
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+
+const BACKEND_DIR = path.resolve(process.cwd(), '..', 'ttbackendflyio');
+const AUTH_DIR = path.resolve(process.cwd(), 'e2e', '.auth');
+const BACKEND_URL = 'http://localhost:5100';
+
+setup('seed test data and authenticate the member', async ({ request }) => {
+  fs.mkdirSync(AUTH_DIR, { recursive: true });
+
+  // 1. Seed: drops the test DB and creates organiser + member + free/paid events.
+  const out = execSync('node tests/seed-e2e.js', {
+    cwd: BACKEND_DIR,
+    env: { ...process.env, NODE_ENV: 'test' },
+  }).toString();
+  const line = out.split('\n').find((l) => l.startsWith('SEED_JSON='));
+  if (!line) throw new Error(`Seed script did not emit SEED_JSON. Output:\n${out}`);
+  const seed = JSON.parse(line.replace('SEED_JSON=', ''));
+  fs.writeFileSync(path.join(AUTH_DIR, 'seed.json'), JSON.stringify(seed, null, 2));
+
+  // 2. Log the member in (public endpoint, no API key) and save the cookie as storage state.
+  const res = await request.post(`${BACKEND_URL}/api/users/login`, {
+    data: { email: seed.memberEmail, password: seed.memberPassword },
+  });
+  expect(res.ok()).toBeTruthy();
+  await request.storageState({ path: path.join(AUTH_DIR, 'member.json') });
+});
