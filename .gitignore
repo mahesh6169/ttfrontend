@@ -3,12 +3,19 @@ node_modules/
 
 # 🚀 Ignore Next.js Build Output
 .next/
+.next-e2e/
 
 # 🚀 Ignore Environment Variables
 .env
 .env.local
 .env.production
 .env.development
+.env.test
+
+# 🚀 Playwright E2E artefacts (specs/config ARE committed; these are not)
+/test-results/
+/playwright-report/
+/e2e/.auth/
 
 # 🚀 Ignore Logs
 npm-debug.log*
