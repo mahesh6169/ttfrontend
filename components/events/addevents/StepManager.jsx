@@ -649,7 +649,26 @@ const StepManager = ({
             errors[`ticketPrice_${index}`] = ['Minimum ticket price is $1'];
           }
 
-          
+          // Bundle rules mirror the server: size >= 2 (whole), no bigger than the per-order limit, and
+          // the bundle price (the Price field) must divide evenly into per-person shares of at least $1.
+          if (ticket.bundleSize !== '' && ticket.bundleSize !== null && ticket.bundleSize !== undefined) {
+            const size = Number(ticket.bundleSize);
+            const price = Number(ticket.price);
+            const maxPer = Number(formData.maxAttendeesPerRegistration) || 0;
+            let bundleErr = '';
+            if (!Number.isInteger(size) || size < 2) {
+              bundleErr = 'Bundle size must be a whole number of 2 or more';
+            } else if (maxPer && size > maxPer) {
+              bundleErr = `Bundle size can't be more than the ${maxPer} tickets allowed per order`;
+            } else if (!isNaN(price) && price >= 1) {
+              if (price % size !== 0) bundleErr = `Bundle price must divide evenly by ${size}`;
+              else if (price / size < 1) bundleErr = "Each person's share must be at least $1";
+            }
+            if (bundleErr) {
+              ticketErrors.push(`Ticket type ${index + 1}: ${bundleErr}`);
+              errors[`ticketBundle_${index}`] = [bundleErr];
+            }
+          }
 
           // Date window (V7): start/expiry on or before the event day (by day); expiry on or after
           // start. Same-day (one-day early-bird) allowed. No past-date restriction.

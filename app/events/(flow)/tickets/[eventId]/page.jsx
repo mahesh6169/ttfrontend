@@ -253,6 +253,32 @@ const TicketSelectionPage = () => {
     }
   }, [eventId]);
 
+  // Stale bundle guard: if a restored reservation holds a bundle quantity that no longer divides
+  // by the current bundle size (organiser edited N mid-flight), release it and ask the buyer to
+  // re-select — never show fractional packs.
+  useEffect(() => {
+    if (!reservation || !selectedEvent?.ticketTypes || selectedTickets.length === 0) return;
+    const hasStalePack = selectedTickets.some((t) => {
+      const tt = selectedEvent.ticketTypes.find((x) => x._id === t.ticketTypeId);
+      return tt?.bundleSize >= 2 && t.quantity % tt.bundleSize !== 0;
+    });
+    if (!hasStalePack) return;
+    (async () => {
+      try {
+        await axios.delete(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/reservation/${reservation._id}`,
+          { withCredentials: true }
+        );
+      } catch (error) {
+        console.error('Error releasing stale bundle reservation:', error);
+      }
+      setReservation(null);
+      setSelectedTickets([]);
+      setPurchaseError('The bundle options changed. Please choose your tickets again.');
+      fetchCapacity();
+    })();
+  }, [reservation, selectedEvent, selectedTickets, eventId, fetchCapacity]);
+
   // Remove the validation effect entirely - we'll just gray out the button
 
   // Create or update reservation
@@ -331,7 +357,10 @@ const TicketSelectionPage = () => {
       (t) => t.ticketTypeId === ticketId
     );
     const currentQuantity = currentTicket?.quantity || 0;
-    const newQuantity = Math.max(0, currentQuantity + change);
+    // Bundle types move in whole packs: one +/- step = bundleSize tickets.
+    const stepSize = ticketType.bundleSize >= 2 ? ticketType.bundleSize : 1;
+    const isBundleRow = stepSize > 1;
+    const newQuantity = Math.max(0, currentQuantity + change * stepSize);
 
     // Calculate max quantity based on capacity and max per order
     const maxPerOrder = selectedEvent.maxAttendeesPerRegistration || 10;
@@ -360,20 +389,32 @@ const TicketSelectionPage = () => {
       userReservation: eventCapacity?.userReservation
     });
 
-    // Check if user is trying to exceed capacity
-    if (change > 0 && eventCapacity?.canBook !== 'unlimited' && potentialTotal > eventCapacity.canBook) {
-      // Don't allow the quantity to increase
-      const canAddMore = Math.max(0, eventCapacity.canBook - otherTicketsTotal);
-      
+    // Block an add that doesn't fit. For a bundle the WHOLE pack must fit within BOTH the
+    // per-order limit and the bookable remainder (no fractional packs); a pack that cannot fit
+    // shows a pack-aware message, never the single-ticket wording.
+    const capBook = eventCapacity?.canBook;
+    const exceedsCapacity = change > 0 && capBook !== 'unlimited' && potentialTotal > (capBook || 0);
+    const exceedsOrder = change > 0 && isBundleRow && potentialTotal > maxPerOrder;
+    if (exceedsCapacity || exceedsOrder) {
+      if (isBundleRow) {
+        setPurchaseError(
+          exceedsCapacity && !exceedsOrder
+            ? `Not enough remaining for another ${ticketType.name}.`
+            : `You can select up to ${maxPerOrder} tickets per order.`
+        );
+        return;
+      }
+      // Single tickets keep the existing wording.
+      const canAddMore = Math.max(0, (capBook || 0) - otherTicketsTotal);
       if (eventCapacity.userReservation > 0) {
-        const additionalAvailable = eventCapacity.canBook - eventCapacity.userReservation;
+        const additionalAvailable = (capBook || 0) - eventCapacity.userReservation;
         setPurchaseError(`You have ${eventCapacity.userReservation} tickets reserved. Only ${additionalAvailable} additional spots available.`);
       } else if (canAddMore > 0) {
         setPurchaseError(`Only ${canAddMore} more ticket${canAddMore === 1 ? '' : 's'} available. You can proceed with ${otherTicketsTotal + canAddMore} ticket${(otherTicketsTotal + canAddMore) === 1 ? '' : 's'} or wait for others to release their selections.`);
       } else {
-        setPurchaseError(`No more tickets available. Maximum ${eventCapacity.canBook} ticket${eventCapacity.canBook === 1 ? '' : 's'} can be selected.`);
+        setPurchaseError(`No more tickets available. Maximum ${capBook} ticket${capBook === 1 ? '' : 's'} can be selected.`);
       }
-      
+
       // IMPORTANT: Return early to prevent quantity update
       return;
     } else {
@@ -748,7 +789,24 @@ const TicketSelectionPage = () => {
               const maxByOrderLimit = maxPerOrder - userReservation;
               
               const remainingQty = Math.max(0, maxByOrderLimit);
-              
+
+              // Bundle rows count PACKS. A pack (bundleSize tickets) fits only when N more tickets
+              // fit within BOTH the per-order room and the bookable remainder (which can be the
+              // string 'unlimited'). displayQty shows packs; the clamp/message stay pack-aware.
+              const stepSize = ticketType.bundleSize >= 2 ? ticketType.bundleSize : 1;
+              const isBundleRow = stepSize > 1;
+              const orderRoom = maxPerOrder - userReservation;                       // additional tickets by per-order cap
+              const capRoom = eventCapacity?.trueAvailable === 'unlimited'
+                ? Number.MAX_SAFE_INTEGER
+                : (eventCapacity?.trueAvailable ?? 0);                               // additional tickets by capacity
+              const packFits = stepSize <= orderRoom && stepSize <= capRoom;
+              const displayQty = isBundleRow ? Math.floor(selectedQty / stepSize) : selectedQty;
+              const packBlockMsg = isBundleRow && isAvailable && !packFits
+                ? (capRoom < stepSize
+                    ? `Not enough remaining for another ${ticketType.name}`
+                    : `You can select up to ${maxPerOrder} tickets per order`)
+                : null;
+
               // Debug logging
               console.log('🎫 Button state debug:', {
                 ticketType: ticketType.name,
@@ -772,6 +830,11 @@ const TicketSelectionPage = () => {
               // pieces so they can be placed independently in the mobile and desktop layouts.
               const noteEl = ticketType.note ? (
                 <p className="text-xs mt-0.5 text-slate-500">{ticketType.note}</p>
+              ) : null;
+
+              // Bundle rows show "(admits N)" under the name (same muted style as the note).
+              const admitsEl = isBundleRow ? (
+                <p className="text-xs mt-0.5 text-slate-500">(admits {stepSize})</p>
               ) : null;
 
               const statusEl = (
@@ -816,9 +879,11 @@ const TicketSelectionPage = () => {
                   </div>
                 ));
 
+              // Bundle rows show the bundle price (share x pack size), not the bare share.
+              const displayPrice = isBundleRow ? ticketType.price * stepSize : ticketType.price;
               const priceEl = (
                 <p className="text-sm sm:text-base font-semibold text-slate-900 whitespace-nowrap">
-                  ${ticketType.price?.toFixed(2) || '0.00'}
+                  ${displayPrice?.toFixed(2) || '0.00'}
                 </p>
               );
 
@@ -828,24 +893,22 @@ const TicketSelectionPage = () => {
                     onClick={() => handleQuantityChange(ticketType._id, -1)}
                     disabled={selectedQty === 0 || apiLoading}
                     className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label={`Remove one ${ticketType.name}`}
+                    aria-label={isBundleRow ? `Remove one ${ticketType.name} pack` : `Remove one ${ticketType.name}`}
                   >
                     <FaMinus className="text-[10px] sm:text-xs text-teal-700" />
                   </button>
                   <span className="w-6 sm:w-8 text-center font-semibold text-sm">
-                    {selectedQty}
+                    {displayQty}
                   </span>
                   <button
                     onClick={() => handleQuantityChange(ticketType._id, 1)}
                     disabled={
-                      userReservation >= maxPerOrder ||
-                      remainingQty <= 0 ||
-                      eventCapacity?.trueAvailable === 0 ||
+                      !packFits ||
                       apiLoading ||
                       !isAvailable
                     }
                     className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label={`Add one ${ticketType.name}`}
+                    aria-label={isBundleRow ? `Add one ${ticketType.name} pack` : `Add one ${ticketType.name}`}
                   >
                     <FaPlus className="text-[10px] sm:text-xs text-teal-700" />
                   </button>
@@ -860,7 +923,7 @@ const TicketSelectionPage = () => {
                   {/* Mobile: name | price (row 1), discount + status | stepper (row 2), note full-width
                       (row 3). Right column fits the stepper; the left column takes the rest. */}
                   <div className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 sm:hidden">
-                    <div className="min-w-0">{nameEl}</div>
+                    <div className="min-w-0">{nameEl}{admitsEl}</div>
                     <div className="justify-self-center self-start">{priceEl}</div>
                     <div className="min-w-0 self-center">{discountEl}{statusEl}</div>
                     <div className="justify-self-center self-center">{stepperEl}</div>
@@ -880,6 +943,7 @@ const TicketSelectionPage = () => {
                         {stepperEl}
                       </div>
                     </div>
+                    {admitsEl}
                     {discountEl.length > 0 && (
                       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                         {discountEl}
@@ -887,6 +951,11 @@ const TicketSelectionPage = () => {
                     )}
                     {noteEl}
                   </div>
+
+                  {/* Pack-aware clamp message (bundle rows only), full width across both layouts. */}
+                  {packBlockMsg && (
+                    <p className="text-xs mt-1 text-amber-600">{packBlockMsg}</p>
+                  )}
                 </div>
               );
             })}

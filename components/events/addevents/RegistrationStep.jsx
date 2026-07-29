@@ -601,6 +601,10 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
     !t?.name?.trim() && priceIsEmpty(t?.price) && !t?.startDate && !t?.expiryDate;
 
   const eventDay = dayOf(formData.dateTime);
+  const maxPer = Number(formData.maxAttendeesPerRegistration) || 0;
+
+  // A ticket type is a bundle when its bundleSize holds a value (empty = normal single ticket).
+  const isBundle = (t) => t?.bundleSize !== '' && t?.bundleSize !== null && t?.bundleSize !== undefined;
 
   // Same rule as the step validator (name + price required, $1 min, 2 decimals) + date window.
   const validateTicket = (t) => {
@@ -609,6 +613,20 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
     if (priceIsEmpty(t?.price)) errs.price = 'Price is required';
     else if (!validatePriceDecimals(t.price)) errs.price = 'Maximum 2 decimal places allowed';
     else if (Number(t.price) < 1) errs.price = 'Minimum ticket price is $1';
+    // Bundle rules mirror the server: size >= 2 (whole), no bigger than the per-order limit, and the
+    // Price field (the whole-bundle price) must divide evenly into per-person shares of at least $1.
+    if (isBundle(t)) {
+      const size = Number(t.bundleSize);
+      const price = Number(t.price);
+      if (!Number.isInteger(size) || size < 2) {
+        errs.bundle = 'Bundle size must be a whole number of 2 or more';
+      } else if (maxPer && size > maxPer) {
+        errs.bundle = `Bundle size can't be more than the ${maxPer} tickets allowed per order`;
+      } else if (!priceIsEmpty(t?.price) && !isNaN(price)) {
+        if (price % size !== 0) errs.bundle = `Bundle price must divide evenly by ${size}`;
+        else if (price / size < 1) errs.bundle = "Each person's share must be at least $1";
+      }
+    }
     // Date window: start/expiry on or before the event day (by day); expiry on or after start.
     const start = dayOf(t?.startDate);
     const expiry = dayOf(t?.expiryDate);
@@ -623,6 +641,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
   const ticketPriceError = (index) =>
     ticketRowErrors[index]?.price || errors?.[`ticketPrice_${index}`]?.[0] || priceErrors[index];
   const ticketDateError = (index) => ticketRowErrors[index]?.dates || errors?.[`ticketDate_${index}`]?.[0];
+  const ticketBundleError = (index) => ticketRowErrors[index]?.bundle || errors?.[`ticketBundle_${index}`]?.[0];
 
   // Never collapse a blank or invalid row, so its error is always reachable before Next.
   const isTicketOpen = (t, index) =>
@@ -632,6 +651,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
     !!errors?.[`ticketName_${index}`] ||
     !!errors?.[`ticketPrice_${index}`] ||
     !!errors?.[`ticketDate_${index}`] ||
+    !!errors?.[`ticketBundle_${index}`] ||
     !!priceErrors[index];
 
   const clearTicketRowError = (index, field) => {
@@ -716,7 +736,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                 >
                   <p className="min-w-0 truncate text-sm font-medium text-slate-700">
                     {ticket.name}
-                    <span className="font-normal text-slate-500"> · ${Number(ticket.price).toFixed(2)}</span>
+                    <span className="font-normal text-slate-500"> · ${Number(ticket.price).toFixed(2)}{isBundle(ticket) ? ` · admits ${ticket.bundleSize}` : ''}</span>
                   </p>
                   <div className="flex items-center gap-1 shrink-0">
                     {confirmDeleteTicket === index ? (
@@ -805,10 +825,10 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                     )}
                   </div>
 
-                  {/* Ticket Price */}
+                  {/* Ticket Price (whole-bundle price when this type is a bundle) */}
                   <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Price <span className="text-red-500">*</span>
+                      {isBundle(ticket) ? 'Bundle price' : 'Price'} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
@@ -889,6 +909,45 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                     className={getInputClasses(false)}
                   />
                   <p className="text-xs text-slate-400 mt-1 text-right">{(ticket.note || '').length}/120</p>
+                </div>
+
+                {/* Bundle: one price admits several people. When on, the Price field above is the
+                    whole-bundle price and must divide evenly by the bundle size. */}
+                <div className="mt-3">
+                  <label className="flex items-center gap-2 cursor-pointer w-fit">
+                    <input
+                      type="checkbox"
+                      checked={isBundle(ticket)}
+                      onChange={(e) => {
+                        setEditingTicket(index);
+                        dispatch(updateTicketType({ index, field: 'bundleSize', value: e.target.checked ? 2 : '' }));
+                        clearTicketRowError(index, 'bundle');
+                      }}
+                      className="h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-300"
+                    />
+                    <span className="text-xs font-medium text-slate-600">Sell as a bundle (one price admits several people)</span>
+                  </label>
+                  {isBundle(ticket) && (
+                    <div className="mt-2">
+                      <label className="block text-xs font-medium text-slate-600 mb-1">
+                        Bundle size (people per purchase) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="2"
+                        step="1"
+                        value={ticket.bundleSize === '' || ticket.bundleSize === null || ticket.bundleSize === undefined ? '' : ticket.bundleSize}
+                        onChange={(e) => { setEditingTicket(index); dispatch(updateTicketType({ index, field: 'bundleSize', value: e.target.value })); clearTicketRowError(index, 'bundle'); }}
+                        onWheel={(e) => e.target.blur()}
+                        placeholder="4"
+                        className={getInputClasses(!!ticketBundleError(index))}
+                      />
+                      <p className="text-xs text-slate-400 mt-1">The Price above is the total for the whole bundle (e.g. size 4 at $72 admits 4 for $18 each).</p>
+                      {ticketBundleError(index) && (
+                        <p className="text-red-500 text-xs mt-1">{ticketBundleError(index)}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-3 flex justify-end gap-4">

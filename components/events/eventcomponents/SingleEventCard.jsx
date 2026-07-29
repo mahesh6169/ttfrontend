@@ -864,6 +864,9 @@ const SingleEventCard = ({ event, chatProps }) => {
                           top-aligned in its own narrow column, so a long note stays left. */}
                       <div className="min-w-0 flex-1">
                         <p className="text-sm sm:text-base font-semibold text-slate-800 truncate">{ticket.name}</p>
+                        {ticket.bundleSize && (
+                          <p className="text-xs mt-0.5 text-slate-500">(admits {ticket.bundleSize})</p>
+                        )}
                         {ticket.note && (
                           <p className="text-xs mt-0.5 text-slate-500">{ticket.note}</p>
                         )}
@@ -874,7 +877,8 @@ const SingleEventCard = ({ event, chatProps }) => {
                           </p>
                         )}
                       </div>
-                      <p className="text-base sm:text-lg font-bold text-teal-700 shrink-0">${ticket.price}</p>
+                      {/* Bundle rows show the bundle price (share x pack size), not the bare share. */}
+                      <p className="text-base sm:text-lg font-bold text-teal-700 shrink-0">${ticket.bundleSize ? ticket.price * ticket.bundleSize : ticket.price}</p>
                     </div>
                   );
                 })}

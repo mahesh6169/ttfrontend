@@ -368,7 +368,13 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
   
   return ticketTypes.map(ticket => {
     const processedTicket = { ...ticket };
-    
+
+    // Bundle types store the per-person share as price; the wizard shows the BUNDLE price the
+    // organiser typed, so reconstruct it (share x bundleSize) for display. Saving re-divides it.
+    if (ticket.bundleSize && ticket.price !== null && ticket.price !== undefined && ticket.price !== '') {
+      processedTicket.price = Number(ticket.price) * Number(ticket.bundleSize);
+    }
+
     // Process startDate
     if (ticket.startDate) {
       try {
@@ -801,7 +807,7 @@ deleteError: null,
     },
 
     addTicketType: (state) => {
-      state.formData.ticketTypes.push({ name: '', price: null, quantity: 0, startDate: null, expiryDate: null, note: '' });
+      state.formData.ticketTypes.push({ name: '', price: null, quantity: 0, startDate: null, expiryDate: null, note: '', bundleSize: '' });
       state.hasUnsavedChanges = true;
     },
     updateTicketType: (state, action) => {

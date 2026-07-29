@@ -10,13 +10,42 @@ export function readSeed() {
   return JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'e2e', '.auth', 'seed.json'), 'utf8'));
 }
 
-// Count docs for a model tied to an event, by running the backend introspection script.
-export function dbCount(kind, eventId) {
-  const out = execSync(`node tests/introspect.js ${kind} ${eventId}`, {
+function introspect(kind, eventId) {
+  return execSync(`node tests/introspect.js ${kind} ${eventId}`, {
     cwd: BACKEND_DIR,
     env: { ...process.env, NODE_ENV: 'test' },
   }).toString();
+}
+
+// Count docs for a model tied to an event, by running the backend introspection script.
+export function dbCount(kind, eventId) {
+  const out = introspect(kind, eventId);
   const m = out.match(/COUNT=(-?\d+)/);
   if (!m) throw new Error(`introspect.js gave no COUNT for ${kind} ${eventId}:\n${out}`);
+  return parseInt(m[1], 10);
+}
+
+// Per-ticket base prices (refund maximum per ticket = basePrice) and paid prices for an event.
+export function dbTicketPrices(eventId) {
+  const out = introspect('ticketBasePrices', eventId);
+  const base = out.match(/BASEPRICES=(\[.*\])/);
+  const paid = out.match(/PAIDPRICES=(\[.*\])/);
+  if (!base) throw new Error(`introspect.js gave no BASEPRICES for ${eventId}:\n${out}`);
+  return { base: JSON.parse(base[1]), paid: paid ? JSON.parse(paid[1]) : [] };
+}
+
+// The invoice total for an event.
+export function dbInvoiceTotal(eventId) {
+  const out = introspect('invoiceTotal', eventId);
+  const m = out.match(/TOTAL=(-?\d+(?:\.\d+)?)/);
+  if (!m) throw new Error(`introspect.js gave no TOTAL for ${eventId}:\n${out}`);
+  return parseFloat(m[1]);
+}
+
+// Capacity-consuming tickets sold for an event (each admission = 1).
+export function dbSold(eventId) {
+  const out = introspect('sold', eventId);
+  const m = out.match(/SOLD=(-?\d+)/);
+  if (!m) throw new Error(`introspect.js gave no SOLD for ${eventId}:\n${out}`);
   return parseInt(m[1], 10);
 }
