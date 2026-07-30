@@ -14,6 +14,40 @@ import {
 import { FaInfoCircle } from 'react-icons/fa';
 import ImageUploader from './ImageUploader';
 
+// Per-row seat-strip preview: a line of mini seat cells with a clickable seam between each pair.
+// Clicking a seam toggles a cosmetic walkway "after seat N" (featureplans/events-seat-walkways.md).
+// Editing walkways never touches seat data, so it is allowed even on frozen (sold) rows.
+function SeatStripPreview({ seatCount, walkways, onToggle }) {
+  if (!seatCount) return null;
+  const active = new Set(walkways || []);
+  const items = [];
+  for (let n = 1; n <= seatCount; n++) {
+    items.push(
+      <div key={`seat-${n}`} className="h-4 w-4 shrink-0 rounded-sm border border-teal-300 bg-teal-100" />
+    );
+    if (n < seatCount) {
+      const on = active.has(n);
+      items.push(
+        <button
+          key={`seam-${n}`}
+          type="button"
+          onClick={() => onToggle(n)}
+          aria-label={`Toggle walkway after seat ${n}`}
+          aria-pressed={on}
+          className={`shrink-0 self-stretch rounded-sm transition-all ${
+            on ? 'w-4 bg-amber-100 ring-1 ring-amber-300' : 'w-1.5 hover:bg-slate-200'
+          }`}
+        />
+      );
+    }
+  }
+  return (
+    <div className="flex items-center gap-0.5 overflow-x-auto py-1" style={{ scrollbarWidth: 'thin' }}>
+      {items}
+    </div>
+  );
+}
+
 const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, onSeatingImagesChange }) => {
   console.log('🪑 SeatingLayoutSection rendered with formData.seatingLayoutImage:', formData.seatingLayoutImage);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -159,7 +193,24 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
         seatNumber: i + 1,
         status: 'available'
       }));
-      updated[rowIndex] = { ...updated[rowIndex], seats };
+      // Drop any walkway that now falls outside the new seat range.
+      const walkwayPositions = (updated[rowIndex].walkwayPositions || []).filter(p => p >= 1 && p <= count - 1);
+      updated[rowIndex] = { ...updated[rowIndex], seats, walkwayPositions };
+      return updated;
+    });
+  };
+
+  // Toggle a cosmetic walkway "after seat N" for a row. Only edits walkwayPositions - never seats -
+  // so it is safe on frozen (sold) rows.
+  const toggleDraftWalkway = (rowIndex, position) => {
+    setDraftSeatingLayout(prev => {
+      const updated = [...prev];
+      const row = updated[rowIndex];
+      const current = Array.isArray(row.walkwayPositions) ? row.walkwayPositions : [];
+      const next = current.includes(position)
+        ? current.filter(p => p !== position)
+        : [...current, position].sort((a, b) => a - b);
+      updated[rowIndex] = { ...row, walkwayPositions: next };
       return updated;
     });
   };
@@ -393,7 +444,8 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
                 <label className="block text-sm font-medium text-slate-600 mb-2">Configure Rows</label>
                 <div className="space-y-2 max-h-48 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
                   {draftSeatingLayout.map((row, rowIndex) => (
-                    <div key={rowIndex} className="flex items-center gap-2">
+                    <div key={rowIndex} className="rounded-lg border border-slate-100 p-2 space-y-2">
+                      <div className="flex items-center gap-2">
                       {/* Row label input */}
                       <input
                         type="text"
@@ -476,6 +528,13 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
                           </svg>
                         </button>
                       )}
+                      </div>
+                      {/* Walkway seams: click a seam to add/remove a gap. Allowed on frozen rows too. */}
+                      <SeatStripPreview
+                        seatCount={(row?.seats || []).length}
+                        walkways={row?.walkwayPositions || []}
+                        onToggle={(pos) => toggleDraftWalkway(rowIndex, pos)}
+                      />
                     </div>
                   ))}
                 </div>

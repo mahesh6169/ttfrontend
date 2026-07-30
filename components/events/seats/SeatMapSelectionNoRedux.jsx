@@ -569,18 +569,26 @@ const SeatMapSelectionNoRedux = forwardRef(({
                             if (!seatId) return null;
 
                             const seatStatus = getSeatStatus(seat, seatId);
+                            // Cosmetic walkway "after seat N" (1-based). A fixed-width empty spacer, no
+                            // data, no handler, no key of its own - it just splits the row into blocks
+                            // and rides along in the same horizontal scroll.
+                            const hasWalkwayAfter = Array.isArray(row.walkwayPositions) && row.walkwayPositions.includes(seatIndex + 1);
 
                             return (
-                              <SeatButton
-                                key={`${seatId}-${seatIndex}`}
-                                seat={{ ...seat, seatId }}
-                                row={row}
-                                isSelected={selectedSeats.includes(seatId)}
-                                isReservedByUser={false}
-                                onClick={() => handleSeatClick(seatId, seatStatus)}
-                                disabled={pendingOperation || isLoading}
-                                userId={userId}
-                              />
+                              <React.Fragment key={`${seatId}-${seatIndex}`}>
+                                <SeatButton
+                                  seat={{ ...seat, seatId }}
+                                  row={row}
+                                  isSelected={selectedSeats.includes(seatId)}
+                                  isReservedByUser={false}
+                                  onClick={() => handleSeatClick(seatId, seatStatus)}
+                                  disabled={pendingOperation || isLoading}
+                                  userId={userId}
+                                />
+                                {hasWalkwayAfter && (
+                                  <div className="w-4 sm:w-6 shrink-0 self-stretch" aria-hidden="true" data-walkway="true" />
+                                )}
+                              </React.Fragment>
                             );
                           })}
                         </div>
