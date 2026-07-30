@@ -86,7 +86,8 @@ const SeatButton = ({
       case 'booked':
         return `${baseStyles} bg-red-500 text-white border-red-600 cursor-not-allowed`;
       case 'reserved':
-        return `${baseStyles} bg-slate-400 text-white border-slate-500 cursor-not-allowed`;
+        // Organiser-reserved (held for organiser use). Purple across builder + attendee map, never grey.
+        return `${baseStyles} bg-purple-600 text-white border-purple-700 cursor-not-allowed`;
       case 'disabled':
         return `${baseStyles} bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50`;
       default:
