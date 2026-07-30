@@ -8,6 +8,7 @@ import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/threads/CategorySelector';
+import ThreadEditor from '@/components/threads/ThreadEditor';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import SuccessView from '@/components/threads/SuccessView';
 import AuthorDetailsSection from '@/components/threads/AuthorDetailsSection';
@@ -68,6 +69,12 @@ const CreateThreadPage = () => {
     if (errors[e.target.name]) {
       setErrors({ ...errors, [e.target.name]: '' });
     }
+  };
+
+  // The rich-text editor emits HTML (or '' when empty). Mirror handleChange's error-clearing.
+  const handleQuestionChange = (html) => {
+    setFormData((prev) => ({ ...prev, question: html }));
+    if (errors.question) setErrors((prev) => ({ ...prev, question: '' }));
   };
 
   const handleFileChange = (e) => {
@@ -367,26 +374,11 @@ const CreateThreadPage = () => {
                 <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
                   Description <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  name="question"
-                  placeholder="Describe what you'd like to discuss or ask..."
+                <ThreadEditor
                   value={formData.question}
-                  onChange={handleChange}
-                  className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
-                    errors.question ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
-                  }`}
-                  maxLength="15000"
+                  onChange={handleQuestionChange}
+                  error={errors.question}
                 />
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex-1">
-                    {errors.question && (
-                      <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.question}</p>
-                    )}
-                  </div>
-                  <span className="text-xs text-slate-500 whitespace-nowrap">
-                    {(formData.question || '').length}/15000
-                  </span>
-                </div>
               </div>
 
               {/* Category */}

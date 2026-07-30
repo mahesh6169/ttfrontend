@@ -59,7 +59,7 @@ export default function ThreadsPage() {
               href="/threads/new"
               className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2.5 px-5 rounded-lg shadow-sm transition-colors whitespace-nowrap flex-shrink-0"
             >
-              + Ask Question
+              + Create a Topic
             </Link>
           </div>
         }

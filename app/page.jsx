@@ -1,6 +1,5 @@
-import { Suspense } from 'react';
 import { HiBuildingStorefront, HiCalendarDays } from 'react-icons/hi2';
-import HeroSection from '@/components/home/HeroSection';
+import HomeBannerSlider from '@/components/home/HomeBannerSlider';
 import VerticalRail from '@/components/home/VerticalRail';
 import ForumList from '@/components/home/ForumList';
 import ShareStrip from '@/components/home/ShareStrip';
@@ -63,9 +62,7 @@ export default async function HomePage() {
   return (
     <AdsFrame topAd={<TopAd />}>
       <div id="content" className="space-y-6">
-        <Suspense>
-          <HeroSection />
-        </Suspense>
+        <HomeBannerSlider placement="home" />
 
         <div className="bg-white border border-slate-200 rounded-2xl w-fit mx-auto">
           <ShareStrip />
@@ -85,6 +82,8 @@ export default async function HomePage() {
             }}
           />
         </div>
+        <HomeBannerSlider placement="events" />
+
         <div className="bg-white border border-slate-200 rounded-2xl">
           <VerticalRail
             title="Upcoming Events"
