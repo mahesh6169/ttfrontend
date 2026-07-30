@@ -2,6 +2,7 @@
 // This is the schema Google uses for forum content — the question body (`text`)
 // is the main indexable content. Returns a plain object (or null) to
 // JSON.stringify into a <script> tag.
+import { stripHtmlToText } from './richText';
 
 function pickImage(thread) {
   return (
@@ -28,7 +29,11 @@ export function buildThreadJsonLd(thread, url) {
     url,
   };
 
-  if (thread.question) jsonLd.text = thread.question;
+  // JSON-LD text is plain indexable content, never markup.
+  if (thread.question) {
+    const text = stripHtmlToText(thread.question);
+    if (text) jsonLd.text = text;
+  }
 
   const datePosted = toIso(thread.createdAt);
   if (datePosted) jsonLd.datePosted = datePosted;

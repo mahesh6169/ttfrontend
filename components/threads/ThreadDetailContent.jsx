@@ -32,6 +32,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
 import BackButton from '@/components/BackButton';
+import { isRichHtml, tidyLinksInHtml } from '@/utils/helpers/threads/richText';
 import EmptyState from '@/components/layout/EmptyState';
 import ErrorState from '@/components/layout/ErrorState';
 import { buildSlugUrl } from '@/utils/slugUtils';
@@ -752,14 +753,26 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         <div className="my-4 mx-2">
           <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Topic Description</h3>
           <div className="relative">
-            <div
-              ref={descriptionRef}
-              className={`text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap ${
-                descriptionExpanded ? '' : 'line-clamp-[20]'
-              }`}
-            >
-              {thread.question}
-            </div>
+            {isRichHtml(thread.question) ? (
+              // Rich description (server-sanitised): real bullets, bold, teal links opening in a new tab.
+              <div
+                ref={descriptionRef}
+                className={`thread-rich text-sm sm:text-base text-slate-700 leading-relaxed ${
+                  descriptionExpanded ? '' : 'line-clamp-[20]'
+                }`}
+                dangerouslySetInnerHTML={{ __html: tidyLinksInHtml(thread.question) }}
+              />
+            ) : (
+              // Legacy plain text: today's line-break path, unchanged.
+              <div
+                ref={descriptionRef}
+                className={`text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap ${
+                  descriptionExpanded ? '' : 'line-clamp-[20]'
+                }`}
+              >
+                {thread.question}
+              </div>
+            )}
             {!descriptionExpanded && descriptionOverflow && (
               <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
             )}

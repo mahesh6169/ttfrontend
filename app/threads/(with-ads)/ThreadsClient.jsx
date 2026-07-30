@@ -17,6 +17,7 @@ import { getCategoryDisplayName } from '@/constants/categories';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from '@headlessui/react';
 import { needsCommunityField } from '@/components/threads/categories';
 import { buildSlugUrl } from '@/utils/slugUtils';
+import { stripHtmlToText } from '@/utils/helpers/threads/richText';
 
 const libraries = ['places'];
 
@@ -837,7 +838,7 @@ const ThreadsPage = ({ heading }) => {
                       <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-1">{thread.title}</h2>
 
                       {/* Question/Description */}
-                      <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 mb-2">{thread.question}</p>
+                      <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 mb-2">{stripHtmlToText(thread.question)}</p>
 
                       {/* Metadata */}
                       <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
