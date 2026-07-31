@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
 import axios from '@/utils/axiosConfig';
 import { toast } from 'react-toastify';
 import { MdLocationOn, MdStore, MdCalendarMonth, MdSchedule } from 'react-icons/md';
 import { FaClock, FaTicketAlt, FaShareAlt, FaMobileAlt, FaEnvelope } from 'react-icons/fa';
 import { format } from 'date-fns';
 import CodeModal from '@/components/coupons/CodeModal';
+import CouponGuestAuthModal from '@/components/coupons/couponcomponents/CouponGuestAuthModal';
 import ShareIconsCampaign from '@/components/shared/ShareIconsCampaign';
 import BackButton from '@/components/BackButton';
 import { formatValidDays, formatValidHours } from '@/utils/couponSchedule';
@@ -18,8 +20,11 @@ import { formatValidDays, formatValidHours } from '@/utils/couponSchedule';
 // the slug route's server generateMetadata — this component renders no metadata.
 export default function CouponDetail({ campaign, onCampaignChange }) {
   const router = useRouter();
+  const { user, tokenValidated } = useSelector((state) => state.user);
+  const isLoggedIn = tokenValidated && !!user?._id;
   const [isGenerating, setIsGenerating] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
   const [userCode, setUserCode] = useState(null);
   const [loadingCode, setLoadingCode] = useState(false);
 
@@ -78,6 +83,12 @@ export default function CouponDetail({ campaign, onCampaignChange }) {
   };
 
   const handleGenerateCode = async () => {
+    if (!isLoggedIn) {
+      // Logged out: offer the login-or-email fork.
+      setShowGuestModal(true);
+      return;
+    }
+
     if (campaign.userHasCode) {
       fetchUserCode();
       return;
@@ -342,6 +353,12 @@ export default function CouponDetail({ campaign, onCampaignChange }) {
           onClose={() => setShowModal(false)}
         />
       )}
+
+      <CouponGuestAuthModal
+        isOpen={showGuestModal}
+        onClose={() => setShowGuestModal(false)}
+        campaign={campaign}
+      />
     </div>
   );
 }

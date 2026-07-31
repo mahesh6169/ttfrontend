@@ -11,6 +11,7 @@ import axios from '@/utils/axiosConfig';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import CodeModal from '../CodeModal';
+import CouponGuestAuthModal from './CouponGuestAuthModal';
 
 export default function CampaignCard({ campaign, onGenerateCode }) {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
   const isLoggedIn = tokenValidated && !!user?._id;
   const [isGenerating, setIsGenerating] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
   const [userCode, setUserCode] = useState(null);
   const [loadingCode, setLoadingCode] = useState(false);
 
@@ -51,8 +53,9 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
   const handleButtonClick = async () => {
     if (!isLoggedIn) {
-      localStorage.setItem('redirectAfterLogin', '/coupons');
-      router.push('/login?preserveRedirect=true');
+      // Logged out: offer the login-or-email fork instead of bouncing straight to login.
+      if (isLimitReached || isExpired) return;
+      setShowGuestModal(true);
       return;
     }
 
@@ -78,7 +81,10 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
 
   const handleShare = async () => {
     if (!campaign.slug) return;
-    const url = `${window.location.origin}/coupons/${campaign.slug}`;
+    // Append a timestamp param (ignored by the page) so WhatsApp treats each re-share as a new URL
+    // and re-scrapes the preview after a campaign edit - same pattern as the events share button.
+    const timestamp = Date.now();
+    const url = `${window.location.origin}/coupons/${campaign.slug}?v=${timestamp}`;
     const shareData = {
       title: campaign.store?.storeName || 'Coupon',
       text: `${campaign.discount} ${campaign.discountProduct}`,
@@ -260,6 +266,12 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
           onClose={() => setShowModal(false)}
         />
       )}
+
+      <CouponGuestAuthModal
+        isOpen={showGuestModal}
+        onClose={() => setShowGuestModal(false)}
+        campaign={campaign}
+      />
     </div>
   );
 }

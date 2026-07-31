@@ -18,7 +18,9 @@ export default function ValidationPage() {
   const [isValidating, setIsValidating] = useState(false);
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [redeemed, setRedeemed] = useState(false);
   const scannerRef = useRef(null);
+  const redeemTimerRef = useRef(null);
 
   useEffect(() => {
     const savedStoreId = localStorage.getItem('validationStoreId');
@@ -34,6 +36,13 @@ export default function ValidationPage() {
         localStorage.removeItem('validationStoreInfo');
       }
     }
+  }, []);
+
+  // Clear the auto-return timer if the page unmounts mid-countdown.
+  useEffect(() => {
+    return () => {
+      if (redeemTimerRef.current) clearTimeout(redeemTimerRef.current);
+    };
   }, []);
 
   // Beep + vibrate feedback: a short tone on a valid code, a buzz pattern on invalid
@@ -169,9 +178,14 @@ export default function ValidationPage() {
 
   // Clear the result and resume scanning for the next code
   const handleScanNext = () => {
+    if (redeemTimerRef.current) {
+      clearTimeout(redeemTimerRef.current);
+      redeemTimerRef.current = null;
+    }
     setValidationResult(null);
     setUserCode('');
     setShowDetails(false);
+    setRedeemed(false);
     scannerRef.current?.resume();
   };
 
@@ -185,8 +199,11 @@ export default function ValidationPage() {
       const response = await axios.post('/coupons/redeem', { fullCode });
 
       if (response.data.success) {
-        toast.success('Code redeemed successfully!');
-        handleScanNext();
+        // Show an on-screen success confirmation (with a confirming beep), then auto-return to
+        // scanning after ~1.5s so the counter can move straight to the next customer.
+        setRedeemed(true);
+        signalResult(true);
+        redeemTimerRef.current = setTimeout(handleScanNext, 1500);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Redemption failed');
@@ -295,7 +312,14 @@ export default function ValidationPage() {
 
           {validationResult && (
             <div className="mt-2">
-              {validationResult.isValid ? (
+              {redeemed ? (
+                <div className="text-center">
+                  <MdCheckCircle className="text-teal-600 w-12 h-12 mx-auto mb-2" />
+                  <h3 className="text-base sm:text-lg font-bold text-teal-700 mb-1">Redeemed successfully</h3>
+                  <p className="text-3xl sm:text-4xl font-mono font-black text-teal-800 mb-3">{userCode}</p>
+                  <p className="text-xs sm:text-sm text-slate-500">Returning to scan...</p>
+                </div>
+              ) : validationResult.isValid ? (
                 <div className="text-center">
                   {/* Code */}
                   <p className="text-xs sm:text-sm text-slate-500 mb-1">Code</p>

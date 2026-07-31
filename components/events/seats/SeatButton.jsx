@@ -71,6 +71,16 @@ const SeatButton = ({
 
   const status = getSeatStatus();
 
+  // Hover card (item 22): the status word in its legend colour. No pricing - this platform has none.
+  const STATUS_WORD = {
+    available: 'Available', selected: 'Selected', 'selected-by-other': 'Hold',
+    booked: 'Sold', reserved: 'Reserved', disabled: 'Unavailable',
+  };
+  const STATUS_COLOR = {
+    available: 'text-teal-700', selected: 'text-teal-700', 'selected-by-other': 'text-amber-600',
+    booked: 'text-red-600', reserved: 'text-purple-700', disabled: 'text-slate-500',
+  };
+
   // ✅ MOBILE ENHANCED: Improved styling with better mobile UX and compact design
   const getSeatStyles = () => {
     const baseStyles =
@@ -86,7 +96,8 @@ const SeatButton = ({
       case 'booked':
         return `${baseStyles} bg-red-500 text-white border-red-600 cursor-not-allowed`;
       case 'reserved':
-        return `${baseStyles} bg-slate-400 text-white border-slate-500 cursor-not-allowed`;
+        // Organiser-reserved (held for organiser use). Purple across builder + attendee map, never grey.
+        return `${baseStyles} bg-purple-600 text-white border-purple-700 cursor-not-allowed`;
       case 'disabled':
         return `${baseStyles} bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50`;
       default:
@@ -218,25 +229,23 @@ const SeatButton = ({
         )}
       </button>
 
-      {/* ✅ MOBILE ENHANCED: Improved tooltip with better mobile positioning */}
-      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20 max-w-xs shadow-lg">
-        <div className="font-medium text-center">{getTooltipText()}</div>
-        
-        {/* Additional info for certain statuses */}
-        {status === 'selected-by-other' && safeSeat.reservedUntil && (
-          <div className="text-slate-300 text-xs mt-1 text-center">
-            Reserved until {new Date(safeSeat.reservedUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </div>
-        )}
-        
-        {status === 'booked' && (
-          <div className="text-slate-300 text-xs mt-1 text-center">
-            Already sold
-          </div>
-        )}
-
-        {/* Tooltip arrow */}
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-slate-900"></div>
+      {/* Hover card (item 22): Row + Seat prominent, status word in its legend colour, no price. Shows
+          on desktop hover; mobile is unchanged (the tap/active reveal and the on-map chip stay). */}
+      <div
+        data-testid="seat-hover-card"
+        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20 shadow-lg"
+      >
+        <div className="flex items-baseline justify-center gap-1 text-slate-800">
+          <span className="text-[10px] uppercase tracking-wide text-slate-400">Row</span>
+          <span className="text-sm font-bold">{safeRow.rowLabel}</span>
+          <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-400">Seat</span>
+          <span className="text-sm font-bold">{safeSeat.seatNumber}</span>
+        </div>
+        <div className={`text-center text-xs font-semibold ${STATUS_COLOR[status] || 'text-slate-600'}`}>
+          {STATUS_WORD[status] || 'Seat'}
+        </div>
+        {/* Card arrow */}
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-white"></div>
       </div>
 
       {/* ✅ NEW: Debug info (only in development) */}

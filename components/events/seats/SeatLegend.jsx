@@ -33,7 +33,7 @@ const SeatLegend = () => {
     },
     {
       status: 'reserved',
-      color: 'bg-slate-400 text-white border-slate-500',
+      color: 'bg-purple-600 text-white border-purple-700',
       label: 'Reserved',
       description: 'Organizer use'
     }

@@ -28,4 +28,12 @@ setup('seed test data and authenticate the member', async ({ request }) => {
   });
   expect(res.ok()).toBeTruthy();
   await request.storageState({ path: path.join(AUTH_DIR, 'member.json') });
+
+  // 3. Log the organiser in (owns the seat-builder events) and save a second storage state. The later
+  // login overwrites the token cookie, so member.json (saved above) keeps the member session.
+  const orgRes = await request.post(`${BACKEND_URL}/api/users/login`, {
+    data: { email: seed.organiserEmail, password: seed.organiserPassword },
+  });
+  expect(orgRes.ok()).toBeTruthy();
+  await request.storageState({ path: path.join(AUTH_DIR, 'organiser.json') });
 });
