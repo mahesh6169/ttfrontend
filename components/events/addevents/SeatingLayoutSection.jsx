@@ -12,9 +12,8 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const capacityWarning = useSelector((state) => state.events.capacityWarning);
 
-  // Rows present when the builder first opens in edit mode are frozen (protect sold tickets).
-  const [originalRowCount] = useState(() => (isEditMode ? (formData.seatingLayout?.length || 0) : 0));
-
+  // The builder self-locks on the event's first sale (a booked seat); "existing event" is not a lock
+  // reason (featureplans/fix-events-seatmap-salelock.md).
   const layout = formData.seatingLayout || [];
   const totalSeats = layout.reduce((t, r) => t + (r.seats?.length || 0), 0);
   const capacity = Number(formData.capacity) || 0;
@@ -110,8 +109,6 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
           initialLayout={layout}
           initialReserved={formData.organizerReservedSeats || ''}
           capacity={capacity}
-          isEditMode={isEditMode}
-          originalRowCount={originalRowCount}
           onSave={handleSave}
           onClose={() => setIsBuilderOpen(false)}
         />

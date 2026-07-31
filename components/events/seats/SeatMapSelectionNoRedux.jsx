@@ -19,8 +19,14 @@ import { FaCheckCircle } from 'react-icons/fa';
 import axios from '@/utils/axiosConfig';
 
 import SeatButton from './SeatButton';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+// Selection is gated below this scale (seats too small to tap comfortably). Fitted view of a big hall
+// sits below it; a normal-sized hall fits at ~1 and stays selectable. Tunable in the feel-pass.
+const SELECT_THRESHOLD = 0.6;
+const MAX_SCALE = 2.5;
 
 const SeatMapSelectionNoRedux = forwardRef(({ 
   event, 
@@ -50,18 +56,16 @@ const SeatMapSelectionNoRedux = forwardRef(({
   const [reserveErrorMessage, setReserveErrorMessage] = useState('');
   const [lastFetchTime, setLastFetchTime] = useState(0);
 
-  // Refs
-  const scrollContainerRef = useRef(null);
-  const [hasAutoScrolled, setHasAutoScrolled] = useState(false);
-  const [scrollPosition, setScrollPosition] = useState(0);
-  
-  // Drag to scroll state
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragAxis, setDragAxis] = useState(null); // 'horizontal' or 'vertical'
-  const [startX, setStartX] = useState(0);
-  const [startY, setStartY] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const [scrollTop, setScrollTop] = useState(0);
+  // Zoom/pan (react-zoom-pan-pinch) replaces the old drag-to-scroll.
+  const viewportRef = useRef(null);   // the fixed map viewport (measured for fit)
+  const contentRef = useRef(null);    // the hall content (natural size, unaffected by transform)
+  const zoomApiRef = useRef(null);    // TransformWrapper instance
+  const [scale, setScale] = useState(1);
+  const [fitScale, setFitScale] = useState(1);
+  const [everZoomed, setEverZoomed] = useState(false);
+  const anchorYRef = useRef(0); // screen-y of the hall's centre; the +/- controls zoom toward it
+  const transformRef = useRef({ scale: 1, positionX: 0, positionY: 0 }); // last-known transform
+  const canSelect = scale >= SELECT_THRESHOLD;
 
   // Calculate required seats
   const requiredSeats = ticketRequirement?.total || 0;
@@ -256,6 +260,10 @@ const SeatMapSelectionNoRedux = forwardRef(({
   const handleSeatClick = async (seatId, seatStatus) => {
     if (pendingOperation || isLoading) return;
 
+    // Zoom-gated: below the tap-size threshold, a tap does not select (it only pans/zooms). The hint
+    // chip tells the buyer to zoom in first. At/above the threshold, selection behaves as before.
+    if (!canSelect) return;
+
     if (seatStatus === 'booked' || seatStatus === 'disabled' || seatStatus === 'reserved') {
       return;
     }
@@ -345,71 +353,63 @@ const SeatMapSelectionNoRedux = forwardRef(({
     return 'available';
   };
 
-  // Remove scroll handling to prevent flickering on mobile
+  // Panning + zooming are handled by react-zoom-pan-pinch (see the render). A drag pans; a click (no
+  // movement) selects - the library's own move threshold distinguishes them.
 
-  // Drag to scroll handlers (desktop only)
-  const handleMouseDown = (e) => {
-    // Only enable on desktop
-    if ('ontouchstart' in window) return;
-    
-    // Only start drag if clicking on container background, not on seats
-    if (e.target.closest('.seat-button') || e.target.closest('button')) return;
-    
-    setIsDragging(true);
-    setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
-    setStartY(e.pageY - scrollContainerRef.current.offsetTop);
-    setScrollLeft(scrollContainerRef.current.scrollLeft);
-    setScrollTop(scrollContainerRef.current.scrollTop);
-    setDragAxis(null);
-    
-    // Change cursor
-    scrollContainerRef.current.style.cursor = 'grabbing';
-  };
+  // Fit the whole hall into the viewport on load (and when the layout changes). offsetWidth/Height are
+  // layout sizes unaffected by the CSS transform, so they give the content's natural dimensions.
+  const fitToView = useCallback(() => {
+    const vp = viewportRef.current;
+    const content = contentRef.current;
+    const api = zoomApiRef.current;
+    if (!vp || !content || !api) return;
+    const cw = content.offsetWidth || 1;
+    const ch = content.offsetHeight || 1;
+    const vw = vp.clientWidth;
+    // The container's maximum height (viewport-relative); the container shrinks to the hall below this.
+    const maxH = Math.round((window.innerHeight || 800) * (window.innerWidth < 640 ? 0.6 : 0.7));
+    // Fill the width (small margin) rather than floating small; height overflow is pannable.
+    const fit = Math.min((vw * 0.96) / cw, 1);
+    const safeFit = Number.isFinite(fit) && fit > 0 ? fit : 1;
+    const fittedH = ch * safeFit;
+    const x = Math.max(0, (vw - cw * safeFit) / 2); // horizontally centred = the shared centreline
+    const y = 8; // stage top-aligned; the space below the hall is deliberate zoom room (item 21)
+    anchorYRef.current = y + fittedH / 2; // the +/- controls zoom toward the hall, not the empty room
+    setFitScale(safeFit);
+    setScale(safeFit);
+    api.setTransform(x, y, safeFit, 0);
+    transformRef.current = { scale: safeFit, positionX: x, positionY: y };
+  }, []);
 
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    
-    e.preventDefault();
-    
-    const x = e.pageX - scrollContainerRef.current.offsetLeft;
-    const y = e.pageY - scrollContainerRef.current.offsetTop;
-    const walkX = (x - startX);
-    const walkY = (y - startY);
-    
-    // Determine drag axis on first significant movement
-    if (!dragAxis && (Math.abs(walkX) > 5 || Math.abs(walkY) > 5)) {
-      if (Math.abs(walkX) > Math.abs(walkY)) {
-        setDragAxis('horizontal');
-      } else {
-        setDragAxis('vertical');
-      }
-    }
-    
-    // Apply scrolling based on axis
-    if (dragAxis === 'horizontal') {
-      scrollContainerRef.current.scrollLeft = scrollLeft - walkX;
-    } else if (dragAxis === 'vertical') {
-      scrollContainerRef.current.scrollTop = scrollTop - walkY;
-    }
-  };
+  // Zoom by the +/- controls: keep the hall anchored (react-zoom-pan-pinch's own zoomIn zooms toward the
+  // container centre, which is empty zoom room below a short top-aligned hall - that would push the seats
+  // out of view). Anchoring on the hall centre keeps the middle seats put as you zoom in.
+  const zoomBy = useCallback((delta) => {
+    const api = zoomApiRef.current;
+    const vp = viewportRef.current;
+    if (!api || !vp) return;
+    const ts = transformRef.current;
+    const oldScale = ts.scale || 1;
+    const newScale = Math.max(fitScale, Math.min(MAX_SCALE, oldScale + delta));
+    if (newScale === oldScale) return;
+    const px = vp.clientWidth / 2;
+    const py = anchorYRef.current || vp.clientHeight / 2;
+    const k = newScale / oldScale;
+    const newX = px - (px - (ts.positionX || 0)) * k;
+    const newY = py - (py - (ts.positionY || 0)) * k;
+    api.setTransform(newX, newY, newScale, 150);
+    transformRef.current = { scale: newScale, positionX: newX, positionY: newY };
+    setScale(newScale);
+    if (newScale >= SELECT_THRESHOLD) setEverZoomed(true);
+  }, [fitScale]);
 
-  const handleMouseUp = () => {
-    if (!isDragging) return;
-    
-    setIsDragging(false);
-    setDragAxis(null);
-    
-    // Reset cursor
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.cursor = 'grab';
+  useLayoutEffect(() => {
+    if (seatingLayout.length > 0 && !isLoading) {
+      // Wait a frame so the content has laid out before measuring.
+      const id = requestAnimationFrame(fitToView);
+      return () => cancelAnimationFrame(id);
     }
-  };
-
-  const handleMouseLeave = () => {
-    if (isDragging) {
-      handleMouseUp();
-    }
-  };
+  }, [seatingLayout, isLoading, fitToView]);
 
   // Check if can proceed to checkout
   const canProceed = reservation && selectedSeats.length === requiredSeats;
@@ -424,28 +424,6 @@ const SeatMapSelectionNoRedux = forwardRef(({
       }
     }
   }, [socketConnected, socketJoinedRoom, fetchSeatData, lastFetchTime]);
-
-  // Auto-center the seating layout on initial load
-  useEffect(() => {
-    if (scrollContainerRef.current && seatingLayout.length > 0 && !hasAutoScrolled && !isLoading) {
-      const container = scrollContainerRef.current;
-      const scrollWidth = container.scrollWidth;
-      const clientWidth = container.clientWidth;
-      
-      if (scrollWidth > clientWidth) {
-        // Calculate center position
-        const centerPosition = (scrollWidth - clientWidth) / 2;
-        
-        // Use requestAnimationFrame for smooth initial positioning
-        requestAnimationFrame(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollLeft = centerPosition;
-            setHasAutoScrolled(true);
-          }
-        });
-      }
-    }
-  }, [seatingLayout, hasAutoScrolled, isLoading]);
 
   return (
     <div className="space-y-2 sm:space-y-3">
@@ -495,75 +473,67 @@ const SeatMapSelectionNoRedux = forwardRef(({
       
       {/* Selection count + reservation timer now live at page level (SeatSelectionPage) */}
 
-      {/* Seat Map */}
-      <div className={`relative border border-slate-200 rounded-md sm:rounded-lg max-w-full mx-auto ${
-        (isLoading || pendingOperation) ? 'opacity-50 pointer-events-none' : ''
-      }`}>
+      {/* Seat Map - one zoomable/pannable canvas (react-zoom-pan-pinch). The old drag-to-scroll and
+          per-row overflow are gone; the whole hall fits on load, then pinch/wheel/drag to explore. */}
+      <div
+        ref={viewportRef}
+        data-testid="seat-map-viewport"
+        className={`relative border border-slate-200 rounded-md sm:rounded-lg max-w-full mx-auto h-[65vh] overflow-hidden bg-slate-50 ${
+          (isLoading || pendingOperation) ? 'opacity-50 pointer-events-none' : ''
+        }`}
+      >
         {seatingLayout.length === 0 ? (
           <div className="text-center py-12 bg-slate-50 rounded-lg">
             <p className="text-slate-500">No seating layout available</p>
           </div>
         ) : (
-          <div>
-            {/* Stage indicator — Venue Layout link on the left, STAGE centered */}
-            <div className="relative flex items-center justify-center py-3 sm:py-4 mb-4">
-              {hasVenueLayout && (
-                <button
-                  type="button"
-                  onClick={onVenueClick}
-                  className="absolute left-0 text-xs sm:text-sm font-medium text-teal-700 hover:text-teal-800 underline"
-                >
-                  Venue Layout
-                </button>
-              )}
-              <div className="inline-block bg-slate-800 text-white px-8 sm:px-16 py-2 sm:py-3 rounded text-xs sm:text-sm font-semibold tracking-wider">
-                STAGE
-              </div>
-            </div>
-
-            {/* Scrollable seat container - Amphitheater style */}
-            <div
-              ref={scrollContainerRef}
-              className="overflow-auto pb-3 -webkit-overflow-scrolling-touch max-h-[60vh] sm:max-h-[70vh] seat-container"
-              style={{ 
-                scrollbarWidth: 'thin', 
-                scrollbarColor: '#CBD5E0 #F7FAFC',
-                cursor: isDragging ? 'grabbing' : 'grab'
-              }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseLeave}
-            >
-              <div className="seat-container px-2 sm:px-4 pb-2 sm:pb-4 min-w-max">
+          <TransformWrapper
+            ref={zoomApiRef}
+            minScale={fitScale}
+            maxScale={MAX_SCALE}
+            initialScale={1}
+            limitToBounds={false}
+            doubleClick={{ mode: 'zoomIn', step: 0.7 }}
+            wheel={{ step: 0.05 }}
+            panning={{ velocityDisabled: true }}
+            onTransformed={(_r, s) => { transformRef.current = { scale: s.scale, positionX: s.positionX, positionY: s.positionY }; setScale(s.scale); if (s.scale >= SELECT_THRESHOLD) setEverZoomed(true); }}
+          >
+            {() => (
+              <>
+                {/* Fixed chrome - stays put outside the zoom layer */}
+                {hasVenueLayout && (
+                  <button type="button" onClick={onVenueClick} className="absolute left-2 top-2 z-20 rounded bg-white/90 px-2 py-1 text-xs font-medium text-teal-700 shadow border border-slate-200 hover:text-teal-800">Venue Layout</button>
+                )}
+                <div className="absolute right-2 top-2 z-20 flex flex-col gap-1">
+                  <button type="button" onClick={() => zoomBy(0.3)} aria-label="Zoom in" className="h-8 w-8 rounded-full bg-white shadow border border-slate-200 text-slate-700">+</button>
+                  <button type="button" onClick={() => zoomBy(-0.3)} aria-label="Zoom out" className="h-8 w-8 rounded-full bg-white shadow border border-slate-200 text-slate-700">-</button>
+                  <button type="button" onClick={fitToView} aria-label="Fit view" className="h-8 w-8 rounded-full bg-white shadow border border-slate-200 text-[10px] text-slate-700">Fit</button>
+                </div>
+                {!canSelect && !everZoomed && (
+                  <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-slate-800/90 px-3 py-1.5 text-xs font-medium text-white shadow" data-testid="zoom-hint">
+                    Pinch or double-tap to zoom in and pick seats
+                  </div>
+                )}
+                <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-max">
+                  <div ref={contentRef} className="px-4 py-4">
+                    {/* STAGE anchors the hall: full-width bar at the top, zooms/pans with the map */}
+                    <div data-testid="stage-bar" className="mb-4 w-full rounded bg-slate-800 py-2 text-center text-xs sm:text-sm font-semibold tracking-[0.3em] text-white">STAGE</div>
                 {seatingLayout.map((row, rowIndex) => {
-                  const seatCount = row.seats?.length || 0;
-                  const totalRows = seatingLayout.length;
-                  // Calculate padding to create amphitheater effect (first row most padded)
-                  const paddingPercentage = ((totalRows - rowIndex - 1) / Math.max(totalRows - 1, 1)) * 20;
-                  
                   return (
                     <div
                       key={`row-${rowIndex}-${row.rowLabel}`}
                       className="flex items-center mb-2 sm:mb-3"
                     >
-                      {/* Left row label */}
-                      <div className="w-8 sm:w-10 flex-shrink-0 text-center sticky left-0 bg-white z-10">
-                        <span className="font-bold text-slate-700 text-xs sm:text-sm bg-white px-1 py-0.5 rounded shadow-sm inline-block">
+                      {/* Left row label (one per end; no sticky - it travels with the row under zoom/pan) */}
+                      <div className="w-8 sm:w-10 flex-shrink-0 text-center">
+                        <span data-testid="row-label" className="font-bold text-slate-700 text-xs sm:text-sm px-1 py-0.5 rounded inline-block">
                           {row.rowLabel}
                         </span>
                       </div>
-                      
-                      {/* Centered container for seats */}
+
+                      {/* Seats - one shared centreline, uniform rhythm (amphitheater padding retired) */}
                       <div className="flex-1 flex justify-center px-2">
-                        {/* Seats with amphitheater-style padding */}
-                        <div 
-                          className="flex items-center gap-1 sm:gap-1.5" 
-                          style={{ 
-                            paddingLeft: `${paddingPercentage}%`, 
-                            paddingRight: `${paddingPercentage}%` 
-                          }}
-                        >
+                        <div className="flex items-center gap-1 sm:gap-1.5">
                           {(row.seats || []).map((seat, seatIndex) => {
                             const seatId = seat.seatId;
                             if (!seatId) return null;
@@ -595,17 +565,19 @@ const SeatMapSelectionNoRedux = forwardRef(({
                       </div>
                       
                       {/* Right row label */}
-                      <div className="w-8 sm:w-10 flex-shrink-0 text-center sticky right-0 bg-white z-10">
-                        <span className="font-bold text-slate-700 text-xs sm:text-sm bg-white px-1 py-0.5 rounded shadow-sm inline-block">
+                      <div className="w-8 sm:w-10 flex-shrink-0 text-center">
+                        <span data-testid="row-label" className="font-bold text-slate-700 text-xs sm:text-sm px-1 py-0.5 rounded inline-block">
                           {row.rowLabel}
                         </span>
                       </div>
                     </div>
                   );
                 })}
-              </div>
-            </div>
-          </div>
+                  </div>
+                </TransformComponent>
+              </>
+            )}
+          </TransformWrapper>
         )}
 
         {/* Loading overlay */}
