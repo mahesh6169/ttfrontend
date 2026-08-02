@@ -4,13 +4,16 @@
 // An OVERLAY mounted inside the wizard step (no route change): Cancel/Save drop back to the exact
 // wizard state. Generate the skeleton by numbers, then shape visually on a single zoomable canvas
 // that shares the attendee map's colour vocabulary. Edits only walkwayPositions + organizerReservedSeats.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { MdEventSeat } from 'react-icons/md';
+import { MdEventSeat, MdFitScreen } from 'react-icons/md';
+import { toast } from 'react-toastify';
 import { nextRowLabel, parseReservedLabels, formatReservedLabels } from '@/utils/events/seatBuilder';
 
 // Seat numbers are hidden at fitted view (clean dots) and appear once zoomed past this scale.
 const NUMBER_THRESHOLD = 1.6;
+// Unified with the attendee map (events-seatmap-zoom-parity.md): min zoom = fitted view, max = 4.0.
+const MAX_SCALE = 4;
 
 const makeSeats = (count) =>
   Array.from({ length: count }, (_, i) => ({ seatNumber: i + 1, status: 'available' }));
@@ -19,7 +22,9 @@ const makeSeats = (count) =>
 const seatClass = (status) => {
   if (status === 'booked') return 'bg-red-500 text-white border-red-600 cursor-not-allowed';
   if (status === 'reserved') return 'bg-purple-600 text-white border-purple-700';
-  return 'bg-teal-50 text-teal-700 border-teal-400 hover:bg-teal-100 cursor-pointer';
+  // Hover gated to true hover devices ([@media(hover:hover)]) so a touch tap toggles the seat on the first
+  // tap (a sticky-hover seat would only reveal the card first) - parity with the attendee SeatButton.
+  return 'bg-teal-50 text-teal-700 border-teal-400 [@media(hover:hover)]:hover:bg-teal-100 cursor-pointer';
 };
 
 export default function SeatBuilderOverlay({
@@ -33,6 +38,7 @@ export default function SeatBuilderOverlay({
   const [genSeats, setGenSeats] = useState('');
   const [aisleSeat, setAisleSeat] = useState('');
   const [bulkInput, setBulkInput] = useState(''); // one-time Bulk Reserve entry (not the live reserved list)
+  const [bulkError, setBulkError] = useState(''); // set on Apply/blur when tokens are not real seats
   const [activeStep, setActiveStep] = useState('rows'); // sidebar step in focus: rows | aisles | reserved
 
   useEffect(() => {
@@ -50,7 +56,10 @@ export default function SeatBuilderOverlay({
 
   const zoomRef = useRef(null);   // TransformWrapper instance
   const canvasRef = useRef(null); // the canvas viewport (wheel target + cursor origin)
+  const contentRef = useRef(null); // the hall content (natural size, for the fit computation)
   const transformRef = useRef({ scale: 1, positionX: 0, positionY: 0 }); // last-known transform
+  const anchorYRef = useRef(0);   // screen-y of the hall centre; +/- controls zoom toward it
+  const [fitScale, setFitScale] = useState(1); // the fitted whole-hall scale = the minimum zoom
 
   // Fixed-per-notch wheel zoom: the library's wheel scales with the raw scroll delta, which varies
   // notch-to-notch (erratic). Instead take ONLY the wheel direction and zoom a constant factor toward
@@ -65,7 +74,7 @@ export default function SeatBuilderOverlay({
       const ts = transformRef.current;
       const old = ts.scale || 1;
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1; // one notch = +/-10%, direction only
-      const next = Math.max(0.3, Math.min(4, old * factor));
+      const next = Math.max(fitScale, Math.min(MAX_SCALE, old * factor)); // floor = fitted, cap unified
       if (next === old) return;
       const rect = el.getBoundingClientRect();
       const cx = e.clientX - rect.left;
@@ -79,7 +88,68 @@ export default function SeatBuilderOverlay({
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
+  }, [fitScale]);
+
+  // Smart Fit (ported from the attendee map for parity): fit the whole hall to ~96% of the width, stage
+  // top-aligned, and record that fitted scale as the minimum zoom. Recentres from anywhere.
+  const fitToView = useCallback(() => {
+    const vp = canvasRef.current;
+    const content = contentRef.current;
+    const api = zoomRef.current;
+    if (!vp || !content || !api?.setTransform) return;
+    const cw = content.offsetWidth || 1;
+    const ch = content.offsetHeight || 1;
+    const vw = vp.clientWidth;
+    const fit = Math.min((vw * 0.96) / cw, 1); // that 96% margin IS the gutter
+    const safeFit = Number.isFinite(fit) && fit > 0 ? fit : 1;
+    const x = Math.max(0, (vw - cw * safeFit) / 2); // horizontally centred = the shared centreline
+    const y = 8; // stage top-aligned
+    anchorYRef.current = y + (ch * safeFit) / 2; // +/- controls zoom toward the hall
+    setFitScale(safeFit);
+    setScale(safeFit);
+    api.setTransform(x, y, safeFit, 0);
+    transformRef.current = { scale: safeFit, positionX: x, positionY: y };
   }, []);
+
+  // +/- buttons: fixed 0.3 step, clamped to [fitted, MAX_SCALE], anchored on the hall (unified with attendee).
+  const zoomBy = useCallback((delta) => {
+    const api = zoomRef.current;
+    const vp = canvasRef.current;
+    if (!api?.setTransform || !vp) return;
+    const ts = transformRef.current;
+    const oldScale = ts.scale || 1;
+    const newScale = Math.max(fitScale, Math.min(MAX_SCALE, oldScale + delta));
+    if (newScale === oldScale) return;
+    const px = vp.clientWidth / 2;
+    const py = anchorYRef.current || vp.clientHeight / 2;
+    const k = newScale / oldScale;
+    const nx = px - (px - (ts.positionX || 0)) * k;
+    const ny = py - (py - (ts.positionY || 0)) * k;
+    // Instant (0ms) like the wheel/Fit: with onTransform/onZoom now wired, a timed animation would report
+    // mid-animation scales and make the +/- step (and seat-number reveal) lag. Parity with the attendee map.
+    api.setTransform(nx, ny, newScale, 0);
+    transformRef.current = { scale: newScale, positionX: nx, positionY: ny };
+    setScale(newScale);
+  }, [fitScale]);
+
+  // Sync scale from the library's LIVE callbacks. In react-zoom-pan-pinch v4 the prop is onTransform (not
+  // onTransformed) and pinch fires onPinch/onZoom - the -ed/-ing variants silently never fire, so a pinch
+  // (or double-tap) would zoom the picture without raising `scale`, and seat numbers would never appear.
+  const syncScaleFromLib = (ref) => {
+    const s = ref?.state ?? ref?.instance?.state;
+    if (!s || typeof s.scale !== 'number') return;
+    transformRef.current = { scale: s.scale, positionX: s.positionX, positionY: s.positionY };
+    setScale(s.scale);
+  };
+
+  // Fit the hall on open and when rows are added/removed (not on aisle/label edits, which would reset zoom).
+  useLayoutEffect(() => {
+    if (rows.length > 0) {
+      const id = requestAnimationFrame(fitToView);
+      return () => cancelAnimationFrame(id);
+    }
+    return undefined;
+  }, [rows.length, fitToView]);
 
   const reservedSet = useMemo(() => parseReservedLabels(reserved), [reserved]);
   // "Seats Reserved" summary: compact tokens (formatReservedLabels collapses runs, e.g. B18-B21),
@@ -162,11 +232,23 @@ export default function SeatBuilderOverlay({
 
   const setRowCount = (idx, value) => {
     const n = Math.max(1, Math.min(100, parseInt(value, 10) || 1));
+    const label = rows[idx]?.rowLabel || '';
     setRows((prev) => prev.map((r, i) => {
       if (i !== idx) return r;
       const walkwayPositions = (r.walkwayPositions || []).filter((p) => p <= n - 1);
       return { ...r, seats: makeSeats(n), walkwayPositions };
     }));
+    // Silent self-cleaning: a shrunk row drops any reserved seat that no longer exists (no message).
+    if (label) {
+      setReserved((prevReserved) => {
+        const set = parseReservedLabels(prevReserved);
+        const kept = [...set].filter((lbl) => {
+          const m = lbl.match(/^([A-Z]+)(\d+)$/);
+          return !(m && m[1] === label && Number(m[2]) > n);
+        });
+        return kept.length === set.size ? prevReserved : formatReservedLabels(new Set(kept));
+      });
+    }
   };
 
   // Seat-count field: type freely (empty allowed) via a per-row draft; validate + apply only on
@@ -182,6 +264,31 @@ export default function SeatBuilderOverlay({
     }
     setCountDrafts((d) => { const c = { ...d }; delete c[i]; return c; }); // empty/invalid reverts
   };
+
+  // ── Validation (live field errors; Save is the one gate) ──────────────────
+  // Every real seat label in the configured hall (for the Bulk Reserve check).
+  const allSeatLabels = useMemo(() => {
+    const s = new Set();
+    rows.forEach((r) => (r.seats || []).forEach((seat) => s.add(`${r.rowLabel}${seat.seatNumber}`)));
+    return s;
+  }, [rows]);
+  // Per-row errors: seat count must be 1-100; label must be 1-3 letters, not blank, and unique (a
+  // duplicate flags the LATER row - the original stays calm; labels are seat identities, so A twice collides).
+  const rowErrors = useMemo(() => rows.map((r, i) => {
+    const raw = countDrafts[i] !== undefined ? countDrafts[i] : String(r.seats?.length || 0);
+    const n = parseInt(raw, 10);
+    const count = String(raw).trim() !== '' && (!Number.isFinite(n) || n < 1 || n > 100);
+    const lbl = (r.rowLabel || '').trim();
+    let label = null;
+    if (lbl === '') label = 'required';
+    else if (rows.slice(0, i).some((o) => (o.rowLabel || '').trim() === lbl)) label = 'duplicate';
+    return { count, label };
+  }), [rows, countDrafts]);
+  const anyRowError = rowErrors.some((e) => e.count || e.label);
+  // Aisle-after-seat is red only if the number falls past the end of EVERY row (no row can take it).
+  const aislePos = parseInt(aisleSeat, 10);
+  const aisleError = String(aisleSeat).trim() !== '' && Number.isInteger(aislePos) && aislePos >= 1
+    && rows.length > 0 && rows.every((r) => (r.seats?.length || 0) <= aislePos);
 
   // ── Walkways ─────────────────────────────────────────────────────────────
   const toggleSeam = (idx, pos) => {
@@ -229,14 +336,45 @@ export default function SeatBuilderOverlay({
   };
 
   // Bulk Reserve: a one-time entry that MERGES the typed seats into the reserved list, then clears.
-  // The live list is shown by the "Seats Reserved" summary and by clicking seats - not by this input.
+  // Checked on Apply/blur (never per keystroke): tokens that are not real seats in the hall turn the
+  // box red and named; nothing applies until the whole box is valid (all-or-nothing).
+  const bulkCulprits = () => [...parseReservedLabels(bulkInput)].filter((lbl) => !allSeatLabels.has(lbl));
   const applyBulkReserve = () => {
+    if (String(bulkInput).trim() === '') { setBulkError(''); return; }
+    const culprits = bulkCulprits();
+    if (culprits.length) { setBulkError(`Not in your hall: ${culprits.join(', ')}`); return; }
     const add = parseReservedLabels(bulkInput);
     if (add.size) setReserved(formatReservedLabels(new Set([...reservedSet, ...add])));
+    setBulkError('');
     setBulkInput('');
   };
+  const checkBulkOnBlur = () => {
+    if (String(bulkInput).trim() === '') { setBulkError(''); return; }
+    const culprits = bulkCulprits();
+    setBulkError(culprits.length ? `Not in your hall: ${culprits.join(', ')}` : '');
+  };
 
-  const save = () => onSave(rows, reserved);
+  // Save - the ONE gate. Tab switches are always free; validation only blocks Save.
+  const nameList = (arr) => (arr.length <= 1 ? (arr[0] || '') : `${arr.slice(0, -1).join(', ')} and ${arr[arr.length - 1]}`);
+  // One signpost toast at a time (shared id = never stacked), placed away from the Save button so it
+  // does not block re-saving after a fix.
+  const signpost = (msg) => toast.error(msg, { toastId: 'seatbuilder-validation', position: 'bottom-center' });
+  const save = () => {
+    if (cap > 0 && totalSeats > cap) {
+      const over = totalSeats - cap;
+      signpost(`Over capacity by ${over} - remove ${over} to save.`);
+      return;
+    }
+    const badTabs = [];
+    if (rowsError || seatsError || anyRowError) badTabs.push('Layout'); // the row list counts as Layout
+    if (aisleError) badTabs.push('Aisles');
+    if (bulkError) badTabs.push('Reservations');
+    if (badTabs.length) {
+      signpost(`${nameList(badTabs)} ${badTabs.length > 1 ? 'have' : 'has'} errors.`);
+      return;
+    }
+    onSave(rows, reserved);
+  };
 
   const steps = [
     { key: 'rows', n: '1', label: 'Layout' },
@@ -278,23 +416,31 @@ export default function SeatBuilderOverlay({
             <h3 className="mb-1 px-1 text-xs font-semibold text-slate-600">Row/Seats Configuration</h3>
             {rows.length === 0 && <p className="px-1 py-1 text-xs text-slate-400">No rows yet - use Layout Settings to configure Rows and Seats per row.</p>}
             {rows.map((r, i) => (
-              <div key={i} className="mb-1 flex items-center gap-1">
-                <input
-                  value={r.rowLabel || ''} onChange={(e) => setRowLabel(i, e.target.value)}
-                  disabled={locked} aria-label={`Row ${i + 1} label`} maxLength={3}
-                  className={`w-10 rounded border border-slate-300 p-1 text-center text-xs font-bold ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
-                />
-                <input
-                  type="number" min="1" max="100"
-                  value={rowCountValue(i, r)}
-                  onChange={(e) => onRowCountChange(i, e.target.value)}
-                  onBlur={() => commitRowCount(i)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { commitRowCount(i); e.currentTarget.blur(); } }}
-                  disabled={locked} aria-label={`Row ${i + 1} seat count`}
-                  className={`w-14 rounded border border-slate-300 p-1 text-center text-xs ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
-                />
-                {!locked && (
-                  <button type="button" onClick={() => removeRow(i)} aria-label={`Remove row ${r.rowLabel}`} className="text-red-500 hover:text-red-700 text-xs px-1">x</button>
+              <div key={i} className="mb-1">
+                <div className="flex items-center gap-1">
+                  <input
+                    value={r.rowLabel || ''} onChange={(e) => setRowLabel(i, e.target.value)}
+                    disabled={locked} aria-label={`Row ${i + 1} label`} maxLength={3}
+                    className={`w-10 rounded border p-1 text-center text-xs font-bold ${rowErrors[i]?.label ? 'border-red-400' : 'border-slate-300'} ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                  />
+                  <input
+                    type="number" min="1" max="100"
+                    value={rowCountValue(i, r)}
+                    onChange={(e) => onRowCountChange(i, e.target.value)}
+                    onBlur={() => commitRowCount(i)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { commitRowCount(i); e.currentTarget.blur(); } }}
+                    disabled={locked} aria-label={`Row ${i + 1} seat count`}
+                    className={`w-14 rounded border p-1 text-center text-xs ${rowErrors[i]?.count ? 'border-red-400' : 'border-slate-300'} ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                  />
+                  {!locked && (
+                    <button type="button" onClick={() => removeRow(i)} aria-label={`Remove row ${r.rowLabel}`} className="text-red-500 hover:text-red-700 text-xs px-1">x</button>
+                  )}
+                </div>
+                {rowErrors[i]?.label && (
+                  <p className="px-1 text-[10px] font-medium text-red-600">{rowErrors[i].label === 'required' ? 'Row name must be 1-3 letters' : 'Row name already used'}</p>
+                )}
+                {rowErrors[i]?.count && (
+                  <p className="px-1 text-[10px] font-medium text-red-600">Seats must be 1-100.</p>
                 )}
               </div>
             ))}
@@ -382,11 +528,14 @@ export default function SeatBuilderOverlay({
                     <div className="mb-1 font-medium text-slate-700">Add Multiple Aisles</div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-slate-500">Aisle after seat</span>
-                      <input type="number" min="1" value={aisleSeat} onChange={(e) => setAisleSeat(e.target.value)} aria-label="Aisle seat number" className="w-14 rounded border border-slate-300 p-1 text-center" />
+                      <input type="number" min="1" value={aisleSeat} onChange={(e) => setAisleSeat(e.target.value)} aria-label="Aisle seat number" className={`w-14 rounded border p-1 text-center ${aisleError ? 'border-red-400' : 'border-slate-300'}`} />
                       <button type="button" onClick={applyAisleToAll} className="rounded border border-amber-400 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100">Apply to all rows</button>
                       <button type="button" onClick={removeAisleFromAll} className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">Remove from all rows</button>
                       <button type="button" onClick={clearAllAisles} disabled={!rows.some((r) => (r.walkwayPositions || []).length)} className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">Clear all aisles</button>
                     </div>
+                    {aisleError && (
+                      <p className="mt-1 text-xs font-medium text-red-600">No row has a seat after {aisleSeat}.</p>
+                    )}
                   </div>
                 </div>
               </>
@@ -407,10 +556,14 @@ export default function SeatBuilderOverlay({
                   <div className="sm:border-l sm:border-slate-200 sm:pl-4">
                     <div className="mb-1 font-medium text-slate-700">Bulk Reserve</div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <input type="text" value={bulkInput} onChange={(e) => setBulkInput(e.target.value.toUpperCase())} onKeyDown={(e) => { if (e.key === 'Enter') applyBulkReserve(); }} aria-label="Bulk reserve seats" placeholder="A1, A4-A6" className="w-40 rounded border border-slate-300 p-1" />
+                      <input type="text" value={bulkInput} onChange={(e) => { setBulkInput(e.target.value.toUpperCase()); if (bulkError) setBulkError(''); }} onBlur={checkBulkOnBlur} onKeyDown={(e) => { if (e.key === 'Enter') applyBulkReserve(); }} aria-label="Bulk reserve seats" placeholder="A1, A4-A6" className={`w-40 rounded border p-1 ${bulkError ? 'border-red-400' : 'border-slate-300'}`} />
                       <button type="button" onClick={applyBulkReserve} className="rounded border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">Apply</button>
                     </div>
-                    <p className="mt-1 text-xs italic text-slate-400">Type seats (e.g. A1, A4-A6) and Apply to reserve them in one go.</p>
+                    {bulkError ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{bulkError}</p>
+                    ) : (
+                      <p className="mt-1 text-xs italic text-slate-400">Type seats (e.g. A1, A4-A6) and Apply to reserve them in one go.</p>
+                    )}
                   </div>
                 </div>
                 {/* Seats Reserved summary - compact ranges, wraps to more lines as the list grows */}
@@ -435,23 +588,26 @@ export default function SeatBuilderOverlay({
             </div>
           )}
           <div className="min-h-0 min-w-0 flex-1 p-3">
-          <div ref={canvasRef} data-testid="builder-map" className="relative h-full w-full overflow-hidden rounded-md border border-slate-200">
+          <div ref={canvasRef} data-testid="builder-map" data-scale={scale} className="relative h-full w-full overflow-hidden rounded-md border border-slate-200">
           <TransformWrapper
             ref={zoomRef}
-            minScale={0.3} maxScale={4} initialScale={1}
+            minScale={fitScale} maxScale={MAX_SCALE} initialScale={1}
             limitToBounds={false}
             wheel={{ disabled: true }} doubleClick={{ step: 0.7 }}
-            onTransformed={(_ref, state) => { transformRef.current = { scale: state.scale, positionX: state.positionX, positionY: state.positionY }; setScale(state.scale); }}
+            onPinchStop={syncScaleFromLib}
+            onZoomStop={syncScaleFromLib}
           >
-            {({ zoomIn, zoomOut, resetTransform }) => (
+            {() => (
               <>
+                {/* Zoom toolbar inside the canvas, top-right, with the fit-to-screen icon (parity of the
+                    control set with the attendee map; the modal keeps it in-canvas). */}
                 <div className="absolute right-3 top-3 z-10 flex flex-col gap-1">
-                  <button type="button" onClick={() => { zoomIn(0.4); setScale((s) => Math.min(4, s + 0.4)); }} aria-label="Zoom in" className="h-8 w-8 rounded bg-white shadow border border-slate-200 text-slate-700">+</button>
-                  <button type="button" onClick={() => { zoomOut(0.4); setScale((s) => Math.max(0.3, s - 0.4)); }} aria-label="Zoom out" className="h-8 w-8 rounded bg-white shadow border border-slate-200 text-slate-700">-</button>
-                  <button type="button" onClick={() => { resetTransform(); setScale(1); }} aria-label="Fit" className="h-8 w-8 rounded bg-white shadow border border-slate-200 text-[10px] text-slate-700">Fit</button>
+                  <button type="button" onClick={() => zoomBy(0.3)} aria-label="Zoom in" className="h-8 w-8 rounded bg-white shadow border border-slate-200 text-slate-700">+</button>
+                  <button type="button" onClick={() => zoomBy(-0.3)} aria-label="Zoom out" className="h-8 w-8 rounded bg-white shadow border border-slate-200 text-slate-700">-</button>
+                  <button type="button" onClick={fitToView} aria-label="Fit" title="Fit to view" className="flex h-8 w-8 items-center justify-center rounded bg-white shadow border border-slate-200 text-slate-700"><MdFitScreen className="h-4 w-4" /></button>
                 </div>
-                <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full">
-                  <div className="mx-auto w-full px-8 py-6">
+                <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-max">
+                  <div ref={contentRef} className="mx-auto px-8 py-6">
                     {/* In-map legend, just above the stage (item 23). Top-to-bottom: legend, stage, hall. */}
                     <div className="mx-auto mb-2 flex w-max max-w-full flex-wrap items-center justify-center gap-3 rounded border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-700 shadow-sm" data-testid="map-legend">
                       <span className="flex items-center gap-1"><span className="h-3.5 w-3.5 rounded border border-teal-400 bg-teal-50" />Available</span>
@@ -472,25 +628,27 @@ export default function SeatBuilderOverlay({
                             const hasWalkway = (row.walkwayPositions || []).includes(pos);
                             return (
                               <span key={label} className="flex items-center">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleReserve(label, booked)}
-                                  disabled={booked || !canReserve}
-                                  aria-label={`Seat ${label}`}
-                                  data-status={status}
-                                  className={`group relative flex h-5 w-5 items-center justify-center rounded border text-[8px] font-medium ${seatClass(status)}`}
-                                >
-                                  {showNumbers ? (
-                                    seat.seatNumber
-                                  ) : (
-                                    <>
-                                      {/* Hovering a seat reveals its number in place (any tab), so the organiser
-                                          can read seat positions at the fitted/dot view without zooming in. */}
-                                      <MdEventSeat className="h-2.5 w-2.5 group-hover:opacity-0" />
-                                      <span className="absolute inset-0 hidden items-center justify-center font-semibold group-hover:flex">{seat.seatNumber}</span>
-                                    </>
-                                  )}
-                                </button>
+                                <div className="relative group">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleReserve(label, booked)}
+                                    disabled={booked || !canReserve}
+                                    aria-label={`Seat ${label}`}
+                                    data-status={status}
+                                    className={`flex h-5 w-5 items-center justify-center rounded border text-[8px] font-medium ${seatClass(status)}`}
+                                  >
+                                    {showNumbers ? seat.seatNumber : <MdEventSeat className="h-2.5 w-2.5" />}
+                                  </button>
+                                  {/* Shared hover card (parity with the attendee map): Row + Seat only, no status word, no price. */}
+                                  <div data-testid="seat-hover-card" className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 opacity-0 shadow-lg transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100">
+                                    <div className="flex items-baseline justify-center gap-1 text-slate-800">
+                                      <span className="text-[10px] uppercase tracking-wide text-slate-400">Row</span>
+                                      <span className="text-sm font-bold">{row.rowLabel}</span>
+                                      <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-400">Seat</span>
+                                      <span className="text-sm font-bold">{seat.seatNumber}</span>
+                                    </div>
+                                  </div>
+                                </div>
                                 {seatIndex < row.seats.length - 1 && (
                                   hasWalkway ? (
                                     <button

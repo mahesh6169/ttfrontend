@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { HiOutlineClock } from 'react-icons/hi';
 import { AiOutlineHourglass } from 'react-icons/ai';
 import { FaCheckCircle } from 'react-icons/fa';
+import { MdFitScreen } from 'react-icons/md';
 import axios from '@/utils/axiosConfig';
 
 import SeatButton from './SeatButton';
@@ -23,10 +24,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-// Selection is gated below this scale (seats too small to tap comfortably). Fitted view of a big hall
-// sits below it; a normal-sized hall fits at ~1 and stays selectable. Tunable in the feel-pass.
-const SELECT_THRESHOLD = 0.6;
-const MAX_SCALE = 2.5;
+const MAX_SCALE = 4; // unified with the builder (deep enough to read seat numbers) - events-seatmap-zoom-parity.md
 
 const SeatMapSelectionNoRedux = forwardRef(({ 
   event, 
@@ -62,10 +60,11 @@ const SeatMapSelectionNoRedux = forwardRef(({
   const zoomApiRef = useRef(null);    // TransformWrapper instance
   const [scale, setScale] = useState(1);
   const [fitScale, setFitScale] = useState(1);
-  const [everZoomed, setEverZoomed] = useState(false);
+  const [viewportH, setViewportH] = useState(null); // map box height, sized to the fitted hall (see fitToView)
   const anchorYRef = useRef(0); // screen-y of the hall's centre; the +/- controls zoom toward it
   const transformRef = useRef({ scale: 1, positionX: 0, positionY: 0 }); // last-known transform
-  const canSelect = scale >= SELECT_THRESHOLD;
+  const userAdjustedRef = useRef(false); // true once the user zooms/pans; freezes auto-fit (see fit effect)
+  const hasFittedOnceRef = useRef(false); // the first fit must always run, even if a stray touch flips the above
 
   // Calculate required seats
   const requiredSeats = ticketRequirement?.total || 0;
@@ -260,9 +259,9 @@ const SeatMapSelectionNoRedux = forwardRef(({
   const handleSeatClick = async (seatId, seatStatus) => {
     if (pendingOperation || isLoading) return;
 
-    // Zoom-gated: below the tap-size threshold, a tap does not select (it only pans/zooms). The hint
-    // chip tells the buyer to zoom in first. At/above the threshold, selection behaves as before.
-    if (!canSelect) return;
+    // A tap selects at ANY zoom (industry standard: the colour, the selected-seats summary and the card
+    // make selection visible and one more tap deselects, so no zoom-gate is needed). Zoom stays available
+    // as an optional aid for dense halls, not a requirement.
 
     if (seatStatus === 'booked' || seatStatus === 'disabled' || seatStatus === 'reserved') {
       return;
@@ -366,15 +365,23 @@ const SeatMapSelectionNoRedux = forwardRef(({
     const cw = content.offsetWidth || 1;
     const ch = content.offsetHeight || 1;
     const vw = vp.clientWidth;
-    // The container's maximum height (viewport-relative); the container shrinks to the hall below this.
+    // Upper bound on the box height (viewport-relative) so a very tall hall still caps and becomes pannable.
     const maxH = Math.round((window.innerHeight || 800) * (window.innerWidth < 640 ? 0.6 : 0.7));
     // Fill the width (small margin) rather than floating small; height overflow is pannable.
     const fit = Math.min((vw * 0.96) / cw, 1);
     const safeFit = Number.isFinite(fit) && fit > 0 ? fit : 1;
     const fittedH = ch * safeFit;
     const x = Math.max(0, (vw - cw * safeFit) / 2); // horizontally centred = the shared centreline
-    const y = 8; // stage top-aligned; the space below the hall is deliberate zoom room (item 21)
-    anchorYRef.current = y + fittedH / 2; // the +/- controls zoom toward the hall, not the empty room
+    // Generous but not wasteful breathing room above and below the hall; the box hugs the hall + this
+    // padding instead of a fixed 65vh (which left a big empty zone below a short hall - item 21 revisited).
+    const padTop = 12;
+    const padBottom = 40;
+    const y = padTop; // stage top-aligned
+    // Box height = the fitted hall plus padding, capped so tall halls stay pannable, floored so tiny halls
+    // still read as a map. Short halls now take only the room they need (no more page-space wastage).
+    const boxH = Math.round(Math.min(maxH, Math.max(200, fittedH + padTop + padBottom)));
+    anchorYRef.current = y + fittedH / 2; // the +/- controls zoom toward the hall centre
+    setViewportH(boxH);
     setFitScale(safeFit);
     setScale(safeFit);
     api.setTransform(x, y, safeFit, 0);
@@ -390,6 +397,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
     if (!api || !vp) return;
     const ts = transformRef.current;
     const oldScale = ts.scale || 1;
+    userAdjustedRef.current = true; // user is driving now - stop auto-fitting on data refreshes
     const newScale = Math.max(fitScale, Math.min(MAX_SCALE, oldScale + delta));
     if (newScale === oldScale) return;
     const px = vp.clientWidth / 2;
@@ -397,18 +405,77 @@ const SeatMapSelectionNoRedux = forwardRef(({
     const k = newScale / oldScale;
     const newX = px - (px - (ts.positionX || 0)) * k;
     const newY = py - (py - (ts.positionY || 0)) * k;
-    api.setTransform(newX, newY, newScale, 150);
+    // Instant (0ms) like the wheel and Fit: with onTransform now wired, a timed animation would report
+    // mid-animation scales and make the +/- step lag. Snappier and consistent across all zoom controls.
+    api.setTransform(newX, newY, newScale, 0);
     transformRef.current = { scale: newScale, positionX: newX, positionY: newY };
     setScale(newScale);
-    if (newScale >= SELECT_THRESHOLD) setEverZoomed(true);
   }, [fitScale]);
 
+  // Fixed-per-notch wheel zoom aimed at the cursor (ported from the builder for parity: fixed 10% per
+  // notch, floor = fitted view, cap = MAX_SCALE, no animation lag). Replaces the library's raw wheel.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return undefined;
+    const onWheel = (e) => {
+      const api = zoomApiRef.current;
+      if (!api?.setTransform) return;
+      e.preventDefault();
+      const ts = transformRef.current;
+      const old = ts.scale || 1;
+      const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1; // one notch = +/-10%, direction only
+      userAdjustedRef.current = true; // user is driving now - stop auto-fitting on data refreshes
+      const next = Math.max(fitScale, Math.min(MAX_SCALE, old * factor));
+      if (next === old) return;
+      const rect = el.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      const k = next / old;
+      const nx = cx - (cx - (ts.positionX || 0)) * k;
+      const ny = cy - (cy - (ts.positionY || 0)) * k;
+      api.setTransform(nx, ny, next, 0);
+      transformRef.current = { scale: next, positionX: nx, positionY: ny };
+      setScale(next);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [fitScale]);
+
+  // Keep our scale state in sync with the library's live pinch/zoom (its callback prop names are onPinch/
+  // onZoom/onTransform - the -ing/-ed variants silently never fire). Feeds the data-scale test hook.
+  // NB: this can also fire from fitToView's own setTransform, so it must NOT flip userAdjustedRef (that
+  // would freeze auto-fit after the first fit). The pinch/pan freeze is handled by onPinchStart/onPanningStart.
+  const syncScaleFromLib = (ref) => {
+    const s = ref?.state ?? ref?.instance?.state;
+    if (!s || typeof s.scale !== 'number') return;
+    transformRef.current = { scale: s.scale, positionX: s.positionX, positionY: s.positionY };
+    setScale(s.scale);
+  };
+
+  // Keep the whole hall fitted to the screen on load AND on every data refresh - UNTIL the user takes
+  // control by zooming or panning. The periodic fetch and socket updates replace the seatingLayout array;
+  // re-fitting on those is invisible while the view is still at the fitted default (self-correcting if the
+  // first measurement landed before layout settled), but once the user has zoomed/panned we freeze so their
+  // view never snaps back. Pressing Fit re-arms auto-fit (see the Fit button handler).
   useLayoutEffect(() => {
-    if (seatingLayout.length > 0 && !isLoading) {
-      // Wait a frame so the content has laid out before measuring.
-      const id = requestAnimationFrame(fitToView);
-      return () => cancelAnimationFrame(id);
-    }
+    if (seatingLayout.length === 0 || isLoading) return undefined;
+    // The FIRST fit ALWAYS runs, even if a stray touch during load flipped userAdjustedRef (on iPhone a
+    // page-scroll whose finger crosses the still-loading map reads as a pan/pinch). Only AFTER we have
+    // fitted once does a real user pan/zoom freeze auto-fit - so the map can never get stuck zoomed-in on load.
+    if (hasFittedOnceRef.current && userAdjustedRef.current) return undefined;
+    // Wait a frame so the content has laid out before measuring.
+    const raf1 = requestAnimationFrame(() => {
+      fitToView();
+      hasFittedOnceRef.current = true;
+    });
+    // Re-measure once more shortly after: on iPhone Safari the seat icons/fonts can settle a frame or two
+    // later, so the first measurement may under-read the hall width and skip the shrink. Skip if the user
+    // has meanwhile taken control.
+    let raf2;
+    const t = setTimeout(() => {
+      raf2 = requestAnimationFrame(() => { if (!userAdjustedRef.current) fitToView(); });
+    }, 200);
+    return () => { cancelAnimationFrame(raf1); clearTimeout(t); if (raf2) cancelAnimationFrame(raf2); };
   }, [seatingLayout, isLoading, fitToView]);
 
   // Check if can proceed to checkout
@@ -473,11 +540,25 @@ const SeatMapSelectionNoRedux = forwardRef(({
       
       {/* Selection count + reservation timer now live at page level (SeatSelectionPage) */}
 
+      {/* Zoom toolbar - sits OUTSIDE the map (owner call): the hint as plain teal text on the left, the
+          +/-/Fit buttons on the right, on both desktop and mobile. */}
+      {seatingLayout.length > 0 && (
+        <div className="mx-auto max-w-full flex items-center gap-2 mb-2">
+          <div className="ml-auto flex gap-1">
+            <button type="button" onClick={() => zoomBy(0.3)} aria-label="Zoom in" className="h-8 w-8 rounded-full bg-white shadow border border-slate-200 text-slate-700">+</button>
+            <button type="button" onClick={() => zoomBy(-0.3)} aria-label="Zoom out" className="h-8 w-8 rounded-full bg-white shadow border border-slate-200 text-slate-700">-</button>
+            <button type="button" onClick={() => { userAdjustedRef.current = false; fitToView(); }} aria-label="Fit view" title="Fit to view" className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow border border-slate-200 text-slate-700"><MdFitScreen className="h-4 w-4" /></button>
+          </div>
+        </div>
+      )}
+
       {/* Seat Map - one zoomable/pannable canvas (react-zoom-pan-pinch). The old drag-to-scroll and
           per-row overflow are gone; the whole hall fits on load, then pinch/wheel/drag to explore. */}
       <div
         ref={viewportRef}
         data-testid="seat-map-viewport"
+        data-scale={scale}
+        style={viewportH ? { height: `${viewportH}px` } : undefined}
         className={`relative border border-slate-200 rounded-md sm:rounded-lg max-w-full mx-auto h-[65vh] overflow-hidden bg-slate-50 ${
           (isLoading || pendingOperation) ? 'opacity-50 pointer-events-none' : ''
         }`}
@@ -492,27 +573,24 @@ const SeatMapSelectionNoRedux = forwardRef(({
             minScale={fitScale}
             maxScale={MAX_SCALE}
             initialScale={1}
-            limitToBounds={false}
+            limitToBounds={true}
+            centerZoomedOut={false}
             doubleClick={{ mode: 'zoomIn', step: 0.7 }}
-            wheel={{ step: 0.05 }}
+            wheel={{ disabled: true }}
             panning={{ velocityDisabled: true }}
-            onTransformed={(_r, s) => { transformRef.current = { scale: s.scale, positionX: s.positionX, positionY: s.positionY }; setScale(s.scale); if (s.scale >= SELECT_THRESHOLD) setEverZoomed(true); }}
+            onPanningStart={() => { userAdjustedRef.current = true; }}
+            onPinchStart={() => { userAdjustedRef.current = true; }}
+            onPinch={syncScaleFromLib}
+            onPinchStop={syncScaleFromLib}
+            onZoom={syncScaleFromLib}
+            onZoomStop={syncScaleFromLib}
+            onTransform={syncScaleFromLib}
           >
             {() => (
               <>
                 {/* Fixed chrome - stays put outside the zoom layer */}
                 {hasVenueLayout && (
                   <button type="button" onClick={onVenueClick} className="absolute left-2 top-2 z-20 rounded bg-white/90 px-2 py-1 text-xs font-medium text-teal-700 shadow border border-slate-200 hover:text-teal-800">Venue Layout</button>
-                )}
-                <div className="absolute right-2 top-2 z-20 flex flex-col gap-1">
-                  <button type="button" onClick={() => zoomBy(0.3)} aria-label="Zoom in" className="h-8 w-8 rounded-full bg-white shadow border border-slate-200 text-slate-700">+</button>
-                  <button type="button" onClick={() => zoomBy(-0.3)} aria-label="Zoom out" className="h-8 w-8 rounded-full bg-white shadow border border-slate-200 text-slate-700">-</button>
-                  <button type="button" onClick={fitToView} aria-label="Fit view" className="h-8 w-8 rounded-full bg-white shadow border border-slate-200 text-[10px] text-slate-700">Fit</button>
-                </div>
-                {!canSelect && !everZoomed && (
-                  <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-slate-800/90 px-3 py-1.5 text-xs font-medium text-white shadow" data-testid="zoom-hint">
-                    Pinch or double-tap to zoom in and pick seats
-                  </div>
                 )}
                 <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-max">
                   <div ref={contentRef} className="px-4 py-4">
