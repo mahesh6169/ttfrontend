@@ -132,8 +132,8 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await openBuilder(page);
     await generate(page, 2, 5);
     const seat = page.getByRole('button', { name: 'Seat A1', exact: true });
-    await expect(seat.getByText('1', { exact: true })).toBeHidden(); // fitted: dot; the number is the hover-only span
-    for (let i = 0; i < 5; i++) await page.getByLabel('Zoom in').click();
+    await expect(seat).toHaveText(''); // fitted: clean dot (icon only; the number is not in the button)
+    for (let i = 0; i < 3; i++) await page.getByLabel('Zoom in').click(); // past the number threshold (0.3 steps)
     await expect(seat).toHaveText('1'); // zoomed in: the number shows
   });
 
@@ -332,6 +332,159 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await page.getByRole('button', { name: 'Seat A1', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Seat A1', exact: true })).toHaveAttribute('data-status', 'reserved');
     await page.getByLabel('Zoom in').click(); // zoom control reachable/functional
+  });
+
+  // --- Validation (see featureplans/events-seatbuilder-validation.md) ---
+  test('V-AC1 renaming a row to a duplicate flags the edited row only; Save is blocked naming Layout', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 2, 10); // rows A, B
+    await page.getByLabel('Row 2 label').fill('A'); // B -> A, a duplicate of row 1
+    await expect(page.getByText('Row name already used')).toHaveCount(1); // only the edited (later) row
+    await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Layout has errors.')).toBeVisible();
+    await expect(page.getByTestId('seat-builder-overlay')).toBeVisible(); // not saved
+  });
+
+  test('V-AC2 clearing a row label to blank shows the 1-3 letters error and blocks Save', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 2, 10);
+    await page.getByLabel('Row 1 label').fill('');
+    await expect(page.getByText(/1-3 letters/i)).toBeVisible();
+    await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Layout has errors.')).toBeVisible();
+    await expect(page.getByTestId('seat-builder-overlay')).toBeVisible();
+  });
+
+  test('V-AC3 an aisle-after-seat past the end of every row shows the red error', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 2, 10);
+    await selectStep(page, 'Aisles');
+    await page.getByLabel('Aisle seat number').fill('15'); // both rows have only 10 seats
+    await expect(page.getByText(/No row has a seat after 15/i)).toBeVisible();
+  });
+
+  test('V-AC4 bulk reserve is all-or-nothing: one bad token applies nothing and names it; fixing applies all', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 2, 10);
+    await selectStep(page, 'Reservations');
+    await page.getByLabel('Bulk reserve seats').fill('A1, Z9');
+    await page.getByRole('button', { name: 'Apply', exact: true }).click();
+    await expect(page.getByText(/Not in your hall: Z9/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Seat A1', exact: true })).toHaveAttribute('data-status', 'available'); // nothing applied
+    // fix the bad token and re-apply -> all listed seats reserved at once
+    await page.getByLabel('Bulk reserve seats').fill('A1, A2');
+    await page.getByRole('button', { name: 'Apply', exact: true }).click();
+    await expect(page.getByLabel('Bulk reserve seats')).toHaveValue('');
+    await expect(page.getByRole('button', { name: 'Seat A1', exact: true })).toHaveAttribute('data-status', 'reserved');
+    await expect(page.getByRole('button', { name: 'Seat A2', exact: true })).toHaveAttribute('data-status', 'reserved');
+  });
+
+  test('V-AC5 shrinking a row silently drops an out-of-range aisle and reserved seat', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 1, 10);
+    await selectStep(page, 'Aisles');
+    await page.getByRole('button', { name: 'Add walkway after seat 8 in row A' }).click();
+    await expect(page.locator('[data-walkway="true"]')).toHaveCount(1);
+    await selectStep(page, 'Reservations');
+    await page.getByRole('button', { name: 'Seat A9', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Seat A9', exact: true })).toHaveAttribute('data-status', 'reserved');
+    // Shrink row A to 5 (the row list lives in the sidebar, visible on any tab).
+    const count = page.getByLabel('Row 1 seat count');
+    await count.fill('5');
+    await count.blur();
+    await expect(page.locator('[data-walkway="true"]')).toHaveCount(0);                    // aisle silently dropped
+    await expect(page.getByRole('button', { name: 'Seat A9', exact: true })).toHaveCount(0); // seat gone
+    await expect(page.getByText('None yet.')).toBeVisible();                                 // reserved A9 removed
+  });
+
+  test('V-AC6 red fields in two tabs give one toast naming both; fixing them lets Save succeed', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 2, 10);
+    // Reservations red: a bad bulk token.
+    await selectStep(page, 'Reservations');
+    await page.getByLabel('Bulk reserve seats').fill('Z9');
+    await page.getByRole('button', { name: 'Apply', exact: true }).click();
+    await expect(page.getByText(/Not in your hall: Z9/i)).toBeVisible();
+    // Layout red: a blank row label (the row list counts as Layout).
+    await page.getByLabel('Row 1 label').fill('');
+    await expect(page.getByText(/1-3 letters/i)).toBeVisible();
+    // Save blocked - ONE toast naming both tabs.
+    await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Layout and Reservations have errors.')).toBeVisible();
+    await expect(page.getByTestId('seat-builder-overlay')).toBeVisible(); // not saved
+    // Fix both -> Save succeeds (overlay closes).
+    await page.getByLabel('Row 1 label').fill('A');
+    await page.getByLabel('Bulk reserve seats').fill('');
+    await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByTestId('seat-builder-overlay')).toBeHidden();
+  });
+
+  // --- Zoom parity (builder side) - see featureplans/events-seatmap-zoom-parity.md ---
+  const builderScale = async (page) => parseFloat(await page.getByTestId('builder-map').getAttribute('data-scale'));
+
+  test('Z-AC3 (builder) the +/- buttons change scale by 0.3', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 2, 20);
+    const a = await builderScale(page);
+    await page.getByLabel('Zoom in').click();
+    expect((await builderScale(page)) - a).toBeCloseTo(0.3, 1);
+    await page.getByLabel('Zoom out').click();
+    expect(await builderScale(page)).toBeCloseTo(a, 1);
+  });
+
+  test('Z-AC5 (builder) Fit lands the whole hall fitted and centred - no reset-to-100% at the origin', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 2, 80); // wide hall -> the fitted scale is width-bound (< 1)
+    const fit = await builderScale(page);
+    expect(fit).toBeLessThan(0.95); // fitted below 1 on open (not the old reset-to-1)
+    // zoom in and pan away
+    for (let i = 0; i < 3; i++) await page.getByLabel('Zoom in').click();
+    const m0 = await page.getByTestId('builder-map').boundingBox();
+    await page.mouse.move(m0.x + m0.width / 2, m0.y + m0.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(m0.x + 40, m0.y + 40, { steps: 6 });
+    await page.mouse.up();
+    // Fit -> back to the fitted scale (NOT 1), stage top-aligned and centred
+    await page.getByLabel('Fit').click();
+    expect(await builderScale(page)).toBeCloseTo(fit, 2);
+    const map = await page.getByTestId('builder-map').boundingBox();
+    const stage = await page.getByTestId('stage-bar').boundingBox();
+    expect(stage.y - map.y).toBeLessThan(map.height * 0.35); // top-aligned, not centred mid-screen
+    expect(Math.abs((stage.x + stage.width / 2) - (map.x + map.width / 2))).toBeLessThan(map.width * 0.06); // ~centred
+  });
+
+  test('Z-AC6 (builder) hovering a seat shows the shared card; the zoomed-in numbers still appear', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 2, 10);
+    const seat = page.getByRole('button', { name: 'Seat A2', exact: true });
+    await seat.hover();
+    const card = seat.locator('xpath=..').getByTestId('seat-hover-card');
+    await expect(card).toContainText('Row');
+    await expect(card).toContainText('Seat');
+    await expect(card).toContainText('2');
+    await expect(card).not.toContainText('Available'); // no status word - Row + Seat only
+    expect(await card.innerText()).not.toContain('$');
+    // the builder's always-numbers-when-zoomed feature is unchanged (card replaces hover only)
+    for (let i = 0; i < 3; i++) await page.getByLabel('Zoom in').click();
+    await expect(seat).toHaveText('2');
   });
 });
 

@@ -2,7 +2,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MdEventSeat } from 'react-icons/md';
 
 const SeatButton = ({
@@ -14,6 +14,17 @@ const SeatButton = ({
   disabled = false,
   userId = null,
 }) => {
+  // Tap-driven card reveal for mobile: a tap shows the Row/Seat card for ~2s then fades (desktop still
+  // uses CSS hover). Hooks stay above the early return below so their order never changes between renders.
+  const [tapCard, setTapCard] = useState(false);
+  const tapTimerRef = useRef(null);
+  useEffect(() => () => { if (tapTimerRef.current) clearTimeout(tapTimerRef.current); }, []);
+  const revealCard = () => {
+    setTapCard(true);
+    if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+    tapTimerRef.current = setTimeout(() => setTapCard(false), 2000);
+  };
+
   // ✅ ENHANCED: Better safety checks with detailed logging
   if (!seat || !row) {
     console.warn('⚠️ SeatButton: Missing required props', { seat: !!seat, row: !!row });
@@ -71,16 +82,6 @@ const SeatButton = ({
 
   const status = getSeatStatus();
 
-  // Hover card (item 22): the status word in its legend colour. No pricing - this platform has none.
-  const STATUS_WORD = {
-    available: 'Available', selected: 'Selected', 'selected-by-other': 'Hold',
-    booked: 'Sold', reserved: 'Reserved', disabled: 'Unavailable',
-  };
-  const STATUS_COLOR = {
-    available: 'text-teal-700', selected: 'text-teal-700', 'selected-by-other': 'text-amber-600',
-    booked: 'text-red-600', reserved: 'text-purple-700', disabled: 'text-slate-500',
-  };
-
   // ✅ MOBILE ENHANCED: Improved styling with better mobile UX and compact design
   const getSeatStyles = () => {
     const baseStyles =
@@ -90,7 +91,10 @@ const SeatButton = ({
       case 'selected':
         return `${baseStyles} bg-teal-700 text-white border-teal-800 shadow-md`;
       case 'available':
-        return `${baseStyles} bg-teal-50 text-teal-700 border-teal-400 hover:bg-teal-100 hover:border-teal-500 hover:shadow-sm`;
+        // Hover styling is gated to true hover devices ([@media(hover:hover)]). On touch screens a
+        // "sticky hover" would (a) pin the card open past its 2s timer and (b) make the FIRST tap only
+        // trigger hover (revealing the card) instead of firing the click - so the seat never selects.
+        return `${baseStyles} bg-teal-50 text-teal-700 border-teal-400 [@media(hover:hover)]:hover:bg-teal-100 [@media(hover:hover)]:hover:border-teal-500 [@media(hover:hover)]:hover:shadow-sm`;
       case 'selected-by-other':
         return `${baseStyles} bg-amber-400 text-amber-900 border-amber-500 cursor-not-allowed`;
       case 'booked':
@@ -132,8 +136,11 @@ const SeatButton = ({
   // ✅ IMPROVED: Enhanced click handling with logging
   const handleClick = (e) => {
     e?.preventDefault();
-    
-    const canClick = !disabled && 
+
+    // Tapping a seat always shows its Row/Seat card (mobile), AND still selects it when allowed - do both.
+    revealCard();
+
+    const canClick = !disabled &&
                     status !== 'booked' && 
                     status !== 'reserved' && 
                     status !== 'disabled' && 
@@ -203,7 +210,6 @@ const SeatButton = ({
           status === 'disabled' ||
           status === 'selected-by-other'
         }
-        title={getTooltipText()}
         {...getAriaAttributes()}
       >
         {getSeatIcon()}
@@ -229,31 +235,22 @@ const SeatButton = ({
         )}
       </button>
 
-      {/* Hover card (item 22): Row + Seat prominent, status word in its legend colour, no price. Shows
-          on desktop hover; mobile is unchanged (the tap/active reveal and the on-map chip stay). */}
+      {/* Row + Seat card, no status word (the seat colour + legend already say the state) and no price.
+          Desktop: shows on hover. Mobile: a tap reveals it for ~2s then it fades (tapCard). Compact on
+          mobile so it covers fewer neighbours. pointer-events-none so it never blocks a tap. */}
       <div
         data-testid="seat-hover-card"
-        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20 shadow-lg"
+        className={`absolute top-full left-1/2 -translate-x-1/2 mt-1.5 rounded-md sm:rounded-lg border border-slate-200 bg-white px-2 py-1 sm:px-3 sm:py-2 ${tapCard ? 'opacity-100' : 'opacity-0'} [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-30 shadow-lg`}
       >
-        <div className="flex items-baseline justify-center gap-1 text-slate-800">
-          <span className="text-[10px] uppercase tracking-wide text-slate-400">Row</span>
-          <span className="text-sm font-bold">{safeRow.rowLabel}</span>
-          <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-400">Seat</span>
-          <span className="text-sm font-bold">{safeSeat.seatNumber}</span>
-        </div>
-        <div className={`text-center text-xs font-semibold ${STATUS_COLOR[status] || 'text-slate-600'}`}>
-          {STATUS_WORD[status] || 'Seat'}
+        <div className="flex items-baseline justify-center gap-0.5 sm:gap-1 text-slate-800">
+          <span className="text-[9px] sm:text-[10px] uppercase tracking-wide text-slate-400">Row</span>
+          <span className="text-xs sm:text-sm font-bold">{safeRow.rowLabel}</span>
+          <span className="ml-1.5 sm:ml-2 text-[9px] sm:text-[10px] uppercase tracking-wide text-slate-400">Seat</span>
+          <span className="text-xs sm:text-sm font-bold">{safeSeat.seatNumber}</span>
         </div>
         {/* Card arrow */}
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-white"></div>
       </div>
-
-      {/* ✅ NEW: Debug info (only in development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          {safeSeat.seatId}
-        </div>
-      )}
     </div>
   );
 };
