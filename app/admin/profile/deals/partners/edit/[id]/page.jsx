@@ -57,7 +57,7 @@ export default function EditPartnerStorePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-slate-50 py-8">
         <div className="container mx-auto px-4 flex justify-center">
           <LoadingSpinner />
         </div>
@@ -67,9 +67,9 @@ export default function EditPartnerStorePage() {
 
   if (!partnerStore) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-slate-50 py-8">
         <div className="container mx-auto px-4">
-          <p className="text-center text-gray-500">Partner store not found</p>
+          <p className="text-center text-slate-500">Partner store not found</p>
         </div>
       </div>
     );
@@ -77,7 +77,7 @@ export default function EditPartnerStorePage() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto py-6 sm:py-8">
-      <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Edit Business</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6">Edit Business</h1>
       <PartnerStoreForm
         initialData={partnerStore}
         onSubmit={handleSubmit}

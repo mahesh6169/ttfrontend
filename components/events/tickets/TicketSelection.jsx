@@ -235,16 +235,16 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-lg">
+        <div className="sticky top-0 bg-white border-b border-slate-200 p-6 rounded-t-lg">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">
                 Select Tickets
               </h2>
-              <h3 className="text-lg text-gray-600 mb-4">{event.title}</h3>
+              <h3 className="text-lg text-slate-600 mb-4">{event.title}</h3>
               
               {/* Event Info */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
                 <div className="flex items-center">
                   <FaCalendarAlt className="mr-2 text-blue-600" />
                   <span>{date}</span>
@@ -268,9 +268,9 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
             
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors"
             >
-              <FaTimes className="text-gray-500" />
+              <FaTimes className="text-slate-500" />
             </button>
           </div>
         </div>
@@ -295,15 +295,15 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
                   key={ticketType._id}
                   className={`border rounded-lg p-4 transition-all ${
                     isAvailable 
-                      ? 'border-gray-200 hover:border-blue-300 hover:shadow-md' 
-                      : 'border-gray-100 bg-gray-50'
+                      ? 'border-slate-200 hover:border-blue-300 hover:shadow-md' 
+                      : 'border-slate-100 bg-slate-50'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     {/* Ticket Info */}
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
-                        <h5 className="font-semibold text-gray-900">
+                        <h5 className="font-semibold text-slate-900">
                           {ticketType.name}
                         </h5>
                         <div className="text-right">
@@ -314,7 +314,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
                       </div>
                       
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center text-sm text-gray-600">
+                        <div className="flex items-center text-sm text-slate-600">
                           <FaUsers className="mr-1" />
                           <span>
                             {isAvailable 
@@ -330,7 +330,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
                             <button
                               onClick={() => handleQuantityChange(ticketType._id, -1)}
                               disabled={selectedQty === 0 || loading.initializing}
-                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <FaMinus className="text-xs" />
                             </button>
@@ -346,7 +346,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
                                 selectedQty >= (event.maxAttendeesPerRegistration || 10) ||
                                 loading.initializing
                               }
-                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <FaPlus className="text-xs" />
                             </button>
@@ -356,7 +356,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
                       
                       {/* Date restrictions */}
                       {(ticketType.startDate || ticketType.expiryDate) && (
-                        <div className="mt-2 text-xs text-gray-500">
+                        <div className="mt-2 text-xs text-slate-500">
                           {ticketType.startDate && (
                             <span>Available from {new Date(ticketType.startDate).toLocaleDateString()}</span>
                           )}
@@ -375,7 +375,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
 
           {/* Order Summary */}
           {totals.totalQuantity > 0 && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="bg-slate-50 rounded-lg p-4 mb-6">
               <h4 className="text-lg font-semibold flex items-center mb-4">
                 <FaCalculator className="mr-2 text-green-600" />
                 Order Summary
@@ -525,9 +525,9 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 rounded-b-lg">
+        <div className="sticky bottom-0 bg-white border-t border-slate-200 p-6 rounded-b-lg">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-slate-600">
               {totals.totalQuantity > 0 ? (
                 <span>
                   {totals.totalQuantity} ticket{totals.totalQuantity !== 1 ? 's' : ''} selected
@@ -542,7 +542,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
               <button
                 onClick={onClose}
                 disabled={loading.initializing}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="px-6 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -555,7 +555,7 @@ const TicketSelection = ({ event, isOpen, onClose }) => {
                     ? hasSeatingLayout
                       ? 'bg-purple-600 hover:bg-purple-700 text-white'
                       : 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
                 }`}
               >
                 {isLoading || loading.initializing ? (

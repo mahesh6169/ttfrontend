@@ -21,22 +21,25 @@ test.describe('seat builder overlay (organiser edit)', () => {
 
   const gotoStep3 = async (page, eventId) => {
     await page.goto(`/events/edit/${eventId}`);
-    await page.getByRole('button', { name: 'Next →' }).click();
-    await page.getByRole('button', { name: 'Next →' }).click();
-    await expect(page.getByRole('button', { name: /Configure Seating|Open seat builder/ })).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('button', { name: 'Seat Builder' })).toBeVisible({ timeout: 20_000 });
   };
   const openBuilder = async (page) => {
-    await page.getByRole('button', { name: /Configure Seating|Open seat builder/ }).click();
+    await page.getByRole('button', { name: 'Seat Builder' }).click();
     await expect(page.getByTestId('seat-builder-overlay')).toBeVisible({ timeout: 15_000 });
   };
   // Sidebar layout: only the active step's tool is on screen, and canvas edits are gated to their tab.
   const selectStep = async (page, name) => {
     await page.getByRole('tab', { name }).click();
   };
-  // Layout calculator: type Rows/Seats (start empty), then the "Add" button creates the hall.
+  // Layout calculator: type Rows/Seats (start empty), then the "Add" button creates the hall. On mobile
+  // the calculator lives in the bottom sheet, so open the Layout tool first (a no-op on desktop where the
+  // tool is inline; Layout is the default active tab).
   const generate = async (page, rows, seats) => {
-    await page.getByLabel('Rows').fill(String(rows));
-    await page.getByLabel('Seats per row').fill(String(seats));
+    await page.getByRole('tab', { name: 'Layout' }).click();
+    await page.getByLabel('Number Of Rows').fill(String(rows));
+    await page.getByLabel('Seats Per Row').fill(String(seats));
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(page.getByRole('button', { name: `Seat A${seats}`, exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: `Seat A${seats + 1}`, exact: true })).toHaveCount(0);
@@ -67,13 +70,13 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await gotoStep3(page, seed.builderEmptyEventId);
     await openBuilder(page);
 
-    await page.getByLabel('Rows').fill('10');
-    await page.getByLabel('Seats per row').fill('40');
+    await page.getByLabel('Number Of Rows').fill('10');
+    await page.getByLabel('Seats Per Row').fill('40');
     await page.getByRole('button', { name: 'Add', exact: true }).click();
 
     await expect(page.getByRole('button', { name: 'Seat A1', exact: true })).toBeVisible();
     await expect(page.getByTestId('stage-bar')).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Seat / })).toHaveCount(400);
+    await expect(page.getByTestId('seat-builder-overlay').getByRole('button', { name: /^Seat / })).toHaveCount(400);
     await expect(page.getByTestId('capacity-badge')).toContainText('Seating Capacity');
     await expect(page.getByTestId('capacity-badge')).toContainText('400');
   });
@@ -85,7 +88,8 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await generate(page, 1, 12);
     await selectStep(page, 'Aisles');
     await page.getByRole('button', { name: 'Add walkway after seat 4 in row A' }).click();
-    await page.getByRole('button', { name: 'Add Single Row' }).click();
+    await selectStep(page, 'Layout'); // Add Single Row is in the Layout tool (also in the rows-panel header)
+    await page.getByTestId('tool-panel').getByRole('button', { name: 'Add Single Row' }).click();
     // Row B: same 12 seats (B12 exists, B13 does not) and the copied walkway after seat 4.
     await expect(page.getByRole('button', { name: 'Seat B12', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Seat B13', exact: true })).toHaveCount(0);
@@ -155,7 +159,7 @@ test.describe('seat builder overlay (organiser edit)', () => {
     // Save then reopen -> the reserved list persisted.
     await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
     await expect(page.getByTestId('seat-builder-overlay')).toBeHidden();
-    await page.getByRole('button', { name: /Open seat builder/ }).click();
+    await page.getByRole('button', { name: 'Seat Builder' }).click();
     await selectStep(page, 'Reservations');
     await expect(page.getByRole('button', { name: 'Seat A5', exact: true })).toHaveAttribute('data-status', 'reserved');
     await expect(page.getByRole('button', { name: 'Seat A2', exact: true })).toHaveAttribute('data-status', 'reserved');
@@ -208,13 +212,13 @@ test.describe('seat builder overlay (organiser edit)', () => {
     expect(stage.y - map.y).toBeLessThan(map.height * 0.35); // near the top of the map (legend above), not centred
   });
 
-  test('P-AC10 (item 10) the Layout tool shows visible Rows / Seats per row labels', async ({ page }) => {
+  test('P-AC10 (item 10) the Layout tool shows visible Number Of Rows / Seats Per Row labels', async ({ page }) => {
     const seed = readSeed();
     await gotoStep3(page, seed.builderEmptyEventId);
     await openBuilder(page); // Layout step active by default
     const panel = page.getByTestId('tool-panel');
-    await expect(panel).toContainText('Rows');
-    await expect(panel).toContainText('Seats per row');
+    await expect(panel).toContainText('Number Of Rows');
+    await expect(panel).toContainText('Seats Per Row');
   });
 
   test('P-AC11 (item 11) the Add Single Row button exists (no Generate)', async ({ page }) => {
@@ -222,7 +226,7 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await gotoStep3(page, seed.builderEmptyEventId);
     await openBuilder(page);
     await generate(page, 1, 5); // Add Single Row appears once rows exist
-    await expect(page.getByRole('button', { name: 'Add Single Row' })).toBeVisible();
+    await expect(page.getByTestId('tool-panel').getByRole('button', { name: 'Add Single Row' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Generate', exact: true })).toHaveCount(0);
   });
 
@@ -312,13 +316,13 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await expect(sidebar.getByRole('tab', { name: 'Layout' })).toBeVisible();
     await expect(sidebar.getByRole('tab', { name: 'Aisles' })).toBeVisible();
     await expect(sidebar.getByRole('tab', { name: 'Reservations' })).toBeVisible();
-    await expect(sidebar.getByTestId('rows-panel')).toBeVisible();
+    await expect(page.getByTestId('rows-panel')).toBeVisible(); // now its own cell, no longer nested in the sidebar
     // one tool at a time: Layout shows the Seats-per-row input, not the Aisle input; swapping flips it.
-    await expect(page.getByLabel('Seats per row')).toBeVisible();
+    await expect(page.getByLabel('Seats Per Row')).toBeVisible();
     await expect(page.getByLabel('Aisle seat number')).toHaveCount(0);
     await selectStep(page, 'Aisles');
     await expect(page.getByLabel('Aisle seat number')).toBeVisible();
-    await expect(page.getByLabel('Seats per row')).toHaveCount(0);
+    await expect(page.getByLabel('Seats Per Row')).toHaveCount(0);
   });
 
   test('AC12 (mobile) overlay opens; add, reserve-click and zoom all work at a phone viewport', async ({ page }) => {
@@ -327,10 +331,12 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await gotoStep3(page, seed.builderEmptyEventId);
     await openBuilder(page);
     await generate(page, 2, 6);
-    await expect(page.getByRole('button', { name: /^Seat / })).toHaveCount(12);
+    await expect(page.getByTestId('seat-builder-overlay').getByRole('button', { name: /^Seat / })).toHaveCount(12);
     await selectStep(page, 'Reservations');
+    await page.getByRole('button', { name: 'Done' }).click(); // dismiss the tool sheet to tap the map
     await page.getByRole('button', { name: 'Seat A1', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Seat A1', exact: true })).toHaveAttribute('data-status', 'reserved');
+    await page.getByRole('button', { name: 'Done' }).click(); // reserving pops the sheet; dismiss to reach the map/zoom
     await page.getByLabel('Zoom in').click(); // zoom control reachable/functional
   });
 

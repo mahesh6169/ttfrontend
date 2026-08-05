@@ -88,7 +88,7 @@ const StoreImageUploader = ({
       {/* Existing Logo Section (only for edit mode) */}
       {isEditMode && existingLogo && !preview && (
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Current Logo</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Current Logo</label>
           <div className="relative inline-block">
             <img
               src={existingLogo.url}
@@ -99,7 +99,7 @@ const StoreImageUploader = ({
               }}
             />
             {existingLogo.originalFilename && (
-              <p className="text-xs text-gray-600 mt-1 truncate w-32" title={existingLogo.originalFilename}>
+              <p className="text-xs text-slate-600 mt-1 truncate w-32" title={existingLogo.originalFilename}>
                 {existingLogo.originalFilename}
               </p>
             )}
@@ -118,7 +118,7 @@ const StoreImageUploader = ({
       {/* New Logo Preview Section */}
       {preview && (
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">New Logo Preview</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">New Logo Preview</label>
           <div className="relative inline-block">
             <img
               src={preview}
@@ -126,7 +126,7 @@ const StoreImageUploader = ({
               className="w-32 h-32 object-contain border rounded bg-white p-2"
             />
             {formData.logo?.name && (
-              <p className="text-xs text-gray-600 mt-1 truncate w-32" title={formData.logo.name}>
+              <p className="text-xs text-slate-600 mt-1 truncate w-32" title={formData.logo.name}>
                 {formData.logo.name}
               </p>
             )}
@@ -144,9 +144,9 @@ const StoreImageUploader = ({
 
       {/* Upload Section */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           {hasLogo ? 'Replace Logo' : 'Upload Logo'}
-          <span className="block text-xs font-normal text-gray-500 mt-1">
+          <span className="block text-xs font-normal text-slate-500 mt-1">
             PNG • Max 2MB • Recommended: 800×400px (Desktop and Mobile)
           </span>
         </label>
@@ -155,7 +155,7 @@ const StoreImageUploader = ({
           accept="image/jpeg,image/jpg,image/png,image/webp"
           onChange={handleFileChange}
           ref={fileInputRef}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
+          className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
         />
       </div>
     </div>

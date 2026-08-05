@@ -123,7 +123,7 @@ const CreateThreadPage = () => {
 
       {!isLoggedIn ? (
         <div className="border rounded-lg p-4 shadow-md bg-white text-center">
-          <p className="text-gray-700 mb-4">
+          <p className="text-slate-700 mb-4">
             You must be logged in to add a new thread.
           </p>
           <div className="flex justify-center space-x-4">
@@ -220,7 +220,7 @@ const CreateThreadPage = () => {
             </button>
             <button
               type="button"
-              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-400"
+              className="bg-slate-600 text-white px-4 py-2 rounded hover:bg-slate-400"
               onClick={() => {
                 const backTo = localStorage.getItem('cancelRedirectUrl');
                 localStorage.removeItem('cancelRedirectUrl');

@@ -85,7 +85,7 @@ export default function EditStorePage() {
 
   if (isLoading || !store) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-slate-50 py-8">
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
@@ -96,11 +96,11 @@ export default function EditStorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-slate-50 py-8">
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Edit Store</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-slate-800">Edit Store</h1>
+          <p className="text-slate-600 mt-2">
             Update store details for {store.storeName}
           </p>
         </div>
@@ -114,7 +114,7 @@ export default function EditStorePage() {
         {campaigns.length > 0 && (
           <div className="mt-8 bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Campaigns</h2>
+              <h2 className="text-xl font-semibold text-slate-800">Campaigns</h2>
               <button
                 onClick={() => router.push(`/admin/profile/stores/${storeId}/campaigns`)}
                 className="text-teal-600 hover:text-teal-700 font-medium text-sm"
@@ -132,8 +132,8 @@ export default function EditStorePage() {
                   <div className="flex items-center gap-3">
                     <MdCampaign className="text-teal-600 w-5 h-5" />
                     <div>
-                      <p className="font-medium text-gray-900">{campaign.discount}</p>
-                      <p className="text-sm text-gray-600">{campaign.discountProduct}</p>
+                      <p className="font-medium text-slate-900">{campaign.discount}</p>
+                      <p className="text-sm text-slate-600">{campaign.discountProduct}</p>
                     </div>
                   </div>
                   
@@ -141,12 +141,12 @@ export default function EditStorePage() {
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                       campaign.isActive
                         ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-700'
+                        : 'bg-slate-100 text-slate-700'
                     }`}>
                       {campaign.isActive ? 'Active' : 'Inactive'}
                     </span>
                     
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-slate-500">
                       {campaign.totalGenerated || 0} / {campaign.maxRedemptions || '∞'}
                     </span>
                   </div>
@@ -154,7 +154,7 @@ export default function EditStorePage() {
               ))}
               
               {campaigns.length > 5 && (
-                <p className="text-sm text-gray-500 text-center pt-2">
+                <p className="text-sm text-slate-500 text-center pt-2">
                   and {campaigns.length - 5} more...
                 </p>
               )}

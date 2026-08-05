@@ -59,9 +59,9 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
       {/* Event Type */}
       <div>
         <div className="flex items-baseline gap-4">
-          <label className="text-sm sm:text-base font-medium text-slate-600 whitespace-nowrap">
-            Event Type <span className="text-red-500">*</span>
-            {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
+          <label className="text-sm font-medium text-slate-700 whitespace-nowrap">
+            Event Type <span className="text-red-600">*</span>
+            {isEditMode && <span className="text-xs font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
           </label>
 
           <div className={`flex items-center ${isLocked ? 'opacity-60' : ''}`}>
@@ -69,7 +69,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
               type="button"
               onClick={() => handleIntentSelect('host')}
               disabled={isLocked}
-              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
+              className={`pb-1 text-sm border-b-2 transition-colors ${
                 currentIntent === 'host'
                   ? 'text-teal-700 font-semibold border-teal-700'
                   : 'text-slate-500 border-transparent hover:text-slate-700'
@@ -82,7 +82,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
               type="button"
               onClick={() => handleIntentSelect('promote')}
               disabled={isLocked}
-              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
+              className={`pb-1 text-sm border-b-2 transition-colors ${
                 currentIntent === 'promote'
                   ? 'text-teal-700 font-semibold border-teal-700'
                   : 'text-slate-500 border-transparent hover:text-slate-700'
@@ -93,7 +93,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
           </div>
         </div>
         {errors?.eventIntent && (
-          <p className="text-red-500 text-xs sm:text-sm mt-1">
+          <p className="text-red-600 text-xs mt-1">
             {Array.isArray(errors.eventIntent) ? errors.eventIntent[0] : errors.eventIntent}
           </p>
         )}
@@ -102,9 +102,9 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
       {/* Free/Paid Toggle - Only shown when "Host" is selected */}
       {currentIntent === 'host' && (
         <div className="flex items-baseline gap-4">
-          <label className="font-medium text-slate-600 text-sm sm:text-base whitespace-nowrap">
-            Ticket Type <span className="text-red-500">*</span>
-            {isEditMode && <span className="text-xs sm:text-sm font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
+          <label className="font-medium text-slate-700 text-sm whitespace-nowrap">
+            Ticket Type <span className="text-red-600">*</span>
+            {isEditMode && <span className="text-xs font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
           </label>
 
           <div className={`flex items-center ${isLocked ? 'opacity-60' : ''}`}>
@@ -112,7 +112,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
               type="button"
               onClick={() => handlePaidToggle(false)}
               disabled={isLocked}
-              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
+              className={`pb-1 text-sm border-b-2 transition-colors ${
                 isPaid === false
                   ? 'text-teal-700 font-semibold border-teal-700'
                   : 'text-slate-500 border-transparent hover:text-slate-700'
@@ -125,7 +125,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
               type="button"
               onClick={() => handlePaidToggle(true)}
               disabled={isLocked}
-              className={`pb-1 text-sm sm:text-base border-b-2 transition-colors ${
+              className={`pb-1 text-sm border-b-2 transition-colors ${
                 isPaid === true
                   ? 'text-teal-700 font-semibold border-teal-700'
                   : 'text-slate-500 border-transparent hover:text-slate-700'
@@ -234,8 +234,8 @@ const BasicInfoStep = ({
 
   // Field styling helper
   const getFieldClasses = (fieldName) => {
-    const baseClasses = 'w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2';
-    const errorClasses = errors?.[fieldName] ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300';
+    const baseClasses = 'w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2';
+    const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300 focus:border-teal-400';
     const readOnlyClasses = disabled
       ? 'bg-slate-100 cursor-not-allowed text-slate-600'
       : '';
@@ -330,8 +330,8 @@ const BasicInfoStep = ({
         <>
           {/* Title */}
           <div>
-            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-              Event Title <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Event Title <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
@@ -344,7 +344,7 @@ const BasicInfoStep = ({
               maxLength="200"
             />
             {errors?.title && (
-              <p className="text-red-500 text-xs sm:text-sm mt-1">
+              <p className="text-red-600 text-xs mt-1">
                 {Array.isArray(errors.title) ? errors.title[0] : errors.title}
               </p>
             )}
@@ -352,8 +352,8 @@ const BasicInfoStep = ({
 
           {/* Category */}
           <div>
-            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-              Category <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Category <span className="text-red-600">*</span>
             </label>
             {disabled ? (
               <input
@@ -376,7 +376,7 @@ const BasicInfoStep = ({
               />
             )}
             {errors?.category && (
-              <p className="text-red-500 text-xs sm:text-sm mt-1">
+              <p className="text-red-600 text-xs mt-1">
                 {Array.isArray(errors.category) ? errors.category[0] : errors.category}
               </p>
             )}
@@ -396,8 +396,8 @@ const BasicInfoStep = ({
 
           {/* Description */}
           <div>
-            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-              Description <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Description <span className="text-red-600">*</span>
             </label>
             <textarea
               name="description"
@@ -412,12 +412,12 @@ const BasicInfoStep = ({
             <div className="flex justify-between items-start gap-2 mt-1">
               <div className="flex-1">
                 {errors?.description && (
-                  <p className="text-red-500 text-xs sm:text-sm">
+                  <p className="text-red-600 text-xs">
                     {Array.isArray(errors.description) ? errors.description[0] : errors.description}
                   </p>
                 )}
               </div>
-              <span className="text-xs text-slate-400 whitespace-nowrap">
+              <span className="text-xs text-slate-500 whitespace-nowrap">
                 {(formData.description || '').length}/15000
               </span>
             </div>
@@ -427,8 +427,8 @@ const BasicInfoStep = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Time Zone */}
             <div>
-              <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-                Timezone <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Timezone <span className="text-red-600">*</span>
                 {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-500 ml-2">(Locked)</span>}
               </label>
               {disabled || (isEditMode && isRecurringEvent) ? (
@@ -436,7 +436,7 @@ const BasicInfoStep = ({
                   type="text"
                   value={AU_TIMEZONES.find(tz => tz.value === formData.timeZone)?.label || 'No timezone selected'}
                   disabled={true}
-                  className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg bg-slate-100 text-slate-600 cursor-not-allowed"
+                  className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-slate-100 text-slate-600 cursor-not-allowed"
                 />
               ) : (
                 <TimezoneSelector
@@ -448,7 +448,7 @@ const BasicInfoStep = ({
                 />
               )}
               {errors?.timeZone && (
-                <p className="text-red-500 text-xs sm:text-sm mt-1">
+                <p className="text-red-600 text-xs mt-1">
                   {Array.isArray(errors.timeZone) ? errors.timeZone[0] : errors.timeZone}
                 </p>
               )}
@@ -456,8 +456,8 @@ const BasicInfoStep = ({
 
             {/* Date & Time */}
             <div>
-              <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-                Date & Time <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Date & Time <span className="text-red-600">*</span>
                 {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-500 ml-2">(Locked)</span>}
               </label>
               <DateTimePicker
@@ -468,7 +468,7 @@ const BasicInfoStep = ({
                 error={!!errors?.dateTime}
               />
               {errors?.dateTime && (
-                <p className="text-red-500 text-xs sm:text-sm mt-1">
+                <p className="text-red-600 text-xs mt-1">
                   {Array.isArray(errors.dateTime) ? errors.dateTime[0] : errors.dateTime}
                 </p>
               )}
@@ -479,7 +479,7 @@ const BasicInfoStep = ({
       {canShowRecurring && (
         <div>
           <label className="cursor-pointer">
-            <span className="block font-medium text-slate-600 text-sm sm:text-base">
+            <span className="block text-sm font-medium text-slate-700">
               Recurring Event
               {isEditMode && <span className="text-xs font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
             </span>
@@ -492,7 +492,7 @@ const BasicInfoStep = ({
               checked={formData.recurrence?.isRecurring || false}
               onChange={handleRecurringToggle}
               disabled={disabled || isEditMode}
-              className="w-5 h-5 text-teal-700 rounded focus:ring-teal-500 disabled:opacity-50"
+              className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300 disabled:opacity-50"
             />
           </label>
 
@@ -500,20 +500,20 @@ const BasicInfoStep = ({
             <div className="space-y-4 mt-4 pt-4 border-t border-slate-200">
               {/* Repeat Schedule */}
               <div className="space-y-3">
-                <label className="block font-medium text-slate-600 text-sm">
+                <label className="block text-sm font-medium text-slate-700">
                   Repeat Schedule
-                  {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-400 ml-2">(Locked)</span>}
+                  {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-500 ml-2">(Locked)</span>}
                 </label>
 
                 {(formData.recurrence?.repeatSchedule || []).map((schedule, index) => (
                   <div key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Day</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Day</label>
                       <select
                         value={schedule?.day || 'Mon'}
                         onChange={(e) => handleUpdateRepeatSchedule(index, 'day', e.target.value)}
                         disabled={disabled || (isEditMode && isRecurringEvent)}
-                        className={`w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 ${disabled ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                        className={`w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${disabled ? 'bg-slate-100 cursor-not-allowed' : ''}`}
                       >
                         <option value="Mon">Monday</option>
                         <option value="Tue">Tuesday</option>
@@ -526,14 +526,14 @@ const BasicInfoStep = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Time</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Time</label>
                       <input
                         type="time"
                         value={schedule?.time || '18:00'}
                         onChange={(e) => handleUpdateRepeatSchedule(index, 'time', e.target.value)}
                         disabled={disabled || (isEditMode && isRecurringEvent)}
                         onWheel={(e) => e.target.blur()}
-                        className={`w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 ${disabled ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                        className={`w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${disabled ? 'bg-slate-100 cursor-not-allowed' : ''}`}
                       />
                     </div>
 
@@ -541,7 +541,7 @@ const BasicInfoStep = ({
                       <button
                         type="button"
                         onClick={() => handleRemoveRepeatSchedule(index)}
-                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm"
+                        className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm"
                       >
                         Remove
                       </button>
@@ -563,7 +563,7 @@ const BasicInfoStep = ({
                 )}
 
                 {scheduleErrors.length > 0 && (
-                  <div className="text-red-500 text-xs sm:text-sm space-y-1 mt-1">
+                  <div className="text-red-600 text-xs space-y-1 mt-1">
                     {scheduleErrors.map((err, i) => <p key={i}>{err}</p>)}
                   </div>
                 )}
@@ -571,9 +571,9 @@ const BasicInfoStep = ({
 
               {/* End Date */}
               <div>
-                <label className="block font-medium mb-2 text-slate-600 text-sm">
-                  End Date <span className="text-red-500">*</span>
-                  {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-400 ml-2">(Locked)</span>}
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  End Date <span className="text-red-600">*</span>
+                  {isEditMode && isRecurringEvent && <span className="text-xs font-normal text-slate-500 ml-2">(Locked)</span>}
                 </label>
                 <input
                   type="date"
@@ -593,15 +593,15 @@ const BasicInfoStep = ({
                   required={formData.recurrence?.isRecurring}
                 />
                 {endDateError && (
-                  <p className="text-red-500 text-xs sm:text-sm mt-1">{endDateError}</p>
+                  <p className="text-red-600 text-xs mt-1">{endDateError}</p>
                 )}
                 {errors?.recurrenceEndDate && (
-                  <p className="text-red-500 text-xs sm:text-sm mt-1">
+                  <p className="text-red-600 text-xs mt-1">
                     {Array.isArray(errors.recurrenceEndDate) ? errors.recurrenceEndDate[0] : errors.recurrenceEndDate}
                   </p>
                 )}
                 {endDateRecurrenceErrors.length > 0 && (
-                  <div className="text-red-500 text-xs sm:text-sm space-y-1 mt-1">
+                  <div className="text-red-600 text-xs space-y-1 mt-1">
                     {endDateRecurrenceErrors.map((err, i) => <p key={i}>{err}</p>)}
                   </div>
                 )}
@@ -616,8 +616,8 @@ const BasicInfoStep = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Venue */}
         <div>
-          <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-            Venue <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Venue <span className="text-red-600">*</span>
           </label>
           <input
             type="text"
@@ -630,7 +630,7 @@ const BasicInfoStep = ({
             maxLength="200"
           />
           {errors?.venue && (
-            <p className="text-red-500 text-xs sm:text-sm mt-1">
+            <p className="text-red-600 text-xs mt-1">
               {Array.isArray(errors.venue) ? errors.venue[0] : errors.venue}
             </p>
           )}
@@ -670,7 +670,7 @@ const BasicInfoStep = ({
               mode={mode}
             />
             {errors?.images && (
-              <p className="text-red-500 text-xs sm:text-sm">
+              <p className="text-red-600 text-xs">
                 {Array.isArray(errors.images) ? errors.images[0] : errors.images}
               </p>
             )}

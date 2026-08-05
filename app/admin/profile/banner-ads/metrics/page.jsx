@@ -190,10 +190,10 @@ export default function MetricsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Banner Ad Metrics</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Banner Ad Metrics</h1>
         <button
           onClick={handleExport}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <FaDownload className="h-5 w-5 mr-2" />
           Export CSV
@@ -203,7 +203,7 @@ export default function MetricsPage() {
       {/* Filters */}
       <div className="bg-white shadow rounded-lg p-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium text-gray-900">Filters</h2>
+          <h2 className="text-lg font-medium text-slate-900">Filters</h2>
           <div className="flex gap-2">
             <button
               onClick={() => {
@@ -225,7 +225,7 @@ export default function MetricsPage() {
                   endDate: end.toISOString().split('T')[0]
                 });
               }}
-              className="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+              className="text-sm px-3 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200"
             >
               Last 7 Days
             </button>
@@ -240,7 +240,7 @@ export default function MetricsPage() {
                   endDate: end.toISOString().split('T')[0]
                 });
               }}
-              className="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+              className="text-sm px-3 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200"
             >
               Last 30 Days
             </button>
@@ -265,34 +265,34 @@ export default function MetricsPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Start Date</label>
+            <label className="block text-sm font-medium text-slate-700">Start Date</label>
             <input
               type="date"
               value={filters.startDate}
               onChange={(e) => updateFilters({ ...filters, startDate: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700">End Date</label>
+            <label className="block text-sm font-medium text-slate-700">End Date</label>
             <input
               type="date"
               value={filters.endDate}
               onChange={(e) => updateFilters({ ...filters, endDate: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Business {filters.businessId && <span className="text-blue-600 text-xs">(filtered)</span>}
             </label>
             <select
               value={filters.businessId}
               onChange={(e) => updateFilters({ ...filters, businessId: e.target.value })}
               className={`mt-1 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                filters.businessId ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                filters.businessId ? 'border-blue-500 bg-blue-50' : 'border-slate-300'
               }`}
             >
               <option value="">All Businesses</option>
@@ -305,11 +305,11 @@ export default function MetricsPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700">Placement</label>
+            <label className="block text-sm font-medium text-slate-700">Placement</label>
             <select
               value={filters.placementId}
               onChange={(e) => updateFilters({ ...filters, placementId: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">All Placements</option>
               {placements.map(p => (
@@ -321,11 +321,11 @@ export default function MetricsPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700">State</label>
+            <label className="block text-sm font-medium text-slate-700">State</label>
             <select
               value={filters.state}
               onChange={(e) => updateFilters({ ...filters, state: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">All States</option>
               {states.slice(1).map(s => (
@@ -338,11 +338,11 @@ export default function MetricsPage() {
 
       {/* Detailed Table - Moved here to be close to filters */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-slate-200">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-900">Detailed Metrics</h3>
+            <h3 className="text-lg font-medium text-slate-900">Detailed Metrics</h3>
             {filters.businessId && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-slate-500">
                 Filtered by: <span className="font-medium">{businesses.find(b => b.businessId === filters.businessId)?.name}</span>
               </span>
             )}
@@ -354,66 +354,66 @@ export default function MetricsPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           )}
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Ad ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Business
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Placement
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   State
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Device
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Impressions
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Clicks
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
                   CTR
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-slate-200">
               {metrics.slice(0, 50).map((metric, idx) => (
                 <tr key={idx}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                     {new Date(metric.date).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                     {metric.adId}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     {businesses.find(b => b._id === metric.businessId || b.businessId === metric.businessId)?.name || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     {metric.placementId}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     {metric.state}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     {metric.device || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">
                     {metric.impressions.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">
                     {metric.clicks.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">
                     {metric.impressions > 0 
                       ? ((metric.clicks / metric.impressions) * 100).toFixed(2) + '%'
                       : '0%'
@@ -425,12 +425,12 @@ export default function MetricsPage() {
           </table>
         </div>
         {metrics.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-slate-500">
             No metrics found for the selected filters.
           </div>
         )}
         {metrics.length > 50 && (
-          <div className="px-6 py-4 bg-gray-50 text-sm text-gray-500 text-center">
+          <div className="px-6 py-4 bg-slate-50 text-sm text-slate-500 text-center">
             Showing first 50 of {metrics.length} records. Export CSV for full data.
           </div>
         )}
@@ -442,8 +442,8 @@ export default function MetricsPage() {
           <div className="flex items-center">
             <FaChartBar className="h-10 w-10 text-blue-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Impressions</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-slate-500">Total Impressions</p>
+              <p className="text-2xl font-bold text-slate-900">
                 {totals.impressions.toLocaleString()}
               </p>
             </div>
@@ -454,8 +454,8 @@ export default function MetricsPage() {
           <div className="flex items-center">
             <FaChartBar className="h-10 w-10 text-green-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Clicks</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-slate-500">Total Clicks</p>
+              <p className="text-2xl font-bold text-slate-900">
                 {totals.clicks.toLocaleString()}
               </p>
             </div>
@@ -466,8 +466,8 @@ export default function MetricsPage() {
           <div className="flex items-center">
             <FaChartBar className="h-10 w-10 text-purple-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Average CTR</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-slate-500">Average CTR</p>
+              <p className="text-2xl font-bold text-slate-900">
                 {totals.ctr}%
               </p>
             </div>
@@ -479,18 +479,18 @@ export default function MetricsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Daily Trend */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Daily Performance</h3>
+          <h3 className="text-lg font-medium text-slate-900 mb-4">Daily Performance</h3>
           <div className="space-y-2">
             {chartData.daily.slice(-7).map(day => (
               <div key={day.date} className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-slate-600">
                   {new Date(day.date).toLocaleDateString()}
                 </span>
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-slate-900">
                     {day.impressions.toLocaleString()} imp
                   </span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-slate-900">
                     {day.clicks.toLocaleString()} clicks
                   </span>
                   <span className="text-sm font-medium text-blue-600">
@@ -504,16 +504,16 @@ export default function MetricsPage() {
 
         {/* By Placement */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Performance by Placement</h3>
+          <h3 className="text-lg font-medium text-slate-900 mb-4">Performance by Placement</h3>
           <div className="space-y-2">
             {chartData.byPlacement.slice(0, 8).map(item => (
               <div key={item.placementId} className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{item.placementId}</span>
+                <span className="text-sm text-slate-600">{item.placementId}</span>
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-slate-900">
                     {item.impressions.toLocaleString()} imp
                   </span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-slate-900">
                     {item.clicks.toLocaleString()} clicks
                   </span>
                   <span className="text-sm font-medium text-blue-600">
@@ -527,16 +527,16 @@ export default function MetricsPage() {
 
         {/* By State */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Performance by State</h3>
+          <h3 className="text-lg font-medium text-slate-900 mb-4">Performance by State</h3>
           <div className="space-y-2">
             {chartData.byState.map(item => (
               <div key={item.state} className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{item.state}</span>
+                <span className="text-sm text-slate-600">{item.state}</span>
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-slate-900">
                     {item.impressions.toLocaleString()} imp
                   </span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-slate-900">
                     {item.clicks.toLocaleString()} clicks
                   </span>
                   <span className="text-sm font-medium text-blue-600">
@@ -551,20 +551,20 @@ export default function MetricsPage() {
         {/* By Business */}
         {chartData.byBusiness.length > 0 && (
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Performance by Business</h3>
+            <h3 className="text-lg font-medium text-slate-900 mb-4">Performance by Business</h3>
             <div className="space-y-2">
               {chartData.byBusiness.map(item => {
                 const business = businesses.find(b => b._id === item.businessId || b.businessId === item.businessId);
                 return (
                   <div key={item.businessId} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-slate-600">
                       {business?.name || item.businessId}
                     </span>
                     <div className="flex items-center space-x-4">
-                      <span className="text-sm text-gray-900">
+                      <span className="text-sm text-slate-900">
                         {item.impressions.toLocaleString()} imp
                       </span>
-                      <span className="text-sm text-gray-900">
+                      <span className="text-sm text-slate-900">
                         {item.clicks.toLocaleString()} clicks
                       </span>
                       <span className="text-sm font-medium text-blue-600">

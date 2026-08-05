@@ -36,7 +36,7 @@ export default function CodeModal({ code, campaign, store, onClose }) {
         <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-end">
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-slate-400 hover:text-slate-600 transition-colors"
           >
             <MdClose size={24} />
           </button>
@@ -56,12 +56,12 @@ export default function CodeModal({ code, campaign, store, onClose }) {
 
           {/* User Code (5-digit only) */}
           <div className="text-center">
-            <div className={`border-2 rounded-lg p-3 ${isRedeemed ? 'bg-gray-100 border-gray-400' : 'bg-teal-50 border-teal-600'}`}>
-              <p className={`text-3xl font-bold font-mono tracking-widest ${isRedeemed ? 'text-gray-500' : 'text-teal-700'}`}>
+            <div className={`border-2 rounded-lg p-3 ${isRedeemed ? 'bg-slate-100 border-slate-400' : 'bg-teal-50 border-teal-600'}`}>
+              <p className={`text-3xl font-bold font-mono tracking-widest ${isRedeemed ? 'text-slate-500' : 'text-teal-700'}`}>
                 {userCode}
               </p>
               {isRedeemed && (
-                <p className="text-xs text-gray-600 mt-2">
+                <p className="text-xs text-slate-600 mt-2">
                   Redeemed on {format(new Date(code.redeemedAt), 'dd MMM yyyy')}
                 </p>
               )}
@@ -70,7 +70,7 @@ export default function CodeModal({ code, campaign, store, onClose }) {
 
           {/* View All Codes Link */}
           <div className="text-center pt-2">
-            <span className="text-sm text-gray-600">For more details </span>
+            <span className="text-sm text-slate-600">For more details </span>
             <button
               onClick={() => {
                 onClose();

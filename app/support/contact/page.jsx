@@ -1,5 +1,4 @@
 import ContactClient from './ContactClient';
-import Footer from '@/components/Footer';
 
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 
@@ -24,9 +23,6 @@ export const metadata = {
 
 export default function ContactPage() {
   return (
-    <>
-      <ContactClient />
-      <Footer />
-    </>
+    <ContactClient />
   );
 }

@@ -48,7 +48,7 @@ export default function AdminStoresPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-slate-50 py-8">
         <div className="container mx-auto px-4">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
@@ -59,12 +59,12 @@ export default function AdminStoresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-slate-50 py-8">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Store Management</h1>
-            <p className="text-gray-600 mt-2">Manage discount stores and campaigns</p>
+            <h1 className="text-3xl font-bold text-slate-800">Store Management</h1>
+            <p className="text-slate-600 mt-2">Manage discount stores and campaigns</p>
           </div>
           
           <button
@@ -78,9 +78,9 @@ export default function AdminStoresPage() {
 
         {stores.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
-            <MdStore className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">No stores yet</h2>
-            <p className="text-gray-500 mb-6">
+            <MdStore className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-slate-700 mb-2">No stores yet</h2>
+            <p className="text-slate-500 mb-6">
               Create your first store to start managing discount campaigns
             </p>
             <button
@@ -94,32 +94,32 @@ export default function AdminStoresPage() {
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Store
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Store ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Category
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Location
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-slate-200">
                   {stores.map((store) => (
-                    <tr key={store._id} className="hover:bg-gray-50">
+                    <tr key={store._id} className="hover:bg-slate-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           {store.logo ? (
@@ -129,31 +129,31 @@ export default function AdminStoresPage() {
                               className="w-10 h-10 object-contain rounded border"
                             />
                           ) : (
-                            <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
-                              <MdStore className="text-gray-400 w-6 h-6" />
+                            <div className="w-10 h-10 bg-slate-200 rounded flex items-center justify-center">
+                              <MdStore className="text-slate-400 w-6 h-6" />
                             </div>
                           )}
                           <div>
-                            <div className="font-medium text-gray-900">{store.storeName}</div>
+                            <div className="font-medium text-slate-900">{store.storeName}</div>
                             {store.contactInfo?.email && (
-                              <div className="text-sm text-gray-500">{store.contactInfo.email}</div>
+                              <div className="text-sm text-slate-500">{store.contactInfo.email}</div>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-mono text-sm font-semibold text-gray-900">
+                        <span className="font-mono text-sm font-semibold text-slate-900">
                           {store.storeIdentifier}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-700">{store.category}</span>
+                        <span className="text-sm text-slate-700">{store.category}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {store.isNationwide ? (
-                          <span className="text-sm text-gray-700">Nationwide</span>
+                          <span className="text-sm text-slate-700">Nationwide</span>
                         ) : (
-                          <span className="text-sm text-gray-700">
+                          <span className="text-sm text-slate-700">
                             {store.address?.state || 'N/A'}
                           </span>
                         )}
@@ -162,7 +162,7 @@ export default function AdminStoresPage() {
                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           store.isActive
                             ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
+                            : 'bg-slate-100 text-slate-800'
                         }`}>
                           {store.isActive ? 'Active' : 'Inactive'}
                         </span>

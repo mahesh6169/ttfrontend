@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { FaUsers, FaFire } from 'react-icons/fa';
+import { FaUsers, FaFire, FaTag } from 'react-icons/fa';
 import axios from '@/utils/axiosConfig';
 
 const EventCapacityDisplay = ({ 
@@ -156,7 +156,7 @@ const EventCapacityDisplay = ({
     
     return (
       <div className="space-y-2">
-        <div className="flex items-center text-sm text-gray-600">
+        <div className="flex items-center text-sm text-slate-600">
           <FaUsers className="mr-2" />
           <span>
             {isUnlimited ? (
@@ -180,7 +180,7 @@ const EventCapacityDisplay = ({
         )}
         
         {activeReservations > 0 && status === 'limited' && (
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-slate-500">
             {activeReservations} other users are currently booking
           </div>
         )}
@@ -192,7 +192,7 @@ const EventCapacityDisplay = ({
   if (isPaid && showInTicketSection) {
     const { displayText } = capacity;
     return (
-      <div className="flex items-center text-sm text-gray-600 mb-4">
+      <div className="flex items-center text-sm text-slate-600 mb-4">
         <FaUsers className="mr-2" />
         <span>{displayText || 'Loading capacity...'}</span>
       </div>
@@ -225,46 +225,53 @@ const EventCapacityDisplay = ({
     ? `${remainingCapacity} of ${totalCapacity} spots left`
     : isUnlimited ? 'Unlimited capacity' : displayText);
 
+  // Availability value for the two-row key/value layout: "297 / 300 left" (or "Unlimited"),
+  // falling back to the display text if the raw numbers aren't clean.
+  const availabilityValue = isUnlimited
+    ? 'Unlimited'
+    : (typeof remainingCapacity === 'number' && totalCapacity > 0)
+      ? `${remainingCapacity} / ${totalCapacity}`
+      : consistentDisplayText;
+
   // Sold-out / fully-booked: a single clean line. No point repeating it as a summary AND a
   // status, and Max-per-order is irrelevant once nothing is available.
   if (isFull) {
     return (
-      <div className="inline-flex items-center gap-2 text-sm sm:text-base font-semibold text-red-600">
-        <FaUsers className="shrink-0 text-red-500" size={13} />
+      <div className="inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap rounded-full bg-red-50 border border-red-200 text-red-700">
+        <FaUsers className="shrink-0" size={12} />
         {isPaid ? 'Sold Out' : 'Fully Booked'}
       </div>
     );
   }
 
+  // Two labelled key/value rows: Availability, then Order Limit. Icon + label on the left,
+  // value pushed to the right (ml-auto). Availability turns urgent (fire + amber) when scarce.
   return (
-    <div>
-      {/* Capacity + max: one row by default, or stacked (Max under the count) when stack is set. */}
-      <div className={`${stack ? 'flex flex-col items-start gap-1' : 'flex items-center justify-between gap-3'} text-sm sm:text-base`}>
-        {/* Capacity summary */}
-        {consistentDisplayText && (
-          isScarce ? (
-            <span className="inline-flex items-center gap-1.5 font-bold text-orange-600 min-w-0">
-              <FaFire className="shrink-0 animate-pulse" size={14} />
-              <span className="truncate">{consistentDisplayText}</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center font-semibold text-slate-800 min-w-0">
-              <FaUsers className="mr-2 text-slate-500 shrink-0" size={13} />
-              <span className="truncate">{consistentDisplayText}</span>
-            </span>
-          )
-        )}
-
-        {/* Booking Limit */}
-        {typeof maxPerRegistration === 'number' && (
-          <span className="shrink-0 whitespace-nowrap">
-            <span className="text-slate-500">Max</span>{' '}
-            <span className="font-semibold text-slate-700">
-              {maxPerRegistration} per {isPaid ? 'order' : 'registration'}
-            </span>
+    <div className="flex flex-col gap-2 text-sm">
+      {/* Availability */}
+      {availabilityValue && (
+        <div className="flex items-center gap-2">
+          {/* People icon is the constant Availability label; the fire is an urgency marker that
+              rides next to the number only when scarce. */}
+          <FaUsers className="shrink-0 text-slate-500" size={13} />
+          <span className="text-slate-500">Availability</span>
+          <span className={`ml-auto inline-flex items-center gap-1 text-right font-semibold whitespace-nowrap ${isScarce ? 'text-amber-700' : 'text-slate-700'}`}>
+            {isScarce && <FaFire className="shrink-0 text-amber-500 animate-pulse" size={13} />}
+            {availabilityValue}
           </span>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Order Limit */}
+      {typeof maxPerRegistration === 'number' && (
+        <div className="flex items-center gap-2">
+          <FaTag className="shrink-0 text-slate-500" size={12} />
+          <span className="text-slate-500">Order Limit</span>
+          <span className="ml-auto text-right font-semibold text-slate-700 whitespace-nowrap">
+            Max {maxPerRegistration}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

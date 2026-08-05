@@ -107,7 +107,7 @@ export default function ManageAdsPage() {
     };
     
     return (
-      <span className={`inline-flex px-2 text-xs leading-5 font-semibold rounded-full ${badges[status] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`inline-flex px-2 text-xs leading-5 font-semibold rounded-full ${badges[status] || 'bg-slate-100 text-slate-800'}`}>
         {status}
       </span>
     );
@@ -129,11 +129,11 @@ export default function ManageAdsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Manage Banner Ads</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Manage Banner Ads</h1>
         <div className="flex gap-2">
           <button
             onClick={handleCheckExpired}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            className="inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
           >
             <FaClock className="h-5 w-5 mr-2" />
             Check Expired Ads
@@ -149,7 +149,7 @@ export default function ManageAdsPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-slate-200">
         <nav className="-mb-px flex space-x-8">
           {['all', 'active', 'paused', 'expired'].map((status) => (
             <button
@@ -159,7 +159,7 @@ export default function ManageAdsPage() {
                 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm capitalize
                 ${filter === status 
                   ? 'border-blue-500 text-blue-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }
               `}
             >
@@ -173,20 +173,20 @@ export default function ManageAdsPage() {
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         {filteredAds.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No ads found</p>
+            <p className="text-slate-500">No ads found</p>
           </div>
         ) : (
-          <ul className="divide-y divide-gray-200">
+          <ul className="divide-y divide-slate-200">
             {filteredAds.map((ad) => (
-              <li key={ad._id} className="px-6 py-4 hover:bg-gray-50">
+              <li key={ad._id} className="px-6 py-4 hover:bg-slate-50">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900">
+                        <h3 className="text-sm font-medium text-slate-900">
                           {ad.name || ad.adId}
                         </h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-slate-500">
                           {ad.businessName} • {ad.placements.join(', ')}
                         </p>
                       </div>
@@ -195,20 +195,20 @@ export default function ManageAdsPage() {
                       </div>
                     </div>
                     
-                    <div className="mt-2 flex items-center text-sm text-gray-500">
+                    <div className="mt-2 flex items-center text-sm text-slate-500">
                       <span>Placements: {ad.placements.join(', ')}</span>
                       <span className="mx-2">•</span>
                       <span>States: {ad.targetStates.length > 0 ? ad.targetStates.join(', ') : 'All'}</span>
                     </div>
                     
-                    <div className="mt-1 flex items-center text-sm text-gray-500">
+                    <div className="mt-1 flex items-center text-sm text-slate-500">
                       <span>Schedule: {new Date(ad.schedule.startAt).toLocaleDateString()} - {new Date(ad.schedule.endAt).toLocaleDateString()}</span>
                       <span className="mx-2">•</span>
                       <span>Images: {(ad.creative?.desktop?.images?.length || 0) + (ad.creative?.mobile?.images?.length || 0)}</span>
                     </div>
                     
                     {ad.counters && (
-                      <div className="mt-1 flex items-center text-sm text-gray-500">
+                      <div className="mt-1 flex items-center text-sm text-slate-500">
                         <FaEye className="mr-1" />
                         <span>{ad.counters.impressions.toLocaleString()} impressions</span>
                         <span className="mx-2">•</span>
@@ -260,8 +260,8 @@ export default function ManageAdsPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="bg-gray-50 px-6 py-4 rounded-lg">
-        <div className="text-sm text-gray-600">
+      <div className="bg-slate-50 px-6 py-4 rounded-lg">
+        <div className="text-sm text-slate-600">
           Total: {ads.length} ads • 
           Active: {ads.filter(a => a.status === 'active').length} • 
           Paused: {ads.filter(a => a.status === 'paused').length} • 

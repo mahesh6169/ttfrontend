@@ -22,8 +22,8 @@ const AddressInput = ({
 
   // Error styling function
   const getFieldClasses = (hasErrors) => {
-    const baseClasses = 'w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2';
-    const errorClasses = hasErrors ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300';
+    const baseClasses = 'w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:border-teal-400';
+    const errorClasses = hasErrors ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300';
     const readOnlyClasses = disabled
       ? 'bg-slate-100 cursor-not-allowed text-slate-600'
       : '';
@@ -116,8 +116,8 @@ const AddressInput = ({
 
   return (
     <div>
-      <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-        Address <span className="text-red-500">*</span>
+      <label className="block text-sm font-medium text-slate-700 mb-1">
+        Address <span className="text-red-600">*</span>
       </label>
       <LoadScriptNext
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
@@ -142,7 +142,7 @@ const AddressInput = ({
       
       {/* Error Display */}
       {hasErrors && (
-        <p className="text-red-500 text-xs sm:text-sm mt-1">
+        <p className="text-red-600 text-xs mt-1">
           {Array.isArray(errors) ? errors[0] : errors}
         </p>
       )}

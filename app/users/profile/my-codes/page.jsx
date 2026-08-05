@@ -121,7 +121,7 @@ export default function MyCodesPage() {
                     className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       statusFilter === 'all'
                         ? 'bg-teal-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     All ({statusCounts.all})
@@ -131,7 +131,7 @@ export default function MyCodesPage() {
                     className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       statusFilter === 'active'
                         ? 'bg-green-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     Active ({statusCounts.active})
@@ -140,8 +140,8 @@ export default function MyCodesPage() {
                     onClick={() => setStatusFilter('redeemed')}
                     className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       statusFilter === 'redeemed'
-                        ? 'bg-gray-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-slate-600 text-white'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     Redeemed ({statusCounts.redeemed})
@@ -151,7 +151,7 @@ export default function MyCodesPage() {
                     className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       statusFilter === 'expired'
                         ? 'bg-red-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     Expired ({statusCounts.expired})
@@ -160,10 +160,10 @@ export default function MyCodesPage() {
 
                 {/* Sort Dropdown */}
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <label className="text-xs sm:text-sm text-gray-600">Sort:</label>
+                  <label className="text-xs sm:text-sm text-slate-600">Sort:</label>
                   <Listbox value={sortBy} onChange={setSortBy}>
                     <div className="relative flex-1 sm:flex-initial">
-                      <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 sm:px-3 sm:py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer text-left">
+                      <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 sm:px-3 sm:py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer text-left">
                         <span className="block truncate text-slate-900">
                           {SORT_OPTIONS.find((o) => o.value === sortBy)?.label}
                         </span>
@@ -211,7 +211,7 @@ export default function MyCodesPage() {
             {/* Campaigns Grid */}
             {filteredCampaigns.length === 0 ? (
               <div className="bg-white rounded-lg shadow p-4 sm:p-8 text-center">
-                <p className="text-sm sm:text-base text-gray-500">No codes found for this filter</p>
+                <p className="text-sm sm:text-base text-slate-500">No codes found for this filter</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 items-stretch">

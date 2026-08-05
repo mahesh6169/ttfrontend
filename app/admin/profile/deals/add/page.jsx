@@ -32,7 +32,7 @@ export default function AddDealPage() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto py-6 sm:py-8">
-      <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Add Daily Deal</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6">Add Daily Deal</h1>
       <DealForm onSubmit={handleSubmit} onCancel={handleCancel} />
     </div>
   );

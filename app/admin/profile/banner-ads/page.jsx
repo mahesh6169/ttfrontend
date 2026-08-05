@@ -138,7 +138,7 @@ export default function BannerAdsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Banner Ads Management</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Banner Ads Management</h1>
         <Link
           href="/admin/profile/banner-ads/create"
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -154,9 +154,9 @@ export default function BannerAdsPage() {
           <div className="flex items-center">
             <FaBuilding className="h-10 w-10 text-blue-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Businesses</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.activeBusinesses}/{stats.totalBusinesses}</p>
-              <p className="text-xs text-gray-500">Active/Total</p>
+              <p className="text-sm font-medium text-slate-500">Businesses</p>
+              <p className="text-2xl font-bold text-slate-900">{stats.activeBusinesses}/{stats.totalBusinesses}</p>
+              <p className="text-xs text-slate-500">Active/Total</p>
             </div>
           </div>
         </div>
@@ -165,9 +165,9 @@ export default function BannerAdsPage() {
           <div className="flex items-center">
             <FaImage className="h-10 w-10 text-green-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Ads</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.activeAds}/{stats.totalAds}</p>
-              <p className="text-xs text-gray-500">Active/Total</p>
+              <p className="text-sm font-medium text-slate-500">Ads</p>
+              <p className="text-2xl font-bold text-slate-900">{stats.activeAds}/{stats.totalAds}</p>
+              <p className="text-xs text-slate-500">Active/Total</p>
             </div>
           </div>
         </div>
@@ -176,11 +176,11 @@ export default function BannerAdsPage() {
           <div className="flex items-center">
             <FaChartBar className="h-10 w-10 text-purple-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Performance (30 days)</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-slate-500">Performance (30 days)</p>
+              <p className="text-2xl font-bold text-slate-900">
                 {stats.totalImpressions.toLocaleString()}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-slate-500">
                 {stats.totalClicks.toLocaleString()} clicks ({stats.totalImpressions > 0 ? ((stats.totalClicks / stats.totalImpressions) * 100).toFixed(2) : 0}% CTR)
               </p>
             </div>
@@ -195,8 +195,8 @@ export default function BannerAdsPage() {
           className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
         >
           <FaBuilding className="h-8 w-8 text-blue-600 mb-2" />
-          <h3 className="font-medium text-gray-900">Manage Businesses</h3>
-          <p className="text-sm text-gray-500">Add, edit, or pause advertisers</p>
+          <h3 className="font-medium text-slate-900">Manage Businesses</h3>
+          <p className="text-sm text-slate-500">Add, edit, or pause advertisers</p>
         </Link>
 
         <Link
@@ -204,8 +204,8 @@ export default function BannerAdsPage() {
           className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
         >
           <FaLayerGroup className="h-8 w-8 text-green-600 mb-2" />
-          <h3 className="font-medium text-gray-900">Manage Placements</h3>
-          <p className="text-sm text-gray-500">Configure ad slots and layouts</p>
+          <h3 className="font-medium text-slate-900">Manage Placements</h3>
+          <p className="text-sm text-slate-500">Configure ad slots and layouts</p>
         </Link>
 
         <Link
@@ -213,8 +213,8 @@ export default function BannerAdsPage() {
           className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
         >
           <FaPlusCircle className="h-8 w-8 text-purple-600 mb-2" />
-          <h3 className="font-medium text-gray-900">Create New Ad</h3>
-          <p className="text-sm text-gray-500">Launch a new ad campaign</p>
+          <h3 className="font-medium text-slate-900">Create New Ad</h3>
+          <p className="text-sm text-slate-500">Launch a new ad campaign</p>
         </Link>
 
         <Link
@@ -222,44 +222,44 @@ export default function BannerAdsPage() {
           className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
         >
           <FaChartBar className="h-8 w-8 text-orange-600 mb-2" />
-          <h3 className="font-medium text-gray-900">View Metrics</h3>
-          <p className="text-sm text-gray-500">Detailed performance reports</p>
+          <h3 className="font-medium text-slate-900">View Metrics</h3>
+          <p className="text-sm text-slate-500">Detailed performance reports</p>
         </Link>
       </div>
 
       {/* Placements */}
       <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Placements</h2>
+        <div className="px-6 py-4 border-b border-slate-200">
+          <h2 className="text-lg font-medium text-slate-900">Placements</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Business
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Placements
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   AD-ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   State
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Schedule
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-slate-200">
               {['H1', 'H2', 'V1', 'V2'].flatMap((placementCode) => {
                 const placementInfo = placements.find(p => p.placementId === placementCode);
                 const isSplit = placementInfo?.layoutType === 'split';
@@ -278,19 +278,19 @@ export default function BannerAdsPage() {
                     
                     return (
                         <tr key={`${placementCode}-${ad.adId}`}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                             {ad.businessId?.name || 'Unknown'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                             {displayPlacement}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                             {ad.name || 'Untitled Ad'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                             {ad.adId}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                             {ad.targetStates?.length > 0 ? ad.targetStates.join(', ') : '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -304,7 +304,7 @@ export default function BannerAdsPage() {
                               {ad.status}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                             {new Date(ad.schedule.startAt).toLocaleDateString()} - {new Date(ad.schedule.endAt).toLocaleDateString()}
                           </td>
                         </tr>
@@ -316,25 +316,25 @@ export default function BannerAdsPage() {
                     // For split placements, show empty rows for each child
                     return placementInfo.children.map(child => (
                       <tr key={`${child.placementId}-empty`}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 italic">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400 italic">
                           No ads assigned
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                           {child.placementId}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           -
                         </td>
                       </tr>
@@ -343,25 +343,25 @@ export default function BannerAdsPage() {
                     // For full placements, show single empty row
                     return (
                       <tr key={`${placementCode}-empty`}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 italic">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400 italic">
                           No ads assigned
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                           {placementCode}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           -
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           -
                         </td>
                       </tr>
@@ -377,55 +377,55 @@ export default function BannerAdsPage() {
       {/* Ads */}
       {recentAds.length > 0 && (
         <div className="bg-white rounded-lg shadow mt-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Ads</h2>
+          <div className="px-6 py-4 border-b border-slate-200">
+            <h2 className="text-lg font-medium text-slate-900">Ads</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Business
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Placements
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     AD-ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     State
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Schedule
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-slate-200">
                 {recentAds.map((ad) => (
                   <tr key={ad.adId}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {ad.businessId?.name || 'Unknown'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {ad.displayPlacements?.join(', ') || ad.placements.join(', ')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                       {ad.name || 'Untitled Ad'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                       {ad.adId}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {ad.targetStates?.length > 0 ? ad.targetStates.join(', ') : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -439,7 +439,7 @@ export default function BannerAdsPage() {
                         {ad.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {new Date(ad.schedule.startAt).toLocaleDateString()} - {new Date(ad.schedule.endAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">

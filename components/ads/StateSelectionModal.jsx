@@ -41,7 +41,7 @@ const StateSelectionModal = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6 w-full max-w-lg">
-        <p className="text-sm sm:text-base font-medium text-gray-900 mb-4 text-center">
+        <p className="text-sm sm:text-base font-medium text-slate-900 mb-4 text-center">
           Select your state to see relevant local deals and content in your area!
         </p>
         
@@ -54,7 +54,7 @@ const StateSelectionModal = ({ isOpen, onClose }) => {
               className={`py-3 px-1 text-sm font-medium rounded-lg border-2 transition-all ${
                 selectedState === state.code
                   ? 'border-teal-600 bg-teal-600 text-lime-100'
-                  : 'border-gray-200 hover:border-teal-500 hover:bg-teal-50'
+                  : 'border-slate-200 hover:border-teal-500 hover:bg-teal-50'
               }`}
             >
               {state.code}
@@ -83,9 +83,9 @@ const StateSelectionModal = ({ isOpen, onClose }) => {
         
         {/* Divider */}
         <div className="flex items-center my-4">
-          <div className="flex-1 border-t border-gray-300"></div>
-          <span className="px-3 text-xs text-gray-500">or</span>
-          <div className="flex-1 border-t border-gray-300"></div>
+          <div className="flex-1 border-t border-slate-300"></div>
+          <span className="px-3 text-xs text-slate-500">or</span>
+          <div className="flex-1 border-t border-slate-300"></div>
         </div>
         
         {/* Login/Register buttons */}

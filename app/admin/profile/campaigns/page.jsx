@@ -88,7 +88,7 @@ export default function AllCampaignsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-slate-50 py-8">
         <div className="container mx-auto px-4">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
@@ -99,24 +99,24 @@ export default function AllCampaignsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-slate-50 py-8">
       <div className="container mx-auto px-4">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">All Campaigns</h1>
-          <p className="text-gray-600 mt-2">Manage all discount campaigns across all stores</p>
+          <h1 className="text-3xl font-bold text-slate-800">All Campaigns</h1>
+          <p className="text-slate-600 mt-2">Manage all discount campaigns across all stores</p>
         </div>
 
         {/* Store Filter */}
         {stores.length > 0 && (
           <div className="mb-6 flex items-center gap-4">
-            <label htmlFor="storeFilter" className="text-sm font-medium text-gray-700">
+            <label htmlFor="storeFilter" className="text-sm font-medium text-slate-700">
               Filter by Store:
             </label>
             <select
               id="storeFilter"
               value={selectedStore}
               onChange={(e) => handleStoreFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
             >
               <option value="all">All Stores ({allCampaigns.length} campaigns)</option>
               {stores.map((store) => {
@@ -138,7 +138,7 @@ export default function AllCampaignsPage() {
             className={`px-4 py-2 font-medium transition-colors ${
               filter === 'all'
                 ? 'border-b-2 border-teal-600 text-teal-600'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-slate-600 hover:text-slate-800'
             }`}
           >
             All ({campaigns.length})
@@ -148,7 +148,7 @@ export default function AllCampaignsPage() {
             className={`px-4 py-2 font-medium transition-colors ${
               filter === 'active'
                 ? 'border-b-2 border-teal-600 text-teal-600'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-slate-600 hover:text-slate-800'
             }`}
           >
             Active ({campaigns.filter(c => c.isActive && new Date(c.expiryDate) >= new Date()).length})
@@ -158,7 +158,7 @@ export default function AllCampaignsPage() {
             className={`px-4 py-2 font-medium transition-colors ${
               filter === 'inactive'
                 ? 'border-b-2 border-teal-600 text-teal-600'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-slate-600 hover:text-slate-800'
             }`}
           >
             Inactive ({campaigns.filter(c => !c.isActive).length})
@@ -168,7 +168,7 @@ export default function AllCampaignsPage() {
             className={`px-4 py-2 font-medium transition-colors ${
               filter === 'expired'
                 ? 'border-b-2 border-teal-600 text-teal-600'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-slate-600 hover:text-slate-800'
             }`}
           >
             Expired ({campaigns.filter(c => new Date(c.expiryDate) < new Date()).length})
@@ -177,11 +177,11 @@ export default function AllCampaignsPage() {
 
         {filteredCampaigns.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
-            <MdStore className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">
+            <MdStore className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-slate-700 mb-2">
               {filter === 'all' ? 'No campaigns yet' : `No ${filter} campaigns found`}
             </h2>
-            <p className="text-gray-500 mb-6">
+            <p className="text-slate-500 mb-6">
               {filter === 'all' 
                 ? 'Go to a store and create a campaign for it'
                 : `No ${filter} campaigns found`}
@@ -198,36 +198,36 @@ export default function AllCampaignsPage() {
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Store
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Campaign
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Expiry
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Redemptions
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-slate-200">
                   {filteredCampaigns.map((campaign) => {
                     const isExpired = new Date(campaign.expiryDate) < new Date();
                     const store = campaign.storeId;
                     
                     return (
-                      <tr key={campaign._id} className="hover:bg-gray-50">
+                      <tr key={campaign._id} className="hover:bg-slate-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             {store?.logo ? (
@@ -237,22 +237,22 @@ export default function AllCampaignsPage() {
                                 className="w-8 h-8 object-contain rounded border"
                               />
                             ) : (
-                              <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-                                <MdStore className="text-gray-400 w-5 h-5" />
+                              <div className="w-8 h-8 bg-slate-200 rounded flex items-center justify-center">
+                                <MdStore className="text-slate-400 w-5 h-5" />
                               </div>
                             )}
                             <div>
-                              <div className="font-medium text-gray-900">{store?.storeName}</div>
-                              <div className="text-xs text-gray-500 font-mono">{store?.storeIdentifier}</div>
+                              <div className="font-medium text-slate-900">{store?.storeName}</div>
+                              <div className="text-xs text-slate-500 font-mono">{store?.storeIdentifier}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <div className="font-semibold text-gray-900">
+                            <div className="font-semibold text-slate-900">
                               {campaign.discount}
                             </div>
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-slate-600">
                               {campaign.discountProduct}
                             </div>
                           </div>
@@ -262,7 +262,7 @@ export default function AllCampaignsPage() {
                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                               campaign.isActive
                                 ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
+                                : 'bg-slate-100 text-slate-800'
                             }`}>
                               {campaign.isActive ? 'Active' : 'Inactive'}
                             </span>
@@ -280,10 +280,10 @@ export default function AllCampaignsPage() {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                           {format(new Date(campaign.expiryDate), 'MMM dd, yyyy')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                           {campaign.totalGenerated || 0}
                           {campaign.maxRedemptions > 0 && ` / ${campaign.maxRedemptions}`}
                         </td>

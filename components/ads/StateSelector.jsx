@@ -66,11 +66,11 @@ const StateSelector = () => {
   
   return (
     <>
-      <div className="text-center text-xs sm:text-sm text-gray-600 pb-1">
+      <div className="text-center text-xs sm:text-sm text-slate-600 pb-1">
         Viewing ads for 
         <button 
           onClick={handleStateClick}
-          className="ml-1 px-2 py-0.5 bg-gray-100 hover:bg-gray-200 rounded text-teal-700 hover:text-teal-800 font-medium transition-colors cursor-pointer"
+          className="ml-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-teal-700 hover:text-teal-800 font-medium transition-colors cursor-pointer"
           title="Click to change state"
         >
           {currentState} ▼

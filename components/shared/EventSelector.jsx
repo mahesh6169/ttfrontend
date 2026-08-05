@@ -51,9 +51,9 @@ const EventSelector = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`w-full p-3 border rounded-lg bg-white text-left flex items-center justify-between
-          ${value ? 'text-gray-900' : 'text-gray-500'}
-          ${isOpen ? 'border-teal-500 ring-2 ring-teal-200' : 'border-gray-300'}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400'}
+          ${value ? 'text-slate-900' : 'text-slate-500'}
+          ${isOpen ? 'border-teal-500 ring-2 ring-teal-200' : 'border-slate-300'}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-slate-400'}
           transition-all duration-200`}
       >
         <span className="truncate pr-2">
@@ -63,14 +63,14 @@ const EventSelector = ({
           }
         </span>
         <FaChevronDown 
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 
+          className={`w-4 h-4 text-slate-400 transition-transform duration-200 
             ${isOpen ? 'transform rotate-180' : ''}`}
         />
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
           {events.length > 0 ? (
             events.map((event) => {
               const isSelected = value === event.id;
@@ -82,8 +82,8 @@ const EventSelector = ({
                   type="button"
                   onClick={() => handleSelect(event.id)}
                   className={`w-full px-4 py-3 text-left hover:bg-teal-50 transition-colors
-                    ${isSelected ? 'bg-teal-50 text-teal-700 font-medium' : 'text-gray-700'}
-                    border-b border-gray-100 last:border-b-0`}
+                    ${isSelected ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'}
+                    border-b border-slate-100 last:border-b-0`}
                 >
                   <div className="text-sm">
                     {event.eventCode} - {event.title} - {eventDateTime}
@@ -92,7 +92,7 @@ const EventSelector = ({
               );
             })
           ) : (
-            <div className="px-4 py-8 text-center text-gray-500">
+            <div className="px-4 py-8 text-center text-slate-500">
               No events available
             </div>
           )}

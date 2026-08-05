@@ -187,7 +187,7 @@ const ManageAdvertsPage = () => {
 
   // Helper function to get row styling
   const getRowClassName = (renewalStatus) => {
-    return renewalStatus === 'notify1' ? 'bg-gray-100 text-gray-400' : '';
+    return renewalStatus === 'notify1' ? 'bg-slate-100 text-slate-400' : '';
   };
 
   // Render
@@ -198,18 +198,18 @@ const ManageAdvertsPage = () => {
       {loading && <LoadingSpinner />}
       
       {!loading && adverts.length === 0 && (
-        <p className="text-gray-500">No adverts found.</p>
+        <p className="text-slate-500">No adverts found.</p>
       )}
 
       {!loading && adverts.length > 0 && (
         <>
-          <div className="mb-4 text-sm text-gray-600">
+          <div className="mb-4 text-sm text-slate-600">
             Showing {adverts.length} of {meta.totalItems} adverts
           </div>
           
           <div className="overflow-x-auto">
             <table className="min-w-full border text-sm">
-              <thead className="bg-gray-100 text-gray-700">
+              <thead className="bg-slate-100 text-slate-700">
                 <tr>
                   <th className="border p-2">Title</th>
                   <th className="border p-2">Owner Email</th>
@@ -259,7 +259,7 @@ const ManageAdvertsPage = () => {
                         )}
 
                         {ad.renewalStatus === 'pendingNotification2' && (
-                          <span className="inline-block px-2 py-1 text-xs rounded bg-gray-300 text-gray-700">
+                          <span className="inline-block px-2 py-1 text-xs rounded bg-slate-300 text-slate-700">
                             Waiting (7d)
                           </span>
                         )}
@@ -284,7 +284,7 @@ const ManageAdvertsPage = () => {
                         )}
                         
                         {ad.renewalStatus === 'valid' && (
-                          <span className="text-xs text-gray-500">-</span>
+                          <span className="text-xs text-slate-500">-</span>
                         )}
                       </td>
                       <td className="border p-2">

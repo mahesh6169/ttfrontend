@@ -78,12 +78,12 @@ const AdminThreadRenewals = () => {
         {loading ? (
           <div className="text-center py-8">Loading threads...</div>
         ) : threads.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">No threads found</div>
+          <div className="text-center py-8 text-slate-500">No threads found</div>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow">
-                <thead className="bg-gray-100">
+              <table className="min-w-full bg-white border border-slate-300 rounded-lg shadow">
+                <thead className="bg-slate-100">
                   <tr>
                     <th className="px-4 py-3 text-left">Title</th>
                     <th className="px-4 py-3 text-left">Author</th>
@@ -93,7 +93,7 @@ const AdminThreadRenewals = () => {
                 </thead>
                 <tbody>
                   {threads.map((thread) => (
-                    <tr key={thread._id} className="border-t hover:bg-gray-50">
+                    <tr key={thread._id} className="border-t hover:bg-slate-50">
                       <td className="px-4 py-3">
                         <div className="max-w-xs truncate font-medium">
                           {thread.title}
@@ -102,7 +102,7 @@ const AdminThreadRenewals = () => {
                       <td className="px-4 py-3">
                         <div className="text-sm">
                           <div className="font-medium">{thread.authorName}</div>
-                          <div className="text-gray-500">{thread.authorEmail}</div>
+                          <div className="text-slate-500">{thread.authorEmail}</div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm">

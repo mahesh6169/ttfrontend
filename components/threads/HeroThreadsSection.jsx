@@ -48,7 +48,7 @@ const HeroThreadsSection = ({ messages = [], showViewAll = true, showCreate = tr
               <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-green-500 flex items-center justify-center`}>
                 <FaThumbsUp className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
-              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-gray-600 flex items-center justify-center`}>
+              <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-slate-600 flex items-center justify-center`}>
                 <FaGlobe className={`${compact ? 'w-2.5 h-2.5 md:w-4 md:h-4' : 'w-3 h-3 md:w-5 md:h-5'} text-white`} />
               </div>
               <div className={`${compact ? 'w-5 h-5 md:w-8 md:h-8' : 'w-6 h-6 md:w-10 md:h-10'} rounded-full bg-red-500 flex items-center justify-center`}>
@@ -69,7 +69,7 @@ const HeroThreadsSection = ({ messages = [], showViewAll = true, showCreate = tr
         {/* Community chat illustration on right */}
         <div className={`flex-shrink-0 w-auto ${compact ? 'md:w-[120px] lg:w-[140px]' : 'md:w-[200px] lg:w-[220px]'} p-2 ${compact ? 'md:p-1 pb-6 md:pb-1' : 'md:p-4 pb-10 md:pb-4'} flex flex-col items-center justify-center relative z-10`}>
           <div className="relative w-[80px] md:w-full md:max-w-[180px]">
-            <div className="absolute inset-0 bg-gray-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
+            <div className="absolute inset-0 bg-slate-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
             <svg className="community-icon w-full h-auto" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
               {/* Yellow chat bubble (behind) */}
               <rect x="190" y="45" width="95" height="65" rx="8" ry="8" fill="#f9d56e"/>
@@ -113,7 +113,7 @@ const HeroThreadsSection = ({ messages = [], showViewAll = true, showCreate = tr
           
           {/* Moving text below icon */}
           <div className="w-[120px] md:w-[220px] overflow-hidden mt-2 h-4 relative">
-            <span key={currentMessage} className="moving-text-below absolute inset-0 flex items-center justify-center text-[10px] md:text-xs font-medium text-gray-700 whitespace-nowrap italic">
+            <span key={currentMessage} className="moving-text-below absolute inset-0 flex items-center justify-center text-[10px] md:text-xs font-medium text-slate-700 whitespace-nowrap italic">
               {["Where can I find...", "Does anyone know...", "Migration Update...", "Looking for advice...", "Need recommendations...", "Community help..."][currentMessage % 6]}
             </span>
           </div>
@@ -125,7 +125,7 @@ const HeroThreadsSection = ({ messages = [], showViewAll = true, showCreate = tr
             {showCreate && (
               <Link
                 href="/threads/new"
-                className="bg-[#f0f0f0] hover:bg-[#e5e5e5] text-gray-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
+                className="bg-[#f0f0f0] hover:bg-[#e5e5e5] text-slate-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
               >
                 + Create
               </Link>
@@ -133,7 +133,7 @@ const HeroThreadsSection = ({ messages = [], showViewAll = true, showCreate = tr
             {showViewAll && (
               <Link
                 href="/threads"
-                className="bg-[#f0f0f0] hover:bg-[#e5e5e5] text-gray-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
+                className="bg-[#f0f0f0] hover:bg-[#e5e5e5] text-slate-700 text-xs md:text-sm font-semibold py-1.5 px-2.5 md:py-2 md:px-4 rounded-lg shadow-sm transition-colors"
               >
                 View All
               </Link>

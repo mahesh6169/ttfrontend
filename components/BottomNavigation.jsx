@@ -3,45 +3,60 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { RiAdvertisementFill } from "react-icons/ri";
-import { FaCalendarAlt, FaTag } from 'react-icons/fa';
-import { MdOutlineGroups2 } from "react-icons/md";
-import { HiReceiptPercent } from 'react-icons/hi2';
+import { NAV_DESTINATIONS } from '@/utils/constants/destinations';
 
-// Bottom nav holds the public destinations only. "My stuff" (profile) now lives behind
-// the header burger → profile drawer below lg. See ProfilePageUX.md.
+// Bottom nav holds the public destinations only, read from the shared list
+// (utils/constants/destinations). "My stuff" (profile) lives behind the header burger and
+// profile drawer below lg. Icon sizes are kept per-item here to preserve this bar's look;
+// the shared list owns the href, label and icon.
+const BOTTOM_ICON_SIZE = {
+  '/': 20,
+  '/listings': 18,
+  '/events': 16,
+  '/deals': 16,
+  '/coupons': 18,
+  '/threads': 20,
+};
+
+// The event booking flow (tickets / seats / checkout) hides the bottom nav so the flow's sticky
+// action bar (e.g. "Select Seats") owns the bottom edge — the same exemption idea as the footer's
+// (Footer.jsx). Matched at segment boundaries so the standalone /tickets landing is unaffected.
+const BOTTOM_NAV_EXEMPT_PATHS = [
+  '/events/tickets',
+  '/events/seats',
+  '/events/checkout',
+];
+
+const isBottomNavExempt = (pathname) => {
+  if (!pathname) return false;
+  return BOTTOM_NAV_EXEMPT_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + '/')
+  );
+};
+
 const BottomNavigation = () => {
   const pathname = usePathname();
 
   const isActive = (path) => pathname === path || pathname.startsWith(path + '/');
 
-  const navItems = [
-    { href: '/', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>, label: 'Home', isHome: true },
-    { href: '/listings', icon: <RiAdvertisementFill size={18} />, label: 'Listings' },
-    { href: '/events', icon: <FaCalendarAlt size={16} />, label: 'Events' },
-    { href: '/deals', icon: <FaTag size={16} />, label: 'Deals' },
-    { href: '/coupons', icon: <HiReceiptPercent size={18} />, label: 'Coupons' },
-    { href: '/threads', icon: <MdOutlineGroups2 size={20} />, label: 'Forum' },
-  ];
+  if (isBottomNavExempt(pathname)) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:hidden z-40 safe-area-inset-pb shadow-sm">
+    <div data-testid="bottom-nav" className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:hidden z-40 safe-area-inset-pb shadow-sm">
       <div className="flex items-center justify-around h-14">
-        {navItems.map((item) => (
+        {NAV_DESTINATIONS.map((d) => (
           <Link
-            key={item.href}
-            href={item.href}
+            key={d.href}
+            href={d.href}
             className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
-              item.isHome
-                ? (pathname === '/' ? 'text-teal-900 font-semibold' : 'text-slate-700 hover:text-slate-900')
-                : (isActive(item.href) ? 'text-teal-900 font-semibold' : 'text-slate-700 hover:text-slate-900')
+              isActive(d.href) ? 'text-teal-900 font-semibold' : 'text-slate-700 hover:text-slate-900'
             }`}
           >
             <div className="h-5 flex items-center justify-center">
-              {item.icon}
+              <d.Icon size={BOTTOM_ICON_SIZE[d.href]} />
             </div>
             <span className="text-[10px] mt-0.5">
-              {item.label}
+              {d.label}
             </span>
           </Link>
         ))}

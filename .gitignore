@@ -50,3 +50,6 @@ dist/
 # 🚀 Ignore Public Uploads (Optional)
 public/uploads/
 .aider*
+
+# Throwaway design preview pages (delete when done)
+app/preview/

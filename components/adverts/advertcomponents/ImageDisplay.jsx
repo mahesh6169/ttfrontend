@@ -17,7 +17,7 @@ const ImageDisplay = ({ images = [], title = 'Advert Image' }) => {
 
   return (
     <div className="border-r lg:border lg:rounded-none shadow-none lg:shadow p-4 w-full">
-      <div className="w-full h-64 lg:h-72 bg-gray-200 flex items-center justify-center overflow-hidden">
+      <div className="w-full h-64 lg:h-72 bg-slate-200 flex items-center justify-center overflow-hidden">
         {images.length > 0 ? (
           <Slider {...settings} className="w-full h-full">
             {images.map((image, index) => (
@@ -31,7 +31,7 @@ const ImageDisplay = ({ images = [], title = 'Advert Image' }) => {
             ))}
           </Slider>
         ) : (
-          <span className="text-gray-500">No Image Available</span>
+          <span className="text-slate-500">No Image Available</span>
         )}
       </div>
     </div>

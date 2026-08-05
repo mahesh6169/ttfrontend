@@ -122,19 +122,19 @@ export default function UsersPage() {
       {loading && <LoadingSpinner />}
       
       {!loading && users.length === 0 && (
-        <p className="text-center text-gray-500">No users found.</p>
+        <p className="text-center text-slate-500">No users found.</p>
       )}
 
       {!loading && users.length > 0 && (
         <>
-          <div className="mb-4 text-sm text-gray-600">
+          <div className="mb-4 text-sm text-slate-600">
             Showing {users.length} of {meta.totalItems} users
           </div>
           
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300">
+            <table className="w-full border-collapse border border-slate-300">
               <thead>
-                <tr className="bg-gray-200">
+                <tr className="bg-slate-200">
                   <th className="border p-2">Name</th>
                   <th className="border p-2">Email</th>
                   <th className="border p-2">Role</th>

@@ -64,16 +64,16 @@ const SuccessModal = ({
           </div>
           
           {/* Success Message */}
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
             {config.title}
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-slate-600 mb-6">
             {config.subtitle}
           </p>
           
           {/* Share Section */}
-          <div className="border-t border-b border-gray-200 py-4 mb-6">
-            <p className="text-sm text-gray-600 mb-3">Share your listing:</p>
+          <div className="border-t border-b border-slate-200 py-4 mb-6">
+            <p className="text-sm text-slate-600 mb-3">Share your listing:</p>
             <div className="flex items-center justify-center">
               <ShareIcons
                 type="listing"
@@ -95,7 +95,7 @@ const SuccessModal = ({
             
             <button
               onClick={config.secondaryAction.handler}
-              className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-700 px-4 py-3 rounded-lg hover:bg-slate-200 transition-colors font-medium"
             >
               <config.secondaryAction.icon className="w-4 h-4" />
               {config.secondaryAction.label}

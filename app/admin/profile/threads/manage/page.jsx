@@ -57,7 +57,7 @@ const ManageThreads = () => {
             '/admin/profile/threads/manage'
           )
         }
-        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+        className="block my-2 p-2 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:text-slate-900 font-semibold lg:w-1/4 text-center rounded"
       >
         + Post New Thread
       </Link>
@@ -75,7 +75,7 @@ const ManageThreads = () => {
           {threads.map((thread) => (
             <li
               key={thread._id}
-              className="border rounded-lg p-4 flex justify-between items-center hover:bg-gray-100 transition-all duration-200"
+              className="border rounded-lg p-4 flex justify-between items-center hover:bg-slate-100 transition-all duration-200"
             >
               <div
                 onClick={() => router.push(buildSlugUrl('thread', thread.title, thread._id))}
@@ -84,13 +84,13 @@ const ManageThreads = () => {
                 <h2 className="text-lg font-semibold text-blue-600 hover:underline">
                   {thread.title}
                 </h2>
-                <p className="text-sm text-gray-700 italic">
+                <p className="text-sm text-slate-700 italic">
                   {thread.question}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-slate-500">
                   Started by {thread.owner?.name || 'Unknown'}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-slate-400">
                   Created on: {new Date(thread.createdAt).toLocaleDateString()}
                 </p>
               </div>

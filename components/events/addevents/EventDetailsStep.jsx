@@ -41,8 +41,8 @@ const PlatformDropdown = ({ value, options, onChange, disabled }) => {
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
-        className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg bg-white text-left flex items-center justify-between transition-colors ${
-          open ? 'border-teal-500 ring-2 ring-teal-200' : 'border-slate-300'
+        className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-white text-left flex items-center justify-between transition-colors ${
+          open ? 'border-teal-400 ring-2 ring-teal-300' : 'border-slate-300'
         } ${disabled ? 'bg-slate-100 cursor-not-allowed text-slate-500' : 'text-slate-700'}`}
       >
         <span className={`truncate pr-2 ${value ? '' : 'text-slate-400'}`}>{selectedLabel}</span>
@@ -58,7 +58,7 @@ const PlatformDropdown = ({ value, options, onChange, disabled }) => {
                 key={p.value}
                 type="button"
                 onClick={() => { onChange(p.value); setOpen(false); }}
-                className={`w-full px-4 py-2.5 text-left text-sm hover:bg-teal-50 transition-colors ${
+                className={`w-full px-3 py-2.5 text-left text-sm hover:bg-teal-50 transition-colors ${
                   value === p.value ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'
                 }`}
               >
@@ -66,7 +66,7 @@ const PlatformDropdown = ({ value, options, onChange, disabled }) => {
               </button>
             ))
           ) : (
-            <div className="px-4 py-3 text-sm text-slate-400">No platforms left</div>
+            <div className="px-3 py-2.5 text-sm text-slate-400">No platforms left</div>
           )}
         </div>
       )}
@@ -193,8 +193,8 @@ const EventDetailsStep = ({
 
   // Field styling helper
   const getFieldClasses = (hasError = false) => {
-    const baseClasses = 'w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2';
-    const errorClasses = hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300';
+    const baseClasses = 'w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2';
+    const errorClasses = hasError ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300 focus:border-teal-400';
     const readOnlyClasses = disabled ? 'bg-slate-100 cursor-not-allowed text-slate-600' : '';
     return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
   };
@@ -268,15 +268,15 @@ const EventDetailsStep = ({
     <div className="space-y-4 sm:space-y-6">
       {/* Organiser Details Section */}
       <div>
-        <h3 className="font-medium text-base sm:text-lg mb-3 sm:mb-4 text-slate-600">
+        <h3 className="font-medium text-base mb-3 sm:mb-4 text-slate-600">
           Organiser Details
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Organiser / Organisation Name */}
           <div>
-            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-              Organiser / Organisation <span className="text-red-500">*</span>
+            <label className="block font-medium mb-2 text-slate-600 text-sm">
+              Organiser / Organisation <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
@@ -288,7 +288,7 @@ const EventDetailsStep = ({
               maxLength="100"
             />
             {errors?.organizer && (
-              <p className="text-red-500 text-xs sm:text-sm mt-1">
+              <p className="text-red-600 text-xs mt-1">
                 {Array.isArray(errors.organizer) ? errors.organizer[0] : errors.organizer}
               </p>
             )}
@@ -296,7 +296,7 @@ const EventDetailsStep = ({
 
           {/* Contact */}
           <div>
-            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
+            <label className="block font-medium mb-2 text-slate-600 text-sm">
               Contact Number
             </label>
             <input
@@ -312,7 +312,7 @@ const EventDetailsStep = ({
 
           {/* Email */}
           <div>
-            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
+            <label className="block font-medium mb-2 text-slate-600 text-sm">
               Contact Email
             </label>
             <input
@@ -328,7 +328,7 @@ const EventDetailsStep = ({
 
           {/* Website */}
           <div>
-            <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
+            <label className="block font-medium mb-2 text-slate-600 text-sm">
               Website
             </label>
             <input
@@ -345,7 +345,7 @@ const EventDetailsStep = ({
           {/* ABN - Only for paid events */}
           {isPaidEvent && (
             <div className="sm:col-span-2">
-              <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
+              <label className="block font-medium mb-2 text-slate-600 text-sm">
                 ABN (Australian Business Number)
               </label>
               <input
@@ -364,15 +364,30 @@ const EventDetailsStep = ({
           )}
         </div>
 
-        {/* Social Media */}
-        <div className="mt-6 pt-6 border-t border-slate-200">
-          <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-            Social Media Links
-          </label>
-          <p className="text-xs text-slate-500 mb-3">Add up to 3 social media links</p>
+        {/* Social Media — compact single-row repeater (design-system.md section 6): one row per link
+            (platform + URL + trash), with "+ Add Social Link" in the section's title row. */}
+        <div className="mt-6 pt-6 border-t border-slate-200" data-testid="social-links">
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-medium text-slate-700">
+              Social Media Links
+            </label>
+            {!disabled && (formData.organizer?.socialMedia?.length || 0) < 3 && (
+              <button
+                type="button"
+                onClick={handleAddSocialMedia}
+                className="inline-flex items-center gap-1 text-sm text-teal-700 hover:text-teal-800 font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add Social Link
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 mt-1 mb-3">Add up to 3 social media links</p>
 
           {formData.organizer?.socialMedia && formData.organizer.socialMedia.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {formData.organizer.socialMedia.map((social, index) => {
                 // Get available platforms (exclude already selected ones)
                 const selectedPlatforms = (formData.organizer.socialMedia || [])
@@ -381,62 +396,49 @@ const EventDetailsStep = ({
                 const availablePlatforms = SOCIAL_PLATFORMS.filter(p => !selectedPlatforms.includes(p.value));
 
                 return (
-                  <div key={index} className="rounded-lg border border-slate-200 p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 min-w-0">
-                        <PlatformDropdown
-                          value={social.platform}
-                          options={availablePlatforms}
-                          onChange={(v) => handleUpdateSocialMedia(index, 'platform', v)}
-                          disabled={disabled}
-                        />
-                      </div>
-                      {!disabled && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSocialMedia(index)}
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors shrink-0"
-                          title="Remove"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      )}
+                  <div key={index} data-testid="social-link-row" className="flex items-center gap-2">
+                    <div className="w-32 sm:w-40 shrink-0">
+                      <PlatformDropdown
+                        value={social.platform}
+                        options={availablePlatforms}
+                        onChange={(v) => handleUpdateSocialMedia(index, 'platform', v)}
+                        disabled={disabled}
+                      />
                     </div>
-                    <input
-                      type="url"
-                      value={social.url || ''}
-                      onChange={(e) => handleUpdateSocialMedia(index, 'url', e.target.value)}
-                      disabled={disabled}
-                      className={`${getFieldClasses(false)} w-full`}
-                      placeholder={social.platform ? `https://${social.platform.toLowerCase()}.com/...` : 'https://...'}
-                      maxLength="200"
-                    />
+                    <div className="flex-1 min-w-0">
+                      <input
+                        type="url"
+                        value={social.url || ''}
+                        onChange={(e) => handleUpdateSocialMedia(index, 'url', e.target.value)}
+                        disabled={disabled}
+                        className={getFieldClasses(false)}
+                        placeholder={social.platform ? `https://${social.platform.toLowerCase()}.com/...` : 'https://...'}
+                        maxLength="200"
+                      />
+                    </div>
+                    {!disabled && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSocialMedia(index)}
+                        className="p-2 text-slate-500 hover:text-red-600 rounded-lg transition-colors shrink-0"
+                        title="Remove"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 );
               })}
             </div>
           ) : null}
-
-          {!disabled && (formData.organizer?.socialMedia?.length || 0) < 3 && (
-            <button
-              type="button"
-              onClick={handleAddSocialMedia}
-              className="mt-3 inline-flex items-center px-4 py-2 text-sm text-teal-700 hover:text-teal-800 font-medium"
-            >
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add Social Link
-            </button>
-          )}
         </div>
       </div>
 
       {/* Event Coordinators Section */}
       <div className="border-t border-slate-200 pt-6 mt-6">
-        <h3 className="font-medium text-base sm:text-lg mb-1 text-slate-600">
+        <h3 className="font-medium text-base mb-1 text-slate-600">
           Event Coordinators
           <span className="text-sm font-normal text-slate-500 ml-2">(optional)</span>
         </h3>
@@ -538,14 +540,14 @@ const EventDetailsStep = ({
                       maxLength="100"
                     />
                     {coordinatorFieldError(index, 'name') && (
-                      <p className="text-red-500 text-xs mt-1">{coordinatorFieldError(index, 'name')}</p>
+                      <p className="text-red-600 text-xs mt-1">{coordinatorFieldError(index, 'name')}</p>
                     )}
                   </div>
 
                   {/* Phone */}
                   <div>
                     <label className="block font-medium mb-2 text-slate-600 text-sm">
-                      Phone {coordinator?.name?.trim() && <span className="text-red-500">*</span>}
+                      Phone {coordinator?.name?.trim() && <span className="text-red-600">*</span>}
                     </label>
                     <input
                       type="tel"
@@ -557,9 +559,9 @@ const EventDetailsStep = ({
                       maxLength="20"
                     />
                     {coordinatorFieldError(index, 'phone') ? (
-                      <p className="text-red-500 text-xs mt-1">{coordinatorFieldError(index, 'phone')}</p>
+                      <p className="text-red-600 text-xs mt-1">{coordinatorFieldError(index, 'phone')}</p>
                     ) : (coordinator?.phone && !isValidPhone(coordinator.phone)) ? (
-                      <p className="text-red-500 text-xs mt-1">Enter a valid phone number</p>
+                      <p className="text-red-600 text-xs mt-1">Enter a valid phone number</p>
                     ) : null}
                   </div>
 
@@ -594,9 +596,9 @@ const EventDetailsStep = ({
                       maxLength="100"
                     />
                     {coordinatorFieldError(index, 'email') ? (
-                      <p className="text-red-500 text-xs mt-1">{coordinatorFieldError(index, 'email')}</p>
+                      <p className="text-red-600 text-xs mt-1">{coordinatorFieldError(index, 'email')}</p>
                     ) : (coordinator?.email && !isValidEmail(coordinator.email)) ? (
-                      <p className="text-red-500 text-xs mt-1">Email is invalid</p>
+                      <p className="text-red-600 text-xs mt-1">Email is invalid</p>
                     ) : null}
                   </div>
                 </div>

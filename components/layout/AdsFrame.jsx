@@ -1,8 +1,8 @@
 // Shared app-shell frame for (with-ads) pages.
-// Layout contract: see designGuides/02-Frontend-GUI/layout.md section 1.
+// Layout contract: see designguide/00-shared/layout-foundation.md.
 //
 // Assembles, outer to inner:
-//   .container frame -> top banner slot -> row of [ LeftAd | content column | RightAd ] -> Footer
+//   .container frame -> top banner slot -> row of [ LeftAd | content column | RightAd ]
 //
 // The content column (#Main) is locked to `flex-1 min-w-0`: flex-1 fills the
 // space the banners don't use, min-w-0 lets it shrink so a wide child (e.g. a
@@ -10,11 +10,11 @@
 // the page sideways on mobile. This rule lives here, once, so it can't drift.
 //
 // The top ad varies per section (EventTopAd, TopAd, ThreadTopAd, ...), so it is
-// passed in as the `topAd` slot; the side ads and footer are shared.
+// passed in as the `topAd` slot; the side ads are shared. The site footer is not
+// here - it is rendered once globally in app/layout.jsx.
 import { Suspense } from 'react';
 import LeftAd from '@/components/ads/LeftAd';
 import RightAd from '@/components/ads/RightAd';
-import Footer from '@/components/Footer';
 import StateSelector from '@/components/ads/StateSelector';
 import AdsContentShell from '@/components/layout/AdsContentShell';
 
@@ -32,7 +32,6 @@ const AdsFrame = ({ topAd = null, children }) => {
         </div>
         <RightAd />
       </div>
-      <Footer />
     </main>
   );
 };

@@ -27,7 +27,7 @@ const DayFilter = ({ selectedDay, onDayChange }) => {
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-medium text-slate-700 mb-2">
         Day Filter
       </label>
       <div className="flex flex-wrap gap-2">
@@ -40,7 +40,7 @@ const DayFilter = ({ selectedDay, onDayChange }) => {
               (day.value === '' && !selectedDay) ||
               (day.value === 'today' && selectedDay === getTodayName())
                 ? 'bg-teal-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             {day.label}
@@ -55,7 +55,7 @@ const DayFilter = ({ selectedDay, onDayChange }) => {
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
               selectedDay === day.value
                 ? 'bg-teal-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             {day.label}

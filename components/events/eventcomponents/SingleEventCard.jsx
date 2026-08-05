@@ -32,12 +32,14 @@ import {
   FaThumbsUp,
   FaUserTie,
   FaMapMarkedAlt,
-  FaCheckCircle
+  FaCheckCircle,
+  FaRegCalendarCheck
 } from 'react-icons/fa';
 import { MdLocationOn, MdEmail, MdPhone, MdPerson, MdEventSeat } from 'react-icons/md';
 import { GiTheaterCurtains } from 'react-icons/gi';
 import { useEventWishlist } from '@/utils/helpers/events/userEventWishlist';
 import { getEventTicketStatus, getTicketSaleStatus } from '@/utils/events/ticketStatusHelper';
+import { isDiscountRedeemable } from '@/utils/events/discountCodes';
 import SendMessage from '@/components/chat/SendMessage';
 import ShareIcons from '@/components/shared/ShareIcons';
 import { buildSlugUrl } from '@/utils/slugUtils';
@@ -416,14 +418,14 @@ const SingleEventCard = ({ event, chatProps }) => {
 
   // Green joined state, or the Join button. Reused by both the paid and free action areas.
   const waitlistBlock = waitlistJoined ? (
-    <div className="w-full sm:w-auto bg-green-50 text-green-700 border border-green-200 px-6 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2">
+    <div className="w-full sm:w-auto bg-green-50 text-green-700 border border-green-200 px-5 py-2.5 rounded-lg font-semibold text-sm flex items-center justify-center gap-2">
       <FaCheckCircle />
       You are on the waitlist
     </div>
   ) : (
     <button
       onClick={handleJoinWaitlist}
-      className="inline-flex items-center gap-2 bg-teal-700 text-white hover:bg-teal-800 px-5 py-2 rounded-full shadow-sm font-semibold text-sm transition-colors"
+      className="inline-flex items-center gap-2 bg-teal-700 text-white hover:bg-teal-800 px-5 py-2.5 rounded-lg shadow-sm font-semibold text-sm transition-colors"
     >
       Join the waitlist
     </button>
@@ -488,14 +490,14 @@ const SingleEventCard = ({ event, chatProps }) => {
             </button>
 
             {/* Dot Indicators */}
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-2">
               {event.images.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
                   className={`h-2 rounded-full transition-all duration-300 ${
                     index === currentImageIndex
-                      ? 'w-6 bg-teal-600'
+                      ? 'w-6 bg-teal-700'
                       : 'w-2 bg-slate-300 hover:bg-slate-400'
                   }`}
                   aria-label={`Go to image ${index + 1}`}
@@ -517,7 +519,7 @@ const SingleEventCard = ({ event, chatProps }) => {
           title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
         >
           <FaHeart
-            className={`text-sm sm:text-base md:text-lg ${
+            className={`text-sm ${
               isInWishlist ? 'text-white' : 'text-slate-700'
             }`}
           />
@@ -537,7 +539,7 @@ const SingleEventCard = ({ event, chatProps }) => {
 
           <button
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-slate-800 p-2 rounded-full shadow hover:bg-white transition"
+            className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-slate-500 hover:text-slate-700 p-2 rounded-full shadow hover:bg-white transition"
           >
             <FaTimes size={24} />
           </button>
@@ -565,7 +567,7 @@ const SingleEventCard = ({ event, chatProps }) => {
                     onClick={() => setCurrentImageIndex(index)}
                     className={`h-2.5 rounded-full transition-all duration-300 ${
                       index === currentImageIndex
-                        ? 'w-8 bg-teal-500'
+                        ? 'w-8 bg-teal-700'
                         : 'w-2.5 bg-slate-400 hover:bg-slate-300'
                     }`}
                     aria-label={`Go to image ${index + 1}`}
@@ -580,9 +582,9 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Title Section */}
       {event.title && (
         <div className="my-2 px-2">
-          <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-slate-900 break-words">{event.title}</h1>
+          <h1 className="text-lg text-center font-bold my-1 px-2 text-slate-900 break-words">{event.title}</h1>
           {event.eventCode && (
-            <p className="text-center text-sm sm:text-base text-slate-700 mt-1">
+            <p className="text-center text-sm text-slate-700 mt-1">
               (event code: {event.eventCode})
             </p>
           )}
@@ -591,30 +593,30 @@ const SingleEventCard = ({ event, chatProps }) => {
 
       {/* Main Details Section */}
       <div className="my-4 p-3">
-        <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Event Details</h3>
+        <h3 className="text-base font-semibold text-slate-900 pb-2 border-b border-slate-200 mb-3">Event Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
           {/* Date */}
-          <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+          <div className="flex items-center gap-2 text-sm text-slate-700 min-w-0">
             <FaCalendarAlt className="text-slate-500 shrink-0" size={13} title="Date" aria-label="Date" />
             <span>{formattedDate}</span>
           </div>
 
           {/* Time */}
-          <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+          <div className="flex items-center gap-2 text-sm text-slate-700 min-w-0">
             <FaClock className="text-slate-500 shrink-0" size={13} title="Time" aria-label="Time" />
             <span>{formattedTime} ({dateTimeZone})</span>
           </div>
 
           {/* Venue */}
-          <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+          <div className="flex items-center gap-2 text-sm text-slate-700 min-w-0">
             <GiTheaterCurtains className="text-slate-500 shrink-0" size={15} title="Venue" aria-label="Venue" />
             <span>{event.venue}</span>
           </div>
 
           {/* Address - Full width if address exists */}
           {event.address && (
-            <div className="flex items-center gap-2 text-sm sm:text-base sm:col-span-2 text-slate-700 min-w-0">
+            <div className="flex items-center gap-2 text-sm sm:col-span-2 text-slate-700 min-w-0">
               <FaMapMarkedAlt className="text-slate-500 shrink-0" size={13} title="Address" aria-label="Address" />
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address.formattedAddress)}`}
@@ -633,14 +635,14 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Event Organizer Section */}
       {event.organizer && (
         <div className="my-4 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Event Organizer</h3>
+          <h3 className="text-base font-semibold text-slate-900 pb-2 border-b border-slate-200 mb-3">Event Organizer</h3>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+            <div className="flex items-center gap-2 text-sm text-slate-700 min-w-0">
               <FaUser className="text-slate-500 shrink-0" size={13} title="Name" aria-label="Name" />
               <span className="truncate" title={event.organizer.name}>{event.organizer.name}</span>
             </div>
             {event.organizer.contact && (
-              <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+              <div className="flex items-center gap-2 text-sm text-slate-700 min-w-0">
                 <FaMobileAlt className="text-slate-500 shrink-0" size={13} title="Phone" aria-label="Phone" />
                 <a href={`tel:${event.organizer.contact}`} className="hover:text-slate-900 underline truncate sm:whitespace-normal">
                   {event.organizer.contact}
@@ -648,7 +650,7 @@ const SingleEventCard = ({ event, chatProps }) => {
               </div>
             )}
             {event.organizer.email && (
-              <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+              <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-sm text-slate-700 min-w-0">
                 <FaEnvelope className="text-slate-500 shrink-0" size={13} title="Email" aria-label="Email" />
                 <a
                   href={`mailto:${event.organizer.email}`}
@@ -659,7 +661,7 @@ const SingleEventCard = ({ event, chatProps }) => {
               </div>
             )}
             {event.organizer.website && (
-              <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+              <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-sm text-slate-700 min-w-0">
                 <FaGlobe className="text-slate-500 shrink-0" size={13} title="Website" aria-label="Website" />
                 <a
                   href={event.organizer.website}
@@ -673,7 +675,7 @@ const SingleEventCard = ({ event, chatProps }) => {
               </div>
             )}
             {event.organizer.socialMedia && event.organizer.socialMedia.length > 0 && (
-              <div className="col-span-2 flex items-center gap-2 text-sm sm:text-base text-slate-700 flex-wrap">
+              <div className="col-span-2 flex items-center gap-2 text-sm text-slate-700 flex-wrap">
                 <FaThumbsUp className="text-slate-500 shrink-0" size={13} title="Follow us" aria-label="Follow us" />
                 {event.organizer.socialMedia.map((social, index) => (
                   <React.Fragment key={index}>
@@ -703,7 +705,7 @@ const SingleEventCard = ({ event, chatProps }) => {
         const renderCard = (coordinator, index, extraClasses = '') => (
           <div key={index} className={`p-2 space-y-1 ${extraClasses}`}>
             {coordinator.name && (
-              <div className="flex items-center gap-2 text-sm sm:text-base text-slate-700 min-w-0">
+              <div className="flex items-center gap-2 text-sm text-slate-700 min-w-0">
                 <FaUser className="text-slate-500 shrink-0" size={13} title="Name" aria-label="Name" />
                 <span className="truncate" title={coordinator.name}>{coordinator.name}</span>
               </div>
@@ -733,7 +735,7 @@ const SingleEventCard = ({ event, chatProps }) => {
 
         return (
           <div className="my-4 p-3">
-            <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Event Coordinators</h3>
+            <h3 className="text-base font-semibold text-slate-900 pb-2 border-b border-slate-200 mb-3">Event Coordinators</h3>
 
             {/* Mobile: vertical slider when >2 coords, otherwise stacked */}
             <div className="md:hidden">
@@ -746,7 +748,7 @@ const SingleEventCard = ({ event, chatProps }) => {
                     {filteredCoords.map((c, i) => renderCard(c, i, 'snap-start'))}
                   </div>
                   {coordMobileCanScroll && coordMobileTotalPages > 1 && (
-                    <div className="flex flex-col justify-center gap-1.5 shrink-0">
+                    <div className="flex flex-col justify-center gap-2 shrink-0">
                       {Array.from({ length: coordMobileTotalPages }).map((_, i) => (
                         <button
                           key={i}
@@ -783,7 +785,7 @@ const SingleEventCard = ({ event, chatProps }) => {
                     </div>
                   </div>
                   {coordCanScroll && coordTotalPages > 1 && (
-                    <div className="flex justify-center gap-1.5 mt-3">
+                    <div className="flex justify-center gap-2 mt-3">
                       {Array.from({ length: coordTotalPages }).map((_, i) => (
                         <button
                           key={i}
@@ -814,11 +816,11 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Description Section */}
       {event.description && (
         <div className="my-4 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">About This Event</h3>
+          <h3 className="text-base font-semibold text-slate-900 pb-2 border-b border-slate-200 mb-3">About This Event</h3>
           <div className="relative">
             <div
               ref={descriptionRef}
-              className={`text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap ${
+              className={`text-sm text-slate-700 leading-relaxed whitespace-pre-wrap ${
                 descriptionExpanded ? '' : 'line-clamp-[20]'
               }`}
             >
@@ -843,18 +845,39 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Tickets — capacity + ticket types + purchase, in sequence (paid events) */}
       {event.isPaid && event.ticketTypes?.length > 0 && (
         <div ref={actionRef} className="my-4 p-3">
-          {/* Two columns: ticket types take most of the width (column 1); capacity + purchase sit
-              in a narrow column 2 (only the width they need). Stacks on mobile. No heading. */}
-          <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+          {/* Mobile: the Purchase + Availability/Order Limit summary sits ABOVE the ticket list;
+              desktop: ticket list on the left, that summary in a narrow right column. Ordering is
+              done with flex order so there is only one capacity display and one button. */}
+          <div className="flex flex-col lg:flex-row lg:items-start gap-3">
 
-            {/* Column 1 — ticket types. ONE bordered card, rows divided by a subtle line; 5+ types
-                scroll inside the card so it stays compact. */}
-            <div className="flex-1 min-w-0">
+            {/* Ticket types. ONE bordered card, rows divided by a subtle line; 5+ types scroll
+                inside the card so it stays compact. Below the summary on mobile, left on desktop. */}
+            <div className="order-2 lg:order-1 flex-1 min-w-0">
               <div className={`rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 transition-opacity ${capacityFull ? 'opacity-50' : ''} ${event.ticketTypes.length > 4 ? 'max-h-72 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full' : ''}`}>
                 {event.ticketTypes.map((ticket, index) => {
                   // Capacity is event-level, not per-ticket, so the list only reflects sale-window status.
                   const status = event.timeZone ? getTicketSaleStatus(ticket, event.timeZone, null) : null;
                   const StatusIcon = status?.icon;
+                  // Public discount-code hints (same source/rule as the tickets page): the API only
+                  // ships redeemable, show-hint codes to non-owners, so these are safe to display. A
+                  // code covers this ticket when its appliesToTicketTypes includes the NAME.
+                  const discountEls = (event.discountCodes || [])
+                    .filter(isDiscountRedeemable)
+                    .filter((dc) => (dc.appliesToTicketTypes || []).includes(ticket.name))
+                    .map((dc) => (
+                      <span
+                        key={dc.code}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-teal-800 text-xs"
+                      >
+                        <FaTag className="text-teal-600 w-2.5 h-2.5 shrink-0" />
+                        <span>
+                          Use code <span className="font-bold text-teal-700">{dc.code}</span>
+                          {dc.kind === 'fixed'
+                            ? ` for $${Number(dc.value).toFixed(2)} off`
+                            : ` for ${dc.value}% off`}
+                        </span>
+                      </span>
+                    ));
                   return (
                     <div
                       key={index}
@@ -863,51 +886,67 @@ const SingleEventCard = ({ event, chatProps }) => {
                       {/* Name, note and status all wrap in this first column; the price sits
                           top-aligned in its own narrow column, so a long note stays left. */}
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm sm:text-base font-semibold text-slate-800 truncate">{ticket.name}</p>
+                        <p className="text-base font-semibold text-slate-900 truncate">{ticket.name}</p>
                         {ticket.bundleSize && (
-                          <p className="text-xs mt-0.5 text-slate-500">(admits {ticket.bundleSize})</p>
+                          <p className="text-xs mt-1 text-slate-500">(admits {ticket.bundleSize})</p>
                         )}
                         {ticket.note && (
-                          <p className="text-xs mt-0.5 text-slate-500">{ticket.note}</p>
+                          <p className="text-xs mt-1 text-slate-500">{ticket.note}</p>
                         )}
-                        {status && (
-                          <p className={`flex items-center gap-1 text-xs mt-0.5 ${status.className}`}>
-                            {StatusIcon && <StatusIcon size={12} className="shrink-0" />}
-                            {status.message}
-                          </p>
+                        {/* Sale status and the discount-code hint(s) on one line: status first, a
+                            comma, then the code badge(s) next to it (wraps if the row is tight). */}
+                        {(status || discountEls.length > 0) && (
+                          <div className="flex flex-wrap items-center gap-1 mt-1">
+                            {status && (
+                              <span className={status.className}>
+                                {StatusIcon && <StatusIcon size={12} className="shrink-0" />}
+                                {status.message}
+                              </span>
+                            )}
+                            {status && discountEls.length > 0 && <span className="text-slate-400 text-xs">,</span>}
+                            {discountEls}
+                          </div>
                         )}
                       </div>
                       {/* Bundle rows show the bundle price (share x pack size), not the bare share. */}
-                      <p className="text-base sm:text-lg font-bold text-teal-700 shrink-0">${ticket.bundleSize ? ticket.price * ticket.bundleSize : ticket.price}</p>
+                      <p className="text-base font-bold text-teal-700 shrink-0">${ticket.bundleSize ? ticket.price * ticket.bundleSize : ticket.price}</p>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Column 2 — capacity then purchase, only the width it needs. */}
+            {/* Purchase + Availability/Order Limit. Mobile: one compact row ABOVE the tickets -
+                button on the left (vertically centred between the two summary rows), summary on the
+                right. Desktop: narrow right column - summary on top, button below. */}
             {!event.isAdvertiseOnly && (
-              <div className="w-full lg:w-56 shrink-0 space-y-4">
-                <EventCapacityDisplay
-                  eventId={event._id}
-                  isPaid={event.isPaid}
-                  context="viewing"
-                  maxPerRegistration={event.maxAttendeesPerRegistration}
-                  onCapacityUpdate={handleCapacityUpdate}
-                  stack
-                />
-                <div className="flex justify-center lg:justify-start">
-                  {showWaitlist ? (
-                    waitlistBlock
-                  ) : (
-                    <button
-                      onClick={handlePurchaseTickets}
-                      className="inline-flex items-center gap-2 bg-teal-700 text-white hover:bg-teal-800 px-5 py-2 rounded-full shadow-sm font-semibold text-sm transition-colors"
-                    >
-                      <FaShoppingCart />
-                      Purchase Tickets
-                    </button>
-                  )}
+              <div className="order-1 lg:order-2 w-full lg:w-56 shrink-0">
+                <div className="flex flex-row items-center justify-between gap-3 lg:flex-col lg:items-start lg:gap-4">
+                  {/* Purchase button (mobile: left, vertically centred; desktop: below the summary) */}
+                  <div className="order-1 lg:order-2 shrink-0">
+                    {showWaitlist ? (
+                      waitlistBlock
+                    ) : (
+                      <button
+                        onClick={handlePurchaseTickets}
+                        className="inline-flex items-center gap-2 bg-teal-700 text-white hover:bg-teal-800 px-5 py-2.5 rounded-lg shadow-sm font-semibold text-sm transition-colors"
+                      >
+                        <FaShoppingCart />
+                        Purchase Tickets
+                      </button>
+                    )}
+                  </div>
+                  {/* Availability + Order Limit (mobile: right; desktop: on top) */}
+                  <div className="order-2 lg:order-1 min-w-0">
+                    <EventCapacityDisplay
+                      eventId={event._id}
+                      isPaid={event.isPaid}
+                      context="viewing"
+                      maxPerRegistration={event.maxAttendeesPerRegistration}
+                      onCapacityUpdate={handleCapacityUpdate}
+                      stack
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -918,28 +957,25 @@ const SingleEventCard = ({ event, chatProps }) => {
       {/* Refund Policy Section (for paid events) */}
       {event.isPaid && event.refundPolicy && (
         <div className="my-4 p-3">
-          <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Refund Policy</h3>
-          <div className="text-sm text-slate-700 space-y-2">
-            {/* Processing Fee Policy */}
-            <p>
-              Processing fees are {event.refundPolicy.processingFeePolicy === 'refunded'
-                ? 'refundable'
-                : 'non-refundable'}.
-            </p>
-
-            {/* Custom Policy Text */}
-            {event.refundPolicy.policyText && event.refundPolicy.policyText.trim() && (
-              <p className="whitespace-pre-line leading-relaxed">
-                {event.refundPolicy.policyText}
-              </p>
-            )}
+          <h3 className="text-base font-semibold text-slate-900 pb-2 border-b border-slate-200 mb-3">Refund Policy</h3>
+          {/* The processing-fee line (from settings) and the custom policy text (from the field)
+              render as ONE uniform block - same size, colour and line spacing - so they read as a
+              single group instead of two. */}
+          <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+            {`Processing fees are ${
+              event.refundPolicy.processingFeePolicy === 'refunded' ? 'refundable' : 'non-refundable'
+            }.${
+              event.refundPolicy.policyText && event.refundPolicy.policyText.trim()
+                ? `\n${event.refundPolicy.policyText}`
+                : ''
+            }`}
           </div>
         </div>
       )}
 
       {/* Booking Card — capacity + RSVP CTA (free events; paid events use the Tickets section above) */}
       {!event.isAdvertiseOnly && !event.isPaid && (
-        <div ref={actionRef} className="my-4 p-4 border border-slate-200 rounded-lg bg-white shadow-sm">
+        <div ref={actionRef} className="my-4 p-4 border border-slate-200 rounded-lg bg-white shadow-sm max-w-md mx-auto">
           <EventCapacityDisplay
             eventId={event._id}
             isPaid={event.isPaid}
@@ -951,7 +987,7 @@ const SingleEventCard = ({ event, chatProps }) => {
           <div className="flex justify-center">
             {isCheckedIn ? (
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-full sm:w-auto bg-green-50 text-green-700 border border-green-200 px-8 py-3 rounded-lg font-semibold text-sm md:text-base flex items-center justify-center gap-2">
+                  <div className="w-full sm:w-auto bg-green-50 text-green-700 border border-green-200 px-5 py-2.5 rounded-lg font-semibold text-sm flex items-center justify-center gap-2">
                     <FaCheckCircle />
                     Checked In
                   </div>
@@ -964,7 +1000,7 @@ const SingleEventCard = ({ event, chatProps }) => {
                 </div>
               ) : isRegistered ? (
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-full sm:w-auto bg-green-50 text-green-700 border border-green-200 px-8 py-3 rounded-lg font-semibold text-sm md:text-base flex items-center justify-center gap-2">
+                  <div className="w-full sm:w-auto bg-green-50 text-green-700 border border-green-200 px-5 py-2.5 rounded-lg font-semibold text-sm flex items-center justify-center gap-2">
                     <FaCheckCircle />
                     Already Registered
                   </div>
@@ -999,13 +1035,11 @@ const SingleEventCard = ({ event, chatProps }) => {
                     }
                     router.push(`/events/rsvp/${event._id}`);
                   }}
-                  className="w-full sm:w-auto bg-teal-700 text-white hover:bg-teal-800 px-8 py-3 rounded-lg shadow font-semibold text-sm md:text-base transition-colors"
+                  className="inline-flex items-center gap-2 bg-teal-700 text-white hover:bg-teal-800 px-5 py-2.5 rounded-lg shadow-sm font-semibold text-sm transition-colors"
                   disabled={registrationStatus === 'loading'}
                 >
-                  {registrationStatus === 'loading'
-                    ? 'Processing...'
-                    : 'Register for Event'
-                  }
+                  <FaRegCalendarCheck />
+                  {registrationStatus === 'loading' ? 'Processing...' : 'Register for Event'}
                 </button>
               )
             }
@@ -1035,7 +1069,7 @@ const SingleEventCard = ({ event, chatProps }) => {
             href={event.externalTicketUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-teal-700 text-white hover:bg-teal-800 px-6 py-2 rounded shadow font-semibold text-sm md:text-base transition-colors inline-flex items-center"
+            className="bg-teal-700 text-white hover:bg-teal-800 px-5 py-2.5 rounded-lg shadow-sm font-semibold text-sm transition-colors inline-flex items-center gap-2"
           >
             {chatProps.promoCtaLabel}
             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1050,7 +1084,7 @@ const SingleEventCard = ({ event, chatProps }) => {
         <div ref={chatRef} className="block lg:hidden px-2 my-4">
           {chatProps.isCuratedEvent ? (
             <div className="p-3 w-full border-t border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900 mb-3">Get in touch</h2>
+              <h2 className="text-base font-semibold text-slate-900 mb-3">Get in touch</h2>
               <p className="text-sm text-slate-700 mb-4">
                 This event has been added on behalf of the organiser. Please use the contact details provided to reach them directly.
               </p>
@@ -1099,7 +1133,7 @@ const SingleEventCard = ({ event, chatProps }) => {
               }
             }
           }}
-          className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-colors"
+          className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-5 py-2.5 rounded-lg shadow font-semibold text-sm transition-colors"
           aria-label="Share event"
         >
           <FaShareAlt size={16} />
@@ -1110,7 +1144,7 @@ const SingleEventCard = ({ event, chatProps }) => {
         {chatProps && !chatProps.isCuratedEvent && (
           <button
             onClick={handleContactClick}
-            className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-4 py-3 rounded-full shadow font-semibold text-sm transition-colors"
+            className="bg-teal-700/80 backdrop-blur-sm text-white hover:bg-teal-700 flex items-center gap-2 px-5 py-2.5 rounded-lg shadow font-semibold text-sm transition-colors"
             aria-label="Chat with organiser"
           >
             <FaCommentDots size={16} />

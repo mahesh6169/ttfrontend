@@ -54,7 +54,7 @@ export default function PartnerStoresPage() {
   if (isLoading) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto py-6 sm:py-8">
-        <p className="text-center text-gray-500">Loading...</p>
+        <p className="text-center text-slate-500">Loading...</p>
       </div>
     );
   }
@@ -64,8 +64,8 @@ export default function PartnerStoresPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Partner Stores</h1>
-          <p className="text-gray-600 text-sm sm:text-base mt-1">Manage partner stores for daily deals</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Partner Stores</h1>
+          <p className="text-slate-600 text-sm sm:text-base mt-1">Manage partner stores for daily deals</p>
         </div>
         <button
           onClick={() => router.push('/admin/profile/deals/partners/add')}
@@ -83,12 +83,12 @@ export default function PartnerStoresPage() {
           placeholder="Search by business name..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          className="w-full sm:w-64 p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full sm:w-64 p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
         />
       </div>
 
       {filteredStores.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">No partner stores found</p>
+        <p className="text-slate-500 text-center py-8">No partner stores found</p>
       ) : (
         <>
           {/* Mobile Cards */}
@@ -103,21 +103,21 @@ export default function PartnerStoresPage() {
                       className="w-14 h-14 object-contain rounded"
                     />
                   ) : (
-                    <div className="w-14 h-14 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
+                    <div className="w-14 h-14 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs">
                       No Logo
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">{store.businessName}</div>
-                    <div className="text-xs text-gray-500">{store.partnerstoreId}</div>
-                    <div className="text-sm text-gray-600 mt-1">{store.subcategory ? `${store.category} › ${store.subcategory}` : store.category}</div>
+                    <div className="font-medium text-slate-900 truncate">{store.businessName}</div>
+                    <div className="text-xs text-slate-500">{store.partnerstoreId}</div>
+                    <div className="text-sm text-slate-600 mt-1">{store.subcategory ? `${store.category} › ${store.subcategory}` : store.category}</div>
                   </div>
                   <span className={`px-2 py-1 rounded text-xs whitespace-nowrap ${store.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {store.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </div>
 
-                <div className="mt-3 text-sm text-gray-600">
+                <div className="mt-3 text-sm text-slate-600">
                   {store.isNationwide ? (
                     <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Nationwide</span>
                   ) : (
@@ -145,20 +145,20 @@ export default function PartnerStoresPage() {
 
           {/* Desktop Table */}
           <div className="hidden sm:block bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Logo</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Business Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Logo</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Business Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Category</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Location</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-slate-200">
                 {filteredStores.map((store) => (
-                  <tr key={store._id} className="hover:bg-gray-50">
+                  <tr key={store._id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       {store.logo?.url ? (
                         <img
@@ -167,17 +167,17 @@ export default function PartnerStoresPage() {
                           className="w-12 h-12 object-contain rounded"
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
+                        <div className="w-12 h-12 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs">
                           No Logo
                         </div>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{store.businessName}</div>
-                      <div className="text-xs text-gray-500">{store.partnerstoreId}</div>
+                      <div className="font-medium text-slate-900">{store.businessName}</div>
+                      <div className="text-xs text-slate-500">{store.partnerstoreId}</div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{store.subcategory ? `${store.category} › ${store.subcategory}` : store.category}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                    <td className="px-4 py-3 text-sm text-slate-600">{store.subcategory ? `${store.category} › ${store.subcategory}` : store.category}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">
                       {store.isNationwide ? (
                         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Nationwide</span>
                       ) : (

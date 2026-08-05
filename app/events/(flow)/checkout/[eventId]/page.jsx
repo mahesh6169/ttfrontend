@@ -835,7 +835,7 @@ const CheckoutPage = () => {
             </p>
 
             <div className="bg-teal-50 rounded-md sm:rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 lg:mb-6">
-              <h3 className="font-semibold text-teal-800 mb-1.5 sm:mb-2 text-sm sm:text-base">
+              <h3 className="font-semibold text-teal-800 mb-2 text-sm sm:text-base">
                 What's Next?
               </h3>
               <ul className="text-teal-700 space-y-1 text-xs sm:text-sm lg:text-base text-left">
@@ -920,73 +920,59 @@ const CheckoutPage = () => {
     <RequireLogin>
       <div>
         <div>
-          {/* Back Button - Smart behavior based on current step */}
-          <div className="mb-2 sm:mb-4">
-            <BackButton
-              onClick={() => {
-                if (currentStep === 'payment') {
-                  // If on payment step, go back to details step
-                  handleBackToDetails();
-                } else {
-                  // If on details step, go back to seats/tickets
-                  hasSeatingLayout ? router.push(`/events/seats/${params.eventId}`) : router.push(`/events/tickets/${params.eventId}`);
-                }
-              }}
-            />
+          {/* Page toolbar (design-system.md section 8): Back pinned left, the "Checkout" title
+              centred in the same row (matches the tickets/seats pages). */}
+          <div className="relative flex items-center justify-center mb-4">
+            <div className="absolute left-0">
+              <BackButton
+                onClick={() => {
+                  if (currentStep === 'payment') {
+                    handleBackToDetails();
+                  } else {
+                    hasSeatingLayout ? router.push(`/events/seats/${params.eventId}`) : router.push(`/events/tickets/${params.eventId}`);
+                  }
+                }}
+              />
+            </div>
+            <h1 className="text-lg font-bold text-slate-900">Checkout</h1>
           </div>
-          
-          {/* Step Indicator — flat, no box */}
-          <div className="mb-4 sm:mb-6">
-            <div className="flex items-center justify-center">
-              <div
-                className={`flex items-center ${
-                  currentStep === 'details' ? 'text-teal-700' : 'text-teal-600'
-                }`}
-              >
+
+          {/* Stepper - centred, below the title. Conforms to section 9: teal current / teal-check
+              done / slate upcoming, connector fills teal once passed, flat 14px. */}
+          <div data-testid="checkout-stepper" className="flex items-center justify-center mb-4">
+              {/* Step 1 - Details (current until the buyer continues, then done). */}
+              <div className="flex items-center gap-1.5">
                 <div
-                  className={`w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center ${
-                    currentStep === 'details'
-                      ? 'bg-teal-700 text-white'
-                      : 'bg-teal-600 text-white'
-                  }`}
+                  data-testid="step-details"
+                  data-state={currentStep === 'details' ? 'current' : 'done'}
+                  className="w-7 h-7 rounded-full flex items-center justify-center bg-teal-700 text-white text-sm"
                 >
-                  {currentStep === 'payment' ? (
-                    <FaCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                  ) : (
-                    <span className="text-xs sm:text-sm lg:text-base">1</span>
-                  )}
+                  {currentStep === 'details' ? <span>1</span> : <FaCheckCircle className="w-4 h-4" />}
                 </div>
-                <span className="ml-1.5 sm:ml-2 text-xs sm:text-sm lg:text-base font-medium">Details</span>
+                <span className={`text-sm font-medium ${currentStep === 'details' ? 'text-teal-700' : 'text-slate-500'}`}>Details</span>
               </div>
 
-              <div
-                className={`w-8 sm:w-12 lg:w-16 h-0.5 sm:h-1 mx-2 sm:mx-3 lg:mx-4 ${
-                  currentStep === 'payment' ? 'bg-teal-600' : 'bg-slate-200'
-                }`}
-              ></div>
+              {/* Connector - fills teal once step 1 is passed. */}
+              <div className={`w-10 h-0.5 mx-3 ${currentStep === 'payment' ? 'bg-teal-700' : 'bg-slate-200'}`}></div>
 
-              <div
-                className={`flex items-center ${
-                  currentStep === 'payment' ? 'text-teal-700' : 'text-slate-400'
-                }`}
-              >
+              {/* Step 2 - Payment (upcoming until reached). */}
+              <div className="flex items-center gap-1.5">
                 <div
-                  className={`w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center ${
-                    currentStep === 'payment'
-                      ? 'bg-teal-700 text-white'
-                      : 'bg-slate-200 text-slate-600'
+                  data-testid="step-payment"
+                  data-state={currentStep === 'payment' ? 'current' : 'upcoming'}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-sm ${
+                    currentStep === 'payment' ? 'bg-teal-700 text-white' : 'bg-slate-200 text-slate-600'
                   }`}
                 >
-                  <span className="text-xs sm:text-sm lg:text-base">2</span>
+                  <span>2</span>
                 </div>
-                <span className="ml-1.5 sm:ml-2 text-xs sm:text-sm lg:text-base font-medium">Payment</span>
+                <span className={`text-sm font-medium ${currentStep === 'payment' ? 'text-teal-700' : 'text-slate-500'}`}>Payment</span>
               </div>
             </div>
-          </div>
 
-          {/* Timer and Status */}
+          {/* Reservation timer - urgency badge, centred. */}
           {reservation && (
-            <div className="mb-4 sm:mb-6">
+            <div className="flex justify-center mb-4">
               <ReservationTimer
                 expiresAt={reservation.expiresAt}
                 eventId={params.eventId}
@@ -1013,19 +999,20 @@ const CheckoutPage = () => {
             onSeatUpdate={handleSeatUpdate}
           />
 
-          {/* Mobile Order Summary - Show above main content on mobile */}
-          <div className="lg:hidden mb-4 sm:mb-6">
+          {/* Mobile Order Summary - collapsible bar at the top on mobile (section 11) */}
+          <div className="lg:hidden mb-4">
             <button
+              data-testid="mobile-order-summary-toggle"
               onClick={() => setShowMobileOrderSummary(!showMobileOrderSummary)}
               className="w-full bg-white border border-slate-200 rounded-lg p-3 flex items-center justify-between shadow-sm hover:bg-slate-50 transition-colors"
             >
               <div className="flex items-center">
-                <FaTicketAlt className="text-teal-600 mr-2 w-4 h-4" />
-                <span className="font-semibold text-sm">Order Summary</span>
+                <FaTicketAlt className="text-teal-700 mr-2 w-4 h-4" />
+                <span className="font-semibold text-sm text-slate-900">Order Summary</span>
                 <span className="ml-1.5 text-slate-600 text-sm">({totals.totalQuantity || 0} items)</span>
               </div>
               <div className="flex items-center">
-                <span className="font-bold text-teal-600 text-sm mr-1.5">${totals.total?.toFixed(2)}</span>
+                <span className="font-bold text-teal-700 text-sm mr-1.5">${totals.total?.toFixed(2)}</span>
                 {showMobileOrderSummary ? (
                   <FaChevronUp className="w-4 h-4 text-slate-500" />
                 ) : (
@@ -1036,7 +1023,7 @@ const CheckoutPage = () => {
             
             {/* Collapsible Content */}
             {showMobileOrderSummary && (
-              <div className="mt-1.5 transition-all duration-300">
+              <div className="mt-2 transition-all duration-300">
                 <PaymentSummary
                   event={event}
                   selectedTickets={formattedTickets}
@@ -1060,15 +1047,15 @@ const CheckoutPage = () => {
                 /* Details Step */
                 <>
                   {/* Discount Code (S3) — top of the form; it relates to the order total */}
-                  <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-slate-200">
-                    <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
+                  <div className="mb-6 pb-6 border-b border-slate-200">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
                       Discount code
                     </label>
                     {appliedDiscount ? (
-                      <div className="flex items-center justify-between gap-2 rounded-md border border-teal-300 bg-teal-50 px-3 py-2">
+                      <div className="flex items-center justify-between gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <FaTag className="text-teal-700 w-3.5 h-3.5 flex-shrink-0" />
-                          <span className="text-xs sm:text-sm text-teal-800 truncate">
+                          <span className="text-sm text-teal-800 truncate">
                             <span className="font-bold">{appliedDiscount.code}</span> applied
                             {totals.discountScopeLabel ? ` to ${totals.discountScopeLabel}` : ''}
                             {appliedDiscount.discountAmount > 0 && (
@@ -1079,7 +1066,7 @@ const CheckoutPage = () => {
                         <button
                           type="button"
                           onClick={handleRemoveDiscount}
-                          className="text-xs sm:text-sm text-red-600 hover:text-red-700 font-medium flex-shrink-0"
+                          className="text-sm text-red-600 hover:text-red-700 font-medium flex-shrink-0"
                         >
                           Remove
                         </button>
@@ -1093,33 +1080,34 @@ const CheckoutPage = () => {
                           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyDiscount(); } }}
                           placeholder="Enter code"
                           maxLength={50}
-                          className="flex-1 px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300 uppercase"
+                          className="flex-1 px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 uppercase"
                         />
                         <button
                           type="button"
                           onClick={handleApplyDiscount}
                           disabled={discountLoading || !discountCodeInput.trim()}
-                          className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium text-white ${discountLoading || !discountCodeInput.trim() ? 'bg-slate-400 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'}`}
+                          className={`shrink-0 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors ${discountLoading || !discountCodeInput.trim() ? 'bg-teal-700 opacity-50 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'}`}
                         >
                           {discountLoading ? 'Checking…' : 'Apply'}
                         </button>
                       </div>
                     )}
-                    {discountError && <p className="text-red-500 text-xs mt-1">{discountError}</p>}
+                    {discountError && <p data-testid="discount-error" className="text-red-600 text-xs mt-1">{discountError}</p>}
                   </div>
 
-                  {/* Buyer Information Form */}
+                  {/* Buyer Information Form (forms guide: 2-col desktop / stacked mobile, top labels
+                      + required *, flat text-sm, teal focus ring). */}
                   <div>
-                    <h2 className="text-sm sm:text-lg lg:text-xl font-semibold mb-2 sm:mb-4 flex items-center">
-                      <FaUser className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2 text-teal-600" />
+                    <h2 className="text-base font-semibold text-slate-900 mb-4 flex items-center">
+                      <FaUser className="w-4 h-4 mr-2 text-teal-700" />
                       Buyer Information
                     </h2>
-                    
-                    <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
+
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* First Name */}
                         <div>
-                          <label className="block text-xs sm:text-sm lg:text-base font-medium text-slate-700 mb-1 sm:mb-1.5">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">
                             First Name *
                           </label>
                           <input
@@ -1127,19 +1115,19 @@ const CheckoutPage = () => {
                             name="firstName"
                             value={buyerInfo.firstName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-3 py-2 sm:px-3 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                            className={`w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
                               errors.firstName ? 'border-red-500 bg-red-50' : 'border-slate-300'
                             }`}
                             placeholder="First name"
                           />
                           {errors.firstName && (
-                            <p className="mt-0.5 text-[10px] sm:text-xs text-red-600">{errors.firstName}</p>
+                            <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
                           )}
                         </div>
-                        
+
                         {/* Last Name */}
                         <div>
-                          <label className="block text-xs sm:text-sm lg:text-base font-medium text-slate-700 mb-1 sm:mb-1.5">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">
                             Last Name *
                           </label>
                           <input
@@ -1147,62 +1135,62 @@ const CheckoutPage = () => {
                             name="lastName"
                             value={buyerInfo.lastName || ''}
                             onChange={handleInputChange}
-                            className={`w-full px-3 py-2 sm:px-3 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                            className={`w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
                               errors.lastName ? 'border-red-500 bg-red-50' : 'border-slate-300'
                             }`}
                             placeholder="Last name"
                           />
                           {errors.lastName && (
-                            <p className="mt-0.5 text-[10px] sm:text-xs text-red-600">{errors.lastName}</p>
+                            <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>
                           )}
                         </div>
                       </div>
 
                       {/* Email + Phone - side by side on desktop */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Email */}
                       <div>
-                        <label className="block text-xs sm:text-sm lg:text-base font-medium text-slate-700 mb-1 sm:mb-1.5">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
                           Email *
                         </label>
                         <div className="relative">
-                          <FaEnvelope className="absolute left-3 sm:left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                           <input
                             type="email"
                             name="email"
                             value={buyerInfo.email || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-3 py-2 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                            className={`w-full pl-9 pr-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
                               errors.email ? 'border-red-500 bg-red-50' : 'border-slate-300'
                             }`}
                             placeholder="Email address"
                           />
                         </div>
                         {errors.email && (
-                          <p className="mt-0.5 text-[10px] sm:text-xs text-red-600">{errors.email}</p>
+                          <p className="mt-1 text-xs text-red-600">{errors.email}</p>
                         )}
                       </div>
 
                       {/* Phone */}
                       <div>
-                        <label className="block text-xs sm:text-sm lg:text-base font-medium text-slate-700 mb-1 sm:mb-1.5">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
                           Phone *
                         </label>
                         <div className="relative">
-                          <FaPhone className="absolute left-3 sm:left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <FaPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                           <input
                             type="tel"
                             name="phone"
                             value={buyerInfo.phone || ''}
                             onChange={handleInputChange}
-                            className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-3 py-2 sm:py-2 text-sm sm:text-base lg:text-base border rounded-md sm:rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                            className={`w-full pl-9 pr-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
                               errors.phone ? 'border-red-500 bg-red-50' : 'border-slate-300'
                             }`}
                             placeholder="Phone number"
                           />
                         </div>
                         {errors.phone && (
-                          <p className="mt-0.5 text-[10px] sm:text-xs text-red-600">{errors.phone}</p>
+                          <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
                         )}
                       </div>
                       </div>
@@ -1214,14 +1202,14 @@ const CheckoutPage = () => {
                           name="agreeToTerms"
                           checked={buyerInfo.agreeToTerms || false}
                           onChange={handleInputChange}
-                          className="mt-1 sm:mt-1 w-4 h-4 sm:w-4 sm:h-4 accent-teal-600 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+                          className="mt-0.5 w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300"
                         />
-                        <label className="ml-2 sm:ml-2 text-xs sm:text-sm lg:text-sm text-slate-600">
+                        <label className="ml-2 text-sm text-slate-600">
                           I agree to the{' '}
                           <a
                             href="/support/terms"
                             target="_blank"
-                            className="text-teal-600 hover:underline"
+                            className="text-teal-700 hover:underline"
                           >
                             Terms
                           </a>{' '}
@@ -1229,14 +1217,14 @@ const CheckoutPage = () => {
                           <a
                             href="/support/privacy"
                             target="_blank"
-                            className="text-teal-600 hover:underline"
+                            className="text-teal-700 hover:underline"
                           >
                             Privacy Policy
                           </a>
                         </label>
                       </div>
                       {errors.agreeToTerms && (
-                        <p className="text-[10px] sm:text-xs text-red-600 ml-4 sm:ml-6">
+                        <p className="text-xs text-red-600 ml-6">
                           {errors.agreeToTerms}
                         </p>
                       )}
@@ -1250,24 +1238,24 @@ const CheckoutPage = () => {
                               name="refundPolicyAccepted"
                               checked={refundPolicyAccepted || false}
                               onChange={(e) => setRefundPolicyAccepted(e.target.checked)}
-                              className="mt-1 sm:mt-1 w-4 h-4 sm:w-4 sm:h-4 accent-teal-600 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+                              className="mt-0.5 w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300"
                             />
-                            <label className="ml-2 sm:ml-2 text-xs sm:text-sm lg:text-sm text-slate-600">
+                            <label className="ml-2 text-sm text-slate-600">
                               I accept the organiser refund policy below *
                             </label>
                           </div>
                           {errors.refundPolicyAccepted && (
-                            <p className="text-[10px] sm:text-xs text-red-600 ml-4 sm:ml-6">
+                            <p className="text-xs text-red-600 ml-6">
                               {errors.refundPolicyAccepted}
                             </p>
                           )}
                         </>
                       )}
-                      
-                      {/* Refund Policy Display - Only for paid events */}
+
+                      {/* Refund Policy Display (amber warning callout) - only for paid events */}
                       {event?.isPaid && event?.refundPolicy && (
-                        <div className="mt-3 sm:mt-4 border-t pt-3 sm:pt-4">
-                          <RefundPolicyDisplay 
+                        <div className="mt-4">
+                          <RefundPolicyDisplay
                             refundPolicy={event.refundPolicy}
                             variant="checkout"
                             showNote={false}
@@ -1275,20 +1263,20 @@ const CheckoutPage = () => {
                         </div>
                       )}
 
-                      {/* Proceed to Payment Button */}
-                      <div className="mt-3 sm:mt-4 flex justify-center">
+                      {/* Proceed to Payment Button (primary; disabled = teal-700 at 50%) */}
+                      <div className="mt-4 flex justify-center">
                       <button
                         onClick={handleProceedToPayment}
                         disabled={isProcessing || shouldDisableProceed()}
-                        className={`w-auto py-2 sm:py-2.5 lg:py-3 px-6 sm:px-8 rounded-md sm:rounded-lg font-medium sm:font-semibold text-xs sm:text-sm lg:text-base text-white transition-all flex items-center justify-center ${
+                        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm text-white transition-colors ${
                           isProcessing || shouldDisableProceed()
-                            ? 'bg-slate-400 cursor-not-allowed'
-                            : 'bg-teal-600 hover:bg-teal-700'
+                            ? 'bg-teal-700 opacity-50 cursor-not-allowed'
+                            : 'bg-teal-700 hover:bg-teal-800'
                         }`}
                       >
                         {isProcessing ? (
                           <>
-                            <FaSpinner className="animate-spin mr-1.5 sm:mr-2 w-3 h-3 sm:w-4 sm:h-4" />
+                            <FaSpinner className="animate-spin w-4 h-4" />
                             Processing...
                           </>
                         ) : (
@@ -1319,7 +1307,7 @@ const CheckoutPage = () => {
                       </div>
                     )}
                     
-                    <h2 className="text-sm sm:text-lg lg:text-xl font-semibold mb-2 sm:mb-4 flex items-center">
+                    <h2 className="text-base font-semibold text-slate-900 mb-4 flex items-center">
                       Payment Details
                     </h2>
                     
@@ -1463,9 +1451,9 @@ const CheckoutPage = () => {
               )}
             </div>
 
-            {/* Right Column - Order Summary (Desktop Only) */}
+            {/* Right Column - Order Summary (Desktop Only) - sticky sidebar (section 11) */}
             <div className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-4 lg:border-l lg:border-slate-200 lg:pl-4 xl:pl-6">
+              <div data-testid="order-summary" className="sticky top-4 lg:border-l lg:border-slate-200 lg:pl-4 xl:pl-6">
                 <PaymentSummary
                   event={event}
                   selectedTickets={formattedTickets}

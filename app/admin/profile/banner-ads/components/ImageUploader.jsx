@@ -149,7 +149,7 @@ const ImageUploader = ({
           <label className="block font-bold text-sm mb-2">
             Banner Images
             {mode === 'edit' && (
-              <span className="text-sm font-normal text-gray-500 ml-2">
+              <span className="text-sm font-normal text-slate-500 ml-2">
                 (Upload new images to replace existing ones)
               </span>
             )}
@@ -160,9 +160,9 @@ const ImageUploader = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Desktop Image */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Desktop Image <span className="text-red-500">*</span>
-              <span className="text-xs text-gray-500 ml-2">
+              <span className="text-xs text-slate-500 ml-2">
                 ({dimensions[variant].desktop})
               </span>
             </label>
@@ -172,7 +172,7 @@ const ImageUploader = ({
                 <img
                   src={getImageSrc(desktopImage)}
                   alt="Desktop banner"
-                  className="w-full h-32 object-cover border-2 border-gray-200 rounded-lg"
+                  className="w-full h-32 object-cover border-2 border-slate-200 rounded-lg"
                 />
                 
                 {/* Remove Button */}
@@ -204,7 +204,7 @@ const ImageUploader = ({
                 )}
               </div>
             ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
                 <input
                   type="file"
                   accept="image/*"
@@ -217,7 +217,7 @@ const ImageUploader = ({
                   htmlFor="desktop-upload"
                   className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
                     disabled 
-                      ? 'bg-gray-400 cursor-not-allowed' 
+                      ? 'bg-slate-400 cursor-not-allowed' 
                       : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
                   }`}
                 >
@@ -229,9 +229,9 @@ const ImageUploader = ({
 
           {/* Mobile Image */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Mobile Image <span className="text-gray-400">(Optional)</span>
-              <span className="text-xs text-gray-500 ml-2">
+            <label className="block text-sm font-medium text-slate-700">
+              Mobile Image <span className="text-slate-400">(Optional)</span>
+              <span className="text-xs text-slate-500 ml-2">
                 ({dimensions[variant].mobile})
               </span>
             </label>
@@ -241,7 +241,7 @@ const ImageUploader = ({
                 <img
                   src={getImageSrc(mobileImage)}
                   alt="Mobile banner"
-                  className="w-full h-32 object-cover border-2 border-gray-200 rounded-lg"
+                  className="w-full h-32 object-cover border-2 border-slate-200 rounded-lg"
                 />
                 
                 {/* Remove Button */}
@@ -273,7 +273,7 @@ const ImageUploader = ({
                 )}
               </div>
             ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
                 <input
                   type="file"
                   accept="image/*"
@@ -286,13 +286,13 @@ const ImageUploader = ({
                   htmlFor="mobile-upload"
                   className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md ${
                     disabled 
-                      ? 'bg-gray-400 text-white cursor-not-allowed' 
-                      : 'bg-gray-600 hover:bg-gray-700 text-white cursor-pointer'
+                      ? 'bg-slate-400 text-white cursor-not-allowed' 
+                      : 'bg-slate-600 hover:bg-slate-700 text-white cursor-pointer'
                   }`}
                 >
                   Choose Mobile Image
                 </label>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-slate-500 mt-2">
                   Leave empty to use desktop image
                 </p>
               </div>
@@ -302,7 +302,7 @@ const ImageUploader = ({
 
         {/* Status Information */}
         {mode === 'edit' && (
-          <div className="mt-4 text-sm text-gray-500 bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="mt-4 text-sm text-slate-500 bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="flex items-center">
               <svg className="w-4 h-4 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -315,7 +315,7 @@ const ImageUploader = ({
 
         {/* Disabled state message */}
         {disabled && (
-          <div className="mt-4 p-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 text-sm">
+          <div className="mt-4 p-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 text-sm">
             Image uploads are disabled in view mode
           </div>
         )}

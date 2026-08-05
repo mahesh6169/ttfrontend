@@ -5,18 +5,11 @@ import Link from 'next/link';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter, usePathname } from 'next/navigation';
 import { logoutUser } from '@/store/slices/users/userSlice';
-import {
-  FaChevronRight,
-  FaBars,
-} from 'react-icons/fa';
-import { MdOutlineGroups2 } from "react-icons/md";
-import { RiAdvertisementFill } from "react-icons/ri";
+import { FaBars } from 'react-icons/fa';
 import { CgProfile } from 'react-icons/cg';
 import { LiaSignInAltSolid, LiaSignOutAltSolid } from 'react-icons/lia';
 import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
-import { FaCalendarAlt } from 'react-icons/fa';
-import { MdLocalOffer } from 'react-icons/md';
-import { HiReceiptPercent } from 'react-icons/hi2';
+import { NAV_DESTINATIONS } from '@/utils/constants/destinations';
 import { toast } from 'react-toastify';
 import {
   setInActiveChat,
@@ -28,9 +21,8 @@ const Header = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const pathname = usePathname();
-  const [openDropdown, setOpenDropdown] = useState(null);
   // Mobile/tablet profile drawer (below lg). The burger replaces Signout there; the
-  // overlay is the ProfileSidebar with Signout pinned at the bottom. See ProfilePageUX.md.
+  // overlay is the ProfileSidebar with Signout pinned at the bottom.
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { tokenValidated, user, status } = useSelector((state) => state.user);
@@ -88,7 +80,7 @@ const Header = () => {
 
   return (
     <>
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm transition-all duration-300 h-[68px]">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm transition-all duration-300 h-[calc(68px+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)]">
       <div className="container mx-auto py-2 md:py-2.5 text-slate-700 relative">
 
         {/* Top Row */}
@@ -112,7 +104,7 @@ const Header = () => {
               <>
                 <Link
                   href="/users/profile/conversations"
-                  className="flex flex-col items-center p-1.5 rounded-lg hover:bg-gray-50 transition-colors relative"
+                  className="flex flex-col items-center p-1.5 rounded-lg hover:bg-slate-50 transition-colors relative"
                   title="Messages"
                 >
                   <div className="relative">
@@ -128,7 +120,7 @@ const Header = () => {
                 </Link>
                 <button
                   onClick={() => setDrawerOpen(true)}
-                  className="flex flex-col items-center p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex flex-col items-center p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
                   title="Menu"
                   aria-label="Open menu"
                   aria-expanded={drawerOpen}
@@ -140,7 +132,7 @@ const Header = () => {
             ) : (
               <Link
                 href="/login"
-                className="flex flex-col items-center p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex flex-col items-center p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
                 title="Signin"
               >
                 <LiaSignInAltSolid size={22} className="text-slate-700 scale-x-[-1]" />
@@ -151,44 +143,18 @@ const Header = () => {
 
           {/* Desktop Nav Container - Hidden on mobile */}
           <div className="hidden md:flex items-center justify-between flex-1 ml-8">
-            {/* Center Nav */}
-            <div className="flex gap-6 mx-auto">
-              <NavLink
-                href="/"
-                icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>}
-                text="Home"
-                pathname={pathname}
-              />
-              <NavLink
-                href="/listings"
-                icon={<RiAdvertisementFill size={20} />}
-                text="Listings"
-                pathname={pathname}
-              />
-              <NavLink
-                href="/events"
-                icon={<FaCalendarAlt size={20} />}
-                text="Events"
-                pathname={pathname}
-              />
-              <NavLink
-                href="/deals"
-                icon={<MdLocalOffer size={20} />}
-                text="Deals"
-                pathname={pathname}
-              />
-              <NavLink
-                href="/coupons"
-                icon={<HiReceiptPercent size={20} />}
-                text="Coupons"
-                pathname={pathname}
-              />
-              <NavLink
-                href="/threads"
-                icon={<MdOutlineGroups2 size={30} />}
-                text="Forum"
-                pathname={pathname}
-              />
+            {/* Center Nav - reads the shared destinations list (utils/constants/destinations).
+                Icon sizes are kept per-nav to preserve this nav's look. */}
+            <div data-testid="header-nav" className="flex gap-6 mx-auto">
+              {NAV_DESTINATIONS.map((d) => (
+                <NavLink
+                  key={d.href}
+                  href={d.href}
+                  icon={<d.Icon size={d.href === '/threads' ? 30 : 20} />}
+                  text={d.label}
+                  pathname={pathname}
+                />
+              ))}
             </div>
 
             {/* Right Nav - Auth Links */}
@@ -268,7 +234,7 @@ const Header = () => {
       </div>
     </header>
 
-    {/* Mobile/tablet profile drawer (below lg) — left slide-in overlay. See ProfilePageUX.md. */}
+    {/* Mobile/tablet profile drawer (below lg) - left slide-in overlay. */}
     {isAuthenticated && (
       <div
         className={`lg:hidden fixed inset-0 z-[60] ${drawerOpen ? '' : 'pointer-events-none'}`}
@@ -308,55 +274,6 @@ const Header = () => {
 };
 
 export default Header;
-
-const DropdownNavLink = ({ href, icon, text, pathname, items }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const isActive = pathname === href || pathname?.startsWith(href + '/');
-
-  return (
-    <div 
-      className="relative"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-    >
-      <Link
-        href={href}
-        className={`flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg transition-all duration-300
-          ${
-            isActive
-              ? 'text-teal-900 bg-slate-100 font-semibold'
-              : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-          }`}
-      >
-        {icon && <span>{icon}</span>}
-        <span>{text}</span>
-        <FaChevronRight 
-          size={12} 
-          className={`transform transition-transform duration-300 ${isOpen ? 'rotate-90' : 'rotate-0'}`}
-        />
-      </Link>
-
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-xl min-w-[200px] py-2 z-50">
-          {items.map((item, index) => (
-            <Link
-              key={index}
-              href={item.disabled ? '#' : item.href}
-              className={`block px-4 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors
-                ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={(e) => {
-                if (item.disabled) e.preventDefault();
-                setIsOpen(false);
-              }}
-            >
-              {item.text}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 const NavLink = ({ href, icon, text, pathname, mobile = false, onClick, showIconOnly }) => {
   // Check if the current path includes the href (for nested routes)

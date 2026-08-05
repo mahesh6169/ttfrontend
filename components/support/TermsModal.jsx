@@ -46,7 +46,7 @@ const TermsModal = () => {
         <h2 className="text-xl font-bold mb-2">
           Updated Terms & Privacy Policy
         </h2>
-        <p className="mb-4 text-sm text-gray-700">
+        <p className="mb-4 text-sm text-slate-700">
           We’ve updated our{' '}
           <Link
             href="/legal/terms"

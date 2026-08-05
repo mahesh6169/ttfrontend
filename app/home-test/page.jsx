@@ -22,7 +22,7 @@ function HeroSection() {
       <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-teal-800">
         Your Online Community Marketplaces
       </h1>
-      <p className="mt-2 sm:mt-3 text-gray-700 text-sm sm:text-base md:text-lg font-medium">
+      <p className="mt-2 sm:mt-3 text-slate-700 text-sm sm:text-base md:text-lg font-medium">
         Powered by community, not algorithms.
       </p>
     </div>
@@ -156,13 +156,13 @@ export default function HomeTestPage() {
 
             {/* Segmented Pill Toggle */}
             <div className="flex justify-center mb-4 sm:mb-6">
-              <div className="inline-flex bg-gray-100 rounded-full p-1">
+              <div className="inline-flex bg-slate-100 rounded-full p-1">
                 <button
                   onClick={() => setMode('poster')}
                   className={`px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-full text-xs sm:text-base font-semibold transition-all duration-300 ${
                     mode === 'poster'
                       ? 'bg-teal-600 text-white shadow-md'
-                      : 'text-gray-600 hover:text-gray-800'
+                      : 'text-slate-600 hover:text-slate-800'
                   }`}
                 >
                   I want to
@@ -172,7 +172,7 @@ export default function HomeTestPage() {
                   className={`px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-full text-xs sm:text-base font-semibold transition-all duration-300 ${
                     mode === 'seeker'
                       ? 'bg-teal-600 text-white shadow-md'
-                      : 'text-gray-600 hover:text-gray-800'
+                      : 'text-slate-600 hover:text-slate-800'
                   }`}
                 >
                   I'm looking to

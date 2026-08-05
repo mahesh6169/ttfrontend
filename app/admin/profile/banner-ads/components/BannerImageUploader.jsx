@@ -185,15 +185,15 @@ const BannerImageUploader = ({
         {/* Image Containers - Full Width */}
         <div className="space-y-6">
           {/* Desktop Images Container */}
-          <div className="border border-gray-200 rounded-lg p-4">
+          <div className="border border-slate-200 rounded-lg p-4">
             <div className="mb-4">
               <label className="block font-bold text-sm">
                 Desktop Images <span className="text-red-500">*</span>
-                <span className="text-sm font-normal text-gray-500 ml-2">
+                <span className="text-sm font-normal text-slate-500 ml-2">
                   ({dimensions[variant].desktop})
                 </span>
               </label>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-slate-500">
                 Upload 1-{maxImages} desktop images. They will rotate every 5 seconds.
               </p>
             </div>
@@ -206,13 +206,13 @@ const BannerImageUploader = ({
                     <img
                       src={getImageSrc(image)}
                       alt={`Desktop ${idx + 1}`}
-                      className="w-full h-24 object-cover border-2 border-gray-200 rounded"
+                      className="w-full h-24 object-cover border-2 border-slate-200 rounded"
                       onError={(e) => {
                         e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMzIwIDUwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iNTAiIGZpbGw9IiNlMGUwZTAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5Ij5JbWFnZSBMb2FkIEVycm9yPC90ZXh0Pjwvc3ZnPg==';
                       }}
                     />
                     {/* Show filename below image */}
-                    <p className="mt-1 text-xs text-gray-600 truncate" title={image.file?.name || image.originalFilename || image.url}>
+                    <p className="mt-1 text-xs text-slate-600 truncate" title={image.file?.name || image.originalFilename || image.url}>
                       {image.file?.name || image.originalFilename || (image.isExisting ? `Position ${idx + 1}` : `New Desktop ${idx + 1}`)}
                     </p>
                   </div>
@@ -249,7 +249,7 @@ const BannerImageUploader = ({
                     input.click();
                   }}
                   disabled={disabled}
-                  className="border-2 border-dashed border-gray-300 rounded h-24 flex flex-col items-center justify-center hover:border-blue-400 hover:text-blue-600 transition-colors"
+                  className="border-2 border-dashed border-slate-300 rounded h-24 flex flex-col items-center justify-center hover:border-blue-400 hover:text-blue-600 transition-colors"
                 >
                   <FaPlus className="text-xl" />
                   <span className="text-xs mt-1">Add Image</span>
@@ -259,15 +259,15 @@ const BannerImageUploader = ({
           </div>
 
           {/* Mobile Images Container */}
-          <div className="border border-gray-200 rounded-lg p-4">
+          <div className="border border-slate-200 rounded-lg p-4">
             <div className="mb-4">
               <label className="block font-bold text-sm">
                 Mobile Images <span className="text-red-500">*</span>
-                <span className="text-sm font-normal text-gray-500 ml-2">
+                <span className="text-sm font-normal text-slate-500 ml-2">
                   ({dimensions[variant].mobile})
                 </span>
               </label>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-slate-500">
                 Upload 1-{maxImages} mobile images. They will rotate every 5 seconds.
               </p>
             </div>
@@ -280,13 +280,13 @@ const BannerImageUploader = ({
                     <img
                       src={getImageSrc(image)}
                       alt={`Mobile ${idx + 1}`}
-                      className="w-full h-24 object-cover border-2 border-gray-200 rounded"
+                      className="w-full h-24 object-cover border-2 border-slate-200 rounded"
                       onError={(e) => {
                         e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMzIwIDUwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iNTAiIGZpbGw9IiNlMGUwZTAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5Ij5JbWFnZSBMb2FkIEVycm9yPC90ZXh0Pjwvc3ZnPg==';
                       }}
                     />
                     {/* Show filename below image */}
-                    <p className="mt-1 text-xs text-gray-600 truncate" title={image.file?.name || image.originalFilename || image.url}>
+                    <p className="mt-1 text-xs text-slate-600 truncate" title={image.file?.name || image.originalFilename || image.url}>
                       {image.file?.name || image.originalFilename || (image.isExisting ? `Position ${idx + 1}` : `New Mobile ${idx + 1}`)}
                     </p>
                   </div>
@@ -323,7 +323,7 @@ const BannerImageUploader = ({
                     input.click();
                   }}
                   disabled={disabled}
-                  className="border-2 border-dashed border-gray-300 rounded h-24 flex flex-col items-center justify-center hover:border-blue-400 hover:text-blue-600 transition-colors"
+                  className="border-2 border-dashed border-slate-300 rounded h-24 flex flex-col items-center justify-center hover:border-blue-400 hover:text-blue-600 transition-colors"
                 >
                   <FaPlus className="text-xl" />
                   <span className="text-xs mt-1">Add Image</span>

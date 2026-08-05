@@ -1,4 +1,3 @@
-import Footer from '@/components/Footer';
 import FormsContentShell from '@/components/layout/FormsContentShell';
 
 const DailyDealsNoAdsLayout = ({ children }) => {
@@ -7,7 +6,6 @@ const DailyDealsNoAdsLayout = ({ children }) => {
       <div id="Main" className="flex-1 min-w-0">
         <FormsContentShell>{children}</FormsContentShell>
       </div>
-      <Footer />
     </main>
   );
 };

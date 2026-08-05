@@ -5,7 +5,7 @@ import PostPaidEventButton from '@/components/buttons/PostPaidEventButton';
 
 export default function EventsSellPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Hero Banner */}
       <section className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-800 text-white">
         <div className="container mx-auto px-3 py-10 md:px-4 md:py-16">
@@ -38,11 +38,11 @@ export default function EventsSellPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg md:text-2xl font-bold mb-1 md:mb-2 text-gray-900">Simple, Flat Fee Pricing</h3>
-                  <p className="text-sm md:text-lg text-gray-700 mb-2 md:mb-3">
+                  <h3 className="text-lg md:text-2xl font-bold mb-1 md:mb-2 text-slate-900">Simple, Flat Fee Pricing</h3>
+                  <p className="text-sm md:text-lg text-slate-700 mb-2 md:mb-3">
                     <span className="font-bold text-teal-700">2% + $0.80 per ticket</span> — that's it!
                   </p>
-                  <p className="text-xs md:text-base text-gray-600">
+                  <p className="text-xs md:text-base text-slate-600">
                     No setup fees, no monthly charges, no surprises. All-inclusive pricing covering everything.
                   </p>
                 </div>
@@ -58,8 +58,8 @@ export default function EventsSellPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg md:text-2xl font-bold mb-1 md:mb-2 text-gray-900">Complete Event Management</h3>
-                  <p className="text-xs md:text-base text-gray-600">
+                  <h3 className="text-lg md:text-2xl font-bold mb-1 md:mb-2 text-slate-900">Complete Event Management</h3>
+                  <p className="text-xs md:text-base text-slate-600">
                     Everything you need: attendee registration, check-in portal, refund management, email confirmations, and real-time chat for inquiries.
                   </p>
                 </div>
@@ -75,8 +75,8 @@ export default function EventsSellPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg md:text-2xl font-bold mb-1 md:mb-2 text-gray-900">Flexible Ticketing Options</h3>
-                  <p className="text-xs md:text-base text-gray-600">
+                  <h3 className="text-lg md:text-2xl font-bold mb-1 md:mb-2 text-slate-900">Flexible Ticketing Options</h3>
+                  <p className="text-xs md:text-base text-slate-600">
                     Multiple ticket types, custom seating layouts, early bird pricing — configure your event exactly how you want it.
                   </p>
                 </div>
@@ -92,8 +92,8 @@ export default function EventsSellPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg md:text-2xl font-bold mb-1 md:mb-2 text-gray-900">Custom Seating Layouts</h3>
-                  <p className="text-xs md:text-base text-gray-600">
+                  <h3 className="text-lg md:text-2xl font-bold mb-1 md:mb-2 text-slate-900">Custom Seating Layouts</h3>
+                  <p className="text-xs md:text-base text-slate-600">
                     Create seating maps for Halls, Community Centres and Venues. Interactive seat selection with real-time availability, flexible configuration, and automatic reservations to prevent double-booking.
                   </p>
                 </div>
@@ -112,104 +112,104 @@ export default function EventsSellPage() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 max-w-4xl mx-auto">
             
             {/* Entertainment */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-purple-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Entertainment</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Entertainment</h3>
             </div>
 
             {/* Exhibitions */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-blue-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Exhibitions</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Exhibitions</h3>
             </div>
 
             {/* Cultural */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-pink-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Cultural</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Cultural</h3>
             </div>
 
             {/* Community Meets */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-green-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Community Meets</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Community Meets</h3>
             </div>
 
             {/* Music */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-orange-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Music</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Music</h3>
             </div>
 
             {/* Workshops */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-indigo-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Workshops</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Workshops</h3>
             </div>
 
             {/* Sports */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-red-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Sports</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Sports</h3>
             </div>
 
             {/* Conferences */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-teal-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Conferences</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Conferences</h3>
             </div>
 
             {/* Festivals */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-yellow-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Festivals</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Festivals</h3>
             </div>
 
             {/* Fundraisers */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-emerald-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Fundraisers</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Fundraisers</h3>
             </div>
 
           </div>
@@ -224,73 +224,73 @@ export default function EventsSellPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto">
             
             {/* Multiple Ticket Types */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-purple-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Multiple Ticket Types</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Multiple Ticket Types</h3>
             </div>
 
             {/* Seating Layout */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-indigo-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Seating Layout</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Seating Layout</h3>
             </div>
 
             {/* Email Confirmations */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-blue-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Email Confirmations</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Email Confirmations</h3>
             </div>
 
             {/* Chat Feature */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-pink-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Chat Feature</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Chat Feature</h3>
             </div>
 
             {/* Secure Payment */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-green-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Secure Payment</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Secure Payment</h3>
             </div>
 
             {/* Refund Portal */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-orange-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Refund Portal</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Refund Portal</h3>
             </div>
 
             {/* Check-in Portal */}
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 md:p-4 text-center">
               <div className="bg-teal-100 w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 md:w-5 md:h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xs md:text-sm font-semibold text-gray-900">Check-in Portal</h3>
+              <h3 className="text-xs md:text-sm font-semibold text-slate-900">Check-in Portal</h3>
             </div>
 
           </div>

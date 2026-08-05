@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import EventsClient from './EventsClient';
 import SeoFooterBlock from './SeoFooterBlock';
 
@@ -51,16 +50,10 @@ export default function EventsPage() {
     <>
       <EventsClient
         heading={
-          <div className="flex items-center justify-center gap-x-3 sm:gap-x-4 border-y border-teal-100 py-3 sm:py-4 md:w-fit md:mx-auto md:px-8">
+          <div className="border-y border-teal-100 py-3 sm:py-4 md:w-fit md:mx-auto md:px-8">
             <h1 className="text-center text-sm sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">
               Discover Indian Events, Concerts &amp; Cultural Shows
             </h1>
-            <Link
-              href="/events/add"
-              className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold py-2.5 px-5 rounded-lg shadow-sm transition-colors whitespace-nowrap flex-shrink-0"
-            >
-              + Create Event
-            </Link>
           </div>
         }
       />

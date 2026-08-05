@@ -22,6 +22,7 @@ import {
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getEventTicketStatus, getTicketSaleStatus } from '@/utils/events/ticketStatusHelper';
+import { isDiscountRedeemable } from '@/utils/events/discountCodes';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import BackButton from '@/components/BackButton';
@@ -606,30 +607,39 @@ const TicketSelectionPage = () => {
 
   const { date, time } = getFormattedDateTime();
 
+  // Sticky-bar aggregate: total ticket count and subtotal across ALL types (never per-type).
+  // selectedTickets stores the per-person share as price and quantity in tickets, so a bundle's
+  // share x tickets already equals its pack total.
+  const selectedCount = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
+  const subtotal = selectedTickets.reduce((sum, t) => sum + (t.price || 0) * t.quantity, 0);
+
   return (
     <div>
-      <div className="w-full max-w-3xl mx-auto">
-        {/* Back to Events Button */}
-        <div className="mb-3 sm:mb-6">
-          <BackButton onClick={handleBack} />
+      <div className="w-full max-w-3xl mx-auto pb-24">
+        {/* Page toolbar (design-system.md section 8): Back pinned left, title centred in the
+            SAME row. Back is the shared secondary button; title is the flat H1 (18px bold). */}
+        <div className="relative flex items-center justify-center mb-4">
+          <div className="absolute left-0">
+            <BackButton onClick={handleBack} />
+          </div>
+          <h1 className="text-lg font-bold text-slate-900">
+            Select Tickets
+          </h1>
         </div>
 
         {/* Single Column Layout - Full Width */}
         <div>
-          {/* Centered Title */}
-          <h1 className="text-lg sm:text-2xl font-semibold sm:font-bold text-slate-900 text-center mb-3 sm:mb-6">
-            Select Tickets
-          </h1>
           
-          {/* Availability + reservation timer — spread (left/right) on mobile, centered on desktop */}
-          <div className="flex items-center justify-between md:justify-center gap-3 md:gap-x-6 mb-3 sm:mb-6">
+          {/* Capacity / timer line (design-system.md section 8): capacity + selection as muted
+              meta (12px slate-500); the reservation countdown rides as an urgency badge. */}
+          <div className="flex items-center justify-between md:justify-center gap-3 md:gap-x-6 mb-4">
 
-            {/* Availability — borderless, minimal */}
+            {/* Availability — muted meta, borderless */}
             <div className="min-w-0">
               <div>
-                <div className="flex items-center text-sm sm:text-base">
-                  <FaUsers className="mr-2 text-base sm:text-lg text-slate-500" />
-                  <span className="font-semibold text-slate-800">
+                <div className="flex items-center text-xs text-slate-500">
+                  <FaUsers className="mr-1.5 text-sm text-slate-400 shrink-0" />
+                  <span>
                     {capacityLoading ? (
                       'Loading availability...'
                     ) : eventCapacity?.isUnlimited ? (
@@ -661,14 +671,14 @@ const TicketSelectionPage = () => {
                 
                 {/* Show max booking limit message when user reaches their limit */}
                 {userReservation > 0 && userReservation >= (selectedEvent.maxAttendeesPerRegistration || 10) && (
-                  <div className="text-sm mt-2 ml-6 sm:ml-7">
+                  <div className="text-xs mt-1 ml-5">
                     <span className="text-slate-600 font-medium">Max booking limit reached</span>
                   </div>
                 )}
-                
+
                 {/* Show appropriate message based on sold out status */}
                 {eventCapacity?.status === 'sold-out' && !reservation && (
-                  <div className="text-sm mt-2 ml-6 sm:ml-7">
+                  <div className="text-xs mt-1 ml-5">
                     {eventCapacity?.sold >= eventCapacity?.total ? (
                       <span className="text-red-600">Event is just sold out</span>
                     ) : (
@@ -676,10 +686,10 @@ const TicketSelectionPage = () => {
                     )}
                   </div>
                 )}
-                
+
                 {/* Show purchase error inline */}
                 {purchaseError && (
-                  <div className="text-sm text-red-600 mt-2 ml-6 sm:ml-7">
+                  <div className="text-xs text-red-600 mt-1 ml-5">
                     {purchaseError}
                   </div>
                 )}
@@ -819,57 +829,45 @@ const TicketSelectionPage = () => {
                 trueAvailable: eventCapacity?.trueAvailable
               });
 
-              // Row pieces defined once, arranged differently for mobile vs desktop.
+              // Row pieces. Text (left column) never flows under the price/stepper (right column).
+              // Bundle rows carry "(N People)" on the NAME itself (N = bundleSize), so there is no
+              // separate admits line. Name is the item-title standard: 14px semibold slate-900.
               const nameEl = (
-                <h4 className="font-medium text-slate-800 text-sm sm:text-base truncate">
-                  {ticketType.name}
+                <h4 className="font-semibold text-slate-900 text-sm">
+                  {ticketType.name}{isBundleRow ? ` (${stepSize} People)` : ''}
                 </h4>
               );
 
-              // The note (row 3, full width) and the status (rides with the discount) are separate
-              // pieces so they can be placed independently in the mobile and desktop layouts.
+              // Note (meta) sits BELOW the name; the discount hint(s) come AFTER the note.
               const noteEl = ticketType.note ? (
-                <p className="text-xs mt-0.5 text-slate-500">{ticketType.note}</p>
+                <p className="text-xs text-slate-500">{ticketType.note}</p>
               ) : null;
 
-              // Bundle rows show "(admits N)" under the name (same muted style as the note).
-              const admitsEl = isBundleRow ? (
-                <p className="text-xs mt-0.5 text-slate-500">(admits {stepSize})</p>
+              // Sale-status badge — sits next to the NAME. The shared helper returns the whole badge
+              // className (amber "X days left" / red "Sold out"|"Sales closed" / slate on-sale), so
+              // the tickets page and the detail card render statuses identically.
+              const status = getTicketSaleStatus(ticketType, selectedEvent.timeZone, eventCapacity);
+              const StatusIcon = status?.icon;
+              const statusBadgeEl = status ? (
+                <span className={status.className}>
+                  {StatusIcon && <StatusIcon size={12} className="shrink-0" />}
+                  {status.message}
+                </span>
               ) : null;
-
-              const statusEl = (
-                <>
-                  {/* Ticket Sale Status */}
-                  {(() => {
-                    const status = getTicketSaleStatus(ticketType, selectedEvent.timeZone, eventCapacity);
-                    if (!status) return null;
-                    const StatusIcon = status.icon;
-                    return (
-                      <p className={`flex items-center gap-1 text-xs mt-0.5 ${status.className}`}>
-                        {StatusIcon && <StatusIcon size={12} className="shrink-0" />}
-                        {status.message}
-                      </p>
-                    );
-                  })()}
-
-                  {/* Sold out — permanent capacity sell-out (kept as an explicit cue) */}
-                  {eventCapacity?.sold >= eventCapacity?.total && eventCapacity?.total > 0 && (
-                    <p className="mt-0.5 text-[10px] sm:text-xs font-medium text-red-600">Sold out</p>
-                  )}
-                </>
-              );
 
               // Public discount-code hints (S2). The API only ships redeemable, show-hint codes
               // to non-owners, so anything present here is safe to display. A code covers this
-              // ticket type when its appliesToTicketTypes includes the NAME.
-              const discountEl = (selectedEvent.discountCodes || [])
+              // ticket type when its appliesToTicketTypes includes the NAME. Teal promo badge
+              // (design-system.md section 7): bg-50 / border-200 / text-800, flat text-xs.
+              const discountEls = (selectedEvent.discountCodes || [])
+                .filter(isDiscountRedeemable)
                 .filter((dc) => (dc.appliesToTicketTypes || []).includes(ticketType.name))
                 .map((dc) => (
                   <div
                     key={dc.code}
-                    className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-teal-50 border border-teal-400 text-teal-800 text-[10px] sm:text-xs"
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-teal-800 text-xs"
                   >
-                    <FaTag className="text-teal-600 w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                    <FaTag className="text-teal-600 w-3 h-3 shrink-0" />
                     <span>
                       Use code <span className="font-bold text-teal-700">{dc.code}</span>
                       {dc.kind === 'fixed'
@@ -879,25 +877,25 @@ const TicketSelectionPage = () => {
                   </div>
                 ));
 
-              // Bundle rows show the bundle price (share x pack size), not the bare share.
+              // Bundle rows show the bundle price (share x pack size), not the bare share. Flat size.
               const displayPrice = isBundleRow ? ticketType.price * stepSize : ticketType.price;
               const priceEl = (
-                <p className="text-sm sm:text-base font-semibold text-slate-900 whitespace-nowrap">
+                <p className="text-sm font-semibold text-slate-900 whitespace-nowrap">
                   ${displayPrice?.toFixed(2) || '0.00'}
                 </p>
               );
 
               const stepperEl = (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => handleQuantityChange(ticketType._id, -1)}
                     disabled={selectedQty === 0 || apiLoading}
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-6 h-6 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label={isBundleRow ? `Remove one ${ticketType.name} pack` : `Remove one ${ticketType.name}`}
                   >
-                    <FaMinus className="text-[10px] sm:text-xs text-teal-700" />
+                    <FaMinus className="text-[9px] text-teal-700" />
                   </button>
-                  <span className="w-6 sm:w-8 text-center font-semibold text-sm">
+                  <span className="w-7 text-center font-semibold text-sm">
                     {displayQty}
                   </span>
                   <button
@@ -907,10 +905,10 @@ const TicketSelectionPage = () => {
                       apiLoading ||
                       !isAvailable
                     }
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-6 h-6 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label={isBundleRow ? `Add one ${ticketType.name} pack` : `Add one ${ticketType.name}`}
                   >
-                    <FaPlus className="text-[10px] sm:text-xs text-teal-700" />
+                    <FaPlus className="text-[9px] text-teal-700" />
                   </button>
                 </div>
               );
@@ -920,39 +918,28 @@ const TicketSelectionPage = () => {
                   key={ticketType._id}
                   className={`px-4 py-3 ${!isAvailable ? 'opacity-60' : ''}`}
                 >
-                  {/* Mobile: name | price (row 1), discount + status | stepper (row 2), note full-width
-                      (row 3). Right column fits the stepper; the left column takes the rest. */}
-                  <div className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 sm:hidden">
-                    <div className="min-w-0">{nameEl}{admitsEl}</div>
-                    <div className="justify-self-center self-start">{priceEl}</div>
-                    <div className="min-w-0 self-center">{discountEl}{statusEl}</div>
-                    <div className="justify-self-center self-center">{stepperEl}</div>
-                    <div className="col-span-2 min-w-0">{noteEl}</div>
-                  </div>
-
-                  {/* Desktop: name + status | price + stepper (row 1), discount (row 2),
-                      note full-width (row 3). */}
-                  <div className="hidden sm:block">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1 flex items-center gap-2">
+                  {/* Left text column (name + status badge, note, discount) never overlaps the
+                      right price+stepper column. Same layout on mobile and desktop. */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {nameEl}
-                        {statusEl}
+                        {statusBadgeEl}
                       </div>
-                      <div className="flex items-center gap-4 shrink-0">
-                        {priceEl}
-                        {stepperEl}
-                      </div>
+                      {noteEl && <div className="mt-1">{noteEl}</div>}
+                      {discountEls.length > 0 && (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          {discountEls}
+                        </div>
+                      )}
                     </div>
-                    {admitsEl}
-                    {discountEl.length > 0 && (
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                        {discountEl}
-                      </div>
-                    )}
-                    {noteEl}
+                    <div className="shrink-0 flex flex-col items-end gap-2">
+                      {priceEl}
+                      {stepperEl}
+                    </div>
                   </div>
 
-                  {/* Pack-aware clamp message (bundle rows only), full width across both layouts. */}
+                  {/* Pack-aware clamp message (bundle rows only), full width under the row. */}
                   {packBlockMsg && (
                     <p className="text-xs mt-1 text-amber-600">{packBlockMsg}</p>
                   )}
@@ -971,66 +958,71 @@ const TicketSelectionPage = () => {
           )}
 
 
-          {/* Proceed Button - Placed right after seating info */}
-          {userReservation > 0 && (
-            <div className="mb-3 sm:mb-6 flex justify-center">
-              <button
-                onClick={handleProceed}
-                disabled={
-                  !canProceedToNext || isLoading || apiLoading || !reservation
-                }
-                className={`w-auto py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
-                  canProceedToNext && !isLoading && !apiLoading && reservation
-                    ? 'bg-teal-700 hover:bg-teal-800 text-white'
-                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                }`}
-              >
-                {isLoading || apiLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    <span className="text-sm sm:text-base">Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    {/* Show different text based on validation state */}
-                    {Object.keys(errors).some(key => selectedEvent?.registrationFields?.some(f => f.fieldName === key)) ? (
-                      <>
-                        <FaExclamationTriangle className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
-                        <span className="text-sm sm:text-base">Fill Required Info</span>
-                      </>
-                    ) : hasSeatingLayout ? (
-                      <>
-                        <FaChair className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
-                        <span className="text-sm sm:text-base">Select Seats</span>
-                      </>
-                    ) : (
-                      <>
-                        <FaShoppingCart className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
-                        <span className="text-sm sm:text-base">Purchase Tickets</span>
-                      </>
-                    )}
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-
-
           {errors.selection && (
-            <div className="flex items-start gap-2 text-sm text-red-600 mb-4 sm:mb-6">
+            <div className="flex items-start gap-2 text-sm text-red-600 mb-4">
               <FaExclamationTriangle className="mt-0.5 shrink-0" />
               <span className="break-words">{errors.selection}</span>
             </div>
           )}
 
           {errors.general && (
-            <div className="flex items-start gap-2 text-sm text-red-600 mb-4 sm:mb-6">
+            <div className="flex items-start gap-2 text-sm text-red-600 mb-4">
               <FaExclamationTriangle className="mt-0.5 shrink-0" />
               <span className="break-words">{errors.general}</span>
             </div>
           )}
         </div>
       </div>
+
+      {/* Sticky action bar (design-system.md buttons): aggregate summary on the left, the primary
+          proceed action on the right, pinned to the bottom edge. The mobile bottom nav is hidden on
+          the flow (see BottomNavigation), so this owns the bottom edge; the page wrapper carries
+          bottom padding (pb-24) so nothing hides behind it. */}
+      {userReservation > 0 && (
+        <div
+          data-testid="tickets-cta-bar"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white safe-area-inset-pb"
+        >
+          <div className="w-full max-w-3xl mx-auto px-2 md:px-4 py-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 truncate">
+                {selectedCount} ticket{selectedCount === 1 ? '' : 's'} - ${subtotal.toFixed(2)}
+              </p>
+            </div>
+            <button
+              onClick={handleProceed}
+              disabled={!canProceedToNext || isLoading || apiLoading || !reservation}
+              className={`shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors ${
+                canProceedToNext && !isLoading && !apiLoading && reservation
+                  ? 'bg-teal-700 hover:bg-teal-800'
+                  : 'bg-teal-700 opacity-50 cursor-not-allowed'
+              }`}
+            >
+              {isLoading || apiLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Processing...</span>
+                </>
+              ) : hasRequiredFieldErrors ? (
+                <>
+                  <FaExclamationTriangle className="text-sm" />
+                  <span>Fill Required Info</span>
+                </>
+              ) : hasSeatingLayout ? (
+                <>
+                  <FaChair className="text-sm" />
+                  <span>Select Seats</span>
+                </>
+              ) : (
+                <>
+                  <FaShoppingCart className="text-sm" />
+                  <span>Purchase Tickets</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

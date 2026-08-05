@@ -181,10 +181,10 @@ const PlatformFeeManagement = () => {
       <div className="max-w-4xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
             Platform Fee Management
           </h1>
-          <p className="text-gray-600">
+          <p className="text-slate-600">
             Configure custom platform fees for individual events. Default fee is 0.30% Total cost + $0.80C per ticket.
           </p>
         </div>
@@ -202,7 +202,7 @@ const PlatformFeeManagement = () => {
 
         {/* Event Selector */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <label htmlFor="eventSelect" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="eventSelect" className="block text-sm font-medium text-slate-700 mb-2">
             Select Event
           </label>
           
@@ -216,7 +216,7 @@ const PlatformFeeManagement = () => {
               id="eventSelect"
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">-- Choose an event --</option>
               {events.map((event) => (
@@ -228,7 +228,7 @@ const PlatformFeeManagement = () => {
             </select>
           )}
           
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-slate-500">
             {events.length} paid event{events.length !== 1 ? 's' : ''} found
           </p>
         </div>
@@ -241,15 +241,15 @@ const PlatformFeeManagement = () => {
             </h2>
 
             {/* Event Details */}
-            <div className="bg-gray-50 rounded p-4 mb-6">
-              <h3 className="font-medium text-gray-900 mb-2">{currentFeeInfo.title}</h3>
+            <div className="bg-slate-50 rounded p-4 mb-6">
+              <h3 className="font-medium text-slate-900 mb-2">{currentFeeInfo.title}</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-gray-600">Event Code:</span>
+                  <span className="text-slate-600">Event Code:</span>
                   <span className="ml-2 font-mono">{currentFeeInfo.eventCode}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Organizer:</span>
+                  <span className="text-slate-600">Organizer:</span>
                   <span className="ml-2">{currentFeeInfo.organizerName}</span>
                 </div>
               </div>
@@ -257,7 +257,7 @@ const PlatformFeeManagement = () => {
 
             {/* Current Fee Display */}
             <div className="mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">Current Platform Fee</h4>
+              <h4 className="font-medium text-slate-900 mb-2">Current Platform Fee</h4>
               <div className="bg-blue-50 border border-blue-200 rounded p-4">
                 {(currentFeeInfo.platformFee !== null || currentFeeInfo.platformFeePercentage !== null) ? (
                   <div>
@@ -289,11 +289,11 @@ const PlatformFeeManagement = () => {
               <div className="space-y-4">
                 {/* Flat Fee Input */}
                 <div>
-                  <label htmlFor="newFee" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="newFee" className="block text-sm font-medium text-slate-700 mb-2">
                     Flat Fee (per ticket)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">
                       $
                     </span>
                     <input
@@ -316,17 +316,17 @@ const PlatformFeeManagement = () => {
                       max="20"
                       step="0.01"
                       placeholder="0.80 (default)"
-                      className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-slate-500">
                     Enter $0.00 to $20.00, or leave empty for default
                   </p>
                 </div>
 
                 {/* Percentage Fee Input */}
                 <div>
-                  <label htmlFor="newPercentage" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="newPercentage" className="block text-sm font-medium text-slate-700 mb-2">
                     Percentage Fee (of total amount)
                   </label>
                   <div className="relative">
@@ -350,13 +350,13 @@ const PlatformFeeManagement = () => {
                       max="10"
                       step="0.01"
                       placeholder="0.30 (default)"
-                      className="w-full pr-8 pl-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pr-8 pl-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500">
                       %
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-slate-500">
                     Enter 0% to 10%, supports decimals (e.g., 0.30%)
                   </p>
                 </div>
@@ -366,7 +366,7 @@ const PlatformFeeManagement = () => {
                   <button
                     type="button"
                     onClick={handleResetToDefault}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
                   >
                     Reset Both to Default
                   </button>
@@ -380,7 +380,7 @@ const PlatformFeeManagement = () => {
                   disabled={saving}
                   className={`px-6 py-2 font-medium text-white rounded-md transition-colors ${
                     saving 
-                      ? 'bg-gray-400 cursor-not-allowed' 
+                      ? 'bg-slate-400 cursor-not-allowed' 
                       : 'bg-blue-600 hover:bg-blue-700'
                   }`}
                 >
@@ -390,7 +390,7 @@ const PlatformFeeManagement = () => {
                 <button
                   type="button"
                   onClick={() => router.push('/admin/profile')}
-                  className="px-6 py-2 font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                  className="px-6 py-2 font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
                 >
                   Cancel
                 </button>

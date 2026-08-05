@@ -150,7 +150,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
 
       {/* Campaign Name */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Campaign Name *
         </label>
         <input
@@ -159,7 +159,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           value={formData.campaignName}
           onChange={handleChange}
           maxLength={100}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="e.g., Summer Special, Grand Opening"
         />
         {errors.campaignName && (
@@ -169,7 +169,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
 
       {/* Discount */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Discount *
         </label>
         <input
@@ -177,7 +177,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           name="discount"
           value={formData.discount}
           onChange={handleChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="e.g., 20% off, $10 off"
         />
         {errors.discount && (
@@ -187,7 +187,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
 
       {/* Discount Product */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Discount Product *
         </label>
         <input
@@ -195,7 +195,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           name="discountProduct"
           value={formData.discountProduct}
           onChange={handleChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="e.g., all items, dinner menu"
         />
         {errors.discountProduct && (
@@ -205,7 +205,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
 
       {/* Terms & Conditions */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Terms & Conditions
         </label>
         <textarea
@@ -213,23 +213,23 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           value={formData.termsConditions}
           onChange={handleChange}
           rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="Enter any terms and conditions (optional)"
         />
       </div>
 
       {/* Expiry Date */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Expiry Date *
-          {isEditing && <span className="text-sm text-gray-500 ml-2">(can only extend)</span>}
+          {isEditing && <span className="text-sm text-slate-500 ml-2">(can only extend)</span>}
         </label>
         <input
           type="date"
           name="expiryDate"
           value={formData.expiryDate}
           onChange={handleChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
         />
         {errors.expiryDate && (
           <p className="text-red-500 text-sm mt-1">{errors.expiryDate}</p>
@@ -238,10 +238,10 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
 
       {/* Valid Days */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Valid Days <span className="text-xs font-normal text-gray-500">(optional)</span>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Valid Days <span className="text-xs font-normal text-slate-500">(optional)</span>
         </label>
-        <p className="text-xs text-gray-500 mb-2">Leave all off to allow every day. A code won't redeem on a day that's off.</p>
+        <p className="text-xs text-slate-500 mb-2">Leave all off to allow every day. A code won't redeem on a day that's off.</p>
         <div className="flex flex-wrap gap-2">
           {DAYS.map(day => (
             <button
@@ -262,10 +262,10 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
 
       {/* Valid Hours */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Valid Hours <span className="text-xs font-normal text-gray-500">(optional, max {MAX_HOURS})</span>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Valid Hours <span className="text-xs font-normal text-slate-500">(optional, max {MAX_HOURS})</span>
         </label>
-        <p className="text-xs text-gray-500 mb-2">
+        <p className="text-xs text-slate-500 mb-2">
           Shown to customers only (e.g. happy hour) — not enforced. Same hours apply to every valid day.
         </p>
 
@@ -275,14 +275,14 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
               type="time"
               value={window.start}
               onChange={(e) => handleHourChange(index, 'start', e.target.value)}
-              className="p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
-            <span className="text-gray-400">to</span>
+            <span className="text-slate-400">to</span>
             <input
               type="time"
               value={window.end}
               onChange={(e) => handleHourChange(index, 'end', e.target.value)}
-              className="p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
             <button
               type="button"
@@ -313,10 +313,10 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
 
       {/* Max Codes Generated */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Max Codes Generated
           {isEditing && initialData?.totalGenerated > 0 && (
-            <span className="text-sm text-gray-500 ml-2">
+            <span className="text-sm text-slate-500 ml-2">
               (current: {initialData.totalGenerated})
             </span>
           )}
@@ -327,10 +327,10 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           value={formData.maxRedemptions}
           onChange={handleChange}
           min={isEditing ? initialData?.totalGenerated || 0 : 0}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="0 = unlimited"
         />
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-slate-500 mt-1">
           Set to 0 for unlimited codes
         </p>
         {errors.maxRedemptions && (
@@ -348,7 +348,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
             onChange={handleChange}
             className="mr-2"
           />
-          <label className="text-sm text-gray-700">
+          <label className="text-sm text-slate-700">
             Hidden (not visible to users)
           </label>
         </div>
@@ -361,7 +361,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
             onChange={handleChange}
             className="mr-2"
           />
-          <label className="text-sm text-gray-700">
+          <label className="text-sm text-slate-700">
             Active
           </label>
         </div>
@@ -379,7 +379,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 bg-teal-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="flex-1 bg-teal-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
         >
           {isSubmitting ? 'Saving...' : (isEditing ? 'Update Campaign' : 'Create Campaign')}
         </button>
@@ -388,7 +388,7 @@ export default function CampaignForm({ initialData = null, onSubmit, onCancel, i
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
           >
             Cancel
           </button>
