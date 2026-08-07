@@ -10,7 +10,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { MdEventSeat, MdFitScreen } from 'react-icons/md';
 import { toast } from 'react-toastify';
-import { nextRowLabel, parseReservedLabels, formatReservedLabels } from '@/utils/events/seatBuilder';
+import { nextRowLabel, parseReservedLabels, formatReservedLabels, sanitizeRowLabel } from '@/utils/events/seatBuilder';
 
 // Seat numbers are hidden at fitted view (clean dots) and appear once zoomed past this scale.
 const NUMBER_THRESHOLD = 1.6;
@@ -39,16 +39,28 @@ export default function SeatBuilderOverlay({
   const [genRows, setGenRows] = useState('');    // empty until the organiser types
   const [genSeats, setGenSeats] = useState('');
   const [aisleSeat, setAisleSeat] = useState('');
+  const [aisleRow, setAisleRow] = useState(''); // Row label for the precise single-row Add/Clear
+  const [aisleHelpOpen, setAisleHelpOpen] = useState(false); // the (i) that reveals the tap-a-seam how-to
   const [bulkInput, setBulkInput] = useState(''); // one-time Bulk Reserve entry (not the live reserved list)
   const [bulkError, setBulkError] = useState(''); // set on Apply/blur when tokens are not real seats
   const [activeStep, setActiveStep] = useState('rows'); // sidebar step in focus: rows | aisles | reserved
   const [sheetOpen, setSheetOpen] = useState(false);    // MOBILE: the per-tab tool bottom sheet (desktop shows the tool inline)
+  const [confirmDiscard, setConfirmDiscard] = useState(false); // Cancel/Escape guard when there are unsaved edits
+
+  // Dirty = the layout or the reserved list differs from what the builder opened with. memoised so the
+  // frequent zoom/pan re-renders do not re-stringify the whole hall.
+  const dirty = useMemo(
+    () => JSON.stringify(rows) !== JSON.stringify(initialLayout || []) || reserved !== (initialReserved || ''),
+    [rows, reserved, initialLayout, initialReserved],
+  );
+  // Cancel/Escape route through here: prompt only when there is something to lose, else close straight away.
+  const requestClose = () => { if (dirty) setConfirmDiscard(true); else onClose(); };
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => { if (e.key === 'Escape') { if (dirty) setConfirmDiscard(true); else onClose(); } };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [dirty, onClose]);
 
   // The builder is a full-screen overlay; lock the page behind it so there is no stray page scrollbar.
   useEffect(() => {
@@ -184,6 +196,7 @@ export default function SeatBuilderOverlay({
   const cap = Number(capacity) || 0;
   const matches = cap > 0 && totalSeats === cap;
   const atCapacity = cap > 0 && totalSeats >= cap; // configured seats reached capacity - no room for more rows
+  const allReserved = totalSeats > 0 && reservedSet.size >= totalSeats; // every seat held back = nothing left to sell
   const rowsNum = parseInt(genRows, 10);
   const seatsNum = parseInt(genSeats, 10);
   const rowsError = String(genRows).trim() !== '' && !(rowsNum >= 1 && rowsNum <= 100);
@@ -224,7 +237,7 @@ export default function SeatBuilderOverlay({
     const r = Math.max(1, Math.min(100, parseInt(genRows, 10) || 0));
     const s = Math.max(1, Math.min(100, parseInt(genSeats, 10) || 0));
     if (!r || !s) return;
-    const start = (genLabel || 'A').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) || 'A';
+    const start = sanitizeRowLabel(genLabel) || 'A';
     generateDims(r, s, start);
   };
   const clearLayout = () => {
@@ -253,7 +266,7 @@ export default function SeatBuilderOverlay({
   const removeRow = (idx) => setRows((prev) => prev.filter((_, i) => i !== idx));
 
   const setRowLabel = (idx, value) => {
-    const v = value.toUpperCase().replace(/[^A-Z]/g, '');
+    const v = sanitizeRowLabel(value);
     setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, rowLabel: v } : r)));
   };
 
@@ -316,23 +329,32 @@ export default function SeatBuilderOverlay({
   const aislePos = parseInt(aisleSeat, 10);
   const aisleError = String(aisleSeat).trim() !== '' && Number.isInteger(aislePos) && aislePos >= 1
     && rows.length > 0 && rows.every((r) => (r.seats?.length || 0) <= aislePos);
+  // The precise Row+Seat button mirrors a seam click: if that row already has a lane at that seat it CLEARS,
+  // otherwise it ADDS. Row must exist and the seat must fall inside it.
+  const aisleRowIdx = rows.findIndex((r) => (r.rowLabel || '').toUpperCase() === aisleRow.trim().toUpperCase());
+  const singleAislePresent = aisleRowIdx >= 0 && Number.isInteger(aislePos) && (rows[aisleRowIdx].walkwayPositions || []).includes(aislePos);
+  const canAddSingle = aisleRowIdx >= 0 && Number.isInteger(aislePos) && aislePos >= 1 && aislePos <= ((rows[aisleRowIdx].seats?.length || 0) - 1);
+  const canApplyAisle = Number.isInteger(aislePos) && aislePos >= 1 && !aisleError; // for "Apply to all rows"
+  // Live validation for the precise Row+Seat control, checked against the layout being built: a row name
+  // that is not in the hall, or a seat past that row's last seat, is flagged in red as the organiser types.
+  const aisleRowMissing = aisleRow.trim() !== '' && aisleRowIdx < 0;
+  const aisleSeatOutOfRow = aisleRowIdx >= 0 && Number.isInteger(aislePos) && aislePos >= 1
+    && aislePos > ((rows[aisleRowIdx].seats?.length || 0) - 1);
+  const singleAisleError = aisleRowMissing
+    ? `Row ${aisleRow.trim()} does not exist.`
+    : (aisleSeatOutOfRow ? `Row ${rows[aisleRowIdx].rowLabel} has only ${rows[aisleRowIdx].seats?.length || 0} seats.` : '');
+  // Exactly one of Row / Seat filled - the "dead Add" case worth a gentle nudge.
+  const aisleSinglePartial = (aisleRow.trim() !== '') !== (String(aisleSeat).trim() !== '');
 
   // ── Walkways ─────────────────────────────────────────────────────────────
-  const toggleSeam = (idx, pos) => {
+  // A seam click STAGES the spot: it fills Row + Seat (and opens the sheet on mobile) but does not toggle
+  // the aisle. The Add/Clear button then acts - Add on an empty gap, Clear on an active aisle - so placing
+  // and removing go through the one control whether you clicked the map or typed Row + Seat.
+  const stageSeam = (idx, pos) => {
     if (!canAisle) return; // aisles are only editable on the Aisles tab
-    const adding = !((rows[idx]?.walkwayPositions) || []).includes(pos);
-    setRows((prev) => prev.map((r, i) => {
-      if (i !== idx) return r;
-      const cur = r.walkwayPositions || [];
-      const next = cur.includes(pos) ? cur.filter((p) => p !== pos) : [...cur, pos].sort((a, b) => a - b);
-      return { ...r, walkwayPositions: next };
-    }));
-    // Clicking a seam to ADD an aisle prefills "Aisle after seat", so "Apply to all rows" is one click
-    // away - and on mobile it pops the tool sheet open so those bulk controls are right there.
-    if (adding) {
-      setAisleSeat(String(pos));
-      setSheetOpen(true);
-    }
+    setAisleRow(rows[idx]?.rowLabel || '');
+    setAisleSeat(String(pos));
+    setSheetOpen(true);
   };
 
   const applyAisleToAll = () => {
@@ -347,11 +369,25 @@ export default function SeatBuilderOverlay({
     setAisleSeat(''); // clear ready for the next number (item 14)
   };
 
-  // Exact inverse of "Apply to all rows": remove the aisle at this seat position (the lane) from every row.
-  const removeAisleFromAll = () => {
+  // Precise single-row Add/Clear: toggle the aisle after Seat in the one Row named in the fields.
+  const addAisleToRow = () => {
     const pos = parseInt(aisleSeat, 10);
-    if (!Number.isInteger(pos) || pos < 1) return;
-    setRows((prev) => prev.map((r) => ({ ...r, walkwayPositions: (r.walkwayPositions || []).filter((p) => p !== pos) })));
+    const idx = rows.findIndex((r) => (r.rowLabel || '').toUpperCase() === aisleRow.toUpperCase());
+    if (idx < 0 || !Number.isInteger(pos) || pos < 1) return;
+    setRows((prev) => prev.map((r, i) => {
+      if (i !== idx) return r;
+      const max = (r.seats?.length || 0) - 1;
+      if (pos > max) return r; // can't cut past this row's last seat
+      const cur = r.walkwayPositions || [];
+      return cur.includes(pos) ? r : { ...r, walkwayPositions: [...cur, pos].sort((a, b) => a - b) };
+    }));
+    setAisleSeat('');
+  };
+  const removeAisleFromRow = () => {
+    const pos = parseInt(aisleSeat, 10);
+    const idx = rows.findIndex((r) => (r.rowLabel || '').toUpperCase() === aisleRow.toUpperCase());
+    if (idx < 0 || !Number.isInteger(pos) || pos < 1) return;
+    setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, walkwayPositions: (r.walkwayPositions || []).filter((p) => p !== pos) } : r)));
     setAisleSeat('');
   };
 
@@ -362,7 +398,16 @@ export default function SeatBuilderOverlay({
   const toggleReserve = (label, booked) => {
     if (!canReserve || booked) return; // reserving is only editable on the Seat Reservations tab (and never after a sale)
     const set = parseReservedLabels(reserved);
-    if (set.has(label)) set.delete(label); else set.add(label);
+    if (set.has(label)) {
+      set.delete(label);
+    } else {
+      if (set.size + 1 >= totalSeats) { // reserving this one would leave nothing to sell
+        signpost('At least one seat must stay unreserved for sale.');
+        setSheetOpen(true);
+        return;
+      }
+      set.add(label);
+    }
     setReserved(formatReservedLabels(set));
     setSheetOpen(true); // mobile: pop the sheet so the Seats Reserved summary + Bulk Reserve are visible
   };
@@ -376,7 +421,12 @@ export default function SeatBuilderOverlay({
     const culprits = bulkCulprits();
     if (culprits.length) { setBulkError(`Not in your hall: ${culprits.join(', ')}`); return; }
     const add = parseReservedLabels(bulkInput);
-    if (add.size) setReserved(formatReservedLabels(new Set([...reservedSet, ...add])));
+    const merged = new Set([...reservedSet, ...add]);
+    if (totalSeats > 0 && merged.size >= totalSeats) { // would hold back every seat
+      setBulkError('At least one seat must stay unreserved for sale.');
+      return;
+    }
+    if (add.size) setReserved(formatReservedLabels(merged));
     setBulkError('');
     setBulkInput('');
   };
@@ -393,17 +443,23 @@ export default function SeatBuilderOverlay({
   // centred toast - so the error blocks neither the controls being fixed nor re-saving after the fix.
   const signpost = (msg) => toast.error(msg, { toastId: 'seatbuilder-validation', position: 'top-center' });
   const save = () => {
-    if (cap > 0 && totalSeats > cap) {
-      const over = totalSeats - cap;
-      signpost(`Over capacity by ${over} - remove ${over} to save.`);
+    if (rows.length === 0) {
+      signpost('Add at least one row to save.');
       return;
     }
+    // Structural field errors first (fix these before capacity is even meaningful).
     const badTabs = [];
     if (rowsError || seatsError || anyRowError) badTabs.push('Layout'); // the row list counts as Layout
     if (aisleError) badTabs.push('Aisles');
-    if (bulkError) badTabs.push('Reservations');
+    if (bulkError || allReserved) badTabs.push('Reservations'); // all-reserved leaves nothing to sell
     if (badTabs.length) {
       signpost(`${nameList(badTabs)} ${badTabs.length > 1 ? 'have' : 'has'} errors.`);
+      return;
+    }
+    // Then capacity: configured seats must EXACTLY equal capacity - over AND under both block.
+    if (cap > 0 && totalSeats !== cap) {
+      const diff = Math.abs(totalSeats - cap);
+      signpost(totalSeats > cap ? `Over capacity by ${diff} - remove ${diff} to save.` : `Under capacity by ${diff} - add ${diff} to save.`);
       return;
     }
     onSave(rows, reserved);
@@ -421,7 +477,7 @@ export default function SeatBuilderOverlay({
       <div className="relative z-50 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
         <h2 className="text-sm sm:text-base font-semibold text-slate-800">Seating layout</h2>
         <div className="ml-auto flex items-center gap-3">
-          <button type="button" onClick={onClose} className="text-sm font-medium text-slate-500 hover:text-slate-700">Cancel</button>
+          <button type="button" onClick={requestClose} className="text-sm font-medium text-slate-500 hover:text-slate-700">Cancel</button>
           <button type="button" onClick={save} className="rounded-lg bg-teal-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-teal-800">Save</button>
         </div>
       </div>
@@ -463,6 +519,21 @@ export default function SeatBuilderOverlay({
               Over capacity by {totalSeats - cap} seat{totalSeats - cap === 1 ? '' : 's'} - remove {totalSeats - cap} to match the {cap}-seat capacity.
             </div>
           )}
+          {rows.length === 0 ? (
+            /* Empty hall: a short guide to the three tabs instead of a blank map. */
+            <div data-testid="builder-empty" className="flex min-h-0 min-w-0 flex-1 items-center justify-center p-4">
+              <div className="max-w-sm text-sm text-slate-600">
+                <div className="mb-3 text-center font-semibold text-slate-800">Build your seating layout</div>
+                <ul className="space-y-2">
+                  <li><span className="font-medium text-slate-800">Layout</span> - set the number of rows and seats to build the hall; fine-tune each row in the Row/Seats list.</li>
+                  <li><span className="font-medium text-slate-800">Aisles</span> - add walkways between seats (tap a gap on the map, or set Row + Seat).</li>
+                  <li><span className="font-medium text-slate-800">Reservations</span> - hold seats back from public sale.</li>
+                </ul>
+                <div className="mt-3 text-center text-slate-500">Start in the Layout tab.</div>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Zoom toolbar - horizontal, top-right, ABOVE and outside the map container (parity with the
               attendee /events/seats map). */}
           <div className="flex shrink-0 justify-end gap-1 px-3 pt-2" data-testid="zoom-toolbar">
@@ -529,7 +600,7 @@ export default function SeatBuilderOverlay({
                                   hasWalkway ? (
                                     <button
                                       type="button"
-                                      onClick={() => toggleSeam(rowIndex, pos)}
+                                      onClick={() => stageSeam(rowIndex, pos)}
                                       disabled={!canAisle}
                                       aria-label={`Remove walkway after seat ${pos} in row ${row.rowLabel}`}
                                       data-walkway="true"
@@ -538,7 +609,7 @@ export default function SeatBuilderOverlay({
                                   ) : (
                                     <button
                                       type="button"
-                                      onClick={() => toggleSeam(rowIndex, pos)}
+                                      onClick={() => stageSeam(rowIndex, pos)}
                                       disabled={!canAisle}
                                       aria-label={`Add walkway after seat ${pos} in row ${row.rowLabel}`}
                                       className="h-5 w-1 self-stretch hover:bg-amber-200 disabled:hover:bg-transparent"
@@ -559,6 +630,8 @@ export default function SeatBuilderOverlay({
           </TransformWrapper>
           </div>
           </div>
+            </>
+          )}
         </div>
 
         {/* Row/Seats Configuration: the real per-row seat counts - desktop col1/row2; mobile row3, a
@@ -649,7 +722,7 @@ export default function SeatBuilderOverlay({
                     <div className="flex flex-col gap-2 pl-3">
                       <label className="flex items-center gap-2">
                         <span className="w-32 shrink-0 text-slate-500">Row Label</span>
-                        <input type="text" value={genLabel} onChange={(e) => setGenLabel(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))} disabled={locked} aria-label="Row Label" maxLength={3} placeholder="A" className="w-12 rounded border border-slate-300 p-1 text-center font-bold disabled:bg-slate-100" />
+                        <input type="text" value={genLabel} onChange={(e) => setGenLabel(sanitizeRowLabel(e.target.value))} disabled={locked} aria-label="Row Label" maxLength={3} placeholder="A" className="w-12 rounded border border-slate-300 p-1 text-center font-bold disabled:bg-slate-100" />
                         <span className="text-xs text-slate-400">
                           e.g. A, AA, VIP
                           <span className="block">front row, max 3 letters</span>
@@ -686,33 +759,51 @@ export default function SeatBuilderOverlay({
                 {/* Tab 2 - Aisles */}
                 {activeStep === 'aisles' && (
                   <>
-                    <div className="flex items-center gap-1.5 font-semibold text-slate-700">
-                      <span className="h-4 w-3 rounded-sm bg-amber-400" />
-                      Aisle Settings
+                    {/* Heading + a help (i): the "tap a seam to add/remove one aisle" how-to lives on demand,
+                        not as standing text, to keep the mobile sheet compact. */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+                        <span className="h-4 w-3 rounded-sm bg-amber-400" />
+                        Aisle Settings
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAisleHelpOpen((v) => !v)}
+                        aria-label="How aisles work"
+                        aria-expanded={aisleHelpOpen}
+                        className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+                      >
+                        {aisleHelpOpen ? 'x' : 'i'}
+                      </button>
                     </div>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                      <div className="sm:pr-4">
-                        <div className="font-medium text-teal-700">Create</div>
-                        <p className="text-xs text-slate-500">Click between two seats to add an aisle</p>
-                      </div>
-                      <div className="sm:pr-4">
-                        <div className="font-medium text-amber-600">Remove</div>
-                        <p className="text-xs text-slate-500">Click again to remove</p>
-                      </div>
-                      <div className="sm:border-l sm:border-slate-200 sm:pl-4">
-                        <div className="mb-1 font-medium text-slate-700">Add Multiple Aisles</div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-slate-500">Aisle after seat</span>
-                          <input type="number" min="1" value={aisleSeat} onChange={(e) => setAisleSeat(e.target.value)} aria-label="Aisle seat number" className={`w-14 rounded border p-1 text-center ${aisleError ? 'border-red-400' : 'border-slate-300'}`} />
-                          <button type="button" onClick={applyAisleToAll} className="rounded border border-amber-400 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100">Apply to all rows</button>
-                          <button type="button" onClick={removeAisleFromAll} className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">Remove from all rows</button>
-                          <button type="button" onClick={clearAllAisles} disabled={!rows.some((r) => (r.walkwayPositions || []).length)} className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">Clear all aisles</button>
-                        </div>
-                        {aisleError && (
-                          <p className="mt-1 text-xs font-medium text-red-600">No row has a seat after {aisleSeat}.</p>
-                        )}
-                      </div>
+                    {aisleHelpOpen && (
+                      <p className="text-xs text-slate-500">Tap between two seats on the map to add or remove a single aisle. The controls below add or remove an aisle across every row at once; Apply to all rows skips any row too short for that seat.</p>
+                    )}
+                    {/* Precise Row + Seat, with a single button that mirrors a seam click: Add when that seat
+                        in that row has no lane, Clear when it already does. Tap a seam on the map to prefill. */}
+                    <p className="text-xs text-slate-500">Click a gap on the map, or set Row and Seat below.</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="flex items-center gap-1"><span className="text-slate-500">Row</span>
+                        <input type="text" value={aisleRow} onChange={(e) => setAisleRow(sanitizeRowLabel(e.target.value))} aria-label="Aisle row" maxLength={3} placeholder="A" className={`w-12 rounded border p-1 text-center font-bold ${aisleRowMissing ? 'border-red-400' : 'border-slate-300'}`} /></label>
+                      <label className="flex items-center gap-1"><span className="text-slate-500">Seat</span>
+                        <input type="number" min="1" value={aisleSeat} onChange={(e) => setAisleSeat(e.target.value)} aria-label="Aisle seat number" placeholder="20" className={`w-14 rounded border p-1 text-center ${aisleError || aisleSeatOutOfRow ? 'border-red-400' : 'border-slate-300'}`} /></label>
+                      {singleAislePresent ? (
+                        <button type="button" onClick={removeAisleFromRow} className="rounded border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">Clear</button>
+                      ) : (
+                        <button type="button" onClick={addAisleToRow} disabled={!canAddSingle} className={`rounded px-3 py-1 text-xs font-medium ${canAddSingle ? 'border border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100' : 'cursor-not-allowed bg-slate-200 text-slate-400'}`}>Add</button>
+                      )}
                     </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button type="button" onClick={applyAisleToAll} disabled={!canApplyAisle} className={`rounded px-2 py-1 text-xs font-medium ${canApplyAisle ? 'border border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100' : 'cursor-not-allowed bg-slate-200 text-slate-400'}`}>Apply to all rows</button>
+                      <button type="button" onClick={clearAllAisles} disabled={!rows.some((r) => (r.walkwayPositions || []).length)} className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">Clear all aisles</button>
+                    </div>
+                    {singleAisleError ? (
+                      <p className="text-xs font-medium text-red-600">{singleAisleError}</p>
+                    ) : aisleError ? (
+                      <p className="text-xs font-medium text-red-600">No row has a seat after {aisleSeat}.</p>
+                    ) : aisleSinglePartial ? (
+                      <p className="text-xs text-slate-400">Enter both a Row and a Seat.</p>
+                    ) : null}
                   </>
                 )}
 
@@ -761,6 +852,20 @@ export default function SeatBuilderOverlay({
           </>
         )}
       </div>
+
+      {/* Unsaved-changes guard: Cancel/Escape with edits pending prompts before dropping the work. */}
+      {confirmDiscard && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
+            <h3 className="text-sm font-semibold text-slate-800">Discard changes?</h3>
+            <p className="mt-1 text-sm text-slate-500">You have unsaved seating changes. Leave without saving?</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmDiscard(false)} className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Keep editing</button>
+              <button type="button" onClick={onClose} className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700">Discard</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

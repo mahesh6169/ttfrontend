@@ -44,6 +44,16 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await expect(page.getByRole('button', { name: `Seat A${seats}`, exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: `Seat A${seats + 1}`, exact: true })).toHaveCount(0);
   };
+  // A seam click on the map now STAGES the spot (fills Row + Seat); the panel Add/Clear button then acts.
+  // These helpers do both, mirroring how an organiser places or removes one row's aisle via the map.
+  const placeAisleViaMap = async (page, row, seat) => {
+    await page.getByRole('button', { name: `Add walkway after seat ${seat} in row ${row}` }).click(); // stage
+    await page.getByTestId('tool-panel').getByRole('button', { name: 'Add', exact: true }).click();   // place
+  };
+  const clearAisleViaMap = async (page, row, seat) => {
+    await page.getByRole('button', { name: `Remove walkway after seat ${seat} in row ${row}` }).click(); // stage
+    await page.getByTestId('tool-panel').getByRole('button', { name: 'Clear', exact: true }).click();     // remove
+  };
 
   test('AC1 overlay preserves wizard state on Save AND Cancel; no route change', async ({ page }) => {
     const seed = readSeed();
@@ -53,6 +63,7 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await limit.fill('7');
 
     await openBuilder(page);
+    await generate(page, 10, 40); // fill to the 400 capacity so Save is allowed (exact match required)
     await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
     await expect(page.getByTestId('seat-builder-overlay')).toBeHidden();
     await expect(limit).toHaveValue('7');
@@ -87,7 +98,7 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await openBuilder(page);
     await generate(page, 1, 12);
     await selectStep(page, 'Aisles');
-    await page.getByRole('button', { name: 'Add walkway after seat 4 in row A' }).click();
+    await placeAisleViaMap(page, 'A', 4);
     await selectStep(page, 'Layout'); // Add Single Row is in the Layout tool (also in the rows-panel header)
     await page.getByTestId('tool-panel').getByRole('button', { name: 'Add Single Row' }).click();
     // Row B: same 12 seats (B12 exists, B13 does not) and the copied walkway after seat 4.
@@ -108,11 +119,11 @@ test.describe('seat builder overlay (organiser edit)', () => {
     for (const r of ['A', 'B', 'C']) {
       await expect(page.getByRole('button', { name: `Remove walkway after seat 13 in row ${r}` })).toBeVisible();
     }
-    // Clicking one row's amber lane removes only that row's gap.
-    await page.getByRole('button', { name: 'Remove walkway after seat 13 in row A' }).click();
+    // Staging one row's amber lane then Clear removes only that row's gap.
+    await clearAisleViaMap(page, 'A', 13);
     await expect(page.locator('[data-walkway="true"]')).toHaveCount(2);
-    // A seam click adds a single gap back.
-    await page.getByRole('button', { name: 'Add walkway after seat 5 in row A' }).click();
+    // Staging an empty gap then Add puts a single gap back.
+    await placeAisleViaMap(page, 'A', 5);
     await expect(page.locator('[data-walkway="true"]')).toHaveCount(3);
   });
 
@@ -122,7 +133,7 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await openBuilder(page);
     await generate(page, 1, 10);
     await selectStep(page, 'Aisles');
-    await page.getByRole('button', { name: 'Add walkway after seat 5 in row A' }).click();
+    await placeAisleViaMap(page, 'A', 5);
     const lane = page.locator('[data-walkway="true"]').first();
     await expect(lane).toHaveClass(/amber/);
     const laneBox = await lane.boundingBox();
@@ -145,7 +156,7 @@ test.describe('seat builder overlay (organiser edit)', () => {
     const seed = readSeed();
     await gotoStep3(page, seed.builderEmptyEventId);
     await openBuilder(page);
-    await generate(page, 2, 10);
+    await generate(page, 10, 40); // 400 = capacity, so the final Save is allowed
     await selectStep(page, 'Reservations');
     // Click a seat -> reserved (purple).
     await page.getByRole('button', { name: 'Seat A2', exact: true }).click();
@@ -187,7 +198,7 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await generate(page, 2, 20);
     await selectStep(page, 'Aisles');
     // Row A gets an aisle (wider); row B stays gapless (narrower) - both must share the centreline.
-    await page.getByRole('button', { name: 'Add walkway after seat 5 in row A' }).click();
+    await placeAisleViaMap(page, 'A', 5);
     const rowMetrics = async (first, last) => {
       const a = await page.getByRole('button', { name: first, exact: true }).boundingBox();
       const b = await page.getByRole('button', { name: last, exact: true }).boundingBox();
@@ -272,6 +283,7 @@ test.describe('seat builder overlay (organiser edit)', () => {
     const seed = readSeed();
     await gotoStep3(page, seed.builderEmptyEventId);
     await openBuilder(page);
+    await generate(page, 2, 6); // the legend lives in the map, which appears once the hall has rows
     const legend = page.getByTestId('builder-canvas').getByTestId('map-legend');
     await expect(legend).toBeVisible();
     await expect(legend).toContainText('Available');
@@ -291,17 +303,20 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await selectStep(page, 'Reservations');
     await expect(panel).toContainText(/click an available seat to reserve/i);
     await selectStep(page, 'Aisles');
-    await expect(panel).toContainText(/Click between two seats to add an aisle/i); // Create zone
-    await expect(panel).toContainText(/Click again to remove/i);                    // Remove zone
+    // The aisle how-to is now on demand behind the (i), keeping the sheet compact.
+    await panel.getByRole('button', { name: 'How aisles work' }).click();
+    await expect(panel).toContainText(/Tap between two seats on the map to add or remove a single aisle/i);
   });
 
   test('P-AC18 (item 18) each tool panel carries its own contextual how-to; the legend lives inside the map', async ({ page }) => {
     const seed = readSeed();
     await gotoStep3(page, seed.builderEmptyEventId);
     await openBuilder(page);
+    await generate(page, 2, 6); // the legend lives in the map, which appears once the hall has rows
     const panel = page.getByTestId('tool-panel');
     await selectStep(page, 'Aisles');
-    await expect(panel).toContainText(/Click between two seats to add an aisle/i);
+    await panel.getByRole('button', { name: 'How aisles work' }).click();
+    await expect(panel).toContainText(/Tap between two seats on the map to add or remove a single aisle/i);
     await selectStep(page, 'Reservations');
     await expect(panel).toContainText(/reserve it \(turns purple\)/i);
     await expect(page.getByTestId('builder-canvas').getByTestId('map-legend')).toBeVisible();
@@ -365,6 +380,46 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await expect(page.getByTestId('seat-builder-overlay')).toBeVisible();
   });
 
+  test('A-AC1 the Row+Seat button toggles one row: Add when clear, Clear when that row+seat has a lane', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 2, 20);
+    await selectStep(page, 'Aisles');
+    const panel = page.getByTestId('tool-panel');
+    await page.getByLabel('Aisle row').fill('A');
+    await page.getByLabel('Aisle seat number').fill('13');
+    await panel.getByRole('button', { name: 'Add', exact: true }).click(); // A13 clear -> Add, row A only
+    await expect(page.getByRole('button', { name: 'Remove walkway after seat 13 in row A' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add walkway after seat 13 in row B' })).toBeVisible(); // B untouched
+    await expect(page.locator('[data-walkway="true"]')).toHaveCount(1);
+    // Re-enter A13: it now has a lane, so the same button reads Clear and removes just that row's gap.
+    await page.getByLabel('Aisle row').fill('A');
+    await page.getByLabel('Aisle seat number').fill('13');
+    await expect(panel.getByRole('button', { name: 'Clear', exact: true })).toBeVisible();
+    await panel.getByRole('button', { name: 'Clear', exact: true }).click();
+    await expect(page.locator('[data-walkway="true"]')).toHaveCount(0);
+  });
+
+  test('A-AC2 the Row+Seat control validates against the built layout (unknown row / seat past the row)', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 2, 20); // rows A and B, 20 seats each
+    await selectStep(page, 'Aisles');
+    const panel = page.getByTestId('tool-panel');
+    // Unknown row -> explicit error, Add disabled.
+    await page.getByLabel('Aisle row').fill('BB');
+    await page.getByLabel('Aisle seat number').fill('5');
+    await expect(panel.getByText(/Row BB does not exist/i)).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'Add', exact: true })).toBeDisabled();
+    // Seat past that row's end -> explicit error naming the real size.
+    await page.getByLabel('Aisle row').fill('A');
+    await page.getByLabel('Aisle seat number').fill('25');
+    await expect(panel.getByText(/Row A has only 20 seats/i)).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'Add', exact: true })).toBeDisabled();
+  });
+
   test('V-AC3 an aisle-after-seat past the end of every row shows the red error', async ({ page }) => {
     const seed = readSeed();
     await gotoStep3(page, seed.builderEmptyEventId);
@@ -399,7 +454,7 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await openBuilder(page);
     await generate(page, 1, 10);
     await selectStep(page, 'Aisles');
-    await page.getByRole('button', { name: 'Add walkway after seat 8 in row A' }).click();
+    await placeAisleViaMap(page, 'A', 8);
     await expect(page.locator('[data-walkway="true"]')).toHaveCount(1);
     await selectStep(page, 'Reservations');
     await page.getByRole('button', { name: 'Seat A9', exact: true }).click();
@@ -417,7 +472,7 @@ test.describe('seat builder overlay (organiser edit)', () => {
     const seed = readSeed();
     await gotoStep3(page, seed.builderEmptyEventId);
     await openBuilder(page);
-    await generate(page, 2, 10);
+    await generate(page, 10, 40); // 400 = capacity, so the fixed-up Save at the end is allowed
     // Reservations red: a bad bulk token.
     await selectStep(page, 'Reservations');
     await page.getByLabel('Bulk reserve seats').fill('Z9');
@@ -435,6 +490,82 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await page.getByLabel('Bulk reserve seats').fill('');
     await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
     await expect(page.getByTestId('seat-builder-overlay')).toBeHidden();
+  });
+
+  test('V-AC7 an empty hall blocks Save with a plain message', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Add at least one row to save.')).toBeVisible();
+    await expect(page.getByTestId('seat-builder-overlay')).toBeVisible();
+  });
+
+  test('V-AC8 under capacity blocks Save - configured seats must equal capacity exactly', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 1, 5); // 5 of the 400-seat capacity
+    await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText(/Under capacity by 395/i)).toBeVisible();
+    await expect(page.getByTestId('seat-builder-overlay')).toBeVisible();
+  });
+
+  test('V-AC9 you cannot reserve every seat - at least one must stay sellable (bulk and click)', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 1, 3); // A1..A3
+    await selectStep(page, 'Reservations');
+    // Bulk: reserving all three is rejected, nothing applied.
+    await page.getByLabel('Bulk reserve seats').fill('A1-A3');
+    await page.getByRole('button', { name: 'Apply', exact: true }).click();
+    await expect(page.getByText(/At least one seat must stay unreserved/i)).toBeVisible();
+    await expect(page.getByText('None yet.')).toBeVisible();
+    // Click: two reserve fine; the third (last) click is blocked and stays available.
+    await page.getByRole('button', { name: 'Seat A1', exact: true }).click();
+    await page.getByRole('button', { name: 'Seat A2', exact: true }).click();
+    await page.getByRole('button', { name: 'Seat A3', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Seat A3', exact: true })).toHaveAttribute('data-status', 'available');
+  });
+
+  test('V-AC10 Cancel with unsaved edits prompts to discard; Keep editing stays, Discard closes', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await generate(page, 1, 5); // an edit -> dirty
+    await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByText('Discard changes?')).toBeVisible();
+    await page.getByRole('button', { name: 'Keep editing' }).click();
+    await expect(page.getByText('Discard changes?')).toHaveCount(0);
+    await expect(page.getByTestId('seat-builder-overlay')).toBeVisible();
+    await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('button', { name: 'Discard' }).click();
+    await expect(page.getByTestId('seat-builder-overlay')).toBeHidden();
+  });
+
+  test('V-AC11 Cancel with no edits closes straight away (no prompt)', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByTestId('seat-builder-overlay')).toBeHidden();
+    await expect(page.getByText('Discard changes?')).toHaveCount(0);
+  });
+
+  test('V-AC12 an empty hall shows the three-tab guide instead of a blank map', async ({ page }) => {
+    const seed = readSeed();
+    await gotoStep3(page, seed.builderEmptyEventId);
+    await openBuilder(page);
+    const guide = page.getByTestId('builder-empty');
+    await expect(guide).toBeVisible();
+    await expect(guide).toContainText('Build your seating layout');
+    await expect(guide).toContainText('Layout');
+    await expect(guide).toContainText('Aisles');
+    await expect(guide).toContainText('Reservations');
+    await generate(page, 1, 5); // rows exist -> the guide gives way to the map
+    await expect(page.getByTestId('builder-empty')).toHaveCount(0);
+    await expect(page.getByTestId('stage-bar')).toBeVisible();
   });
 
   // --- Zoom parity (builder side) - see featureplans/events-seatmap-zoom-parity.md ---
