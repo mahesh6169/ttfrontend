@@ -24,7 +24,7 @@ const RequireLogin = ({
 
   return (
     <div className="border rounded-lg p-4 shadow-md bg-white text-center">
-      <p className="text-gray-700 mb-4 text-xs sm:text-base">
+      <p className="text-slate-700 mb-4 text-xs sm:text-base">
         {message}
       </p>
       <div className="flex justify-center space-x-4">

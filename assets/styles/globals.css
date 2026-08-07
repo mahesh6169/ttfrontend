@@ -43,6 +43,14 @@ input[type="number"] {
     right: 5vw !important;
     left: auto !important;
   }
+
+  /* Top-center containers (the seat builder's validation signpost) stay centred at the top on mobile,
+     clear of the top-right Save button and the bottom tool sheet - overriding the right-pin above. */
+  .Toastify__toast-container--top-center {
+    right: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
   
   /* Individual toast adjustments */
   .Toastify__toast {

@@ -222,7 +222,7 @@ const EditThreadPage = () => {
           <button
             type="button"
             onClick={() => router.back()}
-            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500"
+            className="bg-slate-600 text-white px-4 py-2 rounded hover:bg-slate-500"
           >
             Cancel
           </button>

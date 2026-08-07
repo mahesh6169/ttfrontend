@@ -10,16 +10,27 @@ export default function RefundPolicyDisplay({
   if (!refundPolicy) return null;
 
   const processingFeeRefundable = refundPolicy.processingFeePolicy === 'refundable';
-  
+
+  // Checkout: a COMPACT amber warning callout (design-system.md section 10) - icon + an inline
+  // heading and a single flowing body line, not a heading-plus-bullets block.
+  if (variant === 'checkout') {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <div className="flex items-start gap-2">
+          <IoInformationCircleOutline className="text-amber-600 w-4 h-4 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            <span className="font-semibold text-amber-900">Refund Policy:</span>{' '}
+            Processing fees are{' '}
+            <span className="font-medium">{processingFeeRefundable ? 'refundable' : 'non-refundable'}</span>.
+            {refundPolicy.policyText ? ` ${refundPolicy.policyText}` : ''}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const getVariantStyles = () => {
     switch (variant) {
-      case 'checkout':
-        return {
-          container: 'bg-amber-50 border border-amber-200 rounded-md sm:rounded-lg p-2 sm:p-3 lg:p-4',
-          icon: 'text-amber-600 w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5',
-          title: 'text-[11px] sm:text-xs lg:text-sm font-medium text-amber-900',
-          text: 'text-[10px] sm:text-xs lg:text-sm text-amber-700'
-        };
       case 'compact':
         return {
           container: 'bg-slate-50 border border-slate-200 rounded-md p-2 sm:p-3',

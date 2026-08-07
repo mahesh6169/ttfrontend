@@ -1661,37 +1661,26 @@ const handleAddAnother = useCallback(() => {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full pb-6">
       <RequireVerifiedAccount message="You must be logged in to manage events.">
 
-        {/* Top Toolbar — Cancel (left), above the title. Single exit for the wizard. */}
-        {!isViewMode && allowCancel && (
-          <div className="mb-4 flex items-center">
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isLoading}
-              className="inline-flex items-center gap-1 bg-teal-700 text-white hover:bg-teal-800 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              ✕ Cancel
-            </button>
+        {/* Sticky header (pinned below the site nav): the persistent title + the stepper. The
+            title stays visible on every step; the stepper is hidden when there is a single step. */}
+        <div data-testid="wizard-header" className="sticky top-[68px] z-30 bg-white pt-2 pb-2 mb-4 border-b border-slate-200">
+          <div className="text-center">
+            <h1 className="text-base font-bold text-slate-900 leading-tight">
+              {customTitle || 'Add Event'}
+            </h1>
           </div>
-        )}
-
-        {/* Page Title — centered, below the toolbar. Font/typography matched to
-            ProfilePageHeading (the profile/manage pages standard). */}
-        <div className="text-center mb-6">
-          <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">
-            {customTitle || 'Create Event'}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">Add your event details below</p>
+          {totalSteps > 1 && (
+            <div className="mt-2">
+              <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
+            </div>
+          )}
         </div>
 
-        {/* Step Indicator */}
-        <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
-
-        {/* Step Content */}
-        <div className="mt-8 bg-white p-3 sm:p-6 rounded-lg shadow-md border border-slate-200">
+        {/* Scrolling form — the current step's fields sit between the two sticky zones. */}
+        <div className="bg-white p-3 sm:p-6 rounded-lg shadow-md border border-slate-200">
            {/* Step 1: Basic Info - Title, Date/Time, Venue, Address, Images */}
   {currentStep === 1 && (
     <BasicInfoStep
@@ -1734,22 +1723,39 @@ const handleAddAnother = useCallback(() => {
     />
   )}
 
-          {/* Navigation */}
-          {!isViewMode && (
-            <div className="mt-8 flex justify-between items-center">
+        </div>
+
+        {/* Bottom toolbar (static, sits at the end of the form - NOT fixed): a fixed bar rode up over the
+            fields when the mobile keyboard opened, so the actions now live at the natural end of the form.
+            LEFT slot = Cancel (step 1) / Previous (2+), secondary in both states so the button does not
+            visually jump; RIGHT slot = Next, or Add/Update on the last step. */}
+        {!isViewMode && (
+          <div data-testid="wizard-toolbar" className="mt-4">
+            <div className="flex items-center justify-between gap-4">
+              {/* LEFT slot */}
               {currentStep > 1 ? (
                 <button
                   type="button"
                   onClick={handlePrev}
                   disabled={isLoading}
-                  className="text-sm text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-4 py-2 sm:px-5 sm:py-2 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  ← Previous
+                  Previous
+                </button>
+              ) : allowCancel ? (
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={isLoading}
+                  className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-4 py-2 sm:px-5 sm:py-2 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
                 </button>
               ) : (
                 <div></div>
               )}
 
+              {/* RIGHT slot */}
               {currentStep < totalSteps ? (
                 (currentStep === 1 && (!formData.eventIntent || (formData.eventIntent === 'host' && formData.isPaid === null) || (formData.eventIntent === 'host' && formData.isPaid === true && !stripeReady))) ? (
                   <div></div>
@@ -1758,9 +1764,9 @@ const handleAddAnother = useCallback(() => {
                     type="button"
                     onClick={handleNext}
                     disabled={isLoading}
-                    className="text-sm text-teal-700 hover:text-teal-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 sm:px-5 sm:py-2 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next →
+                    Next
                   </button>
                 )
               ) : (
@@ -1768,10 +1774,8 @@ const handleAddAnother = useCallback(() => {
                   type="button"
                   onClick={handleSubmit}
                   disabled={isLoading}
-                  className={`px-6 py-2 text-sm sm:text-base rounded-lg transition-colors flex items-center gap-2 ${
-                    isLoading
-                      ? 'bg-slate-400 cursor-not-allowed text-white'
-                      : 'bg-teal-700 hover:bg-teal-800 text-white'
+                  className={`px-4 py-2 sm:px-5 sm:py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 text-white ${
+                    isLoading ? 'bg-teal-700 opacity-50 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'
                   }`}
                 >
                   {isLoading ? (
@@ -1785,26 +1789,28 @@ const handleAddAnother = useCallback(() => {
                   ) : isEditingMode ? (
                     'Update'
                   ) : (
-                    'Create'
+                    'Add Event'
                   )}
                 </button>
               )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* View Mode Navigation */}
-          {isViewMode && (
-            <div className="mt-8 flex justify-center">
+        {/* View mode: a single Back to Events action in the same static bottom toolbar. */}
+        {isViewMode && (
+          <div className="mt-4">
+            <div className="flex justify-center">
               <button
                 type="button"
                 onClick={() => router.push('/events')}
-                className="px-6 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition-colors"
+                className="bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 sm:px-5 sm:py-2 rounded-lg text-sm font-semibold transition-colors"
               >
                 Back to Events
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </RequireVerifiedAccount>
     </div>
   );

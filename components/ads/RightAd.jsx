@@ -135,7 +135,7 @@ const RightAd = () => {
 
   // Show vertical ad - 160x600 (desktop only)
   return (
-    <div className="hidden lg:block sticky top-16 w-[160px] h-[600px] overflow-hidden cursor-pointer"
+    <div data-testid="right-ad" className="hidden lg:block sticky top-16 w-[160px] h-[600px] overflow-hidden cursor-pointer"
       onClick={() => handleAdClick(currentAd, currentImage)}
     >
       <Image

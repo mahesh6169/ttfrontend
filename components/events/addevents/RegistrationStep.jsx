@@ -46,15 +46,15 @@ const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
     <div className="space-y-4">
       {/* Free/Paid Selection */}
       <div>
-        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-          Event Type <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-slate-700 mb-2">
+          Event Type <span className="text-red-600">*</span>
         </label>
         <div className={`inline-grid grid-cols-2 gap-2 ${disabled ? 'opacity-60' : ''}`}>
           <button
             type="button"
             onClick={() => !disabled && dispatch(updateField({ field: 'isPaid', value: false }))}
             disabled={disabled}
-            className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
+            className={`py-2 px-6 text-sm rounded-lg border transition-colors ${
               isFreeSelected
                 ? 'bg-teal-700 text-white border-teal-700'
                 : 'bg-white text-slate-700 border-slate-300'
@@ -66,7 +66,7 @@ const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
             type="button"
             onClick={() => !disabled && dispatch(updateField({ field: 'isPaid', value: true }))}
             disabled={disabled}
-            className={`py-2 px-6 text-sm sm:text-base rounded-lg border transition-colors ${
+            className={`py-2 px-6 text-sm rounded-lg border transition-colors ${
               isPaidSelected
                 ? 'bg-teal-700 text-white border-teal-700'
                 : 'bg-white text-slate-700 border-slate-300'
@@ -76,7 +76,7 @@ const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
           </button>
         </div>
         {errors?.isPaid && (
-          <p className="text-red-500 text-xs sm:text-sm mt-1">
+          <p className="text-red-600 text-xs mt-1">
             {Array.isArray(errors.isPaid) ? errors.isPaid[0] : errors.isPaid}
           </p>
         )}
@@ -84,7 +84,7 @@ const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
 
       {/* External Ticket URL */}
       <div>
-        <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           External Registration Link
           <span className="text-slate-400 font-normal ml-1">(optional)</span>
         </label>
@@ -93,14 +93,14 @@ const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
           value={formData.externalTicketUrl || ''}
           onChange={(e) => dispatch(setExternalTicketUrl(e.target.value))}
           disabled={disabled}
-          className="w-full p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 disabled:bg-slate-100 disabled:cursor-not-allowed"
+          className="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 disabled:bg-slate-100 disabled:cursor-not-allowed"
           placeholder="https://eventbrite.com/your-event"
         />
         <p className="text-xs text-slate-500 mt-1">
           Link where attendees can register or purchase tickets
         </p>
         {errors?.externalTicketUrl && (
-          <p className="text-red-500 text-xs sm:text-sm mt-1">
+          <p className="text-red-600 text-xs mt-1">
             {Array.isArray(errors.externalTicketUrl) ? errors.externalTicketUrl[0] : errors.externalTicketUrl}
           </p>
         )}
@@ -121,8 +121,8 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
   const [bookingLimitError, setBookingLimitError] = useState('');
 
   const getInputClasses = (hasError) => {
-    const base = 'w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2';
-    return `${base} ${hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
+    const base = 'w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:border-teal-400';
+    return `${base} ${hasError ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
   };
 
   return (
@@ -130,9 +130,9 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Event Capacity */}
         <div>
-          <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
             Capacity {isPaid
-              ? <span className="text-red-500">*</span>
+              ? <span className="text-red-600">*</span>
               : <span className="font-normal text-slate-400 ml-1">(optional)</span>}
           </label>
           <input
@@ -157,7 +157,7 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
             placeholder="0 = unlimited"
           />
           {errors?.capacity ? (
-            <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.capacity}</p>
+            <p className="text-red-600 text-xs mt-1">{errors.capacity}</p>
           ) : (
             <p className="text-xs text-slate-500 mt-1">0 = unlimited capacity</p>
           )}
@@ -165,8 +165,8 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
 
         {/* Booking Limit */}
         <div>
-          <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-            Booking Limit <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Booking Limit <span className="text-red-600">*</span>
           </label>
           <input
             type="number"
@@ -194,9 +194,9 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
             placeholder="Max per order"
           />
           {errors?.maxAttendeesPerRegistration ? (
-            <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.maxAttendeesPerRegistration}</p>
+            <p className="text-red-600 text-xs mt-1">{errors.maxAttendeesPerRegistration}</p>
           ) : bookingLimitError ? (
-            <p className="text-red-500 text-xs sm:text-sm mt-1">{bookingLimitError}</p>
+            <p className="text-red-600 text-xs mt-1">{bookingLimitError}</p>
           ) : (
             <p className="text-xs text-slate-500 mt-1">Maximum seats per order</p>
           )}
@@ -339,7 +339,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
 
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
-      <h3 className="font-medium text-sm sm:text-base mb-1 text-slate-600">
+      <h3 className="font-medium text-sm mb-1 text-slate-700">
         Attendee Information
       </h3>
       <p className="text-xs text-slate-500 mb-4">
@@ -372,8 +372,8 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                         dispatch(updateRegistrationField({ index, field: 'fieldName', value: e.target.value }));
                         clearSnapshotEntry(`${index}-name`);
                       }}
-                      className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 ${
-                        nameError ? 'border-red-300' : 'border-slate-300'
+                      className={`w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
+                        nameError ? 'border-red-500 bg-red-50' : 'border-slate-300'
                       }`}
                       placeholder={isDropdown ? 'e.g., T-shirt size' : 'e.g., Dietary requirements'}
                       maxLength="100"
@@ -385,7 +385,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                     {/* Options editor (only when type = Dropdown) */}
                     {isDropdown && (
                       <div className="mt-3 pl-3 border-l-2 border-teal-200">
-                        <label className="block text-xs font-medium text-slate-600 mb-2">Options</label>
+                        <label className="block text-xs font-medium text-slate-700 mb-2">Options</label>
                         <div className="space-y-2">
                           {(field?.fieldOptions || []).map((option, optIdx) => (
                             <div key={optIdx} className="flex gap-2 items-center">
@@ -398,7 +398,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                                   dispatch(updateFieldOptions({ index, options: newOptions }));
                                   clearSnapshotEntry(`${index}-options`);
                                 }}
-                                className="flex-1 p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
+                                className="flex-1 px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400"
                                 placeholder={`Option ${optIdx + 1}`}
                                 maxLength="80"
                               />
@@ -447,9 +447,9 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                         id={`required-${index}`}
                         checked={field?.isRequired || false}
                         onChange={(e) => dispatch(updateRegistrationField({ index, field: 'isRequired', value: e.target.checked }))}
-                        className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
+                        className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300"
                       />
-                      <label htmlFor={`required-${index}`} className="ml-2 text-sm text-slate-600">
+                      <label htmlFor={`required-${index}`} className="ml-2 text-sm text-slate-700">
                         Required
                       </label>
                     </div>
@@ -518,7 +518,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                             type="button"
                             onClick={() => setConfirmDeleteField(index)}
                             aria-label="Delete question"
-                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -591,8 +591,8 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
   };
 
   const getInputClasses = (hasError) => {
-    const base = 'w-full p-3 sm:p-2 text-base sm:text-sm text-slate-700 bg-white [color-scheme:light] border rounded-lg focus:outline-none focus:ring-2';
-    return `${base} ${hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
+    const base = 'w-full px-3 py-2.5 text-sm text-slate-700 bg-white [color-scheme:light] placeholder:text-slate-400 hover:border-slate-400 border rounded-lg focus:outline-none focus:ring-2 focus:border-teal-400';
+    return `${base} ${hasError ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
   };
 
   // --- Ticket accordion helpers ---
@@ -720,8 +720,8 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
 
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
-      <h3 className="font-medium text-sm sm:text-base mb-4 text-slate-600">
-        Tickets Configuration <span className="text-red-500">*</span>
+      <h3 className="font-medium text-sm mb-4 text-slate-700">
+        Tickets Configuration <span className="text-red-600">*</span>
       </h3>
 
       {(formData.ticketTypes || []).length > 0 && (
@@ -774,7 +774,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                             type="button"
                             onClick={() => setConfirmDeleteTicket(index)}
                             aria-label="Delete ticket type"
-                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -800,8 +800,8 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Ticket Name */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Name <span className="text-red-500">*</span>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      Name <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="text"
@@ -821,14 +821,14 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                       maxLength="100"
                     />
                     {ticketNameError(index) && (
-                      <p className="text-red-500 text-xs mt-1">{ticketNameError(index)}</p>
+                      <p className="text-red-600 text-xs mt-1">{ticketNameError(index)}</p>
                     )}
                   </div>
 
                   {/* Ticket Price (whole-bundle price when this type is a bundle) */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      {isBundle(ticket) ? 'Bundle price' : 'Price'} <span className="text-red-500">*</span>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      {isBundle(ticket) ? 'Bundle price' : 'Price'} <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="number"
@@ -860,13 +860,13 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                       placeholder="0.00"
                     />
                     {ticketPriceError(index) && (
-                      <p className="text-red-500 text-xs mt-1">{ticketPriceError(index)}</p>
+                      <p className="text-red-600 text-xs mt-1">{ticketPriceError(index)}</p>
                     )}
                   </div>
 
                   {/* Start Date */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Start Date <span className="font-normal text-slate-400">(optional)</span></label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Start Date <span className="font-normal text-slate-400">(optional)</span></label>
                     <input
                       type="date"
                       value={ticket.startDate ? (ticket.startDate.includes('T') ? ticket.startDate.slice(0, 10) : ticket.startDate) : ''}
@@ -879,7 +879,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
 
                   {/* Expiry Date */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Expiry Date <span className="font-normal text-slate-400">(optional)</span></label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Expiry Date <span className="font-normal text-slate-400">(optional)</span></label>
                     <input
                       type="date"
                       value={ticket.expiryDate ? (ticket.expiryDate.includes('T') ? ticket.expiryDate.slice(0, 10) : ticket.expiryDate) : ''}
@@ -892,12 +892,12 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                   </div>
                 </div>
                 {ticketDateError(index) && (
-                  <p className="text-red-500 text-xs mt-1">{ticketDateError(index)}</p>
+                  <p className="text-red-600 text-xs mt-1">{ticketDateError(index)}</p>
                 )}
 
                 {/* Optional display-only note shown to buyers while choosing (e.g. "Includes dinner"). */}
                 <div className="mt-3">
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Note <span className="font-normal text-slate-400">(optional, shown to buyers)</span>
                   </label>
                   <input
@@ -923,14 +923,14 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                         dispatch(updateTicketType({ index, field: 'bundleSize', value: e.target.checked ? 2 : '' }));
                         clearTicketRowError(index, 'bundle');
                       }}
-                      className="h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-300"
+                      className="h-4 w-4 rounded border-slate-300 accent-teal-700 focus:ring-teal-300"
                     />
-                    <span className="text-xs font-medium text-slate-600">Sell as a bundle (one price admits several people)</span>
+                    <span className="text-xs font-medium text-slate-700">Sell as a bundle (one price admits several people)</span>
                   </label>
                   {isBundle(ticket) && (
                     <div className="mt-2">
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Bundle size (people per purchase) <span className="text-red-500">*</span>
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Bundle size (people per purchase) <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="number"
@@ -944,7 +944,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                       />
                       <p className="text-xs text-slate-400 mt-1">The Price above is the total for the whole bundle (e.g. size 4 at $72 admits 4 for $18 each).</p>
                       {ticketBundleError(index) && (
-                        <p className="text-red-500 text-xs mt-1">{ticketBundleError(index)}</p>
+                        <p className="text-red-600 text-xs mt-1">{ticketBundleError(index)}</p>
                       )}
                     </div>
                   )}
@@ -973,7 +973,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
       )}
 
       {errors?.ticketTypes && (
-        <p className="text-red-500 text-xs sm:text-sm mb-2">
+        <p className="text-red-600 text-xs mb-2">
           {Array.isArray(errors.ticketTypes) ? errors.ticketTypes[0] : errors.ticketTypes}
         </p>
       )}
@@ -1003,8 +1003,8 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
   const [confirmDeleteDiscount, setConfirmDeleteDiscount] = useState(null);
 
   const getInputClasses = (hasError) => {
-    const base = 'w-full p-3 sm:p-2 text-base sm:text-sm text-slate-700 bg-white [color-scheme:light] border rounded-lg focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed';
-    return `${base} ${hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
+    const base = 'w-full px-3 py-2.5 text-sm text-slate-700 bg-white [color-scheme:light] placeholder:text-slate-400 hover:border-slate-400 border rounded-lg focus:outline-none focus:ring-2 focus:border-teal-400 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed';
+    return `${base} ${hasError ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
   };
 
   const clearError = (key) => {
@@ -1164,7 +1164,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
       <div className="mb-4 flex items-center gap-2">
-        <h3 className="font-medium text-sm sm:text-base text-slate-600">
+        <h3 className="font-medium text-sm text-slate-700">
           Discount Codes
         </h3>
         <button
@@ -1238,7 +1238,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                           disabled={lockUsed}
                           aria-label="Delete discount code"
                           title={lockUsed ? "This code has been used — switch it off instead of deleting" : undefined}
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                          className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1269,7 +1269,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                       disabled={namedTicketTypes.length === 0 && dc?.active === false}
                       title={namedTicketTypes.length === 0 ? 'Add a named ticket type first' : undefined}
                       onClick={() => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'active', value: !(dc?.active !== false) })); clearDiscountRowError(index, 'applies'); }}
-                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${dc?.active !== false ? 'bg-teal-700' : 'bg-slate-300'}`}
+                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${dc?.active !== false ? 'bg-teal-700' : 'bg-slate-200'}`}
                     >
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${dc?.active !== false ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
                     </button>
@@ -1279,7 +1279,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Code */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Code <span className="text-red-500">*</span></label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Code <span className="text-red-600">*</span></label>
                     <input
                       type="text"
                       value={dc?.code || ''}
@@ -1291,7 +1291,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                       className={getInputClasses(!!discountFieldError(index, 'code'))}
                     />
                     {discountFieldError(index, 'code') && (
-                      <p className="text-red-500 text-xs mt-1">{discountFieldError(index, 'code')}</p>
+                      <p className="text-red-600 text-xs mt-1">{discountFieldError(index, 'code')}</p>
                     )}
                     <p className="text-xs text-slate-500 mt-1">
                       {lockWord ? "A saved code can't be renamed." : 'Max 20 characters, letters and numbers only.'}
@@ -1300,7 +1300,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
 
                   {/* Type */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Type <span className="text-red-500">*</span></label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Type <span className="text-red-600">*</span></label>
                     <select
                       value={dc?.kind || 'percent'}
                       onChange={(e) => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'kind', value: e.target.value })); clearDiscountRowError(index, 'value'); }}
@@ -1315,8 +1315,8 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
 
                   {/* Value */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      {dc?.kind === 'fixed' ? 'Amount ($)' : 'Percent (1–90)'} <span className="text-red-500">*</span>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      {dc?.kind === 'fixed' ? 'Amount ($)' : 'Percent (1–90)'} <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="number"
@@ -1331,12 +1331,12 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                       className={getInputClasses(!!discountFieldError(index, 'value'))}
                       placeholder={dc?.kind === 'fixed' ? '5.00' : '10'}
                     />
-                    {discountFieldError(index, 'value') && <p className="text-red-500 text-xs mt-1">{discountFieldError(index, 'value')}</p>}
+                    {discountFieldError(index, 'value') && <p className="text-red-600 text-xs mt-1">{discountFieldError(index, 'value')}</p>}
                   </div>
 
                   {/* Max uses */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Max uses <span className="font-normal text-slate-400">(optional)</span></label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Max uses <span className="font-normal text-slate-400">(optional)</span></label>
                     <input
                       type="number"
                       min="1"
@@ -1347,12 +1347,12 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                       className={getInputClasses(!!discountFieldError(index, 'uses'))}
                       placeholder="Unlimited"
                     />
-                    {discountFieldError(index, 'uses') && <p className="text-red-500 text-xs mt-1">{discountFieldError(index, 'uses')}</p>}
+                    {discountFieldError(index, 'uses') && <p className="text-red-600 text-xs mt-1">{discountFieldError(index, 'uses')}</p>}
                   </div>
 
                   {/* Valid from */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Valid from <span className="font-normal text-slate-400">(optional)</span></label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Valid from <span className="font-normal text-slate-400">(optional)</span></label>
                     <input
                       type="date"
                       value={dc.validFrom ? (dc.validFrom.includes('T') ? dc.validFrom.slice(0, 10) : dc.validFrom) : ''}
@@ -1366,7 +1366,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
 
                   {/* Valid until */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Valid until <span className="font-normal text-slate-400">(optional)</span></label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Valid until <span className="font-normal text-slate-400">(optional)</span></label>
                     <input
                       type="date"
                       value={dc.validUntil ? (dc.validUntil.includes('T') ? dc.validUntil.slice(0, 10) : dc.validUntil) : ''}
@@ -1378,12 +1378,12 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                   </div>
                 </div>
 
-                {discountFieldError(index, 'dates') && <p className="text-red-500 text-xs mt-1">{discountFieldError(index, 'dates')}</p>}
+                {discountFieldError(index, 'dates') && <p className="text-red-600 text-xs mt-1">{discountFieldError(index, 'dates')}</p>}
 
                 {/* Applies to (ticket-type NAMES, explicit) */}
                 <div className="mt-3 pt-3 border-t border-slate-200">
-                  <label className="block text-xs font-medium text-slate-600 mb-2">
-                    Select ticket types to discount <span className="text-red-500">*</span>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
+                    Select ticket types to discount <span className="text-red-600">*</span>
                   </label>
                   {namedTicketTypes.length === 0 ? (
                     <p className="text-xs text-amber-600">Name your ticket types above first, then choose which ones this code applies to.</p>
@@ -1395,14 +1395,14 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                             type="checkbox"
                             checked={(dc.appliesToTicketTypes || []).includes(t.name)}
                             onChange={(e) => toggleApplies(index, t.name, e.target.checked)}
-                            className="w-4 h-4 text-teal-700 border-slate-300 rounded focus:ring-teal-300"
+                            className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300"
                           />
-                          <span className="text-sm text-slate-600">{t.name}</span>
+                          <span className="text-sm text-slate-700">{t.name}</span>
                         </label>
                       ))}
                     </div>
                   )}
-                  {discountFieldError(index, 'applies') && <p className="text-red-500 text-xs mt-1">{discountFieldError(index, 'applies')}</p>}
+                  {discountFieldError(index, 'applies') && <p className="text-red-600 text-xs mt-1">{discountFieldError(index, 'applies')}</p>}
                 </div>
 
                 {/* Advertise at ticket selection — yes/no toggle (only meaningful when the code is active) */}
@@ -1414,11 +1414,11 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                     disabled={dc?.active === false}
                     title={dc?.active === false ? 'Activate the code to advertise it' : undefined}
                     onClick={() => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'showHint', value: !(dc?.showHint === true) })); }}
-                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${(dc?.showHint === true && dc?.active !== false) ? 'bg-teal-700' : 'bg-slate-300'}`}
+                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${(dc?.showHint === true && dc?.active !== false) ? 'bg-teal-700' : 'bg-slate-200'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${(dc?.showHint === true && dc?.active !== false) ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
                   </button>
-                  <span className={`text-sm ${dc?.active === false ? 'text-slate-400' : 'text-slate-600'}`}>
+                  <span className={`text-sm ${dc?.active === false ? 'text-slate-400' : 'text-slate-700'}`}>
                     {dc?.code ? `Advertise "${dc.code}" at ticket selection` : 'Advertise this code at ticket selection'}
                     {dc?.active === false ? ' (activate first)' : ''}
                   </span>
@@ -1462,7 +1462,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50" onClick={() => setShowDiscountInfo(false)}>
           <div className="bg-white w-full sm:max-w-md rounded-lg max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h3 className="text-base font-semibold text-slate-800">How discount codes work</h3>
+              <h3 className="text-base font-semibold text-slate-900">How discount codes work</h3>
               <button
                 type="button"
                 onClick={() => setShowDiscountInfo(false)}
@@ -1475,7 +1475,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
               </button>
             </div>
             <div className="p-4 overflow-y-auto">
-              <ul className="space-y-2 text-sm text-slate-600 list-disc pl-5">
+              <ul className="space-y-2 text-sm text-slate-700 list-disc pl-5">
                 <li>Buyers type the code at checkout. Codes are 3–20 letters/numbers, shown in capitals.</li>
                 <li>A code only works when <strong>Active</strong> — and an active code must apply to at least one ticket type (ticking a ticket activates it automatically).</li>
                 <li>The discount is a percentage (1–90%) or a fixed $ amount, and can't bring a ticket under $1.</li>
@@ -1501,7 +1501,7 @@ const GSTConfiguration = ({ formData, dispatch }) => {
 
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
-      <h3 className="font-medium text-sm sm:text-base mb-3 text-slate-600">GST</h3>
+      <h3 className="font-medium text-sm mb-3 text-slate-700">GST</h3>
 
       <div className="flex items-start gap-3">
         <button
@@ -1509,12 +1509,12 @@ const GSTConfiguration = ({ formData, dispatch }) => {
           role="switch"
           aria-checked={on}
           onClick={() => dispatch(updateGstIncluded(!on))}
-          className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-300 ${on ? 'bg-teal-700' : 'bg-slate-300'}`}
+          className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-300 ${on ? 'bg-teal-700' : 'bg-slate-200'}`}
         >
           <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${on ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
         </button>
         <div className="flex-1">
-          <p className="text-sm font-medium text-slate-600">Ticket prices include GST</p>
+          <p className="text-sm font-medium text-slate-700">Ticket prices include GST</p>
           <p className="text-xs text-slate-500 mt-0.5">
             Turn on if your ticket prices already include 10% GST.
           </p>
@@ -1523,8 +1523,8 @@ const GSTConfiguration = ({ formData, dispatch }) => {
           <div className="mt-3 max-w-xs">
             <p className="text-xs text-slate-500 mb-1">At checkout, the total reads:</p>
             <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-              <span className="text-slate-600">{on ? 'Total (incl. GST)' : 'Total'}</span>
-              <span className="font-medium text-slate-800">{sampleLabel}</span>
+              <span className="text-slate-700">{on ? 'Total (incl. GST)' : 'Total'}</span>
+              <span className="font-medium text-slate-900">{sampleLabel}</span>
             </div>
           </div>
         </div>

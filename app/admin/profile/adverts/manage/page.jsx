@@ -109,7 +109,7 @@ export default function ProfilePage() {
         onClick={() =>
           localStorage.setItem('cancelRedirectUrl', '/admin/profile/adverts/manage')
         }
-        className="block my-2 p-2 bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 font-semibold lg:w-1/4 text-center rounded"
+        className="block my-2 p-2 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:text-slate-900 font-semibold lg:w-1/4 text-center rounded"
       >
         + Post New Advertisement
       </Link>
@@ -119,7 +119,7 @@ export default function ProfilePage() {
           {adverts.map((advert) => (
             <div
               key={advert._id}
-              className="p-4 border border-gray-300 rounded shadow hover:shadow-lg transition"
+              className="p-4 border border-slate-300 rounded shadow hover:shadow-lg transition"
             >
               <h3 className="text-xl font-bold">{advert.title}</h3>
               {advert.images?.length > 0 && (
@@ -149,7 +149,7 @@ export default function ProfilePage() {
           ))}
         </div>
       ) : (
-        <p className="text-gray-700 pt-25">You have no adverts posted.</p>
+        <p className="text-slate-700 pt-25">You have no adverts posted.</p>
       )}
 
       {/* Reusable Confirm Modal */}

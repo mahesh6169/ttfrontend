@@ -35,6 +35,10 @@ export const nextRowLabel = (lastLabel = '', existingLabels = []) => {
   }
 };
 
+/** The one row-label rule used everywhere (Layout calculator, per-row list, aisle Row): uppercase A-Z
+ *  letters only, max 3 characters (A, AA, VIP). Keep this the single source so the panes never drift. */
+export const sanitizeRowLabel = (raw = '') => String(raw).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+
 // Organiser-reserved seats share the existing typed-box format ("A1,A4-A6,B2"). These convert between
 // that string and a Set of seat labels ("A13") so the typed box and click-to-reserve edit one list.
 

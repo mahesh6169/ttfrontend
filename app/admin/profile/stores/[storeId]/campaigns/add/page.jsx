@@ -52,7 +52,7 @@ export default function AddCampaignPage() {
 
   if (!store) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-slate-50 py-8">
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
@@ -63,7 +63,7 @@ export default function AddCampaignPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-slate-50 py-8">
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="mb-6">
           <button
@@ -73,8 +73,8 @@ export default function AddCampaignPage() {
             ← Back to Campaigns
           </button>
           
-          <h1 className="text-3xl font-bold text-gray-800">Add New Campaign</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-slate-800">Add New Campaign</h1>
+          <p className="text-slate-600 mt-2">
             Create a new discount campaign for {store.storeName}
           </p>
         </div>

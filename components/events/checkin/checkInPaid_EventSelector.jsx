@@ -102,8 +102,8 @@ const CheckInPaid_EventSelector = () => {
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-        <div className="h-10 bg-gray-200 rounded w-full"></div>
+        <div className="h-4 bg-slate-200 rounded w-32 mb-2"></div>
+        <div className="h-10 bg-slate-200 rounded w-full"></div>
       </div>
     );
   }
@@ -123,12 +123,12 @@ const CheckInPaid_EventSelector = () => {
       <div className="flex flex-col sm:flex-row sm:gap-4">
         {/* Date Filter - Compact on mobile */}
         <div className="sm:w-1/3">
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-slate-600 mb-1">
             Date Range
           </label>
           <Listbox value={dateFilter} onChange={setDateFilter}>
             <div className="relative">
-              <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+              <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
                 <span className="block truncate text-slate-900">
                   {DATE_FILTER_OPTIONS.find((o) => o.value === dateFilter)?.label}
                 </span>
@@ -173,12 +173,12 @@ const CheckInPaid_EventSelector = () => {
 
         {/* Event Selector - Optimized for mobile */}
         <div className="flex-1 mt-3 sm:mt-0">
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-slate-600 mb-1">
             Select Paid Event
           </label>
           <Listbox value={selectedEvent?._id || ''} onChange={handleEventChange}>
             <div className="relative">
-              <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
+              <ListboxButton className="relative w-full pl-3 pr-9 py-1.5 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 cursor-pointer text-left">
                 <span className={`block truncate ${selectedEvent ? 'text-slate-900' : 'text-slate-500'}`}>
                   {selectedEvent
                     ? `${selectedEvent.title} • ${formatEventDateTime(selectedEvent.dateTime, selectedEvent.timeZone).date}`
@@ -253,7 +253,7 @@ const CheckInPaid_EventSelector = () => {
           </Listbox>
 
           {filteredEvents.length === 0 && managedEvents.length > 0 && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               No events in selected range. Try a different date filter.
             </p>
           )}

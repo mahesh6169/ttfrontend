@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import Footer from '@/components/Footer';
 import FormsContentShell from '@/components/layout/FormsContentShell';
 
 const ListingsNoAdsLayout = ({ children }) => {
@@ -10,7 +9,6 @@ const ListingsNoAdsLayout = ({ children }) => {
           <FormsContentShell>{children}</FormsContentShell>
         </Suspense>
       </div>
-      <Footer />
     </main>
   );
 };

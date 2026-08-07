@@ -65,7 +65,7 @@ const SuccessStep = ({
       </div>
 
       {/* Title */}
-      <h2 className="text-lg sm:text-xl font-semibold text-slate-800 text-center mb-1">
+      <h2 className="text-lg font-bold text-slate-900 text-center mb-1">
         {mode === 'edit' ? 'Event Updated' : 'Event Created'}
       </h2>
       <p className="text-sm text-slate-500 text-center mb-6">
@@ -74,7 +74,7 @@ const SuccessStep = ({
 
       {/* Event Summary */}
       <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
-        <h3 className="font-medium text-slate-800 mb-3 line-clamp-2">{eventTitle}</h3>
+        <h3 className="text-base font-semibold text-slate-900 mb-3 line-clamp-2">{eventTitle}</h3>
 
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">

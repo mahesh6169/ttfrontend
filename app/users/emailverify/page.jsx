@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { verifyEmail, sendVerifyOtp } from '@/store/slices/users/userSlice';
 import { toast } from 'react-toastify';
 import BaseContentShell from '@/components/layout/BaseContentShell';
-import Footer from '@/components/Footer';
 
 export default function EmailVerifyPage() {
   // Form state
@@ -126,11 +125,10 @@ export default function EmailVerifyPage() {
           <div className="animate-pulse text-slate-500">Loading...</div>
         </div>
       </BaseContentShell>
-      <Footer />
       </div>
     );
   }
-  
+
   // Success state
   if (verificationState === 'success') {
     return (
@@ -158,7 +156,6 @@ export default function EmailVerifyPage() {
         </div>
       </div>
       </BaseContentShell>
-      <Footer />
       </div>
     );
   }
@@ -201,7 +198,7 @@ export default function EmailVerifyPage() {
                   className={`w-full p-3 border rounded-lg text-center text-lg tracking-wider ${
                     verificationState === 'error' 
                       ? 'border-red-500 bg-red-50' 
-                      : 'border-gray-300'
+                      : 'border-slate-300'
                   }`}
                   placeholder="Enter 6-digit code"
                   maxLength={6}
@@ -278,7 +275,6 @@ export default function EmailVerifyPage() {
       </div>
     </div>
     </BaseContentShell>
-    <Footer />
     </div>
   );
 }

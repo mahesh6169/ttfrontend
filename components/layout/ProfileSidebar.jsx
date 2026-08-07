@@ -1,6 +1,6 @@
 'use client';
 
-// Desktop profile sidebar — see designGuides/02-Frontend-GUI/ProfilePageUX.md.
+// Desktop profile sidebar.
 // Static left nav (desktop only). Organiser items are gated by host flags on state.user
 // (freeHost / paidHost — see HostTypeFlags.md). Settings sits quietly at the very bottom.
 

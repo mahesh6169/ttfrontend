@@ -183,7 +183,7 @@ const DemoEventsSection = ({ events }) => {
               <div
                 key={idx}
                 className={`h-1.5 rounded-full transition-all ${
-                  idx === mobileScrollIndex ? 'w-6 bg-purple-600' : 'w-1.5 bg-gray-400'
+                  idx === mobileScrollIndex ? 'w-6 bg-purple-600' : 'w-1.5 bg-slate-400'
                 }`}
               />
             ))}
@@ -200,7 +200,7 @@ const DemoEventsSection = ({ events }) => {
                 className={`rounded-full transition-all ${
                   Math.floor(currentIndex / 4) === idx
                     ? 'w-7 h-2 bg-purple-600'
-                    : 'w-2 h-2 bg-gray-400'
+                    : 'w-2 h-2 bg-slate-400'
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               />

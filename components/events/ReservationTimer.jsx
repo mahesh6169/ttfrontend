@@ -119,28 +119,32 @@ const ReservationTimer = ({
   if (!expiresAt || timeRemaining === null) return null;
 
   const isExpired = timeRemaining <= 0;
-  const isWarning = timeRemaining <= 120; // Last 2 minutes
+  const isCritical = timeRemaining <= 60; // last minute -> red
 
-  // Borderless, minimal — a plain line (no box). Urgency reads through red text,
-  // not a coloured panel. "Clear" is a quiet teal text action.
+  // Urgency badge (design-system.md sections 7 & 8): amber normally, red under one minute.
+  // A short countdown is a pill (rounded-full); the clock icon rides the accent colour.
+  // "Clear" stays a quiet teal text action beside it (seats / checkout only).
+  const badgeCls = isExpired || isCritical
+    ? 'bg-red-50 border-red-200 text-red-700'
+    : 'bg-amber-50 border-amber-200 text-amber-800';
+
   return (
-    <div className="flex items-center gap-2 text-sm sm:text-base">
-      <svg
-        className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 ${isExpired || isWarning ? 'text-red-600' : 'text-slate-500'}`}
-        fill="none" stroke="currentColor" viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-
-      <div className="flex-1 min-w-0 whitespace-nowrap">
+    <div className="flex items-center gap-2">
+      <span data-testid="reservation-timer" className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs whitespace-nowrap ${badgeCls}`}>
+        <svg
+          className="w-3 h-3 shrink-0"
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
         {isExpired ? (
-          <span className="font-medium text-red-600">Reservation expired</span>
+          <span className="font-medium">Reservation expired</span>
         ) : (
-          <span className={`font-semibold tabular-nums ${isWarning ? 'text-red-600' : 'text-slate-900'}`}>
+          <span className="font-semibold tabular-nums">
             {formatTime(timeRemaining)}
           </span>
         )}
-      </div>
+      </span>
 
       {!isExpired && showClear && (
         <button

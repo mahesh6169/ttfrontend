@@ -66,19 +66,19 @@ const ConversationsList = () => {
                   onError={() => handleImageError(`${conversation.resourceType}-${conversation.resourceId}`)}
                 />
               ) : (
-                <FaUserCircle className="w-16 h-16 text-gray-400" />
+                <FaUserCircle className="w-16 h-16 text-slate-400" />
               )}
               <div>
                 <h3 className="font-bold">{conversation.title}</h3>
-                <p className="text-gray-600 truncate w-64">
+                <p className="text-slate-600 truncate w-64">
                   Last Message: {conversation.lastMessage?.text}
                 </p>
-                <p className="text-gray-500">
+                <p className="text-slate-500">
                   {conversation.otherUser?.name || 'Unknown'}
                 </p>
               </div>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-slate-500">
               {conversation.lastMessage?.createdAt
                 ? new Date(conversation.lastMessage.createdAt).toLocaleString()
                 : ''}

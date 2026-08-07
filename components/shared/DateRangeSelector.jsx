@@ -44,26 +44,26 @@ const DateRangeSelector = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`w-full p-3 border rounded-lg bg-white text-left flex items-center justify-between
-          ${value ? 'text-gray-900' : 'text-gray-500'}
-          ${isOpen ? 'border-teal-500 ring-2 ring-teal-200' : 'border-gray-300'}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400'}
+          ${value ? 'text-slate-900' : 'text-slate-500'}
+          ${isOpen ? 'border-teal-500 ring-2 ring-teal-200' : 'border-slate-300'}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-slate-400'}
           transition-all duration-200`}
       >
         <span className="flex items-center gap-2">
-          <FaCalendar className="w-4 h-4 text-gray-400" />
+          <FaCalendar className="w-4 h-4 text-slate-400" />
           <span className="truncate">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </span>
         <FaChevronDown 
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 
+          className={`w-4 h-4 text-slate-400 transition-transform duration-200 
             ${isOpen ? 'transform rotate-180' : ''}`}
         />
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg">
           {options.map((option) => {
             const isSelected = value === option.value;
             
@@ -73,11 +73,11 @@ const DateRangeSelector = ({
                 type="button"
                 onClick={() => handleSelect(option.value)}
                 className={`w-full px-4 py-3 text-left hover:bg-teal-50 transition-colors
-                  ${isSelected ? 'bg-teal-50 text-teal-700 font-medium' : 'text-gray-700'}
-                  border-b border-gray-100 last:border-b-0`}
+                  ${isSelected ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'}
+                  border-b border-slate-100 last:border-b-0`}
               >
                 <div className="flex items-center gap-2">
-                  <FaCalendar className={`w-4 h-4 ${isSelected ? 'text-teal-600' : 'text-gray-400'}`} />
+                  <FaCalendar className={`w-4 h-4 ${isSelected ? 'text-teal-600' : 'text-slate-400'}`} />
                   <span className="text-sm">{option.label}</span>
                 </div>
               </button>

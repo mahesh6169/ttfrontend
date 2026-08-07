@@ -157,10 +157,10 @@ const ResetPasswordContent = () => {
           <h1 className="text-2xl font-bold text-green-600 mb-2">
             Password Reset Complete!
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-slate-600 mb-4">
             Your password has been successfully updated. Redirecting to login...
           </p>
-          <div className="animate-pulse text-sm text-gray-500">
+          <div className="animate-pulse text-sm text-slate-500">
             Redirecting in 3 seconds...
           </div>
         </div>
@@ -216,7 +216,7 @@ const ResetPasswordContent = () => {
                 id="email"
                 type="email"
                 className={`w-full p-3 border rounded-lg ${
-                  errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  errors.email ? 'border-red-500 bg-red-50' : 'border-slate-300'
                 }`}
                 placeholder="Enter your registered email"
                 value={email}
@@ -265,7 +265,7 @@ const ResetPasswordContent = () => {
                 id="otp"
                 type="text"
                 className={`w-full p-3 border rounded-lg text-center text-lg tracking-wider ${
-                  errors.otp ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  errors.otp ? 'border-red-500 bg-red-50' : 'border-slate-300'
                 }`}
                 placeholder="Enter 7-digit code"
                 value={otp}
@@ -332,7 +332,7 @@ const ResetPasswordContent = () => {
                 id="newPassword"
                 type="password"
                 className={`w-full p-3 border rounded-lg ${
-                  errors.newPassword ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  errors.newPassword ? 'border-red-500 bg-red-50' : 'border-slate-300'
                 }`}
                 placeholder="Enter new password"
                 value={newPassword}
@@ -352,25 +352,25 @@ const ResetPasswordContent = () => {
                 </p>
               )}
               {showPasswordHint && newPassword && (
-                <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-xs">
+                <div className="mt-1 p-2 bg-slate-50 border border-slate-200 rounded text-xs">
                   {(() => {
                     const checks = getPasswordStrength();
                     const allValid = Object.values(checks).every(Boolean);
                     return (
                       <div className="space-y-0.5">
-                        <div className={`flex items-center ${checks.length ? 'text-green-600' : 'text-gray-500'}`}>
+                        <div className={`flex items-center ${checks.length ? 'text-green-600' : 'text-slate-500'}`}>
                           <span className="mr-1">{checks.length ? '✓' : '○'}</span>
                           <span>8+ characters</span>
                         </div>
-                        <div className={`flex items-center ${checks.uppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        <div className={`flex items-center ${checks.uppercase ? 'text-green-600' : 'text-slate-500'}`}>
                           <span className="mr-1">{checks.uppercase ? '✓' : '○'}</span>
                           <span>One uppercase (A-Z)</span>
                         </div>
-                        <div className={`flex items-center ${checks.lowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                        <div className={`flex items-center ${checks.lowercase ? 'text-green-600' : 'text-slate-500'}`}>
                           <span className="mr-1">{checks.lowercase ? '✓' : '○'}</span>
                           <span>One lowercase (a-z)</span>
                         </div>
-                        <div className={`flex items-center ${checks.number ? 'text-green-600' : 'text-gray-500'}`}>
+                        <div className={`flex items-center ${checks.number ? 'text-green-600' : 'text-slate-500'}`}>
                           <span className="mr-1">{checks.number ? '✓' : '○'}</span>
                           <span>One number (0-9)</span>
                         </div>
@@ -389,7 +389,7 @@ const ResetPasswordContent = () => {
                 id="confirmPassword"
                 type="password"
                 className={`w-full p-3 border rounded-lg ${
-                  errors.confirmPassword ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  errors.confirmPassword ? 'border-red-500 bg-red-50' : 'border-slate-300'
                 }`}
                 placeholder="Confirm new password"
                 value={confirmPassword}
@@ -417,7 +417,7 @@ const ResetPasswordContent = () => {
                       <span>Passwords match</span>
                     </p>
                   ) : (
-                    <p className="text-gray-500 text-xs flex items-center">
+                    <p className="text-slate-500 text-xs flex items-center">
                       <span className="mr-1">○</span>
                       <span>Passwords do not match</span>
                     </p>

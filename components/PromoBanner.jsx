@@ -161,15 +161,15 @@ const PromoBanner = ({ page = 'listings', inline = false, showAll = false }) => 
                 {message.link ? (
                   <Link 
                     href={message.link}
-                    className="text-sm font-medium text-gray-700 hover:text-teal-600 transition-colors"
+                    className="text-sm font-medium text-slate-700 hover:text-teal-600 transition-colors"
                   >
                     {message.text}
                   </Link>
                 ) : (
-                  <span className="text-sm font-medium text-gray-700">{message.text}</span>
+                  <span className="text-sm font-medium text-slate-700">{message.text}</span>
                 )}
                 {index < messages.length - 1 && (
-                  <div className="h-6 w-px bg-gray-200 mx-2"></div>
+                  <div className="h-6 w-px bg-slate-200 mx-2"></div>
                 )}
               </div>
             ))}
@@ -183,14 +183,14 @@ const PromoBanner = ({ page = 'listings', inline = false, showAll = false }) => 
                   href={current.link}
                   className="flex items-center justify-center transition-all duration-300 w-full h-full"
                 >
-                  <span className="text-sm font-medium text-gray-700 animate-fade-in truncate flex items-center gap-2">
+                  <span className="text-sm font-medium text-slate-700 animate-fade-in truncate flex items-center gap-2">
                     {current.icon && <current.icon className="text-teal-600 flex-shrink-0" />}
                     <span>{current.text}</span>
                   </span>
                 </Link>
               ) : (
                 <div className="flex items-center justify-center w-full h-full">
-                  <span className="text-sm font-medium text-gray-700 animate-fade-in truncate flex items-center gap-2">
+                  <span className="text-sm font-medium text-slate-700 animate-fade-in truncate flex items-center gap-2">
                     {current.icon && <current.icon className="text-teal-600 flex-shrink-0" />}
                     <span>{current.text}</span>
                   </span>

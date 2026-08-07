@@ -54,7 +54,7 @@ const HeaderColorOptions = () => {
   ];
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
+    <div className="p-8 bg-slate-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-8">Header Color Options</h1>
       
       <div className="space-y-8">
@@ -78,8 +78,8 @@ const HeaderColorOptions = () => {
             </div>
             <div className="p-4">
               <h3 className="font-semibold text-lg">{scheme.name}</h3>
-              <p className="text-gray-600">{scheme.description}</p>
-              <div className="mt-2 text-sm text-gray-500">
+              <p className="text-slate-600">{scheme.description}</p>
+              <div className="mt-2 text-sm text-slate-500">
                 <code>Header: {scheme.header}</code><br/>
                 <code>Text: {scheme.text}</code>
               </div>

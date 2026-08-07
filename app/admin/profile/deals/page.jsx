@@ -102,7 +102,7 @@ export default function DailyDealsPage() {
   if (isLoading) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto py-6 sm:py-8">
-        <p className="text-center text-gray-500">Loading...</p>
+        <p className="text-center text-slate-500">Loading...</p>
       </div>
     );
   }
@@ -112,8 +112,8 @@ export default function DailyDealsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Daily Deals</h1>
-          <p className="text-gray-600 text-sm sm:text-base mt-1">Manage daily deals</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Daily Deals</h1>
+          <p className="text-slate-600 text-sm sm:text-base mt-1">Manage daily deals</p>
         </div>
         <button
           onClick={() => router.push('/admin/profile/deals/add')}
@@ -131,12 +131,12 @@ export default function DailyDealsPage() {
           placeholder="Search by deal title..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          className="w-full sm:w-64 p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full sm:w-64 p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
         />
         <select
           value={filterActive}
           onChange={(e) => setFilterActive(e.target.value)}
-          className="w-full sm:w-auto p-3 sm:p-2 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full sm:w-auto p-3 sm:p-2 text-base sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
         >
           <option value="all">All Status</option>
           <option value="active">Active</option>
@@ -145,7 +145,7 @@ export default function DailyDealsPage() {
       </div>
 
       {filteredDeals.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">No deals found</p>
+        <p className="text-slate-500 text-center py-8">No deals found</p>
       ) : (
         <>
           {/* Mobile Cards */}
@@ -160,13 +160,13 @@ export default function DailyDealsPage() {
                       className="w-16 h-16 object-cover rounded"
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
+                    <div className="w-16 h-16 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs">
                       No Image
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">{deal.dealTitle}</div>
-                    <div className="text-sm text-gray-600 mt-1">{deal.partnerstoreId?.businessName || 'Unknown'}</div>
+                    <div className="font-medium text-slate-900 truncate">{deal.dealTitle}</div>
+                    <div className="text-sm text-slate-600 mt-1">{deal.partnerstoreId?.businessName || 'Unknown'}</div>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {deal.featured?.isActive && (
                         <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs">Featured</span>
@@ -183,11 +183,11 @@ export default function DailyDealsPage() {
 
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <span className="text-gray-500">Valid:</span>
-                    <span className="ml-1 text-gray-700">{formatValidDays(deal.validDays)}</span>
+                    <span className="text-slate-500">Valid:</span>
+                    <span className="ml-1 text-slate-700">{formatValidDays(deal.validDays)}</span>
                   </div>
                   <div className="text-right">
-                    <span className={`${isExpired(deal.endDate) ? 'text-red-600' : isExpiringSoon(deal.endDate) ? 'text-orange-600' : 'text-gray-700'}`}>
+                    <span className={`${isExpired(deal.endDate) ? 'text-red-600' : isExpiringSoon(deal.endDate) ? 'text-orange-600' : 'text-slate-700'}`}>
                       {format(new Date(deal.startDate), 'dd MMM')} - {format(new Date(deal.endDate), 'dd MMM')}
                     </span>
                   </div>
@@ -213,21 +213,21 @@ export default function DailyDealsPage() {
 
           {/* Desktop Table */}
           <div className="hidden sm:block bg-white rounded-lg shadow overflow-hidden overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deal Title</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Partner</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valid Days</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dates</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Image</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Deal Title</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Partner</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Valid Days</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Dates</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-slate-200">
                 {filteredDeals.map((deal) => (
-                  <tr key={deal._id} className="hover:bg-gray-50">
+                  <tr key={deal._id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       {deal.images && deal.images.length > 0 ? (
                         <img
@@ -236,26 +236,26 @@ export default function DailyDealsPage() {
                           className="w-12 h-12 object-cover rounded"
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
+                        <div className="w-12 h-12 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs">
                           No Image
                         </div>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{deal.dealTitle}</div>
+                      <div className="font-medium text-slate-900">{deal.dealTitle}</div>
                       {deal.featured?.isActive && (
                         <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs">Featured</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                    <td className="px-4 py-3 text-sm text-slate-600">
                       {deal.partnerstoreId?.businessName || 'Unknown'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                    <td className="px-4 py-3 text-sm text-slate-600">
                       {formatValidDays(deal.validDays)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                    <td className="px-4 py-3 text-sm text-slate-600">
                       <div>{format(new Date(deal.startDate), 'dd MMM')}</div>
-                      <div className="text-gray-400">to</div>
+                      <div className="text-slate-400">to</div>
                       <div className={isExpired(deal.endDate) ? 'text-red-600' : isExpiringSoon(deal.endDate) ? 'text-orange-600' : ''}>
                         {format(new Date(deal.endDate), 'dd MMM yyyy')}
                       </div>

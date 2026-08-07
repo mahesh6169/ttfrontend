@@ -123,7 +123,7 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
       {/* Store Name */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Store Name *
         </label>
         <input
@@ -131,7 +131,7 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
           name="storeName"
           value={formData.storeName}
           onChange={handleChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="Enter store name"
         />
         {errors.storeName && (
@@ -141,14 +141,14 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
 
       {/* Category */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Category *
         </label>
         <select
           name="category"
           value={formData.category}
           onChange={handleChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
         >
           <option value="">Select category</option>
           {getAllParentCategories().map(cat => (
@@ -162,7 +162,7 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
 
       {/* Subcategory */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Subcategory *
         </label>
         <select
@@ -170,7 +170,7 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
           value={formData.subcategory}
           onChange={handleChange}
           disabled={!formData.category}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-slate-100 disabled:cursor-not-allowed"
         >
           <option value="">{formData.category ? 'Select subcategory' : 'Select category first'}</option>
           {getSubcategories(formData.category).map(sub => (
@@ -191,7 +191,7 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
           onChange={handleChange}
           className="mr-2"
         />
-        <label className="text-sm text-gray-700">
+        <label className="text-sm text-slate-700">
           Nationwide store (no specific location)
         </label>
       </div>
@@ -208,7 +208,7 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
 
       {/* Contact Phone */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Contact Phone
         </label>
         <input
@@ -216,14 +216,14 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
           name="contactInfo.phone"
           value={formData.contactInfo.phone}
           onChange={handleChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="Phone number"
         />
       </div>
 
       {/* Contact Email */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Contact Email
         </label>
         <input
@@ -231,14 +231,14 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
           name="contactInfo.email"
           value={formData.contactInfo.email}
           onChange={handleChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="Email address"
         />
       </div>
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Description
         </label>
         <textarea
@@ -246,7 +246,7 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
           value={formData.description}
           onChange={handleChange}
           rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="Store description (optional)"
         />
       </div>
@@ -274,7 +274,7 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 bg-teal-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="flex-1 bg-teal-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
         >
           {isSubmitting ? 'Saving...' : (initialData ? 'Update Store' : 'Create Store')}
         </button>
@@ -283,7 +283,7 @@ export default function StoreForm({ initialData = null, onSubmit, onCancel }) {
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
           >
             Cancel
           </button>

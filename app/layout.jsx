@@ -1,5 +1,6 @@
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
+import Footer from '@/components/Footer';
 import TermsModal from '@/components/support/TermsModal';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -16,6 +17,16 @@ const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 const defaultOgImage = process.env.NEXT_PUBLIC_DEFAULT_OG_IMAGE_URL || 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1764066113/ogshare_v4_psldb7.jpg';
 
+
+// viewport-fit=cover lets the page extend under the notch and home indicator so the
+// env(safe-area-inset-*) values become non-zero and the shell's inset handling (header top
+// inset, bottom-nav bottom inset) actually takes effect on iOS and Android. See
+// featureplans/shared-appshell-nav.md.
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
@@ -184,10 +195,19 @@ const ParentLayout = ({ children }) => {
          <StateSelectionWrapper />
           <Header />
            {/* <TermsModal /> */} 
-          <div className="flex flex-col min-h-screen pt-[68px]">
-            <main className="flex-1 pb-[calc(60px+env(safe-area-inset-bottom))] md:pb-0">
+          {/* App-shell column: min-height so short pages still fill the screen. The
+              bottom padding (mobile only) reserves room for the fixed BottomNavigation,
+              so whatever is last - the Footer on footer pages, the page content on
+              exempt pages - clears the nav instead of hiding behind it. */}
+          <div className="flex flex-col min-h-screen pt-[calc(68px+env(safe-area-inset-top))] pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
+            {/* overflow-x-clip is the frame-level guard for the "nothing wider than the phone"
+                rule: a too-wide child scrolls inside its own track (with min-w-0 on the content
+                columns) instead of dragging the whole page sideways at the 360px floor. clip (not
+                hidden) does not create a scroll container, so sticky elements are unaffected. */}
+            <main className="flex-1 overflow-x-clip">
               {children}
             </main>
+            <Footer />
             <BottomNavigation />
           </div>
           <ToastContainer 

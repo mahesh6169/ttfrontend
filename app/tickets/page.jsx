@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import PostPaidEventButton from '@/components/buttons/PostPaidEventButton';
-import Footer from '@/components/Footer';
 import TicketPayoutCalculator from '@/components/events/TicketPayoutCalculator';
 import { MARKETED_PLATFORM_FEE, platformFeeLabel } from '@/utils/platformFee';
 
@@ -366,8 +365,6 @@ export default function TicketsPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

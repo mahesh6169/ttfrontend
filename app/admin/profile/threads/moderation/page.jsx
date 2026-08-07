@@ -98,25 +98,25 @@ const ThreadModerationPage = () => {
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">Thread Moderation</h1>
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-slate-600 mb-4">
         Manage threads reported for abuse or inappropriate content
       </p>
 
       {loading && <LoadingSpinner />}
       
       {!loading && threads.length === 0 && (
-        <p className="text-gray-500">No threads found.</p>
+        <p className="text-slate-500">No threads found.</p>
       )}
 
       {!loading && threads.length > 0 && (
         <>
-          <div className="mb-4 text-sm text-gray-600">
+          <div className="mb-4 text-sm text-slate-600">
             Showing {threads.length} of {meta.totalItems} threads
           </div>
           
           <div className="overflow-x-auto">
             <table className="min-w-full border text-sm">
-              <thead className="bg-gray-100 text-gray-700">
+              <thead className="bg-slate-100 text-slate-700">
                 <tr>
                   <th className="border p-2 text-left">Thread Title</th>
                   <th className="border p-2 text-left">Posted By</th>
@@ -130,7 +130,7 @@ const ThreadModerationPage = () => {
                   const { _id, title, authorName, authorEmail, createdAt } = thread;
 
                   return (
-                    <tr key={_id} className="hover:bg-gray-50">
+                    <tr key={_id} className="hover:bg-slate-50">
                       <td className="border p-2">
                         <div className="max-w-xs truncate" title={title}>
                           {title}

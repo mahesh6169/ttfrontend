@@ -215,7 +215,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
               checked={formData.marketingOptIn}
               onChange={handleChange}
             />
-            <label className="text-sm text-gray-600">
+            <label className="text-sm text-slate-600">
               Opt-in for offers & updates
             </label>
           </div>
@@ -223,7 +223,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
           <div className="flex justify-between mt-4">
             <button
               type="button"
-              className="bg-gray-500 text-white px-4 py-2 rounded"
+              className="bg-slate-500 text-white px-4 py-2 rounded"
               onClick={onClose}
               disabled={submitting}
             >

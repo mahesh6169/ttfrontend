@@ -60,9 +60,9 @@ const TimezoneSelector = ({ value, onChange, timezones, placeholder = "Select ti
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full p-3 border rounded-lg bg-white text-left flex items-center justify-between
-          ${value ? 'text-gray-900' : 'text-gray-500'}
-          ${isOpen ? 'border-teal-500 ring-2 ring-teal-200' : 'border-gray-300'}
-          hover:border-gray-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200
+          ${value ? 'text-slate-900' : 'text-slate-500'}
+          ${isOpen ? 'border-teal-500 ring-2 ring-teal-200' : 'border-slate-300'}
+          hover:border-slate-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200
           transition-all duration-200`}
       >
         <span className="truncate pr-2">
@@ -71,12 +71,12 @@ const TimezoneSelector = ({ value, onChange, timezones, placeholder = "Select ti
         <div className="flex items-center gap-2">
           {value && !isOpen && (
             <FaTimes 
-              className="w-4 h-4 text-gray-400 hover:text-gray-600"
+              className="w-4 h-4 text-slate-400 hover:text-slate-600"
               onClick={handleClear}
             />
           )}
           <FaChevronDown 
-            className={`w-4 h-4 text-gray-400 transition-transform duration-200 
+            className={`w-4 h-4 text-slate-400 transition-transform duration-200 
               ${isOpen ? 'transform rotate-180' : ''}`}
           />
         </div>
@@ -84,18 +84,18 @@ const TimezoneSelector = ({ value, onChange, timezones, placeholder = "Select ti
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg">
           {/* Search Input */}
-          <div className="p-2 border-b border-gray-100">
+          <div className="p-2 border-b border-slate-100">
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
                 ref={inputRef}
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search timezones..."
-                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md 
+                className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-md 
                   focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-200"
               />
             </div>
@@ -111,27 +111,27 @@ const TimezoneSelector = ({ value, onChange, timezones, placeholder = "Select ti
                   onClick={() => handleSelect(timezone)}
                   className={`w-full px-4 py-3 text-left hover:bg-teal-50 focus:bg-teal-50 
                     focus:outline-none transition-colors
-                    ${value === timezone.value ? 'bg-teal-50 text-teal-700 font-medium' : 'text-gray-700'}`}
+                    ${value === timezone.value ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'}`}
                 >
                   {timezone.label}
                 </button>
               ))
             ) : (
-              <div className="px-4 py-8 text-center text-gray-500">
+              <div className="px-4 py-8 text-center text-slate-500">
                 No timezones found
               </div>
             )}
           </div>
 
           {/* Mobile-friendly footer */}
-          <div className="p-2 border-t border-gray-100 md:hidden">
+          <div className="p-2 border-t border-slate-100 md:hidden">
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false);
                 setSearchTerm('');
               }}
-              className="w-full py-2 text-center text-gray-600 font-medium"
+              className="w-full py-2 text-center text-slate-600 font-medium"
             >
               Close
             </button>

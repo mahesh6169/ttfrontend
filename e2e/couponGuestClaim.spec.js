@@ -9,7 +9,7 @@ async function claimByEmail(page, campaignId, email) {
   await page.goto(`/coupons/views/${campaignId}`);
 
   await page.getByRole('button', { name: 'GET CODE' }).click();
-  await page.getByRole('button', { name: 'Get it by email' }).click();
+  await page.getByRole('button', { name: 'Continue as guest' }).click();
 
   await page.getByPlaceholder('you@email.com').fill(email);
 

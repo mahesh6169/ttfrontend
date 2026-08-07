@@ -1,23 +1,54 @@
 // components/events/addevents/SeatingLayoutSection.jsx
-// Hosts the seating summary + the full-screen one-canvas builder overlay (SeatBuilderOverlay).
-// See featureplans/events-seatbuilder-redesign.md.
+// Hosts the seating summary card + the full-screen one-canvas builder overlay (SeatBuilderOverlay).
+// The card is DISPLAY-ONLY: only the "Seat Builder" button opens the overlay. Capacity validation
+// lives entirely in the builder, so the card shows no capacity badge. See
+// featureplans/events-seating-card.md (design ref: /preview/seating-card).
 
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { MdEventSeat } from 'react-icons/md';
 import { updateField, setSeatingLayout } from '@/store/slices/events/eventSlice';
 import ImageUploader from './ImageUploader';
 import SeatBuilderOverlay from './SeatBuilderOverlay';
 
+// A compact read-only mini seat map: a STAGE bar + rows of small seats. Reserved seats tint amber,
+// the rest teal; an empty layout renders a faint dashed "imaginary" placeholder. Columns/rows are
+// capped so a large hall never overflows the card (the mini map is an impression, not the real map).
+const MAX_COLS = 20;
+const MAX_ROWS = 12;
+
+const MiniSeatPreview = ({ layout }) => {
+  const empty = layout.length === 0;
+  const displayRows = empty
+    ? Array.from({ length: 6 }, () => Array.from({ length: 10 }, () => 'seat'))
+    : layout.slice(0, MAX_ROWS).map((row) =>
+        (row.seats || []).slice(0, MAX_COLS).map((s) => (s.status === 'reserved' ? 'reserved' : 'seat'))
+      );
+  const seatColor = (s) =>
+    empty ? 'text-slate-300' : s === 'reserved' ? 'text-amber-500' : 'text-teal-600';
+
+  return (
+    <div
+      data-testid="mini-seat-preview"
+      className={`rounded-lg border ${empty ? 'border-dashed' : ''} border-slate-200 bg-slate-50 p-2 overflow-hidden`}
+    >
+      <div className={`mx-auto mb-2 w-2/3 rounded ${empty ? 'bg-slate-300' : 'bg-slate-700'} text-white text-[9px] text-center py-0.5 tracking-wide`}>STAGE</div>
+      <div className={`flex flex-col items-center gap-1 ${empty ? 'opacity-60' : ''}`}>
+        {displayRows.map((row, i) => (
+          <div key={i} data-testid="mini-seat-row" className="flex gap-0.5">
+            {row.map((s, j) => <MdEventSeat key={j} className={`w-3 h-3 ${seatColor(s)}`} />)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, onSeatingImagesChange }) => {
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
-  const capacityWarning = useSelector((state) => state.events.capacityWarning);
 
-  // The builder self-locks on the event's first sale (a booked seat); "existing event" is not a lock
-  // reason (featureplans/fix-events-seatmap-salelock.md).
   const layout = formData.seatingLayout || [];
   const totalSeats = layout.reduce((t, r) => t + (r.seats?.length || 0), 0);
-  const capacity = Number(formData.capacity) || 0;
-  const isMatching = capacity > 0 && totalSeats === capacity;
+  const capacity = Number(formData.capacity) || 0; // passed to the builder; not shown on the card
 
   const handleSave = (newLayout, newReserved) => {
     dispatch(setSeatingLayout(newLayout));
@@ -25,15 +56,26 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
     setIsBuilderOpen(false);
   };
 
+  const seatBuilderBtn = (
+    <button
+      type="button"
+      onClick={() => setIsBuilderOpen(true)}
+      className="inline-flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-semibold rounded-lg px-3 py-1.5 shrink-0"
+    >
+      <MdEventSeat className="w-3.5 h-3.5" />
+      Seat Builder
+    </button>
+  );
+
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
       <div className="mb-3">
-        <h3 className="font-medium text-sm sm:text-base text-slate-600">Seating Configuration</h3>
+        <h3 className="font-medium text-sm text-slate-900">Seating Configuration</h3>
       </div>
 
       {errors?.seatingLayout && (
         <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
-          <div className="text-red-700 text-xs sm:text-sm">
+          <div className="text-red-600 text-xs">
             {Array.isArray(errors.seatingLayout)
               ? errors.seatingLayout.map((err, i) => <p key={i} className="mb-1">- {err}</p>)
               : <p>- {errors.seatingLayout}</p>}
@@ -41,57 +83,35 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
         </div>
       )}
 
-      {/* Summary card (opens the builder) */}
-      {layout.length > 0 ? (
-        <button
-          type="button"
-          onClick={() => setIsBuilderOpen(true)}
-          className="w-full bg-white border border-slate-200 rounded-lg p-3 hover:bg-slate-50 hover:border-slate-300 transition-colors text-left group"
-        >
-          <div className="flex items-center justify-between gap-2">
+      {/* Summary card - DISPLAY ONLY (a plain panel). Only the Seat Builder button opens the overlay;
+          no capacity badge (the builder validates capacity). */}
+      <div data-testid="seating-card" className="border border-slate-200 rounded-lg p-3">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          {layout.length > 0 ? (
             <span className="text-sm text-slate-700">
               <span className="font-semibold">{totalSeats}</span> seat{totalSeats === 1 ? '' : 's'}
               <span className="text-slate-400"> - </span>
               <span className="font-semibold">{layout.length}</span> row{layout.length === 1 ? '' : 's'}
             </span>
-            {capacity > 0 && (isMatching ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5">Matches capacity</span>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 text-xs font-medium px-2 py-0.5">
-                {totalSeats > capacity ? `${totalSeats - capacity} over capacity` : `${capacity - totalSeats} short`}
-              </span>
-            ))}
-          </div>
-          {formData.organizerReservedSeats && (
-            <div className="mt-1.5 flex items-start gap-2">
-              <span className="w-16 shrink-0 text-xs text-slate-500">Reserved</span>
-              <span className="text-xs text-slate-600">{formData.organizerReservedSeats}</span>
-            </div>
+          ) : (
+            <span className="text-sm text-slate-500">No seating configured yet</span>
           )}
-          <span className="mt-1 inline-block text-xs font-medium text-teal-700 group-hover:text-teal-800">Open seat builder</span>
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setIsBuilderOpen(true)}
-          className="inline-flex items-center text-sm font-medium text-teal-700 hover:text-teal-800"
-        >
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Configure Seating
-        </button>
-      )}
-
-      {capacityWarning && (
-        <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-yellow-700 text-xs">{capacityWarning}</p>
+          {seatBuilderBtn}
         </div>
-      )}
+
+        {layout.length > 0 && formData.organizerReservedSeats && (
+          <div className="flex items-start gap-2 mb-2">
+            <span className="text-xs text-slate-500">Reserved</span>
+            <span className="text-xs text-slate-600">{formData.organizerReservedSeats}</span>
+          </div>
+        )}
+
+        <MiniSeatPreview layout={layout} />
+      </div>
 
       {/* Venue layout images (outside the builder) */}
       <div className="mt-4">
-        <label className="block text-sm font-medium text-slate-600 mb-2">Venue Layout</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Venue Layout</label>
         <p className="text-xs text-slate-500 mb-2">Upload seating / venue layout images</p>
         <ImageUploader
           images={formData.seatingLayoutImage || []}

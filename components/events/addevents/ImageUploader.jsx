@@ -2,6 +2,7 @@
 
 import React, { useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import { FiX } from 'react-icons/fi';
 
 const ImageUploader = ({
   images = [],
@@ -155,7 +156,7 @@ const ImageUploader = ({
       {/* Header */}
       {showLabel && (
         <>
-          <span className="block font-medium text-slate-600 text-sm sm:text-base">
+          <span className="block font-medium text-slate-600 text-sm">
             {label}
           </span>
           <p className="text-xs text-slate-500 mt-1 mb-3">
@@ -192,7 +193,7 @@ const ImageUploader = ({
             Choose Files
           </label>
           {isMaxReached && (
-            <p className="text-xs text-amber-600 mt-2">
+            <p className="text-xs text-slate-500 mt-2">
               Maximum reached. Remove images to add new ones.
             </p>
           )}
@@ -252,19 +253,19 @@ const ImageUploader = ({
                 
                 {/* Status Badge */}
                 {image.isExisting && (
-                  <span className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                  <span className="absolute top-1 left-1 bg-slate-600 text-white text-xs px-1.5 py-0.5 rounded">
                     Saved
                   </span>
                 )}
                 {image.isNew && mode === 'edit' && (
-                  <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                  <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded">
                     New
                   </span>
                 )}
 
                 {/* Filename */}
                 {image.name && (
-                  <p className="text-[10px] text-slate-500 mt-1 truncate w-20 sm:w-24" title={image.name}>
+                  <p className="text-xs text-slate-500 mt-1 truncate w-20 sm:w-24" title={image.name}>
                     {image.name}
                   </p>
                 )}
@@ -274,10 +275,10 @@ const ImageUploader = ({
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(index)}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full hover:bg-red-600 flex items-center justify-center"
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-white border border-slate-200 text-slate-500 rounded-full hover:text-slate-700 flex items-center justify-center"
                     title="Remove"
                   >
-                    ✕
+                    <FiX className="w-4 h-4" />
                   </button>
                 )}
               </div>

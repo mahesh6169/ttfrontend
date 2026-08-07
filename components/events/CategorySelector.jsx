@@ -54,9 +54,9 @@ const CategorySelector = ({ value, onChange, placeholder = "Select a category", 
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`w-full p-3 border rounded-lg bg-white text-left flex items-center justify-between
-          ${value ? 'text-gray-900' : 'text-gray-500'}
-          ${isOpen ? 'border-teal-500 ring-2 ring-teal-200' : 'border-gray-300'}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200'}
+          ${value ? 'text-slate-900' : 'text-slate-500'}
+          ${isOpen ? 'border-teal-500 ring-2 ring-teal-200' : 'border-slate-300'}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-slate-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200'}
           transition-all duration-200`}
       >
         <span className="truncate pr-2">
@@ -65,12 +65,12 @@ const CategorySelector = ({ value, onChange, placeholder = "Select a category", 
         <div className="flex items-center gap-2">
           {value && !isOpen && !disabled && (
             <FaTimes
-              className="w-4 h-4 text-gray-400 hover:text-gray-600"
+              className="w-4 h-4 text-slate-400 hover:text-slate-600"
               onClick={handleClear}
             />
           )}
           <FaChevronDown
-            className={`w-4 h-4 text-gray-400 transition-transform duration-200
+            className={`w-4 h-4 text-slate-400 transition-transform duration-200
               ${isOpen ? 'transform rotate-180' : ''}`}
           />
         </div>
@@ -78,18 +78,18 @@ const CategorySelector = ({ value, onChange, placeholder = "Select a category", 
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg">
           {/* Search Input */}
-          <div className="p-2 border-b border-gray-100">
+          <div className="p-2 border-b border-slate-100">
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
                 ref={inputRef}
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search categories..."
-                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md
+                className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-md
                   focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-200"
               />
             </div>
@@ -105,27 +105,27 @@ const CategorySelector = ({ value, onChange, placeholder = "Select a category", 
                   onClick={() => handleSelect(category)}
                   className={`w-full px-4 py-3 text-left hover:bg-teal-50 focus:bg-teal-50
                     focus:outline-none transition-colors
-                    ${value === category ? 'bg-teal-50 text-teal-700 font-medium' : 'text-gray-700'}`}
+                    ${value === category ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'}`}
                 >
                   {category}
                 </button>
               ))
             ) : (
-              <div className="px-4 py-8 text-center text-gray-500">
+              <div className="px-4 py-8 text-center text-slate-500">
                 No categories found
               </div>
             )}
           </div>
 
           {/* Mobile-friendly footer */}
-          <div className="p-2 border-t border-gray-100 md:hidden">
+          <div className="p-2 border-t border-slate-100 md:hidden">
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false);
                 setSearchTerm('');
               }}
-              className="w-full py-2 text-center text-gray-600 font-medium"
+              className="w-full py-2 text-center text-slate-600 font-medium"
             >
               Close
             </button>

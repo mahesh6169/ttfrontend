@@ -14,7 +14,7 @@ import EmptyState from '@/components/layout/EmptyState';
 import SeatMapWithSocket from '@/components/events/seats/SeatMapWithSocket';
 import SeatLegend from '@/components/events/seats/SeatLegend';
 import ReservationTimer from '@/components/events/ReservationTimer';
-import { FaShoppingCart, FaTimes, FaUsers } from 'react-icons/fa';
+import { FaShoppingCart, FaTimes } from 'react-icons/fa';
 import { MdEventSeat } from 'react-icons/md';
 
 // Helper function to get optimized image URL (same pattern as SingleEventCard)
@@ -243,96 +243,101 @@ const SeatSelectionPage = () => {
 
   return (
     <div>
-      <div className="w-full">
-        {/* Back to Tickets */}
-        <div className="mb-3 sm:mb-6">
-          <BackButton onClick={handleBackToTickets} />
-        </div>
-
-        {/* Flat — no outer card */}
-        <div>
-          {/* Centered Title */}
-          <h1 className="text-lg sm:text-2xl font-semibold sm:font-bold text-slate-900 text-center mb-3 sm:mb-6">
+      <div className="w-full pb-24">
+        {/* Page toolbar (design-system.md section 8): Back pinned left, title centred in the SAME
+            row. Back is the shared secondary button; title is the flat H1 (18px bold). */}
+        <div className="relative flex items-center justify-center mb-4">
+          <div className="absolute left-0">
+            <BackButton onClick={handleBackToTickets} />
+          </div>
+          <h1 className="text-lg font-bold text-slate-900">
             Select Seats
           </h1>
-          
-          {/* Seat legend — centered */}
-          <div className="flex justify-center mb-3 sm:mb-6">
-            <SeatLegend />
-          </div>
+        </div>
 
-          {/* Seats selected + reservation timer — spread (left/right) on mobile, centered on desktop (matches /tickets) */}
-          <div className="flex items-center justify-between md:justify-center gap-3 md:gap-x-6 mb-3 sm:mb-6">
-            {/* Seats selected */}
-            <div className="min-w-0">
-              <div className="flex items-center text-sm sm:text-base whitespace-nowrap">
-                <FaUsers className="mr-2 text-base sm:text-lg text-slate-500" />
-                <span className="font-semibold text-slate-800">{liveSeats.length}/{ticketRequirement.total} Seats Selected</span>
-              </div>
-              {liveSeats.length > 0 && (
-                <div className="mt-1 flex w-fit max-w-full items-start gap-1.5 text-xs sm:text-sm font-medium text-teal-800 bg-teal-50 px-2 py-1 rounded-md">
-                  <MdEventSeat className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-                  <span className="break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                    {liveSeats.join(', ')}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Reservation timer — no Clear (deselect on the map to change seats) */}
-            {reservation && (
-              <div>
-                <ReservationTimer
-                  expiresAt={reservation.expiresAt}
-                  eventId={selectedEvent._id}
-                  reservationId={reservation._id}
-                  mode="seats"
-                  showClear={false}
-                  onExpire={() => {
-                    router.push(`/events/tickets/${eventId}`);
-                  }}
-                  onClear={() => {
-                    setSelectedSeats([]);
-                    router.push(`/events/tickets/${eventId}`);
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Seat Map */}
-          <div className="mb-3 sm:mb-6">
-            <SeatMapWithSocket
-              event={selectedEvent}
-              ticketRequirement={ticketRequirement}
-              eventId={eventId}
-              userId={user?._id}
-              existingReservation={reservation}
-              onSeatsChange={handleSeatsUpdated}
-              onSelectionChange={setLiveSeats}
-              hasVenueLayout={selectedEvent?.seatingLayoutImage?.length > 0}
-              onVenueClick={() => { setCurrentImageIndex(0); setIsFullscreen(true); }}
+        {/* Header: three stacked rows — timer, the selected seats, then the legend. Same on desktop
+            and mobile. The "N of M seats selected" count lives in the sticky bar. */}
+        <div data-testid="seats-status-row" className="flex flex-col items-center gap-2 mb-4">
+          {/* No Clear — deselect on the map to change seats. */}
+          {reservation && (
+            <ReservationTimer
+              expiresAt={reservation.expiresAt}
+              eventId={selectedEvent._id}
+              reservationId={reservation._id}
+              mode="seats"
+              showClear={false}
+              onExpire={() => {
+                router.push(`/events/tickets/${eventId}`);
+              }}
+              onClear={() => {
+                setSelectedSeats([]);
+                router.push(`/events/tickets/${eventId}`);
+              }}
             />
-          </div>
-          
-          
-          {/* Proceed to Payment */}
-          <div className="flex justify-center">
+          )}
+
+          {/* The specific seats picked (variable length — wraps here, fully visible on mobile). */}
+          {liveSeats.length > 0 && (
+            <div className="flex max-w-full items-start gap-1.5 text-xs font-medium text-teal-800 bg-teal-50 px-2 py-1 rounded-md">
+              <MdEventSeat className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
+              <span className="break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                {liveSeats.join(', ')}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Legend — its own row, centred, immediately above the map. */}
+        <div data-testid="seats-legend" className="flex justify-center mb-4">
+          <SeatLegend />
+        </div>
+
+        {/* Seat map (layout / selection / socket unchanged). */}
+        <div data-testid="seats-map">
+          <SeatMapWithSocket
+            event={selectedEvent}
+            ticketRequirement={ticketRequirement}
+            eventId={eventId}
+            userId={user?._id}
+            existingReservation={reservation}
+            onSeatsChange={handleSeatsUpdated}
+            onSelectionChange={setLiveSeats}
+            hasVenueLayout={selectedEvent?.seatingLayoutImage?.length > 0}
+            onVenueClick={() => { setCurrentImageIndex(0); setIsFullscreen(true); }}
+          />
+        </div>
+      </div>
+
+      {/* Sticky action bar (matches the tickets page): the seat-selection count on the left, the
+          primary Proceed to Payment on the right, pinned to the bottom edge. The mobile bottom nav
+          is hidden on the flow, so this owns the bottom edge; the content carries pb-24 so nothing
+          hides behind it. The inner band matches BaseContentShell (max-w-5xl + gutters). */}
+      {reservation && (
+        <div
+          data-testid="seats-cta-bar"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white safe-area-inset-pb"
+        >
+          <div className="w-full max-w-5xl mx-auto px-2 md:px-4 py-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 truncate">
+                {liveSeats.length} of {ticketRequirement.total} seats selected
+              </p>
+            </div>
             <button
               onClick={handleProceedToCheckout}
               disabled={!canProceed}
-              className={`w-auto py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg font-medium sm:font-semibold text-sm sm:text-base flex items-center justify-center transition-all ${
+              className={`shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors ${
                 canProceed
-                  ? 'bg-teal-700 hover:bg-teal-800 text-white'
-                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                  ? 'bg-teal-700 hover:bg-teal-800'
+                  : 'bg-teal-700 opacity-50 cursor-not-allowed'
               }`}
             >
-              <FaShoppingCart className="mr-1.5 sm:mr-2 text-sm sm:text-base" />
-              <span className="text-sm sm:text-base">Proceed to Payment</span>
+              <FaShoppingCart className="text-sm" />
+              <span>Proceed to Payment</span>
             </button>
           </div>
         </div>
-      </div>
+      )}
       
       {/* Fullscreen Modal for Seating Images */}
       {isFullscreen && selectedEvent?.seatingLayoutImage?.length > 0 && (

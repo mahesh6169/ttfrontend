@@ -61,7 +61,7 @@ const CheckInPaid_SearchBar = () => {
         {/* Search Icon */}
         <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
           <svg 
-            className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" 
+            className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -81,7 +81,7 @@ const CheckInPaid_SearchBar = () => {
           value={localSearchTerm}
           onChange={(e) => setLocalSearchTerm(e.target.value)}
           placeholder="Ticket #, Invoice #, Name, Email"
-          className="block w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+          className="block w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-2 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
         />
         
         {/* Clear Button */}
@@ -92,7 +92,7 @@ const CheckInPaid_SearchBar = () => {
             type="button"
           >
             <svg 
-              className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600" 
+              className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 hover:text-slate-600" 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -109,7 +109,7 @@ const CheckInPaid_SearchBar = () => {
       </div>
       
       {/* Field hints */}
-      <div className="mt-1 text-xs text-gray-500">
+      <div className="mt-1 text-xs text-slate-500">
         <span className="font-medium">Examples:</span> TKT-KYJDS-0001, INV-KYJDS-001, John Smith, john@example.com
       </div>
     </div>

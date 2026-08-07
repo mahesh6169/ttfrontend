@@ -373,7 +373,7 @@ const Register = () => {
               value={formData.name}
               onChange={handleChange}
               className={`w-full px-3 py-1.5 text-sm border rounded ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
+                errors.name ? 'border-red-500' : 'border-slate-300'
               }`}
               placeholder="Enter your name"
               maxLength={50} // Prevent excessive input
@@ -395,7 +395,7 @@ const Register = () => {
               value={formData.email}
               onChange={handleChange}
               className={`w-full px-3 py-1.5 text-sm border rounded ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
+                errors.email ? 'border-red-500' : 'border-slate-300'
               }`}
               placeholder="Enter your email"
               maxLength={100} // Prevent excessive input
@@ -431,7 +431,7 @@ const Register = () => {
                 onFocus={() => setShowPasswordHint(true)}
                 onBlur={() => setShowPasswordHint(false)}
                 className={`w-full px-3 py-1.5 pr-10 text-sm border rounded ${
-                  errors.password ? 'border-red-500' : 'border-gray-300'
+                  errors.password ? 'border-red-500' : 'border-slate-300'
                 }`}
                 placeholder="Enter your password"
                 autoComplete="new-password"
@@ -450,25 +450,25 @@ const Register = () => {
               <p className="text-red-500 text-sm mt-1">{errors.password}</p>
             )}
             {showPasswordHint && formData.password && (
-              <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-xs">
+              <div className="mt-1 p-2 bg-slate-50 border border-slate-200 rounded text-xs">
                 {(() => {
                   const checks = getPasswordStrength();
                   const allValid = Object.values(checks).every(Boolean);
                   return (
                     <div className="space-y-0.5">
-                      <div className={`flex items-center ${checks.length ? 'text-green-600' : 'text-gray-500'}`}>
+                      <div className={`flex items-center ${checks.length ? 'text-green-600' : 'text-slate-500'}`}>
                         <span className="mr-1">{checks.length ? '✓' : '○'}</span>
                         <span>8+ characters</span>
                       </div>
-                      <div className={`flex items-center ${checks.uppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                      <div className={`flex items-center ${checks.uppercase ? 'text-green-600' : 'text-slate-500'}`}>
                         <span className="mr-1">{checks.uppercase ? '✓' : '○'}</span>
                         <span>One uppercase (A-Z)</span>
                       </div>
-                      <div className={`flex items-center ${checks.lowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                      <div className={`flex items-center ${checks.lowercase ? 'text-green-600' : 'text-slate-500'}`}>
                         <span className="mr-1">{checks.lowercase ? '✓' : '○'}</span>
                         <span>One lowercase (a-z)</span>
                       </div>
-                      <div className={`flex items-center ${checks.number ? 'text-green-600' : 'text-gray-500'}`}>
+                      <div className={`flex items-center ${checks.number ? 'text-green-600' : 'text-slate-500'}`}>
                         <span className="mr-1">{checks.number ? '✓' : '○'}</span>
                         <span>One number (0-9)</span>
                       </div>
@@ -494,7 +494,7 @@ const Register = () => {
                 onFocus={() => setShowPasswordHint(true)}
                 onBlur={() => setShowPasswordHint(false)}
                 className={`w-full px-3 py-1.5 pr-10 text-sm border rounded ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                  errors.confirmPassword ? 'border-red-500' : 'border-slate-300'
                 }`}
                 placeholder="Confirm your password"
                 autoComplete="new-password"
@@ -552,7 +552,7 @@ const Register = () => {
                   type="text"
                   placeholder="Enter your suburb"
                   className={`w-full px-3 py-1.5 text-sm border rounded ${
-                    errors.suburb || suburbValidationError ? 'border-red-500' : 'border-gray-300'
+                    errors.suburb || suburbValidationError ? 'border-red-500' : 'border-slate-300'
                   }`}
                   onChange={(e) => {
                     // Clear validation error when user starts typing
@@ -610,7 +610,7 @@ const Register = () => {
               value={formData.mobile}
               onChange={handleChange}
               className={`w-full px-3 py-1.5 text-sm border rounded ${
-                errors.mobile ? 'border-red-500' : 'border-gray-300'
+                errors.mobile ? 'border-red-500' : 'border-slate-300'
               }`}
               placeholder="(e.g., 0412 345 678)"
               maxLength={15} // Prevent excessive input
@@ -631,7 +631,7 @@ const Register = () => {
               onChange={handleChange}
               className="mr-2"
             />
-            <label htmlFor="marketingOptIn" className="text-sm text-gray-700">
+            <label htmlFor="marketingOptIn" className="text-sm text-slate-700">
               I agree to receive updates and offers (Optional)
             </label>
           </div>
@@ -646,7 +646,7 @@ const Register = () => {
               onChange={handleChange}
               className="mt-1"
             />
-            <label htmlFor="acceptTerms" className="text-sm text-gray-700">
+            <label htmlFor="acceptTerms" className="text-sm text-slate-700">
               I agree to the{' '}
               <Link
                 href="/support/terms"
@@ -702,32 +702,6 @@ const Register = () => {
               Login here
             </Link>
           </p>
-        </div>
-
-        {/* Support Links - Mobile Only */}
-        <div className="md:hidden border-t border-gray-300 mt-6 pt-4">
-          <div className="flex items-center justify-center gap-3 text-xs text-gray-700">
-            <Link 
-              href="/support/contact"
-              className="hover:text-teal-600 transition-colors"
-            >
-              Contact
-            </Link>
-            <span className="text-gray-400">•</span>
-            <Link 
-              href="/support/terms"
-              className="hover:text-teal-600 transition-colors"
-            >
-              Terms
-            </Link>
-            <span className="text-gray-400">•</span>
-            <Link 
-              href="/support/privacy"
-              className="hover:text-teal-600 transition-colors"
-            >
-              Privacy
-            </Link>
-          </div>
         </div>
       </div>
     </>

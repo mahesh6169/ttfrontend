@@ -32,11 +32,11 @@ export default function AddStorePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-slate-50 py-8">
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Add New Store</h1>
-          <p className="text-gray-600 mt-2">Create a new store for discount campaigns</p>
+          <h1 className="text-3xl font-bold text-slate-800">Add New Store</h1>
+          <p className="text-slate-600 mt-2">Create a new store for discount campaigns</p>
         </div>
 
         <StoreForm onSubmit={handleSubmit} onCancel={handleCancel} />

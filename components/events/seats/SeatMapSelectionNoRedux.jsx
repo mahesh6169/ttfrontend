@@ -540,8 +540,8 @@ const SeatMapSelectionNoRedux = forwardRef(({
       
       {/* Selection count + reservation timer now live at page level (SeatSelectionPage) */}
 
-      {/* Zoom toolbar - sits OUTSIDE the map (owner call): the hint as plain teal text on the left, the
-          +/-/Fit buttons on the right, on both desktop and mobile. */}
+      {/* Zoom toolbar - sits OUTSIDE the map (owner call): the +/-/Fit buttons on the right, on both
+          desktop and mobile. */}
       {seatingLayout.length > 0 && (
         <div className="mx-auto max-w-full flex items-center gap-2 mb-2">
           <div className="ml-auto flex gap-1">

@@ -61,7 +61,7 @@ export default function PlacementsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Manage Placements</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Manage Placements</h1>
         <div className="flex space-x-3">
           <button
             onClick={() => setShowCreateModal(true)}
@@ -72,7 +72,7 @@ export default function PlacementsPage() {
           </button>
           <button
             onClick={fetchPlacements}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md shadow-sm text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <FaSyncAlt className="h-5 w-5 mr-2" />
             Refresh
@@ -82,68 +82,68 @@ export default function PlacementsPage() {
 
       {/* Placements Table */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Placement ID
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Placement Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Dimensions
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Ads Assigned
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-slate-200">
             {placements.length === 0 ? (
               <tr>
-                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                <td colSpan="5" className="px-6 py-4 text-center text-slate-500">
                   No placements found. Create one to get started.
                 </td>
               </tr>
             ) : (
               placements.map(placement => (
-                <tr key={placement.placementId} className="hover:bg-gray-50">
+                <tr key={placement.placementId} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-slate-900">
                       {placement.placementId}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
+                    <div className="text-sm text-slate-900">
                       {placement.name}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
+                    <div className="text-sm text-slate-900">
                       <div>
-                        <span className="text-gray-500">Desktop:</span>{' '}
+                        <span className="text-slate-500">Desktop:</span>{' '}
                         {placement.dimensions?.desktop?.width || placement.dimensions?.width || '?'} × {placement.dimensions?.desktop?.height || placement.dimensions?.height || '?'}
                       </div>
                       {placement.dimensions?.mobile?.width && (
                         <div>
-                          <span className="text-gray-500">Mobile:</span>{' '}
+                          <span className="text-slate-500">Mobile:</span>{' '}
                           {placement.dimensions.mobile.width} × {placement.dimensions.mobile.height}
                         </div>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
+                    <div className="text-sm text-slate-900">
                       {placement.assignedAds?.length > 0 ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           {placement.assignedAds.length} ad{placement.assignedAds.length !== 1 ? 's' : ''}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
                           None
                         </span>
                       )}
@@ -225,11 +225,11 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-slate-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-md w-full">
         <form onSubmit={handleSubmit}>
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">
+          <div className="px-6 py-4 border-b border-slate-200">
+            <h3 className="text-lg font-medium text-slate-900">
               Edit Placement: {placement.placementId}
             </h3>
           </div>
@@ -237,14 +237,14 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
           <div className="px-6 py-4 space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Display Name
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 required
               />
             </div>
@@ -252,7 +252,7 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
 
             {/* Desktop Dimensions */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Desktop Dimensions (pixels)
               </label>
               <div className="grid grid-cols-2 gap-2 mt-1">
@@ -270,7 +270,7 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
                       }
                     }
                   })}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  className="block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
                 <input
                   type="number"
@@ -286,14 +286,14 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
                       }
                     }
                   })}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  className="block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
               </div>
             </div>
 
             {/* Mobile Dimensions */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Mobile Dimensions (pixels)
               </label>
               <div className="grid grid-cols-2 gap-2 mt-1">
@@ -311,7 +311,7 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
                       }
                     }
                   })}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  className="block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
                 <input
                   type="number"
@@ -327,18 +327,18 @@ function PlacementEditModal({ placement, onClose, onSuccess }) {
                       }
                     }
                   })}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  className="block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
               </div>
             </div>
 
           </div>
 
-          <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+          <div className="px-6 py-4 border-t border-slate-200 flex justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Cancel
             </button>
@@ -409,7 +409,7 @@ function PlacementCreateModal({ onClose, onSuccess }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Placement ID */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Placement ID <span className="text-red-500">*</span>
             </label>
             <input
@@ -420,17 +420,17 @@ function PlacementCreateModal({ onClose, onSuccess }) {
                 setFormData({ ...formData, placementId: id });
               }}
               placeholder="e.g. TOP-P1, MIDDLE-S1"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               required
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-slate-500">
               Use descriptive names like TOP-P1 (Top Primary 1), MIDDLE-S1 (Middle Secondary 1)
             </p>
           </div>
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -438,17 +438,17 @@ function PlacementCreateModal({ onClose, onSuccess }) {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g. Top Primary Banner #1"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               required
             />
           </div>
 
           {/* Desktop Dimensions */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Desktop Dimensions (px)
             </label>
-            <p className="mt-1 text-xs text-gray-500">Standard: DH-728×90, DV-160×600, DH-Half-364×90</p>
+            <p className="mt-1 text-xs text-slate-500">Standard: DH-728×90, DV-160×600, DH-Half-364×90</p>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <input
                 type="number"
@@ -465,7 +465,7 @@ function PlacementCreateModal({ onClose, onSuccess }) {
                   setFormData(newFormData);
                   
                 }}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
               <input
                 type="number"
@@ -482,17 +482,17 @@ function PlacementCreateModal({ onClose, onSuccess }) {
                   setFormData(newFormData);
                   
                 }}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
           </div>
 
           {/* Mobile Dimensions */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Mobile Dimensions (px)
             </label>
-            <p className="mt-1 text-xs text-gray-500">Standard: MH-320×50, MH-Half-160×50</p>
+            <p className="mt-1 text-xs text-slate-500">Standard: MH-320×50, MH-Half-160×50</p>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <input
                 type="number"
@@ -509,7 +509,7 @@ function PlacementCreateModal({ onClose, onSuccess }) {
                   setFormData(newFormData);
                   
                 }}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
               <input
                 type="number"
@@ -526,7 +526,7 @@ function PlacementCreateModal({ onClose, onSuccess }) {
                   setFormData(newFormData);
                   
                 }}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                className="block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
           </div>
@@ -536,7 +536,7 @@ function PlacementCreateModal({ onClose, onSuccess }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Cancel
             </button>

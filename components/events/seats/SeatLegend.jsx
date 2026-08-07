@@ -41,14 +41,15 @@ const SeatLegend = () => {
 
   return (
     <div className="w-full md:w-auto">
-      {/* One row (scrolls horizontally on small screens); wraps on desktop */}
-      <div className="flex flex-nowrap overflow-x-auto gap-2 sm:gap-3 md:flex-wrap md:justify-start [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      {/* One row that scrolls horizontally on small screens (shares its row with the zoom controls);
+          wraps on desktop. Flat sizes, labels at the 12px guide floor. */}
+      <div className="flex flex-nowrap overflow-x-auto gap-2 md:flex-wrap md:justify-start [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {legendItems.map((item) => (
-          <div key={item.status} className="flex items-center space-x-1 sm:space-x-1.5 justify-start shrink-0">
-            <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded text-[8px] sm:text-[10px] font-medium border flex items-center justify-center ${item.color}`}>
-              <MdEventSeat className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <div key={item.status} className="flex items-center space-x-1 justify-start shrink-0">
+            <div className={`w-5 h-5 rounded border flex items-center justify-center ${item.color}`}>
+              <MdEventSeat className="w-3 h-3" />
             </div>
-            <div className="text-[10px] sm:text-xs font-medium text-slate-700">
+            <div className="text-xs font-medium text-slate-700">
               {item.label}
             </div>
           </div>

@@ -13,12 +13,12 @@ const DeleteAccountModal = ({ isOpen, onClose, onConfirm, isDeleting }) => {
       
       {/* Modal */}
       <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
+        <h2 className="text-xl font-bold text-slate-900 mb-4">
           Delete Account
         </h2>
         
         <div className="mb-6">
-          <p className="text-gray-700 mb-3">
+          <p className="text-slate-700 mb-3">
             Are you sure you want to delete your account?
           </p>
           
@@ -44,7 +44,7 @@ const DeleteAccountModal = ({ isOpen, onClose, onConfirm, isDeleting }) => {
           <button
             onClick={onClose}
             disabled={isDeleting}
-            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>

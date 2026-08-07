@@ -208,11 +208,11 @@ const CarouselImageUploader = ({
         <div>
           <label className="block font-bold text-sm mb-2">
             Carousel Images
-            <span className="text-sm font-normal text-gray-500 ml-2">
+            <span className="text-sm font-normal text-slate-500 ml-2">
               (Upload 1-{maxCarouselImages} images for carousel)
             </span>
           </label>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-slate-500">
             Recommended: 2 images. Images will rotate every 5 seconds.
           </p>
         </div>
@@ -220,7 +220,7 @@ const CarouselImageUploader = ({
         {/* Carousel Images */}
         <div className="space-y-4">
           {carouselImages.map((carouselImg, idx) => (
-            <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <div key={idx} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium">Image {idx + 1}</h4>
                 <div className="flex items-center gap-2">
@@ -228,7 +228,7 @@ const CarouselImageUploader = ({
                     <button
                       type="button"
                       onClick={() => moveImage(idx, idx - 1)}
-                      className="p-1 text-gray-600 hover:text-gray-800"
+                      className="p-1 text-slate-600 hover:text-slate-800"
                       title="Move up"
                     >
                       <FaArrowUp />
@@ -238,7 +238,7 @@ const CarouselImageUploader = ({
                     <button
                       type="button"
                       onClick={() => moveImage(idx, idx + 1)}
-                      className="p-1 text-gray-600 hover:text-gray-800"
+                      className="p-1 text-slate-600 hover:text-slate-800"
                       title="Move down"
                     >
                       <FaArrowDown />
@@ -258,9 +258,9 @@ const CarouselImageUploader = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Desktop Image */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Desktop <span className="text-red-500">*</span>
-                    <span className="text-xs text-gray-500 ml-2">({dimensions[variant].desktop})</span>
+                    <span className="text-xs text-slate-500 ml-2">({dimensions[variant].desktop})</span>
                   </label>
                   
                   {carouselImg.desktop ? (
@@ -268,7 +268,7 @@ const CarouselImageUploader = ({
                       <img
                         src={getImageSrc(carouselImg.desktop)}
                         alt={`Desktop carousel ${idx + 1}`}
-                        className="w-full h-24 object-cover border-2 border-gray-200 rounded"
+                        className="w-full h-24 object-cover border-2 border-slate-200 rounded"
                       />
                       <input
                         type="file"
@@ -286,7 +286,7 @@ const CarouselImageUploader = ({
                       </label>
                     </div>
                   ) : (
-                    <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center">
+                    <div className="border-2 border-dashed border-slate-300 rounded p-4 text-center">
                       <input
                         type="file"
                         accept="image/*"
@@ -307,9 +307,9 @@ const CarouselImageUploader = ({
 
                 {/* Mobile Image */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Mobile <span className="text-gray-400">(Optional)</span>
-                    <span className="text-xs text-gray-500 ml-2">({dimensions[variant].mobile})</span>
+                  <label className="block text-sm font-medium text-slate-700">
+                    Mobile <span className="text-slate-400">(Optional)</span>
+                    <span className="text-xs text-slate-500 ml-2">({dimensions[variant].mobile})</span>
                   </label>
                   
                   {carouselImg.mobile?.file || carouselImg.mobile?.url ? (
@@ -317,7 +317,7 @@ const CarouselImageUploader = ({
                       <img
                         src={getImageSrc(carouselImg.mobile)}
                         alt={`Mobile carousel ${idx + 1}`}
-                        className="w-full h-24 object-cover border-2 border-gray-200 rounded"
+                        className="w-full h-24 object-cover border-2 border-slate-200 rounded"
                       />
                       <input
                         type="file"
@@ -335,7 +335,7 @@ const CarouselImageUploader = ({
                       </label>
                     </div>
                   ) : (
-                    <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center">
+                    <div className="border-2 border-dashed border-slate-300 rounded p-4 text-center">
                       <input
                         type="file"
                         accept="image/*"
@@ -346,7 +346,7 @@ const CarouselImageUploader = ({
                       />
                       <label
                         htmlFor={`mobile-upload-${idx}`}
-                        className="text-gray-600 hover:text-gray-700 cursor-pointer text-sm"
+                        className="text-slate-600 hover:text-slate-700 cursor-pointer text-sm"
                       >
                         Choose Mobile Image
                       </label>
@@ -371,7 +371,7 @@ const CarouselImageUploader = ({
               disabled={disabled}
               className={`w-full py-3 border-2 border-dashed rounded-lg flex items-center justify-center gap-2 ${
                 disabled 
-                  ? 'border-gray-200 text-gray-400 cursor-not-allowed' 
+                  ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
                   : 'border-blue-300 text-blue-600 hover:border-blue-400 hover:text-blue-700 cursor-pointer'
               }`}
             >

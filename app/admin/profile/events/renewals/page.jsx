@@ -133,18 +133,18 @@ const ManageEventsPage = () => {
       {loading && <LoadingSpinner />}
       
       {!loading && events.length === 0 && (
-        <p className="text-gray-500">No events found.</p>
+        <p className="text-slate-500">No events found.</p>
       )}
 
       {!loading && events.length > 0 && (
         <>
-          <div className="mb-4 text-sm text-gray-600">
+          <div className="mb-4 text-sm text-slate-600">
             Showing {events.length} of {meta.totalItems} events
           </div>
           
           <div className="overflow-x-auto">
             <table className="min-w-full border text-sm">
-              <thead className="bg-gray-100 text-gray-700">
+              <thead className="bg-slate-100 text-slate-700">
                 <tr>
                   <th className="border p-2">Title</th>
                   <th className="border p-2">Owner Email</th>
@@ -195,7 +195,7 @@ const ManageEventsPage = () => {
                           className={`px-2 py-1 text-xs rounded transition ${
                             actions.notify1.enabled
                               ? 'bg-yellow-500 text-white hover:bg-yellow-600 disabled:opacity-50'
-                              : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              : 'bg-slate-300 text-slate-600 cursor-not-allowed'
                           }`}
                         >
                           {sendingReminders[reminderKey1] ? 'Sending...' : 'Notify 1'}
@@ -208,7 +208,7 @@ const ManageEventsPage = () => {
                           className={`px-2 py-1 text-xs rounded transition ${
                             actions.notify2.enabled
                               ? 'bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50'
-                              : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              : 'bg-slate-300 text-slate-600 cursor-not-allowed'
                           }`}
                         >
                           {sendingReminders[reminderKey2] ? 'Sending...' : 'Notify 2'}
@@ -221,7 +221,7 @@ const ManageEventsPage = () => {
                           className={`px-2 py-1 text-xs rounded transition ${
                             actions.delete.enabled
                               ? 'bg-red-600 text-white hover:bg-red-700 disabled:opacity-50'
-                              : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              : 'bg-slate-300 text-slate-600 cursor-not-allowed'
                           }`}
                         >
                           {deletingEvents[_id] ? 'Deleting...' : 'Delete'}
@@ -235,7 +235,7 @@ const ManageEventsPage = () => {
                           className={`px-2 py-1 text-xs rounded transition ${
                             actions.moderationDelete.enabled
                               ? 'bg-red-600 text-white hover:bg-red-700 disabled:opacity-50'
-                              : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              : 'bg-slate-300 text-slate-600 cursor-not-allowed'
                           }`}
                         >
                           {deletingEvents[_id] ? 'Deleting...' : 'Moderation Delete'}

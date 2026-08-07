@@ -55,7 +55,7 @@ export default function AnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-slate-50 py-8">
         <div className="container mx-auto px-4">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
@@ -66,25 +66,25 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-slate-50 py-8">
       <div className="container mx-auto px-4">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Campaign Analytics</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-slate-800">Campaign Analytics</h1>
+          <p className="text-slate-600 mt-2">
             View campaign performance and code redemption statistics
           </p>
         </div>
 
         {stores.length > 0 && (
           <div className="mb-6 flex items-center gap-4">
-            <label htmlFor="storeFilter" className="text-sm font-medium text-gray-700">
+            <label htmlFor="storeFilter" className="text-sm font-medium text-slate-700">
               Filter by Store:
             </label>
             <select
               id="storeFilter"
               value={selectedStore}
               onChange={(e) => handleStoreFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
             >
               <option value="all">All Stores ({allCampaigns.length} campaigns)</option>
               {stores.map((store) => {
@@ -101,8 +101,8 @@ export default function AnalyticsPage() {
 
         {campaigns.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">No campaigns yet</h2>
-            <p className="text-gray-500 mb-6">
+            <h2 className="text-xl font-semibold text-slate-700 mb-2">No campaigns yet</h2>
+            <p className="text-slate-500 mb-6">
               Create stores and campaigns to see analytics
             </p>
             <button
@@ -123,14 +123,14 @@ export default function AnalyticsPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
+                          <h3 className="text-lg font-semibold text-slate-900">
                             {campaign.campaignName}
                           </h3>
                           
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                             campaign.isActive
                               ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-700'
+                              : 'bg-slate-100 text-slate-700'
                           }`}>
                             {campaign.isActive ? 'Active' : 'Inactive'}
                           </span>
@@ -142,37 +142,37 @@ export default function AnalyticsPage() {
                           )}
                         </div>
 
-                        <p className="text-sm text-gray-600 mb-1">
+                        <p className="text-sm text-slate-600 mb-1">
                           <strong>Discount:</strong> {campaign.discount} on {campaign.discountProduct}
                         </p>
 
                         <div className="flex items-center gap-2 mb-3">
-                          <span className="text-sm text-gray-600">Store:</span>
-                          <span className="text-sm font-medium text-gray-900">
+                          <span className="text-sm text-slate-600">Store:</span>
+                          <span className="text-sm font-medium text-slate-900">
                             {campaign.storeId?.storeName}
                           </span>
-                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                          <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">
                             {campaign.storeId?.storeIdentifier}
                           </span>
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div className="bg-blue-50 rounded p-3">
-                            <p className="text-xs text-gray-600 mb-1">Codes Generated</p>
+                            <p className="text-xs text-slate-600 mb-1">Codes Generated</p>
                             <p className="text-2xl font-bold text-blue-700">
                               {campaign.stats?.totalGenerated || 0}
                             </p>
                           </div>
 
                           <div className="bg-green-50 rounded p-3">
-                            <p className="text-xs text-gray-600 mb-1">Codes Redeemed</p>
+                            <p className="text-xs text-slate-600 mb-1">Codes Redeemed</p>
                             <p className="text-2xl font-bold text-green-700">
                               {campaign.stats?.totalRedeemed || 0}
                             </p>
                           </div>
 
                           <div className="bg-purple-50 rounded p-3">
-                            <p className="text-xs text-gray-600 mb-1">Redemption Rate</p>
+                            <p className="text-xs text-slate-600 mb-1">Redemption Rate</p>
                             <p className="text-2xl font-bold text-purple-700">
                               {campaign.stats?.totalGenerated > 0
                                 ? Math.round((campaign.stats.totalRedeemed / campaign.stats.totalGenerated) * 100)
@@ -181,7 +181,7 @@ export default function AnalyticsPage() {
                           </div>
 
                           <div className="bg-orange-50 rounded p-3">
-                            <p className="text-xs text-gray-600 mb-1">Expires</p>
+                            <p className="text-xs text-slate-600 mb-1">Expires</p>
                             <p className="text-sm font-semibold text-orange-700">
                               {format(new Date(campaign.expiryDate), 'MMM dd, yyyy')}
                             </p>

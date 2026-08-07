@@ -147,7 +147,7 @@ export default function Settings() {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2 border border-slate-300 rounded"
           />
         </div>
 
@@ -159,7 +159,7 @@ export default function Settings() {
             name="email"
             value={formData.email}
             disabled
-            className="w-full p-2 border bg-gray-100 border-gray-200 rounded cursor-not-allowed"
+            className="w-full p-2 border bg-slate-100 border-slate-200 rounded cursor-not-allowed"
           />
         </div>
 
@@ -171,7 +171,7 @@ export default function Settings() {
             name="mobile"
             value={formData.mobile}
             onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2 border border-slate-300 rounded"
           />
         </div>
 
@@ -196,7 +196,7 @@ export default function Settings() {
                 value={formData.suburb.name}
                 onChange={handleChange}
                 placeholder="Search and select suburb"
-                className="w-full p-2 border border-gray-300 rounded"
+                className="w-full p-2 border border-slate-300 rounded"
               />
             </Autocomplete>
           </LoadScriptNext>
@@ -212,7 +212,7 @@ export default function Settings() {
             onChange={handleChange}
             className="mr-2"
           />
-          <label htmlFor="marketingOptIn" className="text-sm text-gray-700">
+          <label htmlFor="marketingOptIn" className="text-sm text-slate-700">
             I agree to receive communication and promotional emails
           </label>
         </div>

@@ -94,15 +94,15 @@ const AdminSidebar = ({ onLinkClick }) => {
   };
 
   return (
-    <nav className="p-4 bg-gray-800 text-white h-full">
+    <nav className="p-4 bg-slate-800 text-white h-full">
       <ul className="space-y-2">
         {menuItems.map((item) => (
           <li key={item.href}>
             {item.hasDropdown ? (
               <>
                 <div
-                  className={`flex items-center justify-between p-2 rounded hover:bg-gray-700 cursor-pointer ${
-                    pathname === item.href ? 'bg-gray-600 font-bold' : ''
+                  className={`flex items-center justify-between p-2 rounded hover:bg-slate-700 cursor-pointer ${
+                    pathname === item.href ? 'bg-slate-600 font-bold' : ''
                   }`}
                   onClick={() => item.setIsOpen(!item.isOpen)}
                 >
@@ -117,8 +117,8 @@ const AdminSidebar = ({ onLinkClick }) => {
                     {item.subItems.map((subItem) => (
                       <li
                         key={subItem.href}
-                        className={`flex items-center space-x-2 p-2 rounded hover:bg-gray-700 ${
-                          pathname === subItem.href ? 'bg-gray-600 font-bold' : ''
+                        className={`flex items-center space-x-2 p-2 rounded hover:bg-slate-700 ${
+                          pathname === subItem.href ? 'bg-slate-600 font-bold' : ''
                         }`}
                       >
                         {subItem.icon}
@@ -133,7 +133,7 @@ const AdminSidebar = ({ onLinkClick }) => {
                         {subItem.label === 'View Metrics' && (
                           <button
                             onClick={handleRefreshMetrics}
-                            className="p-1 hover:bg-gray-600 rounded"
+                            className="p-1 hover:bg-slate-600 rounded"
                             title="Refresh metrics"
                           >
                             <FaSync className="text-xs" />
@@ -146,8 +146,8 @@ const AdminSidebar = ({ onLinkClick }) => {
               </>
             ) : (
               <div
-                className={`flex items-center space-x-2 p-2 rounded hover:bg-gray-700 ${
-                  pathname === item.href ? 'bg-gray-600 font-bold' : ''
+                className={`flex items-center space-x-2 p-2 rounded hover:bg-slate-700 ${
+                  pathname === item.href ? 'bg-slate-600 font-bold' : ''
                 }`}
               >
                 {item.icon}

@@ -114,7 +114,7 @@ const ShareIconsCampaign = ({ slug, title, storeName, className = '', compact = 
   
   const iconSize = compact ? "w-4 h-4" : "w-4 h-4";
 
-  const greyButtonClass = `${iconClass} bg-gray-200 hover:bg-gray-300 text-gray-700`;
+  const greyButtonClass = `${iconClass} bg-slate-200 hover:bg-slate-300 text-slate-700`;
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -135,7 +135,7 @@ const ShareIconsCampaign = ({ slug, title, storeName, className = '', compact = 
           className={`${iconClass} ${
             copied
               ? 'bg-green-500 text-white'
-              : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
           }`}
           title="Copy link"
         >

@@ -318,7 +318,7 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      <div className="flex-shrink-0 bg-gray-900 border-b border-gray-700 p-4">
+      <div className="flex-shrink-0 bg-slate-900 border-b border-slate-700 p-4">
         <div className="flex items-center justify-between">
           <button
             onClick={onClose}
@@ -337,25 +337,25 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
         
         <div className="text-white text-center mt-4 space-y-2">
           <p className="text-sm">Point camera at ticket QR code</p>
-          <p className="text-xs text-gray-400">Auto-scans on detect</p>
+          <p className="text-xs text-slate-400">Auto-scans on detect</p>
         </div>
 
         <button
           onClick={() => setShowManualInput(!showManualInput)}
-          className="mt-6 px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
+          className="mt-6 px-4 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-600 transition-colors text-sm"
         >
           🎫 Can't scan? Type ticket number
         </button>
 
         {showManualInput && (
-          <div className="mt-4 w-full max-w-md bg-gray-800 rounded-lg p-4">
+          <div className="mt-4 w-full max-w-md bg-slate-800 rounded-lg p-4">
             <h3 className="text-white text-sm font-medium mb-3">Enter Ticket Number</h3>
             <input
               type="text"
               value={manualTicketNumber}
               onChange={(e) => setManualTicketNumber(e.target.value.toUpperCase())}
               placeholder="TKT-XXXXX-0001"
-              className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-teal-500 text-sm mb-3"
+              className="w-full px-3 py-2 rounded bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-teal-500 text-sm mb-3"
               onKeyPress={(e) => e.key === 'Enter' && handleManualCheckIn()}
             />
             <div className="flex gap-2">
@@ -371,7 +371,7 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
                   setShowManualInput(false);
                   setManualTicketNumber('');
                 }}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 text-sm"
+                className="px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-500 text-sm"
               >
                 Cancel
               </button>
@@ -380,8 +380,8 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
         )}
       </div>
 
-      <div className="flex-shrink-0 bg-gray-900 border-t border-gray-700 p-4">
-        <div className="text-center text-sm text-gray-400">
+      <div className="flex-shrink-0 bg-slate-900 border-t border-slate-700 p-4">
+        <div className="text-center text-sm text-slate-400">
           {selectedEvent && (
             <>
               <div className="font-medium text-white">{selectedEvent.title}</div>
@@ -396,17 +396,17 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
           <div className="bg-white rounded-lg p-6 max-w-sm w-full">
             <div className="text-center">
               <div className="text-6xl mb-4">✅</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Checked In!</h3>
-              <div className="text-gray-700 space-y-1">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Checked In!</h3>
+              <div className="text-slate-700 space-y-1">
                 <p className="font-semibold">{String(successData.buyerName || '')}</p>
                 <p className="text-sm">{String(successData.ticketNumber || '')}</p>
-                <p className="text-sm text-gray-600">{String(successData.ticketType || '')}</p>
+                <p className="text-sm text-slate-600">{String(successData.ticketType || '')}</p>
                 {successData.seats && Array.isArray(successData.seats) && successData.seats.length > 0 && successData.seats[0] && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-slate-600">
                     Seat: {String(successData.seats[0].row)}-{String(successData.seats[0].seatNumber)}
                   </p>
                 )}
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-slate-500 mt-2">
                   {successData.checkInTime ? new Date(successData.checkInTime).toLocaleTimeString() : ''}
                 </p>
               </div>
@@ -427,15 +427,15 @@ const CheckInPaid_QRScanner = ({ onClose }) => {
             <div className="text-center">
               <div className="text-6xl mb-4">❌</div>
               <h3 className="text-xl font-bold text-red-600 mb-2">{errorData.title}</h3>
-              <div className="text-gray-700 space-y-2">
+              <div className="text-slate-700 space-y-2">
                 <p className="text-sm">{errorData.message}</p>
                 {errorData.ticketNumber && (
-                  <p className="text-xs text-gray-500 font-mono">{String(errorData.ticketNumber)}</p>
+                  <p className="text-xs text-slate-500 font-mono">{String(errorData.ticketNumber)}</p>
                 )}
               </div>
               <button
                 onClick={resetScanner}
-                className="mt-4 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                className="mt-4 px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
               >
                 Scan Next
               </button>

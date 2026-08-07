@@ -328,7 +328,7 @@ export default function EditAdPage({ params }) {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Edit Ad: {ad.adId}</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Edit Ad: {ad.adId}</h1>
         <button
           onClick={handleDelete}
           className="px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -348,28 +348,28 @@ export default function EditAdPage({ params }) {
                     ? 'bg-blue-600'
                     : step.id === currentStep
                     ? 'bg-blue-600'
-                    : 'bg-gray-200'
+                    : 'bg-slate-200'
                 }`}>
                   {step.id < currentStep ? (
                     <svg className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   ) : (
-                    <span className={`text-xs ${step.id === currentStep ? 'text-white' : 'text-gray-500'}`}>
+                    <span className={`text-xs ${step.id === currentStep ? 'text-white' : 'text-slate-500'}`}>
                       {step.id}
                     </span>
                   )}
                 </div>
                 <div className="ml-4">
-                  <p className={`text-sm font-medium ${step.id <= currentStep ? 'text-gray-900' : 'text-gray-500'}`}>
+                  <p className={`text-sm font-medium ${step.id <= currentStep ? 'text-slate-900' : 'text-slate-500'}`}>
                     {step.name}
                   </p>
-                  <p className="text-xs text-gray-500">{step.description}</p>
+                  <p className="text-xs text-slate-500">{step.description}</p>
                 </div>
               </div>
               {stepIdx !== STEPS.length - 1 && (
                 <div className="absolute top-4 w-full -right-4">
-                  <div className={`h-0.5 ${step.id < currentStep ? 'bg-blue-600' : 'bg-gray-200'}`} />
+                  <div className={`h-0.5 ${step.id < currentStep ? 'bg-blue-600' : 'bg-slate-200'}`} />
                 </div>
               )}
             </li>
@@ -392,7 +392,7 @@ export default function EditAdPage({ params }) {
             type="button"
             onClick={handleBack}
             disabled={currentStep === 1}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaChevronLeft className="h-5 w-5 mr-2" />
             Back
@@ -427,23 +427,23 @@ export default function EditAdPage({ params }) {
 function BusinessNameStep({ formData, setFormData }) {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Business & Ad Name</h2>
+      <h2 className="text-lg font-medium text-slate-900">Business & Ad Name</h2>
       
       {/* Business Info (read-only) */}
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Business Information</h3>
-        <p className="text-sm text-gray-500 mb-2">
+        <h3 className="text-sm font-medium text-slate-700 mb-2">Business Information</h3>
+        <p className="text-sm text-slate-500 mb-2">
           Business information cannot be changed after ad creation.
         </p>
-        <div className="bg-gray-50 rounded-md p-4">
-          <p className="text-sm font-medium text-gray-900">{formData.businessName}</p>
-          <p className="text-xs text-gray-500">Business ID: {formData.businessHumanId || formData.businessId}</p>
+        <div className="bg-slate-50 rounded-md p-4">
+          <p className="text-sm font-medium text-slate-900">{formData.businessName}</p>
+          <p className="text-xs text-slate-500">Business ID: {formData.businessHumanId || formData.businessId}</p>
         </div>
       </div>
       
       {/* Ad Name (editable) */}
       <div>
-        <label htmlFor="adName" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="adName" className="block text-sm font-medium text-slate-700">
           Ad Name <span className="text-red-500">*</span>
         </label>
         <input
@@ -452,10 +452,10 @@ function BusinessNameStep({ formData, setFormData }) {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g., Summer Sale 2024, New Store Opening"
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           required
         />
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-slate-500">
           Give your ad a descriptive name for easy identification
         </p>
       </div>
@@ -497,7 +497,7 @@ function PlacementStep({ formData, setFormData }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-medium text-gray-900">Select Placement & Layout</h2>
+      <h2 className="text-lg font-medium text-slate-900">Select Placement & Layout</h2>
       
       {/* Info Note */}
       <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
@@ -509,7 +509,7 @@ function PlacementStep({ formData, setFormData }) {
       
       {/* Placement Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Available Placements
         </label>
         <div className="space-y-2">
@@ -517,21 +517,21 @@ function PlacementStep({ formData, setFormData }) {
             return (
               <label 
                 key={placement.placementId} 
-                className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
+                className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-slate-50"
               >
                 <input
                   type="checkbox"
                   checked={formData.placements.includes(placement.placementId)}
                   onChange={() => handlePlacementToggle(placement.placementId)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
                 />
                 <div className="ml-3 flex-1">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-slate-900">
                       {placement.placementId} - {placement.name}
                     </p>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-slate-500">
                     Desktop: {placement.dimensions?.desktop?.width || placement.dimensions?.width} × {placement.dimensions?.desktop?.height || placement.dimensions?.height}
                     {placement.dimensions?.mobile?.width && (
                       <span> • Mobile: {placement.dimensions.mobile.width} × {placement.dimensions.mobile.height}</span>
@@ -561,7 +561,7 @@ function TargetStatesStep({ formData, setFormData }) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Target States</h2>
+      <h2 className="text-lg font-medium text-slate-900">Target States</h2>
       
       {/* Info Note */}
       <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
@@ -572,10 +572,10 @@ function TargetStatesStep({ formData, setFormData }) {
       
       {/* State Targeting */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           Target States 
           {formData.targetStates.length === 0 && (
-            <span className="text-sm font-normal text-gray-500 ml-2">(Currently showing in all states)</span>
+            <span className="text-sm font-normal text-slate-500 ml-2">(Currently showing in all states)</span>
           )}
         </label>
         
@@ -586,9 +586,9 @@ function TargetStatesStep({ formData, setFormData }) {
                 type="checkbox"
                 checked={formData.targetStates.includes(state)}
                 onChange={() => handleStateToggle(state)}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="rounded border-slate-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
-              <span className="ml-2 text-sm text-gray-700">{state}</span>
+              <span className="ml-2 text-sm text-slate-700">{state}</span>
             </label>
           ))}
         </div>
@@ -750,7 +750,7 @@ function CreativeStep({ formData, setFormData, existingAd }) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Update Creative Assets</h2>
+      <h2 className="text-lg font-medium text-slate-900">Update Creative Assets</h2>
       
       {/* Image Uploader - handles both single and multiple images */}
       <BannerImageUploader
@@ -764,10 +764,10 @@ function CreativeStep({ formData, setFormData, existingAd }) {
       {/* Creative Details - Always show all fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         {/* Desktop Creative */}
-        <div className="space-y-4 border border-gray-200 rounded-lg p-4">
-          <h3 className="font-medium text-gray-900">Desktop Creative Details</h3>
+        <div className="space-y-4 border border-slate-200 rounded-lg p-4">
+          <h3 className="font-medium text-slate-900">Desktop Creative Details</h3>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Desktop Alt Text <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-slate-700">Desktop Alt Text <span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="Describe the image for accessibility"
@@ -782,13 +782,13 @@ function CreativeStep({ formData, setFormData, existingAd }) {
                   }
                 }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Desktop Destination URL</label>
+            <label className="block text-sm font-medium text-slate-700">Desktop Destination URL</label>
             <input
               type="url"
               placeholder="https://example.com"
@@ -806,16 +806,16 @@ function CreativeStep({ formData, setFormData, existingAd }) {
                   }
                 }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
         </div>
 
         {/* Mobile Creative */}
-        <div className="space-y-4 border border-gray-200 rounded-lg p-4">
-          <h3 className="font-medium text-gray-900">Mobile Creative Details</h3>
+        <div className="space-y-4 border border-slate-200 rounded-lg p-4">
+          <h3 className="font-medium text-slate-900">Mobile Creative Details</h3>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Mobile Alt Text</label>
+            <label className="block text-sm font-medium text-slate-700">Mobile Alt Text</label>
             <input
               type="text"
               placeholder="Leave empty to use desktop alt text"
@@ -830,12 +830,12 @@ function CreativeStep({ formData, setFormData, existingAd }) {
                   }
                 }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Mobile Destination URL</label>
+            <label className="block text-sm font-medium text-slate-700">Mobile Destination URL</label>
             <input
               type="url"
               placeholder="Leave empty to use desktop URL"
@@ -853,7 +853,7 @@ function CreativeStep({ formData, setFormData, existingAd }) {
                   }
                 }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
         </div>
@@ -866,14 +866,14 @@ function CreativeStep({ formData, setFormData, existingAd }) {
 function ControlsStep({ formData, setFormData }) {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Schedule & Controls</h2>
+      <h2 className="text-lg font-medium text-slate-900">Schedule & Controls</h2>
       
       {/* Schedule */}
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Campaign Schedule</h3>
+        <h3 className="text-sm font-medium text-slate-700 mb-3">Campaign Schedule</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Start Date</label>
+            <label className="block text-sm font-medium text-slate-700">Start Date</label>
             <input
               type="date"
               value={formData.schedule.startAt}
@@ -881,12 +881,12 @@ function ControlsStep({ formData, setFormData }) {
                 ...formData,
                 schedule: { ...formData.schedule, startAt: e.target.value }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">End Date</label>
+            <label className="block text-sm font-medium text-slate-700">End Date</label>
             <input
               type="date"
               value={formData.schedule.endAt}
@@ -894,7 +894,7 @@ function ControlsStep({ formData, setFormData }) {
                 ...formData,
                 schedule: { ...formData.schedule, endAt: e.target.value }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               required
             />
           </div>
@@ -903,11 +903,11 @@ function ControlsStep({ formData, setFormData }) {
 
       {/* Status */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Initial Status</label>
+        <label className="block text-sm font-medium text-slate-700">Initial Status</label>
         <select
           value={formData.status}
           onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
         >
           <option value="active">Active (Live immediately)</option>
           <option value="paused">Paused (Manual activation required)</option>
@@ -917,10 +917,10 @@ function ControlsStep({ formData, setFormData }) {
 
       {/* Caps */}
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Performance Limits (Optional)</h3>
+        <h3 className="text-sm font-medium text-slate-700 mb-3">Performance Limits (Optional)</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Maximum Impressions
             </label>
             <input
@@ -930,13 +930,13 @@ function ControlsStep({ formData, setFormData }) {
                 ...formData,
                 caps: { ...formData.caps, maxImpressions: e.target.value }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="Leave empty for unlimited"
             />
-            <p className="mt-1 text-xs text-gray-500">Ad will pause after reaching this many views</p>
+            <p className="mt-1 text-xs text-slate-500">Ad will pause after reaching this many views</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-slate-700">
               Maximum Clicks
             </label>
             <input
@@ -946,10 +946,10 @@ function ControlsStep({ formData, setFormData }) {
                 ...formData,
                 caps: { ...formData.caps, maxClicks: e.target.value }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="Leave empty for unlimited"
             />
-            <p className="mt-1 text-xs text-gray-500">Ad will pause after reaching this many clicks</p>
+            <p className="mt-1 text-xs text-slate-500">Ad will pause after reaching this many clicks</p>
           </div>
         </div>
       </div>
@@ -963,51 +963,51 @@ function ReviewStep({ formData, existingAd }) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Review Changes</h2>
+      <h2 className="text-lg font-medium text-slate-900">Review Changes</h2>
       
-      <dl className="divide-y divide-gray-200">
+      <dl className="divide-y divide-slate-200">
         <div className="py-3">
-          <dt className="text-sm font-medium text-gray-500">Ad ID</dt>
-          <dd className="mt-1 text-sm text-gray-900">{existingAd.adId}</dd>
+          <dt className="text-sm font-medium text-slate-500">Ad ID</dt>
+          <dd className="mt-1 text-sm text-slate-900">{existingAd.adId}</dd>
         </div>
 
         <div className="py-3">
-          <dt className="text-sm font-medium text-gray-500">Business</dt>
-          <dd className="mt-1 text-sm text-gray-900">{formData.businessName}</dd>
+          <dt className="text-sm font-medium text-slate-500">Business</dt>
+          <dd className="mt-1 text-sm text-slate-900">{formData.businessName}</dd>
         </div>
         
         <div className="py-3">
-          <dt className="text-sm font-medium text-gray-500">Ad Name</dt>
-          <dd className="mt-1 text-sm text-gray-900">{formData.name || 'Not specified'}</dd>
+          <dt className="text-sm font-medium text-slate-500">Ad Name</dt>
+          <dd className="mt-1 text-sm text-slate-900">{formData.name || 'Not specified'}</dd>
         </div>
         
         <div className="py-3">
-          <dt className="text-sm font-medium text-gray-500">Placements</dt>
-          <dd className="mt-1 text-sm text-gray-900">
+          <dt className="text-sm font-medium text-slate-500">Placements</dt>
+          <dd className="mt-1 text-sm text-slate-900">
             {formData.placements.join(', ') || 'None selected'}
           </dd>
         </div>
         
         <div className="py-3">
-          <dt className="text-sm font-medium text-gray-500">Target States</dt>
-          <dd className="mt-1 text-sm text-gray-900">{formData.targetStates.length === 0 ? 'All states' : formData.targetStates.join(', ')}</dd>
+          <dt className="text-sm font-medium text-slate-500">Target States</dt>
+          <dd className="mt-1 text-sm text-slate-900">{formData.targetStates.length === 0 ? 'All states' : formData.targetStates.join(', ')}</dd>
         </div>
         
         <div className="py-3">
-          <dt className="text-sm font-medium text-gray-500">Schedule</dt>
-          <dd className="mt-1 text-sm text-gray-900">
+          <dt className="text-sm font-medium text-slate-500">Schedule</dt>
+          <dd className="mt-1 text-sm text-slate-900">
             {formData.schedule.startAt} to {formData.schedule.endAt}
           </dd>
         </div>
         
         <div className="py-3">
-          <dt className="text-sm font-medium text-gray-500">Status</dt>
-          <dd className="mt-1 text-sm text-gray-900">{formData.status}</dd>
+          <dt className="text-sm font-medium text-slate-500">Status</dt>
+          <dd className="mt-1 text-sm text-slate-900">{formData.status}</dd>
         </div>
         
         <div className="py-3">
-          <dt className="text-sm font-medium text-gray-500">Caps</dt>
-          <dd className="mt-1 text-sm text-gray-900">
+          <dt className="text-sm font-medium text-slate-500">Caps</dt>
+          <dd className="mt-1 text-sm text-slate-900">
             Impressions: {formData.caps.maxImpressions || 'Unlimited'}, 
             Clicks: {formData.caps.maxClicks || 'Unlimited'}
           </dd>
@@ -1015,16 +1015,16 @@ function ReviewStep({ formData, existingAd }) {
 
         {hasNewImages && (
           <div className="py-3">
-            <dt className="text-sm font-medium text-gray-500">New Images</dt>
-            <dd className="mt-1 text-sm text-gray-900">
+            <dt className="text-sm font-medium text-slate-500">New Images</dt>
+            <dd className="mt-1 text-sm text-slate-900">
               {formData.creative.images.map(img => img.imageType).join(', ')} will be uploaded
             </dd>
           </div>
         )}
         
         <div className="py-3">
-          <dt className="text-sm font-medium text-gray-500">Statistics</dt>
-          <dd className="mt-1 text-sm text-gray-900">
+          <dt className="text-sm font-medium text-slate-500">Statistics</dt>
+          <dd className="mt-1 text-sm text-slate-900">
             Impressions: {existingAd.counters?.impressions || 0} | 
             Clicks: {existingAd.counters?.clicks || 0} |
             CTR: {existingAd.counters?.impressions > 0 

@@ -150,7 +150,7 @@ const Login = () => {
               value={credentials.email}
               onChange={handleChange}
               className={`w-full px-3 py-1.5 text-sm border ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
+                errors.email ? 'border-red-500' : 'border-slate-300'
               } rounded`}
               placeholder="Enter your email"
               required
@@ -174,7 +174,7 @@ const Login = () => {
                 value={credentials.password}
                 onChange={handleChange}
                 className={`w-full px-3 py-1.5 pr-10 text-sm border ${
-                  errors.password ? 'border-red-500' : 'border-gray-300'
+                  errors.password ? 'border-red-500' : 'border-slate-300'
                 } rounded`}
                 placeholder="Enter your password"
                 required
@@ -249,32 +249,6 @@ const Login = () => {
               Register here
             </Link>
           </p>
-        </div>
-
-        {/* Support Links - Mobile Only */}
-        <div className="md:hidden border-t border-gray-300 mt-6 pt-4">
-          <div className="flex items-center justify-center gap-3 text-xs text-gray-700">
-            <Link 
-              href="/support/contact"
-              className="hover:text-teal-600 transition-colors"
-            >
-              Contact
-            </Link>
-            <span className="text-gray-400">•</span>
-            <Link 
-              href="/support/terms"
-              className="hover:text-teal-600 transition-colors"
-            >
-              Terms
-            </Link>
-            <span className="text-gray-400">•</span>
-            <Link 
-              href="/support/privacy"
-              className="hover:text-teal-600 transition-colors"
-            >
-              Privacy
-            </Link>
-          </div>
         </div>
       </div>
     </>
