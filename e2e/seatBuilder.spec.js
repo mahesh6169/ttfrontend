@@ -492,13 +492,14 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await expect(page.getByTestId('seat-builder-overlay')).toBeHidden();
   });
 
-  test('V-AC7 an empty hall blocks Save with a plain message', async ({ page }) => {
+  // Updated by events-wizard-validation.md (D12/AC17): an empty layout is a valid saved state now, so
+  // clearing the hall and hitting Save exits the builder instead of blocking.
+  test('V-AC7 an empty hall saves and exits (empty layout is a valid saved state)', async ({ page }) => {
     const seed = readSeed();
     await gotoStep3(page, seed.builderEmptyEventId);
     await openBuilder(page);
     await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByText('Add at least one row to save.')).toBeVisible();
-    await expect(page.getByTestId('seat-builder-overlay')).toBeVisible();
+    await expect(page.getByTestId('seat-builder-overlay')).toBeHidden();
   });
 
   test('V-AC8 under capacity blocks Save - configured seats must equal capacity exactly', async ({ page }) => {

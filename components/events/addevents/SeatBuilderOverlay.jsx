@@ -298,11 +298,16 @@ export default function SeatBuilderOverlay({
   const onRowCountChange = (i, value) => setCountDrafts((d) => ({ ...d, [i]: value }));
   const commitRowCount = (i) => {
     const raw = countDrafts[i];
-    const n = parseInt(raw, 10);
-    if (raw !== undefined && raw !== '' && Number.isFinite(n)) {
-      setRowCount(i, Math.max(1, Math.min(100, n))); // min-1 holds on apply, not while editing
+    const num = Number(raw);
+    // Apply only a valid whole number 1-100; reject (never silently clamp) an out-of-range or decimal
+    // count by KEEPING the draft, so the inline error stays and Save is blocked (AC16). Empty reverts.
+    if (raw !== undefined && String(raw).trim() !== '' && Number.isInteger(num) && num >= 1 && num <= 100) {
+      setRowCount(i, num);
+      setCountDrafts((d) => { const c = { ...d }; delete c[i]; return c; });
+    } else if (raw === undefined || String(raw).trim() === '') {
+      setCountDrafts((d) => { const c = { ...d }; delete c[i]; return c; });
     }
-    setCountDrafts((d) => { const c = { ...d }; delete c[i]; return c; }); // empty/invalid reverts
+    // else: invalid (0/negative/>100/decimal) - leave the draft so rowErrors flags it and Save blocks.
   };
 
   // ── Validation (live field errors; Save is the one gate) ──────────────────
@@ -316,8 +321,9 @@ export default function SeatBuilderOverlay({
   // duplicate flags the LATER row - the original stays calm; labels are seat identities, so A twice collides).
   const rowErrors = useMemo(() => rows.map((r, i) => {
     const raw = countDrafts[i] !== undefined ? countDrafts[i] : String(r.seats?.length || 0);
-    const n = parseInt(raw, 10);
-    const count = String(raw).trim() !== '' && (!Number.isFinite(n) || n < 1 || n > 100);
+    const num = Number(raw);
+    // A seat count must be a whole number 1-100 (reject 0/negative/decimal/>100 - AC16).
+    const count = String(raw).trim() !== '' && (!Number.isInteger(num) || num < 1 || num > 100);
     const lbl = (r.rowLabel || '').trim();
     let label = null;
     if (lbl === '') label = 'required';
@@ -444,7 +450,9 @@ export default function SeatBuilderOverlay({
   const signpost = (msg) => toast.error(msg, { toastId: 'seatbuilder-validation', position: 'top-center' });
   const save = () => {
     if (rows.length === 0) {
-      signpost('Add at least one row to save.');
+      // An empty layout is a valid saved state (no assigned seating): let the organiser clear the
+      // hall, Save, and exit to check other steps (D12/AC17).
+      onSave([], []);
       return;
     }
     // Structural field errors first (fix these before capacity is even meaningful).

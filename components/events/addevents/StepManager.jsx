@@ -30,6 +30,7 @@ import {
   toggleIsPaid,
 } from '@/store/slices/events/eventSlice';
 import { markCapacityStale } from '@/store/slices/events/eventCapacitySlice';
+import { isHttpsUrl, isValidAuMobile } from '@/utils/events/wizardValidation';
 
 // Step Components
 import StepIndicator from './StepIndicator';
@@ -130,10 +131,15 @@ const validateDiscountCodesList = (formData) => {
       errors[`discountApplies_${index}`] = ['Pick at least one ticket type this code applies to'];
     }
 
-    // V5 — date order; V7 — window cannot run past the event day (by day)
+    // Dates: not in the past (AC14); window cannot run past the event day; from <= until.
+    const dToday = new Date().toISOString().slice(0, 10);
     const vFrom = dc.validFrom ? String(dc.validFrom).slice(0, 10) : '';
     const vUntil = dc.validUntil ? String(dc.validUntil).slice(0, 10) : '';
-    if (eventDay && vFrom && vFrom > eventDay) {
+    if (vFrom && vFrom < dToday) {
+      errors[`discountDates_${index}`] = ["Valid from can't be in the past"];
+    } else if (vUntil && vUntil < dToday) {
+      errors[`discountDates_${index}`] = ["Valid until can't be in the past"];
+    } else if (eventDay && vFrom && vFrom > eventDay) {
       errors[`discountDates_${index}`] = ["Valid from can't be after the event day"];
     } else if (eventDay && vUntil && vUntil > eventDay) {
       errors[`discountDates_${index}`] = ["Valid until can't be after the event day"];
@@ -151,18 +157,20 @@ const validateDiscountCodesList = (formData) => {
       }
     }
 
-    // V6 — must leave at least $1 on the cheapest covered ticket bought alone
+    // V6 - the code may not drop any covered ticket, or any per-person share inside a covered pack,
+    // below $1. For a bundle the floor is the per-person share (packPrice / size); a fixed amount
+    // reduces each share by value / size. Mirrors the server (events-bundle-pricing.md D9).
     if (applies.length > 0 && !isNaN(val)) {
-      const coveredPrices = ticketTypes
-        .filter((t) => applies.includes(t.name) && t.price !== null && t.price !== undefined && t.price !== '')
-        .map((t) => Number(t.price))
-        .filter((p) => !isNaN(p));
-      if (coveredPrices.length > 0) {
-        const cheapest = Math.min(...coveredPrices);
-        const after = dc.kind === 'percent' ? cheapest * (1 - val / 100) : cheapest - val;
-        if (Math.round(after * 100) < 100) {
-          errors[`discountValue_${index}`] = ['This makes a ticket cost under $1. Lower the discount or uncheck that ticket type.'];
-        }
+      const offender = ticketTypes
+        .filter((t) => applies.includes(t.name) && t.price !== null && t.price !== undefined && t.price !== '' && !isNaN(Number(t.price)))
+        .find((t) => {
+          const size = t.bundleSize && Number(t.bundleSize) >= 2 ? Number(t.bundleSize) : 1;
+          const perPerson = Number(t.price) / size;
+          const after = dc.kind === 'percent' ? perPerson * (1 - val / 100) : perPerson - val / size;
+          return Math.round(after * 100) < 100;
+        });
+      if (offender) {
+        errors[`discountValue_${index}`] = [`This leaves ${offender.name} under the $1 minimum per ticket. Lower the discount or uncheck that ticket type.`];
       }
     }
   });
@@ -650,7 +658,7 @@ const StepManager = ({
           }
 
           // Bundle rules mirror the server: size >= 2 (whole), no bigger than the per-order limit, and
-          // the bundle price (the Price field) must divide evenly into per-person shares of at least $1.
+          // the pack price (the Price field, stored as typed) must leave each person's share >= $1.
           if (ticket.bundleSize !== '' && ticket.bundleSize !== null && ticket.bundleSize !== undefined) {
             const size = Number(ticket.bundleSize);
             const price = Number(ticket.price);
@@ -660,9 +668,8 @@ const StepManager = ({
               bundleErr = 'Bundle size must be a whole number of 2 or more';
             } else if (maxPer && size > maxPer) {
               bundleErr = `Bundle size can't be more than the ${maxPer} tickets allowed per order`;
-            } else if (!isNaN(price) && price >= 1) {
-              if (price % size !== 0) bundleErr = `Bundle price must divide evenly by ${size}`;
-              else if (price / size < 1) bundleErr = "Each person's share must be at least $1";
+            } else if (!isNaN(price) && price >= 1 && price / size < 1) {
+              bundleErr = "Each person's share must be at least $1";
             }
             if (bundleErr) {
               ticketErrors.push(`Ticket type ${index + 1}: ${bundleErr}`);
@@ -733,6 +740,11 @@ const StepManager = ({
           ];
         }
       }
+
+      // Refund policy is an explicit required choice (AC20/D13) - the final submit is the wall too.
+      if (!formData.refundPolicy?.processingFeePolicy) {
+        errors.refundPolicy = ['Please select a refund policy option'];
+      }
     } else {
       // Free event specific validation - skip if promotional or advertise-only
       const isPromotional = formData.eventIntent === 'promote' || formData.isAdvertiseOnly;
@@ -779,10 +791,10 @@ const validateCurrentStep = useCallback(() => {
       if (!formData.description?.trim()) errors.description = ['Description is required'];
       if (!formData.dateTime) {
         errors.dateTime = ['Date & time are required'];
-      } else if (isAddMode) {
+      } else {
+        // Event date must be in the future - in add AND edit mode (events-wizard-validation.md D9/AC3).
         const eventDate = new Date(formData.dateTime);
-        const now = new Date();
-        if (eventDate <= now) {
+        if (eventDate <= new Date()) {
           errors.dateTime = ['Date must be in the future'];
         }
       }
@@ -819,26 +831,34 @@ const validateCurrentStep = useCallback(() => {
       }
 
       if (!formData.venue?.trim()) errors.venue = ['Venue is required'];
-      if (
-        !formData.address ||
-        !formData.address.formattedAddress?.trim() ||
-        !formData.address.location ||
-        !Array.isArray(formData.address.location.coordinates) ||
-        formData.address.location.coordinates.length !== 2 ||
-        formData.address.location.coordinates[0] === 0 ||
-        formData.address.location.coordinates[1] === 0
-      ) {
-        errors.address = ['A valid address is required'];
+      {
+        // Address must be a real geocoded place picked from the suggestions (D8/AC2). Distinguish
+        // "nothing entered" from "typed but not selected" so the message tells the organiser what to do.
+        const addr = formData.address;
+        const hasCoords =
+          addr && addr.location && Array.isArray(addr.location.coordinates) &&
+          addr.location.coordinates.length === 2 &&
+          addr.location.coordinates[0] !== 0 && addr.location.coordinates[1] !== 0;
+        if (!hasCoords) {
+          errors.address = addr && addr.formattedAddress?.trim()
+            ? ['Select an address from the list']
+            : ['Venue address is required'];
+        }
       }
       break;
 
     case 2: // Organiser - Organizer details, social, coordinators
-      // Organiser validation — Name required; contact number is optional for all event types
+      // Organiser name required; phone required + valid AU mobile (D6/AC5/AC6).
       if (!formData.organizer?.name?.trim()) {
         errors.organizer = ['Name is required'];
       }
+      if (!formData.organizer?.contact?.trim()) {
+        errors.organizerContact = ['Phone is required'];
+      } else if (!isValidAuMobile(formData.organizer.contact)) {
+        errors.organizerContact = ['Enter a valid Australian mobile (starts 04)'];
+      }
 
-      // Basic email validation for organiser if provided
+      // Email / website / social validate only when filled (D7/AC7).
       if (
         formData.organizer?.email &&
         formData.organizer.email.trim() &&
@@ -846,6 +866,15 @@ const validateCurrentStep = useCallback(() => {
       ) {
         errors.organizer = (errors.organizer || []).concat(['Email is invalid']);
       }
+      if (formData.organizer?.website?.trim() && !isHttpsUrl(formData.organizer.website)) {
+        errors.organizerWebsite = ['Enter a valid https:// URL'];
+      }
+      // Each social link must be a non-empty valid https URL once its row exists (D7/AC7).
+      (formData.organizer?.socialMedia || []).forEach((social, index) => {
+        const url = (social?.url || '').trim();
+        if (!url) errors[`socialUrl_${index}`] = ['Add a link or remove this row'];
+        else if (!isHttpsUrl(url)) errors[`socialUrl_${index}`] = ['Enter a valid https:// URL'];
+      });
 
       // Coordinators validation — Name is the anchor field
       // Error messages target a single field so the inline display only shows under that field
@@ -857,6 +886,8 @@ const validateCurrentStep = useCallback(() => {
 
           if (hasName && !coord.phone?.trim()) {
             coordinatorErrors.push(`Coordinator ${index + 1}: Phone is required`);
+          } else if (hasName && !isValidAuMobile(coord.phone)) {
+            coordinatorErrors.push(`Coordinator ${index + 1}: Phone must be a valid Australian mobile`);
           } else if (!hasName && hasOtherData) {
             coordinatorErrors.push(`Coordinator ${index + 1}: Name is required`);
           }
@@ -871,7 +902,10 @@ const validateCurrentStep = useCallback(() => {
         if (formData.isPaid === null) {
           errors.isPaid = ['Please select whether this is a free or paid event'];
         }
-        // External URL is optional, no validation needed
+        // A promo event needs a valid https registration/ticket link (D7/AC4).
+        const url = (formData.externalTicketUrl || '').trim();
+        if (!url) errors.externalTicketUrl = ['A registration/ticket link is required'];
+        else if (!isHttpsUrl(url)) errors.externalTicketUrl = ['Enter a valid https:// link'];
       }
 
       // Hosted event validation
@@ -886,12 +920,18 @@ const validateCurrentStep = useCallback(() => {
             errors.capacity = ['Event capacity is required'];
           }
 
-          if (
-            formData.maxAttendeesPerRegistration === undefined ||
-            formData.maxAttendeesPerRegistration === null ||
-            formData.maxAttendeesPerRegistration === ''
-          ) {
-            errors.maxAttendeesPerRegistration = ['Booking limit is required'];
+          {
+            // Max-per-order: required whole number; cannot exceed capacity when capacity is set (AC13/D10).
+            const maxRaw = formData.maxAttendeesPerRegistration;
+            const maxNum = Number(maxRaw);
+            const capNum = Number(formData.capacity);
+            if (maxRaw === undefined || maxRaw === null || maxRaw === '') {
+              errors.maxAttendeesPerRegistration = ['Booking limit is required'];
+            } else if (!Number.isInteger(maxNum) || maxNum < 1) {
+              errors.maxAttendeesPerRegistration = ['Max per order must be a whole number of 1 or more'];
+            } else if (Number.isFinite(capNum) && capNum > 0 && maxNum > capNum) {
+              errors.maxAttendeesPerRegistration = ["Max per order can't be more than the capacity"];
+            }
           }
 
           // Seating layout validation
@@ -924,21 +964,32 @@ const validateCurrentStep = useCallback(() => {
             errors.ticketTypes = ['At least one ticket type is required for paid events'];
           } else {
             const eventDayStr = formData.dateTime ? String(formData.dateTime).slice(0, 10) : '';
+            const todayStr = new Date().toISOString().slice(0, 10);
             formData.ticketTypes.forEach((ticket, index) => {
-              if (!ticket.name?.trim()) {
+              const nm = ticket.name?.trim();
+              if (!nm) {
                 errors[`ticketName_${index}`] = ['Ticket name is required'];
-              }
-              if (
-                ticket.price === undefined ||
-                ticket.price === null ||
-                ticket.price === ''
+              } else if (
+                formData.ticketTypes.some((o, i) => i !== index && o?.name?.trim()?.toLowerCase() === nm.toLowerCase())
               ) {
-                errors[`ticketPrice_${index}`] = ['Ticket price is required'];
+                errors[`ticketName_${index}`] = ['A ticket type with this name already exists'];
               }
-              // Date window (V7): start/expiry <= event day (by day); expiry >= start. Same-day allowed.
+              // Price required, at least $1, at most 2 decimals - so an invalid price can't leak to Next (AC9).
+              if (ticket.price === undefined || ticket.price === null || ticket.price === '') {
+                errors[`ticketPrice_${index}`] = ['Ticket price is required'];
+              } else if (Math.abs(Number(ticket.price) * 100 - Math.round(Number(ticket.price) * 100)) > 1e-9) {
+                errors[`ticketPrice_${index}`] = ['Maximum 2 decimal places allowed'];
+              } else if (Number(ticket.price) < 1) {
+                errors[`ticketPrice_${index}`] = ['Minimum ticket price is $1'];
+              }
+              // Date window: not in the past (AC11); start/expiry <= event day; expiry >= start.
               const tStart = ticket.startDate ? String(ticket.startDate).slice(0, 10) : '';
               const tExpiry = ticket.expiryDate ? String(ticket.expiryDate).slice(0, 10) : '';
-              if (eventDayStr && tStart && tStart > eventDayStr) {
+              if (tStart && tStart < todayStr) {
+                errors[`ticketDate_${index}`] = ["Start date can't be in the past"];
+              } else if (tExpiry && tExpiry < todayStr) {
+                errors[`ticketDate_${index}`] = ["Expiry date can't be in the past"];
+              } else if (eventDayStr && tStart && tStart > eventDayStr) {
                 errors[`ticketDate_${index}`] = ["Start date can't be after the event day"];
               } else if (eventDayStr && tExpiry && tExpiry > eventDayStr) {
                 errors[`ticketDate_${index}`] = ["Expiry date can't be after the event day"];
@@ -1441,7 +1492,7 @@ if (formData.recurrence && formData.recurrence.isRecurring) {
       dispatch(setFormErrors(validationErrors));
 
       // Inline field errors carry the specifics; the toast is just a generic attention-grabber.
-      toast.error('Form Errors — please fix the highlighted fields.');
+      toast.error('Please complete the required fields on this step.');
       return;
     }
 
@@ -1532,7 +1583,7 @@ const handleNext = useCallback(() => {
 
 
     // Inline field errors carry the specifics; the toast is just a generic attention-grabber.
-    toast.error('Form Errors — please fix the highlighted fields.');
+    toast.error('Please complete the required fields on this step.');
     return;
   }
 

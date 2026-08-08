@@ -908,8 +908,8 @@ const SingleEventCard = ({ event, chatProps }) => {
                           </div>
                         )}
                       </div>
-                      {/* Bundle rows show the bundle price (share x pack size), not the bare share. */}
-                      <p className="text-base font-bold text-teal-700 shrink-0">${ticket.bundleSize ? ticket.price * ticket.bundleSize : ticket.price}</p>
+                      {/* The stored price IS the pack price for a bundle (events-bundle-pricing.md), shown directly. */}
+                      <p className="text-base font-bold text-teal-700 shrink-0">${ticket.price}</p>
                     </div>
                   );
                 })}

@@ -13,6 +13,7 @@ import {
   removeOrganizerSocialMedia,
   setFormErrors,
 } from '@/store/slices/events/eventSlice';
+import { isValidAuMobile, isHttpsUrl, isValidEmail as isValidEmailHelper } from '@/utils/events/wizardValidation';
 
 const SOCIAL_PLATFORMS = [
   { value: 'Facebook', label: 'Facebook' },
@@ -169,16 +170,9 @@ const EventDetailsStep = ({
     setCoordinatorRowErrors({});
   };
 
-  // Validation helpers
-  const isValidPhone = (phone) => {
-    if (!phone) return false;
-    return /^[\d\s\-\+\(\)]+$/.test(phone);
-  };
-
-  const isValidEmail = (email) => {
-    if (!email) return true;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  // Validation helpers. Phone must be a valid AU mobile (D6); email is checked only when filled.
+  const isValidPhone = (phone) => isValidAuMobile(phone);
+  const isValidEmail = (email) => isValidEmailHelper(email);
 
   const getFieldError = (index, field) => {
     if (!errors?.coordinators) return null;
@@ -210,7 +204,7 @@ const EventDetailsStep = ({
     const hasName = !!c?.name?.trim();
     const hasOther = !!(c?.phone?.trim() || c?.email?.trim() || c?.role?.trim());
     if (hasName && !c?.phone?.trim()) errs.phone = 'Phone is required';
-    else if (c?.phone?.trim() && !isValidPhone(c.phone)) errs.phone = 'Enter a valid phone number';
+    else if (c?.phone?.trim() && !isValidPhone(c.phone)) errs.phone = 'Enter a valid Australian mobile (starts 04)';
     if (!hasName && hasOther) errs.name = 'Name is required';
     if (c?.email?.trim() && !isValidEmail(c.email)) errs.email = 'Email is invalid';
     return errs;
@@ -297,17 +291,22 @@ const EventDetailsStep = ({
           {/* Contact */}
           <div>
             <label className="block font-medium mb-2 text-slate-600 text-sm">
-              Contact Number
+              Contact Number <span className="text-red-600">*</span>
             </label>
             <input
               type="tel"
               value={formData.organizer?.contact || ''}
               onChange={(e) => handleOrganizerChange('contact', e.target.value)}
               disabled={disabled}
-              className={getFieldClasses(false)}
+              className={getFieldClasses(!!errors?.organizerContact)}
               placeholder="+61 4XX XXX XXX"
               maxLength="20"
             />
+            {errors?.organizerContact && (
+              <p className="text-red-600 text-xs mt-1">
+                {Array.isArray(errors.organizerContact) ? errors.organizerContact[0] : errors.organizerContact}
+              </p>
+            )}
           </div>
 
           {/* Email */}
@@ -336,10 +335,15 @@ const EventDetailsStep = ({
               value={formData.organizer?.website || ''}
               onChange={(e) => handleOrganizerChange('website', e.target.value)}
               disabled={disabled}
-              className={getFieldClasses(false)}
+              className={getFieldClasses(!!errors?.organizerWebsite)}
               placeholder="https://yourwebsite.com"
               maxLength="200"
             />
+            {errors?.organizerWebsite && (
+              <p className="text-red-600 text-xs mt-1">
+                {Array.isArray(errors.organizerWebsite) ? errors.organizerWebsite[0] : errors.organizerWebsite}
+              </p>
+            )}
           </div>
 
           {/* ABN - Only for paid events */}
@@ -411,10 +415,15 @@ const EventDetailsStep = ({
                         value={social.url || ''}
                         onChange={(e) => handleUpdateSocialMedia(index, 'url', e.target.value)}
                         disabled={disabled}
-                        className={getFieldClasses(false)}
+                        className={getFieldClasses(!!errors?.[`socialUrl_${index}`])}
                         placeholder={social.platform ? `https://${social.platform.toLowerCase()}.com/...` : 'https://...'}
                         maxLength="200"
                       />
+                      {errors?.[`socialUrl_${index}`] && (
+                        <p className="text-red-600 text-xs mt-1">
+                          {Array.isArray(errors[`socialUrl_${index}`]) ? errors[`socialUrl_${index}`][0] : errors[`socialUrl_${index}`]}
+                        </p>
+                      )}
                     </div>
                     {!disabled && (
                       <button

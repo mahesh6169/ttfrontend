@@ -606,15 +606,22 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
   // A ticket type is a bundle when its bundleSize holds a value (empty = normal single ticket).
   const isBundle = (t) => t?.bundleSize !== '' && t?.bundleSize !== null && t?.bundleSize !== undefined;
 
-  // Same rule as the step validator (name + price required, $1 min, 2 decimals) + date window.
-  const validateTicket = (t) => {
+  // Same rule as the step validator (name + price required, $1 min, 2 decimals, unique) + date window.
+  const validateTicket = (t, index) => {
     const errs = {};
     if (!t?.name?.trim()) errs.name = 'Name is required';
+    else {
+      // Ticket names must be unique within the event (AC10).
+      const dup = (formData.ticketTypes || []).some(
+        (o, i) => i !== index && o?.name?.trim() && o.name.trim().toLowerCase() === t.name.trim().toLowerCase()
+      );
+      if (dup) errs.name = 'A ticket type with this name already exists';
+    }
     if (priceIsEmpty(t?.price)) errs.price = 'Price is required';
     else if (!validatePriceDecimals(t.price)) errs.price = 'Maximum 2 decimal places allowed';
     else if (Number(t.price) < 1) errs.price = 'Minimum ticket price is $1';
     // Bundle rules mirror the server: size >= 2 (whole), no bigger than the per-order limit, and the
-    // Price field (the whole-bundle price) must divide evenly into per-person shares of at least $1.
+    // pack price (the Price field) must leave each person's share at least $1 (AC12 wording).
     if (isBundle(t)) {
       const size = Number(t.bundleSize);
       const price = Number(t.price);
@@ -622,15 +629,17 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
         errs.bundle = 'Bundle size must be a whole number of 2 or more';
       } else if (maxPer && size > maxPer) {
         errs.bundle = `Bundle size can't be more than the ${maxPer} tickets allowed per order`;
-      } else if (!priceIsEmpty(t?.price) && !isNaN(price)) {
-        if (price % size !== 0) errs.bundle = `Bundle price must divide evenly by ${size}`;
-        else if (price / size < 1) errs.bundle = "Each person's share must be at least $1";
+      } else if (!priceIsEmpty(t?.price) && !isNaN(price) && price / size < 1) {
+        errs.bundle = `Bundle price must be at least $${size} - each of the ${size} tickets must be at least $1.`;
       }
     }
-    // Date window: start/expiry on or before the event day (by day); expiry on or after start.
+    // Date window: start/expiry not in the past (AC11), on or before the event day, expiry >= start.
+    const today = dayOf(new Date());
     const start = dayOf(t?.startDate);
     const expiry = dayOf(t?.expiryDate);
-    if (eventDay && start && start > eventDay) errs.dates = "Start date can't be after the event day";
+    if (start && start < today) errs.dates = "Start date can't be in the past";
+    else if (expiry && expiry < today) errs.dates = "Expiry date can't be in the past";
+    else if (eventDay && start && start > eventDay) errs.dates = "Start date can't be after the event day";
     else if (eventDay && expiry && expiry > eventDay) errs.dates = "Expiry date can't be after the event day";
     else if (start && expiry && expiry < start) errs.dates = 'Expiry must be on or after the start';
     return errs;
@@ -692,7 +701,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
       setEditingTicket(null);
       return;
     }
-    const errs = validateTicket(t);
+    const errs = validateTicket(t, index);
     if (Object.keys(errs).length > 0) {
       setTicketRowErrors((prev) => ({ ...prev, [index]: errs }));
       setEditingTicket(index); // keep open to show errors
@@ -942,7 +951,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                         placeholder="4"
                         className={getInputClasses(!!ticketBundleError(index))}
                       />
-                      <p className="text-xs text-slate-400 mt-1">The Price above is the total for the whole bundle (e.g. size 4 at $72 admits 4 for $18 each).</p>
+                      <p className="text-xs text-slate-400 mt-1">The Price above is the whole pack price (e.g. $50 admits 3). Any amount is fine as long as each person's share stays at least $1.</p>
                       {ticketBundleError(index) && (
                         <p className="text-red-600 text-xs mt-1">{ticketBundleError(index)}</p>
                       )}
@@ -1070,9 +1079,12 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
     if (dc.active !== false && applies.length === 0) {
       errs.applies = 'Pick at least one ticket type this code applies to';
     }
+    const vToday = dayOf(new Date());
     const vFrom = dayOf(dc.validFrom);
     const vUntil = dayOf(dc.validUntil);
-    if (eventDay && vFrom && vFrom > eventDay) errs.dates = "Valid from can't be after the event day";
+    if (vFrom && vFrom < vToday) errs.dates = "Valid from can't be in the past";
+    else if (vUntil && vUntil < vToday) errs.dates = "Valid until can't be in the past";
+    else if (eventDay && vFrom && vFrom > eventDay) errs.dates = "Valid from can't be after the event day";
     else if (eventDay && vUntil && vUntil > eventDay) errs.dates = "Valid until can't be after the event day";
     else if (vFrom && vUntil && vFrom > vUntil) errs.dates = '"Valid from" must be on or before "valid until"';
     const used = dc.usedCount || 0;
@@ -1081,14 +1093,18 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
       else if (dc.maxUses < used) errs.uses = `${used} already used — max uses cannot be below ${used}`;
     }
     if (applies.length > 0 && !isNaN(val)) {
-      const coveredPrices = (formData.ticketTypes || [])
-        .filter((t) => applies.includes(t.name) && t.price !== null && t.price !== undefined && t.price !== '')
-        .map((t) => Number(t.price)).filter((p) => !isNaN(p));
-      if (coveredPrices.length > 0) {
-        const cheapest = Math.min(...coveredPrices);
-        const after = dc.kind === 'percent' ? cheapest * (1 - val / 100) : cheapest - val;
-        if (Math.round(after * 100) < 100) errs.value = 'This makes a ticket cost under $1. Lower the discount or uncheck that ticket type.';
-      }
+      // The code may not drop any covered ticket - or any per-person share inside a covered pack -
+      // below $1. For a bundle the floor is the per-person share (packPrice / size); a fixed amount
+      // reduces each share by value / size. Mirrors the server (events-bundle-pricing.md D9).
+      const offender = (formData.ticketTypes || [])
+        .filter((t) => applies.includes(t.name) && t.price !== null && t.price !== undefined && t.price !== '' && !isNaN(Number(t.price)))
+        .find((t) => {
+          const size = t.bundleSize && Number(t.bundleSize) >= 2 ? Number(t.bundleSize) : 1;
+          const perPerson = Number(t.price) / size;
+          const after = dc.kind === 'percent' ? perPerson * (1 - val / 100) : perPerson - val / size;
+          return Math.round(after * 100) < 100;
+        });
+      if (offender) errs.value = `This leaves ${offender.name} under the $1 minimum per ticket. Lower the discount or uncheck that ticket type.`;
     }
     return errs;
   };

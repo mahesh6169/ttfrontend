@@ -209,16 +209,13 @@ const CheckoutPage = () => {
   const ticketTotals = useMemo(() => {
     const totalQuantity = selectedTickets.reduce((sum, t) => sum + (t.quantity || 0), 0);
     const totalPrice = selectedTickets.reduce((sum, t) => {
-      const price = t.price || 0;
-      const quantity = t.quantity || 0;
-      console.log('Ticket calculation:', t.ticketName, 'price:', price, 'qty:', quantity, 'subtotal:', price * quantity);
-      return sum + (price * quantity);
+      // A bundle line is packPrice x packs, not price x people (events-bundle-pricing.md D11).
+      const size = t.bundleSize && t.bundleSize >= 2 ? t.bundleSize : 1;
+      const units = size > 1 ? (t.quantity || 0) / size : (t.quantity || 0);
+      return sum + ((t.price || 0) * units);
     }, 0);
-    
-    const totals = { totalQuantity, totalPrice };
-    console.log('Ticket totals calculated:', totals);
-    console.log('Reservation totalAmount:', reservation?.totalAmount);
-    return totals;
+
+    return { totalQuantity, totalPrice };
   }, [selectedTickets, reservation?.totalAmount]);
 
   // Payment states
@@ -269,15 +266,22 @@ const CheckoutPage = () => {
     };
   }, [reservation?.totalAmount, ticketTotals, appliedDiscount, selectedTickets]);
 
-  // Format selected tickets for PaymentSummary - memoized
+  // Format selected tickets for PaymentSummary - memoized. A bundle shows as ONE line at the pack
+  // price with "admits N" (events-bundle-pricing.md D8): quantity is packs, totalPrice is
+  // packPrice x packs - never price x people.
   const formattedTickets = useMemo(() => {
-    return selectedTickets.map(ticket => ({
-      _id: ticket.ticketTypeId,
-      name: ticket.ticketName || 'Ticket',
-      quantity: ticket.quantity,
-      price: ticket.price,
-      totalPrice: ticket.price * ticket.quantity
-    }));
+    return selectedTickets.map(ticket => {
+      const size = ticket.bundleSize && ticket.bundleSize >= 2 ? ticket.bundleSize : 1;
+      const isPack = size > 1;
+      const units = isPack ? (ticket.quantity || 0) / size : (ticket.quantity || 0);
+      return {
+        _id: ticket.ticketTypeId,
+        name: isPack ? `${ticket.ticketName || 'Ticket'} (admits ${size})` : (ticket.ticketName || 'Ticket'),
+        quantity: units,
+        price: ticket.price,
+        totalPrice: ticket.price * units
+      };
+    });
   }, [selectedTickets]);
 
   // Format selected seats for display
@@ -341,7 +345,9 @@ const CheckoutPage = () => {
             return {
               ...ticket,
               ticketName: ticketType.name,
-              price: ticket.price !== undefined ? ticket.price : ticketType.price
+              price: ticket.price !== undefined ? ticket.price : ticketType.price,
+              // Keep the pack size so the summary can show "admits N" (events-bundle-pricing.md).
+              bundleSize: ticket.bundleSize !== undefined ? ticket.bundleSize : ticketType.bundleSize
             };
           }
           return ticket;

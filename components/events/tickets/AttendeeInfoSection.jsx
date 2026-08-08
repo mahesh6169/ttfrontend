@@ -67,7 +67,14 @@ const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate }
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </ListboxButton>
-              <ListboxOptions className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-slate-200 focus:outline-none">
+              {/* anchor (Headless UI v2) portals + auto-flips the panel and keeps a 16px viewport
+                  gap, so near the bottom of a scrolled page it opens UPWARD instead of behind the
+                  fixed z-40 checkout bar. Matches every other Listbox in the app. z-50 sits above
+                  that bar. */}
+              <ListboxOptions
+                anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                className="z-50 w-[var(--button-width)] max-h-60 overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-slate-200 focus:outline-none"
+              >
                 {field.fieldOptions?.map((option, idx) => (
                   <ListboxOption
                     key={idx}

@@ -608,10 +608,15 @@ const TicketSelectionPage = () => {
   const { date, time } = getFormattedDateTime();
 
   // Sticky-bar aggregate: total ticket count and subtotal across ALL types (never per-type).
-  // selectedTickets stores the per-person share as price and quantity in tickets, so a bundle's
-  // share x tickets already equals its pack total.
+  // price is the PACK price for a bundle (events-bundle-pricing.md D1), and quantity counts people,
+  // so a bundle line is packPrice x packs (quantity / bundleSize) - never packPrice x people.
   const selectedCount = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
-  const subtotal = selectedTickets.reduce((sum, t) => sum + (t.price || 0) * t.quantity, 0);
+  const subtotal = selectedTickets.reduce((sum, t) => {
+    const tt = selectedEvent?.ticketTypes?.find((x) => x._id === t.ticketTypeId);
+    const size = tt?.bundleSize >= 2 ? tt.bundleSize : 1;
+    const units = size > 1 ? t.quantity / size : t.quantity;
+    return sum + (t.price || 0) * units;
+  }, 0);
 
   return (
     <div>
@@ -877,8 +882,9 @@ const TicketSelectionPage = () => {
                   </div>
                 ));
 
-              // Bundle rows show the bundle price (share x pack size), not the bare share. Flat size.
-              const displayPrice = isBundleRow ? ticketType.price * stepSize : ticketType.price;
+              // The stored price IS the pack price for a bundle (events-bundle-pricing.md D1), so it
+              // shows directly - no share x size. Flat size.
+              const displayPrice = ticketType.price;
               const priceEl = (
                 <p className="text-sm font-semibold text-slate-900 whitespace-nowrap">
                   ${displayPrice?.toFixed(2) || '0.00'}

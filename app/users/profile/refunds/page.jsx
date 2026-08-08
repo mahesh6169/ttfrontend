@@ -458,6 +458,11 @@ export default function RefundsPage() {
     groups[ticket.invoiceNumber].push(ticket);
     return groups;
   }, {});
+  // Show each invoice's tickets in ascending ticket-number order (0001, 0002, ...), not the
+  // fetch's descending order.
+  Object.values(ticketsByInvoice).forEach((list) =>
+    list.sort((a, b) => String(a.ticketNumber || '').localeCompare(String(b.ticketNumber || '')))
+  );
 
   return (
     <>

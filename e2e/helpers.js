@@ -49,3 +49,11 @@ export function dbSold(eventId) {
   if (!m) throw new Error(`introspect.js gave no SOLD for ${eventId}:\n${out}`);
   return parseInt(m[1], 10);
 }
+
+// Each ticket's pack tag id (null for singles) - to prove the N tickets of a pack share one id.
+export function dbPackTags(eventId) {
+  const out = introspect('packTags', eventId);
+  const m = out.match(/PACKIDS=(\[.*\])/);
+  if (!m) throw new Error(`introspect.js gave no PACKIDS for ${eventId}:\n${out}`);
+  return JSON.parse(m[1]);
+}

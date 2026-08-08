@@ -3,7 +3,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from '@/utils/axiosConfig';
@@ -50,9 +50,6 @@ const SeatSelectionPage = () => {
   const [ticketTotals, setTicketTotals] = useState({ totalQuantity: 0, totalPrice: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  // Live seat selection (display only) — the map reports every change so the
-  // page can show the count/list on the same row as the timer.
-  const [liveSeats, setLiveSeats] = useState([]);
 
   // Calculate ticket requirement
   const ticketRequirement = {
@@ -70,94 +67,82 @@ const SeatSelectionPage = () => {
     }
   }, [eventId, dispatch]);
 
-  // Fetch reservation data
-  useEffect(() => {
-    const fetchReservation = async () => {
-      console.log('🔍 [SeatSelection] Starting reservation fetch...');
-      console.log('   - Event ID:', selectedEvent?._id);
-      console.log('   - User ID:', user?._id || user?.id);
-      
-      if (!selectedEvent?._id || !user) {
-        console.log('❌ [SeatSelection] Missing event or user, skipping reservation fetch');
-        setIsLoading(false);
-        return;
-      }
+  // Fetch the reservation and derive the LIVE required-seat count. Reused on mount and whenever the
+  // page regains focus, so the count always reflects the current reservation - the buyer may have
+  // changed their ticket quantity on the tickets page since this page was last shown
+  // (featureplans/fix-events-seatcount-sync.md D1).
+  const fetchReservation = useCallback(async () => {
+    if (!selectedEvent?._id || !user) {
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${selectedEvent._id}/reservation`;
+      // Cache-bust so a return visit never reads a stale browser-cached reservation.
+      const response = await axios.get(url, { withCredentials: true, params: { _t: Date.now() } });
 
-      try {
-        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${selectedEvent._id}/reservation`;
-        console.log('📡 [SeatSelection] Fetching reservation from:', url);
-        
-        const response = await axios.get(url, { withCredentials: true });
-        
-        console.log('✅ [SeatSelection] Reservation response:', response.data);
+      if (response.data.success && response.data.reservation) {
+        const res = response.data.reservation;
+        const tickets = res.tickets || [];
+        const required = tickets.reduce((sum, t) => sum + t.quantity, 0);
 
-        if (response.data.success && response.data.reservation) {
-          const res = response.data.reservation;
-          console.log('📋 [SeatSelection] Reservation found:', {
-            id: res._id,
-            status: res.status,
-            seatIds: res.seatIds,
-            tickets: res.tickets,
-            expiresAt: res.expiresAt
-          });
-          
-          setReservation(res);
-          
-          // Set selected tickets from reservation
-          const tickets = res.tickets || [];
-          setSelectedTickets(tickets);
-          
-          // Calculate totals
-          const totals = {
-            totalQuantity: tickets.reduce((sum, t) => sum + t.quantity, 0),
-            totalPrice: res.totalAmount || 0
-          };
-          setTicketTotals(totals);
-          
-          // Set selected seats if any
-          if (res.seatIds && res.seatIds.length > 0) {
-            console.log('🪑 [SeatSelection] Setting selected seats:', res.seatIds);
-            setSelectedSeats(res.seatIds);
-          } else {
-            console.log('⚠️ [SeatSelection] No seats in reservation');
+        // Reconcile held seats DOWN to the live count (buyer lowered their ticket quantity after
+        // holding seats): persist the trimmed list through the existing seat-update path - it clears
+        // the old holds and re-holds only the kept seats, so the exact-match Proceed gate is
+        // satisfiable and the buyer is never stuck above the new count (D4).
+        let seatIds = res.seatIds || [];
+        if (seatIds.length > required) {
+          const keep = seatIds.slice(0, required);
+          try {
+            await axios.put(
+              `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${selectedEvent._id}/reservation/${res._id}/seats`,
+              { seatIds: keep },
+              { withCredentials: true }
+            );
+          } catch (e) {
+            console.error('Failed to reconcile seats to the lowered count:', e);
           }
-        } else {
-          console.log('⚠️ [SeatSelection] No reservation found or unsuccessful response');
-          // No reservation found
-          setError('Please select tickets first');
-          setTimeout(() => {
-            router.push(`/events/tickets/${eventId}`);
-          }, 2000);
+          seatIds = keep;
+          res.seatIds = keep;
         }
-      } catch (error) {
-        console.error('❌ [SeatSelection] Error fetching reservation:', {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-          headers: error.config?.headers
-        });
-        
-        if (error.response?.status === 404) {
-          console.log('🔄 [SeatSelection] 404 - No reservation found, redirecting to tickets page');
-          // No reservation found
-          setError('Please select tickets first');
-          setTimeout(() => {
-            router.push(`/events/tickets/${eventId}`);
-          }, 2000);
-        } else if (error.response?.status === 401) {
-          console.log('🚫 [SeatSelection] 401 - Unauthorized, possible API key issue');
-          setError('Authentication failed - please refresh the page');
-        } else {
-          console.error('Error fetching reservation:', error);
-          setError('Failed to load reservation data');
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
-    fetchReservation();
-  }, [selectedEvent?._id, eventId, user, router]);
+        setReservation(res);
+        setSelectedTickets(tickets);
+        setTicketTotals({ totalQuantity: required, totalPrice: res.totalAmount || 0 });
+        setSelectedSeats(seatIds);
+      } else {
+        setError('Please select tickets first');
+        setTimeout(() => { router.push(`/events/tickets/${eventId}`); }, 2000);
+      }
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setError('Please select tickets first');
+        setTimeout(() => { router.push(`/events/tickets/${eventId}`); }, 2000);
+      } else if (error.response?.status === 401) {
+        setError('Authentication failed - please refresh the page');
+      } else {
+        console.error('Error fetching reservation:', error);
+        setError('Failed to load reservation data');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedEvent?._id, user, eventId, router]);
+
+  // Fetch on mount / when the event + user resolve.
+  useEffect(() => { fetchReservation(); }, [fetchReservation]);
+
+  // Re-fetch whenever the page regains focus (tab return / restore), so the required-seat count and
+  // held seats stay in sync with a quantity change made on the tickets page.
+  useEffect(() => {
+    const onShow = () => { if (document.visibilityState === 'visible') fetchReservation(); };
+    window.addEventListener('focus', onShow);
+    document.addEventListener('visibilitychange', onShow);
+    return () => {
+      window.removeEventListener('focus', onShow);
+      document.removeEventListener('visibilitychange', onShow);
+    };
+  }, [fetchReservation]);
 
   // Handle seat selection updates
   const handleSeatsUpdated = async (newSelectedSeats) => {
@@ -185,6 +170,10 @@ const SeatSelectionPage = () => {
       
       if (response.data.success) {
         setSelectedSeats(newSelectedSeats);
+        // Keep the reservation's seatIds in sync with the live selection. The seat map's periodic
+        // refresh (fetchSeatData) restores its selection from this list, so if it lagged behind, a
+        // just-picked seat would briefly lose its "selected" colour until the next poll.
+        setReservation((prev) => (prev ? { ...prev, seatIds: newSelectedSeats } : prev));
       }
     } catch (error) {
       console.error('Error updating seats:', error);
@@ -277,11 +266,11 @@ const SeatSelectionPage = () => {
           )}
 
           {/* The specific seats picked (variable length — wraps here, fully visible on mobile). */}
-          {liveSeats.length > 0 && (
+          {selectedSeats.length > 0 && (
             <div className="flex max-w-full items-start gap-1.5 text-xs font-medium text-teal-800 bg-teal-50 px-2 py-1 rounded-md">
               <MdEventSeat className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
               <span className="break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                {liveSeats.join(', ')}
+                {selectedSeats.join(', ')}
               </span>
             </div>
           )}
@@ -301,7 +290,6 @@ const SeatSelectionPage = () => {
             userId={user?._id}
             existingReservation={reservation}
             onSeatsChange={handleSeatsUpdated}
-            onSelectionChange={setLiveSeats}
             hasVenueLayout={selectedEvent?.seatingLayoutImage?.length > 0}
             onVenueClick={() => { setCurrentImageIndex(0); setIsFullscreen(true); }}
           />
@@ -320,7 +308,7 @@ const SeatSelectionPage = () => {
           <div className="w-full max-w-5xl mx-auto px-2 md:px-4 py-3 flex items-center justify-between gap-4">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-900 truncate">
-                {liveSeats.length} of {ticketRequirement.total} seats selected
+                {selectedSeats.length} of {ticketRequirement.total} seats selected
               </p>
             </div>
             <button

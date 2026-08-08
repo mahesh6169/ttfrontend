@@ -33,8 +33,9 @@ const RefundPolicyStep = ({
     );
   }
 
-  const selectedPolicy = formData.refundPolicy?.processingFeePolicy || 'non-refundable';
-  const feesRefunded = selectedPolicy === 'refunded'; // toggle ON = full refund, organiser absorbs fee
+  // No default (D13): until the organiser chooses, neither option is highlighted and the gate blocks.
+  const chosenPolicy = formData.refundPolicy?.processingFeePolicy || '';
+  const feesRefunded = chosenPolicy === 'refunded'; // toggle ON = full refund, organiser absorbs fee
 
   const price = Number(samplePrice) || 0;
   const fee = platformFeeFor(price);
@@ -72,7 +73,7 @@ const RefundPolicyStep = ({
               disabled={disabled}
               onClick={() => handleRefundPolicyChange('processingFeePolicy', 'non-refundable')}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed ${
-                !feesRefunded ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                chosenPolicy === 'non-refundable' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'
               }`}
             >
               Non-Refundable
