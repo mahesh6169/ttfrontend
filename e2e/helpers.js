@@ -50,6 +50,15 @@ export function dbSold(eventId) {
   return parseInt(m[1], 10);
 }
 
+// The edit-locking signals set at first sale: { hasActivity, hasSold } (events-edit-locking.md AC1).
+export function dbEditFlags(eventId) {
+  const out = introspect('editFlags', eventId);
+  const a = out.match(/HASACTIVITY=(\d)/);
+  const s = out.match(/HASSOLD=(\d)/);
+  if (!a || !s) throw new Error(`introspect.js gave no edit flags for ${eventId}:\n${out}`);
+  return { hasActivity: a[1] === '1', hasSold: s[1] === '1' };
+}
+
 // Each ticket's pack tag id (null for singles) - to prove the N tickets of a pack share one id.
 export function dbPackTags(eventId) {
   const out = introspect('packTags', eventId);

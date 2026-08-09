@@ -40,14 +40,14 @@ const EventDetailContent = ({ event }) => {
     };
   }, [shareOpen]);
 
-  // Back: return to the previous page if it was on our site (e.g. the events grid);
-  // otherwise (landed straight from Google/WhatsApp) go to the events page.
+  // Back: return to the page the visitor was ACTUALLY just on - the events grid, a search, or an
+  // organiser's /events/by/{slug} page. In a single-page app document.referrer is the page they first
+  // entered the site on (e.g. the QR link), not the previous page, so it wrongly sent organiser-page
+  // visitors to /events. Use the real browser history instead: go back when there's an in-app page to
+  // return to; only fall back to /events when this event was deep-linked directly (no in-app history).
   const handleBack = () => {
-    const cameFromSite =
-      typeof document !== 'undefined' &&
-      document.referrer &&
-      document.referrer.startsWith(window.location.origin);
-    if (cameFromSite) router.back();
+    const hasInAppHistory = typeof window !== 'undefined' && window.history.length > 1;
+    if (hasInAppHistory) router.back();
     else router.push('/events');
   };
 

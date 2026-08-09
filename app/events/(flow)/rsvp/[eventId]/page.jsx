@@ -5,8 +5,9 @@ import { useRouter, useParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
+import { DEFAULT_BLOCK_MESSAGE } from '@/utils/events/registrationMessages';
 import { formatInTimeZone } from 'date-fns-tz';
-import { FaUser, FaPhone, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaUser, FaPhone, FaPlus, FaTrash, FaExclamationCircle } from 'react-icons/fa';
 
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import {
@@ -234,12 +235,25 @@ const RsvpPage = () => {
     router.back();
   };
 
+  // Blocking answers (events-rsvp-blocking-questions.md): a dropdown answer marked blocking stops the
+  // RSVP. Evaluated PER QUESTION against its own blockingOptions; returns the message (custom or default)
+  // when the current answer blocks, else null. While any block is active, Register stays disabled.
+  const getFieldBlock = (field) => {
+    const answer = formResponses[field.fieldName];
+    const blocks = (field.blockingOptions || []).map(String);
+    if (answer != null && String(answer).trim() !== '' && blocks.includes(String(answer))) {
+      return (field.blockingMessage && field.blockingMessage.trim()) || DEFAULT_BLOCK_MESSAGE;
+    }
+    return null;
+  };
+  const anyBlockActive = (selectedEvent?.registrationFields || []).some((f) => getFieldBlock(f));
+
   // ───────── Field renderer (text + dropdown for now; full type set ready) ─────────
   const renderFormField = (field) => {
     const value = formResponses[field.fieldName] ?? '';
     const error = errors[field.fieldName];
-    const baseInput = `w-full p-2 sm:p-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 ${
-      error ? 'border-red-300' : 'border-slate-300'
+    const baseInput = `w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
+      error ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300'
     }`;
 
     const label = (
@@ -250,7 +264,8 @@ const RsvpPage = () => {
     );
 
     switch (field.fieldType) {
-      case 'select':
+      case 'select': {
+        const blockMessage = getFieldBlock(field);
         return (
           <div key={field.fieldName} className="mb-3 sm:mb-4">
             {label}
@@ -261,8 +276,17 @@ const RsvpPage = () => {
               placeholder="Select"
             />
             {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+            {blockMessage && (
+              <div className="mt-3 text-center" data-testid={`block-notice-${field.fieldName}`}>
+                <p className="flex items-center justify-center gap-1.5 text-sm font-medium text-red-600">
+                  <FaExclamationCircle className="shrink-0" />
+                  {blockMessage}
+                </p>
+              </div>
+            )}
           </div>
         );
+      }
 
       case 'text':
       default:
@@ -310,7 +334,7 @@ const RsvpPage = () => {
 
   return (
     <div>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-xl mx-auto">
         <div className="mb-3 sm:mb-4">
           <BackButton href={`/events/views/${eventId}`} />
         </div>
@@ -409,8 +433,8 @@ const RsvpPage = () => {
                       setErrors(next);
                     }
                   }}
-                  className={`w-full p-2 sm:p-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 ${
-                    errors.mobile ? 'border-red-300' : 'border-slate-300'
+                  className={`w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
+                    errors.mobile ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300'
                   }`}
                   placeholder="Enter your mobile number"
                 />
@@ -431,14 +455,11 @@ const RsvpPage = () => {
                     }`}
                   >
                     {attendees.map((a, i) => (
-                      <div
-                        key={i}
-                        className="border border-slate-200 rounded-lg p-3 mb-2 bg-slate-50"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-slate-700">
+                      <div key={i} className="mb-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-sm font-medium text-slate-700">
                             Attendee {i + 1}<span className="text-red-500 ml-0.5">*</span>
-                          </h4>
+                          </label>
                           {attendees.length > 1 && (
                             <button
                               type="button"
@@ -454,10 +475,8 @@ const RsvpPage = () => {
                           type="text"
                           value={a.name}
                           onChange={(e) => handleAttendeeChange(i, 'name', e.target.value)}
-                          className={`w-full p-2 sm:p-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 ${
-                            errors[`attendee_${i}_name`]
-                              ? 'border-red-300'
-                              : 'border-slate-300'
+                          className={`w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
+                            errors[`attendee_${i}_name`] ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300'
                           }`}
                           placeholder="Enter full name"
                         />
@@ -525,17 +544,28 @@ const RsvpPage = () => {
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="px-6 sm:px-8 py-2 sm:py-3 text-sm md:text-base border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg shadow font-semibold transition-colors"
+                  className="px-5 py-2.5 text-sm font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={registrationStatus === 'loading'}
-                  className="px-6 sm:px-8 py-2 sm:py-3 text-sm md:text-base bg-teal-700 hover:bg-teal-800 text-white rounded-lg shadow font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {registrationStatus === 'loading' ? 'Registering...' : 'Register'}
-                </button>
+                {anyBlockActive ? (
+                  // A blocking answer is chosen - registration is impossible, so the primary action
+                  // becomes the way out (events-rsvp-blocking-questions.md, feel-pass).
+                  <Link
+                    href="/events"
+                    className="inline-flex items-center px-5 py-2.5 text-sm font-semibold bg-teal-700 hover:bg-teal-800 text-white rounded-lg transition-colors"
+                  >
+                    Browse Events
+                  </Link>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={registrationStatus === 'loading'}
+                    className="px-5 py-2.5 text-sm font-semibold bg-teal-700 hover:bg-teal-800 text-white rounded-lg transition-colors disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                  >
+                    {registrationStatus === 'loading' ? 'Registering...' : 'Register'}
+                  </button>
+                )}
               </div>
             </form>
           )}

@@ -151,3 +151,13 @@ test('AC7 sale-status badges: amber days-left and red closed', async ({ page }) 
   await expect(closed).toBeVisible();
   await expect(closed).toHaveClass(/red/);
 });
+
+// A STOPPED ticket type (active === false) is retired - it must not appear on the buy page
+// (events-edit-locking.md stop-selling extension). Guards against showing a type buyers can't buy.
+test('a stopped ticket type is hidden from the buy page; on-sale types still show', async ({ page }) => {
+  const seed = readSeed();
+  await page.goto(`/events/tickets/${seed.editLockStoppedEventId}`);
+
+  await expect(page.getByText('OpenPass', { exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('ClosedPass', { exact: true })).toHaveCount(0);
+});

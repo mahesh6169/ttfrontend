@@ -466,9 +466,15 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
 
     isPaid: eventData.isPaid || false,
     isAdvertiseOnly: eventData.isAdvertiseOnly || false,
+    // Edit-locking signals (events-edit-locking.md): drive which fields the edit form disables.
+    hasActivity: eventData.hasActivity || false,
+    hasSeating: eventData.hasSeating || false,
+    committedCount: eventData.committedCount || 0,
     capacity: eventData.capacity || '',
     maxAttendeesPerRegistration: eventData.maxAttendeesPerRegistration || '',
-    registrationFields: eventData.registrationFields || [],
+    // Tag questions that came from the server as _existing so the edit form can lock them once the
+    // event has activity (events-edit-locking.md D10); questions added this session stay editable.
+    registrationFields: (eventData.registrationFields || []).map((f) => ({ ...f, _existing: true })),
     ticketTypes: (eventData.ticketTypes && eventData.ticketTypes.length > 0)
   ? processTicketDatesForEdit(eventData.ticketTypes, eventData.timeZone)
   : [],
@@ -718,7 +724,9 @@ deleteError: null,
         fieldName: '',
         fieldType,
         fieldOptions: fieldType === 'select' ? [''] : [],
-        isRequired: false
+        isRequired: false,
+        blockingOptions: [],
+        blockingMessage: ''
       });
       state.hasUnsavedChanges = true;
     },
@@ -804,7 +812,7 @@ deleteError: null,
     },
 
     addTicketType: (state) => {
-      state.formData.ticketTypes.push({ name: '', price: null, quantity: 0, startDate: null, expiryDate: null, note: '', bundleSize: '' });
+      state.formData.ticketTypes.push({ name: '', price: null, quantity: 0, startDate: null, expiryDate: null, note: '', bundleSize: '', active: true });
       state.hasUnsavedChanges = true;
     },
     updateTicketType: (state, action) => {

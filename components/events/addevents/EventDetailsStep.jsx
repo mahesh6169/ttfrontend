@@ -44,7 +44,7 @@ const PlatformDropdown = ({ value, options, onChange, disabled }) => {
         onClick={() => !disabled && setOpen((o) => !o)}
         className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-white text-left flex items-center justify-between transition-colors ${
           open ? 'border-teal-400 ring-2 ring-teal-300' : 'border-slate-300'
-        } ${disabled ? 'bg-slate-100 cursor-not-allowed text-slate-500' : 'text-slate-700'}`}
+        } ${disabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed text-slate-500' : 'text-slate-700'}`}
       >
         <span className={`truncate pr-2 ${value ? '' : 'text-slate-400'}`}>{selectedLabel}</span>
         <svg className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,7 +189,7 @@ const EventDetailsStep = ({
   const getFieldClasses = (hasError = false) => {
     const baseClasses = 'w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2';
     const errorClasses = hasError ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300 focus:border-teal-400';
-    const readOnlyClasses = disabled ? 'bg-slate-100 cursor-not-allowed text-slate-600' : '';
+    const readOnlyClasses = disabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed text-slate-600' : '';
     return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
   };
 
@@ -288,10 +288,10 @@ const EventDetailsStep = ({
             )}
           </div>
 
-          {/* Contact */}
+          {/* Phone */}
           <div>
             <label className="block font-medium mb-2 text-slate-600 text-sm">
-              Contact Number <span className="text-red-600">*</span>
+              Phone <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             <input
               type="tel"
@@ -570,7 +570,7 @@ const EventDetailsStep = ({
                     {coordinatorFieldError(index, 'phone') ? (
                       <p className="text-red-600 text-xs mt-1">{coordinatorFieldError(index, 'phone')}</p>
                     ) : (coordinator?.phone && !isValidPhone(coordinator.phone)) ? (
-                      <p className="text-red-600 text-xs mt-1">Enter a valid phone number</p>
+                      <p className="text-red-600 text-xs mt-1">Enter a valid Australian mobile (starts 04)</p>
                     ) : null}
                   </div>
 

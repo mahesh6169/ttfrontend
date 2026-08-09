@@ -77,6 +77,13 @@ const validateRegistrationFieldsList = (formData) => {
       const lowered = options.map((o) => o.trim().toLowerCase());
       if (new Set(lowered).size !== lowered.length) {
         errors.push(`${questionLabel}: Options must be unique.`);
+        return;
+      }
+      // A blocking question may not block every answer (events-rsvp-blocking-questions.md).
+      const nonEmpty = options.map((o) => (o || '').trim()).filter(Boolean);
+      const blk = field.blockingOptions || [];
+      if (nonEmpty.length > 0 && nonEmpty.every((o) => blk.includes(o))) {
+        errors.push(`${questionLabel}: Leave at least one answer that allows registration.`);
       }
     }
   });
@@ -634,6 +641,8 @@ const StepManager = ({
         errors.ticketTypes = [
           'At least one ticket type is required for paid events',
         ];
+      } else if (!formData.ticketTypes.some((t) => t.active !== false)) {
+        errors.ticketTypes = ['At least one ticket type must be on sale - switch one on to continue.'];
       } else {
         const ticketErrors = [];
         formData.ticketTypes.forEach((ticket, index) => {
@@ -848,13 +857,11 @@ const validateCurrentStep = useCallback(() => {
       break;
 
     case 2: // Organiser - Organizer details, social, coordinators
-      // Organiser name required; phone required + valid AU mobile (D6/AC5/AC6).
+      // Organiser name required; phone optional but a valid AU mobile when filled (D6/AC5/AC6).
       if (!formData.organizer?.name?.trim()) {
         errors.organizer = ['Name is required'];
       }
-      if (!formData.organizer?.contact?.trim()) {
-        errors.organizerContact = ['Phone is required'];
-      } else if (!isValidAuMobile(formData.organizer.contact)) {
+      if (formData.organizer?.contact?.trim() && !isValidAuMobile(formData.organizer.contact)) {
         errors.organizerContact = ['Enter a valid Australian mobile (starts 04)'];
       }
 
@@ -962,6 +969,9 @@ const validateCurrentStep = useCallback(() => {
           // Ticket types validation
           if (!formData.ticketTypes || formData.ticketTypes.length === 0) {
             errors.ticketTypes = ['At least one ticket type is required for paid events'];
+          } else if (!formData.ticketTypes.some((t) => t.active !== false)) {
+            // Every type switched off -> nothing to sell. Switch one on to continue.
+            errors.ticketTypes = ['At least one ticket type must be on sale - switch one on to continue.'];
           } else {
             const eventDayStr = formData.dateTime ? String(formData.dateTime).slice(0, 10) : '';
             const todayStr = new Date().toISOString().slice(0, 10);
@@ -1789,7 +1799,7 @@ const handleAddAnother = useCallback(() => {
                   type="button"
                   onClick={handlePrev}
                   disabled={isLoading}
-                  className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-4 py-2 sm:px-5 sm:py-2 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-4 py-2 sm:px-5 sm:py-2 text-sm font-semibold disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
@@ -1798,7 +1808,7 @@ const handleAddAnother = useCallback(() => {
                   type="button"
                   onClick={handleCancel}
                   disabled={isLoading}
-                  className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-4 py-2 sm:px-5 sm:py-2 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-4 py-2 sm:px-5 sm:py-2 text-sm font-semibold disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -1815,7 +1825,7 @@ const handleAddAnother = useCallback(() => {
                     type="button"
                     onClick={handleNext}
                     disabled={isLoading}
-                    className="bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 sm:px-5 sm:py-2 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 sm:px-5 sm:py-2 rounded-lg text-sm font-semibold disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                   >
                     Next
                   </button>

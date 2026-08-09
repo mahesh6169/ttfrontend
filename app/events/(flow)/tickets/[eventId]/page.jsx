@@ -727,9 +727,9 @@ const TicketSelectionPage = () => {
           </div>
 
           {/* Ticket Types — one bordered card, rows divided by a subtle line (matches the event
-              detail card). */}
+              detail card). A STOPPED type (active === false) is retired, so it is hidden from buyers. */}
           <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
-            {selectedEvent.ticketTypes?.map((ticketType) => {
+            {selectedEvent.ticketTypes?.filter((t) => t.active !== false).map((ticketType) => {
               // Use backend values for max available
               const maxAvailable = eventCapacity?.canBook === 'unlimited' 
                 ? selectedEvent.maxAttendeesPerRegistration || 10
@@ -896,7 +896,7 @@ const TicketSelectionPage = () => {
                   <button
                     onClick={() => handleQuantityChange(ticketType._id, -1)}
                     disabled={selectedQty === 0 || apiLoading}
-                    className="w-6 h-6 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-6 h-6 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                     aria-label={isBundleRow ? `Remove one ${ticketType.name} pack` : `Remove one ${ticketType.name}`}
                   >
                     <FaMinus className="text-[9px] text-teal-700" />
@@ -911,7 +911,7 @@ const TicketSelectionPage = () => {
                       apiLoading ||
                       !isAvailable
                     }
-                    className="w-6 h-6 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-6 h-6 rounded-full border border-teal-600 flex items-center justify-center hover:bg-teal-100 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                     aria-label={isBundleRow ? `Add one ${ticketType.name} pack` : `Add one ${ticketType.name}`}
                   >
                     <FaPlus className="text-[9px] text-teal-700" />
@@ -922,7 +922,7 @@ const TicketSelectionPage = () => {
               return (
                 <div
                   key={ticketType._id}
-                  className={`px-4 py-3 ${!isAvailable ? 'opacity-60' : ''}`}
+                  className={`px-4 py-3 ${!isAvailable ? 'bg-slate-100 text-slate-500' : ''}`}
                 >
                   {/* Left text column (name + status badge, note, discount) never overlaps the
                       right price+stepper column. Same layout on mobile and desktop. */}
@@ -996,12 +996,13 @@ const TicketSelectionPage = () => {
               </p>
             </div>
             <button
+              data-testid="tickets-proceed"
               onClick={handleProceed}
               disabled={!canProceedToNext || isLoading || apiLoading || !reservation}
-              className={`shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors ${
+              className={`shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
                 canProceedToNext && !isLoading && !apiLoading && reservation
-                  ? 'bg-teal-700 hover:bg-teal-800'
-                  : 'bg-teal-700 opacity-50 cursor-not-allowed'
+                  ? 'bg-teal-700 hover:bg-teal-800 text-white'
+                  : 'bg-slate-100 text-slate-500 cursor-not-allowed'
               }`}
             >
               {isLoading || apiLoading ? (
