@@ -17,6 +17,15 @@ const RefundInvoiceCard = ({
 }) => {
   const [activeTab, setActiveTab] = useState('tickets');
   
+  // Pack tag context (events-bundle-pricing.md D7): the N tickets issued from one bundle pack share
+  // a pack id + pack price. Count per pack so each pack ticket row can name its pack ("$50, admits N")
+  // - the odd-cent per-person share reads as part of a pack, and a whole pack is refunded by
+  // selecting its rows (a single person by selecting one).
+  const packCounts = tickets.reduce((acc, t) => {
+    if (t.pack?.id) acc[t.pack.id] = (acc[t.pack.id] || 0) + 1;
+    return acc;
+  }, {});
+
   // Calculate invoice totals
   const invoiceTotal = tickets.reduce((sum, t) => sum + t.priceDetails.totalPrice, 0);
   const invoiceRefunded = tickets.reduce((sum, t) => sum + (t.totalRefundedAmount || 0), 0);
@@ -198,6 +207,11 @@ const RefundInvoiceCard = ({
                               {!ticket.seats?.length && ' • GA'}
                             </span>
                           </div>
+                          {ticket.pack?.id && (
+                            <div className="text-xs text-teal-700 mt-0.5">
+                              Part of {ticket.ticketType.name} - {formatCurrency(ticket.pack.price)}, admits {packCounts[ticket.pack.id]}
+                            </div>
+                          )}
                           
                           {/* Refund Status - Responsive */}
                           {isFullyRefunded ? (

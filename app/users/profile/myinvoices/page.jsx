@@ -837,16 +837,8 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
       doc.text('Amount', amountRightX, yPosition, { align: 'right' });
       yPosition += 9; // clear the grey band before the first row
 
-      // Group by ticket type, summing the REAL per-ticket discount stored at purchase.
-      const groups = Object.values(invoiceData.lineItems.reduce((acc, item) => {
-        const key = item.ticketType.name;
-        if (!acc[key]) acc[key] = { name: key, quantity: 0, price: item.ticketType.price, discount: 0, amount: 0 };
-        const lineDiscount = item.discountAmount || 0;
-        acc[key].quantity += item.quantity || 1;
-        acc[key].discount += lineDiscount;
-        acc[key].amount += (item.ticketType.price * (item.quantity || 1)) - lineDiscount;
-        return acc;
-      }, {}));
+      // Group by ticket type (bundle packs collapse to one "admits N" line at the pack price).
+      const groups = groupLineItemsByType(invoiceData.lineItems);
 
       doc.setFont(undefined, 'normal');
       groups.forEach((item, index) => {
@@ -862,10 +854,22 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
         yPosition += 6;
       });
 
-      // Separator + Total
+      // Separator + Total (with Subtotal + Discount lines when a discount applied, matching the email)
       doc.setDrawColor(200);
       doc.line(tableLeft, yPosition, tableLeft + tableWidth, yPosition);
       yPosition += 5;
+      const amt = invoiceData.amounts;
+      if (amt.discount && amt.discount.amount > 0) {
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(80);
+        doc.text(`Subtotal: $${(amt.subtotal ?? amt.total).toFixed(2)}`, amountRightX, yPosition, { align: 'right' });
+        yPosition += 5;
+        doc.setTextColor(13, 148, 136);
+        doc.text(`Discount${amt.discount.code ? ` (${amt.discount.code})` : ''}: -$${amt.discount.amount.toFixed(2)}`, amountRightX, yPosition, { align: 'right' });
+        yPosition += 5;
+        doc.setTextColor(0);
+      }
       doc.setFont(undefined, 'bold');
       doc.setFontSize(11);
       const totalText = invoiceData.gstIncluded
@@ -989,27 +993,39 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
   };
 
   // Helper function to group line items by ticket type for Purchase Details table.
-  // amount is the NET line total (base − discount); discount sums each ticket's S4-D share.
+  // A bundle pack shows as ONE line at the pack price with "admits N" (events-bundle-pricing.md D8):
+  // its amount is packPrice x packs - discount, never a rounded per-ticket share x quantity (which
+  // would read $50.01). Singles group by type; amount is the NET line total (base - discount).
   const groupLineItemsByType = (lineItems) => {
+    const r2 = (n) => Math.round(n * 100) / 100;
     const grouped = lineItems.reduce((acc, item) => {
+      const isPack = !!(item.pack && item.pack.id);
       const typeName = item.ticketType.name;
       if (!acc[typeName]) {
         acc[typeName] = {
           name: typeName,
-          price: item.ticketType.price,
-          quantity: 0,
+          isPack,
+          price: isPack ? item.pack.price : item.ticketType.price,
+          tickets: 0,
+          packIds: new Set(),
           discount: 0,
-          amount: 0
         };
       }
-      const lineDiscount = item.discountAmount || 0;
-      acc[typeName].quantity += item.quantity;
-      acc[typeName].discount += lineDiscount;
-      acc[typeName].amount += (item.ticketType.price * item.quantity) - lineDiscount;
+      const g = acc[typeName];
+      g.tickets += (item.quantity || 1);
+      g.discount += (item.discountAmount || 0);
+      if (isPack) g.packIds.add(item.pack.id);
       return acc;
     }, {});
 
-    return Object.values(grouped);
+    return Object.values(grouped).map((g) => {
+      if (g.isPack) {
+        const packs = g.packIds.size || 1;
+        const admits = Math.round(g.tickets / packs);
+        return { name: `${g.name} (admits ${admits})`, price: g.price, quantity: packs, discount: r2(g.discount), amount: r2(g.price * packs - g.discount) };
+      }
+      return { name: g.name, price: g.price, quantity: g.tickets, discount: r2(g.discount), amount: r2(g.price * g.tickets - g.discount) };
+    });
   };
 
   // Helper function to group refunds by transaction for Refund Details table - sorted oldest first
@@ -1224,9 +1240,17 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                     </table>
                   </div>
 
-                  {/* Total Paid — outside the table so it stays visible on mobile (never clipped by table overflow) */}
-                  <div className="bg-slate-50 border-t border-slate-300 px-3 sm:px-4 py-3 text-right text-sm font-bold text-slate-900">
-                    Total Paid: ${invoiceData.amounts.total.toFixed(2)}{invoiceData.gstIncluded && ' (incl. GST)'}
+                  {/* Money summary - outside the table so it stays visible on mobile (never clipped by
+                      table overflow). When a discount applied, show Subtotal + Discount (code + amount)
+                      before Total Paid, matching the buyer email. */}
+                  <div className="bg-slate-50 border-t border-slate-300 px-3 sm:px-4 py-3 text-right text-sm text-slate-900 space-y-1">
+                    {invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0 && (
+                      <>
+                        <div className="text-slate-600">Subtotal: ${(invoiceData.amounts.subtotal ?? invoiceData.amounts.total).toFixed(2)}</div>
+                        <div className="text-teal-700">Discount{invoiceData.amounts.discount.code ? ` (${invoiceData.amounts.discount.code})` : ''}: -${invoiceData.amounts.discount.amount.toFixed(2)}</div>
+                      </>
+                    )}
+                    <div className="font-bold">Total Paid: ${invoiceData.amounts.total.toFixed(2)}{invoiceData.gstIncluded && ' (incl. GST)'}</div>
                   </div>
 
                   {/* Notes Below Table — discount code (informational) + Terms & Conditions (refund policy) */}

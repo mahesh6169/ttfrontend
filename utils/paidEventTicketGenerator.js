@@ -105,89 +105,87 @@ export const generateTicketsPDF = async (tickets, eventInfo, eventId = '') => {
   doc.text('Tickets', leftMargin, currentY);
   currentY += 10;
   
-  // Process each ticket [Small font]
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'normal');
+  // Process each ticket - compact rows (QR on the left, details snug on the right), in ascending
+  // ticket-number order. Large scannable QR, minimal gaps, one ticket block never split across pages.
+  const orderedTickets = [...tickets].sort((a, b) =>
+    String(a.ticketNumber || '').localeCompare(String(b.ticketNumber || ''))
+  );
+  const qrSize = 38;                       // mm - large + scannable, close to the on-screen My Tickets QR
+  const textX = leftMargin + qrSize + 8;
 
-  for (let index = 0; index < tickets.length; index++) {
-    const ticket = tickets[index];
+  for (let index = 0; index < orderedTickets.length; index++) {
+    const ticket = orderedTickets[index];
+    const label = ticket.ticketNumber || `TICKET-${index + 1}`;
     const isRefunded = ticket.refundStatus === 'full' || ticket.checkInStatus === 'cancelled';
 
-    // Check if we need a new page
-    if (currentY > pageHeight - 70) {
+    // Keep a whole ticket block on one page.
+    if (currentY + qrSize + 8 > pageHeight - 25) {
       doc.addPage();
       currentY = 20;
     }
 
-    // Ticket number
+    const qrY = currentY;
+
+    // QR code on the left
+    try {
+      const qrDataURL = await QRCode.toDataURL(label, {
+        width: 320,
+        margin: 1,
+        errorCorrectionLevel: 'H'
+      });
+      doc.addImage(qrDataURL, 'PNG', leftMargin, qrY, qrSize, qrSize);
+      if (isRefunded) {
+        doc.setDrawColor(220, 38, 38);
+        doc.setLineWidth(1.5);
+        doc.line(leftMargin, qrY, leftMargin + qrSize, qrY + qrSize);
+        doc.line(leftMargin + qrSize, qrY, leftMargin, qrY + qrSize);
+        doc.setLineWidth(0.2);
+        doc.setDrawColor(0);
+      }
+    } catch (error) {
+      console.error('QR code generation error:', error);
+    }
+
+    // Details on the right, stacked snug against the QR
+    let ty = qrY + 6;
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text(ticket.ticketNumber || `TICKET-${index + 1}`, leftMargin, currentY);
-
-    // Add REFUNDED label if ticket is refunded
+    doc.text(label, textX, ty);
     if (isRefunded) {
       doc.setTextColor(220, 38, 38);
-      doc.text(' [REFUNDED]', leftMargin + doc.getTextWidth(ticket.ticketNumber || `TICKET-${index + 1}`) + 2, currentY);
+      doc.text(' [REFUNDED]', textX + doc.getTextWidth(label) + 2, ty);
       doc.setTextColor(0);
     }
-    currentY += 8;
 
-    // Ticket type and seat
+    ty += 7;
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
     let ticketInfo = ticket.ticketType?.name || 'Standard';
     if (ticket.seats && ticket.seats.length > 0) {
       ticketInfo += ` (Seat: ${ticket.seats[0].row}-${ticket.seats[0].seatNumber})`;
     }
-    doc.text(ticketInfo, leftMargin, currentY);
-    currentY += 10;
+    doc.text(ticketInfo, textX, ty);
 
-    // Generate QR code
-    try {
-      const qrDataURL = await QRCode.toDataURL(ticket.ticketNumber, {
-        width: 150,
-        margin: 1,
-        errorCorrectionLevel: 'H'
-      });
-
-      // Add QR code to PDF (30x30mm ≈ 150px at 72dpi)
-      doc.addImage(qrDataURL, 'PNG', leftMargin, currentY, 30, 30);
-
-      // If refunded, draw X over QR code
-      if (isRefunded) {
-        doc.setDrawColor(220, 38, 38);
-        doc.setLineWidth(1.5);
-        doc.line(leftMargin, currentY, leftMargin + 30, currentY + 30);
-        doc.line(leftMargin + 30, currentY, leftMargin, currentY + 30);
-        doc.setLineWidth(0.2);
-        doc.setDrawColor(0);
-
-        // Add "NOT VALID FOR ENTRY" text below QR
-        doc.setFontSize(8);
-        doc.setTextColor(220, 38, 38);
-        doc.setFont(undefined, 'bold');
-        doc.text('NOT VALID FOR ENTRY', leftMargin + 15, currentY + 35, { align: 'center' });
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(0);
-      } else {
-        // Add "Scan at entrance" text below QR
-        doc.setFontSize(8);
-        doc.setTextColor(100);
-        doc.text('Scan at entrance', leftMargin + 15, currentY + 35, { align: 'center' });
-        doc.setTextColor(0);
-      }
-
-      currentY += 45;
-    } catch (error) {
-      console.error('QR code generation error:', error);
-      currentY += 10;
+    ty += 7;
+    doc.setFontSize(9);
+    if (isRefunded) {
+      doc.setTextColor(220, 38, 38);
+      doc.setFont(undefined, 'bold');
+      doc.text('NOT VALID FOR ENTRY', textX, ty);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(0);
+    } else {
+      doc.setTextColor(100);
+      doc.text('Scan at entrance', textX, ty);
+      doc.setTextColor(0);
     }
 
-    // Separator between tickets
-    if (index < tickets.length - 1) {
-      doc.setDrawColor(200);
+    // Advance past the QR block, then a thin divider with a minimal gap.
+    currentY = qrY + qrSize + 5;
+    if (index < orderedTickets.length - 1) {
+      doc.setDrawColor(220);
       doc.line(leftMargin, currentY, pageWidth - rightMargin, currentY);
-      currentY += 10;
+      currentY += 5;
     }
   }
   

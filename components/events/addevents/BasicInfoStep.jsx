@@ -54,6 +54,15 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
 
   const isLocked = disabled || isEditMode;
 
+  // Locked event-type tabs read greyed (muted text, selection kept via the underline) rather than a
+  // faint opacity dim, so the "can't change this" state is clear on mobile too (events-disabled-field-styling.md).
+  const tabClass = (active) => {
+    if (isLocked) {
+      return active ? 'text-slate-500 font-semibold border-slate-400' : 'text-slate-400 border-transparent';
+    }
+    return active ? 'text-teal-700 font-semibold border-teal-700' : 'text-slate-500 border-transparent hover:text-slate-700';
+  };
+
   return (
     <div className="space-y-4">
       {/* Event Type */}
@@ -64,16 +73,12 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
             {isEditMode && <span className="text-xs font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
           </label>
 
-          <div className={`flex items-center ${isLocked ? 'opacity-60' : ''}`}>
+          <div className={`flex items-center`}>
             <button
               type="button"
               onClick={() => handleIntentSelect('host')}
               disabled={isLocked}
-              className={`pb-1 text-sm border-b-2 transition-colors ${
-                currentIntent === 'host'
-                  ? 'text-teal-700 font-semibold border-teal-700'
-                  : 'text-slate-500 border-transparent hover:text-slate-700'
-              } ${isLocked ? 'cursor-not-allowed' : ''}`}
+              className={`pb-1 text-sm border-b-2 transition-colors ${tabClass(currentIntent === 'host')} ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
               Host
             </button>
@@ -82,11 +87,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
               type="button"
               onClick={() => handleIntentSelect('promote')}
               disabled={isLocked}
-              className={`pb-1 text-sm border-b-2 transition-colors ${
-                currentIntent === 'promote'
-                  ? 'text-teal-700 font-semibold border-teal-700'
-                  : 'text-slate-500 border-transparent hover:text-slate-700'
-              } ${isLocked ? 'cursor-not-allowed' : ''}`}
+              className={`pb-1 text-sm border-b-2 transition-colors ${tabClass(currentIntent === 'promote')} ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
               Promote
             </button>
@@ -107,16 +108,12 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
             {isEditMode && <span className="text-xs font-normal text-slate-500 ml-2">(Cannot be changed)</span>}
           </label>
 
-          <div className={`flex items-center ${isLocked ? 'opacity-60' : ''}`}>
+          <div className={`flex items-center`}>
             <button
               type="button"
               onClick={() => handlePaidToggle(false)}
               disabled={isLocked}
-              className={`pb-1 text-sm border-b-2 transition-colors ${
-                isPaid === false
-                  ? 'text-teal-700 font-semibold border-teal-700'
-                  : 'text-slate-500 border-transparent hover:text-slate-700'
-              } ${isLocked ? 'cursor-not-allowed' : ''}`}
+              className={`pb-1 text-sm border-b-2 transition-colors ${tabClass(isPaid === false)} ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
               RSVP
             </button>
@@ -125,11 +122,7 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
               type="button"
               onClick={() => handlePaidToggle(true)}
               disabled={isLocked}
-              className={`pb-1 text-sm border-b-2 transition-colors ${
-                isPaid === true
-                  ? 'text-teal-700 font-semibold border-teal-700'
-                  : 'text-slate-500 border-transparent hover:text-slate-700'
-              } ${isLocked ? 'cursor-not-allowed' : ''}`}
+              className={`pb-1 text-sm border-b-2 transition-colors ${tabClass(isPaid === true)} ${isLocked ? 'cursor-not-allowed' : ''}`}
             >
               Paid
             </button>
@@ -237,7 +230,7 @@ const BasicInfoStep = ({
     const baseClasses = 'w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2';
     const errorClasses = errors?.[fieldName] ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300 focus:border-teal-400';
     const readOnlyClasses = disabled
-      ? 'bg-slate-100 cursor-not-allowed text-slate-600'
+      ? 'bg-slate-100 text-slate-500 cursor-not-allowed text-slate-600'
       : '';
 
     return `${baseClasses} ${errorClasses} ${readOnlyClasses}`;
@@ -492,7 +485,7 @@ const BasicInfoStep = ({
               checked={formData.recurrence?.isRecurring || false}
               onChange={handleRecurringToggle}
               disabled={disabled || isEditMode}
-              className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300 disabled:opacity-50"
+              className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
             />
           </label>
 
@@ -513,7 +506,7 @@ const BasicInfoStep = ({
                         value={schedule?.day || 'Mon'}
                         onChange={(e) => handleUpdateRepeatSchedule(index, 'day', e.target.value)}
                         disabled={disabled || (isEditMode && isRecurringEvent)}
-                        className={`w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${disabled ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                        className={`w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${disabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
                       >
                         <option value="Mon">Monday</option>
                         <option value="Tue">Tuesday</option>
@@ -533,7 +526,7 @@ const BasicInfoStep = ({
                         onChange={(e) => handleUpdateRepeatSchedule(index, 'time', e.target.value)}
                         disabled={disabled || (isEditMode && isRecurringEvent)}
                         onWheel={(e) => e.target.blur()}
-                        className={`w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${disabled ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                        className={`w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${disabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
                       />
                     </div>
 

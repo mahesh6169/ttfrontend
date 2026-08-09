@@ -124,7 +124,8 @@ test('AC5 timer turns red when under one minute remains', async ({ page }) => {
 
   // Force the reservation to expire in ~45s (only the GET reservation payload is tweaked) so the same
   // badge renders red, proving the under-one-minute threshold without waiting out a real 15-min hold.
-  await page.route(/\/events\/[^/]+\/reservation$/, async (route) => {
+  // The seats page cache-busts the reservation GET (…/reservation?_t=…), so match with or without a query string.
+  await page.route(/\/events\/[^/]+\/reservation(\?.*)?$/, async (route) => {
     if (route.request().method() !== 'GET') return route.continue();
     const resp = await route.fetch();
     let body;

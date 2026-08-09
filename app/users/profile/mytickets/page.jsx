@@ -179,8 +179,14 @@ const EnhancedMyTicketsPage = () => {
       return acc;
     }, {});
 
-    // Convert to array and sort by purchase date
-    return Object.values(grouped).sort((a, b) => 
+    // Within each purchase, show tickets in ascending ticket-number order (0001, 0002, ...) - not
+    // the fetch's descending order - so the on-screen list, QR carousel and PDF all read forwards.
+    Object.values(grouped).forEach((list) =>
+      list.sort((a, b) => String(a.ticketNumber || '').localeCompare(String(b.ticketNumber || '')))
+    );
+
+    // Convert to array and sort groups by purchase date (newest purchase first)
+    return Object.values(grouped).sort((a, b) =>
       new Date(b[0].createdAt) - new Date(a[0].createdAt)
     );
   };

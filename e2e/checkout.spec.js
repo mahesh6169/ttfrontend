@@ -3,7 +3,7 @@
 // behaviour is preserved (AC5 is the flagship end-to-end purchase with Stripe's 4242 test card, zero
 // real money). Runs as a logged-in member. Each test title starts with its acceptance-criterion number.
 import { test, expect } from '@playwright/test';
-import { readSeed, dbCount } from './helpers.js';
+import { readSeed, dbCount, dbEditFlags } from './helpers.js';
 
 test.use({ storageState: 'e2e/.auth/member.json' });
 
@@ -155,6 +155,12 @@ test('AC5 member buys a paid ticket end to end (4242 test card)', async ({ page 
 
   expect(dbCount('paidTickets', seed.paidEventId)).toBeGreaterThanOrEqual(1);
   expect(dbCount('invoices', seed.paidEventId)).toBeGreaterThanOrEqual(1);
+
+  // Edit-locking AC1 (events-edit-locking.md): a real first sale flips the event's hasActivity and the
+  // purchased ticket type's hasSold - the signals the edit form reads to lock the sold type.
+  const flags = dbEditFlags(seed.paidEventId);
+  expect(flags.hasActivity).toBe(true);
+  expect(flags.hasSold).toBe(true);
 });
 
 // AC6 — at 360px there is no horizontal scroll and the summary is a collapsible bar at the top.

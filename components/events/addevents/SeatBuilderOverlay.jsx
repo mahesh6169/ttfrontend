@@ -208,14 +208,15 @@ export default function SeatBuilderOverlay({
   // fit), capped so it is never later than the desktop 1.6x.
   const numberThreshold = isMobile ? Math.min(NUMBER_THRESHOLD, fitScale * 1.3) : NUMBER_THRESHOLD;
   const showNumbers = scale >= numberThreshold;
-  // Seat configuration locks on the event's FIRST SALE (a booked seat), not on "existing event": before
-  // a sale it is fully editable even on an existing event; after a sale the whole builder is read-only.
-  // No partial freeze - all or nothing (featureplans/fix-events-seatmap-salelock.md).
-  const locked = (initialLayout || []).some((r) => (r.seats || []).some((s) => s.status === 'booked'));
+  // Seated lock (events-edit-locking.md, revised): a seated event is a fixed room, so once a seat is
+  // BOOKED the whole layout structure freezes - no adding, removing, resizing, renaming rows or aisles,
+  // and the bulk calculator is off. The only live action is reserving/releasing the seats that are
+  // still free. The server re-checks every rule at save.
+  const hasBooked = (initialLayout || []).some((r) => (r.seats || []).some((s) => s.status === 'booked'));
   // Canvas edits are gated to their tab: aisles (seam clicks) only on the Aisles tab, reserving (seat
-  // clicks) only on the Seat Reservations tab. Colours/aisles still SHOW on every tab, just not editable.
-  const canAisle = !locked && activeStep === 'aisles';
-  const canReserve = !locked && activeStep === 'reserved';
+  // clicks) only on the Seat Reservations tab. Aisles freeze once sold; reserving free seats stays live.
+  const canAisle = !hasBooked && activeStep === 'aisles';
+  const canReserve = activeStep === 'reserved';
 
   // ── Structure ────────────────────────────────────────────────────────────
   const generateDims = (r, s, startLabel = 'A') => {
@@ -233,7 +234,7 @@ export default function SeatBuilderOverlay({
   // from the two numbers; once rows exist it reads "Clear" and wipes the rows (back to "Add"), leaving
   // the typed numbers in the boxes. No auto-create on typing or blur.
   const addLayout = () => {
-    if (locked) return;
+    if (hasBooked) return; // the bulk calculator would renumber booked seats (D12)
     const r = Math.max(1, Math.min(100, parseInt(genRows, 10) || 0));
     const s = Math.max(1, Math.min(100, parseInt(genSeats, 10) || 0));
     if (!r || !s) return;
@@ -241,7 +242,7 @@ export default function SeatBuilderOverlay({
     generateDims(r, s, start);
   };
   const clearLayout = () => {
-    if (locked) return;
+    if (hasBooked) return; // clearing would drop booked seats (D12)
     setRows([]);
     setReserved('');
   };
@@ -271,12 +272,20 @@ export default function SeatBuilderOverlay({
   };
 
   const setRowCount = (idx, value) => {
-    const n = Math.max(1, Math.min(100, parseInt(value, 10) || 1));
+    const requested = Math.max(1, Math.min(100, parseInt(value, 10) || 1));
     const label = rows[idx]?.rowLabel || '';
+    // Preserve existing seats (incl. booked) and only append/truncate at the END - never below the
+    // last booked seat in the row (edit-locking D12: booked seats can't be removed or renumbered).
+    const existing = rows[idx]?.seats || [];
+    const lastBooked = existing.reduce((m, s) => (s.status === 'booked' ? Math.max(m, Number(s.seatNumber)) : m), 0);
+    const n = Math.max(requested, lastBooked);
     setRows((prev) => prev.map((r, i) => {
       if (i !== idx) return r;
+      const seats = n >= existing.length
+        ? [...existing, ...Array.from({ length: n - existing.length }, (_, k) => ({ seatNumber: existing.length + k + 1, status: 'available' }))]
+        : existing.slice(0, n);
       const walkwayPositions = (r.walkwayPositions || []).filter((p) => p <= n - 1);
-      return { ...r, seats: makeSeats(n), walkwayPositions };
+      return { ...r, seats, walkwayPositions };
     }));
     // Silent self-cleaning: a shrunk row drops any reserved seat that no longer exists (no message).
     if (label) {
@@ -298,11 +307,16 @@ export default function SeatBuilderOverlay({
   const onRowCountChange = (i, value) => setCountDrafts((d) => ({ ...d, [i]: value }));
   const commitRowCount = (i) => {
     const raw = countDrafts[i];
-    const n = parseInt(raw, 10);
-    if (raw !== undefined && raw !== '' && Number.isFinite(n)) {
-      setRowCount(i, Math.max(1, Math.min(100, n))); // min-1 holds on apply, not while editing
+    const num = Number(raw);
+    // Apply only a valid whole number 1-100; reject (never silently clamp) an out-of-range or decimal
+    // count by KEEPING the draft, so the inline error stays and Save is blocked (AC16). Empty reverts.
+    if (raw !== undefined && String(raw).trim() !== '' && Number.isInteger(num) && num >= 1 && num <= 100) {
+      setRowCount(i, num);
+      setCountDrafts((d) => { const c = { ...d }; delete c[i]; return c; });
+    } else if (raw === undefined || String(raw).trim() === '') {
+      setCountDrafts((d) => { const c = { ...d }; delete c[i]; return c; });
     }
-    setCountDrafts((d) => { const c = { ...d }; delete c[i]; return c; }); // empty/invalid reverts
+    // else: invalid (0/negative/>100/decimal) - leave the draft so rowErrors flags it and Save blocks.
   };
 
   // ── Validation (live field errors; Save is the one gate) ──────────────────
@@ -316,8 +330,9 @@ export default function SeatBuilderOverlay({
   // duplicate flags the LATER row - the original stays calm; labels are seat identities, so A twice collides).
   const rowErrors = useMemo(() => rows.map((r, i) => {
     const raw = countDrafts[i] !== undefined ? countDrafts[i] : String(r.seats?.length || 0);
-    const n = parseInt(raw, 10);
-    const count = String(raw).trim() !== '' && (!Number.isFinite(n) || n < 1 || n > 100);
+    const num = Number(raw);
+    // A seat count must be a whole number 1-100 (reject 0/negative/decimal/>100 - AC16).
+    const count = String(raw).trim() !== '' && (!Number.isInteger(num) || num < 1 || num > 100);
     const lbl = (r.rowLabel || '').trim();
     let label = null;
     if (lbl === '') label = 'required';
@@ -444,7 +459,9 @@ export default function SeatBuilderOverlay({
   const signpost = (msg) => toast.error(msg, { toastId: 'seatbuilder-validation', position: 'top-center' });
   const save = () => {
     if (rows.length === 0) {
-      signpost('Add at least one row to save.');
+      // An empty layout is a valid saved state (no assigned seating): let the organiser clear the
+      // hall, Save, and exit to check other steps (D12/AC17).
+      onSave([], []);
       return;
     }
     // Structural field errors first (fix these before capacity is even meaningful).
@@ -488,8 +505,8 @@ export default function SeatBuilderOverlay({
           Seat editing, zoom, validation and Save are unchanged - only the arrangement moves. */}
       <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 grid-rows-[auto_auto_minmax(0,1fr)] sm:grid-cols-[14rem_minmax(0,1fr)] sm:grid-rows-[auto_minmax(0,1fr)]">
 
-        {/* Tabs - desktop col1/row1; mobile row1. Hidden when the layout is locked. */}
-        {!locked && (
+        {/* Tabs - desktop col1/row1; mobile row1. Always shown; safe edits stay available after a sale. */}
+        {(
           <div className="relative z-50 border-b border-slate-200 bg-white sm:col-start-1 sm:row-start-1 sm:border-b-0 sm:border-r" data-testid="builder-sidebar">
             <div className="flex gap-1 p-2 sm:flex-col" role="tablist" aria-label="Seating steps">
               {steps.map((s) => (
@@ -509,11 +526,6 @@ export default function SeatBuilderOverlay({
         {/* Canvas (the MAP) - desktop col2/row2; mobile row2 (the primary workspace). The locked notice
             and the over-capacity banner ride above the map. The hall never moves. */}
         <div className="relative flex min-h-0 min-w-0 flex-col bg-slate-50 sm:col-start-2 sm:row-start-2" data-testid="builder-canvas">
-          {locked && (
-            <div data-testid="builder-locked" className="m-3 mb-0 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              This event has sold seats, so the seating layout is locked and cannot be edited. To change the layout, recreate the event and reserve the already-sold seats.
-            </div>
-          )}
           {cap > 0 && totalSeats > cap && (
             <div data-testid="capacity-error" className="shrink-0 border-b border-red-200 bg-red-50 px-4 py-1.5 text-xs font-medium text-red-700">
               Over capacity by {totalSeats - cap} seat{totalSeats - cap === 1 ? '' : 's'} - remove {totalSeats - cap} to match the {cap}-seat capacity.
@@ -639,8 +651,8 @@ export default function SeatBuilderOverlay({
         <div className="min-h-0 overflow-y-auto border-t border-slate-200 p-2 sm:col-start-1 sm:row-start-2 sm:border-r" data-testid="rows-panel">
           <div className="mb-1 flex items-center justify-between gap-2 px-1">
             <h3 className="text-xs font-semibold text-slate-600">Row/Seats Configuration</h3>
-            {!locked && rows.length > 0 && (
-              <button type="button" onClick={addRow} disabled={atCapacity} title={atCapacity ? 'At capacity - no room for another row' : ''} className="shrink-0 rounded border border-slate-300 px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">Add Single Row</button>
+            {!hasBooked && rows.length > 0 && (
+              <button type="button" onClick={addRow} disabled={atCapacity} title={atCapacity ? 'At capacity - no room for another row' : ''} className="shrink-0 rounded border border-slate-300 px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-transparent">Add Single Row</button>
             )}
           </div>
           {rows.length === 0 && <p className="px-1 py-1 text-xs text-slate-400">No rows yet - use configure layout to set Number Of Rows and Seats Per Row.</p>}
@@ -649,8 +661,8 @@ export default function SeatBuilderOverlay({
               <div className="flex items-center gap-1">
                 <input
                   value={r.rowLabel || ''} onChange={(e) => setRowLabel(i, e.target.value)}
-                  disabled={locked} aria-label={`Row ${i + 1} label`} maxLength={3}
-                  className={`w-10 rounded border p-1 text-center text-xs font-bold ${rowErrors[i]?.label ? 'border-red-400' : 'border-slate-300'} ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                  disabled={hasBooked} aria-label={`Row ${i + 1} label`} maxLength={3}
+                  className={`w-10 rounded border p-1 text-center text-xs font-bold ${rowErrors[i]?.label ? 'border-red-400' : 'border-slate-300'} ${hasBooked ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
                 />
                 <input
                   type="number" min="1" max="100"
@@ -658,10 +670,10 @@ export default function SeatBuilderOverlay({
                   onChange={(e) => onRowCountChange(i, e.target.value)}
                   onBlur={() => commitRowCount(i)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { commitRowCount(i); e.currentTarget.blur(); } }}
-                  disabled={locked} aria-label={`Row ${i + 1} seat count`}
-                  className={`w-14 rounded border p-1 text-center text-xs ${rowErrors[i]?.count ? 'border-red-400' : 'border-slate-300'} ${locked ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                  disabled={hasBooked} aria-label={`Row ${i + 1} seat count`}
+                  className={`w-14 rounded border p-1 text-center text-xs ${rowErrors[i]?.count ? 'border-red-400' : 'border-slate-300'} ${hasBooked ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
                 />
-                {!locked && (
+                {!hasBooked && (
                   <button type="button" onClick={() => removeRow(i)} aria-label={`Remove row ${r.rowLabel}`} className="text-red-500 hover:text-red-700 text-xs px-1">x</button>
                 )}
               </div>
@@ -678,8 +690,9 @@ export default function SeatBuilderOverlay({
         </div>
 
         {/* Per-tab tool - desktop col2/row1 inline; mobile a dismissible bottom sheet that opens on a tab
-            tap (see the tab onClick). The Layout / Aisles / Reservations tools are unchanged. */}
-        {!locked && (
+            tap. Always shown; after a sale the Aisles/Reservations tools still work and only the Layout
+            bulk calculator is disabled. */}
+        {(
           <>
             <div onClick={() => setSheetOpen(false)} className={`${sheetOpen ? 'block' : 'hidden'} sm:hidden fixed inset-0 z-40 bg-black/30`} />
             <div
@@ -722,7 +735,7 @@ export default function SeatBuilderOverlay({
                     <div className="flex flex-col gap-2 pl-3">
                       <label className="flex items-center gap-2">
                         <span className="w-32 shrink-0 text-slate-500">Row Label</span>
-                        <input type="text" value={genLabel} onChange={(e) => setGenLabel(sanitizeRowLabel(e.target.value))} disabled={locked} aria-label="Row Label" maxLength={3} placeholder="A" className="w-12 rounded border border-slate-300 p-1 text-center font-bold disabled:bg-slate-100" />
+                        <input type="text" value={genLabel} onChange={(e) => setGenLabel(sanitizeRowLabel(e.target.value))} disabled={hasBooked} aria-label="Row Label" maxLength={3} placeholder="A" className="w-12 rounded border border-slate-300 p-1 text-center font-bold disabled:bg-slate-100" />
                         <span className="text-xs text-slate-400">
                           e.g. A, AA, VIP
                           <span className="block">front row, max 3 letters</span>
@@ -730,11 +743,11 @@ export default function SeatBuilderOverlay({
                       </label>
                       <label className="flex items-center gap-2">
                         <span className="w-32 shrink-0 text-slate-500">Number Of Rows</span>
-                        <input type="number" min="1" max="100" value={genRows} onChange={(e) => setGenRows(e.target.value)} disabled={locked} aria-label="Number Of Rows" className={`w-14 rounded border p-1 text-center disabled:bg-slate-100 ${rowsError ? 'border-red-400' : 'border-slate-300'}`} />
+                        <input type="number" min="1" max="100" value={genRows} onChange={(e) => setGenRows(e.target.value)} disabled={hasBooked} aria-label="Number Of Rows" className={`w-14 rounded border p-1 text-center disabled:bg-slate-100 ${rowsError ? 'border-red-400' : 'border-slate-300'}`} />
                       </label>
                       <label className="flex items-center gap-2">
                         <span className="w-32 shrink-0 text-slate-500">Seats Per Row</span>
-                        <input type="number" min="1" max="100" value={genSeats} onChange={(e) => setGenSeats(e.target.value)} disabled={locked} aria-label="Seats Per Row" className={`w-14 rounded border p-1 text-center disabled:bg-slate-100 ${seatsError ? 'border-red-400' : 'border-slate-300'}`} />
+                        <input type="number" min="1" max="100" value={genSeats} onChange={(e) => setGenSeats(e.target.value)} disabled={hasBooked} aria-label="Seats Per Row" className={`w-14 rounded border p-1 text-center disabled:bg-slate-100 ${seatsError ? 'border-red-400' : 'border-slate-300'}`} />
                       </label>
                       {(rowsError || seatsError) && (
                         <p className="text-xs font-medium text-red-600">Number Of Rows and Seats Per Row must each be a number from 1 to 100.</p>
@@ -744,14 +757,20 @@ export default function SeatBuilderOverlay({
                           relocated here from the Row/Seats Configuration list. */}
                       <div className="flex flex-wrap gap-2">
                         {rows.length > 0 ? (
-                          <button type="button" onClick={clearLayout} className="rounded border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">Clear</button>
+                          <button type="button" onClick={clearLayout} disabled={hasBooked} title={hasBooked ? 'Seats are sold - the bulk layout tool is off' : ''} className="rounded border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-transparent">Clear</button>
                         ) : (
-                          <button type="button" onClick={addLayout} disabled={!canAdd} className={`rounded px-3 py-1 text-xs font-medium ${canAdd ? 'bg-teal-700 text-white hover:bg-teal-800' : 'cursor-not-allowed bg-slate-200 text-slate-400'}`}>Add</button>
+                          <button type="button" onClick={addLayout} disabled={!canAdd || hasBooked} className={`rounded px-3 py-1 text-xs font-medium ${canAdd && !hasBooked ? 'bg-teal-700 text-white hover:bg-teal-800' : 'cursor-not-allowed bg-slate-200 text-slate-400'}`}>Add</button>
                         )}
-                        {rows.length > 0 && (
-                          <button type="button" onClick={addRow} disabled={atCapacity} title={atCapacity ? 'At capacity - no room for another row' : ''} className="rounded border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">Add Single Row</button>
+                        {rows.length > 0 && !hasBooked && (
+                          <button type="button" onClick={addRow} disabled={atCapacity} title={atCapacity ? 'At capacity - no room for another row' : ''} className="rounded border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-transparent">Add Single Row</button>
                         )}
                       </div>
+                      {/* Why the bulk tool is off - shown here beside it, not floating on the map. */}
+                      {hasBooked && (
+                        <p data-testid="builder-locked" className="mt-2 text-xs text-amber-600">
+                          Some seats are sold, so the seating layout is locked. You can still reserve or release the seats that are still free.
+                        </p>
+                      )}
                     </div>
                   </>
                 )}
@@ -795,7 +814,7 @@ export default function SeatBuilderOverlay({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <button type="button" onClick={applyAisleToAll} disabled={!canApplyAisle} className={`rounded px-2 py-1 text-xs font-medium ${canApplyAisle ? 'border border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100' : 'cursor-not-allowed bg-slate-200 text-slate-400'}`}>Apply to all rows</button>
-                      <button type="button" onClick={clearAllAisles} disabled={!rows.some((r) => (r.walkwayPositions || []).length)} className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">Clear all aisles</button>
+                      <button type="button" onClick={clearAllAisles} disabled={!rows.some((r) => (r.walkwayPositions || []).length)} className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed">Clear all aisles</button>
                     </div>
                     {singleAisleError ? (
                       <p className="text-xs font-medium text-red-600">{singleAisleError}</p>

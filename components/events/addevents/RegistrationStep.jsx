@@ -49,16 +49,18 @@ const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
         <label className="block text-sm font-medium text-slate-700 mb-2">
           Event Type <span className="text-red-600">*</span>
         </label>
-        <div className={`inline-grid grid-cols-2 gap-2 ${disabled ? 'opacity-60' : ''}`}>
+        <div className="inline-grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => !disabled && dispatch(updateField({ field: 'isPaid', value: false }))}
             disabled={disabled}
             className={`py-2 px-6 text-sm rounded-lg border transition-colors ${
-              isFreeSelected
-                ? 'bg-teal-700 text-white border-teal-700'
-                : 'bg-white text-slate-700 border-slate-300'
-            } ${disabled ? 'cursor-not-allowed' : ''}`}
+              disabled
+                ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed'
+                : isFreeSelected
+                  ? 'bg-teal-700 text-white border-teal-700'
+                  : 'bg-white text-slate-700 border-slate-300'
+            }`}
           >
             RSVP
           </button>
@@ -67,10 +69,12 @@ const PromotionalConfig = ({ formData, disabled, dispatch, errors }) => {
             onClick={() => !disabled && dispatch(updateField({ field: 'isPaid', value: true }))}
             disabled={disabled}
             className={`py-2 px-6 text-sm rounded-lg border transition-colors ${
-              isPaidSelected
-                ? 'bg-teal-700 text-white border-teal-700'
-                : 'bg-white text-slate-700 border-slate-300'
-            } ${disabled ? 'cursor-not-allowed' : ''}`}
+              disabled
+                ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed'
+                : isPaidSelected
+                  ? 'bg-teal-700 text-white border-teal-700'
+                  : 'bg-white text-slate-700 border-slate-300'
+            }`}
           >
             Paid
           </button>
@@ -121,9 +125,15 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
   const [bookingLimitError, setBookingLimitError] = useState('');
 
   const getInputClasses = (hasError) => {
-    const base = 'w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:border-teal-400';
+    const base = 'w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:border-teal-400 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed';
     return `${base} ${hasError ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
   };
+
+  // Edit-locking D11: capacity can rise freely but can't drop below the committed count. Floor the
+  // input and show an inline reason if the organiser types below it (the server re-checks at save).
+  const committed = Number(formData.committedCount) || 0;
+  const capacityBelowFloor =
+    committed > 0 && formData.capacity !== '' && formData.capacity !== null && Number(formData.capacity) < committed;
 
   return (
     <div>
@@ -137,7 +147,7 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
           </label>
           <input
             type="number"
-            min="0"
+            min={committed > 0 ? String(committed) : '0'}
             inputMode="numeric"
             value={formData.capacity === '' ? '' : formData.capacity}
             onChange={(e) => {
@@ -153,11 +163,13 @@ const CapacityManagement = ({ formData, errors, dispatch, isPaid }) => {
               }
             }}
             onWheel={(e) => e.target.blur()}
-            className={getInputClasses(!!errors?.capacity)}
+            className={getInputClasses(!!errors?.capacity || capacityBelowFloor)}
             placeholder="0 = unlimited"
           />
           {errors?.capacity ? (
             <p className="text-red-600 text-xs mt-1">{errors.capacity}</p>
+          ) : capacityBelowFloor ? (
+            <p className="text-red-600 text-xs mt-1">Capacity can&apos;t be lower than the {committed} people already registered.</p>
           ) : (
             <p className="text-xs text-slate-500 mt-1">0 = unlimited capacity</p>
           )}
@@ -279,7 +291,11 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
     if (f.fieldType === 'select') {
       const opts = f.fieldOptions || [];
       const lowered = opts.map((o) => (o || '').trim().toLowerCase());
-      const bad = opts.length === 0 || opts.some((o) => !o?.trim()) || new Set(lowered).size !== lowered.length;
+      // A question may not block every answer (events-rsvp-blocking-questions.md): at least one must allow.
+      const nonEmpty = opts.map((o) => (o || '').trim()).filter(Boolean);
+      const blk = f.blockingOptions || [];
+      const allBlocked = nonEmpty.length > 0 && nonEmpty.every((o) => blk.includes(o));
+      const bad = opts.length === 0 || opts.some((o) => !o?.trim()) || new Set(lowered).size !== lowered.length || allBlocked;
       if (bad) snap[`${index}-options`] = true;
     }
     if (Object.keys(snap).length) { setErrorSnapshot((prev) => ({ ...prev, ...snap })); return; } // stays open
@@ -308,6 +324,9 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
     if (options.some((o) => !o?.trim())) return 'Fill all options or remove the empty ones';
     const lowered = options.map((o) => o.trim().toLowerCase());
     if (new Set(lowered).size !== lowered.length) return 'Options must be unique';
+    const nonEmpty = options.map((o) => (o || '').trim()).filter(Boolean);
+    const blk = field.blockingOptions || [];
+    if (nonEmpty.length > 0 && nonEmpty.every((o) => blk.includes(o))) return 'Leave at least one answer that allows registration';
     return null;
   };
 
@@ -350,11 +369,17 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
         <div className="space-y-2 mb-4">
           {(formData.registrationFields || []).map((field, index) => {
             const isDropdown = field?.fieldType === 'select';
+            // Blocking answers (events-rsvp-blocking-questions.md) are free-RSVP + dropdown only.
+            const showBlocking = isDropdown && !formData.isPaid;
+            const blocks = field?.blockingOptions || [];
+            const hasBlocks = blocks.length > 0;
             const nameError = getNameError(field, index);
             const optionsError = getOptionsError(field, index);
             const hasAnyError = !!(nameError || optionsError);
-            const isExpanded = expandedIndex === index || isEmptyField(field)
-              || !!errorSnapshot[`${index}-name`] || !!errorSnapshot[`${index}-options`];
+            // Edit-locking D10: a question that existed at load locks once the event has activity.
+            const locked = !!formData.hasActivity && !!field._existing;
+            const isExpanded = !locked && (expandedIndex === index || isEmptyField(field)
+              || !!errorSnapshot[`${index}-name`] || !!errorSnapshot[`${index}-options`]);
             return (
               <div
                 key={index}
@@ -393,20 +418,52 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                                 type="text"
                                 value={option || ''}
                                 onChange={(e) => {
+                                  const oldVal = field.fieldOptions?.[optIdx] || '';
+                                  const newVal = e.target.value;
                                   const newOptions = [...(field.fieldOptions || [])];
-                                  newOptions[optIdx] = e.target.value;
+                                  newOptions[optIdx] = newVal;
                                   dispatch(updateFieldOptions({ index, options: newOptions }));
+                                  // Blocking values are stored BY VALUE - follow a rename so the flag isn't lost.
+                                  if ((field.blockingOptions || []).includes(oldVal)) {
+                                    dispatch(updateRegistrationField({ index, field: 'blockingOptions', value: (field.blockingOptions || []).map((v) => (v === oldVal ? newVal : v)) }));
+                                  }
                                   clearSnapshotEntry(`${index}-options`);
                                 }}
-                                className="flex-1 px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400"
+                                className={`flex-1 px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
+                                  showBlocking && (field.blockingOptions || []).includes(option)
+                                    ? 'line-through text-slate-400' // a blocked answer reads as "knocked out"
+                                    : 'text-slate-700'
+                                }`}
                                 placeholder={`Option ${optIdx + 1}`}
                                 maxLength="80"
                               />
+                              {/* Block-if-chosen: picking this answer blocks the RSVP (free dropdowns only). */}
+                              {showBlocking && (option || '').trim() && (
+                                <label className="flex items-center gap-1 shrink-0 whitespace-nowrap text-xs text-slate-600" title="Picking this answer blocks the RSVP">
+                                  <input
+                                    type="checkbox"
+                                    checked={(field.blockingOptions || []).includes(option)}
+                                    onChange={(e) => {
+                                      const cur = field.blockingOptions || [];
+                                      const next = e.target.checked ? [...new Set([...cur, option])] : cur.filter((v) => v !== option);
+                                      dispatch(updateRegistrationField({ index, field: 'blockingOptions', value: next }));
+                                      if (next.length > 0) dispatch(updateRegistrationField({ index, field: 'isRequired', value: true }));
+                                      clearSnapshotEntry(`${index}-options`);
+                                    }}
+                                    className="w-3.5 h-3.5 accent-teal-700 rounded focus:ring-teal-300"
+                                  />
+                                  Block
+                                </label>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => {
+                                  const removedVal = field.fieldOptions?.[optIdx] || '';
                                   const newOptions = (field.fieldOptions || []).filter((_, i) => i !== optIdx);
                                   dispatch(updateFieldOptions({ index, options: newOptions }));
+                                  if ((field.blockingOptions || []).includes(removedVal)) {
+                                    dispatch(updateRegistrationField({ index, field: 'blockingOptions', value: (field.blockingOptions || []).filter((v) => v !== removedVal) }));
+                                  }
                                   clearSnapshotEntry(`${index}-options`);
                                 }}
                                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
@@ -427,7 +484,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                             clearSnapshotEntry(`${index}-options`);
                           }}
                           disabled={(field.fieldOptions || []).some((o) => !o?.trim())}
-                          className="mt-2 inline-flex items-center px-3 py-1.5 text-xs text-teal-700 hover:text-teal-800 font-medium disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-teal-700"
+                          className="mt-2 inline-flex items-center px-3 py-1.5 text-xs text-teal-700 hover:text-teal-800 font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:text-teal-700"
                         >
                           <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -440,19 +497,46 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                       </div>
                     )}
 
-                    {/* Required */}
+                    {/* Message shown when blocked (free dropdown with a block set): optional, 150 cap. */}
+                    {showBlocking && hasBlocks && (
+                      <div className="mt-3">
+                        <label className="block text-xs font-medium text-slate-700 mb-1">
+                          Message shown when blocked <span className="font-normal text-slate-400">(optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={field.blockingMessage || ''}
+                          onChange={(e) => dispatch(updateRegistrationField({ index, field: 'blockingMessage', value: e.target.value }))}
+                          placeholder="e.g. Sorry, this event is 18+ only."
+                          maxLength="150"
+                          className="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400"
+                        />
+                        <p className="text-xs text-slate-400 mt-1 text-right">{(field.blockingMessage || '').length}/150</p>
+                      </div>
+                    )}
+
+                    {/* Required. A blocking question is forced Required and the toggle is locked on (D). */}
                     <div className="flex items-center mt-3">
                       <input
                         type="checkbox"
                         id={`required-${index}`}
-                        checked={field?.isRequired || false}
+                        checked={field?.isRequired || hasBlocks}
+                        disabled={hasBlocks}
                         onChange={(e) => dispatch(updateRegistrationField({ index, field: 'isRequired', value: e.target.checked }))}
-                        className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300"
+                        className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                       />
                       <label htmlFor={`required-${index}`} className="ml-2 text-sm text-slate-700">
                         Required
                       </label>
+                      {hasBlocks && (
+                        <span className="ml-2 text-xs text-slate-400">(locked on - a blocking question must be required)</span>
+                      )}
                     </div>
+                    {formData.hasActivity && !field._existing && field.isRequired && (
+                      <p className="text-xs text-amber-600 mt-2">
+                        This event already has attendees. A new required question only applies to people who register from now on - those who already registered will not have answered it.
+                      </p>
+                    )}
 
                     {/* Footer */}
                     <div className="mt-3 flex justify-end gap-4">
@@ -484,7 +568,9 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                       </span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {confirmDeleteField === index ? (
+                      {locked ? (
+                        <span className="text-xs text-slate-400 italic">Attendees registered - locked</span>
+                      ) : confirmDeleteField === index ? (
                         <span className="flex items-center gap-2 text-xs text-slate-600">
                           Delete?
                           <button
@@ -545,7 +631,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
           type="button"
           onClick={() => handleAddField()}
           disabled={hasIncompleteQuestion}
-          className="inline-flex items-center text-sm font-medium text-teal-700 hover:text-teal-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-teal-700"
+          className="inline-flex items-center text-sm font-medium text-teal-700 hover:text-teal-800 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:text-teal-700"
         >
           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -556,7 +642,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
           type="button"
           onClick={() => handleAddField({ fieldType: 'select' })}
           disabled={hasIncompleteQuestion}
-          className="inline-flex items-center text-sm font-medium text-teal-700 hover:text-teal-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-teal-700"
+          className="inline-flex items-center text-sm font-medium text-teal-700 hover:text-teal-800 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:text-teal-700"
         >
           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -591,7 +677,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
   };
 
   const getInputClasses = (hasError) => {
-    const base = 'w-full px-3 py-2.5 text-sm text-slate-700 bg-white [color-scheme:light] placeholder:text-slate-400 hover:border-slate-400 border rounded-lg focus:outline-none focus:ring-2 focus:border-teal-400';
+    const base = 'w-full px-3 py-2.5 text-sm text-slate-700 bg-white [color-scheme:light] placeholder:text-slate-400 hover:border-slate-400 border rounded-lg focus:outline-none focus:ring-2 focus:border-teal-400 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed';
     return `${base} ${hasError ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'}`;
   };
 
@@ -606,15 +692,22 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
   // A ticket type is a bundle when its bundleSize holds a value (empty = normal single ticket).
   const isBundle = (t) => t?.bundleSize !== '' && t?.bundleSize !== null && t?.bundleSize !== undefined;
 
-  // Same rule as the step validator (name + price required, $1 min, 2 decimals) + date window.
-  const validateTicket = (t) => {
+  // Same rule as the step validator (name + price required, $1 min, 2 decimals, unique) + date window.
+  const validateTicket = (t, index) => {
     const errs = {};
     if (!t?.name?.trim()) errs.name = 'Name is required';
+    else {
+      // Ticket names must be unique within the event (AC10).
+      const dup = (formData.ticketTypes || []).some(
+        (o, i) => i !== index && o?.name?.trim() && o.name.trim().toLowerCase() === t.name.trim().toLowerCase()
+      );
+      if (dup) errs.name = 'A ticket type with this name already exists';
+    }
     if (priceIsEmpty(t?.price)) errs.price = 'Price is required';
     else if (!validatePriceDecimals(t.price)) errs.price = 'Maximum 2 decimal places allowed';
     else if (Number(t.price) < 1) errs.price = 'Minimum ticket price is $1';
     // Bundle rules mirror the server: size >= 2 (whole), no bigger than the per-order limit, and the
-    // Price field (the whole-bundle price) must divide evenly into per-person shares of at least $1.
+    // pack price (the Price field) must leave each person's share at least $1 (AC12 wording).
     if (isBundle(t)) {
       const size = Number(t.bundleSize);
       const price = Number(t.price);
@@ -622,15 +715,17 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
         errs.bundle = 'Bundle size must be a whole number of 2 or more';
       } else if (maxPer && size > maxPer) {
         errs.bundle = `Bundle size can't be more than the ${maxPer} tickets allowed per order`;
-      } else if (!priceIsEmpty(t?.price) && !isNaN(price)) {
-        if (price % size !== 0) errs.bundle = `Bundle price must divide evenly by ${size}`;
-        else if (price / size < 1) errs.bundle = "Each person's share must be at least $1";
+      } else if (!priceIsEmpty(t?.price) && !isNaN(price) && price / size < 1) {
+        errs.bundle = `Bundle price must be at least $${size} - each of the ${size} tickets must be at least $1.`;
       }
     }
-    // Date window: start/expiry on or before the event day (by day); expiry on or after start.
+    // Date window: start/expiry not in the past (AC11), on or before the event day, expiry >= start.
+    const today = dayOf(new Date());
     const start = dayOf(t?.startDate);
     const expiry = dayOf(t?.expiryDate);
-    if (eventDay && start && start > eventDay) errs.dates = "Start date can't be after the event day";
+    if (start && start < today) errs.dates = "Start date can't be in the past";
+    else if (expiry && expiry < today) errs.dates = "Expiry date can't be in the past";
+    else if (eventDay && start && start > eventDay) errs.dates = "Start date can't be after the event day";
     else if (eventDay && expiry && expiry > eventDay) errs.dates = "Expiry date can't be after the event day";
     else if (start && expiry && expiry < start) errs.dates = 'Expiry must be on or after the start';
     return errs;
@@ -692,7 +787,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
       setEditingTicket(null);
       return;
     }
-    const errs = validateTicket(t);
+    const errs = validateTicket(t, index);
     if (Object.keys(errs).length > 0) {
       setTicketRowErrors((prev) => ({ ...prev, [index]: errs }));
       setEditingTicket(index); // keep open to show errors
@@ -737,6 +832,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                   <p className="min-w-0 truncate text-sm font-medium text-slate-700">
                     {ticket.name}
                     <span className="font-normal text-slate-500"> · ${Number(ticket.price).toFixed(2)}{isBundle(ticket) ? ` · admits ${ticket.bundleSize}` : ''}</span>
+                    {ticket.active === false && <span className="font-normal text-slate-400"> · Closed</span>}
                   </p>
                   <div className="flex items-center gap-1 shrink-0">
                     {confirmDeleteTicket === index ? (
@@ -769,7 +865,7 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
-                        {(formData.ticketTypes || []).length > 1 && (
+                        {(formData.ticketTypes || []).length > 1 && !ticket.hasSold && (
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteTicket(index)}
@@ -788,14 +884,48 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
               );
             }
 
-            // Expanded editor.
+            // Expanded editor. A sold type (edit-locking D8) freezes its name/price/bundle - note and
+            // sale dates stay editable (D13). soldLock also appends a disabled look to those inputs.
+            const soldLock = !!ticket.hasSold;
+            const soldClass = soldLock ? ' bg-slate-100 text-slate-500 cursor-not-allowed' : '';
             return (
               <div key={index} className="border border-slate-200 rounded-lg p-3">
-                <div className="mb-3">
+                <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="text-sm font-medium text-slate-700">
                     Ticket {index + 1}{ticket?.name ? `: ${ticket.name}` : ''}
                   </span>
+                  {/* On-sale switch: stop selling this type without deleting it. Stays available even
+                      after a sale - it's how an organiser retires a sold type (delete is blocked). */}
+                  <span className="flex items-center gap-2">
+                    <span className={`text-xs ${ticket.active !== false ? 'text-teal-700 font-medium' : 'text-slate-400'}`}>
+                      {ticket.active !== false ? 'On sale' : 'Stopped'}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={ticket.active !== false}
+                      aria-label="On sale"
+                      onClick={() => {
+                        setEditingTicket(index);
+                        dispatch(updateTicketType({ index, field: 'active', value: !(ticket.active !== false) }));
+                        if (errors?.ticketTypes) { const n = { ...errors }; delete n.ticketTypes; dispatch(setFormErrors(n)); }
+                      }}
+                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${ticket.active !== false ? 'bg-teal-700' : 'bg-slate-200'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${ticket.active !== false ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                    </button>
+                  </span>
                 </div>
+                {ticket.active === false && (
+                  <p className="text-xs text-amber-600 mb-3">
+                    Stopped - buyers can&apos;t purchase this type. Anyone who already bought keeps their ticket.
+                  </p>
+                )}
+                {soldLock && (
+                  <p className="text-xs text-slate-500 mb-3">
+                    Tickets have sold, so this type&apos;s name, price and bundle are locked. You can still edit its note and sale dates.
+                  </p>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Ticket Name */}
@@ -817,7 +947,8 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                         clearTicketRowError(index, 'name');
                       }}
                       placeholder="Early Bird"
-                      className={getInputClasses(!!ticketNameError(index))}
+                      disabled={soldLock}
+                      className={getInputClasses(!!ticketNameError(index)) + soldClass}
                       maxLength="100"
                     />
                     {ticketNameError(index) && (
@@ -856,7 +987,8 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                         clearTicketRowError(index, 'price');
                       }}
                       onWheel={(e) => e.target.blur()}
-                      className={getInputClasses(!!ticketPriceError(index))}
+                      disabled={soldLock}
+                      className={getInputClasses(!!ticketPriceError(index)) + soldClass}
                       placeholder="0.00"
                     />
                     {ticketPriceError(index) && (
@@ -918,12 +1050,13 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                     <input
                       type="checkbox"
                       checked={isBundle(ticket)}
+                      disabled={soldLock}
                       onChange={(e) => {
                         setEditingTicket(index);
                         dispatch(updateTicketType({ index, field: 'bundleSize', value: e.target.checked ? 2 : '' }));
                         clearTicketRowError(index, 'bundle');
                       }}
-                      className="h-4 w-4 rounded border-slate-300 accent-teal-700 focus:ring-teal-300"
+                      className="h-4 w-4 rounded border-slate-300 accent-teal-700 focus:ring-teal-300 disabled:cursor-not-allowed"
                     />
                     <span className="text-xs font-medium text-slate-700">Sell as a bundle (one price admits several people)</span>
                   </label>
@@ -939,10 +1072,11 @@ const TicketTypesSection = ({ formData, errors, dispatch }) => {
                         value={ticket.bundleSize === '' || ticket.bundleSize === null || ticket.bundleSize === undefined ? '' : ticket.bundleSize}
                         onChange={(e) => { setEditingTicket(index); dispatch(updateTicketType({ index, field: 'bundleSize', value: e.target.value })); clearTicketRowError(index, 'bundle'); }}
                         onWheel={(e) => e.target.blur()}
+                        disabled={soldLock}
                         placeholder="4"
-                        className={getInputClasses(!!ticketBundleError(index))}
+                        className={getInputClasses(!!ticketBundleError(index)) + soldClass}
                       />
-                      <p className="text-xs text-slate-400 mt-1">The Price above is the total for the whole bundle (e.g. size 4 at $72 admits 4 for $18 each).</p>
+                      <p className="text-xs text-slate-400 mt-1">The Price above is the whole pack price (e.g. $50 admits 3). Any amount is fine as long as each person's share stays at least $1.</p>
                       {ticketBundleError(index) && (
                         <p className="text-red-600 text-xs mt-1">{ticketBundleError(index)}</p>
                       )}
@@ -1070,9 +1204,12 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
     if (dc.active !== false && applies.length === 0) {
       errs.applies = 'Pick at least one ticket type this code applies to';
     }
+    const vToday = dayOf(new Date());
     const vFrom = dayOf(dc.validFrom);
     const vUntil = dayOf(dc.validUntil);
-    if (eventDay && vFrom && vFrom > eventDay) errs.dates = "Valid from can't be after the event day";
+    if (vFrom && vFrom < vToday) errs.dates = "Valid from can't be in the past";
+    else if (vUntil && vUntil < vToday) errs.dates = "Valid until can't be in the past";
+    else if (eventDay && vFrom && vFrom > eventDay) errs.dates = "Valid from can't be after the event day";
     else if (eventDay && vUntil && vUntil > eventDay) errs.dates = "Valid until can't be after the event day";
     else if (vFrom && vUntil && vFrom > vUntil) errs.dates = '"Valid from" must be on or before "valid until"';
     const used = dc.usedCount || 0;
@@ -1081,14 +1218,18 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
       else if (dc.maxUses < used) errs.uses = `${used} already used — max uses cannot be below ${used}`;
     }
     if (applies.length > 0 && !isNaN(val)) {
-      const coveredPrices = (formData.ticketTypes || [])
-        .filter((t) => applies.includes(t.name) && t.price !== null && t.price !== undefined && t.price !== '')
-        .map((t) => Number(t.price)).filter((p) => !isNaN(p));
-      if (coveredPrices.length > 0) {
-        const cheapest = Math.min(...coveredPrices);
-        const after = dc.kind === 'percent' ? cheapest * (1 - val / 100) : cheapest - val;
-        if (Math.round(after * 100) < 100) errs.value = 'This makes a ticket cost under $1. Lower the discount or uncheck that ticket type.';
-      }
+      // The code may not drop any covered ticket - or any per-person share inside a covered pack -
+      // below $1. For a bundle the floor is the per-person share (packPrice / size); a fixed amount
+      // reduces each share by value / size. Mirrors the server (events-bundle-pricing.md D9).
+      const offender = (formData.ticketTypes || [])
+        .filter((t) => applies.includes(t.name) && t.price !== null && t.price !== undefined && t.price !== '' && !isNaN(Number(t.price)))
+        .find((t) => {
+          const size = t.bundleSize && Number(t.bundleSize) >= 2 ? Number(t.bundleSize) : 1;
+          const perPerson = Number(t.price) / size;
+          const after = dc.kind === 'percent' ? perPerson * (1 - val / 100) : perPerson - val / size;
+          return Math.round(after * 100) < 100;
+        });
+      if (offender) errs.value = `This leaves ${offender.name} under the $1 minimum per ticket. Lower the discount or uncheck that ticket type.`;
     }
     return errs;
   };
@@ -1269,7 +1410,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                       disabled={namedTicketTypes.length === 0 && dc?.active === false}
                       title={namedTicketTypes.length === 0 ? 'Add a named ticket type first' : undefined}
                       onClick={() => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'active', value: !(dc?.active !== false) })); clearDiscountRowError(index, 'applies'); }}
-                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${dc?.active !== false ? 'bg-teal-700' : 'bg-slate-200'}`}
+                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed ${dc?.active !== false ? 'bg-teal-700' : 'bg-slate-200'}`}
                     >
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${dc?.active !== false ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
                     </button>
@@ -1414,7 +1555,7 @@ const DiscountCodesSection = ({ formData, errors, dispatch }) => {
                     disabled={dc?.active === false}
                     title={dc?.active === false ? 'Activate the code to advertise it' : undefined}
                     onClick={() => { setEditingDiscount(index); dispatch(updateDiscountCode({ index, field: 'showHint', value: !(dc?.showHint === true) })); }}
-                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${(dc?.showHint === true && dc?.active !== false) ? 'bg-teal-700' : 'bg-slate-200'}`}
+                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed ${(dc?.showHint === true && dc?.active !== false) ? 'bg-teal-700' : 'bg-slate-200'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${(dc?.showHint === true && dc?.active !== false) ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
                   </button>

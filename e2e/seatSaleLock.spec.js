@@ -36,16 +36,18 @@ test('AC5 an existing UNSOLD event is fully editable: calculator + row list edit
   await expect(page.getByRole('button', { name: 'Seat C7', exact: true })).toHaveCount(0);
 });
 
-test('AC6 an event with a SOLD seat opens read-only with the plain lock message', async ({ page }) => {
+// events-edit-locking.md (revised): once a seat sells the whole layout freezes (the hall is a fixed
+// room); only reserving/releasing the still-free seats stays live. The builder is not fully read-only.
+test('AC6 an event with a SOLD seat freezes the whole layout; the sold seat is frozen', async ({ page }) => {
   const seed = readSeed();
   // builderSoldEvent has a booked seat (A-3).
   await gotoStep3(page, seed.builderSoldEventId);
   await openBuilder(page);
 
-  await expect(page.getByTestId('builder-locked')).toBeVisible();                 // plain lock message
-  await expect(page.getByTestId('builder-locked')).toContainText(/recreate the event/i);
-  await expect(page.getByLabel('Number Of Rows')).toHaveCount(0);                           // calculator gone
-  await expect(page.getByRole('button', { name: 'Add Single Row' })).toHaveCount(0);
-  await expect(page.getByLabel('Row 1 label')).toBeDisabled();                    // row list read-only
-  await expect(page.getByRole('button', { name: 'Seat A1', exact: true })).toBeDisabled(); // seats non-interactive
+  await expect(page.getByTestId('builder-locked')).toBeVisible();
+  await expect(page.getByTestId('builder-locked')).toContainText(/sold/i);
+  await expect(page.getByLabel('Number Of Rows')).toBeDisabled();                 // bulk calculator off
+  await expect(page.getByLabel('Row 1 label')).toBeDisabled();                    // row labels frozen
+  await expect(page.getByLabel('Row 2 label')).toBeDisabled();                    // every row frozen, not just booked ones
+  await expect(page.getByRole('button', { name: 'Seat A3', exact: true })).toBeDisabled(); // sold seat frozen
 });

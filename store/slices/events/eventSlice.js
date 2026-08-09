@@ -292,9 +292,9 @@ const createDefaultFormData = () => ({
   // Financial
   stripeAccountId: '',
 
-  // Refund Policy (Paid Events Only)
+  // Refund Policy (Paid Events Only) - no default: the organiser must explicitly choose (D13/AC20).
 refundPolicy: {
-  processingFeePolicy: 'non-refundable', // 'refunded' or 'non-refundable'
+  processingFeePolicy: '', // 'refunded' or 'non-refundable' - unset until chosen
   policyText: ''
 },
 
@@ -369,11 +369,8 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
   return ticketTypes.map(ticket => {
     const processedTicket = { ...ticket };
 
-    // Bundle types store the per-person share as price; the wizard shows the BUNDLE price the
-    // organiser typed, so reconstruct it (share x bundleSize) for display. Saving re-divides it.
-    if (ticket.bundleSize && ticket.price !== null && ticket.price !== undefined && ticket.price !== '') {
-      processedTicket.price = Number(ticket.price) * Number(ticket.bundleSize);
-    }
+    // The stored price IS the pack price the organiser typed (events-bundle-pricing.md D1), so the
+    // wizard shows it straight - no reconstruction, no re-division on save.
 
     // Process startDate
     if (ticket.startDate) {
@@ -469,9 +466,15 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
 
     isPaid: eventData.isPaid || false,
     isAdvertiseOnly: eventData.isAdvertiseOnly || false,
+    // Edit-locking signals (events-edit-locking.md): drive which fields the edit form disables.
+    hasActivity: eventData.hasActivity || false,
+    hasSeating: eventData.hasSeating || false,
+    committedCount: eventData.committedCount || 0,
     capacity: eventData.capacity || '',
     maxAttendeesPerRegistration: eventData.maxAttendeesPerRegistration || '',
-    registrationFields: eventData.registrationFields || [],
+    // Tag questions that came from the server as _existing so the edit form can lock them once the
+    // event has activity (events-edit-locking.md D10); questions added this session stay editable.
+    registrationFields: (eventData.registrationFields || []).map((f) => ({ ...f, _existing: true })),
     ticketTypes: (eventData.ticketTypes && eventData.ticketTypes.length > 0)
   ? processTicketDatesForEdit(eventData.ticketTypes, eventData.timeZone)
   : [],
@@ -481,7 +484,7 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
     organizerReservedSeats: eventData.organizerReservedSeats || '',
     stripeAccountId: eventData.stripeAccountId || '',
     refundPolicy: eventData.refundPolicy || {
-      processingFeePolicy: 'non-refundable',
+      processingFeePolicy: '',
       policyText: ''
     },
     gstIncluded: eventData.gstIncluded || false,
@@ -721,7 +724,9 @@ deleteError: null,
         fieldName: '',
         fieldType,
         fieldOptions: fieldType === 'select' ? [''] : [],
-        isRequired: false
+        isRequired: false,
+        blockingOptions: [],
+        blockingMessage: ''
       });
       state.hasUnsavedChanges = true;
     },
@@ -807,7 +812,7 @@ deleteError: null,
     },
 
     addTicketType: (state) => {
-      state.formData.ticketTypes.push({ name: '', price: null, quantity: 0, startDate: null, expiryDate: null, note: '', bundleSize: '' });
+      state.formData.ticketTypes.push({ name: '', price: null, quantity: 0, startDate: null, expiryDate: null, note: '', bundleSize: '', active: true });
       state.hasUnsavedChanges = true;
     },
     updateTicketType: (state, action) => {
@@ -872,7 +877,7 @@ updateRefundPolicy: (state, action) => {
 
 setRefundPolicy: (state, action) => {
   state.formData.refundPolicy = {
-    processingFeePolicy: action.payload.processingFeePolicy || 'non-refundable',
+    processingFeePolicy: action.payload.processingFeePolicy || '',
     policyText: action.payload.policyText || ''
   };
   state.hasUnsavedChanges = true;

@@ -842,8 +842,9 @@ const SingleEventCard = ({ event, chatProps }) => {
         </div>
       )}
 
-      {/* Tickets — capacity + ticket types + purchase, in sequence (paid events) */}
-      {event.isPaid && event.ticketTypes?.length > 0 && (
+      {/* Tickets — capacity + ticket types + purchase, in sequence (paid events). A STOPPED type
+          (active === false) is retired, so it is hidden here just like on the buy page. */}
+      {event.isPaid && event.ticketTypes?.some((t) => t.active !== false) && (
         <div ref={actionRef} className="my-4 p-3">
           {/* Mobile: the Purchase + Availability/Order Limit summary sits ABOVE the ticket list;
               desktop: ticket list on the left, that summary in a narrow right column. Ordering is
@@ -853,8 +854,8 @@ const SingleEventCard = ({ event, chatProps }) => {
             {/* Ticket types. ONE bordered card, rows divided by a subtle line; 5+ types scroll
                 inside the card so it stays compact. Below the summary on mobile, left on desktop. */}
             <div className="order-2 lg:order-1 flex-1 min-w-0">
-              <div className={`rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 transition-opacity ${capacityFull ? 'opacity-50' : ''} ${event.ticketTypes.length > 4 ? 'max-h-72 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full' : ''}`}>
-                {event.ticketTypes.map((ticket, index) => {
+              <div className={`rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 transition-opacity ${capacityFull ? 'opacity-50' : ''} ${event.ticketTypes.filter((t) => t.active !== false).length > 4 ? 'max-h-72 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full' : ''}`}>
+                {event.ticketTypes.filter((t) => t.active !== false).map((ticket, index) => {
                   // Capacity is event-level, not per-ticket, so the list only reflects sale-window status.
                   const status = event.timeZone ? getTicketSaleStatus(ticket, event.timeZone, null) : null;
                   const StatusIcon = status?.icon;
@@ -908,8 +909,8 @@ const SingleEventCard = ({ event, chatProps }) => {
                           </div>
                         )}
                       </div>
-                      {/* Bundle rows show the bundle price (share x pack size), not the bare share. */}
-                      <p className="text-base font-bold text-teal-700 shrink-0">${ticket.bundleSize ? ticket.price * ticket.bundleSize : ticket.price}</p>
+                      {/* The stored price IS the pack price for a bundle (events-bundle-pricing.md), shown directly. */}
+                      <p className="text-base font-bold text-teal-700 shrink-0">${ticket.price}</p>
                     </div>
                   );
                 })}

@@ -178,16 +178,17 @@ test.describe('seat builder overlay (organiser edit)', () => {
 
   // SUPERSEDED by featureplans/fix-events-seatmap-salelock.md: after a sale it is all-or-nothing, not a
   // partial freeze - the WHOLE builder is read-only (no seam or reserve edits), with a plain lock message.
-  test('AC9 a sold event locks the whole builder read-only (label/count/seam/reserve); the booked seat is unclickable', async ({ page }) => {
+  // events-edit-locking.md (revised): once a seat sells the whole layout freezes - labels, seat counts,
+  // and the bulk tool all lock; only reserving/releasing a free seat stays live (proven in editlocking).
+  test('AC9 a sold event freezes the whole layout (labels, counts, bulk tool); the booked seat is unclickable', async ({ page }) => {
     const seed = readSeed();
     await gotoStep3(page, seed.builderSoldEventId);
     await openBuilder(page);
-    await expect(page.getByTestId('builder-locked')).toBeVisible();
-    await expect(page.getByLabel('Row 1 label')).toBeDisabled();
-    await expect(page.getByLabel('Row 1 seat count')).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Add walkway after seat 5 in row A' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Seat A1', exact: true })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Seat A3', exact: true })).toBeDisabled(); // sold seat
+    await expect(page.getByTestId('builder-locked')).toBeVisible();          // the "some seats sold" notice
+    await expect(page.getByLabel('Row 1 label')).toBeDisabled();             // row labels frozen
+    await expect(page.getByLabel('Row 1 seat count')).toBeDisabled();        // seat counts frozen
+    await expect(page.getByRole('button', { name: 'Clear' })).toBeDisabled(); // bulk calculator is off
+    await expect(page.getByRole('button', { name: 'Seat A3', exact: true })).toBeDisabled(); // sold seat frozen
   });
 
   // --- Seat-map polish punch-list (see featureplans/fix-events-seatmap-polish.md), builder surface ---
@@ -492,13 +493,14 @@ test.describe('seat builder overlay (organiser edit)', () => {
     await expect(page.getByTestId('seat-builder-overlay')).toBeHidden();
   });
 
-  test('V-AC7 an empty hall blocks Save with a plain message', async ({ page }) => {
+  // Updated by events-wizard-validation.md (D12/AC17): an empty layout is a valid saved state now, so
+  // clearing the hall and hitting Save exits the builder instead of blocking.
+  test('V-AC7 an empty hall saves and exits (empty layout is a valid saved state)', async ({ page }) => {
     const seed = readSeed();
     await gotoStep3(page, seed.builderEmptyEventId);
     await openBuilder(page);
     await page.getByTestId('seat-builder-overlay').getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByText('Add at least one row to save.')).toBeVisible();
-    await expect(page.getByTestId('seat-builder-overlay')).toBeVisible();
+    await expect(page.getByTestId('seat-builder-overlay')).toBeHidden();
   });
 
   test('V-AC8 under capacity blocks Save - configured seats must equal capacity exactly', async ({ page }) => {

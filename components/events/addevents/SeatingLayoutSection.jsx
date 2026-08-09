@@ -50,6 +50,12 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
   const totalSeats = layout.reduce((t, r) => t + (r.seats?.length || 0), 0);
   const capacity = Number(formData.capacity) || 0; // passed to the builder; not shown on the card
 
+  // A paid event's seating NATURE locks at the first sale (events-edit-locking.md): a general-admission
+  // event that has sold tickets can't become seated - its buyers have no seat. Only offer the builder
+  // when the event is already seated OR has no activity yet.
+  const isSeated = layout.length > 0 || !!formData.hasSeating;
+  const seatingLockedOut = !isSeated && !!formData.hasActivity;
+
   const handleSave = (newLayout, newReserved) => {
     dispatch(setSeatingLayout(newLayout));
     dispatch(updateField({ field: 'organizerReservedSeats', value: newReserved }));
@@ -83,8 +89,14 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
         </div>
       )}
 
-      {/* Summary card - DISPLAY ONLY (a plain panel). Only the Seat Builder button opens the overlay;
-          no capacity badge (the builder validates capacity). */}
+      {/* General-admission event with sales: seating can't be introduced now (buyers have no seat). */}
+      {seatingLockedOut ? (
+        <p data-testid="seating-locked-out" className="text-xs text-amber-600">
+          This event has sold tickets as general admission, so assigned seating can&apos;t be added now. To use a seat map, recreate the event.
+        </p>
+      ) : (
+      /* Summary card - DISPLAY ONLY (a plain panel). Only the Seat Builder button opens the overlay;
+          no capacity badge (the builder validates capacity). */
       <div data-testid="seating-card" className="border border-slate-200 rounded-lg p-3">
         <div className="flex items-center justify-between gap-2 mb-2">
           {layout.length > 0 ? (
@@ -108,6 +120,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
 
         <MiniSeatPreview layout={layout} />
       </div>
+      )}
 
       {/* Venue layout images (outside the builder) */}
       <div className="mt-4">

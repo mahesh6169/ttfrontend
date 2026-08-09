@@ -29,7 +29,8 @@ const CheckInPaid_GroupedAttendeeList = () => {
   const [expandedInvoices, setExpandedInvoices] = useState(new Set());
   const [activeTab, setActiveTab] = useState({}); // { invoiceNumber: 'tickets' | 'attendeeInfo' | 'buyerInfo' }
 
-  // Group tickets by invoice number
+  // Group tickets by invoice number, each group in ascending ticket-number order
+  // (TKT-CODE-0001, 0002, ... - never the fetch's descending order).
   const groupedByInvoice = React.useMemo(() => {
     const groups = {};
     attendees.forEach(ticket => {
@@ -39,6 +40,9 @@ const CheckInPaid_GroupedAttendeeList = () => {
       }
       groups[invoiceNumber].push(ticket);
     });
+    Object.values(groups).forEach(list =>
+      list.sort((a, b) => String(a.ticketNumber || '').localeCompare(String(b.ticketNumber || '')))
+    );
     return groups;
   }, [attendees]);
 
@@ -175,6 +179,15 @@ const CheckInPaid_GroupedAttendeeList = () => {
           const someCheckedIn = areSomeCheckedIn(tickets);
           const hasMultipleTickets = tickets.length > 1;
           const showPartialCheckIn = someCheckedIn && !allCheckedIn;
+
+          // Bulk action: all in -> "Check Out All" (checks out everyone); partly in -> "Check In
+          // Remaining" (checks in only the not-yet-checked tickets); none in -> "Check In All".
+          const remainingTickets = tickets.filter(t => !t.attendees.every(att => att.checkedIn));
+          const bulkCheckIn = !allCheckedIn;                       // true = checking in, false = checking out
+          const ticketsForAction = allCheckedIn ? tickets : remainingTickets;
+          const bulkActionLabel = allCheckedIn
+            ? 'Check Out All'
+            : (showPartialCheckIn ? 'Check In Remaining' : 'Check In All');
           
           // Get representative ticket for buyer info
           const representative = tickets[0];
@@ -204,7 +217,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleBulkCheckInInvoice(tickets, !allCheckedIn);
+                        handleBulkCheckInInvoice(ticketsForAction, bulkCheckIn);
                       }}
                       disabled={actionLoading}
                       className={`
@@ -216,7 +229,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
                         ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
                     >
-                      {actionLoading ? 'Processing...' : (allCheckedIn ? 'Check Out All' : 'Check In All')}
+                      {actionLoading ? 'Processing...' : bulkActionLabel}
                     </button>
                   </div>
                   
@@ -237,7 +250,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleBulkCheckInInvoice(tickets, !allCheckedIn);
+                        handleBulkCheckInInvoice(ticketsForAction, bulkCheckIn);
                       }}
                       disabled={actionLoading}
                       className={`
@@ -249,7 +262,7 @@ const CheckInPaid_GroupedAttendeeList = () => {
                         ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
                     >
-                      {allCheckedIn ? 'Check Out All' : 'Check In All'}
+                      {actionLoading ? 'Processing...' : bulkActionLabel}
                     </button>
                   </div>
                   
