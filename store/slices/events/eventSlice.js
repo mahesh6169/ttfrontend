@@ -112,6 +112,16 @@ export const updatePaidEvent = createAsyncThunk(
         return rejectWithValue(response.data.message || 'Failed to update paid event');
       }
     } catch (error) {
+      // DEBUG: surface the REAL cause instead of the generic fallback. A response with a status =
+      // the backend rejected it (read data.message); no response + code ECONNABORTED = client 30s
+      // timeout; no response at all = network/CORS.
+      console.error('[UPDATE-PAID DEBUG] failed:', {
+        status: error.response?.status,
+        backendMessage: error.response?.data?.message,
+        backendData: error.response?.data,
+        axiosCode: error.code,
+        axiosMessage: error.message,
+      });
       return rejectWithValue(
         error.response?.data?.message || 'Failed to update paid event'
       );
@@ -288,7 +298,8 @@ const createDefaultFormData = () => ({
   seatingLayout: [],
   seatingLayoutImage: [],
   organizerReservedSeats: '',
-  
+  organizerBlockedSeats: '',
+
   // Financial
   stripeAccountId: '',
 
@@ -482,6 +493,7 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
     seatingLayout: eventData.seatingLayout || [],
     seatingLayoutImage: processImagesForEdit(eventData.seatingLayoutImage),
     organizerReservedSeats: eventData.organizerReservedSeats || '',
+    organizerBlockedSeats: eventData.organizerBlockedSeats || '',
     stripeAccountId: eventData.stripeAccountId || '',
     refundPolicy: eventData.refundPolicy || {
       processingFeePolicy: '',

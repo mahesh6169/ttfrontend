@@ -21,7 +21,7 @@ test('guest RSVPs a free event end to end', async ({ page }) => {
   await page.getByRole('button', { name: /Continue to RSVP/ }).click();
 
   await expect(page).toHaveURL(new RegExp(`/events/rsvp/${seed.freeEventId}`), { timeout: 15_000 });
-  await page.getByPlaceholder('Enter your mobile number').fill('0412345678');
+  await page.getByPlaceholder('0412345678').fill('0412345678');
   await page.getByPlaceholder('Enter full name').fill('Guest Tester');
   await page.getByRole('button', { name: 'Register' }).click();
 

@@ -162,7 +162,7 @@ const EventAttendAuthModal = ({ isOpen, onClose, event }) => {
                   value={email}
                   onChange={(e) => { setEmail(sanitizeInput(e.target.value)); if (emailError) setEmailError(null); }}
                   placeholder="you@email.com"
-                  className={`w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-teal-600 ${emailError ? 'border-red-400' : 'border-slate-300'}`}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-teal-300 ${emailError ? 'border-red-400' : 'border-slate-300'}`}
                   autoFocus
                 />
                 {emailError && (

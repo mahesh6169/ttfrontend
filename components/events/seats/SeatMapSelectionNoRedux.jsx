@@ -263,7 +263,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
     // make selection visible and one more tap deselects, so no zoom-gate is needed). Zoom stays available
     // as an optional aid for dense halls, not a requirement.
 
-    if (seatStatus === 'booked' || seatStatus === 'disabled' || seatStatus === 'reserved') {
+    if (seatStatus === 'booked' || seatStatus === 'blocked' || seatStatus === 'reserved') {
       return;
     }
 
@@ -328,7 +328,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
   const getSeatStatus = (seat, seatId) => {
     // Check backend status first
     if (seat.status === 'booked') return 'booked';
-    if (seat.status === 'disabled') return 'disabled';
+    if (seat.status === 'blocked') return 'blocked'; // not-for-sale (events-blocked-seats.md)
     if (seat.status === 'reserved') return 'reserved';
 
     // Check if this seat is selected by current user

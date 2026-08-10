@@ -3,7 +3,7 @@
 'use client';
 
 import React from 'react';
-import { MdEventSeat } from 'react-icons/md';
+import { MdEventSeat, MdClose } from 'react-icons/md';
 
 const SeatLegend = () => {
   const legendItems = [
@@ -36,6 +36,14 @@ const SeatLegend = () => {
       color: 'bg-purple-600 text-white border-purple-700',
       label: 'Reserved',
       description: 'Organizer use'
+    },
+    {
+      // Organiser not-for-sale (events-blocked-seats.md): grey with an X.
+      status: 'blocked',
+      color: 'bg-slate-200 text-slate-500 border-slate-400',
+      label: 'Not for sale',
+      description: 'Not available',
+      icon: 'close'
     }
   ];
 
@@ -47,7 +55,7 @@ const SeatLegend = () => {
         {legendItems.map((item) => (
           <div key={item.status} className="flex items-center space-x-1 justify-start shrink-0">
             <div className={`w-5 h-5 rounded border flex items-center justify-center ${item.color}`}>
-              <MdEventSeat className="w-3 h-3" />
+              {item.icon === 'close' ? <MdClose className="w-3 h-3" /> : <MdEventSeat className="w-3 h-3" />}
             </div>
             <div className="text-xs font-medium text-slate-700">
               {item.label}

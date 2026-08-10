@@ -8,7 +8,7 @@
 // with the per-tab tool in a dismissible bottom sheet; desktop keeps the sidebar-left / canvas-right layout.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { MdEventSeat, MdFitScreen } from 'react-icons/md';
+import { MdEventSeat, MdFitScreen, MdClose } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import { nextRowLabel, parseReservedLabels, formatReservedLabels, sanitizeRowLabel } from '@/utils/events/seatBuilder';
 
@@ -24,16 +24,21 @@ const makeSeats = (count) =>
 const seatClass = (status) => {
   if (status === 'booked') return 'bg-red-500 text-white border-red-600 cursor-not-allowed';
   if (status === 'reserved') return 'bg-purple-600 text-white border-purple-700';
+  // Not-for-sale (events-blocked-seats.md): grey with an X, unclickable outside its own tab.
+  if (status === 'blocked') return 'bg-slate-200 text-slate-500 border-slate-400 cursor-not-allowed';
   // Hover gated to true hover devices ([@media(hover:hover)]) so a touch tap toggles the seat on the first
   // tap (a sticky-hover seat would only reveal the card first) - parity with the attendee SeatButton.
   return 'bg-teal-50 text-teal-700 border-teal-400 [@media(hover:hover)]:hover:bg-teal-100 cursor-pointer';
 };
 
 export default function SeatBuilderOverlay({
-  initialLayout, initialReserved, capacity, onSave, onClose,
+  initialLayout, initialReserved, initialBlocked, capacity, onSave, onClose,
 }) {
   const [rows, setRows] = useState(() => JSON.parse(JSON.stringify(initialLayout || [])));
   const [reserved, setReserved] = useState(initialReserved || '');
+  const [blocked, setBlocked] = useState(initialBlocked || ''); // not-for-sale list (events-blocked-seats.md)
+  const [bulkBlockInput, setBulkBlockInput] = useState(''); // one-time Bulk "Not for sale" entry
+  const [bulkBlockError, setBulkBlockError] = useState('');
   const [scale, setScale] = useState(1);
   const [genLabel, setGenLabel] = useState('A'); // starting row label for the Layout calculator
   const [genRows, setGenRows] = useState('');    // empty until the organiser types
@@ -50,8 +55,10 @@ export default function SeatBuilderOverlay({
   // Dirty = the layout or the reserved list differs from what the builder opened with. memoised so the
   // frequent zoom/pan re-renders do not re-stringify the whole hall.
   const dirty = useMemo(
-    () => JSON.stringify(rows) !== JSON.stringify(initialLayout || []) || reserved !== (initialReserved || ''),
-    [rows, reserved, initialLayout, initialReserved],
+    () => JSON.stringify(rows) !== JSON.stringify(initialLayout || [])
+      || reserved !== (initialReserved || '')
+      || blocked !== (initialBlocked || ''),
+    [rows, reserved, blocked, initialLayout, initialReserved, initialBlocked],
   );
   // Cancel/Escape route through here: prompt only when there is something to lose, else close straight away.
   const requestClose = () => { if (dirty) setConfirmDiscard(true); else onClose(); };
@@ -192,11 +199,20 @@ export default function SeatBuilderOverlay({
     const s = formatReservedLabels(reservedSet);
     return s ? s.split(',').map((t) => t.trim()).filter(Boolean) : [];
   }, [reservedSet]);
+  // Not-for-sale list mirrors reserved (events-blocked-seats.md).
+  const blockedSet = useMemo(() => parseReservedLabels(blocked), [blocked]);
+  const blockedTokens = useMemo(() => {
+    const s = formatReservedLabels(blockedSet);
+    return s ? s.split(',').map((t) => t.trim()).filter(Boolean) : [];
+  }, [blockedSet]);
   const totalSeats = rows.reduce((t, r) => t + (r.seats?.length || 0), 0);
   const cap = Number(capacity) || 0;
   const matches = cap > 0 && totalSeats === cap;
   const atCapacity = cap > 0 && totalSeats >= cap; // configured seats reached capacity - no room for more rows
-  const allReserved = totalSeats > 0 && reservedSet.size >= totalSeats; // every seat held back = nothing left to sell
+  // Reserved + not-for-sale are mutually exclusive (a seat is never in both), so their sizes sum. Every
+  // seat held back one way or another = nothing left to sell.
+  const heldBack = reservedSet.size + blockedSet.size;
+  const allReserved = totalSeats > 0 && heldBack >= totalSeats;
   const rowsNum = parseInt(genRows, 10);
   const seatsNum = parseInt(genSeats, 10);
   const rowsError = String(genRows).trim() !== '' && !(rowsNum >= 1 && rowsNum <= 100);
@@ -217,6 +233,7 @@ export default function SeatBuilderOverlay({
   // clicks) only on the Seat Reservations tab. Aisles freeze once sold; reserving free seats stays live.
   const canAisle = !hasBooked && activeStep === 'aisles';
   const canReserve = activeStep === 'reserved';
+  const canBlock = activeStep === 'blocked'; // not-for-sale toggling is only editable on the Not for sale tab
 
   // ── Structure ────────────────────────────────────────────────────────────
   const generateDims = (r, s, startLabel = 'A') => {
@@ -228,6 +245,7 @@ export default function SeatBuilderOverlay({
     }
     setRows(next);
     setReserved(''); // a fresh rebuild wipes aisles (new rows) and reserved too, while still designing (item 23)
+    setBlocked(''); // ...and the not-for-sale list
   };
 
   // Layout calculator: ONE button with two faces. With no rows it reads "Add" and builds the skeleton
@@ -245,6 +263,7 @@ export default function SeatBuilderOverlay({
     if (hasBooked) return; // clearing would drop booked seats (D12)
     setRows([]);
     setReserved('');
+    setBlocked('');
   };
 
   const addRow = () => {
@@ -287,16 +306,18 @@ export default function SeatBuilderOverlay({
       const walkwayPositions = (r.walkwayPositions || []).filter((p) => p <= n - 1);
       return { ...r, seats, walkwayPositions };
     }));
-    // Silent self-cleaning: a shrunk row drops any reserved seat that no longer exists (no message).
+    // Silent self-cleaning: a shrunk row drops any reserved/not-for-sale seat that no longer exists.
     if (label) {
-      setReserved((prevReserved) => {
-        const set = parseReservedLabels(prevReserved);
+      const dropOrphans = (prevList) => {
+        const set = parseReservedLabels(prevList);
         const kept = [...set].filter((lbl) => {
           const m = lbl.match(/^([A-Z]+)(\d+)$/);
           return !(m && m[1] === label && Number(m[2]) > n);
         });
-        return kept.length === set.size ? prevReserved : formatReservedLabels(new Set(kept));
-      });
+        return kept.length === set.size ? prevList : formatReservedLabels(new Set(kept));
+      };
+      setReserved(dropOrphans);
+      setBlocked(dropOrphans);
     }
   };
 
@@ -412,11 +433,12 @@ export default function SeatBuilderOverlay({
   // ── Reserve (two-way with the typed box) ──────────────────────────────────
   const toggleReserve = (label, booked) => {
     if (!canReserve || booked) return; // reserving is only editable on the Seat Reservations tab (and never after a sale)
+    if (blockedSet.has(label)) return; // a not-for-sale seat is never reservable
     const set = parseReservedLabels(reserved);
     if (set.has(label)) {
       set.delete(label);
     } else {
-      if (set.size + 1 >= totalSeats) { // reserving this one would leave nothing to sell
+      if (heldBack + 1 >= totalSeats) { // holding this one back too would leave nothing to sell
         signpost('At least one seat must stay unreserved for sale.');
         setSheetOpen(true);
         return;
@@ -425,6 +447,31 @@ export default function SeatBuilderOverlay({
     }
     setReserved(formatReservedLabels(set));
     setSheetOpen(true); // mobile: pop the sheet so the Seats Reserved summary + Bulk Reserve are visible
+  };
+
+  // ── Not for sale (two-way with the typed box) - mirrors reserve on the blocked list ────────
+  const toggleBlock = (label, booked) => {
+    if (!canBlock || booked) return; // editable only on the Not for sale tab; a booked seat is never markable
+    if (reservedSet.has(label)) return; // a reserved (VIP) seat is never markable not-for-sale
+    const set = parseReservedLabels(blocked);
+    if (set.has(label)) {
+      set.delete(label);
+    } else {
+      if (heldBack + 1 >= totalSeats) { // holding this one back too would leave nothing to sell
+        signpost('At least one seat must stay for sale.');
+        setSheetOpen(true);
+        return;
+      }
+      set.add(label);
+    }
+    setBlocked(formatReservedLabels(set));
+    setSheetOpen(true);
+  };
+
+  // Route a map seat click to the active tab's toggle (reserve on Reservations, block on Not for sale).
+  const onSeatMapClick = (label, booked) => {
+    if (canReserve) toggleReserve(label, booked);
+    else if (canBlock) toggleBlock(label, booked);
   };
 
   // Bulk Reserve: a one-time entry that MERGES the typed seats into the reserved list, then clears.
@@ -451,6 +498,30 @@ export default function SeatBuilderOverlay({
     setBulkError(culprits.length ? `Not in your hall: ${culprits.join(', ')}` : '');
   };
 
+  // Bulk "Not for sale": mirrors Bulk Reserve on the blocked list. Culprits = tokens not in the hall,
+  // OR seats already reserved (a reserved seat can't also be not-for-sale).
+  const bulkBlockCulprits = () => [...parseReservedLabels(bulkBlockInput)]
+    .filter((lbl) => !allSeatLabels.has(lbl) || reservedSet.has(lbl));
+  const applyBulkBlock = () => {
+    if (String(bulkBlockInput).trim() === '') { setBulkBlockError(''); return; }
+    const culprits = bulkBlockCulprits();
+    if (culprits.length) { setBulkBlockError(`Not available to block: ${culprits.join(', ')}`); return; }
+    const add = parseReservedLabels(bulkBlockInput);
+    const merged = new Set([...blockedSet, ...add]);
+    if (totalSeats > 0 && (merged.size + reservedSet.size) >= totalSeats) { // would hold back every seat
+      setBulkBlockError('At least one seat must stay for sale.');
+      return;
+    }
+    if (add.size) setBlocked(formatReservedLabels(merged));
+    setBulkBlockError('');
+    setBulkBlockInput('');
+  };
+  const checkBulkBlockOnBlur = () => {
+    if (String(bulkBlockInput).trim() === '') { setBulkBlockError(''); return; }
+    const culprits = bulkBlockCulprits();
+    setBulkBlockError(culprits.length ? `Not available to block: ${culprits.join(', ')}` : '');
+  };
+
   // Save - the ONE gate. Tab switches are always free; validation only blocks Save.
   const nameList = (arr) => (arr.length <= 1 ? (arr[0] || '') : `${arr.slice(0, -1).join(', ')} and ${arr[arr.length - 1]}`);
   // One signpost toast at a time (shared id = never stacked). Placed TOP-CENTER: the bottom is now taken
@@ -461,14 +532,15 @@ export default function SeatBuilderOverlay({
     if (rows.length === 0) {
       // An empty layout is a valid saved state (no assigned seating): let the organiser clear the
       // hall, Save, and exit to check other steps (D12/AC17).
-      onSave([], []);
+      onSave([], [], []);
       return;
     }
     // Structural field errors first (fix these before capacity is even meaningful).
     const badTabs = [];
     if (rowsError || seatsError || anyRowError) badTabs.push('Layout'); // the row list counts as Layout
     if (aisleError) badTabs.push('Aisles');
-    if (bulkError || allReserved) badTabs.push('Reservations'); // all-reserved leaves nothing to sell
+    if (bulkError || allReserved) badTabs.push('Reservations'); // all-held-back leaves nothing to sell
+    if (bulkBlockError) badTabs.push('Not for sale');
     if (badTabs.length) {
       signpost(`${nameList(badTabs)} ${badTabs.length > 1 ? 'have' : 'has'} errors.`);
       return;
@@ -479,13 +551,14 @@ export default function SeatBuilderOverlay({
       signpost(totalSeats > cap ? `Over capacity by ${diff} - remove ${diff} to save.` : `Under capacity by ${diff} - add ${diff} to save.`);
       return;
     }
-    onSave(rows, reserved);
+    onSave(rows, reserved, blocked);
   };
 
   const steps = [
     { key: 'rows', n: '1', label: 'Layout' },
     { key: 'aisles', n: '2', label: 'Aisles' },
     { key: 'reserved', n: '3', label: 'Reservations' },
+    { key: 'blocked', n: '4', label: 'Not for sale' },
   ];
 
   return (
@@ -540,6 +613,7 @@ export default function SeatBuilderOverlay({
                   <li><span className="font-medium text-slate-800">Layout</span> - set the number of rows and seats to build the hall; fine-tune each row in the Row/Seats list.</li>
                   <li><span className="font-medium text-slate-800">Aisles</span> - add walkways between seats (tap a gap on the map, or set Row + Seat).</li>
                   <li><span className="font-medium text-slate-800">Reservations</span> - hold seats back from public sale.</li>
+                  <li><span className="font-medium text-slate-800">Not for sale</span> - mark seats that are never sold (a pillar, a broken seat, a buffer).</li>
                 </ul>
                 <div className="mt-3 text-center text-slate-500">Start in the Layout tab.</div>
               </div>
@@ -571,6 +645,7 @@ export default function SeatBuilderOverlay({
                     <div className="mx-auto mb-2 flex w-max max-w-full flex-wrap items-center justify-center gap-3 rounded border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-700 shadow-sm" data-testid="map-legend">
                       <span className="flex items-center gap-1"><span className="h-3.5 w-3.5 rounded border border-teal-400 bg-teal-50" />Available</span>
                       <span className="flex items-center gap-1"><span className="h-3.5 w-3.5 rounded border border-purple-700 bg-purple-600" />Reserved</span>
+                      <span className="flex items-center gap-1"><span className="flex h-3.5 w-3.5 items-center justify-center rounded border border-slate-400 bg-slate-200"><MdClose className="h-2 w-2 text-slate-500" /></span>Not for sale</span>
                       <span className="flex items-center gap-1"><span className="h-3.5 w-2.5 rounded-sm bg-amber-400" />Aisle</span>
                     </div>
                     {/* Stage bar */}
@@ -583,20 +658,27 @@ export default function SeatBuilderOverlay({
                             const pos = seatIndex + 1;
                             const label = `${row.rowLabel}${seat.seatNumber}`;
                             const booked = seat.status === 'booked';
-                            const status = booked ? 'booked' : (reservedSet.has(label) ? 'reserved' : 'available');
+                            const isBlocked = blockedSet.has(label);
+                            const isReserved = reservedSet.has(label);
+                            const status = booked ? 'booked' : isBlocked ? 'blocked' : (isReserved ? 'reserved' : 'available');
+                            // Clickable only on the matching tab, and never a seat owned by the other list.
+                            const seatDisabled = booked || (!canReserve && !canBlock)
+                              || (canReserve && isBlocked) || (canBlock && isReserved);
                             const hasWalkway = (row.walkwayPositions || []).includes(pos);
                             return (
                               <span key={label} className="flex items-center">
                                 <div className="relative group">
                                   <button
                                     type="button"
-                                    onClick={() => toggleReserve(label, booked)}
-                                    disabled={booked || !canReserve}
+                                    onClick={() => onSeatMapClick(label, booked)}
+                                    disabled={seatDisabled}
                                     aria-label={`Seat ${label}`}
                                     data-status={status}
                                     className={`flex h-5 w-5 items-center justify-center rounded border text-[8px] font-medium ${seatClass(status)}`}
                                   >
-                                    {showNumbers ? seat.seatNumber : <MdEventSeat className="h-2.5 w-2.5" />}
+                                    {status === 'blocked'
+                                      ? <MdClose className="h-2.5 w-2.5" />
+                                      : (showNumbers ? seat.seatNumber : <MdEventSeat className="h-2.5 w-2.5" />)}
                                   </button>
                                   {/* Shared hover card (parity with the attendee map): Row + Seat only, no status word, no price. */}
                                   <div data-testid="seat-hover-card" className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 opacity-0 shadow-lg transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100">
@@ -860,6 +942,47 @@ export default function SeatBuilderOverlay({
                         <div className="flex flex-wrap gap-1">
                           {reservedTokens.map((t) => (
                             <span key={t} className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">{t}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Tab 4 - Not for sale (cloned from Reservations; grey/X list) */}
+                {activeStep === 'blocked' && (
+                  <>
+                    <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+                      <span className="flex h-4 w-4 items-center justify-center rounded border border-slate-400 bg-slate-200 text-slate-500"><MdClose className="h-2.5 w-2.5" /></span>
+                      Not for sale
+                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                      <div className="sm:pr-4">
+                        <div className="font-medium text-teal-700">Manual Selection</div>
+                        <p className="text-xs text-slate-500">Click an available seat to mark it not for sale (turns grey with an X). Click again to release.</p>
+                      </div>
+                      <div className="sm:border-l sm:border-slate-200 sm:pl-4">
+                        <div className="mb-1 font-medium text-slate-700">Bulk Not for sale</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input type="text" value={bulkBlockInput} onChange={(e) => { setBulkBlockInput(e.target.value.toUpperCase()); if (bulkBlockError) setBulkBlockError(''); }} onBlur={checkBulkBlockOnBlur} onKeyDown={(e) => { if (e.key === 'Enter') applyBulkBlock(); }} aria-label="Bulk not for sale seats" placeholder="A1, A4-A6" className={`w-40 rounded border p-1 ${bulkBlockError ? 'border-red-400' : 'border-slate-300'}`} />
+                          <button type="button" onClick={applyBulkBlock} className="rounded border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">Apply</button>
+                        </div>
+                        {bulkBlockError ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">{bulkBlockError}</p>
+                        ) : (
+                          <p className="mt-1 text-xs italic text-slate-400">Type seats (e.g. A1, A4-A6) and Apply to mark them not for sale in one go.</p>
+                        )}
+                      </div>
+                    </div>
+                    {/* Not-for-sale summary - compact ranges, wraps as the list grows */}
+                    <div className="border-t border-slate-200 pt-2">
+                      <div className="mb-1 font-medium text-slate-700">Not for sale{blockedSet.size ? ` (${blockedSet.size})` : ''}</div>
+                      {blockedTokens.length === 0 ? (
+                        <p className="text-xs text-slate-400">None yet.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          {blockedTokens.map((t) => (
+                            <span key={t} className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">{t}</span>
                           ))}
                         </div>
                       )}

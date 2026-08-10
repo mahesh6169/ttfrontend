@@ -750,6 +750,20 @@ const StepManager = ({
         }
       }
 
+      // Not-for-sale (blocked) seats validation - mirrors reserved (events-blocked-seats.md).
+      if (typeof formData.organizerBlockedSeats === 'string' && formData.organizerBlockedSeats.trim()) {
+        const blockedSeatsStr = formData.organizerBlockedSeats.trim();
+        const seatPattern = /^[A-Z]+\d+(-[A-Z]+\d+)?$/; // Matches A1 or A7-A9
+        const parts = blockedSeatsStr.split(',').map(part => part.trim()).filter(Boolean);
+
+        const invalidSeats = parts.filter(part => !seatPattern.test(part));
+        if (invalidSeats.length > 0) {
+          errors.organizerBlockedSeats = [
+            `Invalid seat format. Use individual seats (A1,A3) or ranges (A7-A9,A12). Invalid: ${invalidSeats.join(', ')}`
+          ];
+        }
+      }
+
       // Refund policy is an explicit required choice (AC20/D13) - the final submit is the wall too.
       if (!formData.refundPolicy?.processingFeePolicy) {
         errors.refundPolicy = ['Please select a refund policy option'];
@@ -1368,6 +1382,10 @@ console.log("🔍 Debug organizerReservedSeats:", {
 
        if (formData.organizerReservedSeats) {
         submitFormData.append('organizerReservedSeats', formData.organizerReservedSeats);
+      }
+
+      if (formData.organizerBlockedSeats) {
+        submitFormData.append('organizerBlockedSeats', formData.organizerBlockedSeats);
       }
 
       if (formData.stripeAccountId) {
