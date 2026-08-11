@@ -940,13 +940,13 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
       doc.line(tableLeft, yPosition, tableLeft + tableWidth, yPosition);
     }
 
-    // Terms and Conditions (refund policy) — matches the on-screen invoice
+    // Refund Policy + organiser Terms & Conditions — separate headed blocks, matching the on-screen invoice.
     if (invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) {
       yPosition += 10;
       doc.setFontSize(9);
       doc.setFont(undefined, 'bold');
       doc.setTextColor(80);
-      doc.text('Terms and Conditions:', tableLeft, yPosition);
+      doc.text('Refund Policy:', tableLeft, yPosition);
       yPosition += 5;
       doc.setFontSize(8);
       doc.setFont(undefined, 'normal');
@@ -959,6 +959,22 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
         doc.text(`* ${invoiceData.refundPolicy.policyText}`, tableLeft, yPosition);
         yPosition += 4;
       }
+      doc.setTextColor(0);
+    }
+    // Organiser Terms & Conditions (events-terms-conditions.md), own heading, wrapped to the table width.
+    if (invoiceData.refundPolicy?.termsAndConditions) {
+      yPosition += 10;
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(80);
+      doc.text('Terms and Conditions:', tableLeft, yPosition);
+      yPosition += 5;
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(100);
+      const tcLines = doc.splitTextToSize(invoiceData.refundPolicy.termsAndConditions, tableWidth);
+      doc.text(tcLines, tableLeft, yPosition);
+      yPosition += tcLines.length * 4;
       doc.setTextColor(0);
     }
 
@@ -1254,20 +1270,27 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                   </div>
 
                   {/* Notes Below Table — discount code (informational) + Terms & Conditions (refund policy) */}
-                  {((invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0) || invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
+                  {((invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0) || invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText || invoiceData.refundPolicy?.termsAndConditions) && (
                     <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 space-y-2">
                       {invoiceData.amounts?.discount && invoiceData.amounts.discount.amount > 0 && (
                         <p>* Discount code {invoiceData.amounts.discount.code} applied{discountedTypeNames.length ? ` to ${discountedTypeNames.join(', ')}` : ''}</p>
                       )}
                       {(invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
                         <div className="space-y-1">
-                          <p className="font-semibold text-slate-700">Terms and Conditions:</p>
+                          <p className="font-semibold text-slate-700">Refund Policy:</p>
                           {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
                             <p>* Processing fees are non-refundable</p>
                           )}
                           {invoiceData.refundPolicy?.policyText && (
                             <p>* {invoiceData.refundPolicy.policyText}</p>
                           )}
+                        </div>
+                      )}
+                      {/* Organiser Terms & Conditions (events-terms-conditions.md) - its own heading. */}
+                      {invoiceData.refundPolicy?.termsAndConditions && (
+                        <div className="space-y-1">
+                          <p className="font-semibold text-slate-700">Terms &amp; Conditions:</p>
+                          <p className="whitespace-pre-line">{invoiceData.refundPolicy.termsAndConditions}</p>
                         </div>
                       )}
                     </div>
@@ -1335,15 +1358,25 @@ const InvoiceModal = ({ invoice, invoiceData, invoiceLoading, invoiceError, onCl
                             </table>
                           </div>
 
-                          {/* Terms and Conditions (refund policy) */}
-                          {(invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
-                            <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 space-y-1">
-                              <p className="font-semibold text-slate-700">Terms and Conditions:</p>
-                              {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
-                                <p>* Processing fees are non-refundable</p>
+                          {/* Refund Policy + organiser Terms & Conditions - separate headed blocks */}
+                          {(invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText || invoiceData.refundPolicy?.termsAndConditions) && (
+                            <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 space-y-2">
+                              {(invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' || invoiceData.refundPolicy?.policyText) && (
+                                <div className="space-y-1">
+                                  <p className="font-semibold text-slate-700">Refund Policy:</p>
+                                  {invoiceData.refundPolicy?.processingFeePolicy === 'non-refundable' && (
+                                    <p>* Processing fees are non-refundable</p>
+                                  )}
+                                  {invoiceData.refundPolicy?.policyText && (
+                                    <p>* {invoiceData.refundPolicy.policyText}</p>
+                                  )}
+                                </div>
                               )}
-                              {invoiceData.refundPolicy?.policyText && (
-                                <p>* {invoiceData.refundPolicy.policyText}</p>
+                              {invoiceData.refundPolicy?.termsAndConditions && (
+                                <div className="space-y-1">
+                                  <p className="font-semibold text-slate-700">Terms &amp; Conditions:</p>
+                                  <p className="whitespace-pre-line">{invoiceData.refundPolicy.termsAndConditions}</p>
+                                </div>
                               )}
                             </div>
                           )}

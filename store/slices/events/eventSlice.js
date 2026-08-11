@@ -288,14 +288,17 @@ const createDefaultFormData = () => ({
   seatingLayout: [],
   seatingLayoutImage: [],
   organizerReservedSeats: '',
-  
+  organizerBlockedSeats: '',
+  seatingLayoutFlipH: false,
+
   // Financial
   stripeAccountId: '',
 
   // Refund Policy (Paid Events Only) - no default: the organiser must explicitly choose (D13/AC20).
 refundPolicy: {
   processingFeePolicy: '', // 'refunded' or 'non-refundable' - unset until chosen
-  policyText: ''
+  policyText: '',
+  termsAndConditions: ''
 },
 
 // GST Configuration (Paid Events Only)
@@ -482,10 +485,13 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
     seatingLayout: eventData.seatingLayout || [],
     seatingLayoutImage: processImagesForEdit(eventData.seatingLayoutImage),
     organizerReservedSeats: eventData.organizerReservedSeats || '',
+    organizerBlockedSeats: eventData.organizerBlockedSeats || '',
+    seatingLayoutFlipH: !!eventData.seatingLayoutFlipH,
     stripeAccountId: eventData.stripeAccountId || '',
     refundPolicy: eventData.refundPolicy || {
       processingFeePolicy: '',
-      policyText: ''
+      policyText: '',
+      termsAndConditions: ''
     },
     gstIncluded: eventData.gstIncluded || false,
   };
@@ -878,7 +884,8 @@ updateRefundPolicy: (state, action) => {
 setRefundPolicy: (state, action) => {
   state.formData.refundPolicy = {
     processingFeePolicy: action.payload.processingFeePolicy || '',
-    policyText: action.payload.policyText || ''
+    policyText: action.payload.policyText || '',
+    termsAndConditions: action.payload.termsAndConditions || ''
   };
   state.hasUnsavedChanges = true;
 },

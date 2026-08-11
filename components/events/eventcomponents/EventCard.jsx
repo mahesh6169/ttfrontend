@@ -16,7 +16,7 @@ import { buildSlugUrl } from '@/utils/slugUtils';
 const WIDE = 2.2;
 const TALL = 0.65;
 
-const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
+const EventCard = ({ event, isInWishlist, onWishlistToggle, ended = false }) => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
   const {
     title,
@@ -114,6 +114,12 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle }) => {
         {/* Image — per-image cover/contain.
             Odd shapes show whole on a soft blurred backdrop instead of being cropped. */}
         <div className="relative w-full h-40 sm:h-48 md:h-56 rounded-t-xl overflow-hidden bg-slate-100">
+          {/* Past event marker (events-past-events.md): a dark "Ended" pill on the image. */}
+          {ended && (
+            <span className="absolute top-2 left-2 z-10 rounded-full bg-slate-800/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+              Ended
+            </span>
+          )}
           {fit === 'contain' && (
             <>
               <img

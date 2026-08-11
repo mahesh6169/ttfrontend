@@ -1,7 +1,7 @@
 // components/events/tickets/AttendeeInfoSection.jsx
 
 import React from 'react';
-import { FaInfoCircle } from 'react-icons/fa';
+import { FaInfoCircle, FaExclamationCircle } from 'react-icons/fa';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react';
 
 // Forms guide (00-shared/design-system.md section 6): 14px slate-700 text, slate-300 border,
@@ -10,7 +10,14 @@ import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headless
 const INPUT_CLASS =
   'w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400';
 
-const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate }) => {
+// errors + blockMessageFor are OPTIONAL (free-RSVP only): errors is a { fieldName: message } map for
+// required-field errors, blockMessageFor(field) returns a blocking-answer message or null. Paid usage
+// passes neither, so its rendering is unchanged.
+// singleColumn opt-in stacks one question per row (free-RSVP asks for this so blocking callouts read
+// cleanly); the paid flow leaves it off and keeps the 2-column grid.
+// bare opt-in drops the outer card (border + padding) so this can sit as a section INSIDE another
+// form card, separated by a top divider instead. The paid flow leaves it off and stays a standalone card.
+const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate, errors = {}, blockMessageFor, singleColumn = false, bare = false }) => {
 
   // Check if event has custom registration fields
   if (!event?.registrationFields || event.registrationFields.length === 0) {
@@ -129,8 +136,16 @@ const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate }
 
   return (
     // Compact card: a 2-column grid on desktop that stacks on mobile. mt-6 (24px) sets it apart
-    // from the ticket list above.
-    <div className="mt-6 rounded-lg border border-slate-200 bg-white p-4" data-attendee-section>
+    // from the ticket list above. In `bare` mode it drops the border/padding and rides a top divider
+    // so it reads as a section within a bigger form card.
+    <div
+      className={
+        bare
+          ? 'mt-6 pt-6 border-t border-slate-200'
+          : 'mt-6 rounded-lg border border-slate-200 bg-white p-4'
+      }
+      data-attendee-section
+    >
       <div className="flex items-center mb-4">
         <FaInfoCircle className="text-slate-500 mr-2 text-base" />
         <h3 className="text-base font-semibold text-slate-900">
@@ -138,18 +153,32 @@ const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate }
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {event.registrationFields.map((field, index) => (
-          <div key={index}>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              {field.fieldName}
-              {field.isRequired && (
-                <span className="text-red-600 ml-0.5">*</span>
+      <div className={`grid gap-4 ${singleColumn ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+        {event.registrationFields.map((field, index) => {
+          const fieldError = errors[field.fieldName];
+          const blockMessage = blockMessageFor ? blockMessageFor(field) : null;
+          return (
+            <div key={index}>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                {field.fieldName}
+                {field.isRequired && (
+                  <span className="text-red-600 ml-0.5">*</span>
+                )}
+              </label>
+              {renderFormField(field)}
+              {fieldError && (
+                <p className="text-xs text-red-600 mt-1">{fieldError}</p>
               )}
-            </label>
-            {renderFormField(field)}
-          </div>
-        ))}
+              {blockMessage && (
+                // Shared callout (design-system.md section 10): tinted red box, 1px border, 14px text.
+                <div className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  <FaExclamationCircle className="mt-0.5 flex-shrink-0" />
+                  <span>{blockMessage}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

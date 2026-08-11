@@ -20,19 +20,51 @@ const numToLabel = (n) => {
  * The next row label after `lastLabel`. A one/two-letter sequence label increments in spreadsheet
  * order (A->B, Z->AA, AA->AB, AZ->BA). A custom label (e.g. "VIP") has no sensible successor, so we
  * fall back to the next free single letter not already used - no cleverness attempted.
+ * `skip` (events-layout-tools.md) omits chosen letters from the AUTO-generated sequence - the walk
+ * jumps over any label matching a skip entry (default I, O). A never-reached entry is silently ignored.
  * @param {string} lastLabel
  * @param {string[]} existingLabels - labels already in the layout (to pick a free letter)
+ * @param {string[]} skip - labels to omit from generation (e.g. ["I","O"])
  * @returns {string}
  */
-export const nextRowLabel = (lastLabel = '', existingLabels = []) => {
+export const nextRowLabel = (lastLabel = '', existingLabels = [], skip = []) => {
+  const skipSet = new Set((skip || []).map((s) => String(s).toUpperCase()));
   if (/^[A-Z]{1,2}$/.test(lastLabel)) {
-    return numToLabel(labelToNum(lastLabel) + 1);
+    let n = labelToNum(lastLabel) + 1;
+    let candidate = numToLabel(n);
+    while (skipSet.has(candidate)) candidate = numToLabel(++n); // jump over I, O, ...
+    return candidate;
   }
   const used = new Set(existingLabels);
   for (let n = 1; ; n++) {
     const candidate = numToLabel(n);
-    if (!used.has(candidate)) return candidate;
+    if (!used.has(candidate) && !skipSet.has(candidate)) return candidate;
   }
+};
+
+/** Parse a Skip-rows field ("I, O") into a deduped array of valid uppercase labels (["I","O"]).
+ *  Uses the shared label rule, so entries are letters-only, max 3 (events-layout-tools.md). */
+export const parseSkipRows = (str = '') =>
+  [...new Set(String(str).split(',').map((s) => sanitizeRowLabel(s)).filter(Boolean))];
+
+/**
+ * Render orientation for one row (events-layout-tools.md). A horizontal flip reverses the seat draw
+ * order (A3, A2, A1) and MIRRORS each walkway position ("after seat N" becomes "after seat len-N") so
+ * the aisle lands on the correct side. It is a RENDER transform only - seat ids/numbers are untouched.
+ * Both the builder map and the attendee map call this, so they always flip together.
+ * @param {{seats?: any[], walkwayPositions?: number[]}} row
+ * @param {boolean} flipH
+ * @returns {{seats: any[], walkwayPositions: number[]}}
+ */
+export const orientRowForRender = (row = {}, flipH = false) => {
+  const seats = row.seats || [];
+  const walkwayPositions = row.walkwayPositions || [];
+  if (!flipH) return { seats, walkwayPositions };
+  const len = seats.length;
+  return {
+    seats: [...seats].reverse(),
+    walkwayPositions: walkwayPositions.map((p) => len - p),
+  };
 };
 
 /** The one row-label rule used everywhere (Layout calculator, per-row list, aisle Row): uppercase A-Z

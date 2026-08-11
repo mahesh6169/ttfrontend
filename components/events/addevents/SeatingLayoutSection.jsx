@@ -21,10 +21,11 @@ const MiniSeatPreview = ({ layout }) => {
   const displayRows = empty
     ? Array.from({ length: 6 }, () => Array.from({ length: 10 }, () => 'seat'))
     : layout.slice(0, MAX_ROWS).map((row) =>
-        (row.seats || []).slice(0, MAX_COLS).map((s) => (s.status === 'reserved' ? 'reserved' : 'seat'))
+        (row.seats || []).slice(0, MAX_COLS).map((s) =>
+          s.status === 'reserved' ? 'reserved' : s.status === 'blocked' ? 'blocked' : 'seat')
       );
   const seatColor = (s) =>
-    empty ? 'text-slate-300' : s === 'reserved' ? 'text-amber-500' : 'text-teal-600';
+    empty ? 'text-slate-300' : s === 'reserved' ? 'text-amber-500' : s === 'blocked' ? 'text-slate-400' : 'text-teal-600';
 
   return (
     <div
@@ -56,9 +57,11 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
   const isSeated = layout.length > 0 || !!formData.hasSeating;
   const seatingLockedOut = !isSeated && !!formData.hasActivity;
 
-  const handleSave = (newLayout, newReserved) => {
+  const handleSave = (newLayout, newReserved, newBlocked, newFlipH) => {
     dispatch(setSeatingLayout(newLayout));
     dispatch(updateField({ field: 'organizerReservedSeats', value: newReserved }));
+    dispatch(updateField({ field: 'organizerBlockedSeats', value: newBlocked }));
+    dispatch(updateField({ field: 'seatingLayoutFlipH', value: !!newFlipH }));
     setIsBuilderOpen(false);
   };
 
@@ -118,6 +121,13 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
           </div>
         )}
 
+        {layout.length > 0 && formData.organizerBlockedSeats && (
+          <div className="flex items-start gap-2 mb-2">
+            <span className="text-xs text-slate-500">Not for sale</span>
+            <span className="text-xs text-slate-600">{formData.organizerBlockedSeats}</span>
+          </div>
+        )}
+
         <MiniSeatPreview layout={layout} />
       </div>
       )}
@@ -141,6 +151,8 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
         <SeatBuilderOverlay
           initialLayout={layout}
           initialReserved={formData.organizerReservedSeats || ''}
+          initialBlocked={formData.organizerBlockedSeats || ''}
+          initialFlipH={!!formData.seatingLayoutFlipH}
           capacity={capacity}
           onSave={handleSave}
           onClose={() => setIsBuilderOpen(false)}

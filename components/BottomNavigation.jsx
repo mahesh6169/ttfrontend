@@ -25,6 +25,7 @@ const BOTTOM_NAV_EXEMPT_PATHS = [
   '/events/tickets',
   '/events/seats',
   '/events/checkout',
+  '/events/rsvp',
 ];
 
 const isBottomNavExempt = (pathname) => {

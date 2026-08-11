@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
-import { toast } from 'react-toastify';
 import { DEFAULT_BLOCK_MESSAGE } from '@/utils/events/registrationMessages';
 import { formatInTimeZone } from 'date-fns-tz';
-import { FaUser, FaPhone, FaPlus, FaTrash, FaExclamationCircle } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
 
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import {
@@ -18,9 +17,13 @@ import {
 } from '@/store/slices/events/freeEventSlice';
 
 import LoadingSpinner from '@/components/LoadingSpinner';
-import SimpleDropdown from '@/components/shared/SimpleDropdown';
+import AttendeeInfoSection from '@/components/events/tickets/AttendeeInfoSection';
 import BackButton from '@/components/BackButton';
 import EmptyState from '@/components/layout/EmptyState';
+
+// AU mobile: 10 digits starting with 04 (spaces allowed in the field, ignored here).
+const normalizeMobile = (m) => String(m || '').replace(/\s+/g, '');
+const isValidAuMobile = (m) => /^04\d{8}$/.test(normalizeMobile(m));
 
 const formatEventDate = (dateTime, timeZone) => {
   if (!dateTime) return '';
@@ -96,34 +99,6 @@ const RsvpPage = () => {
   // Track whether THIS session's submit just succeeded — drives the inline success card render.
   const [justRegistered, setJustRegistered] = useState(false);
 
-  const attendeesScrollRef = useRef(null);
-  const [attendeesScroll, setAttendeesScroll] = useState({ canScroll: false, thumbTopPct: 0, thumbHeightPct: 100 });
-
-  useEffect(() => {
-    const el = attendeesScrollRef.current;
-    if (!el) return;
-    const update = () => {
-      const { scrollTop, scrollHeight, clientHeight } = el;
-      if (clientHeight === 0) return;
-      const canScroll = scrollHeight > clientHeight + 1;
-      if (!canScroll) {
-        setAttendeesScroll({ canScroll: false, thumbTopPct: 0, thumbHeightPct: 100 });
-        return;
-      }
-      const thumbHeightPct = (clientHeight / scrollHeight) * 100;
-      const thumbTopPct = (scrollTop / scrollHeight) * 100;
-      setAttendeesScroll({ canScroll: true, thumbTopPct, thumbHeightPct });
-    };
-    update();
-    el.addEventListener('scroll', update, { passive: true });
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => {
-      el.removeEventListener('scroll', update);
-      ro.disconnect();
-    };
-  }, [attendees.length]);
-
   useEffect(() => {
     if (!submitting) return;
 
@@ -186,8 +161,8 @@ const RsvpPage = () => {
     const newErrors = {};
     if (!mobile.trim()) {
       newErrors.mobile = 'Mobile number is required';
-    } else if (!/^[0-9+\-\s()]+$/.test(mobile)) {
-      newErrors.mobile = 'Please enter a valid mobile number';
+    } else if (!isValidAuMobile(mobile)) {
+      newErrors.mobile = 'Enter a 10-digit mobile starting with 04';
     }
 
     attendees.forEach((a, i) => {
@@ -215,7 +190,7 @@ const RsvpPage = () => {
     setSubmitting(true);
 
     const registrationData = {
-      mobile: mobile.trim(),
+      mobile: normalizeMobile(mobile),
       attendees: attendees
         .filter((a) => a.name.trim())
         .map((a) => ({
@@ -231,10 +206,6 @@ const RsvpPage = () => {
     dispatch(registerForFreeEvent({ eventId, registrationData }));
   };
 
-  const handleCancel = () => {
-    router.back();
-  };
-
   // Blocking answers (events-rsvp-blocking-questions.md): a dropdown answer marked blocking stops the
   // RSVP. Evaluated PER QUESTION against its own blockingOptions; returns the message (custom or default)
   // when the current answer blocks, else null. While any block is active, Register stays disabled.
@@ -246,65 +217,23 @@ const RsvpPage = () => {
     }
     return null;
   };
-  const anyBlockActive = (selectedEvent?.registrationFields || []).some((f) => getFieldBlock(f));
+  const activeBlockMessage =
+    (selectedEvent?.registrationFields || []).map((f) => getFieldBlock(f)).find(Boolean) || null;
+  const anyBlockActive = !!activeBlockMessage;
 
-  // ───────── Field renderer (text + dropdown for now; full type set ready) ─────────
-  const renderFormField = (field) => {
-    const value = formResponses[field.fieldName] ?? '';
-    const error = errors[field.fieldName];
-    const baseInput = `w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
-      error ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300'
-    }`;
+  // Register enables only when the required info is complete (D2): a mobile number, every attendee
+  // name, and every required custom question. Same rule the validateForm() gate enforces on submit -
+  // this just mirrors it live so the sticky-bar button greys out until it is met.
+  const requiredComplete =
+    isValidAuMobile(mobile) &&
+    attendees.every((a) => a.name.trim() !== '') &&
+    (selectedEvent?.registrationFields || []).every((f) => {
+      if (!f.isRequired) return true;
+      const v = formResponses[f.fieldName];
+      return v != null && String(v).trim() !== '';
+    });
 
-    const label = (
-      <label className="block text-sm font-medium text-slate-700 mb-1">
-        {field.fieldName}
-        {field.isRequired && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-    );
-
-    switch (field.fieldType) {
-      case 'select': {
-        const blockMessage = getFieldBlock(field);
-        return (
-          <div key={field.fieldName} className="mb-3 sm:mb-4">
-            {label}
-            <SimpleDropdown
-              value={value}
-              onChange={(v) => handleFormResponseChange(field.fieldName, v)}
-              options={field.fieldOptions || []}
-              placeholder="Select"
-            />
-            {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
-            {blockMessage && (
-              <div className="mt-3 text-center" data-testid={`block-notice-${field.fieldName}`}>
-                <p className="flex items-center justify-center gap-1.5 text-sm font-medium text-red-600">
-                  <FaExclamationCircle className="shrink-0" />
-                  {blockMessage}
-                </p>
-              </div>
-            )}
-          </div>
-        );
-      }
-
-      case 'text':
-      default:
-        return (
-          <div key={field.fieldName} className="mb-3 sm:mb-4">
-            {label}
-            <textarea
-              value={value}
-              onChange={(e) => handleFormResponseChange(field.fieldName, e.target.value)}
-              rows={3}
-              className={`${baseInput} resize-vertical`}
-              placeholder="Please provide your response"
-            />
-            {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
-          </div>
-        );
-    }
-  };
+  const isSubmitting = submitting || registrationStatus === 'loading';
 
   // ───────── Render: loading / not-found / main ─────────
   const isLoadingEvent = (eventStatus === 'idle' || eventStatus === 'loading') && !selectedEvent;
@@ -332,258 +261,286 @@ const RsvpPage = () => {
   const eventDate = selectedEvent.dateTime ? new Date(selectedEvent.dateTime) : null;
   const isPastEvent = eventDate && eventDate < new Date();
 
+  // The form is only shown (and the sticky bar only pinned) when there is something to fill in.
+  const showForm = !isRegistered && !isPastEvent && !justRegistered;
+
   return (
     <div>
-      <div className="max-w-xl mx-auto">
-        <div className="mb-3 sm:mb-4">
-          <BackButton href={`/events/views/${eventId}`} />
+      <div className="w-full max-w-2xl mx-auto pb-24">
+        {/* Page toolbar (design-system.md section 8): Back pinned left, title centred in the SAME
+            row. Back is the shared secondary button; title is the flat H1 (18px bold). */}
+        <div className="relative flex items-center justify-center mb-4">
+          <div className="absolute left-0">
+            <BackButton href={`/events/views/${eventId}`} />
+          </div>
+          <h1 className="px-12 text-lg font-bold text-slate-900 text-center truncate">
+            {selectedEvent.title}
+          </h1>
         </div>
 
-        <div>
-          {/* Title + event summary — hidden when registration is complete or on a revisit
-              (the registered card stands alone with its own actions). */}
-          {!justRegistered && !isRegistered && (
-            <>
-              <h1 className="text-lg sm:text-2xl font-bold text-slate-900 text-center mb-1">
-                {selectedEvent.title}
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 text-center mb-4 sm:mb-6">
-                {formatEventDate(selectedEvent.dateTime, selectedEvent.timeZone)}
+        {/* Event date meta (12px muted) - only while the form is shown. */}
+        {showForm && (
+          <p className="text-xs text-slate-500 text-center mb-6">
+            {formatEventDate(selectedEvent.dateTime, selectedEvent.timeZone)}
+          </p>
+        )}
+
+        {/* Registered card — same layout for fresh success AND already-registered revisits;
+            just the message differs. Both flows end with the same two actions. */}
+        {(justRegistered || isRegistered) && !submitting && (
+          <div className="text-center py-6">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-teal-100 flex items-center justify-center">
+              <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-base font-semibold text-slate-900 mb-1">
+              {justRegistered ? 'Registration successful' : 'You are already registered for this event'}
+            </h3>
+            {justRegistered && (
+              <p className="text-sm text-slate-500 mb-6">
+                You will receive a confirmation email shortly.
               </p>
-            </>
-          )}
+            )}
+            {!justRegistered && <div className="mb-6" />}
 
-          {/* Registered card — same layout for fresh success AND already-registered revisits;
-              just the message differs. Both flows end with the same two actions. */}
-          {(justRegistered || isRegistered) && !submitting && (
-            <div className="text-center py-6">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-teal-100 flex items-center justify-center">
-                <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-1">
-                {justRegistered ? 'Registration successful' : 'You are already registered for this event'}
-              </h3>
-              {justRegistered && (
-                <p className="text-sm text-slate-500 mb-6">
-                  You will receive a confirmation email shortly.
-                </p>
-              )}
-              {!justRegistered && <div className="mb-6" />}
+            {/* Guest came back to manage: registering with the same email upgrades the
+                guest record, attaching this RSVP so they can manage it. Organiser contact
+                is already in their email and on the event page. Not shown on fresh success. */}
+            {isGuest && !justRegistered && (
+              <p className="text-sm text-slate-600 max-w-md mx-auto mb-4">
+                To change or cancel, contact the event organiser. Alternatively,{' '}
+                <Link href="/register" className="text-teal-700 hover:text-teal-800 underline">
+                  register with {user?.email}
+                </Link>{' '}
+                to manage your RSVPs online.
+              </p>
+            )}
 
-              {/* Guest came back to manage: registering with the same email upgrades the
-                  guest record, attaching this RSVP so they can manage it. Organiser contact
-                  is already in their email and on the event page. Not shown on fresh success. */}
-              {isGuest && !justRegistered && (
-                <p className="text-sm text-slate-600 max-w-md mx-auto mb-4">
-                  To change or cancel, contact the event organiser. Alternatively,{' '}
-                  <Link href="/register" className="text-teal-700 hover:text-teal-800 underline">
-                    register with {user?.email}
-                  </Link>{' '}
-                  to manage your RSVPs online.
-                </p>
-              )}
-
-              <div className="flex items-center justify-center gap-4 text-sm">
-                {!isGuest && (
-                  <>
-                    <Link
-                      href="/users/profile/myregistrations"
-                      className="text-teal-700 hover:text-teal-800 underline"
-                    >
-                      View my RSVPs
-                    </Link>
-                    <span className="text-slate-300">·</span>
-                  </>
-                )}
-                <Link
-                  href="/events"
-                  className="text-teal-700 hover:text-teal-800 underline"
-                >
-                  Browse events
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Past-event banner */}
-          {isPastEvent && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 mb-4">
-              This event has already taken place. Registration is closed.
-            </div>
-          )}
-
-          {/* Form — hidden when already registered, just-registered, or event is past. */}
-          {!isRegistered && !isPastEvent && !justRegistered && (
-            <form onSubmit={handleSubmit}>
-              {/* Contact Information */}
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Mobile Number<span className="text-red-500 ml-0.5">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={mobile}
-                  onChange={(e) => {
-                    setMobile(e.target.value);
-                    if (errors.mobile) {
-                      const next = { ...errors };
-                      delete next.mobile;
-                      setErrors(next);
-                    }
-                  }}
-                  className={`w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
-                    errors.mobile ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300'
-                  }`}
-                  placeholder="Enter your mobile number"
-                />
-                {errors.mobile && (
-                  <p className="text-xs text-red-600 mt-1">{errors.mobile}</p>
-                )}
-              </div>
-
-              {/* Attendees */}
-              <div className="mb-8 sm:mb-10">
-                <div className="flex gap-2 items-stretch">
-                  <div
-                    ref={attendeesScrollRef}
-                    className={`flex-1 min-w-0 ${
-                      attendees.length > 3
-                        ? 'max-h-72 md:max-h-[36rem] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [scrollbar-width:none]'
-                        : ''
-                    }`}
-                  >
-                    {attendees.map((a, i) => (
-                      <div key={i} className="mb-4">
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-sm font-medium text-slate-700">
-                            Attendee {i + 1}<span className="text-red-500 ml-0.5">*</span>
-                          </label>
-                          {attendees.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveAttendee(i)}
-                              className="text-slate-400 hover:text-red-600 transition-colors"
-                              aria-label="Remove attendee"
-                            >
-                              <FaTrash size={12} />
-                            </button>
-                          )}
-                        </div>
-                        <input
-                          type="text"
-                          value={a.name}
-                          onChange={(e) => handleAttendeeChange(i, 'name', e.target.value)}
-                          className={`w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
-                            errors[`attendee_${i}_name`] ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300'
-                          }`}
-                          placeholder="Enter full name"
-                        />
-                        {errors[`attendee_${i}_name`] && (
-                          <p className="text-xs text-red-600 mt-1">
-                            {errors[`attendee_${i}_name`]}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {attendeesScroll.canScroll && (
-                    <div className="relative w-1.5 bg-slate-100 rounded-full shrink-0">
-                      <div
-                        className="absolute left-0 right-0 bg-teal-700 rounded-full transition-all"
-                        style={{
-                          top: `${attendeesScroll.thumbTopPct}%`,
-                          height: `${attendeesScroll.thumbHeightPct}%`,
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {(selectedEvent.maxAttendeesPerRegistration || 1) > 1 && (() => {
-                  const max = selectedEvent.maxAttendeesPerRegistration;
-                  const atMax = attendees.length >= max;
-                  return (
-                    <div className="flex items-center justify-between mt-3">
-                      <span className={`text-xs ${atMax ? 'text-red-600' : 'invisible'}`}>
-                        Max {max} attendees reached
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleAddAttendee}
-                        disabled={atMax}
-                        className={`flex items-center gap-1 px-3 py-1 text-xs sm:text-sm rounded-full font-semibold transition-colors ${
-                          atMax
-                            ? 'text-slate-400 cursor-not-allowed'
-                            : 'text-teal-700 hover:bg-teal-50 hover:text-teal-800'
-                        }`}
-                      >
-                        <FaPlus size={10} />
-                        Add Attendee
-                      </button>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Additional info — host-configured questions */}
-              {selectedEvent.registrationFields?.length > 0 && (
-                <div className="mb-4 sm:mb-6">
-                  {selectedEvent.registrationFields.map(renderFormField)}
-                </div>
-              )}
-
-              {/* Server-side error (returned by the registerForFreeEvent thunk) */}
-              {registrationError && (
-                <p className="text-sm text-red-600 mb-4">{registrationError}</p>
-              )}
-
-              {/* Action footer */}
-              <div className="flex justify-center gap-2 sm:gap-4 pt-4 sm:pt-6 border-t border-slate-200 mt-6">
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="px-5 py-2.5 text-sm font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                {anyBlockActive ? (
-                  // A blocking answer is chosen - registration is impossible, so the primary action
-                  // becomes the way out (events-rsvp-blocking-questions.md, feel-pass).
+            <div className="flex items-center justify-center gap-4 text-sm">
+              {!isGuest && (
+                <>
                   <Link
-                    href="/events"
-                    className="inline-flex items-center px-5 py-2.5 text-sm font-semibold bg-teal-700 hover:bg-teal-800 text-white rounded-lg transition-colors"
+                    href="/users/profile/myregistrations"
+                    className="text-teal-700 hover:text-teal-800 underline"
                   >
-                    Browse Events
+                    View my RSVPs
                   </Link>
-                ) : (
-                  <button
-                    type="submit"
-                    disabled={registrationStatus === 'loading'}
-                    className="px-5 py-2.5 text-sm font-semibold bg-teal-700 hover:bg-teal-800 text-white rounded-lg transition-colors disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
-                  >
-                    {registrationStatus === 'loading' ? 'Registering...' : 'Register'}
-                  </button>
-                )}
-              </div>
-            </form>
-          )}
-
-          {/* Past-event back-to-event link. (Registered/just-registered states have their own
-              action buttons inside the unified registered card above.) */}
-          {isPastEvent && !justRegistered && !isRegistered && (
-            <div className="flex justify-center pt-4 border-t border-slate-200 mt-4">
+                  <span className="text-slate-300">·</span>
+                </>
+              )}
               <Link
-                href={`/events/views/${eventId}`}
-                className="px-4 py-2 text-sm sm:text-base border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                href="/events"
+                className="text-teal-700 hover:text-teal-800 underline"
               >
-                Back to event
+                Browse events
               </Link>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Past-event banner */}
+        {isPastEvent && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 mb-4">
+            This event has already taken place. Registration is closed.
+          </div>
+        )}
+
+        {/* Form — hidden when already registered, just-registered, or event is past. One bordered
+            card wraps every field so the page reads as a single form; the custom-questions block
+            rides inside it as a divided section (AttendeeInfoSection `bare`). */}
+        {showForm && (
+          <form id="rsvp-form" onSubmit={handleSubmit} className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
+            {/* Mobile number — contact for the whole registration, so it owns its own full-width row. */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Mobile Number<span className="text-red-500 ml-0.5">*</span>
+              </label>
+              <input
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
+                value={mobile}
+                onChange={(e) => {
+                  setMobile(e.target.value);
+                  if (errors.mobile) {
+                    const next = { ...errors };
+                    delete next.mobile;
+                    setErrors(next);
+                  }
+                }}
+                className={`w-full max-w-[200px] px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
+                  errors.mobile ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300'
+                }`}
+                placeholder="0412345678"
+              />
+              {errors.mobile && (
+                <p className="text-xs text-red-600 mt-1">{errors.mobile}</p>
+              )}
+            </div>
+
+            {/* Attendee names: 2-column on desktop, stacked on mobile (D4). */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Attendee name cards — flow normally (no DIY scrollbar, D6). */}
+              {attendees.map((a, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium text-slate-700">
+                      Attendee {i + 1}<span className="text-red-500 ml-0.5">*</span>
+                    </label>
+                    {attendees.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAttendee(i)}
+                        className="text-slate-400 hover:text-red-600 transition-colors"
+                        aria-label="Remove attendee"
+                      >
+                        <FaTrash size={12} />
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={a.name}
+                    onChange={(e) => handleAttendeeChange(i, 'name', e.target.value)}
+                    className={`w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
+                      errors[`attendee_${i}_name`] ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300'
+                    }`}
+                    placeholder="Enter full name"
+                  />
+                  {errors[`attendee_${i}_name`] && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors[`attendee_${i}_name`]}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Add-attendee control (only when the event allows more than one). Sits right after the
+                attendee fields, left-aligned; the max-reached note tucks in beside it. */}
+            {(selectedEvent.maxAttendeesPerRegistration || 1) > 1 && (() => {
+              const max = selectedEvent.maxAttendeesPerRegistration;
+              const atMax = attendees.length >= max;
+              return (
+                <div className="flex items-center gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={handleAddAttendee}
+                    disabled={atMax}
+                    className={`flex items-center gap-1 px-3 py-1 text-sm rounded-full font-semibold transition-colors ${
+                      atMax
+                        ? 'text-slate-400 cursor-not-allowed'
+                        : 'text-teal-700 hover:bg-teal-50 hover:text-teal-800'
+                    }`}
+                  >
+                    <FaPlus size={10} />
+                    Add Attendee
+                  </button>
+                  {atMax && (
+                    <span className="text-xs text-red-600">Max {max} attendees reached</span>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Host-configured custom questions — the shared card in `bare` mode so it sits as a
+                divided section inside this one form card (D3). Errors render under each field; the
+                blocking message is lifted OUT of the form (below) per owner's direction. */}
+            <AttendeeInfoSection
+              event={selectedEvent}
+              formResponses={formResponses}
+              onFormResponseUpdate={handleFormResponseChange}
+              errors={errors}
+              singleColumn
+              bare
+            />
+
+            {/* Server-side error (returned by the registerForFreeEvent thunk) */}
+            {registrationError && (
+              <p className="text-sm text-red-600 mt-6">{registrationError}</p>
+            )}
+          </form>
+        )}
+
+        {/* Blocking-answer callout (design-system.md section 10): a chosen answer denies registration.
+            It sits OUTSIDE the form, between the form and the sticky bar, so it reads as a verdict on
+            the whole registration rather than a single field's error. */}
+        {showForm && anyBlockActive && (
+          <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <FaExclamationCircle className="mt-0.5 flex-shrink-0" />
+            <span>{activeBlockMessage}</span>
+          </div>
+        )}
+
+        {/* Past-event back-to-event link. (Registered/just-registered states have their own
+            action buttons inside the unified registered card above.) */}
+        {isPastEvent && !justRegistered && !isRegistered && (
+          <div className="flex justify-center pt-4 border-t border-slate-200 mt-4">
+            <Link
+              href={`/events/views/${eventId}`}
+              className="px-4 py-2 text-sm border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              Back to event
+            </Link>
+          </div>
+        )}
       </div>
+
+      {/* Sticky action bar (design-system.md buttons): "N attendees" on the left, the Register
+          primary on the right, pinned to the bottom edge. The mobile bottom nav is hidden on this
+          page (see BottomNavigation), so this owns the bottom edge; the wrapper carries pb-24 so
+          nothing hides behind it. When a blocking answer is chosen, registration is impossible, so
+          the primary becomes the way out (Browse Events). */}
+      {showForm && (
+        <div
+          data-testid="rsvp-cta-bar"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white safe-area-inset-pb"
+        >
+          <div className="w-full max-w-2xl mx-auto px-2 md:px-4 py-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 truncate">
+                {attendees.length} attendee{attendees.length === 1 ? '' : 's'}
+              </p>
+            </div>
+            {anyBlockActive ? (
+              <Link
+                href="/events"
+                data-testid="rsvp-browse"
+                className="shrink-0 inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-sm font-semibold bg-teal-700 hover:bg-teal-800 text-white transition-colors"
+              >
+                Browse Events
+              </Link>
+            ) : (
+              <button
+                type="submit"
+                form="rsvp-form"
+                data-testid="rsvp-register"
+                disabled={!requiredComplete || isSubmitting}
+                className={`shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                  requiredComplete
+                    ? 'bg-teal-700 hover:bg-teal-800 text-white'
+                    : 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Registering...</span>
+                  </>
+                ) : requiredComplete ? (
+                  <span>Register</span>
+                ) : (
+                  <>
+                    <FaExclamationTriangle className="text-sm" />
+                    <span>Fill Required Info</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

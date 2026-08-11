@@ -11,19 +11,21 @@ test('AC11 a blocking answer disables Register with an inline message; the safe 
   await page.goto(`/events/rsvp/${seed.blockingRsvpEventId}`);
   await page.waitForLoadState('networkidle');
 
-  await page.getByPlaceholder('Enter your mobile number').fill('0412345678');
+  await page.getByPlaceholder('0412345678').fill('0412345678');
   await page.getByPlaceholder('Enter full name').fill('Member Tester');
 
   // Pick the blocking answer "No" -> inline message shows and the primary action becomes "Browse Events".
+  // Custom questions now use the shared Attendee Information card (Headless UI Listbox): the trigger is
+  // a button, the choices are role="option".
   await page.getByRole('button', { name: 'Select' }).click();
-  await page.getByRole('button', { name: 'No', exact: true }).click();
+  await page.getByRole('option', { name: 'No', exact: true }).click();
   await expect(page.getByText('Sorry, this event is 18+ only.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Browse Events' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Register', exact: true })).toHaveCount(0);
 
   // Switch to the safe answer "Yes" -> the message clears and Register returns.
   await page.getByRole('button', { name: 'No', exact: true }).click(); // the trigger now shows "No"; reopen
-  await page.getByRole('button', { name: 'Yes', exact: true }).click();
+  await page.getByRole('option', { name: 'Yes', exact: true }).click();
   await expect(page.getByText('Sorry, this event is 18+ only.')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Register', exact: true })).toBeEnabled();
 

@@ -20,11 +20,14 @@ import { MdFitScreen } from 'react-icons/md';
 import axios from '@/utils/axiosConfig';
 
 import SeatButton from './SeatButton';
+import SeatNumberingHint from './SeatNumberingHint';
+import { orientRowForRender } from '@/utils/events/seatBuilder';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const MAX_SCALE = 4; // unified with the builder (deep enough to read seat numbers) - events-seatmap-zoom-parity.md
+const NUMBER_THRESHOLD = 1.6; // reveal seat numbers past this zoom (parity with the builder)
 
 const SeatMapSelectionNoRedux = forwardRef(({ 
   event, 
@@ -60,6 +63,9 @@ const SeatMapSelectionNoRedux = forwardRef(({
   const zoomApiRef = useRef(null);    // TransformWrapper instance
   const [scale, setScale] = useState(1);
   const [fitScale, setFitScale] = useState(1);
+  // Reveal seat numbers on the faces once zoomed a little past the fitted view (capped at 1.6), so a
+  // wide hall (fitted at a small scale on mobile) still reveals without a huge zoom. Parity with the builder.
+  const showNumbers = scale >= Math.min(NUMBER_THRESHOLD, fitScale * 1.3);
   const [viewportH, setViewportH] = useState(null); // map box height, sized to the fitted hall (see fitToView)
   const anchorYRef = useRef(0); // screen-y of the hall's centre; the +/- controls zoom toward it
   const transformRef = useRef({ scale: 1, positionX: 0, positionY: 0 }); // last-known transform
@@ -263,7 +269,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
     // make selection visible and one more tap deselects, so no zoom-gate is needed). Zoom stays available
     // as an optional aid for dense halls, not a requirement.
 
-    if (seatStatus === 'booked' || seatStatus === 'disabled' || seatStatus === 'reserved') {
+    if (seatStatus === 'booked' || seatStatus === 'blocked' || seatStatus === 'reserved') {
       return;
     }
 
@@ -328,7 +334,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
   const getSeatStatus = (seat, seatId) => {
     // Check backend status first
     if (seat.status === 'booked') return 'booked';
-    if (seat.status === 'disabled') return 'disabled';
+    if (seat.status === 'blocked') return 'blocked'; // not-for-sale (events-blocked-seats.md)
     if (seat.status === 'reserved') return 'reserved';
 
     // Check if this seat is selected by current user
@@ -595,8 +601,13 @@ const SeatMapSelectionNoRedux = forwardRef(({
                 <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-max">
                   <div ref={contentRef} className="px-4 py-4">
                     {/* STAGE anchors the hall: full-width bar at the top, zooms/pans with the map */}
-                    <div data-testid="stage-bar" className="mb-4 w-full rounded bg-slate-800 py-2 text-center text-xs sm:text-sm font-semibold tracking-[0.3em] text-white">STAGE</div>
+                    <div data-testid="stage-bar" className="mb-2 w-full rounded bg-slate-800 py-2 text-center text-xs sm:text-sm font-semibold tracking-[0.3em] text-white">STAGE</div>
+                    {/* Seat-1 side cue (events-layout-tools.md): shows which side seat 1 is on, matching the builder. */}
+                    <SeatNumberingHint flipH={!!event?.seatingLayoutFlipH} />
                 {seatingLayout.map((row, rowIndex) => {
+                  // Shared render orientation (events-layout-tools.md): a horizontal flip reverses the
+                  // seat draw order and mirrors the aisles, so the attendee hall matches the builder.
+                  const { seats: drawSeats, walkwayPositions: drawWalkways } = orientRowForRender(row, !!event?.seatingLayoutFlipH);
                   return (
                     <div
                       key={`row-${rowIndex}-${row.rowLabel}`}
@@ -612,15 +623,15 @@ const SeatMapSelectionNoRedux = forwardRef(({
                       {/* Seats - one shared centreline, uniform rhythm (amphitheater padding retired) */}
                       <div className="flex-1 flex justify-center px-2">
                         <div className="flex items-center gap-1 sm:gap-1.5">
-                          {(row.seats || []).map((seat, seatIndex) => {
+                          {drawSeats.map((seat, seatIndex) => {
                             const seatId = seat.seatId;
                             if (!seatId) return null;
 
                             const seatStatus = getSeatStatus(seat, seatId);
-                            // Cosmetic walkway "after seat N" (1-based). A fixed-width empty spacer, no
-                            // data, no handler, no key of its own - it just splits the row into blocks
-                            // and rides along in the same horizontal scroll.
-                            const hasWalkwayAfter = Array.isArray(row.walkwayPositions) && row.walkwayPositions.includes(seatIndex + 1);
+                            // Cosmetic walkway "after seat N" (1-based), in the mirrored render coordinates
+                            // so the aisle lands on the correct side after a flip. A fixed-width empty
+                            // spacer - no data, no handler - that splits the row into blocks.
+                            const hasWalkwayAfter = drawWalkways.includes(seatIndex + 1);
 
                             return (
                               <React.Fragment key={`${seatId}-${seatIndex}`}>
@@ -632,6 +643,7 @@ const SeatMapSelectionNoRedux = forwardRef(({
                                   onClick={() => handleSeatClick(seatId, seatStatus)}
                                   disabled={pendingOperation || isLoading}
                                   userId={userId}
+                                  showNumber={showNumbers}
                                 />
                                 {hasWalkwayAfter && (
                                   <div className="w-4 sm:w-6 shrink-0 self-stretch" aria-hidden="true" data-walkway="true" />

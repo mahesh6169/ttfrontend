@@ -139,6 +139,28 @@ const RefundPolicyStep = ({
         </p>
       </div>
 
+      {/* Terms and Conditions (events-terms-conditions.md) - mirrors the Additional Refund Policy box. */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700">
+          Terms and Conditions <span className="text-slate-400 font-normal">(optional)</span>
+        </label>
+        <p className="text-xs text-slate-500 mb-2">Any terms buyers should accept. Shown at checkout and on the ticket.</p>
+        <textarea
+          rows={4}
+          disabled={disabled}
+          className={`w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 resize-none ${
+            disabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed text-slate-500' : ''
+          }`}
+          placeholder="e.g. Entry subject to venue conditions; no outside food or drink."
+          value={formData.refundPolicy?.termsAndConditions || ''}
+          onChange={(e) => handleRefundPolicyChange('termsAndConditions', e.target.value)}
+          maxLength={2000}
+        />
+        <p className="text-xs text-slate-500 mt-1 text-right">
+          {(formData.refundPolicy?.termsAndConditions || '').length}/2000
+        </p>
+      </div>
+
       {/* Error */}
       {errors?.refundPolicy && (
         <p className="text-red-600 text-xs">

@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MdEventSeat } from 'react-icons/md';
+import { MdEventSeat, MdClose } from 'react-icons/md';
 
 const SeatButton = ({
   seat,
@@ -13,6 +13,7 @@ const SeatButton = ({
   onClick,
   disabled = false,
   userId = null,
+  showNumber = false, // reveal the seat number on the face when zoomed in (parity with the builder)
 }) => {
   // Tap-driven card reveal for mobile: a tap shows the Row/Seat card for ~2s then fades (desktop still
   // uses CSS hover). Hooks stay above the early return below so their order never changes between renders.
@@ -71,7 +72,8 @@ const SeatButton = ({
     // Priority 2: Backend statuses
     if (safeSeat.status === 'booked') return 'booked';
     if (safeSeat.status === 'reserved') return 'reserved';
-    if (safeSeat.status === 'disabled') return 'disabled';
+    // Organiser not-for-sale (events-blocked-seats.md): grey/X, never selectable.
+    if (safeSeat.status === 'blocked') return 'blocked';
     
     // Priority 3: Selected by another user
     if (otherUserHolding) return 'selected-by-other';
@@ -102,8 +104,9 @@ const SeatButton = ({
       case 'reserved':
         // Organiser-reserved (held for organiser use). Purple across builder + attendee map, never grey.
         return `${baseStyles} bg-purple-600 text-white border-purple-700 cursor-not-allowed`;
-      case 'disabled':
-        return `${baseStyles} bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50`;
+      case 'blocked':
+        // Not for sale: grey with an X (getSeatIcon), unclickable. Distinct from booked (red).
+        return `${baseStyles} bg-slate-200 text-slate-500 border-slate-400 cursor-not-allowed`;
       default:
         return `${baseStyles} bg-slate-100 text-slate-600 border-slate-300`;
     }
@@ -126,8 +129,8 @@ const SeatButton = ({
         return `${seatLabel} - Already purchased`;
       case 'reserved':
         return `${seatLabel} - Reserved by organizer`;
-      case 'disabled':
-        return `${seatLabel} - Not available for selection`;
+      case 'blocked':
+        return `${seatLabel} - Not for sale`;
       default:
         return seatLabel;
     }
@@ -141,9 +144,9 @@ const SeatButton = ({
     revealCard();
 
     const canClick = !disabled &&
-                    status !== 'booked' && 
-                    status !== 'reserved' && 
-                    status !== 'disabled' && 
+                    status !== 'booked' &&
+                    status !== 'reserved' &&
+                    status !== 'blocked' &&
                     status !== 'selected-by-other';
 
     if (!canClick) {
@@ -162,7 +165,14 @@ const SeatButton = ({
 
   // ✅ MOBILE ENHANCED: Better seat icon with responsive sizing
   const getSeatIcon = () => {
-    // Always show seat icon for all statuses for better mobile experience
+    // Not-for-sale seats show an X instead of the seat icon (the grey/X look).
+    if (status === 'blocked') {
+      return <MdClose className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />;
+    }
+    // Zoomed in enough: show the seat number on the face (parity with the builder). Otherwise the icon.
+    if (showNumber) {
+      return <span className="leading-none">{safeSeat.seatNumber}</span>;
+    }
     return <MdEventSeat className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />;
   };
 
@@ -184,7 +194,7 @@ const SeatButton = ({
       role: 'button',
       'aria-label': getTooltipText(),
       'aria-pressed': isSelected,
-      'aria-disabled': disabled || status === 'booked' || status === 'reserved' || status === 'disabled' || status === 'selected-by-other',
+      'aria-disabled': disabled || status === 'booked' || status === 'reserved' || status === 'blocked' || status === 'selected-by-other',
       tabIndex: disabled ? -1 : 0,
     };
   };
@@ -207,7 +217,7 @@ const SeatButton = ({
           disabled ||
           status === 'booked' ||
           status === 'reserved' ||
-          status === 'disabled' ||
+          status === 'blocked' ||
           status === 'selected-by-other'
         }
         {...getAriaAttributes()}
