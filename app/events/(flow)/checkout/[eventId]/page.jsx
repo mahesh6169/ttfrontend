@@ -1247,7 +1247,7 @@ const CheckoutPage = () => {
                               className="mt-0.5 w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300"
                             />
                             <label className="ml-2 text-sm text-slate-600">
-                              I accept the organiser refund policy below *
+                              I accept the organiser refund policy and terms &amp; conditions below *
                             </label>
                           </div>
                           {errors.refundPolicyAccepted && (

@@ -1,4 +1,5 @@
 import EventsClient from './EventsClient';
+import PastEvents from './PastEvents';
 import SeoFooterBlock from './SeoFooterBlock';
 
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
@@ -57,6 +58,7 @@ export default function EventsPage() {
           </div>
         }
       />
+      <PastEvents />
       <SeoFooterBlock />
     </>
   );

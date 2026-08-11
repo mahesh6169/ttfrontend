@@ -13,6 +13,7 @@ const SeatButton = ({
   onClick,
   disabled = false,
   userId = null,
+  showNumber = false, // reveal the seat number on the face when zoomed in (parity with the builder)
 }) => {
   // Tap-driven card reveal for mobile: a tap shows the Row/Seat card for ~2s then fades (desktop still
   // uses CSS hover). Hooks stay above the early return below so their order never changes between renders.
@@ -168,7 +169,10 @@ const SeatButton = ({
     if (status === 'blocked') {
       return <MdClose className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />;
     }
-    // Always show seat icon for all statuses for better mobile experience
+    // Zoomed in enough: show the seat number on the face (parity with the builder). Otherwise the icon.
+    if (showNumber) {
+      return <span className="leading-none">{safeSeat.seatNumber}</span>;
+    }
     return <MdEventSeat className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5" />;
   };
 

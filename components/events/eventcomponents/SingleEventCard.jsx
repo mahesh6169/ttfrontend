@@ -955,24 +955,40 @@ const SingleEventCard = ({ event, chatProps }) => {
         </div>
       )}
 
-      {/* Refund Policy Section (for paid events) */}
-      {event.isPaid && event.refundPolicy && (
-        <div className="my-4 p-3">
-          <h3 className="text-base font-semibold text-slate-900 pb-2 border-b border-slate-200 mb-3">Refund Policy</h3>
-          {/* The processing-fee line (from settings) and the custom policy text (from the field)
-              render as ONE uniform block - same size, colour and line spacing - so they read as a
-              single group instead of two. */}
-          <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-            {`Processing fees are ${
-              event.refundPolicy.processingFeePolicy === 'refunded' ? 'refundable' : 'non-refundable'
-            }.${
-              event.refundPolicy.policyText && event.refundPolicy.policyText.trim()
-                ? `\n${event.refundPolicy.policyText}`
-                : ''
-            }`}
+      {/* Refund Policy + Terms & Conditions (for paid events). Two columns on desktop, stacked on mobile;
+          the refund policy is full-width when there is no T&C (events-terms-conditions.md). */}
+      {event.isPaid && event.refundPolicy && (() => {
+        const hasTC = event.refundPolicy.termsAndConditions && event.refundPolicy.termsAndConditions.trim();
+        return (
+          <div className="my-4 p-3">
+            <div className={`grid grid-cols-1 gap-4 ${hasTC ? 'md:grid-cols-2 md:gap-6' : ''}`}>
+              {/* Refund policy column */}
+              <div>
+                <h3 className="text-base font-semibold text-slate-900 pb-2 border-b border-slate-200 mb-3">Refund Policy</h3>
+                {/* processing-fee line + custom policy text as one uniform block */}
+                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                  {`Processing fees are ${
+                    event.refundPolicy.processingFeePolicy === 'refunded' ? 'refundable' : 'non-refundable'
+                  }.${
+                    event.refundPolicy.policyText && event.refundPolicy.policyText.trim()
+                      ? `\n${event.refundPolicy.policyText}`
+                      : ''
+                  }`}
+                </div>
+              </div>
+              {/* Terms & Conditions column (only when present) */}
+              {hasTC && (
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900 pb-2 border-b border-slate-200 mb-3">Terms &amp; Conditions</h3>
+                  <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                    {event.refundPolicy.termsAndConditions}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Booking Card — capacity + RSVP CTA (free events; paid events use the Tickets section above) */}
       {!event.isAdvertiseOnly && !event.isPaid && (

@@ -112,16 +112,6 @@ export const updatePaidEvent = createAsyncThunk(
         return rejectWithValue(response.data.message || 'Failed to update paid event');
       }
     } catch (error) {
-      // DEBUG: surface the REAL cause instead of the generic fallback. A response with a status =
-      // the backend rejected it (read data.message); no response + code ECONNABORTED = client 30s
-      // timeout; no response at all = network/CORS.
-      console.error('[UPDATE-PAID DEBUG] failed:', {
-        status: error.response?.status,
-        backendMessage: error.response?.data?.message,
-        backendData: error.response?.data,
-        axiosCode: error.code,
-        axiosMessage: error.message,
-      });
       return rejectWithValue(
         error.response?.data?.message || 'Failed to update paid event'
       );
@@ -299,6 +289,7 @@ const createDefaultFormData = () => ({
   seatingLayoutImage: [],
   organizerReservedSeats: '',
   organizerBlockedSeats: '',
+  seatingLayoutFlipH: false,
 
   // Financial
   stripeAccountId: '',
@@ -306,7 +297,8 @@ const createDefaultFormData = () => ({
   // Refund Policy (Paid Events Only) - no default: the organiser must explicitly choose (D13/AC20).
 refundPolicy: {
   processingFeePolicy: '', // 'refunded' or 'non-refundable' - unset until chosen
-  policyText: ''
+  policyText: '',
+  termsAndConditions: ''
 },
 
 // GST Configuration (Paid Events Only)
@@ -494,10 +486,12 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
     seatingLayoutImage: processImagesForEdit(eventData.seatingLayoutImage),
     organizerReservedSeats: eventData.organizerReservedSeats || '',
     organizerBlockedSeats: eventData.organizerBlockedSeats || '',
+    seatingLayoutFlipH: !!eventData.seatingLayoutFlipH,
     stripeAccountId: eventData.stripeAccountId || '',
     refundPolicy: eventData.refundPolicy || {
       processingFeePolicy: '',
-      policyText: ''
+      policyText: '',
+      termsAndConditions: ''
     },
     gstIncluded: eventData.gstIncluded || false,
   };
@@ -890,7 +884,8 @@ updateRefundPolicy: (state, action) => {
 setRefundPolicy: (state, action) => {
   state.formData.refundPolicy = {
     processingFeePolicy: action.payload.processingFeePolicy || '',
-    policyText: action.payload.policyText || ''
+    policyText: action.payload.policyText || '',
+    termsAndConditions: action.payload.termsAndConditions || ''
   };
   state.hasUnsavedChanges = true;
 },

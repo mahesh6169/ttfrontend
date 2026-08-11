@@ -10,7 +10,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { MdEventSeat, MdFitScreen, MdClose } from 'react-icons/md';
 import { toast } from 'react-toastify';
-import { nextRowLabel, parseReservedLabels, formatReservedLabels, sanitizeRowLabel } from '@/utils/events/seatBuilder';
+import { nextRowLabel, parseReservedLabels, formatReservedLabels, sanitizeRowLabel, parseSkipRows, orientRowForRender } from '@/utils/events/seatBuilder';
+import SeatNumberingHint from '@/components/events/seats/SeatNumberingHint';
 
 // Seat numbers are hidden at fitted view (clean dots) and appear once zoomed past this scale.
 const NUMBER_THRESHOLD = 1.6;
@@ -32,7 +33,7 @@ const seatClass = (status) => {
 };
 
 export default function SeatBuilderOverlay({
-  initialLayout, initialReserved, initialBlocked, capacity, onSave, onClose,
+  initialLayout, initialReserved, initialBlocked, initialFlipH, capacity, onSave, onClose,
 }) {
   const [rows, setRows] = useState(() => JSON.parse(JSON.stringify(initialLayout || [])));
   const [reserved, setReserved] = useState(initialReserved || '');
@@ -43,6 +44,8 @@ export default function SeatBuilderOverlay({
   const [genLabel, setGenLabel] = useState('A'); // starting row label for the Layout calculator
   const [genRows, setGenRows] = useState('');    // empty until the organiser types
   const [genSeats, setGenSeats] = useState('');
+  const [skipRows, setSkipRows] = useState('I, O'); // letters omitted from auto-generated labels (events-layout-tools.md)
+  const [flipH, setFlipH] = useState(!!initialFlipH); // whole-hall horizontal render flip (render flag, never a renumber)
   const [aisleSeat, setAisleSeat] = useState('');
   const [aisleRow, setAisleRow] = useState(''); // Row label for the precise single-row Add/Clear
   const [aisleHelpOpen, setAisleHelpOpen] = useState(false); // the (i) that reveals the tap-a-seam how-to
@@ -57,8 +60,9 @@ export default function SeatBuilderOverlay({
   const dirty = useMemo(
     () => JSON.stringify(rows) !== JSON.stringify(initialLayout || [])
       || reserved !== (initialReserved || '')
-      || blocked !== (initialBlocked || ''),
-    [rows, reserved, blocked, initialLayout, initialReserved, initialBlocked],
+      || blocked !== (initialBlocked || '')
+      || flipH !== !!initialFlipH,
+    [rows, reserved, blocked, flipH, initialLayout, initialReserved, initialBlocked, initialFlipH],
   );
   // Cancel/Escape route through here: prompt only when there is something to lose, else close straight away.
   const requestClose = () => { if (dirty) setConfirmDiscard(true); else onClose(); };
@@ -217,7 +221,11 @@ export default function SeatBuilderOverlay({
   const seatsNum = parseInt(genSeats, 10);
   const rowsError = String(genRows).trim() !== '' && !(rowsNum >= 1 && rowsNum <= 100);
   const seatsError = String(genSeats).trim() !== '' && !(seatsNum >= 1 && seatsNum <= 100);
-  const canAdd = rowsNum >= 1 && rowsNum <= 100 && seatsNum >= 1 && seatsNum <= 100; // both valid
+  // Row-start guard (events-layout-tools.md D5): the start label cannot be a lone skipped letter (I/O) -
+  // starting a sequence on a letter you are skipping is contradictory. A multi-letter start ("AO") is fine.
+  const startLabelClean = sanitizeRowLabel(genLabel);
+  const startLabelSkipped = /^[A-Z]$/.test(startLabelClean) && parseSkipRows(skipRows).includes(startLabelClean);
+  const canAdd = rowsNum >= 1 && rowsNum <= 100 && seatsNum >= 1 && seatsNum <= 100 && !startLabelSkipped; // all valid
   // Seat numbers reveal at an absolute 1.6x on desktop (parity with the attendee map). On mobile the hall
   // starts fitted at a much smaller scale (a wide hall shrinks to fit the narrow screen), so a fixed 1.6x
   // forced a huge zoom before numbers showed; instead reveal RELATIVE to the fitted view (a small zoom past
@@ -237,11 +245,12 @@ export default function SeatBuilderOverlay({
 
   // ── Structure ────────────────────────────────────────────────────────────
   const generateDims = (r, s, startLabel = 'A') => {
+    const skip = parseSkipRows(skipRows); // omit these letters from the auto-generated sequence
     const next = [];
     let label = startLabel || 'A';
     for (let i = 0; i < r; i++) {
       next.push({ rowLabel: label, seats: makeSeats(s), walkwayPositions: [] });
-      label = nextRowLabel(label, next.map((x) => x.rowLabel));
+      label = nextRowLabel(label, next.map((x) => x.rowLabel), skip);
     }
     setRows(next);
     setReserved(''); // a fresh rebuild wipes aisles (new rows) and reserved too, while still designing (item 23)
@@ -253,6 +262,7 @@ export default function SeatBuilderOverlay({
   // the typed numbers in the boxes. No auto-create on typing or blur.
   const addLayout = () => {
     if (hasBooked) return; // the bulk calculator would renumber booked seats (D12)
+    if (startLabelSkipped) return; // a lone skipped letter cannot start the sequence (D5)
     const r = Math.max(1, Math.min(100, parseInt(genRows, 10) || 0));
     const s = Math.max(1, Math.min(100, parseInt(genSeats, 10) || 0));
     if (!r || !s) return;
@@ -276,7 +286,7 @@ export default function SeatBuilderOverlay({
       const remaining = cap > 0 ? cap - configured : Infinity;
       if (remaining <= 0) return prev; // at capacity - nothing to add (the button is greyed anyway)
       const seatCount = Math.max(1, Math.min(prevCount, remaining));
-      const label = nextRowLabel(last?.rowLabel || '', prev.map((x) => x.rowLabel));
+      const label = nextRowLabel(last?.rowLabel || '', prev.map((x) => x.rowLabel), parseSkipRows(skipRows));
       // Copy the previous row's aisles, dropping any that would sit past the shorter tail row's last seat.
       const walkwayPositions = [...(last?.walkwayPositions || [])].filter((p) => p <= seatCount - 1);
       return [...prev, { rowLabel: label, seats: makeSeats(seatCount), walkwayPositions }];
@@ -532,7 +542,7 @@ export default function SeatBuilderOverlay({
     if (rows.length === 0) {
       // An empty layout is a valid saved state (no assigned seating): let the organiser clear the
       // hall, Save, and exit to check other steps (D12/AC17).
-      onSave([], [], []);
+      onSave([], [], [], false);
       return;
     }
     // Structural field errors first (fix these before capacity is even meaningful).
@@ -551,7 +561,7 @@ export default function SeatBuilderOverlay({
       signpost(totalSeats > cap ? `Over capacity by ${diff} - remove ${diff} to save.` : `Under capacity by ${diff} - add ${diff} to save.`);
       return;
     }
-    onSave(rows, reserved, blocked);
+    onSave(rows, reserved, blocked, flipH);
   };
 
   const steps = [
@@ -581,12 +591,12 @@ export default function SeatBuilderOverlay({
         {/* Tabs - desktop col1/row1; mobile row1. Always shown; safe edits stay available after a sale. */}
         {(
           <div className="relative z-50 border-b border-slate-200 bg-white sm:col-start-1 sm:row-start-1 sm:border-b-0 sm:border-r" data-testid="builder-sidebar">
-            <div className="flex gap-1 p-2 sm:flex-col" role="tablist" aria-label="Seating steps">
+            <div className="flex gap-1 overflow-x-auto p-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-col sm:overflow-x-visible" role="tablist" aria-label="Seating steps">
               {steps.map((s) => (
                 <button
                   key={s.key} type="button" role="tab" aria-selected={activeStep === s.key}
                   onClick={() => { setActiveStep(s.key); setSheetOpen(true); }}
-                  className={`flex min-w-0 flex-1 items-center gap-1.5 rounded px-2 py-2 text-sm font-medium sm:flex-none ${activeStep === s.key ? 'border border-teal-300 bg-teal-50 text-teal-800' : 'text-slate-600 hover:bg-slate-50'}`}
+                  className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded px-2.5 py-2 text-sm font-medium sm:w-full sm:shrink ${activeStep === s.key ? 'border border-teal-300 bg-teal-50 text-teal-800' : 'text-slate-600 hover:bg-slate-50'}`}
                 >
                   <span className={`hidden h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs sm:flex ${activeStep === s.key ? 'bg-teal-600 text-white' : 'bg-slate-200 text-slate-600'}`}>{s.n}</span>
                   <span className="truncate">{s.label}</span>
@@ -649,13 +659,21 @@ export default function SeatBuilderOverlay({
                       <span className="flex items-center gap-1"><span className="h-3.5 w-2.5 rounded-sm bg-amber-400" />Aisle</span>
                     </div>
                     {/* Stage bar */}
-                    <div className="mx-auto mb-6 w-2/3 rounded bg-slate-800 py-1 text-center text-xs font-semibold tracking-widest text-white" data-testid="stage-bar">STAGE</div>
+                    <div className="mx-auto mb-2 w-2/3 rounded bg-slate-800 py-1 text-center text-xs font-semibold tracking-widest text-white" data-testid="stage-bar">STAGE</div>
+                    {/* Seat-1 side cue (events-layout-tools.md): makes the horizontal flip visible at the fitted view. */}
+                    <SeatNumberingHint flipH={flipH} />
                     {rows.map((row, rowIndex) => (
                       <div key={rowIndex} className="mb-2 flex items-center justify-center gap-2">
                         <span className="w-8 shrink-0 text-right text-xs font-bold text-slate-600">{row.rowLabel}</span>
                         <div className="flex items-center gap-1">
-                          {(row.seats || []).map((seat, seatIndex) => {
-                            const pos = seatIndex + 1;
+                          {(() => {
+                            // Shared render orientation (events-layout-tools.md): flip reverses the draw
+                            // order and mirrors the aisles; seam edits still target the DATA position.
+                            const { seats: drawSeats, walkwayPositions: drawWalkways } = orientRowForRender(row, flipH);
+                            const rowLen = (row.seats || []).length;
+                            return drawSeats.map((seat, seatIndex) => {
+                            const pos = seatIndex + 1; // position from the left in the (possibly flipped) render
+                            const dataPos = flipH ? rowLen - pos : pos; // walkway "after seat dataPos" in data terms
                             const label = `${row.rowLabel}${seat.seatNumber}`;
                             const booked = seat.status === 'booked';
                             const isBlocked = blockedSet.has(label);
@@ -664,7 +682,7 @@ export default function SeatBuilderOverlay({
                             // Clickable only on the matching tab, and never a seat owned by the other list.
                             const seatDisabled = booked || (!canReserve && !canBlock)
                               || (canReserve && isBlocked) || (canBlock && isReserved);
-                            const hasWalkway = (row.walkwayPositions || []).includes(pos);
+                            const hasWalkway = drawWalkways.includes(pos);
                             return (
                               <span key={label} className="flex items-center">
                                 <div className="relative group">
@@ -690,29 +708,30 @@ export default function SeatBuilderOverlay({
                                     </div>
                                   </div>
                                 </div>
-                                {seatIndex < row.seats.length - 1 && (
+                                {seatIndex < drawSeats.length - 1 && (
                                   hasWalkway ? (
                                     <button
                                       type="button"
-                                      onClick={() => stageSeam(rowIndex, pos)}
+                                      onClick={() => stageSeam(rowIndex, dataPos)}
                                       disabled={!canAisle}
-                                      aria-label={`Remove walkway after seat ${pos} in row ${row.rowLabel}`}
+                                      aria-label={`Remove walkway after seat ${dataPos} in row ${row.rowLabel}`}
                                       data-walkway="true"
                                       className="mx-0.5 h-5 w-3 self-stretch rounded-sm bg-amber-400 hover:bg-amber-500 disabled:hover:bg-amber-400"
                                     />
                                   ) : (
                                     <button
                                       type="button"
-                                      onClick={() => stageSeam(rowIndex, pos)}
+                                      onClick={() => stageSeam(rowIndex, dataPos)}
                                       disabled={!canAisle}
-                                      aria-label={`Add walkway after seat ${pos} in row ${row.rowLabel}`}
+                                      aria-label={`Add walkway after seat ${dataPos} in row ${row.rowLabel}`}
                                       className="h-5 w-1 self-stretch hover:bg-amber-200 disabled:hover:bg-transparent"
                                     />
                                   )
                                 )}
                               </span>
                             );
-                          })}
+                            });
+                          })()}
                         </div>
                         <span className="w-8 shrink-0 text-left text-xs font-bold text-slate-600">{row.rowLabel}</span>
                       </div>
@@ -817,10 +836,18 @@ export default function SeatBuilderOverlay({
                     <div className="flex flex-col gap-2 pl-3">
                       <label className="flex items-center gap-2">
                         <span className="w-32 shrink-0 text-slate-500">Row Label</span>
-                        <input type="text" value={genLabel} onChange={(e) => setGenLabel(sanitizeRowLabel(e.target.value))} disabled={hasBooked} aria-label="Row Label" maxLength={3} placeholder="A" className="w-12 rounded border border-slate-300 p-1 text-center font-bold disabled:bg-slate-100" />
+                        <input type="text" value={genLabel} onChange={(e) => setGenLabel(sanitizeRowLabel(e.target.value))} disabled={hasBooked} aria-label="Row Label" maxLength={3} placeholder="A" className={`w-12 rounded border p-1 text-center font-bold disabled:bg-slate-100 ${startLabelSkipped ? 'border-red-400' : 'border-slate-300'}`} />
                         <span className="text-xs text-slate-400">
                           e.g. A, AA, VIP
                           <span className="block">front row, max 3 letters</span>
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <span className="w-32 shrink-0 text-slate-500">Skip Rows</span>
+                        <input type="text" value={skipRows} onChange={(e) => setSkipRows(e.target.value.toUpperCase())} disabled={hasBooked} aria-label="Skip Rows" placeholder="I, O" className="w-24 rounded border border-slate-300 p-1 text-center disabled:bg-slate-100" />
+                        <span className="text-xs text-slate-400">
+                          letters to skip
+                          <span className="block">e.g. I, O</span>
                         </span>
                       </label>
                       <label className="flex items-center gap-2">
@@ -833,6 +860,9 @@ export default function SeatBuilderOverlay({
                       </label>
                       {(rowsError || seatsError) && (
                         <p className="text-xs font-medium text-red-600">Number Of Rows and Seats Per Row must each be a number from 1 to 100.</p>
+                      )}
+                      {startLabelSkipped && (
+                        <p className="text-xs font-medium text-red-600">Row Label can&apos;t be a skipped letter ({startLabelClean}). Choose a different starting label.</p>
                       )}
                       {/* Bulk Add builds the whole block (flips to Clear once rows exist); Add Single Row
                           appends one more row copying the last row's seats - same behaviour as before, just
@@ -847,6 +877,23 @@ export default function SeatBuilderOverlay({
                           <button type="button" onClick={addRow} disabled={atCapacity} title={atCapacity ? 'At capacity - no room for another row' : ''} className="rounded border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-transparent">Add Single Row</button>
                         )}
                       </div>
+                      {/* Orientation: a whole-hall horizontal flip (render only, ids untouched). Locked once
+                          a seat sells - it would move a booked seat (events-layout-tools.md D6). */}
+                      <div className="mt-1 flex items-center gap-2 border-t border-slate-200 pt-2">
+                        <span className="w-32 shrink-0 text-slate-500">Orientation</span>
+                        <button
+                          type="button"
+                          onClick={() => setFlipH((v) => !v)}
+                          disabled={hasBooked || rows.length === 0}
+                          aria-pressed={flipH}
+                          data-testid="flip-horizontal"
+                          title={hasBooked ? 'Seats are sold - the layout orientation is locked' : ''}
+                          className={`rounded border px-3 py-1 text-xs font-medium disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 ${flipH ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+                        >
+                          Flip horizontally{flipH ? ' (on)' : ''}
+                        </button>
+                      </div>
+
                       {/* Why the bulk tool is off - shown here beside it, not floating on the map. */}
                       {hasBooked && (
                         <p data-testid="builder-locked" className="mt-2 text-xs text-amber-600">

@@ -57,10 +57,11 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
   const isSeated = layout.length > 0 || !!formData.hasSeating;
   const seatingLockedOut = !isSeated && !!formData.hasActivity;
 
-  const handleSave = (newLayout, newReserved, newBlocked) => {
+  const handleSave = (newLayout, newReserved, newBlocked, newFlipH) => {
     dispatch(setSeatingLayout(newLayout));
     dispatch(updateField({ field: 'organizerReservedSeats', value: newReserved }));
     dispatch(updateField({ field: 'organizerBlockedSeats', value: newBlocked }));
+    dispatch(updateField({ field: 'seatingLayoutFlipH', value: !!newFlipH }));
     setIsBuilderOpen(false);
   };
 
@@ -151,6 +152,7 @@ const SeatingLayoutSection = ({ formData, errors, dispatch, isEditMode = false, 
           initialLayout={layout}
           initialReserved={formData.organizerReservedSeats || ''}
           initialBlocked={formData.organizerBlockedSeats || ''}
+          initialFlipH={!!formData.seatingLayoutFlipH}
           capacity={capacity}
           onSave={handleSave}
           onClose={() => setIsBuilderOpen(false)}

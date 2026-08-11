@@ -1388,6 +1388,9 @@ console.log("🔍 Debug organizerReservedSeats:", {
         submitFormData.append('organizerBlockedSeats', formData.organizerBlockedSeats);
       }
 
+      // Whole-hall horizontal render flip (events-layout-tools.md) - always send so turning it OFF sticks.
+      submitFormData.append('seatingLayoutFlipH', formData.seatingLayoutFlipH ? 'true' : 'false');
+
       if (formData.stripeAccountId) {
         submitFormData.append('stripeAccountId', formData.stripeAccountId);
       }
