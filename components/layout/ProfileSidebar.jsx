@@ -34,7 +34,7 @@ const TOP = [
 // `flag` (when present) gates the item on user[flag] being true. No flag = always shown.
 const ORGANISER = [
   { label: 'Stripe Setup', href: '/users/profile/stripeSetup', icon: FaCreditCard },
-  { label: 'Check-in RSVP', href: '/users/profile/checkInFree', icon: FaUserCheck, flag: 'freeHost' },
+  { label: 'Check-in RSVP', href: '/users/profile/checkinrsvp', icon: FaUserCheck, flag: 'freeHost' },
   { label: 'Check-in Paid', href: '/users/profile/checkInPaid', icon: FaQrcode, flag: 'paidHost' },
   { label: 'Refunds', href: '/users/profile/refunds', icon: FaUndo, flag: 'paidHost' },
 ];

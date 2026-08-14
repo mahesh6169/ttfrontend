@@ -233,6 +233,10 @@ const RsvpPage = () => {
       return v != null && String(v).trim() !== '';
     });
 
+  // Live-invalid: something is typed but it isn't a valid AU mobile yet. Drives the inline red
+  // hint so the disabled Register button always has a visible reason.
+  const mobileInvalid = mobile.trim() !== '' && !isValidAuMobile(mobile);
+
   const isSubmitting = submitting || registrationStatus === 'loading';
 
   // ───────── Render: loading / not-found / main ─────────
@@ -370,13 +374,23 @@ const RsvpPage = () => {
                   }
                 }}
                 className={`w-full max-w-[200px] px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
-                  errors.mobile ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300'
+                  errors.mobile || mobileInvalid ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-slate-300'
                 }`}
                 placeholder="0412345678"
               />
-              {errors.mobile && (
-                <p className="text-xs text-red-600 mt-1">{errors.mobile}</p>
-              )}
+              {/* Live feedback: a red message the moment what's typed isn't a valid AU mobile
+                  (the Register button is disabled until it is, so without this the greyed button
+                  has no visible reason); a muted format hint only while the field is empty; and
+                  nothing once a valid number is entered. */}
+              {errors.mobile || mobileInvalid ? (
+                <p className="text-xs text-red-600 mt-1">
+                  {errors.mobile || 'Enter a 10-digit mobile starting with 04'}
+                </p>
+              ) : mobile.trim() === '' ? (
+                <p className="text-xs text-slate-500 mt-1">
+                  Australian mobile, 10 digits starting with 04
+                </p>
+              ) : null}
             </div>
 
             {/* Attendee names: 2-column on desktop, stacked on mobile (D4). */}
