@@ -26,10 +26,12 @@ import {
 const PAGE_SIZE = 50; // batch size for "Load more"
 const HEADER_OFFSET = 68; // the fixed app header height; the table header pins below the search+tabs strip
 
+// Not checked in first (the door's short worklist) -> Checked in -> All. Keys unchanged
+// (the server status filter still maps pending/done).
 const TABS = [
+  { key: 'pending', label: 'Not checked in' },
+  { key: 'done', label: 'Checked in' },
   { key: 'all', label: 'All' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'done', label: 'Done' },
 ];
 
 const formatDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
@@ -46,7 +48,7 @@ export default function CheckinRsvpEventPage() {
   const dispatch = useDispatch();
   const { managedEvents, rows, pagination, stats, listLoading, loadingMore } = useSelector((state) => state.checkinRsvp);
 
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('pending'); // default to the "Not checked in" worklist
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -93,6 +95,18 @@ export default function CheckinRsvpEventPage() {
   const refresh = () => {
     dispatch(fetchAttendeesPage({ eventId, page: 1, limit: PAGE_SIZE, search: debouncedSearch, status: activeTab }));
   };
+
+  // Live-filter the loaded rows by the active tab (in addition to the server filter), so a booking
+  // drops off the "Not checked in" list the moment it becomes fully checked in - matching paid.
+  const displayed = useMemo(() => {
+    if (activeTab === 'all') return rows;
+    return rows.filter((reg) => {
+      const total = reg.attendees?.length || 0;
+      const checked = (reg.attendees || []).filter((a) => a.checkedIn).length;
+      const allIn = total > 0 && checked === total;
+      return activeTab === 'done' ? allIn : !allIn;
+    });
+  }, [rows, activeTab]);
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -194,7 +208,7 @@ export default function CheckinRsvpEventPage() {
         </div>
       ) : (
         <>
-          <CheckinTable registrations={rows} eventId={eventId} onRefresh={refresh} stickyTop={tableHeaderTop} />
+          <CheckinTable registrations={displayed} eventId={eventId} onRefresh={refresh} stickyTop={tableHeaderTop} />
 
           {/* Load more - loads the next batch and appends; nobody is ever hidden. */}
           {pagination.hasNextPage && (

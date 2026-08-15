@@ -54,14 +54,27 @@ test.describe('J2 per-event check-in', () => {
   test.use({ storageState: 'e2e/.auth/organiser.json' });
 
   const row = (page, reg) => page.getByTestId('checkinrsvp-row').filter({ hasText: reg });
+  // Select the "All" tab so a test sees every row (the page now defaults to "Not checked in"); a
+  // checked-in booking would otherwise drop off the default worklist mid-test.
+  const showAll = (page) => page.getByTestId('checkinrsvp-tabs').getByRole('button', { name: 'All' }).click();
   const gotoActive = async (page) => {
     await page.goto(`${LIST_URL}/${readSeed().rsvpCheckinActiveEventId}`);
     await expect(row(page, 'RC-A04')).toBeVisible({ timeout: 20_000 });
+    await showAll(page);
   };
   const gotoInteract = async (page) => {
     await page.goto(`${LIST_URL}/${readSeed().rsvpCheckinInteractEventId}`);
     await expect(row(page, 'RC-I-SINGLE')).toBeVisible({ timeout: 20_000 });
+    await showAll(page);
   };
+
+  test('the tabs read Not checked in / Checked in / All and default to Not checked in', async ({ page }) => {
+    await page.goto(`${LIST_URL}/${readSeed().rsvpCheckinActiveEventId}`);
+    const tabs = page.getByTestId('checkinrsvp-tabs');
+    await expect(tabs.getByRole('button', { name: 'Not checked in', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 20_000 });
+    // A fully-checked booking is hidden by default (it lives under "Checked in").
+    await expect(page.getByTestId('checkinrsvp-row').filter({ hasText: 'RC-A01' })).toHaveCount(0);
+  });
 
   test('AC4 the header shows the summary and stats (no export), and Back returns to the list', async ({ page }) => {
     await gotoActive(page);
@@ -87,19 +100,19 @@ test.describe('J2 per-event check-in', () => {
     await expect(rows.filter({ hasText: 'RC-A05' })).toHaveCount(0);
   });
 
-  test('AC6 the All / Pending / Done tabs filter by check-in state', async ({ page }) => {
+  test('AC6 the Not checked in / Checked in / All tabs filter by check-in state', async ({ page }) => {
     await gotoActive(page);
     const tabs = page.getByTestId('checkinrsvp-tabs');
     const rows = page.getByTestId('checkinrsvp-row');
 
-    // Pending: partly-checked (RC-A03) and un-checked (RC-A04) show; fully-checked (RC-A01) hidden.
-    await tabs.getByRole('button', { name: 'Pending' }).click();
+    // Not checked in: partly-checked (RC-A03) and un-checked (RC-A04) show; fully-checked (RC-A01) hidden.
+    await tabs.getByRole('button', { name: 'Not checked in', exact: true }).click();
     await expect(rows.filter({ hasText: 'RC-A03' })).toHaveCount(1);
     await expect(rows.filter({ hasText: 'RC-A04' })).toHaveCount(1);
     await expect(rows.filter({ hasText: 'RC-A01' })).toHaveCount(0);
 
-    // Done: only fully-checked (RC-A01); partly + un-checked hidden.
-    await tabs.getByRole('button', { name: 'Done' }).click();
+    // Checked in: only fully-checked (RC-A01); partly + un-checked hidden.
+    await tabs.getByRole('button', { name: 'Checked in', exact: true }).click();
     await expect(rows.filter({ hasText: 'RC-A01' })).toHaveCount(1);
     await expect(rows.filter({ hasText: 'RC-A03' })).toHaveCount(0);
     await expect(rows.filter({ hasText: 'RC-A04' })).toHaveCount(0);
@@ -199,9 +212,11 @@ test.describe('J2 per-event check-in', () => {
     await page.goto(`${LIST_URL}/${readSeed().rsvpCheckinVolumeEventId}`);
     const rows = page.getByTestId('checkinrsvp-row');
     await expect(rows.first()).toBeVisible({ timeout: 20_000 });
+    // Switch to All (the page defaults to "Not checked in") so the whole event loads.
+    await page.getByTestId('checkinrsvp-tabs').getByRole('button', { name: 'All' }).click();
     // The first batch is 50 (not all 100 at once).
+    await expect(page.getByText('Showing 50 of 100')).toBeVisible({ timeout: 20_000 });
     await expect(rows).toHaveCount(50);
-    await expect(page.getByText('Showing 50 of 100')).toBeVisible();
 
     // Load more appends the next batch to 100, then the button is gone.
     await page.getByTestId('checkinrsvp-loadmore').click();
@@ -244,5 +259,15 @@ test.describe('J2 per-event check-in', () => {
       const noHScroll = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
       expect(noHScroll, `no sideways scroll at ${width}px`).toBe(true);
     }
+  });
+
+  test('checking a booking in on "Not checked in" drops it off the list immediately (matches paid)', async ({ page }) => {
+    // Default tab is "Not checked in"; RC-I-SINGLE is a single unchecked booking, so it shows here.
+    await page.goto(`${LIST_URL}/${readSeed().rsvpCheckinInteractEventId}`);
+    const single = row(page, 'RC-I-SINGLE');
+    await expect(single).toBeVisible({ timeout: 20_000 });
+    await single.getByRole('button', { name: 'Check in', exact: true }).click();
+    // Fully checked in -> it leaves the "Not checked in" worklist at once.
+    await expect(row(page, 'RC-I-SINGLE')).toHaveCount(0);
   });
 });

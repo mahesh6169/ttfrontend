@@ -35,7 +35,7 @@ const TOP = [
 const ORGANISER = [
   { label: 'Stripe Setup', href: '/users/profile/stripeSetup', icon: FaCreditCard },
   { label: 'Check-in RSVP', href: '/users/profile/checkinrsvp', icon: FaUserCheck, flag: 'freeHost' },
-  { label: 'Check-in Paid', href: '/users/profile/checkInPaid', icon: FaQrcode, flag: 'paidHost' },
+  { label: 'Check-in Paid', href: '/users/profile/checkin-paid', icon: FaQrcode, flag: 'paidHost' },
   { label: 'Refunds', href: '/users/profile/refunds', icon: FaUndo, flag: 'paidHost' },
 ];
 

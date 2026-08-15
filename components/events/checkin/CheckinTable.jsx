@@ -184,15 +184,15 @@ export default function CheckinTable({ registrations, eventId, onRefresh, sticky
               const noneCheckedIn = (reg.attendees || []).every((a) => !a.checkedIn);
               return (
                 <tr key={reg._id} data-testid="checkinrsvp-row" className="border-t border-slate-100">
-                  {/* Reg wraps (break-words) instead of nowrap so a very long reg number never forces the
-                      table wider than its container (which would clip the Check-in / Cancel columns) - it
-                      is never truncated with an ellipsis either way. */}
-                  <td data-testid="checkinrsvp-regno" className="px-3 py-2.5 align-middle break-words font-mono text-xs text-slate-700">
+                  {/* Reg stays on one line (grows to fit) and never wraps while there is room; the
+                      Booked-by column (max-w-0 w-full) yields space and truncates instead of starving it.
+                      It is never truncated with an ellipsis either way. */}
+                  <td data-testid="checkinrsvp-regno" className="px-3 py-2.5 align-middle whitespace-nowrap font-mono text-xs text-slate-700">
                     {reg.registrationNumber}
                   </td>
-                  <td className="px-3 py-2.5 align-middle">
+                  <td className="w-full max-w-0 px-3 py-2.5 align-middle">
                     <div className="flex items-center gap-1 min-w-0">
-                      <span className="truncate max-w-[18rem] text-sm text-slate-700" title={bookerOf(reg)}>
+                      <span className="truncate text-sm text-slate-700" title={bookerOf(reg)}>
                         {bookerOf(reg)}
                       </span>
                       <InfoButton reg={reg} onOpen={setAnswersRegId} />
