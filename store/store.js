@@ -13,6 +13,7 @@ import supportReducer from './slices/supportSlice';
 import refundReducer from './slices/events/refundSlice';
 import eventCapacityReducer from './slices/events/eventCapacitySlice';
 import checkInFreeReducer from './slices/events/checkInFreeSlice';
+import checkinRsvpReducer from './slices/events/checkinRsvpSlice';
 import checkInPaidReducer from './slices/events/checkInPaidSlice';
 import searchCouponsReducer from './slices/coupons/searchCouponsSlice';
 import dealReducer from './slices/dailydeals/dealSlice';
@@ -32,6 +33,7 @@ const store = configureStore({
         refunds: refundReducer,
         eventCapacity: eventCapacityReducer,
         checkInFree: checkInFreeReducer,
+        checkinRsvp: checkinRsvpReducer,
         checkInPaid: checkInPaidReducer,
         searchCoupons: searchCouponsReducer,
         deal: dealReducer,
