@@ -28,15 +28,28 @@ const formatWhen = (dateTime, timeZone = 'Australia/Sydney') => {
 
 // Build the action buttons for one event from the user's roles + the event type.
 // host → Manage (primary) + Check-in · attendee → View RSVP / View Ticket.
-const actionsFor = (roles, type) => {
+const actionsFor = (roles, type, eventId) => {
   const isHost = roles.includes('host');
   const isAttendee = roles.includes('attendee');
   const actions = [];
   if (isHost) {
-    actions.push({ label: 'Manage', href: '/users/profile/manageevents', primary: true });
+    actions.push({
+      label: 'Edit',
+      href: `/events/edit/${eventId}`,
+      primary: true,
+      // Smart Cancel: the edit wizard returns to cancelRedirectUrl. Coming from this
+      // dashboard, send them back here (manageevents sets its own value).
+      onClick: () => { try { localStorage.setItem('cancelRedirectUrl', '/users/profile'); } catch {} },
+    });
     actions.push({
       label: 'Check-in',
-      href: type === 'free' ? '/users/profile/checkInFree' : '/users/profile/checkInPaid',
+      href: type === 'free'
+        ? `/users/profile/checkinrsvp/${eventId}`
+        : `/users/profile/checkin-paid/${eventId}`,
+      // Smart Back: the per-event check-in page returns to checkinReturnUrl when set;
+      // coming from this dashboard, send them back here (the list pages set nothing, so
+      // arriving from a list still defaults to that list).
+      onClick: () => { try { localStorage.setItem('checkinReturnUrl', '/users/profile'); } catch {} },
     });
   }
   if (isAttendee) {
@@ -60,7 +73,7 @@ const roleLabel = (roles) => {
 const EventCard = ({ event }) => {
   const { date, time } = formatWhen(event.dateTime, event.timeZone);
   const typeLabel = event.type === 'paid' ? 'Paid' : 'RSVP';
-  const actions = actionsFor(event.roles || [], event.type);
+  const actions = actionsFor(event.roles || [], event.type, event.eventId);
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex items-start justify-between gap-3">
@@ -74,6 +87,7 @@ const EventCard = ({ event }) => {
             <Link
               key={a.label}
               href={a.href}
+              onClick={a.onClick}
               className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
                 a.primary
                   ? 'bg-teal-700 text-white hover:bg-teal-800'
