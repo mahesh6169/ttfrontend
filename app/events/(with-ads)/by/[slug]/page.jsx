@@ -31,10 +31,14 @@ export async function generateMetadata({ params }) {
     if (API_BASE_URL) {
       // /events/by/{slug} is behind the API-key gate (enforce mode), so the SSR fetch must send the
       // same x-api-key the browser client attaches (utils/axiosConfig.js).
+      // Always fresh: the organiser share fields are hand-set directly in Mongo (no admin UI, so no
+      // revalidateTag hook to clear a cache), so caching would leave the share card stale. The share
+      // card is scraped rarely, so an uncached fetch per scrape is cheap. The ?v= on shared links
+      // handles the social platform's own cache.
       const apiKey = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
       const res = await fetch(`${API_BASE_URL}/events/by/${slug}`, {
         headers: apiKey ? { 'x-api-key': apiKey } : {},
-        next: { revalidate: 3600 },
+        cache: 'no-store',
       });
       if (res.ok) {
         const data = await res.json();
