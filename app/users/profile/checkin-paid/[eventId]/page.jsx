@@ -52,6 +52,17 @@ export default function CheckinPaidEventPage() {
   const [activeTab, setActiveTab] = useState('pending'); // default to the "Not checked in" worklist
   const [search, setSearch] = useState('');
   const [showScanner, setShowScanner] = useState(false);
+  const [backHref, setBackHref] = useState('/users/profile/checkin-paid'); // default: the check-in list
+
+  // Smart Back: if we arrived from a page that recorded a return URL (e.g. the profile
+  // dashboard), send Back there; otherwise keep the default list page.
+  useEffect(() => {
+    const stored = localStorage.getItem('checkinReturnUrl');
+    if (stored) {
+      setBackHref(stored);
+      localStorage.removeItem('checkinReturnUrl');
+    }
+  }, []);
 
   const stripRef = useRef(null);
   const [tableHeaderTop, setTableHeaderTop] = useState(HEADER_OFFSET + 96);
@@ -128,7 +139,7 @@ export default function CheckinPaidEventPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="relative flex items-center mb-4">
-        <BackButton href="/users/profile/checkin-paid" />
+        <BackButton href={backHref} />
         <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-bold text-slate-900">Check-in</h1>
       </div>
 

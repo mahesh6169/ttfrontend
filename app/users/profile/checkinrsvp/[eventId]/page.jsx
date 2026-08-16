@@ -51,6 +51,17 @@ export default function CheckinRsvpEventPage() {
   const [activeTab, setActiveTab] = useState('pending'); // default to the "Not checked in" worklist
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [backHref, setBackHref] = useState('/users/profile/checkinrsvp'); // default: the check-in list
+
+  // Smart Back: if we arrived from a page that recorded a return URL (e.g. the profile
+  // dashboard), send Back there; otherwise keep the default list page.
+  useEffect(() => {
+    const stored = localStorage.getItem('checkinReturnUrl');
+    if (stored) {
+      setBackHref(stored);
+      localStorage.removeItem('checkinReturnUrl');
+    }
+  }, []);
 
   // Debounce the search box (server search).
   useEffect(() => {
@@ -112,7 +123,7 @@ export default function CheckinRsvpEventPage() {
     <div className="max-w-2xl mx-auto">
       {/* Page toolbar: Back left + "Check-in" centred (D7) */}
       <div className="relative flex items-center mb-4">
-        <BackButton href="/users/profile/checkinrsvp" />
+        <BackButton href={backHref} />
         <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-bold text-slate-900">Check-in</h1>
       </div>
 

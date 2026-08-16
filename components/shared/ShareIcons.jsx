@@ -3,7 +3,11 @@ import { FaCopy, FaWhatsapp, FaShareAlt } from 'react-icons/fa';
 import { buildSlugUrl } from '@/utils/slugUtils';
 import { toast } from 'react-toastify';
 
-const ShareIcons = ({ type, title, id, className = '', compact = false, hoverClassName = '' }) => {
+// `path` is an optional escape hatch for pages whose shareable URL is NOT an item slug URL - e.g.
+// the public organiser page /events/by/{slug}, whose handle is a hand-set User.slug, not a
+// buildSlugUrl(title, id). When `path` is set it is shared verbatim (origin + path, same cache-bust);
+// otherwise the URL is derived from type/title/id exactly as before. Existing callers pass no `path`.
+const ShareIcons = ({ type, title, id, path = '', className = '', compact = false, hoverClassName = '' }) => {
   const [copied, setCopied] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -18,9 +22,18 @@ const ShareIcons = ({ type, title, id, className = '', compact = false, hoverCla
   let fullUrl;
   if (type === 'website' || type === 'share') {
     // For website/share, use the homepage URL
-    fullUrl = typeof window !== 'undefined' 
+    fullUrl = typeof window !== 'undefined'
       ? window.location.origin
       : process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
+  } else if (path) {
+    // Explicit path (e.g. the organiser page /events/by/{slug}) - share it verbatim.
+    const origin = typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
+    fullUrl = `${origin}${path}`;
+    // Add timestamp to bust WhatsApp cache, same as the item-slug branch.
+    const timestamp = Date.now();
+    fullUrl = `${fullUrl}?v=${timestamp}`;
   } else {
     // For specific items, use slug URL
     const slugUrl = buildSlugUrl(type, title, id);
