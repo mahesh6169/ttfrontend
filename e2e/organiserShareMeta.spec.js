@@ -30,3 +30,13 @@ test('AC4 an organiser with custom share fields uses those in its head', async (
   await expect(await ogContent(page, 'og:description')).toBe(seed.orgShareDescription);
   await expect(await ogContent(page, 'og:image')).toBe(seed.orgShareImage);
 });
+
+test('AC4b the visible page heading uses the share title as the organiser name', async ({ page }) => {
+  const seed = readSeed();
+  await page.goto(`/events/by/${seed.orgShareSlug}`);
+
+  // organiserShareTitle wins over the event's own organiser name, so the on-screen heading reads it.
+  await expect(
+    page.getByRole('heading', { name: `Events by ${seed.orgShareTitle}` })
+  ).toBeVisible({ timeout: 20_000 });
+});
