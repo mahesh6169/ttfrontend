@@ -2,7 +2,6 @@ import { createSlugUrl } from '@/utils/slugUtils';
 import axios from '@/utils/axiosConfig';
 
 export async function GET() {
-  console.log('🚀 LISTINGS SITEMAP CALLED');
   const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 
   try {
