@@ -26,7 +26,7 @@ export async function generateMetadata({ params }) {
     // Fetch event data from API
     const response = await fetch(`${API_BASE_URL}/events/views/${eventId}`, {
       next: { 
-        revalidate: 3600,
+        revalidate: 300,
         tags: [`event-${eventId}`]
       }
     });
@@ -38,54 +38,37 @@ export async function generateMetadata({ params }) {
     const data = await response.json();
     const event = data.event || data;
     
-    // Generate meta tags
-    const title = event.title || 'Event';
-    
-    // Build description with event details and call-to-action
-    let description = '';
-    
-    // Add date if available
-    if (event.dateTime) {
-      const eventDate = format(new Date(event.dateTime), 'dd MMM');
-      description = `${eventDate}`;
-    }
-    
-    // Add venue if available
-    if (event.venue) {
-      description += description ? ` - ${event.venue}. ` : `${event.venue}. `;
-    } else if (description) {
-      description += ' - ';
-    }
-    
-    // Add call-to-action based on event type
-    const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
-    if (event.isPaid) {
-      description += `Don't wait—get your ticket now at ${siteName}!`;
-    } else if (event.isAdvertiseOnly) {
-      description += `Learn more at ${siteName}!`;
+    // Row 3 (title): the platform seoTitle when set, else the organiser's event title.
+    // Emitted in absolute form below so the events layout's "%s | Desify" template is
+    // bypassed and no brand appears (see designguide/06-seo/events.md).
+    const resolvedTitle = event.seoTitle || event.title || 'Event';
+
+    // Row 4 (description): the platform seoDescription when set, else a one-liner built
+    // ONLY from structured fields (never the free-text body, which can run thousands of
+    // chars). Capped at ~155 chars (Google's snippet length).
+    const MAX_DESCRIPTION = 155;
+    const capDescription = (text) => {
+      if (!text || text.length <= MAX_DESCRIPTION) return text || '';
+      const cut = text.slice(0, MAX_DESCRIPTION);
+      const lastSpace = cut.lastIndexOf(' ');
+      return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
+    };
+
+    let description;
+    if (event.seoDescription) {
+      description = event.seoDescription;
     } else {
-      description += `Don't wait—RSVP now at ${siteName}!`;
+      const locDateParts = [];
+      if (event.address?.suburb) locDateParts.push(event.address.suburb);
+      if (event.address?.state) locDateParts.push(event.address.state);
+      if (event.dateTime) locDateParts.push(format(new Date(event.dateTime), 'dd MMM yyyy'));
+      const locDate = locDateParts.join(', ');
+      const ending = event.isPaid ? 'Get tickets.' : 'Free RSVP.';
+      description = locDate
+        ? `${event.title} - ${locDate}. ${ending}`
+        : `${event.title}. ${ending}`;
     }
-    
-    // Ensure it fits within 80 chars
-    if (description.length > 80) {
-      // If too long, use shorter version without venue
-      if (event.dateTime) {
-        const eventDate = format(new Date(event.dateTime), 'dd MMM');
-        description = event.isPaid 
-          ? `${eventDate} - Get your ticket at ${siteName}!`
-          : event.isAdvertiseOnly
-          ? `${eventDate} - Learn more at ${siteName}!`
-          : `${eventDate} - RSVP now at ${siteName}!`;
-      } else {
-        // No date available, just call-to-action
-        description = event.isPaid 
-          ? `Get your ticket now at ${siteName}!`
-          : event.isAdvertiseOnly
-          ? `Learn more at ${siteName}!`
-          : `RSVP now at ${siteName}!`;
-      }
-    }
+    description = capDescription(description);
     
     // Get OG image or fallback (skip raw images to avoid >300KB issues)
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
@@ -107,11 +90,16 @@ export async function generateMetadata({ params }) {
     const url = `${META_DEFAULTS.siteUrl}/events/${slug}`;
     
     return {
-      title: `${title} - ${META_DEFAULTS.siteName}`,
+      // Absolute form: bypasses the layout's "%s | Desify" template, so the title
+      // carries NO brand (Desify already appears in result Row 1).
+      title: { absolute: resolvedTitle },
       description,
-      alternates: { canonical: url },
+      // Canonical grouping (events-seo-canonical.md): when this event points at a hero
+      // via seoCanonicalEventId, the backend resolves the hero's URL into seoCanonicalUrl;
+      // use it so multi-part events consolidate onto the hero. Else self-canonical.
+      alternates: { canonical: event.seoCanonicalUrl || url },
       openGraph: {
-        title, // No branding for WhatsApp
+        title: resolvedTitle, // No branding for WhatsApp
         description,
         url,
         siteName: META_DEFAULTS.siteName,
@@ -128,7 +116,7 @@ export async function generateMetadata({ params }) {
       },
       twitter: {
         card: image ? 'summary_large_image' : 'summary',
-        title,
+        title: resolvedTitle,
         description,
         images: image ? [image] : [],
       },
@@ -170,7 +158,7 @@ export default async function EventSlugPage({ params }) {
   let event = null;
   try {
     const response = await fetch(`${API_BASE_URL}/events/views/${eventId}`, {
-      next: { revalidate: 3600, tags: [`event-${eventId}`] },
+      next: { revalidate: 300, tags: [`event-${eventId}`] },
     });
     if (response.ok) {
       const json = await response.json();

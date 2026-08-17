@@ -11,9 +11,8 @@ export async function GET() {
     { url: '/threads', priority: '0.8', changefreq: 'daily' },   // rank 4 vertical
     { url: '/deals', priority: '0.75', changefreq: 'daily' }, // rank 5 vertical
     { url: '/coupons', priority: '0.7', changefreq: 'weekly' }, // rank 6 vertical
-    { url: '/support/contact', priority: '0.4', changefreq: 'yearly' },
-    { url: '/support/terms', priority: '0.3', changefreq: 'yearly' },
-    { url: '/support/privacy', priority: '0.3', changefreq: 'yearly' },
+    // /support/contact, /support/terms, /support/privacy are intentionally omitted:
+    // those pages are noindex, so listing them in a sitemap would contradict that.
   ];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
