@@ -45,7 +45,7 @@ const monthDropdownOptions = [
   ...monthOptions,
 ];
 
-const EventsPage = ({ heading }) => {
+const EventsPage = ({ heading, initialData = null }) => {
   // URL-based filters (nuqs)
   const {
     cat,
@@ -69,6 +69,13 @@ const EventsPage = ({ heading }) => {
     clearAllFilters,
   } = useEventFilters();
 
+  // Default view = no filters, no location, page 1, default sort. Only then may the
+  // server pre-fill (initialData) seed the grid; any change and the hook fetches fresh
+  // (so a filtered/paged view is never seeded with the default 12).
+  const isDefaultView =
+    !cat && communities.length === 0 && !state && !month && !eventType &&
+    !location && sort === 'date' && page === 1;
+
   // TanStack Query for fetching events
   const { data, isLoading, isError, refetch } = useSearchEvents({
     cat,
@@ -80,6 +87,7 @@ const EventsPage = ({ heading }) => {
     sort,
     page,
     location,
+    initialData: isDefaultView ? initialData : undefined,
   });
 
   const events = data?.events || [];

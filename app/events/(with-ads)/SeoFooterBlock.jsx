@@ -1,8 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
-const BODY_TEXT = `Desify is a community-driven events platform where you can discover Indian concerts, cultural shows, festivals and community gatherings. Host your own RSVP event for free, sell tickets at a simple flat rate, or promote your existing event to reach attendees in your area.`;
+// Locked attendee signboard footer (designguide/06-seo/events.md "Landing page (/events)").
+// The organiser phrase links to /tickets (the organiser signboard is a later job).
+const FooterParagraph = () => (
+  <>
+    Desify is a community events platform for Indians in Australia. Discover concerts,
+    devotional programs, cultural nights, festivals like Diwali, Navratri Garba, Holi,
+    Ganesh Chaturthi and Onam, and community gatherings in Sydney, Melbourne, Perth,
+    Brisbane and Adelaide. Organising an event?{' '}
+    <Link href="/tickets" className="text-teal-700 hover:text-teal-800 underline">
+      Host free RSVP events or sell tickets
+    </Link>{' '}
+    on Desify.
+  </>
+);
 
 export default function SeoFooterBlock() {
   const [expanded, setExpanded] = useState(false);
@@ -23,7 +37,7 @@ export default function SeoFooterBlock() {
                 }
           }
         >
-          {BODY_TEXT}
+          <FooterParagraph />
         </p>
         <button
           type="button"
@@ -36,7 +50,7 @@ export default function SeoFooterBlock() {
 
       {/* Desktop: always visible full paragraph */}
       <p className="hidden md:block text-sm text-slate-600 leading-snug md:text-center md:max-w-5xl md:mx-auto">
-        {BODY_TEXT}
+        <FooterParagraph />
       </p>
     </section>
   );

@@ -39,7 +39,7 @@ async function fetchDeals({ cat, subcat, state, day, q, partnerstoreId, sort, pa
 }
 
 // TanStack Query hook for searching deals
-export function useSearchDeals({ cat, subcat, state, day, q, partnerstoreId, sort, page, location }) {
+export function useSearchDeals({ cat, subcat, state, day, q, partnerstoreId, sort, page, location, initialData }) {
   return useQuery({
     // Query key includes all filter values — TanStack Query refetches when any change
     queryKey: [
@@ -58,6 +58,9 @@ export function useSearchDeals({ cat, subcat, state, day, q, partnerstoreId, sor
       location?.radius,
     ],
     queryFn: () => fetchDeals({ cat, subcat, state, day, q, partnerstoreId, sort, page, location }),
+    // Server pre-fill for the default view (SSR): seeds the grid so first paint shows real
+    // deals, not a skeleton. Undefined for filtered/paged views, which fetch normally.
+    initialData,
     // Keep previous results visible while new ones load (no flash of empty)
     placeholderData: (previousData) => previousData,
   });

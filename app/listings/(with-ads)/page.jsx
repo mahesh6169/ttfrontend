@@ -5,13 +5,20 @@ import SeoFooterBlock from './SeoFooterBlock';
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
 const listingsOgImage = process.env.NEXT_PUBLIC_LISTINGS_OG_IMAGE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
+
+// Buyer-facing signboard (designguide/06-seo/listings.md "Landing page (/listings)").
+const LANDING_TITLE = 'Indian Classifieds in Australia | Buy & Sell, Jobs, Rentals';
+const LANDING_DESCRIPTION =
+  'Find rooms, vehicles, home maintenance and professional services from the Indian community near you. New listings added daily.';
 
 export const metadata = {
-  // Google site title — kept short for clean sitelink display
-  title: 'Classifieds',
+  // Absolute form: the listings layout's "%s | Desify" template must NOT append the brand
+  // (Desify already shows in result Row 1); the whole title is free for keywords.
+  title: { absolute: LANDING_TITLE },
 
-  // Site description
-  description: 'Indian classifieds Australia for rentals, cars, services and businesses. Discover local listings or post your own for free and get discovered locally.',
+  description: LANDING_DESCRIPTION,
 
   // Canonical URL for this page
   alternates: {
@@ -20,8 +27,8 @@ export const metadata = {
 
   // OpenGraph block — must be full (Next.js shallow-merges; page replaces layout's OG block)
   openGraph: {
-    title: `Australia's Indian Classifieds`,
-    description: 'Discover rentals, cars, services, businesses and more, or list your own for free.',
+    title: LANDING_TITLE,
+    description: LANDING_DESCRIPTION,
     url: `${siteUrl}/listings`,
     siteName,
     images: [{
@@ -37,8 +44,8 @@ export const metadata = {
   // Twitter — mirrors og
   twitter: {
     card: 'summary_large_image',
-    title: `Australia's Indian Classifieds`,
-    description: 'Discover rentals, cars, services, businesses and more, or list your own for free.',
+    title: LANDING_TITLE,
+    description: LANDING_DESCRIPTION,
     images: [listingsOgImage],
   },
 
@@ -46,10 +53,52 @@ export const metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function ListingsPage() {
+// The default view = no filters, no location, page 1, default sort. Only then may the
+// server pre-fill seed the grid (L7 guard: a filtered/paged arrival fetches client-side).
+function isDefaultListingsView(sp = {}) {
+  const filterKeys = ['cat', 'sub', 'state', 'adType', 'q', 'loc', 'lat', 'lng', 'communities'];
+  if (filterKeys.some((k) => sp[k])) return false;
+  if (sp.page && String(sp.page) !== '1') return false;
+  if (sp.sort && sp.sort !== 'newest') return false;
+  return true;
+}
+
+// SSR pre-fill of the default first page (newest first, 12), mirroring the events landing:
+// same base URL + x-api-key header + 300s revalidate. Returns { adverts, meta } (the search
+// body's .data, the shape useSearchListings yields) or null on any failure.
+async function fetchDefaultListingsPage() {
+  if (!API_BASE_URL) return null;
+  const filters = {
+    categories: [], subcategories: [], location: null, state: '',
+    searchText: '', adType: null, sortBy: 'newest', communities: [],
+  };
+  const query = new URLSearchParams({
+    filters: JSON.stringify(filters),
+    pagination: JSON.stringify({ page: 1, limit: 12 }),
+  });
+  try {
+    const res = await fetch(`${API_BASE_URL}/adverts/search?${query.toString()}`, {
+      headers: { 'x-api-key': API_KEY },
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body?.data || null;
+  } catch (error) {
+    console.error('Error pre-fetching listings landing:', error);
+    return null;
+  }
+}
+
+export default async function ListingsPage({ searchParams }) {
+  const sp = (await searchParams) || {};
+  // Only the clean default view is pre-filled; a filtered/paged arrival is left to the client.
+  const initialData = isDefaultListingsView(sp) ? await fetchDefaultListingsPage() : null;
+
   return (
     <>
       <ListingsClient
+        initialData={initialData}
         heading={
           <div className="flex items-center justify-center gap-x-3 sm:gap-x-4 border-y border-teal-100 py-3 sm:py-4 md:w-fit md:mx-auto md:px-8">
             <h1 className="text-center text-sm sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">

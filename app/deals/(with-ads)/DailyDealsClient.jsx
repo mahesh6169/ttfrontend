@@ -22,7 +22,7 @@ const DAYS_OPTIONS = [
   { value: 'sunday', label: 'Sunday' }
 ];
 
-const DailyDealsPage = ({ heading }) => {
+const DailyDealsPage = ({ heading, initialData = null }) => {
   // URL-based filters (nuqs)
   const {
     cat,
@@ -45,6 +45,13 @@ const DailyDealsPage = ({ heading }) => {
     clearAllFilters,
   } = useDealFilters();
 
+  // Default view = no filters, no location, page 1, default sort. Only then may the
+  // server pre-fill (initialData) seed the grid; any change and the hook fetches fresh
+  // (so a filtered/paged view is never seeded with the default page).
+  const isDefaultView =
+    !cat && !subcat && !state && !day && !partnerstoreId &&
+    !location && sort === 'newest' && page === 1;
+
   // TanStack Query for fetching deals
   const { data, isLoading, isError, refetch } = useSearchDeals({
     cat,
@@ -56,6 +63,7 @@ const DailyDealsPage = ({ heading }) => {
     sort,
     page,
     location,
+    initialData: isDefaultView ? initialData : undefined,
   });
 
   // Category + subcategory options come from live deals (filter-options), so the

@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 
-const BODY_TEXT = `Desify is a community-driven coupons platform where you can discover discount codes and special offers from local Indian-owned stores and businesses across Australia. Browse coupons near you and redeem in-store, or promote your own store's offers for free.`;
+// Locked shopper signboard footer (designguide/06-seo/coupons.md "Landing page (/coupons)").
+// The closing store line is deliberately UNLINKED - stores are onboarded via admin (C1).
+const BODY_TEXT = `Desify is a coupons platform for the Indian community in Australia. Save on groceries, food and dining, fashion, and health and wellbeing at stores in Sydney, Melbourne, Perth, Brisbane and Adelaide - browse offers near you and redeem in-store with a QR code. Stores can list their offers free on Desify.`;
 
 export default function SeoFooterBlock() {
   const [expanded, setExpanded] = useState(false);

@@ -5,9 +5,19 @@ import ForumList from '@/components/home/ForumList';
 import ShareStrip from '@/components/home/ShareStrip';
 import TopAd from '@/components/ads/TopAd';
 import AdsFrame from '@/components/layout/AdsFrame';
+import HomeSeoFooterBlock from '@/components/home/HomeSeoFooterBlock';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
+
+// Homepage-only meta description (designguide/06-seo/sharedseo.md "The homepage signboard").
+// Set HERE, not on the root layout, so other pages keep inheriting the root default. The
+// title stays the root layout default ("Australia's Indian Community Platform") and the OG /
+// social blocks are left untouched.
+export const metadata = {
+  description:
+    "Desify is Australia's Indian community platform - discover local classifieds, events and tickets, deals, coupons and community discussions, all in one place.",
+};
 
 async function fetchHomeData() {
   try {
@@ -62,6 +72,14 @@ export default async function HomePage() {
   return (
     <AdsFrame topAd={<TopAd />}>
       <div id="content" className="space-y-6">
+        {/* SEO H1 - matches the title exactly; quiet heading band in the spirit of the
+            vertical landings (designguide/06-seo/sharedseo.md "The homepage signboard"). */}
+        <div className="border-y border-teal-100 py-3 sm:py-4 md:w-fit md:mx-auto md:px-8">
+          <h1 className="text-center text-sm sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">
+            Australia&apos;s Indian Community Platform
+          </h1>
+        </div>
+
         <HomeBannerSlider placement="home" />
 
         <div className="bg-white border border-slate-200 rounded-2xl w-fit mx-auto">
@@ -106,6 +124,8 @@ export default async function HomePage() {
             cta={{ label: 'Ask a question', href: '/threads/new' }}
           />
         </div>
+
+        <HomeSeoFooterBlock />
       </div>
     </AdsFrame>
   );

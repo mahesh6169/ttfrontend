@@ -235,9 +235,13 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
               >
                 {buttonConfig.text}
               </button>
-              {campaign._id && (
+              {(campaign.slug || campaign._id) && (
                 <Link
-                  href={`/coupons/views/${campaign._id}`}
+                  // Link to the canonical, indexable slug page so the landing page's SSR
+                  // links feed Google the detail pages (the /coupons/views/{id} route is
+                  // noindex - see shared-seo-plumbing). Falls back to /views for the rare
+                  // slug-less campaign. See featureplans/coupons-seo-landing.md.
+                  href={campaign.slug ? `/coupons/${campaign.slug}` : `/coupons/views/${campaign._id}`}
                   className="text-xs text-teal-700 hover:text-teal-800 underline"
                 >
                   More details & terms

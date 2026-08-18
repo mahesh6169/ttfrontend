@@ -21,7 +21,7 @@ import { stripHtmlToText } from '@/utils/helpers/threads/richText';
 
 const libraries = ['places'];
 
-const ThreadsPage = ({ heading }) => {
+const ThreadsPage = ({ heading, initialData = null }) => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL;
 
   // URL-based filters (nuqs)
@@ -45,6 +45,13 @@ const ThreadsPage = ({ heading }) => {
     clearAllFilters,
   } = useThreadFilters();
 
+  // Default view = no filters, no location, page 1, default sort. Only then may the
+  // server pre-fill (initialData) seed the grid; any change and the hook fetches fresh
+  // (so a filtered/paged view is never seeded with the default page).
+  const isDefaultView =
+    !cat && communities.length === 0 && !state && !q &&
+    !location && sort === 'newest' && page === 1;
+
   // TanStack Query for fetching threads
   const { data, isLoading, isError, refetch } = useSearchThreads({
     cat,
@@ -54,6 +61,7 @@ const ThreadsPage = ({ heading }) => {
     sort,
     page,
     location,
+    initialData: isDefaultView ? initialData : undefined,
   });
 
   // TanStack Query for filter options
