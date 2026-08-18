@@ -1,8 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
-const BODY_TEXT = `Desify is a community-driven deals platform where you can discover discounts and special offers on restaurants, catering, beauty services and more from Indian-owned businesses. Promote your own deal for free and reach engaged local customers.`;
+// Locked shopper signboard footer (designguide/06-seo/deals.md "Landing page (/deals)").
+// The closing business phrase links to /users/profile/deals (the create-deal page).
+const FooterParagraph = () => (
+  <>
+    Discover Indian deals across Australia, from restaurants and catering, sweets and
+    groceries to fashion and jewellery, beauty and salons, dance and music classes, and
+    party and wedding services. Find offers from businesses in Sydney, Melbourne, Perth,
+    Brisbane and Adelaide.{' '}
+    <Link href="/users/profile/deals" className="text-teal-700 hover:text-teal-800 underline">
+      Businesses can post their deals free
+    </Link>{' '}
+    on Desify.
+  </>
+);
 
 export default function SeoFooterBlock() {
   const [expanded, setExpanded] = useState(false);
@@ -23,7 +37,7 @@ export default function SeoFooterBlock() {
                 }
           }
         >
-          {BODY_TEXT}
+          <FooterParagraph />
         </p>
         <button
           type="button"
@@ -36,7 +50,7 @@ export default function SeoFooterBlock() {
 
       {/* Desktop: always visible full paragraph */}
       <p className="hidden md:block text-sm text-slate-600 leading-snug md:text-center md:max-w-5xl md:mx-auto">
-        {BODY_TEXT}
+        <FooterParagraph />
       </p>
     </section>
   );

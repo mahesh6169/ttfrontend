@@ -30,13 +30,16 @@ async function fetchListings({ filters, page }) {
 }
 
 // TanStack Query hook for searching listings
-export function useSearchListings({ cat, sub, state, adType, q, sort, page, location, communities }) {
+export function useSearchListings({ cat, sub, state, adType, q, sort, page, location, communities, initialData }) {
   const apiFilters = buildApiFilters({ cat, sub, state, adType, q, sort, location, communities });
 
   return useQuery({
     // Query key includes all filter values — TanStack Query refetches when any change
     queryKey: ['listings', cat, sub, state, adType, q, sort, page, location?.name, location?.coordinates?.[0], location?.coordinates?.[1], location?.radius, communities?.join(',')],
     queryFn: () => fetchListings({ filters: apiFilters, page }),
+    // Server pre-fill for the default view (SSR): seeds the grid so first paint shows real
+    // cards, not a skeleton. Undefined for filtered/paged views, which fetch normally.
+    initialData,
     // Keep previous results visible while new ones load (no flash of empty)
     placeholderData: (previousData) => previousData,
   });

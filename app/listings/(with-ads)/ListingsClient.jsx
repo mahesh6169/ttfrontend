@@ -15,7 +15,7 @@ import { Fragment } from 'react';
 
 const libraries = ['places'];
 
-const AdvertsPage = ({ heading }) => {
+const AdvertsPage = ({ heading, initialData = null }) => {
   // URL-based filter state (nuqs)
   const {
     cat, sub, state: stateFilter, adType, q, sort, page, location, hasLocation, communities,
@@ -24,9 +24,17 @@ const AdvertsPage = ({ heading }) => {
     params,
   } = useListingFilters();
 
+  // Default view = no filters, no location, page 1, default sort. Only then may the
+  // server pre-fill (initialData) seed the grid; any change and the hook fetches fresh
+  // (so a filtered/paged view is never seeded with the default page).
+  const isDefaultView =
+    !cat && !sub && !stateFilter && !adType && !q &&
+    !location && communities.length === 0 && sort === 'newest' && page === 1;
+
   // TanStack Query — fetches listings based on current URL filters
   const { data, isLoading, isError, error, isPlaceholderData, refetch } = useSearchListings({
     cat, sub, state: stateFilter, adType, q, sort, page, location, communities,
+    initialData: isDefaultView ? initialData : undefined,
   });
 
   const adverts = data?.adverts || [];

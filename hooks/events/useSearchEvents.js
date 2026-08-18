@@ -30,7 +30,7 @@ async function fetchEvents({ filters, page }) {
 }
 
 // TanStack Query hook for searching events
-export function useSearchEvents({ cat, communities, state, month, eventType, q, sort, page, location }) {
+export function useSearchEvents({ cat, communities, state, month, eventType, q, sort, page, location, initialData }) {
   const apiFilters = buildApiFilters({ cat, communities, state, month, eventType, q, sort, location });
 
   return useQuery({
@@ -51,6 +51,9 @@ export function useSearchEvents({ cat, communities, state, month, eventType, q, 
       location?.radius,
     ],
     queryFn: () => fetchEvents({ filters: apiFilters, page }),
+    // Server pre-fill for the default view (SSR): seeds the grid so first paint shows real
+    // cards, not a skeleton. Undefined for filtered/paged views, which fetch normally.
+    initialData,
     // Keep previous results visible while new ones load (no flash of empty)
     placeholderData: (previousData) => previousData,
   });

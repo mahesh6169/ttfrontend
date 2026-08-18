@@ -28,7 +28,7 @@ async function fetchThreads({ filters, page }) {
 }
 
 // TanStack Query hook for searching threads
-export function useSearchThreads({ cat, communities, state, q, sort, page, location }) {
+export function useSearchThreads({ cat, communities, state, q, sort, page, location, initialData }) {
   const apiFilters = buildApiFilters({ cat, communities, state, q, sort, location });
 
   return useQuery({
@@ -47,6 +47,9 @@ export function useSearchThreads({ cat, communities, state, q, sort, page, locat
       location?.radius,
     ],
     queryFn: () => fetchThreads({ filters: apiFilters, page }),
+    // Server pre-fill for the default view (SSR): seeds the grid so first paint shows real
+    // threads, not a skeleton. Undefined for filtered/paged views, which fetch normally.
+    initialData,
     // Keep previous results visible while new ones load (no flash of empty)
     placeholderData: (previousData) => previousData,
   });

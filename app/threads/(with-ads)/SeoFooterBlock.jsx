@@ -1,8 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
-const BODY_TEXT = `Desify is a community-driven forum where you can ask questions, share knowledge and join discussions on migration, visas, health, careers, real estate and more from the Indian community in Australia. Start a discussion or browse answers.`;
+// Locked forum signboard footer (designguide/06-seo/threads.md "Landing page (/threads)").
+// The discussion phrase links to /threads/new. No city names - forum searches are national.
+const FooterParagraph = () => (
+  <>
+    Desify is a community forum for Indians in Australia. Ask questions and read answers on
+    migration and visas, careers and education, personal finance and legal matters, health,
+    and real estate and rentals. Talk about family and kids, food, and cultural and
+    devotional life - or{' '}
+    <Link href="/threads/new" className="text-teal-700 hover:text-teal-800 underline">
+      start your own discussion free
+    </Link>{' '}
+    on Desify.
+  </>
+);
 
 export default function SeoFooterBlock() {
   const [expanded, setExpanded] = useState(false);
@@ -23,7 +37,7 @@ export default function SeoFooterBlock() {
                 }
           }
         >
-          {BODY_TEXT}
+          <FooterParagraph />
         </p>
         <button
           type="button"
@@ -36,7 +50,7 @@ export default function SeoFooterBlock() {
 
       {/* Desktop: always visible full paragraph */}
       <p className="hidden md:block text-sm text-slate-600 leading-snug md:text-center md:max-w-5xl md:mx-auto">
-        {BODY_TEXT}
+        <FooterParagraph />
       </p>
     </section>
   );
