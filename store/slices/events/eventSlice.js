@@ -476,8 +476,14 @@ const processTicketDatesForEdit = (ticketTypes, timeZone) => {
     capacity: eventData.capacity || '',
     maxAttendeesPerRegistration: eventData.maxAttendeesPerRegistration || '',
     // Tag questions that came from the server as _existing so the edit form can lock them once the
-    // event has activity (events-edit-locking.md D10); questions added this session stay editable.
-    registrationFields: (eventData.registrationFields || []).map((f) => ({ ...f, _existing: true })),
+    // event has activity. _lockedOptions snapshots the stored option list so, after activity, the
+    // builder locks EXISTING options (can't rename/remove) while newly appended ones stay editable
+    // (events-rsvp-question-editing.md D4/D5). Questions added this session carry neither flag.
+    registrationFields: (eventData.registrationFields || []).map((f) => ({
+      ...f,
+      _existing: true,
+      _lockedOptions: Array.isArray(f.fieldOptions) ? [...f.fieldOptions] : [],
+    })),
     ticketTypes: (eventData.ticketTypes && eventData.ticketTypes.length > 0)
   ? processTicketDatesForEdit(eventData.ticketTypes, eventData.timeZone)
   : [],
@@ -721,19 +727,27 @@ deleteError: null,
     },
     
     // Registration Fields with change tracking
-    // Optional payload: { fieldType: 'text' | 'select' } — defaults to 'text' if absent
-    // Dropdowns pre-load with one empty option row so the host immediately sees
-    // they need to fill an option, instead of guessing why the form is incomplete.
+    // Optional payload: { fieldType } — one of the eight types (events-rsvp-question-types.md).
+    // Choice types (dropdown, multiple choice, checkboxes) pre-load one empty option row so the
+    // host immediately sees they need to fill an option, instead of guessing why it's incomplete.
     addRegistrationField: (state, action) => {
       const fieldType = action?.payload?.fieldType || 'text';
+      const needsOptions = ['select', 'radio', 'checkboxes'].includes(fieldType);
       state.formData.registrationFields.push({
         fieldName: '',
         fieldType,
-        fieldOptions: fieldType === 'select' ? [''] : [],
+        fieldOptions: needsOptions ? [''] : [],
         isRequired: false,
+        includeTime: false,
         blockingOptions: [],
         blockingMessage: ''
       });
+      state.hasUnsavedChanges = true;
+    },
+    // Wipe every question (used by the step-1 type-flip after confirmation, D10): RSVP and paid
+    // support different types, so flipping clears the lot rather than trying to migrate them.
+    clearRegistrationFields: (state) => {
+      state.formData.registrationFields = [];
       state.hasUnsavedChanges = true;
     },
     updateRegistrationField: (state, action) => {
@@ -751,7 +765,17 @@ deleteError: null,
       state.formData.registrationFields = state.formData.registrationFields.filter((_, i) => i !== index);
       state.hasUnsavedChanges = true;
     },
-    
+    // Reorder a question by swapping it with its neighbour. Order is pure presentation (answers are
+    // keyed by qid), so this is always allowed - even on a locked/paid event with registrations.
+    moveRegistrationField: (state, action) => {
+      const { index, direction } = action.payload; // direction: -1 up, +1 down
+      const list = state.formData.registrationFields;
+      const target = index + direction;
+      if (target < 0 || target >= list.length) return;
+      [list[index], list[target]] = [list[target], list[index]];
+      state.hasUnsavedChanges = true;
+    },
+
     // Ticket Types with change tracking
     toggleIsPaid: (state, action) => {
       state.formData.isPaid = action.payload;
@@ -1368,10 +1392,12 @@ export const {
   
   // Registration fields
   addRegistrationField,
+  clearRegistrationFields,
   updateRegistrationField,
   updateFieldOptions,
   removeRegistrationField,
-  
+  moveRegistrationField,
+
   // Ticket types
   toggleIsPaid,
   toggleAdvertiseOnly,

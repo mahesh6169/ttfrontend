@@ -3,6 +3,8 @@
 import React from 'react';
 import { FaInfoCircle, FaExclamationCircle } from 'react-icons/fa';
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react';
+import { TEXT_ANSWER_MAX, SCALE_MIN, SCALE_MAX } from '@/utils/events/questionTypes';
+import DateTimeField from '@/components/shared/DateTimeField';
 
 // Forms guide (00-shared/design-system.md section 6): 14px slate-700 text, slate-300 border,
 // rounded-lg, px-3 py-2.5, white; hover slate-400 border; focus teal ring (ring-2 ring-teal-300)
@@ -10,14 +12,17 @@ import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headless
 const INPUT_CLASS =
   'w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400';
 
-// errors + blockMessageFor are OPTIONAL (free-RSVP only): errors is a { fieldName: message } map for
-// required-field errors, blockMessageFor(field) returns a blocking-answer message or null. Paid usage
-// passes neither, so its rendering is unchanged.
+// errors + blockMessageFor + isFieldBlocking are OPTIONAL (free-RSVP only): errors is a { fieldName:
+// message } map for required-field errors; blockMessageFor(field) returns a blocking-answer message or
+// null and renders the FULL red box under the field (builder Preview uses this); isFieldBlocking(field)
+// returns a boolean and renders a SMALL red marker instead - the real RSVP form uses this because the
+// full message rides the sticky bar, so under the field it only needs to point at WHICH answer blocks.
+// Paid usage passes none, so its rendering is unchanged.
 // singleColumn opt-in stacks one question per row (free-RSVP asks for this so blocking callouts read
 // cleanly); the paid flow leaves it off and keeps the 2-column grid.
 // bare opt-in drops the outer card (border + padding) so this can sit as a section INSIDE another
 // form card, separated by a top divider instead. The paid flow leaves it off and stays a standalone card.
-const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate, errors = {}, blockMessageFor, singleColumn = false, bare = false }) => {
+const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate, errors = {}, blockMessageFor, isFieldBlocking, singleColumn = false, bare = false }) => {
 
   // Check if event has custom registration fields
   if (!event?.registrationFields || event.registrationFields.length === 0) {
@@ -40,9 +45,131 @@ const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate, 
             value={value}
             onChange={(e) => handleFieldChange(field.fieldName, e.target.value)}
             rows={2}
+            maxLength={TEXT_ANSWER_MAX}
             className={`${INPUT_CLASS} resize-vertical`}
             placeholder="Enter requested details"
           />
+        );
+
+      case 'radio':
+        // Multiple choice: full-width teal radio rows; the whole row is tappable and long option
+        // sentences wrap beside the button (design-system radio control).
+        return (
+          <div className="space-y-2">
+            {(field.fieldOptions || []).map((option, idx) => (
+              <label
+                key={idx}
+                className="flex items-start gap-2.5 rounded-lg border border-slate-300 px-3 py-2.5 cursor-pointer hover:border-slate-400"
+              >
+                <input
+                  type="radio"
+                  name={`field-${field.fieldName}`}
+                  value={option}
+                  checked={value === option}
+                  onChange={() => handleFieldChange(field.fieldName, option)}
+                  className="mt-0.5 w-4 h-4 accent-teal-700 border-slate-300 focus:ring-teal-300 shrink-0"
+                />
+                <span className="min-w-0 text-sm text-slate-700 break-words">{option}</span>
+              </label>
+            ))}
+          </div>
+        );
+
+      case 'checkboxes': {
+        // Pick-many: one checkbox row per option; the stored answer is the list of chosen options.
+        const chosen = Array.isArray(value) ? value : [];
+        return (
+          <div className="space-y-2">
+            {(field.fieldOptions || []).map((option, idx) => (
+              <label
+                key={idx}
+                className="flex items-start gap-2.5 rounded-lg border border-slate-300 px-3 py-2.5 cursor-pointer hover:border-slate-400"
+              >
+                <input
+                  type="checkbox"
+                  checked={chosen.includes(option)}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                      ? [...chosen, option]
+                      : chosen.filter((v) => v !== option);
+                    handleFieldChange(field.fieldName, next);
+                  }}
+                  className="mt-0.5 w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300 shrink-0"
+                />
+                <span className="min-w-0 text-sm text-slate-700 break-words">{option}</span>
+              </label>
+            ))}
+          </div>
+        );
+      }
+
+      case 'scale': {
+        // Linear scale, fixed 1..5: five segmented buttons across, the selected one teal.
+        // Optional per-number labels (stored positionally in fieldOptions) list underneath.
+        const selected = Number(value);
+        const steps = [];
+        for (let n = SCALE_MIN; n <= SCALE_MAX; n += 1) steps.push(n);
+        const labels = field.fieldOptions || [];
+        return (
+          <div>
+            {/* Phone tier (<768): pills stack vertically full-width, number and label side by
+                side. Tablet/desktop: the classic five-across row, label under the number. */}
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
+              {steps.map((n) => {
+                const lbl = (labels[n - 1] || '').trim();
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => handleFieldChange(field.fieldName, n)}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-2 text-sm rounded-lg border transition-colors md:block md:px-1 ${
+                      selected === n
+                        ? 'bg-teal-700 text-white border-teal-700'
+                        : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                    }`}
+                  >
+                    <span className="md:block">{n}</span>
+                    {/* Label lives inside the pill: beside the number on phone, under it on md+. */}
+                    {lbl && (
+                      <span
+                        className={`text-[11px] leading-tight break-words md:block md:mt-0.5 ${
+                          selected === n ? 'text-teal-50' : 'text-slate-500'
+                        }`}
+                      >
+                        {lbl}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      case 'time':
+        return (
+          <input
+            type="time"
+            value={value}
+            onChange={(e) => handleFieldChange(field.fieldName, e.target.value)}
+            className={`${INPUT_CLASS} max-w-[160px]`}
+          />
+        );
+
+      case 'yesno':
+        // Yes/No: a single tick. Ticked records "Yes"; unticked records "No" (required means it must
+        // be ticked - the agreement use). The question text is the label above; this caption is "Yes".
+        return (
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={value === 'Yes'}
+              onChange={(e) => handleFieldChange(field.fieldName, e.target.checked ? 'Yes' : 'No')}
+              className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300"
+            />
+            <span className="text-sm text-slate-700">Yes</span>
+          </label>
         );
 
       case 'number':
@@ -99,12 +226,15 @@ const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate, 
         );
 
       case 'date':
+        // Modern calendar-popover picker (shared DateTimeField) instead of the native control, which
+        // reads as a dated/broken dropdown and differs across phones. "Also ask time" (includeTime)
+        // adds the hour/minute + AM/PM row. Same stored value shape as before.
         return (
-          <input
-            type="date"
+          <DateTimeField
             value={value}
-            onChange={(e) => handleFieldChange(field.fieldName, e.target.value)}
-            className={INPUT_CLASS}
+            includeTime={!!field.includeTime}
+            onChange={(v) => handleFieldChange(field.fieldName, v)}
+            ariaLabel={field.fieldName}
           />
         );
 
@@ -157,12 +287,27 @@ const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate, 
         {event.registrationFields.map((field, index) => {
           const fieldError = errors[field.fieldName];
           const blockMessage = blockMessageFor ? blockMessageFor(field) : null;
+          const fieldBlocks = isFieldBlocking ? isFieldBlocking(field) : false;
           return (
-            <div key={index}>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+            // min-w-0 lets a long answer wrap inside the column instead of dragging the page wider.
+            <div key={index} className="min-w-0">
+              <label className="block text-sm font-medium text-slate-700 mb-1 break-words whitespace-pre-line">
                 {field.fieldName}
-                {field.isRequired && (
+                {field.isRequired ? (
                   <span className="text-red-600 ml-0.5">*</span>
+                ) : (
+                  // A skippable question reads as such - a light "(optional)" where the asterisk would be.
+                  <span className="ml-1.5 font-normal text-xs text-slate-400">(optional)</span>
+                )}
+                {/* How-to-answer hint for the types where the interaction isn't self-evident. */}
+                {field.fieldType === 'radio' && (
+                  <span className="ml-1.5 font-normal text-xs text-slate-400">Choose one</span>
+                )}
+                {field.fieldType === 'checkboxes' && (
+                  <span className="ml-1.5 font-normal text-xs text-slate-400">Choose all that apply</span>
+                )}
+                {field.fieldType === 'scale' && (
+                  <span className="ml-1.5 font-normal text-xs text-slate-400">Pick one number</span>
                 )}
               </label>
               {renderFormField(field)}
@@ -175,6 +320,14 @@ const AttendeeInfoSection = ({ event, formResponses = {}, onFormResponseUpdate, 
                   <FaExclamationCircle className="mt-0.5 flex-shrink-0" />
                   <span>{blockMessage}</span>
                 </div>
+              )}
+              {!blockMessage && fieldBlocks && (
+                // Small marker: the sticky bar carries the full reason, so here we only point at the
+                // answer that blocks - "change this to continue".
+                <p className="mt-1 flex items-center gap-1 text-xs text-red-600">
+                  <FaExclamationCircle className="flex-shrink-0" />
+                  This answer blocks registration
+                </p>
               )}
             </div>
           );

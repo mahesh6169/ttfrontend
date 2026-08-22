@@ -12,8 +12,9 @@
 // Guarantees enforced here: Reg Number NEVER truncates (auto column on desktop, own wrapping line
 // on mobile); the info icon sits immediately AFTER the Booked-by name and only when answers exist;
 // the Cancel X shows only when nobody is checked in; the check-in control adapts to party size; the
-// column header is sticky-capable (the page passes stickyTop). Composes ResponsiveSheet for the
-// check-in sheet and the RSVP-answers sheet.
+// column header is sticky-capable (the page passes stickyTop). The info icon toggles the booking's
+// RSVP answers OPEN INLINE under its row (no modal); composes ResponsiveSheet for the party
+// check-in sheet only.
 
 'use client';
 
@@ -23,7 +24,8 @@ import { MdClose, MdInfoOutline, MdCheck } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import ConfirmModal from '@/components/ConfirmModal';
 import CheckinRsvp_CheckInSheet from './checkinrsvp_CheckInSheet';
-import CheckinRsvp_RsvpAnswersSheet from './checkinrsvp_RsvpAnswersSheet';
+// Same friendly rendering as the CSV/PDF downloads (dates as "20 Aug 2026, 2:30 PM").
+import { formatAnswerForExport as formatAnswer } from '@/utils/events/exportAnswer';
 import {
   checkInAttendee,
   undoCheckInAttendee,
@@ -36,6 +38,31 @@ const hasRsvpAnswers = (reg) =>
     (r) => r && r.response !== undefined && r.response !== null && String(r.response).trim() !== ''
   );
 
+// The RSVP answers for one booking, shown INLINE under its row when the info icon is toggled open:
+// a teal-accented panel of label / value pairs, two columns from the sm tier up, one on a phone.
+// Dates read the same friendly way as the exports.
+function AnswersPanel({ reg, testId = 'checkinrsvp-answers' }) {
+  const answers = (reg.formResponses || []).filter(
+    (r) => r && r.response !== undefined && r.response !== null && formatAnswer(r.response).trim() !== ''
+  );
+  return (
+    <div data-testid={testId} className="rounded-r-lg border-l-2 border-teal-500 bg-slate-50 px-4 py-3">
+      {answers.length === 0 ? (
+        <p className="text-sm text-slate-500">No information on this booking.</p>
+      ) : (
+        <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+          {answers.map((a, i) => (
+            <div key={i} className="min-w-0">
+              <dt className="text-xs text-slate-500">{a.fieldName}</dt>
+              <dd className="whitespace-pre-line break-words text-sm text-slate-900">{formatAnswer(a.response)}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
+}
+
 // "Booked by": a member's account name, or - for a guest, whose name is blank or the 'Guest'
 // placeholder (see waitlistController: "'Guest' is the guest placeholder, treat as blank") - the
 // email they gave. A free registration always carries an email, so guests show their email, never
@@ -47,14 +74,15 @@ const bookerOf = (reg) => {
 };
 
 // ── Shared cell pieces (single-sourced so desktop + mobile behave identically) ──
-function InfoButton({ reg, onOpen }) {
+function InfoButton({ reg, expanded, onToggle }) {
   if (!hasRsvpAnswers(reg)) return null;
   return (
     <button
       type="button"
-      onClick={() => onOpen(reg._id)}
+      onClick={() => onToggle(reg._id)}
       aria-label="View attendee information"
-      className="shrink-0 p-1.5 text-slate-500 hover:text-slate-700"
+      aria-expanded={expanded}
+      className={`shrink-0 rounded-md p-1.5 ${expanded ? 'bg-teal-50 text-teal-700' : 'text-slate-500 hover:text-slate-700'}`}
     >
       <MdInfoOutline className="w-4 h-4" />
     </button>
@@ -118,11 +146,11 @@ export default function CheckinTable({ registrations, eventId, onRefresh, sticky
   const dispatch = useDispatch();
   const { actionLoading } = useSelector((state) => state.checkinRsvp);
   const [sheetRegId, setSheetRegId] = useState(null);
-  const [answersRegId, setAnswersRegId] = useState(null);
+  const [expandedId, setExpandedId] = useState(null); // which booking's answers are open inline
   const [pendingCancel, setPendingCancel] = useState(null);
 
   const sheetReg = registrations.find((r) => r._id === sheetRegId) || null;
-  const answersReg = registrations.find((r) => r._id === answersRegId) || null;
+  const toggleAnswers = (id) => setExpandedId((cur) => (cur === id ? null : id));
 
   const toggleSingle = async (reg) => {
     if (actionLoading) return;
@@ -182,8 +210,10 @@ export default function CheckinTable({ registrations, eventId, onRefresh, sticky
           <tbody>
             {registrations.map((reg) => {
               const noneCheckedIn = (reg.attendees || []).every((a) => !a.checkedIn);
+              const expanded = expandedId === reg._id;
               return (
-                <tr key={reg._id} data-testid="checkinrsvp-row" className="border-t border-slate-100">
+                <React.Fragment key={reg._id}>
+                <tr data-testid="checkinrsvp-row" className="border-t border-slate-100">
                   {/* Reg stays on one line (grows to fit) and never wraps while there is room; the
                       Booked-by column (max-w-0 w-full) yields space and truncates instead of starving it.
                       It is never truncated with an ellipsis either way. */}
@@ -195,7 +225,7 @@ export default function CheckinTable({ registrations, eventId, onRefresh, sticky
                       <span className="truncate text-sm text-slate-700" title={bookerOf(reg)}>
                         {bookerOf(reg)}
                       </span>
-                      <InfoButton reg={reg} onOpen={setAnswersRegId} />
+                      <InfoButton reg={reg} expanded={expanded} onToggle={toggleAnswers} />
                     </div>
                   </td>
                   <td className="px-3 py-2.5 align-middle w-[8rem]">
@@ -205,6 +235,14 @@ export default function CheckinTable({ registrations, eventId, onRefresh, sticky
                     <CancelButton reg={reg} noneCheckedIn={noneCheckedIn} onOpen={setPendingCancel} />
                   </td>
                 </tr>
+                {expanded && (
+                  <tr className="border-t border-slate-100">
+                    <td colSpan={4} className="px-3 pb-3 pt-0">
+                      <AnswersPanel reg={reg} />
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               );
             })}
           </tbody>
@@ -230,10 +268,16 @@ export default function CheckinTable({ registrations, eventId, onRefresh, sticky
               <div className="mt-2 flex items-center justify-between gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-1">
                   <span className="truncate text-sm text-slate-700" title={bookerOf(reg)}>{bookerOf(reg)}</span>
-                  <InfoButton reg={reg} onOpen={setAnswersRegId} />
+                  <InfoButton reg={reg} expanded={expandedId === reg._id} onToggle={toggleAnswers} />
                 </div>
                 <CheckInControl reg={reg} {...controlProps} labeled />
               </div>
+              {/* Answers expand inline under the card. */}
+              {expandedId === reg._id && (
+                <div className="mt-2">
+                  <AnswersPanel reg={reg} testId="checkinrsvp-answers-m" />
+                </div>
+              )}
             </div>
           );
         })}
@@ -241,9 +285,6 @@ export default function CheckinTable({ registrations, eventId, onRefresh, sticky
 
       {sheetReg && (
         <CheckinRsvp_CheckInSheet registration={sheetReg} eventId={eventId} onClose={() => setSheetRegId(null)} />
-      )}
-      {answersReg && (
-        <CheckinRsvp_RsvpAnswersSheet registration={answersReg} onClose={() => setAnswersRegId(null)} />
       )}
 
       <ConfirmModal

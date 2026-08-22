@@ -16,7 +16,9 @@ import {
   removeRepeatSchedule,
   setRecurrenceEndDate,
   setFormErrors,
+  clearRegistrationFields,
 } from '@/store/slices/events/eventSlice';
+import ConfirmModal from '@/components/ConfirmModal';
 import AddressInput from '@/components/events/addevents/AddressInput';
 import ImageUploader from '@/components/events/addevents/ImageUploader';
 import TimezoneSelector from '@/components/shared/TimezoneSelector';
@@ -47,9 +49,25 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
     dispatch(setEventIntent(intent));
   };
 
+  // Pending type-flip awaiting confirmation (null = no dialog). Flipping RSVP<->Paid clears every
+  // question because the two support different types (D10); we only prompt when questions exist.
+  const [pendingPaid, setPendingPaid] = useState(null);
+
+  const applyPaidToggle = (paid) => {
+    dispatch(toggleIsPaid(paid));
+    dispatch(clearRegistrationFields());
+  };
+
   const handlePaidToggle = (paid) => {
     if (disabled || isEditMode) return;
-    dispatch(toggleIsPaid(paid));
+    if (paid === isPaid) return; // no change
+    const hasQuestions = (formData.registrationFields || []).length > 0;
+    // First-time pick (isPaid still null) or no questions built: flip instantly.
+    if (isPaid === null || !hasQuestions) {
+      dispatch(toggleIsPaid(paid));
+      return;
+    }
+    setPendingPaid(paid); // questions exist -> confirm before clearing them
   };
 
   const isLocked = disabled || isEditMode;
@@ -129,6 +147,17 @@ const IntentSelection = ({ formData, disabled, dispatch, errors, isEditMode }) =
           </div>
         </div>
       )}
+
+      {/* Type-flip confirmation (D10): switching RSVP<->Paid clears the questions. */}
+      <ConfirmModal
+        isOpen={pendingPaid !== null}
+        title="Switch event type?"
+        message="Changing between RSVP and Paid clears the attendee questions you've added, because the two support different question types. This can't be undone."
+        confirmText="Switch and clear"
+        cancelText="Keep questions"
+        onConfirm={() => { applyPaidToggle(pendingPaid); setPendingPaid(null); }}
+        onCancel={() => setPendingPaid(null)}
+      />
     </div>
   );
 };

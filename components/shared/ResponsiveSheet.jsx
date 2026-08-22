@@ -40,8 +40,10 @@ export default function ResponsiveSheet({ onClose, header, footer, children, tes
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Panel: bottom sheet on mobile, centred dialog on md+. Flex column so the body scrolls
-          between a pinned header and a pinned footer. */}
-      <div className="relative z-10 flex w-full max-h-[85vh] flex-col rounded-t-2xl bg-white shadow-xl md:w-full md:max-w-md md:rounded-xl">
+          between a pinned header and a pinned footer. A hairline border + lift shadow give the
+          panel a crisp edge against the dimmed page (a full-width white sheet reads as a flat slab
+          without it). */}
+      <div className="relative z-10 flex w-full max-h-[85vh] flex-col rounded-t-2xl border border-slate-200 bg-white shadow-2xl md:w-full md:max-w-md md:rounded-xl">
         {/* Mobile drag handle */}
         <div className="shrink-0 pt-2 md:hidden">
           <div className="mx-auto h-1 w-10 rounded-full bg-slate-300" />

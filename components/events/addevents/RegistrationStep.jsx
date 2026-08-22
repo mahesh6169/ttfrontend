@@ -3,7 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { FaInfoCircle } from 'react-icons/fa';
+import { FaInfoCircle, FaRegCalendarAlt, FaRegClock } from 'react-icons/fa';
+import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react';
 import {
   updateField,
   setExternalTicketUrl,
@@ -21,10 +22,40 @@ import {
   updateRegistrationField,
   updateFieldOptions,
   removeRegistrationField,
+  moveRegistrationField,
   updateGstIncluded,
   setFormErrors,
 } from '@/store/slices/events/eventSlice';
 import SeatingLayoutSection from './SeatingLayoutSection';
+import ResponsiveSheet from '@/components/shared/ResponsiveSheet';
+import AttendeeInfoSection from '@/components/events/tickets/AttendeeInfoSection';
+import { DEFAULT_BLOCK_MESSAGE } from '@/utils/events/registrationMessages';
+import {
+  addMenuFor,
+  TYPE_LABEL,
+  isChoiceType,
+  isBlockableType,
+  LABEL_MAX,
+  OPTION_MAX,
+  MIN_OPTIONS,
+  SCALE_LABEL_MAX,
+} from '@/utils/events/questionTypes';
+
+// Grow a textarea to fit its content (no clipping, no scrollbar) - used by the question label and the
+// option boxes so long questions/options wrap and show in full. Called on mount (ref) and on input.
+const autoGrow = (el) => {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+};
+
+// A subtle "N/max" counter shown as soon as the field has any text (hidden on an empty field, so no
+// "0/max" noise), so the host always sees how much room is left while typing.
+const CharCounter = ({ value, max }) => {
+  const len = (value || '').length;
+  if (len === 0) return null;
+  return <p className="text-xs text-slate-400 mt-1 text-right">{len}/{max}</p>;
+};
 
 // Day part (yyyy-mm-dd) of a date string/Date, in local terms — used to compare ticket/discount
 // dates against the event day (by day, ignoring time).
@@ -228,6 +259,9 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
   const [expandedIndex, setExpandedIndex] = useState(null);
   // Which question is awaiting delete confirmation (null = none).
   const [confirmDeleteField, setConfirmDeleteField] = useState(null);
+  // Attendee-view preview: open state + the throwaway answers typed inside the preview.
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewResponses, setPreviewResponses] = useState({});
 
   useEffect(() => {
     const regErrors = errors?.registrationFields;
@@ -271,31 +305,78 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
     setConfirmDeleteField(null);
   };
 
-  // Add a new field (text or dropdown) and immediately expand it for editing
+  // Move a question up (-1) or down (+1). Order is presentation only (answers are keyed by qid),
+  // so it is always allowed, even on a locked/paid event. Keep any open editor pointed at the same
+  // question as it moves.
+  const handleMoveField = (index, direction) => {
+    const list = formData.registrationFields || [];
+    const target = index + direction;
+    if (target < 0 || target >= list.length) return;
+    dispatch(moveRegistrationField({ index, direction }));
+    if (expandedIndex === index) setExpandedIndex(target);
+    else if (expandedIndex === target) setExpandedIndex(index);
+    setConfirmDeleteField(null);
+  };
+
+  // Add a new field (defaults to text) and immediately expand it for editing; the
+  // type is then picked inside the card (Google Forms pattern).
   const handleAddField = (opts) => {
     const newIndex = (formData.registrationFields || []).length;
     dispatch(addRegistrationField(opts));
     setExpandedIndex(newIndex);
   };
 
+  // Change a question's type in place, re-shaping the card: a choice type needs at
+  // least one option row to edit; a non-choice type carries no options; blocking
+  // survives only on the blockable types (dropdown, multiple choice).
+  const handleTypeChange = (index, newType) => {
+    const f = (formData.registrationFields || [])[index];
+    if (!f || f.fieldType === newType) return;
+    dispatch(updateRegistrationField({ index, field: 'fieldType', value: newType }));
+    if (isChoiceType(newType)) {
+      // Coming FROM scale, fieldOptions held scale labels, not options - start fresh.
+      if (f.fieldType === 'scale' || (f.fieldOptions || []).length === 0) {
+        dispatch(updateFieldOptions({ index, options: [''] }));
+      }
+    } else {
+      // Non-choice types carry no options; scale starts its labels empty.
+      dispatch(updateFieldOptions({ index, options: [] }));
+    }
+    if (!isBlockableType(newType)) {
+      dispatch(updateRegistrationField({ index, field: 'blockingOptions', value: [] }));
+      dispatch(updateRegistrationField({ index, field: 'blockingMessage', value: '' }));
+    }
+    if (newType !== 'date' && f.includeTime) {
+      dispatch(updateRegistrationField({ index, field: 'includeTime', value: false }));
+    }
+    clearSnapshotEntry(`${index}-options`);
+  };
+
   // A question is "empty" when it has no text and no real options.
   const isEmptyField = (f) =>
     !f?.fieldName?.trim() && !(f?.fieldOptions || []).some((o) => o?.trim());
 
-  // Done: discard a blank card; validate (name + options) and keep it open if invalid, else collapse.
+  // Done means "save this question", so it requires a valid one: a non-empty, unique label plus valid
+  // options for the choice types. Invalid -> the sheet stays open with the error. A blank card is not
+  // silently kept - dismiss it with Cancel / the X (which discards a blank), not Done.
   const handleDoneField = (index) => {
-    const f = (formData.registrationFields || [])[index];
-    if (isEmptyField(f)) { handleRemoveField(index); return; }
+    const all = formData.registrationFields || [];
+    const f = all[index];
     const snap = {};
-    if (!f.fieldName?.trim()) snap[`${index}-name`] = true;
-    if (f.fieldType === 'select') {
+    const name = (f.fieldName || '').trim();
+    // Every question needs a label; and it must be unique within the event (case-insensitive).
+    if (!name) snap[`${index}-name`] = true;
+    else if (all.some((o, i) => i !== index && (o.fieldName || '').trim().toLowerCase() === name.toLowerCase())) {
+      snap[`${index}-name`] = true;
+    }
+    if (isChoiceType(f.fieldType)) {
       const opts = f.fieldOptions || [];
       const lowered = opts.map((o) => (o || '').trim().toLowerCase());
       // A question may not block every answer (events-rsvp-blocking-questions.md): at least one must allow.
       const nonEmpty = opts.map((o) => (o || '').trim()).filter(Boolean);
       const blk = f.blockingOptions || [];
       const allBlocked = nonEmpty.length > 0 && nonEmpty.every((o) => blk.includes(o));
-      const bad = opts.length === 0 || opts.some((o) => !o?.trim()) || new Set(lowered).size !== lowered.length || allBlocked;
+      const bad = opts.length < MIN_OPTIONS || opts.some((o) => !o?.trim()) || new Set(lowered).size !== lowered.length || allBlocked;
       if (bad) snap[`${index}-options`] = true;
     }
     if (Object.keys(snap).length) { setErrorSnapshot((prev) => ({ ...prev, ...snap })); return; } // stays open
@@ -317,10 +398,10 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
   };
   const getOptionsError = (field, index) => {
     if (!errorSnapshot[`${index}-options`]) return null;
-    if (field.fieldType !== 'select') return null;
+    if (!isChoiceType(field.fieldType)) return null;
 
     const options = field.fieldOptions || [];
-    if (options.length === 0) return 'Add at least one option';
+    if (options.length < MIN_OPTIONS) return `Add at least ${MIN_OPTIONS} options`;
     if (options.some((o) => !o?.trim())) return 'Fill all options or remove the empty ones';
     const lowered = options.map((o) => o.trim().toLowerCase());
     if (new Set(lowered).size !== lowered.length) return 'Options must be unique';
@@ -346,7 +427,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
   // An empty option ROW counts as incomplete — the question isn't ready until every row has text.
   const hasIncompleteQuestion = (formData.registrationFields || []).some((field) => {
     if (!field.fieldName?.trim()) return true;
-    if (field.fieldType === 'select') {
+    if (isChoiceType(field.fieldType)) {
       const options = field.fieldOptions || [];
       if (options.length === 0) return true;
       if (options.some((o) => !o?.trim())) return true;
@@ -356,70 +437,314 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
     return false;
   });
 
+  // Duplicate question names (case-insensitive, D9). The later card in a clash is flagged; the server
+  // re-checks on save. The indexes drive the inline "already used" message under the name field.
+  const duplicateNameIndexes = (() => {
+    const seen = new Map();
+    const dups = new Set();
+    (formData.registrationFields || []).forEach((f, i) => {
+      const key = (f?.fieldName || '').trim().toLowerCase();
+      if (!key) return;
+      if (seen.has(key)) dups.add(i);
+      else seen.set(key, i);
+    });
+    return dups;
+  })();
+
   return (
     <div className="border-t border-slate-200 pt-6 mt-6">
+      {/* Attendee Details: the fields the RSVP form ALWAYS collects, shown greyed so hosts
+          see them and don't add duplicate name/mobile questions below. Free events only -
+          this mirrors the real registration form. */}
+      {!formData.isPaid && (
+        <div className="mb-6">
+          <h3 className="font-medium text-sm mb-1 text-slate-700">Attendee Details</h3>
+          <p className="text-xs text-slate-500 mb-3">Collected automatically on every registration - no need to ask again below.</p>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Mobile Number</label>
+              <input
+                type="text"
+                disabled
+                placeholder="0412 345 678"
+                className="w-full max-w-[220px] px-3 py-2 text-sm bg-slate-100 border border-slate-200 rounded-lg text-slate-400 placeholder:text-slate-400 cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Attendee Name(s)</label>
+              <input
+                type="text"
+                disabled
+                placeholder="One name per attendee, up to the booking limit"
+                className="w-full max-w-[320px] px-3 py-2 text-sm bg-slate-100 border border-slate-200 rounded-lg text-slate-400 placeholder:text-slate-400 cursor-not-allowed"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <h3 className="font-medium text-sm mb-1 text-slate-700">
         Attendee Information
       </h3>
       <p className="text-xs text-slate-500 mb-4">
-        Collect additional info{!formData.isPaid && ' (Name & Mobile are collected by default)'}
+        Collect additional info
       </p>
 
       {(formData.registrationFields || []).length > 0 && (
         <div className="space-y-2 mb-4">
           {(formData.registrationFields || []).map((field, index) => {
-            const isDropdown = field?.fieldType === 'select';
-            // Blocking answers (events-rsvp-blocking-questions.md) are free-RSVP + dropdown only.
-            const showBlocking = isDropdown && !formData.isPaid;
+            const isChoice = isChoiceType(field?.fieldType); // dropdown / multiple choice / checkboxes
+            // Blocking answers (events-rsvp-blocking-questions.md) are free-RSVP + single-pick (dropdown
+            // or multiple choice) only. Checkboxes (pick-many) never block.
+            const showBlocking = isBlockableType(field?.fieldType) && !formData.isPaid;
             const blocks = field?.blockingOptions || [];
             const hasBlocks = blocks.length > 0;
             const nameError = getNameError(field, index);
             const optionsError = getOptionsError(field, index);
-            const hasAnyError = !!(nameError || optionsError);
-            // Edit-locking D10: a question that existed at load locks once the event has activity.
-            const locked = !!formData.hasActivity && !!field._existing;
-            const isExpanded = !locked && (expandedIndex === index || isEmptyField(field)
+            const isDuplicateName = duplicateNameIndexes.has(index);
+            const hasAnyError = !!(nameError || optionsError || isDuplicateName);
+            // Post-activity edit rules (events-rsvp-question-editing.md). A question that existed at
+            // load, once the event has answers: a PAID event freezes it fully; a FREE event opens it
+            // for label-safe edits only (reword, add option, scale labels, block message) while the
+            // type, existing options, blocking, includeTime, and delete stay locked.
+            const activityLocked = !!formData.hasActivity && !!field._existing;
+            const paidFrozen = activityLocked && !!formData.isPaid;
+            const partialEdit = activityLocked && !formData.isPaid;
+            // Existing (stored) options are locked; options appended this session (index at/after the
+            // stored count) stay editable. Scale "options" are labels and are fully editable.
+            const lockedOptionCount = partialEdit && isChoice ? (field._lockedOptions?.length || 0) : 0;
+            // The editor opens in a bottom sheet (mobile) / dialog (desktop) - the shared
+            // ResponsiveSheet, same as Preview - instead of expanding inline down the page.
+            const isEditing = !paidFrozen && (expandedIndex === index || isEmptyField(field)
               || !!errorSnapshot[`${index}-name`] || !!errorSnapshot[`${index}-options`]);
             return (
               <div
                 key={index}
+                data-testid="rsvp-question-card"
                 className={`border rounded-lg p-3 bg-white ${
                   hasAnyError ? 'border-red-300' : 'border-slate-200'
                 }`}
               >
-                {isExpanded ? (
-                  <>
-                    {/* Question text */}
-                    <input
-                      type="text"
+                {isEditing && (
+                  <ResponsiveSheet
+                    onClose={() => handleCancelField(index)}
+                    ariaLabel="Edit question"
+                    testId="question-editor-sheet"
+                    header={
+                      <h3 className="text-base font-semibold text-slate-900">
+                        {field?._existing ? 'Edit question' : 'Add question'}
+                      </h3>
+                    }
+                    footer={
+                      <div className="flex justify-end gap-4">
+                        <button type="button" onClick={() => handleCancelField(index)} className="text-sm font-medium text-slate-500 hover:text-slate-700">Cancel</button>
+                        <button type="button" onClick={() => handleDoneField(index)} className="text-sm font-medium text-teal-700 hover:text-teal-800">Done</button>
+                      </div>
+                    }
+                  >
+                    <div className="px-4 py-4">
+                    {/* A short note on an answered free question: what can and can't be changed. */}
+                    {partialEdit && (
+                      <p className="mb-3 text-xs text-amber-600">
+                        This question has answers. You can reword it, add options, and edit scale labels - but its type, existing options, and blocking can't change, and it can't be deleted.
+                      </p>
+                    )}
+
+                    {/* Question type — picked in-card; changing it re-shapes the editor below. Locked
+                        once the question has answers (changing type would orphan them). */}
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">Question type</label>
+                      <Listbox value={field?.fieldType || 'text'} onChange={(t) => handleTypeChange(index, t)} disabled={partialEdit}>
+                        <div className="relative">
+                          <ListboxButton className={`relative w-full sm:w-56 px-3 py-2.5 pr-9 text-sm text-left border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${partialEdit ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed' : 'bg-white border-slate-300 text-slate-700 cursor-pointer hover:border-slate-400'}`}>
+                            <span className="block truncate">{TYPE_LABEL[field?.fieldType] || 'Text'}</span>
+                            <svg
+                              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+                              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </ListboxButton>
+                          <ListboxOptions
+                            anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+                            className="z-50 w-[var(--button-width)] max-h-60 overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-slate-200 focus:outline-none"
+                          >
+                            {addMenuFor(formData.isPaid).map((item) => (
+                              <ListboxOption
+                                key={item.type}
+                                value={item.type}
+                                className={({ active }) =>
+                                  `cursor-pointer select-none py-2 px-3 ${active ? 'bg-teal-50' : ''}`
+                                }
+                              >
+                                {({ selected }) => (
+                                  <>
+                                    <span className={`block text-slate-900 ${selected ? 'font-semibold' : ''}`}>{item.label}</span>
+                                    {item.hint && <span className="block text-xs text-slate-500">{item.hint}</span>}
+                                  </>
+                                )}
+                              </ListboxOption>
+                            ))}
+                          </ListboxOptions>
+                        </div>
+                      </Listbox>
+                    </div>
+
+                    {/* Question text - an auto-growing textarea so a long question wraps and shows in
+                        full (Enter adds a line break). */}
+                    <textarea
+                      ref={autoGrow}
+                      rows={1}
                       value={field?.fieldName || ''}
                       onChange={(e) => {
                         dispatch(updateRegistrationField({ index, field: 'fieldName', value: e.target.value }));
                         clearSnapshotEntry(`${index}-name`);
+                        autoGrow(e.target);
                       }}
-                      className={`w-full px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
-                        nameError ? 'border-red-500 bg-red-50' : 'border-slate-300'
+                      className={`w-full resize-none overflow-hidden px-3 py-2.5 text-sm bg-white border rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
+                        nameError || isDuplicateName ? 'border-red-500 bg-red-50' : 'border-slate-300'
                       }`}
-                      placeholder={isDropdown ? 'e.g., T-shirt size' : 'e.g., Dietary requirements'}
-                      maxLength="100"
+                      placeholder={isChoice ? 'Enter your question (e.g. T-shirt size)' : 'Enter your question (e.g. Dietary requirements)'}
+                      maxLength={LABEL_MAX}
                     />
+                    <CharCounter value={field?.fieldName} max={LABEL_MAX} />
                     {nameError && (
                       <p className="text-xs text-red-600 mt-1">{nameError}</p>
                     )}
+                    {!nameError && isDuplicateName && (
+                      <p className="text-xs text-red-600 mt-1">Another question already uses this name.</p>
+                    )}
 
-                    {/* Options editor (only when type = Dropdown) */}
-                    {isDropdown && (
+                    {/* Required. Sits right under the question row, far right. A blocking question
+                        is forced Required and the toggle is locked on (D). */}
+                    <div className="flex items-center justify-end mt-2">
+                      {hasBlocks && (
+                        <span className="mr-2 text-xs text-slate-400">(locked on - an answer blocks registration, so this must be answered)</span>
+                      )}
+                      <input
+                        type="checkbox"
+                        id={`required-${index}`}
+                        checked={field?.isRequired || hasBlocks}
+                        disabled={hasBlocks}
+                        onChange={(e) => dispatch(updateRegistrationField({ index, field: 'isRequired', value: e.target.checked }))}
+                        className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                      />
+                      <label htmlFor={`required-${index}`} className="ml-2 text-sm text-slate-700">
+                        Required to register
+                      </label>
+                    </div>
+
+                    {/* Scale editor: the fixed 1-5 numbers, each with an optional label box.
+                        Labels are stored positionally in fieldOptions (slot 0 = number 1) and
+                        appear under the scale on the attendee form. */}
+                    {field.fieldType === 'scale' && (
+                      <div className="mt-3 pl-3 border-l-2 border-teal-200">
+                        <div className="space-y-2">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <div key={n}>
+                            <div className="flex items-center gap-2">
+                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-sm text-slate-500">
+                                {n}
+                              </span>
+                              <input
+                                type="text"
+                                value={field.fieldOptions?.[n - 1] || ''}
+                                onChange={(e) => {
+                                  const labels = [...(field.fieldOptions || [])];
+                                  while (labels.length < 5) labels.push('');
+                                  labels[n - 1] = e.target.value;
+                                  dispatch(updateFieldOptions({ index, options: labels }));
+                                }}
+                                maxLength={SCALE_LABEL_MAX}
+                                className="flex-1 px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400"
+                                placeholder={n === 1 ? 'What 1 means (optional), e.g. nothing' : n === 5 ? 'What 5 means (optional), e.g. fluent' : 'optional'}
+                              />
+                            </div>
+                            <CharCounter value={field.fieldOptions?.[n - 1]} max={SCALE_LABEL_MAX} />
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2">Attendees pick one number. Filled labels appear under the scale.</p>
+                      </div>
+                    )}
+
+                    {/* Date / time / yes-no: nothing to configure, so show a mock of what attendees get.
+                        A clear calendar/clock icon + the format reads as a date picker (a plain greyed
+                        native box looked like a broken dropdown). */}
+                    {(field.fieldType === 'date' || field.fieldType === 'time') && (
+                      <div className="mt-3 pl-3 border-l-2 border-teal-200">
+                        <div className={`${field.includeTime ? 'w-64' : field.fieldType === 'time' ? 'w-36' : 'w-48'} flex items-center gap-2 px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-400`}>
+                          {field.fieldType === 'time' ? (
+                            <FaRegClock className="h-4 w-4 shrink-0 text-slate-400" />
+                          ) : (
+                            <FaRegCalendarAlt className="h-4 w-4 shrink-0 text-slate-400" />
+                          )}
+                          <span>{field.fieldType === 'time' ? '- - : - -' : field.includeTime ? 'DD/MM/YYYY, - - : - -' : 'DD/MM/YYYY'}</span>
+                        </div>
+                        {field.fieldType === 'date' && (
+                          <label className={`mt-2 flex items-center gap-2 text-sm ${partialEdit ? 'text-slate-400' : 'text-slate-700'}`}>
+                            <input
+                              type="checkbox"
+                              checked={!!field.includeTime}
+                              disabled={partialEdit}
+                              onChange={(e) => dispatch(updateRegistrationField({ index, field: 'includeTime', value: e.target.checked }))}
+                              className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300 disabled:cursor-not-allowed"
+                            />
+                            Also ask time
+                          </label>
+                        )}
+                        <p className="text-xs text-slate-500 mt-2">
+                          {field.fieldType === 'time'
+                            ? 'Attendees pick a time in this box.'
+                            : field.includeTime
+                              ? 'Attendees pick a date and a time in this one box.'
+                              : 'Attendees pick a date from this calendar box.'}
+                        </p>
+                      </div>
+                    )}
+                    {field.fieldType === 'yesno' && (
+                      <div className="mt-3 pl-3 border-l-2 border-teal-200">
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" disabled className="w-4 h-4 rounded border-slate-300 cursor-not-allowed" />
+                          <span className="text-sm text-slate-500 italic">Your question appears here with one tick box</span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2">
+                          Ticked = Yes, unticked = No. If required, attendees must tick it to register.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Options editor (choice types: dropdown, multiple choice, checkboxes) */}
+                    {isChoice && (
                       <div className="mt-3 pl-3 border-l-2 border-teal-200">
                         <label className="block text-xs font-medium text-slate-700 mb-2">Options</label>
                         <div className="space-y-2">
-                          {(field?.fieldOptions || []).map((option, optIdx) => (
-                            <div key={optIdx} className="flex gap-2 items-center">
-                              <input
-                                type="text"
+                          {(field?.fieldOptions || []).map((option, optIdx) => {
+                            const optionLocked = partialEdit && optIdx < lockedOptionCount; // existing option
+                            return (
+                            <div key={optIdx}>
+                            <div className="flex gap-2 items-start">
+                              {/* Type marker (Google Forms pattern): a dropdown's options read as a
+                                  numbered list, multiple choice as circles, checkboxes as squares -
+                                  so the host sees how the question will render while building it. mt
+                                  keeps the marker aligned to the option's first line as it wraps. */}
+                              {field.fieldType === 'select' ? (
+                                <span className="shrink-0 mt-2.5 w-5 text-right text-sm text-slate-400">{optIdx + 1}.</span>
+                              ) : field.fieldType === 'radio' ? (
+                                <span className="shrink-0 mt-3 w-4 h-4 rounded-full border-2 border-slate-300" aria-hidden="true"></span>
+                              ) : (
+                                <span className="shrink-0 mt-3 w-4 h-4 rounded border-2 border-slate-300" aria-hidden="true"></span>
+                              )}
+                              <textarea
+                                ref={autoGrow}
+                                rows={1}
                                 value={option || ''}
+                                disabled={optionLocked}
+                                onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                                 onChange={(e) => {
                                   const oldVal = field.fieldOptions?.[optIdx] || '';
                                   const newVal = e.target.value;
+                                  autoGrow(e.target);
                                   const newOptions = [...(field.fieldOptions || [])];
                                   newOptions[optIdx] = newVal;
                                   dispatch(updateFieldOptions({ index, options: newOptions }));
@@ -429,52 +754,66 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                                   }
                                   clearSnapshotEntry(`${index}-options`);
                                 }}
-                                className={`flex-1 px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 ${
-                                  showBlocking && (field.blockingOptions || []).includes(option)
-                                    ? 'line-through text-slate-400' // a blocked answer reads as "knocked out"
-                                    : 'text-slate-700'
+                                className={`min-w-0 flex-1 resize-none overflow-hidden px-3 py-2.5 text-sm border border-slate-300 rounded-lg placeholder:text-slate-400 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400 disabled:bg-slate-100 disabled:cursor-not-allowed ${
+                                  optionLocked ? 'bg-slate-100 text-slate-500' : 'bg-white text-slate-700'
                                 }`}
                                 placeholder={`Option ${optIdx + 1}`}
-                                maxLength="80"
+                                maxLength={OPTION_MAX}
                               />
-                              {/* Block-if-chosen: picking this answer blocks the RSVP (free dropdowns only). */}
-                              {showBlocking && (option || '').trim() && (
-                                <label className="flex items-center gap-1 shrink-0 whitespace-nowrap text-xs text-slate-600" title="Picking this answer blocks the RSVP">
-                                  <input
-                                    type="checkbox"
-                                    checked={(field.blockingOptions || []).includes(option)}
-                                    onChange={(e) => {
-                                      const cur = field.blockingOptions || [];
-                                      const next = e.target.checked ? [...new Set([...cur, option])] : cur.filter((v) => v !== option);
-                                      dispatch(updateRegistrationField({ index, field: 'blockingOptions', value: next }));
-                                      if (next.length > 0) dispatch(updateRegistrationField({ index, field: 'isRequired', value: true }));
-                                      clearSnapshotEntry(`${index}-options`);
-                                    }}
-                                    className="w-3.5 h-3.5 accent-teal-700 rounded focus:ring-teal-300"
-                                  />
-                                  Block
-                                </label>
+                              {!optionLocked && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const removedVal = field.fieldOptions?.[optIdx] || '';
+                                    const newOptions = (field.fieldOptions || []).filter((_, i) => i !== optIdx);
+                                    dispatch(updateFieldOptions({ index, options: newOptions }));
+                                    if ((field.blockingOptions || []).includes(removedVal)) {
+                                      dispatch(updateRegistrationField({ index, field: 'blockingOptions', value: (field.blockingOptions || []).filter((v) => v !== removedVal) }));
+                                    }
+                                    clearSnapshotEntry(`${index}-options`);
+                                  }}
+                                  className="mt-1 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                  aria-label="Remove option"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
                               )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const removedVal = field.fieldOptions?.[optIdx] || '';
-                                  const newOptions = (field.fieldOptions || []).filter((_, i) => i !== optIdx);
-                                  dispatch(updateFieldOptions({ index, options: newOptions }));
-                                  if ((field.blockingOptions || []).includes(removedVal)) {
-                                    dispatch(updateRegistrationField({ index, field: 'blockingOptions', value: (field.blockingOptions || []).filter((v) => v !== removedVal) }));
-                                  }
-                                  clearSnapshotEntry(`${index}-options`);
-                                }}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                aria-label="Remove option"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
                             </div>
-                          ))}
+                            {/* Char counter + block-if-chosen share one right-aligned line under the
+                                option, instead of stacking two - the counter alone would waste a row.
+                                Blocking: picking this answer blocks the RSVP (free dropdowns only);
+                                frozen once the question has answers. */}
+                            {(() => {
+                              const len = (option || '').length;
+                              const showBlockToggle = showBlocking && !partialEdit && (option || '').trim();
+                              if (!len && !showBlockToggle) return null;
+                              return (
+                                <div className="flex items-center justify-end gap-3 mt-1">
+                                  {len > 0 && <span className="text-xs text-slate-400">{len}/{OPTION_MAX}</span>}
+                                  {showBlockToggle && (
+                                    <label className="flex items-center gap-1.5 text-xs text-slate-600" title="An attendee choosing this answer cannot register">
+                                      <input
+                                        type="checkbox"
+                                        checked={(field.blockingOptions || []).includes(option)}
+                                        onChange={(e) => {
+                                          const cur = field.blockingOptions || [];
+                                          const next = e.target.checked ? [...new Set([...cur, option])] : cur.filter((v) => v !== option);
+                                          dispatch(updateRegistrationField({ index, field: 'blockingOptions', value: next }));
+                                          if (next.length > 0) dispatch(updateRegistrationField({ index, field: 'isRequired', value: true }));
+                                          clearSnapshotEntry(`${index}-options`);
+                                        }}
+                                        className="w-3.5 h-3.5 accent-teal-700 rounded focus:ring-teal-300"
+                                      />
+                                      Block registration
+                                    </label>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                            </div>
+                          ); })}
                         </div>
                         <button
                           type="button"
@@ -501,7 +840,7 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                     {showBlocking && hasBlocks && (
                       <div className="mt-3">
                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                          Message shown when blocked <span className="font-normal text-slate-400">(optional)</span>
+                          Message shown when registration is blocked <span className="font-normal text-slate-400">(optional)</span>
                         </label>
                         <input
                           type="text"
@@ -515,61 +854,66 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                       </div>
                     )}
 
-                    {/* Required. A blocking question is forced Required and the toggle is locked on (D). */}
-                    <div className="flex items-center mt-3">
-                      <input
-                        type="checkbox"
-                        id={`required-${index}`}
-                        checked={field?.isRequired || hasBlocks}
-                        disabled={hasBlocks}
-                        onChange={(e) => dispatch(updateRegistrationField({ index, field: 'isRequired', value: e.target.checked }))}
-                        className="w-4 h-4 accent-teal-700 border-slate-300 rounded focus:ring-teal-300 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
-                      />
-                      <label htmlFor={`required-${index}`} className="ml-2 text-sm text-slate-700">
-                        Required
-                      </label>
-                      {hasBlocks && (
-                        <span className="ml-2 text-xs text-slate-400">(locked on - a blocking question must be required)</span>
-                      )}
-                    </div>
                     {formData.hasActivity && !field._existing && field.isRequired && (
                       <p className="text-xs text-amber-600 mt-2">
                         This event already has attendees. A new required question only applies to people who register from now on - those who already registered will not have answered it.
                       </p>
                     )}
 
-                    {/* Footer */}
-                    <div className="mt-3 flex justify-end gap-4">
-                      <button
-                        type="button"
-                        onClick={() => handleCancelField(index)}
-                        className="text-sm font-medium text-slate-500 hover:text-slate-700"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDoneField(index)}
-                        className="text-sm font-medium text-teal-700 hover:text-teal-800"
-                      >
-                        Done
-                      </button>
                     </div>
-                  </>
-                ) : (
-                  /* Collapsed summary: question · type (· Required) + edit/delete */
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1 min-w-0 flex-1 text-sm">
-                      <span className="truncate text-slate-700">
+                  </ResponsiveSheet>
+                )}
+                {/* Collapsed summary always visible; the editor opens in the sheet above. */}
+                <div className="flex items-center justify-between gap-2">
+                    {/* Two lines so a long label keeps the full width on a phone instead of fighting
+                        the four action icons for space: label on top, type/required meta below. */}
+                    <div className="min-w-0 flex-1 text-sm">
+                      <span data-testid="rsvp-question-card-label" className="block truncate text-slate-700">
                         {field?.fieldName?.trim() ? field.fieldName : <span className="italic text-slate-400">Untitled question</span>}
                       </span>
-                      <span className="shrink-0 font-normal text-slate-400">
-                        · {isDropdown ? 'Dropdown' : 'Text'}{field?.isRequired ? ' · Required' : ''}
+                      <span className="block truncate text-xs font-normal text-slate-400">
+                        {TYPE_LABEL[field?.fieldType] || 'Text'}{field?.fieldType === 'date' && field?.includeTime ? ' + time' : ''}{field?.isRequired ? ' · Required' : ''}
                       </span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {locked ? (
+                      {/* Move up/down: reordering is presentation only (answers keyed by qid), so it
+                          is offered on every question, even a locked/paid one. Disabled at the ends. */}
+                      <button
+                        type="button"
+                        onClick={() => handleMoveField(index, -1)}
+                        disabled={index === 0}
+                        aria-label="Move question up"
+                        className="p-2 text-slate-500 hover:text-teal-700 hover:bg-slate-50 rounded-lg transition-colors disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveField(index, 1)}
+                        disabled={index === (formData.registrationFields || []).length - 1}
+                        aria-label="Move question down"
+                        className="p-2 text-slate-500 hover:text-teal-700 hover:bg-slate-50 rounded-lg transition-colors disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {paidFrozen ? (
                         <span className="text-xs text-slate-400 italic">Attendees registered - locked</span>
+                      ) : partialEdit ? (
+                        // Free event with answers: editable (label-safe) but not deletable - Edit only.
+                        <button
+                          type="button"
+                          onClick={() => setExpandedIndex(index)}
+                          aria-label="Edit question"
+                          className="p-2 text-slate-500 hover:text-teal-700 hover:bg-slate-50 rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
                       ) : confirmDeleteField === index ? (
                         <span className="flex items-center gap-2 text-xs text-slate-600">
                           Delete?
@@ -614,7 +958,6 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
                       )}
                     </div>
                   </div>
-                )}
               </div>
             );
           })}
@@ -624,9 +967,10 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
       {/* Top-level error box removed — errors now show inline under each input.
           Toast on Next/Submit still summarises all errors. */}
 
-      {/* Add buttons — type-specific entry. Disabled when any existing question is incomplete,
-          so hosts can't pile up empty cards on top of unfinished ones. */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+      {/* One Add question button (Google Forms pattern) — the type is picked inside the card.
+          Disabled when any existing question is incomplete, so hosts can't pile up empty cards
+          on top of unfinished ones. */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <button
           type="button"
           onClick={() => handleAddField()}
@@ -638,23 +982,61 @@ const CustomRegistrationFields = ({ formData, errors, dispatch, isRecurring = fa
           </svg>
           Add question
         </button>
-        <button
-          type="button"
-          onClick={() => handleAddField({ fieldType: 'select' })}
-          disabled={hasIncompleteQuestion}
-          className="inline-flex items-center text-sm font-medium text-teal-700 hover:text-teal-800 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:text-teal-700"
-        >
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Add dropdown
-        </button>
+        {/* Preview: opens the REAL attendee component (AttendeeInfoSection) in the shared sheet,
+            live - so what the host sees here is exactly what registrants get, blocking included. */}
+        {(formData.registrationFields || []).length > 0 && (
+          <button
+            type="button"
+            onClick={() => { setPreviewResponses({}); setShowPreview(true); }}
+            className="ml-auto inline-flex items-center text-sm font-medium text-teal-700 hover:text-teal-800"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Preview
+          </button>
+        )}
         {hasIncompleteQuestion && (
           <p className="w-full text-xs text-slate-500 mt-1">
             Complete the question above to add another.
           </p>
         )}
       </div>
+
+      {showPreview && (
+        <ResponsiveSheet
+          onClose={() => setShowPreview(false)}
+          ariaLabel="Attendee view preview"
+          header={
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">Attendee view</h3>
+              <p className="text-xs text-slate-500">How your questions appear on the registration form. Try them - nothing is saved.</p>
+            </div>
+          }
+        >
+          <div className="px-4 pb-6">
+            <AttendeeInfoSection
+              event={{ registrationFields: formData.registrationFields }}
+              formResponses={previewResponses}
+              onFormResponseUpdate={(fieldName, value) =>
+                setPreviewResponses((prev) => ({ ...prev, [fieldName]: value }))
+              }
+              blockMessageFor={
+                formData.isPaid
+                  ? undefined
+                  : (field) => {
+                      const v = previewResponses[field.fieldName];
+                      if (!v || !(field.blockingOptions || []).includes(v)) return null;
+                      return (field.blockingMessage || '').trim() || DEFAULT_BLOCK_MESSAGE;
+                    }
+              }
+              singleColumn
+              bare
+            />
+          </div>
+        </ResponsiveSheet>
+      )}
     </div>
   );
 };

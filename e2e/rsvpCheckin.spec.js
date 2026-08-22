@@ -180,16 +180,15 @@ test.describe('J2 per-event check-in', () => {
     await expect(row(page, 'RC-I-GUEST')).toContainText('guest-booking@test.dev');
   });
 
-  test('AC10 the info icon shows only for bookings with attendee information and opens the sheet', async ({ page }) => {
+  test('AC10 the info icon shows only for bookings with attendee information and expands the answers inline', async ({ page }) => {
     await gotoInteract(page);
 
-    // With answers -> icon present, opens the "Attendee information" sheet listing the answer.
+    // With answers -> icon present, expands the answers INLINE under the row (no modal).
     await row(page, 'RC-I-INFO').getByRole('button', { name: 'View attendee information' }).click();
-    const sheet = page.getByTestId('rsvp-answers-sheet');
-    await expect(sheet.getByRole('heading', { name: 'Attendee information' })).toBeVisible();
-    await expect(sheet.getByText('Dietary needs')).toBeVisible();
-    await expect(sheet.getByText('Vegetarian')).toBeVisible();
-    await page.keyboard.press('Escape');
+    const answers = page.getByTestId('checkinrsvp-answers');
+    await expect(answers).toBeVisible();
+    await expect(answers.getByText('Dietary needs')).toBeVisible();
+    await expect(answers.getByText('Vegetarian')).toBeVisible();
 
     // No answers -> no icon.
     await expect(row(page, 'RC-I-SINGLE').getByRole('button', { name: 'View attendee information' })).toHaveCount(0);

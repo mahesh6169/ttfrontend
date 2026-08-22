@@ -12,6 +12,7 @@
 
 import jsPDF from 'jspdf';
 import axios from '@/utils/axiosConfig';
+import { formatAnswerForExport } from '@/utils/events/exportAnswer';
 
 // Build + download the attendee PDF for one event.
 //   event: { _id, title }
@@ -24,8 +25,16 @@ export async function saveAttendeePdf(event) {
     `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${event._id}/free/attendees?limit=10000`,
     { withCredentials: true }
   );
-  const registrations = response.data?.registrations || [];
-  if (registrations.length === 0) return { empty: true };
+  const fetched = response.data?.registrations || [];
+  if (fetched.length === 0) return { empty: true };
+
+  // Sign-up order: oldest registration on top (matches the CSV; the console stays newest-first).
+  const registrations = [...fetched].sort((a, b) => {
+    const ta = new Date(a.createdAt || 0).getTime();
+    const tb = new Date(b.createdAt || 0).getTime();
+    if (ta !== tb) return ta - tb;
+    return String(a.registrationNumber || '').localeCompare(String(b.registrationNumber || ''));
+  });
 
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.width;
@@ -79,7 +88,7 @@ export async function saveAttendeePdf(event) {
     const responses = (reg.formResponses || []).filter((r) => r && r.response);
 
     const answerBlocks = responses.map((r) => {
-      const text = String(r.response || '');
+      const text = formatAnswerForExport(r.response);
       const lines = doc.splitTextToSize(text, cols.info.width);
       return { lines, height: lines.length * lineHeight };
     });

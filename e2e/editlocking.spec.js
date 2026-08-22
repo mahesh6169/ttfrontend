@@ -103,16 +103,19 @@ test('AC15 once a seat sells the whole layout freezes; only reserving a free sea
   await expect(freeSeat).toHaveAttribute('data-status', 'reserved');
 });
 
-test('AC12 an existing question is locked once there are attendees; a new required question warns', async ({ page }) => {
+test('AC12 a free event question with answers is label-safe editable (not frozen); a new required question warns', async ({ page }) => {
   await gotoStep3(page, readSeed().editLockQuestionEventId);
 
-  // The seeded question is locked - shown with a reason, no edit control.
-  await expect(page.getByText(/attendees registered - locked/i)).toBeVisible();
+  // A free event with answers no longer freezes its questions (events-rsvp-question-editing.md): the
+  // existing question shows an Edit control (label-safe editing) - no "locked" note, no Delete.
   await expect(page.getByText('Dietary needs')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Edit question' })).toHaveCount(0);
+  await expect(page.getByText(/attendees registered - locked/i)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit question' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Delete question' })).toHaveCount(0);
 
   // Adding a new question is allowed; marking it required warns it only covers future registrants.
+  // One "Add question" button adds a text question by default; the toggle reads "Required to register".
   await page.getByRole('button', { name: 'Add question' }).click();
-  await page.getByLabel('Required').check();
+  await page.getByLabel('Required to register').check();
   await expect(page.getByText(/only applies to people who register from now on/i)).toBeVisible();
 });

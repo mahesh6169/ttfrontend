@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { logoutUser } from '@/store/slices/users/userSlice';
 import { FaBars } from 'react-icons/fa';
 import { CgProfile } from 'react-icons/cg';
-import { LiaSignInAltSolid, LiaSignOutAltSolid } from 'react-icons/lia';
+import { LiaSignInAltSolid, LiaSignOutAltSolid, LiaUserPlusSolid } from 'react-icons/lia';
 import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
 import { NAV_DESTINATIONS } from '@/utils/constants/destinations';
 import { toast } from 'react-toastify';
@@ -130,14 +130,24 @@ const Header = () => {
                 </button>
               </>
             ) : (
-              <Link
-                href="/login"
-                className="flex flex-col items-center p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-                title="Signin"
-              >
-                <LiaSignInAltSolid size={22} className="text-slate-700 scale-x-[-1]" />
-                <span className="text-[10px] text-slate-700">Signin</span>
-              </Link>
+              <>
+                <Link
+                  href="/login"
+                  className="flex flex-col items-center p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+                  title="Signin"
+                >
+                  <LiaSignInAltSolid size={22} className="text-slate-700 scale-x-[-1]" />
+                  <span className="text-[10px] text-slate-700">Signin</span>
+                </Link>
+                <Link
+                  href="/register"
+                  className="flex flex-col items-center p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+                  title="Register"
+                >
+                  <LiaUserPlusSolid size={22} className="text-slate-700" />
+                  <span className="text-[10px] text-slate-700">Register</span>
+                </Link>
+              </>
             )}
           </div>
 
