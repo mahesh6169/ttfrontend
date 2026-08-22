@@ -11,6 +11,7 @@ import useDelayedLoading from '@/hooks/useDelayedLoading';
 import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
 import EmptyState from '@/components/layout/EmptyState';
 import ErrorState from '@/components/layout/ErrorState';
+import { formatAnswer } from '@/utils/events/questionTypes';
 
 const DATE_FILTER_OPTIONS = [
   { value: '3months', label: 'Last 3 months' },
@@ -627,7 +628,7 @@ const MyFreeEventRegistrationsPage = () => {
                               {registration.formResponses.map((response, idx) => (
                                 <div key={idx} className="py-2 text-xs sm:text-sm">
                                   <span className="font-semibold text-slate-700">{response.fieldName}: </span>
-                                  <span className="text-slate-600 whitespace-pre-line break-words">{response.response}</span>
+                                  <span className="text-slate-600 whitespace-pre-line break-words">{formatAnswer(response.response)}</span>
                                 </div>
                               ))}
                             </div>

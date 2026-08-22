@@ -14,6 +14,7 @@ import { toast } from 'react-toastify';
 import { formatInTimeZone } from 'date-fns-tz';
 import { FaDownload, FaRegCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
 import { saveAttendeePdf } from '@/utils/events/attendeePdf';
+import { saveAttendeeCsv } from '@/utils/events/attendeeCsv';
 
 const formatDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
   if (!dateTime) return '';
@@ -27,6 +28,7 @@ const formatDateTime = (dateTime, timeZone = 'Australia/Sydney') => {
 export default function CheckinRsvp_EventCard({ event }) {
   const router = useRouter();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isCsvDownloading, setIsCsvDownloading] = useState(false);
 
   const open = () => router.push(`/users/profile/checkinrsvp/${event._id}`);
 
@@ -42,6 +44,21 @@ export default function CheckinRsvp_EventCard({ event }) {
       toast.error('Failed to generate PDF');
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadCsv = async (e) => {
+    e.stopPropagation();
+    if (isCsvDownloading) return;
+    setIsCsvDownloading(true);
+    try {
+      const result = await saveAttendeeCsv(event);
+      if (result?.empty) toast.info('No attendees to export yet');
+    } catch (err) {
+      console.error('CSV generation failed:', err);
+      toast.error('Failed to generate CSV');
+    } finally {
+      setIsCsvDownloading(false);
     }
   };
 
@@ -90,16 +107,27 @@ export default function CheckinRsvp_EventCard({ event }) {
           </div>
         </div>
 
-        {/* Save PDF - secondary button; does not open the card */}
-        <button
-          type="button"
-          onClick={handleSavePdf}
-          disabled={isDownloading}
-          className="shrink-0 inline-flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FaDownload size={12} />
-          {isDownloading ? 'Saving...' : 'Save PDF'}
-        </button>
+        {/* Export actions - secondary buttons; do not open the card (D12). */}
+        <div className="shrink-0 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleSavePdf}
+            disabled={isDownloading}
+            className="inline-flex items-center justify-center gap-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaDownload size={12} />
+            {isDownloading ? 'Saving...' : 'Save PDF'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={isCsvDownloading}
+            className="inline-flex items-center justify-center gap-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaDownload size={12} />
+            {isCsvDownloading ? 'Saving...' : 'Download CSV'}
+          </button>
+        </div>
       </div>
     </div>
   );

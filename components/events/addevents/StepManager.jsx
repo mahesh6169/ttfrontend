@@ -44,34 +44,55 @@ import SuccessStep from './SuccessStep';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
-// Validate the host-configured registration fields (text + dropdown question types).
-// Called from BOTH the per-step validator (case 3) and the global validateForm safety net,
-// so the rule lives in exactly one place and can't drift between call sites.
+// Validate the host-configured registration fields (all eight question types on free, two on paid).
+// Called from BOTH the per-step validator (case 3) and the global validateForm safety net, so the
+// rule lives in exactly one place and can't drift. Mirrors the server (finalizeRegistrationFields).
 // Returns null if valid, or an array of error strings if invalid.
 const validateRegistrationFieldsList = (formData) => {
   const isPromotionalEvent = formData.eventIntent === 'promote' || formData.isAdvertiseOnly;
   if (isPromotionalEvent) return null;
   if (!formData.registrationFields || formData.registrationFields.length === 0) return null;
 
+  const CHOICE = ['select', 'radio', 'checkboxes'];
+  const BLOCKABLE = ['select', 'radio'];
+  const LABEL_MAX = 200;
+  const OPTION_MAX = 150;
+  const MIN_OPTIONS = 2;
+
   // Sequential: at most ONE error per question, in the order the host should fix them.
-  // Same priority as the inline display: question text → options exist → options non-empty → unique.
   const errors = [];
+  const seenNames = new Set();
   formData.registrationFields.forEach((field, index) => {
     const questionLabel = `Question ${index + 1}`;
+    const name = (field.fieldName || '').trim();
 
-    if (!field.fieldName?.trim()) {
+    if (!name) {
       errors.push(`${questionLabel}: Type your question.`);
       return;
     }
+    if (name.length > LABEL_MAX) {
+      errors.push(`${questionLabel}: Question is too long (max ${LABEL_MAX} characters).`);
+      return;
+    }
+    const nameKey = name.toLowerCase();
+    if (seenNames.has(nameKey)) {
+      errors.push(`${questionLabel}: Another question already uses this name.`);
+      return;
+    }
+    seenNames.add(nameKey);
 
-    if (field.fieldType === 'select') {
+    if (CHOICE.includes(field.fieldType)) {
       const options = field.fieldOptions || [];
-      if (options.length === 0) {
-        errors.push(`${questionLabel}: Add at least one option.`);
+      if (options.length < MIN_OPTIONS) {
+        errors.push(`${questionLabel}: Add at least ${MIN_OPTIONS} options.`);
         return;
       }
       if (options.some((o) => !o?.trim())) {
         errors.push(`${questionLabel}: Fill all options or remove the empty ones.`);
+        return;
+      }
+      if (options.some((o) => (o || '').trim().length > OPTION_MAX)) {
+        errors.push(`${questionLabel}: An option is too long (max ${OPTION_MAX} characters).`);
         return;
       }
       const lowered = options.map((o) => o.trim().toLowerCase());
@@ -79,11 +100,13 @@ const validateRegistrationFieldsList = (formData) => {
         errors.push(`${questionLabel}: Options must be unique.`);
         return;
       }
-      // A blocking question may not block every answer (events-rsvp-blocking-questions.md).
-      const nonEmpty = options.map((o) => (o || '').trim()).filter(Boolean);
-      const blk = field.blockingOptions || [];
-      if (nonEmpty.length > 0 && nonEmpty.every((o) => blk.includes(o))) {
-        errors.push(`${questionLabel}: Leave at least one answer that allows registration.`);
+      // A blocking question may not block every answer (dropdown + multiple choice only).
+      if (BLOCKABLE.includes(field.fieldType)) {
+        const nonEmpty = options.map((o) => (o || '').trim()).filter(Boolean);
+        const blk = field.blockingOptions || [];
+        if (nonEmpty.length > 0 && nonEmpty.every((o) => blk.includes(o))) {
+          errors.push(`${questionLabel}: Leave at least one answer that allows registration.`);
+        }
       }
     }
   });

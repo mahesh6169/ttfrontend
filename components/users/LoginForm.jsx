@@ -39,20 +39,23 @@ const Login = () => {
     setFormLoadTime(Date.now());
   }, []);
 
-  // Handle redirection after login
+  // Handle redirection after login.
+  // Only bounce a REAL member away from the login page. A guest (visitor sticker)
+  // must be allowed to see the form so they can log in or upgrade to a real account -
+  // matches the "guest = logged out" rule the header already uses (Header.jsx).
   useEffect(() => {
-    if (user?._id) {
+    if (user?._id && user?.role !== 'guest') {
       // Get redirect path from localStorage (set by RequireLogin or PostListingButton)
       const storedRedirect = localStorage.getItem('redirectAfterLogin');
-      
+
       // Clear the stored redirect
       localStorage.removeItem('redirectAfterLogin');
-      
+
       // Redirect logic:
       // 1. If there's a stored redirect and preserveRedirect=true, use it
       // 2. Otherwise, go to profile page (direct login case)
       const redirectPath = (preserveRedirect && storedRedirect) ? storedRedirect : '/users/profile';
-      
+
       router.push(redirectPath);
     }
   }, [user, router, preserveRedirect]);

@@ -25,6 +25,14 @@ import EmptyState from '@/components/layout/EmptyState';
 const normalizeMobile = (m) => String(m || '').replace(/\s+/g, '');
 const isValidAuMobile = (m) => /^04\d{8}$/.test(normalizeMobile(m));
 
+// Is a required question answered? Pick-many needs at least one tick; yes/no must be ticked (Yes -
+// the agreement use); everything else needs a non-empty value.
+const isAnswered = (field, v) => {
+  if (field.fieldType === 'yesno') return v === 'Yes';
+  if (Array.isArray(v)) return v.length > 0;
+  return v != null && String(v).trim() !== '';
+};
+
 const formatEventDate = (dateTime, timeZone) => {
   if (!dateTime) return '';
   try {
@@ -172,9 +180,7 @@ const RsvpPage = () => {
     });
 
     selectedEvent?.registrationFields?.forEach((field) => {
-      const value = formResponses[field.fieldName];
-      const isEmpty = Array.isArray(value) ? value.length === 0 : !value;
-      if (field.isRequired && isEmpty) {
+      if (field.isRequired && !isAnswered(field, formResponses[field.fieldName])) {
         newErrors[field.fieldName] = `${field.fieldName} is required`;
       }
     });
@@ -212,6 +218,8 @@ const RsvpPage = () => {
   const getFieldBlock = (field) => {
     const answer = formResponses[field.fieldName];
     const blocks = (field.blockingOptions || []).map(String);
+    // Blocking is single-pick only (dropdown / multiple choice); a list answer never blocks.
+    if (Array.isArray(answer) || blocks.length === 0) return null;
     if (answer != null && String(answer).trim() !== '' && blocks.includes(String(answer))) {
       return (field.blockingMessage && field.blockingMessage.trim()) || DEFAULT_BLOCK_MESSAGE;
     }
@@ -229,8 +237,7 @@ const RsvpPage = () => {
     attendees.every((a) => a.name.trim() !== '') &&
     (selectedEvent?.registrationFields || []).every((f) => {
       if (!f.isRequired) return true;
-      const v = formResponses[f.fieldName];
-      return v != null && String(v).trim() !== '';
+      return isAnswered(f, formResponses[f.fieldName]);
     });
 
   // Live-invalid: something is typed but it isn't a valid AU mobile yet. Drives the inline red
@@ -270,7 +277,7 @@ const RsvpPage = () => {
 
   return (
     <div>
-      <div className="w-full max-w-2xl mx-auto pb-24">
+      <div className={`w-full max-w-2xl mx-auto ${anyBlockActive ? 'pb-48' : 'pb-24'}`}>
         {/* Page toolbar (design-system.md section 8): Back pinned left, title centred in the SAME
             row. Back is the shared secondary button; title is the flat H1 (18px bold). */}
         <div className="relative flex items-center justify-center mb-4">
@@ -466,6 +473,7 @@ const RsvpPage = () => {
               formResponses={formResponses}
               onFormResponseUpdate={handleFormResponseChange}
               errors={errors}
+              isFieldBlocking={(field) => !!getFieldBlock(field)}
               singleColumn
               bare
             />
@@ -475,16 +483,6 @@ const RsvpPage = () => {
               <p className="text-sm text-red-600 mt-6">{registrationError}</p>
             )}
           </form>
-        )}
-
-        {/* Blocking-answer callout (design-system.md section 10): a chosen answer denies registration.
-            It sits OUTSIDE the form, between the form and the sticky bar, so it reads as a verdict on
-            the whole registration rather than a single field's error. */}
-        {showForm && anyBlockActive && (
-          <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            <FaExclamationCircle className="mt-0.5 flex-shrink-0" />
-            <span>{activeBlockMessage}</span>
-          </div>
         )}
 
         {/* Past-event back-to-event link. (Registered/just-registered states have their own
@@ -511,7 +509,17 @@ const RsvpPage = () => {
           data-testid="rsvp-cta-bar"
           className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white safe-area-inset-pb"
         >
-          <div className="w-full max-w-2xl mx-auto px-2 md:px-4 py-3 flex items-center justify-between gap-4">
+          <div className="w-full max-w-2xl mx-auto px-2 md:px-4 py-3">
+            {/* Blocked: the organiser's reason rides the always-visible bar (a top strip) so the
+                attendee sees WHY the instant they pick a disqualifying answer, without scrolling to
+                the bottom of the form. It wraps to two lines for a long message. */}
+            {anyBlockActive && (
+              <div className="mb-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <FaExclamationCircle className="mt-0.5 flex-shrink-0" />
+                <span>{activeBlockMessage}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-900 truncate">
                 {attendees.length} attendee{attendees.length === 1 ? '' : 's'}
@@ -552,6 +560,7 @@ const RsvpPage = () => {
                 )}
               </button>
             )}
+            </div>
           </div>
         </div>
       )}
