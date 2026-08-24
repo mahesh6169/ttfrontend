@@ -140,6 +140,12 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: []
   },
 
+  'Water Filtration & Purification': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
   'Computer & Mobile Repairs': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],

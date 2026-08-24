@@ -521,6 +521,16 @@ fields: {
     ]
   },
 
+  'Water Filtration & Purification': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
   'Computer & Mobile Repairs': {
     sections: [
       {

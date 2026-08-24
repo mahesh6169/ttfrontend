@@ -32,6 +32,7 @@ export const CATEGORIES = [
       'Plumbing & Gas',
       'Landscaping & Gardening',
       'Air Conditioning & Refrigeration',
+      'Water Filtration & Purification',
       'Home Repairs & Improvements',
       'Cabinet Makers',
       'Handyman & Flatpacks',
