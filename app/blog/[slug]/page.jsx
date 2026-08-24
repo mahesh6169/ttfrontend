@@ -6,6 +6,7 @@ import { simpleMarkdownToHtml } from '@/utils/markdownToHtml';
 import { parseFrontmatter } from '@/utils/parseFrontmatter';
 import { META_DEFAULTS } from '@/utils/slugUtils';
 import { FaFacebookF, FaWhatsapp, FaShareAlt } from 'react-icons/fa';
+import BlogLightbox from '@/components/blog/BlogLightbox';
 
 // Placeholder the author leaves in a .md file until they paste a real image URL.
 const IMAGE_PLACEHOLDER = 'PASTE_CLOUDINARY_IMAGE_URL_HERE';
@@ -182,9 +183,9 @@ export default async function BlogPostPage({ params }) {
         </div>
       </div>
 
-      <div
+      <BlogLightbox
+        html={html}
         className="prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:text-slate-800 prose-headings:font-semibold prose-p:text-slate-700 prose-li:text-slate-700 prose-a:text-teal-700 hover:prose-a:text-teal-800"
-        dangerouslySetInnerHTML={{ __html: html }}
       />
 
       <div className="mt-8 flex justify-center">
