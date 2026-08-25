@@ -89,65 +89,70 @@ export default function ProfileSidebar({ className = '', onNavigate, onSignout }
 
   return (
     <nav className={className}>
-      {/* Identity → profile home */}
-      <Link
-        href="/users/profile"
-        onClick={onNavigate}
-        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-          isActive('/users/profile') ? 'bg-teal-50' : 'hover:bg-slate-50'
-        }`}
-      >
-        <div className="w-9 h-9 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-semibold shrink-0">
-          {initial}
-        </div>
-        <span className="text-sm font-semibold text-slate-900 truncate">
-          {user?.name || 'My Profile'}
-        </span>
-      </Link>
-      <div className="border-t border-slate-200 my-2" />
+      {/* flex-col layout: scrollable zone fills available height, footer group sits below it */}
+      <div className="flex flex-col h-full">
 
-      <div className="space-y-0.5">
-        {TOP.map((i) => (
-          <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
-        ))}
-      </div>
-
-      <GroupLabel>Organiser</GroupLabel>
-      <div className="space-y-0.5">
-        {organiserItems.map((i) => (
-          <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
-        ))}
-      </div>
-
-      <GroupLabel>Manage</GroupLabel>
-      <div className="space-y-0.5">
-        {MANAGE.map((i) => (
-          <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
-        ))}
-      </div>
-
-      <div className="space-y-0.5 mt-4">
-        {RECORDS.map((i) => (
-          <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
-        ))}
-      </div>
-
-      <div className="border-t border-slate-200 mt-4 pt-2">
-        <NavItem item={SETTINGS} active={isActive(SETTINGS.href)} onNavigate={onNavigate} />
-      </div>
-
-      {/* Signout — pinned at the bottom in the mobile overlay only (desktop keeps it in the header) */}
-      {onSignout && (
-        <div className="border-t border-slate-200 mt-2 pt-2">
-          <button
-            onClick={onSignout}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm w-full text-left text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors"
+        {/* Scrollable zone: all nav items except Settings and Signout */}
+        <div className="flex-1 min-h-0 overflow-y-auto pb-2">
+          {/* Identity → profile home */}
+          <Link
+            href="/users/profile"
+            onClick={onNavigate}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              isActive('/users/profile') ? 'bg-teal-50' : 'hover:bg-slate-50'
+            }`}
           >
-            <FaSignOutAlt className="text-base shrink-0" />
-            <span>Signout</span>
-          </button>
+            <div className="w-9 h-9 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-semibold shrink-0">
+              {initial}
+            </div>
+            <span className="text-sm font-semibold text-slate-900 truncate">
+              {user?.name || 'My Profile'}
+            </span>
+          </Link>
+          <div className="border-t border-slate-200 my-2" />
+
+          <div className="space-y-0.5">
+            {TOP.map((i) => (
+              <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
+            ))}
+          </div>
+
+          <GroupLabel>Organiser</GroupLabel>
+          <div className="space-y-0.5">
+            {organiserItems.map((i) => (
+              <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
+            ))}
+          </div>
+
+          <GroupLabel>Manage</GroupLabel>
+          <div className="space-y-0.5">
+            {MANAGE.map((i) => (
+              <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
+            ))}
+          </div>
+
+          <div className="space-y-0.5 mt-4">
+            {RECORDS.map((i) => (
+              <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
+            ))}
+          </div>
         </div>
-      )}
+
+        {/* Footer group: one separator line, then Settings and Signout as plain items */}
+        <div className="shrink-0 border-t border-slate-200 pt-2 pb-2">
+          <NavItem item={SETTINGS} active={isActive(SETTINGS.href)} onNavigate={onNavigate} />
+          {onSignout && (
+            <button
+              onClick={onSignout}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm w-full text-left text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors"
+            >
+              <FaSignOutAlt className="text-base shrink-0" />
+              <span>Signout</span>
+            </button>
+          )}
+        </div>
+
+      </div>
     </nav>
   );
 }

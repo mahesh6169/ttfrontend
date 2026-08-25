@@ -73,7 +73,7 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
         className={`absolute top-2 right-2 text-white p-1.5 rounded-full z-10 ${
           isInWishlist ? 'bg-red-500 hover:bg-red-600' : 'bg-slate-300 hover:bg-slate-400'
         }`}
-        title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+        aria-label={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
       >
         <FaHeart className={`text-xs sm:text-sm ${isInWishlist ? 'text-white' : 'text-slate-700'}`} />
       </button>

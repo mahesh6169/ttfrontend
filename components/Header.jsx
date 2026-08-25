@@ -134,7 +134,6 @@ const Header = () => {
                 <Link
                   href="/login"
                   className="flex flex-col items-center p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-                  title="Signin"
                 >
                   <LiaSignInAltSolid size={22} className="text-slate-700 scale-x-[-1]" />
                   <span className="text-[10px] text-slate-700">Signin</span>
@@ -142,7 +141,6 @@ const Header = () => {
                 <Link
                   href="/register"
                   className="flex flex-col items-center p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-                  title="Register"
                 >
                   <LiaUserPlusSolid size={22} className="text-slate-700" />
                   <span className="text-[10px] text-slate-700">Register</span>
@@ -270,12 +268,11 @@ const Header = () => {
               ✕
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto px-3 pb-4">
-            <ProfileSidebar
-              onNavigate={() => setDrawerOpen(false)}
-              onSignout={() => { setDrawerOpen(false); handleLogout(); }}
-            />
-          </div>
+          <ProfileSidebar
+            className="flex-1 overflow-hidden px-3"
+            onNavigate={() => setDrawerOpen(false)}
+            onSignout={() => { setDrawerOpen(false); handleLogout(); }}
+          />
         </div>
       </div>
     )}
@@ -305,7 +302,6 @@ const NavLink = ({ href, icon, text, pathname, mobile = false, onClick, showIcon
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }
         ${mobile ? 'text-sm' : ''}`}
-      title={typeof text === 'string' ? text : undefined}
     >
       {icon && <span>{icon}</span>}
       {showIconOnly === 'md' ? (

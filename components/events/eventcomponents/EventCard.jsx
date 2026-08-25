@@ -91,7 +91,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle, ended = false }) => 
             ? 'bg-red-500 hover:bg-red-600'
             : 'bg-slate-300 hover:bg-slate-400'
         }`}
-        title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+        aria-label={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
       >
         <FaHeart
           className={`text-xs sm:text-sm ${
@@ -160,7 +160,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle, ended = false }) => 
             {(event.recurrence?.isRecurring || event.isRecurringInstance) && (
               <MdRepeat
                 className="ml-1 text-slate-500 flex-shrink-0"
-                title="Recurring Event"
+                aria-label="Recurring event"
                 size={14}
               />
             )}
@@ -194,7 +194,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle, ended = false }) => 
                 <FaBullhorn
                   className="text-teal-600"
                   size={12}
-                  title="Promotional Event"
+                  aria-hidden="true"
                 />
                 <span className="text-[10px] text-teal-600 font-medium">
                   Promo
@@ -203,7 +203,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle, ended = false }) => 
                   <FaExternalLinkAlt
                     className="text-teal-500 ml-1"
                     size={10}
-                    title="External tickets"
+                    aria-hidden="true"
                   />
                 )}
               </>
@@ -212,7 +212,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle, ended = false }) => 
                 <FaMoneyBillWave
                   className="text-slate-600"
                   size={12}
-                  title="Paid Event"
+                  aria-hidden="true"
                 />
                 <span className="text-[10px] text-slate-600 font-medium">
                   Paid
@@ -223,7 +223,7 @@ const EventCard = ({ event, isInWishlist, onWishlistToggle, ended = false }) => 
                 <FaClipboardList
                   className="text-slate-600"
                   size={12}
-                  title="RSVP"
+                  aria-hidden="true"
                 />
                 <span className="text-[10px] text-slate-600 font-medium">
                   RSVP
