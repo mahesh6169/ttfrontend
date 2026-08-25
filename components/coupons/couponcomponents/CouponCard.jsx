@@ -252,7 +252,6 @@ export default function CampaignCard({ campaign, onGenerateCode }) {
             {campaign.slug && (
               <button
                 onClick={handleShare}
-                title="Share"
                 aria-label="Share"
                 className="w-8 h-8 rounded-full flex items-center justify-center text-teal-700 hover:bg-teal-50 transition-colors flex-shrink-0"
               >
