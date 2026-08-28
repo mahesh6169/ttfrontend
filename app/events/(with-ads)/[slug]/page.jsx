@@ -1,5 +1,4 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
-import { format } from 'date-fns';
 import EventDetailContent from '@/components/events/eventcomponents/EventDetailContent';
 import { buildEventJsonLd } from '@/utils/helpers/events/eventJsonLd';
 
@@ -54,21 +53,35 @@ export async function generateMetadata({ params }) {
       return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
     };
 
+    // M9: strip markdown markers to plain text (events use plain text, not HTML)
+    const stripMarkdown = (text) => {
+      if (!text) return '';
+      return text
+        .replace(/^#+\s*/gm, '')
+        .replace(/[*_]{1,3}([^*_]+)[*_]{1,3}/g, '$1')
+        .replace(/^>\s*/gm, '')
+        .replace(/^[-*]\s+/gm, '')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    // M4: three-level description fallback
     let description;
     if (event.seoDescription) {
+      // Level 1: explicit platform seoDescription
       description = event.seoDescription;
     } else {
-      const locDateParts = [];
-      if (event.address?.suburb) locDateParts.push(event.address.suburb);
-      if (event.address?.state) locDateParts.push(event.address.state);
-      if (event.dateTime) locDateParts.push(format(new Date(event.dateTime), 'dd MMM yyyy'));
-      const locDate = locDateParts.join(', ');
-      const ending = event.isPaid ? 'Get tickets.' : 'Free RSVP.';
-      description = locDate
-        ? `${event.title} - ${locDate}. ${ending}`
-        : `${event.title}. ${ending}`;
+      const stripped = stripMarkdown(event.description);
+      const wordCount = stripped ? stripped.trim().split(/\s+/).filter(Boolean).length : 0;
+      if (wordCount >= 5) {
+        // Level 2: body text when present and long enough
+        description = capDescription(stripped);
+      } else {
+        // Level 3: CTA fallback
+        description = event.isPaid ? 'Get your tickets now at Desify!!' : 'Register at Desify!!';
+      }
     }
-    description = capDescription(description);
     
     // Get OG image or fallback (skip raw images to avoid >300KB issues)
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;

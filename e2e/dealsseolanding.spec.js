@@ -1,9 +1,9 @@
 // Plan: featureplans/deals-seo-landing.md - AC1..AC9 (deals signboard + SSR pre-fill).
 import { test, expect } from '@playwright/test';
 
-const LANDING_TITLE = 'Indian Deals, Discounts & Offers in Australia';
+const LANDING_TITLE = 'Find Local Deals, Discounts & Offers Near You';
 const LANDING_DESCRIPTION =
-  'Find special offers from businesses serving the Indian community - restaurants, groceries, fashion, jewellery, beauty, entertainment, classes and more.';
+  'Browse deals from local businesses near you - food, groceries, fashion, jewellery, beauty, classes and more. Find an offer and save today.';
 const H1_TEXT = 'Discover Indian Deals, Discounts & Special Offers';
 
 // Count the distinct deal detail-card links (/deals/{slug}-{24hex}) in raw HTML.

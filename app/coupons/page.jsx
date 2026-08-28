@@ -9,9 +9,9 @@ const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
 
 // Shopper-facing signboard (designguide/06-seo/coupons.md "Landing page (/coupons)").
 // This metadata moved off layout.jsx as part of the server split.
-const LANDING_TITLE = 'Indian Store Coupons & Offers in Australia';
+const LANDING_TITLE = 'Discover In-Store Coupons From Local Businesses Near You';
 const LANDING_DESCRIPTION =
-  'Save in-store with coupon offers from Indian grocery stores, food and dining, fashion, and health and wellbeing businesses near you. Show the QR code and redeem.';
+  'Browse coupons from restaurants, grocery stores, fashion, beauty and wellbeing businesses near you. Show the QR code in-store and save.';
 
 export const metadata = {
   // Absolute form: the coupons layout's title template must NOT append the brand

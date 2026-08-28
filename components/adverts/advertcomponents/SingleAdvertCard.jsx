@@ -327,7 +327,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
               ? 'bg-red-500 hover:bg-red-600'
               : 'bg-slate-300 hover:bg-slate-400'
           }`}
-          title={isInWishlist(advert._id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+          aria-label={isInWishlist(advert._id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
         >
           <FaHeart
             className={`text-sm sm:text-base md:text-lg ${
@@ -489,7 +489,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             {/* Location - Full width at the bottom */}
             {advert.address && (advert.address.formattedAddress || advert.address.suburb || advert.address.state) && (
               <div className="text-sm sm:text-base col-span-1 sm:col-span-2">
-                <FaMapMarkedAlt className="text-slate-500 shrink-0 inline mr-1.5" size={13} title="Location" aria-label="Location" />
+                <FaMapMarkedAlt className="text-slate-500 shrink-0 inline mr-1.5" size={13} aria-hidden="true" />
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(advert.address.formattedAddress || [advert.address.suburb, advert.address.state].filter(Boolean).join(', '))}`}
                   target="_blank"
@@ -646,7 +646,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             {/* Social Media - always visible */}
             {advert.contactInfo.socialMedia && advert.contactInfo.socialMedia.some((s) => s.url) && (
               <div className="flex items-center gap-2 text-sm sm:text-base flex-wrap">
-                <FaThumbsUp className="text-slate-500 shrink-0" size={13} title="Follow us" aria-label="Follow us" />
+                <FaThumbsUp className="text-slate-500 shrink-0" size={13} aria-hidden="true" />
                 {advert.contactInfo.socialMedia.filter((s) => s.url).map((social, index, arr) => {
                   const Icon = getSocialIcon(social.platform);
                   return (

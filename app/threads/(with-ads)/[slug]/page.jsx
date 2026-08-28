@@ -45,9 +45,32 @@ export async function generateMetadata({ params }) {
     
     // Generate meta tags
     const title = thread.title || 'Community Topic';
-    
-    // Simple call-to-action description
-    const description = 'Join the conversation now!';
+
+    // M9: strip HTML tags and markdown markers to plain text
+    const stripMarkdown = (text) => {
+      if (!text) return '';
+      return text
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/^#+\s*/gm, '')
+        .replace(/[*_]{1,3}([^*_]+)[*_]{1,3}/g, '$1')
+        .replace(/^>\s*/gm, '')
+        .replace(/^[-*]\s+/gm, '')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    // M10: cap at 155 chars at the nearest word boundary
+    const MAX_DESC = 155;
+    const capDescription = (text) => {
+      if (!text || text.length <= MAX_DESC) return text || '';
+      const cut = text.slice(0, MAX_DESC);
+      const lastSpace = cut.lastIndexOf(' ');
+      return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
+    };
+
+    // M6: question stripped of markdown, capped at 155
+    const description = capDescription(stripMarkdown(thread.question));
     
     // Get OG image or fallback (skip raw images to avoid >300KB issues)
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
@@ -69,7 +92,7 @@ export async function generateMetadata({ params }) {
     const url = `${META_DEFAULTS.siteUrl}/threads/${slug}`;
     
     const metadata = {
-      title: `${title} - ${META_DEFAULTS.siteName}`,
+      title: { absolute: title },
       description,
       alternates: { canonical: url },
       openGraph: {

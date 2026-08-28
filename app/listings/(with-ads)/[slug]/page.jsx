@@ -46,30 +46,54 @@ export async function generateMetadata({ params }) {
     
     // Generate meta tags
     const title = listing.title || 'Listing';
-    
-    // Build structured description with price and location
-    let description = '';
-    
-    // Add price or "Request for quote"
-    if (listing.pricing && listing.pricing.length > 0 && listing.pricing[0].amount > 0) {
-      const price = listing.pricing[0];
-      description = `$${price.amount}`;
-      if (price.unit && price.unit !== 'item') {
-        description += `/${price.unit}`;
+
+    // M9: strip markdown markers and HTML tags to plain text
+    const stripMarkdown = (text) => {
+      if (!text) return '';
+      return text
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/^#+\s*/gm, '')
+        .replace(/[*_]{1,3}([^*_]+)[*_]{1,3}/g, '$1')
+        .replace(/^>\s*/gm, '')
+        .replace(/^[-*]\s+/gm, '')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    // M10: cap at 155 chars at the nearest word boundary
+    const MAX_DESC = 155;
+    const capDescription = (text) => {
+      if (!text || text.length <= MAX_DESC) return text || '';
+      const cut = text.slice(0, MAX_DESC);
+      const lastSpace = cut.lastIndexOf(' ');
+      return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
+    };
+
+    // M5: price, location, description - cap at 155
+    const parts = [];
+    if (listing.adType !== 'wanted') {
+      const pricing = listing.pricing;
+      if (pricing && pricing.length > 0 && pricing[0].amount > 0) {
+        const price = pricing[0];
+        let priceStr = `$${price.amount}`;
+        if (price.priceType !== 'sell' && price.unit) priceStr += `/${price.unit}`;
+        parts.push(priceStr);
+      } else {
+        parts.push('Request for quote');
       }
-    } else {
-      description = 'Request for quote';
     }
-    
-    // Add location (suburb, state)
-    if (listing.address?.suburb && listing.address?.state) {
-      description += ` • ${listing.address.suburb}, ${listing.address.state}`;
+    if (listing.address?.isNationwide) {
+      parts.push('Nationwide');
+    } else if (listing.address?.suburb || listing.address?.state) {
+      parts.push([listing.address.suburb, listing.address.state].filter(Boolean).join(', '));
     }
-    
-    // Ensure it fits within 80 chars
-    if (description.length > 80) {
-      description = description.substring(0, 77) + '...';
-    }
+    const strippedBody = stripMarkdown(listing.description);
+    if (strippedBody) parts.push(strippedBody);
+
+    let description = capDescription(parts.join('. '));
+    const wordCount = description.trim().split(/\s+/).filter(Boolean).length;
+    if (wordCount < 5) description = 'Check the listing at Desify!!';
     
     // Get OG image or fallback (skip raw images to avoid >300KB issues)
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
@@ -91,7 +115,7 @@ export async function generateMetadata({ params }) {
     const url = `${META_DEFAULTS.siteUrl}/listings/${slug}`;
     
     return {
-      title: `${title} - ${META_DEFAULTS.siteName}`,
+      title: { absolute: title },
       description,
       alternates: { canonical: url },
       openGraph: {

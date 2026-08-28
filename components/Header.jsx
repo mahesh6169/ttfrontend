@@ -105,7 +105,6 @@ const Header = () => {
                 <Link
                   href="/users/profile/conversations"
                   className="flex flex-col items-center p-1.5 rounded-lg hover:bg-slate-50 transition-colors relative"
-                  title="Messages"
                 >
                   <div className="relative">
                     {showNotification ? (
@@ -121,7 +120,6 @@ const Header = () => {
                 <button
                   onClick={() => setDrawerOpen(true)}
                   className="flex flex-col items-center p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-                  title="Menu"
                   aria-label="Open menu"
                   aria-expanded={drawerOpen}
                 >
@@ -206,7 +204,6 @@ const Header = () => {
                   <button
                     onClick={() => setDrawerOpen(true)}
                     className="lg:hidden flex items-center gap-2 px-2 md:px-3 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300"
-                    title="Menu"
                     aria-label="Open menu"
                     aria-expanded={drawerOpen}
                   >
@@ -215,7 +212,7 @@ const Header = () => {
                   <button
                     onClick={handleLogout}
                     className="hidden lg:flex items-center gap-2 px-2 md:px-3 lg:px-4 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300"
-                    title="Signout"
+                    aria-label="Signout"
                   >
                     <LiaSignOutAltSolid size={22} />
                     <span className="hidden lg:inline">Signout</span>

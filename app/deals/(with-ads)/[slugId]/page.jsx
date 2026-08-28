@@ -1,5 +1,6 @@
 import { extractIdFromSlug, META_DEFAULTS } from '@/utils/slugUtils';
 import { format } from 'date-fns';
+import { formatValidDays } from '@/utils/couponSchedule';
 import DealDetailContent from '@/components/dailydeals/dealcomponents/DealDetailContent';
 import { buildDealJsonLd } from '@/utils/helpers/dailydeals/dealJsonLd';
 
@@ -42,24 +43,15 @@ export async function generateMetadata({ params }) {
     // Generate meta tags
     const title = deal.dealTitle || 'Daily Deal';
 
-    // Build description: Until {date}. {location} {businessName}
+    // M7: "Valid {days} until {endDate} at {businessName}"
     let description = '';
-
-    // Add end date
-    if (deal.endDate) {
-      const endDate = format(new Date(deal.endDate), 'dd MMM');
-      description = `Until ${endDate}`;
-    }
-
-    // Add location (suburb, state)
-    const address = deal.partnerstoreId?.address;
-    if (address?.suburb && address?.state) {
-      description += description ? `. ${address.suburb}, ${address.state}` : `${address.suburb}, ${address.state}`;
-    }
-
-    // Add business name
-    if (deal.partnerstoreId?.businessName) {
-      description += description ? ` - ${deal.partnerstoreId.businessName}` : deal.partnerstoreId.businessName;
+    const days = formatValidDays(deal.validDays);
+    const endDateStr = deal.endDate ? format(new Date(deal.endDate), 'dd MMM yyyy') : '';
+    const businessName = deal.partnerstoreId?.businessName || '';
+    if (days) {
+      description = `Valid ${days} until ${endDateStr} at ${businessName}`;
+    } else {
+      description = `Valid until ${endDateStr} at ${businessName}`;
     }
 
     // Get OG image or fallback (skip raw images to avoid >300KB issues)
@@ -82,7 +74,7 @@ export async function generateMetadata({ params }) {
     const url = `${META_DEFAULTS.siteUrl}/deals/${slugId}`;
 
     return {
-      title: `${title} - ${META_DEFAULTS.siteName}`,
+      title: { absolute: title },
       description,
       alternates: { canonical: url },
       openGraph: {
