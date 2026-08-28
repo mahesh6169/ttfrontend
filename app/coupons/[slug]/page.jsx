@@ -1,4 +1,6 @@
 import { META_DEFAULTS } from '@/utils/slugUtils';
+import { format } from 'date-fns';
+import { formatValidDays } from '@/utils/couponSchedule';
 import CampaignDetailClient from './CampaignDetailClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -41,8 +43,15 @@ export async function generateMetadata({ params }) {
     const data = await response.json();
     const campaign = data.campaign;
     
-    const title = `${campaign.discount} on ${campaign.discountProduct}`;
-    const description = campaign.storeId?.storeName || 'Coupon offer available';
+    // M3: "{discount} {discountProduct} at {storeName}"
+    const title = `${campaign.discount} ${campaign.discountProduct} at ${campaign.storeId?.storeName || 'store'}`;
+
+    // M8: "Valid {days} until {expiryDate}. Show QR code in-store to redeem."
+    const days = formatValidDays(campaign.validDays);
+    const expiryStr = campaign.expiryDate ? format(new Date(campaign.expiryDate), 'dd MMM yyyy') : '';
+    const description = days
+      ? `Valid ${days} until ${expiryStr}. Show QR code in-store to redeem.`
+      : `Valid until ${expiryStr}. Show QR code in-store to redeem.`;
     
     const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || META_DEFAULTS.siteUrl;
     let image = campaign.ogImageUrl || campaign.storeId?.logo?.url || process.env.NEXT_PUBLIC_FALLBACK_CAMPAIGN_IMAGE_URL;
@@ -64,7 +73,7 @@ export async function generateMetadata({ params }) {
     const url = `${siteUrl}/coupons/${slug}`;
     
     return {
-      title: `${title} - ${META_DEFAULTS.siteName}`,
+      title: { absolute: title },
       description,
       alternates: { canonical: url },
       openGraph: {

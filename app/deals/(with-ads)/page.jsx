@@ -9,9 +9,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
 
 // Shopper-facing signboard (designguide/06-seo/deals.md "Landing page (/deals)").
-const LANDING_TITLE = 'Indian Deals, Discounts & Offers in Australia';
+const LANDING_TITLE = 'Find Local Deals, Discounts & Offers Near You';
 const LANDING_DESCRIPTION =
-  'Find special offers from businesses serving the Indian community - restaurants, groceries, fashion, jewellery, beauty, entertainment, classes and more.';
+  'Browse deals from local businesses near you - food, groceries, fashion, jewellery, beauty, classes and more. Find an offer and save today.';
 
 export const metadata = {
   // Absolute form: the deals layout's "%s | Desify" template must NOT append the brand

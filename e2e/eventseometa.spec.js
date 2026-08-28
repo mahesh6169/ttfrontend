@@ -38,16 +38,18 @@ test('AC6 an event with seoDescription uses it verbatim as the meta description'
   expect(description).toBe(seed.seoFullEventDescription);
 });
 
-test('AC7 a free event with no seoDescription gets the generated one-liner ending "Free RSVP."', async ({ page }) => {
+test('AC7 a free event with no seoDescription and a body description uses the body text', async ({ page }) => {
   const seed = readSeed();
   const { description } = await metaFor(page, seed.seoFreeEventId);
-  expect(description).toBe('SEO Free Event - Willetton, WA, 14 Sep 2026. Free RSVP.');
+  // M4 Level 2: event.description (factory default) is used when >= 5 words
+  expect(description).toBe('A seeded event for automated tests.');
 });
 
-test('AC8 a paid event with no seoDescription ends the generated one-liner with "Get tickets."', async ({ page }) => {
+test('AC8 a paid event with no seoDescription and a body description uses the body text', async ({ page }) => {
   const seed = readSeed();
   const { description } = await metaFor(page, seed.seoPaidEventId);
-  expect(description).toBe('SEO Paid Event - Willetton, WA, 14 Sep 2026. Get tickets.');
+  // M4 Level 2: event.description (factory default) is used when >= 5 words
+  expect(description).toBe('A seeded event for automated tests.');
 });
 
 test('AC9 the meta description never exceeds ~155 chars, even for a very long title', async ({ page }) => {

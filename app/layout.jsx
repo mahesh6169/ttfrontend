@@ -39,7 +39,6 @@ export const metadata = {
   // GOOGLE SEARCH RESULTS - Primary title shown in search results
   title: {
     default: `Australia's Indian Community Platform`,
-    template: `%s | Desify`,
   },
   
   // GOOGLE SEARCH RESULTS - Description shown below title in search results
