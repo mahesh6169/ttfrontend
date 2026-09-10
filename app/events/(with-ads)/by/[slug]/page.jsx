@@ -4,6 +4,7 @@
 // generateMetadata emits an Open Graph share card from the organiser's optional share fields,
 // mirroring the event page's generateMetadata (app/events/(with-ads)/[slug]/page.jsx).
 import { META_DEFAULTS } from '@/utils/slugUtils';
+import { currentIndexingPolicy } from '@/utils/seo/indexingPolicy';
 import OrganiserEventsClient from './OrganiserEventsClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -57,11 +58,13 @@ export async function generateMetadata({ params }) {
     shareDescription || `Book upcoming events by ${organiserName} on Desify!!`;
   const image = absoluteImage(shareImage);
 
+  const { index: shouldIndex, follow: shouldFollow } = currentIndexingPolicy();
+
   return {
     title,
     description,
     alternates: { canonical },
-    robots: { index: true, follow: true },
+    robots: { index: shouldIndex, follow: shouldFollow },
     openGraph: {
       title,
       description,

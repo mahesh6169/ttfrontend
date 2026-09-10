@@ -11,11 +11,16 @@ import StateSelectionWrapper from '@/components/ads/StateSelectionWrapper';
 import Script from 'next/script';
 import { COMMUNITIES } from '@/utils/constants/communities';
 import { Analytics } from '@vercel/analytics/next';
+import { currentIndexingPolicy } from '@/utils/seo/indexingPolicy';
 
 
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 const defaultOgImage = process.env.NEXT_PUBLIC_DEFAULT_OG_IMAGE_URL || 'https://res.cloudinary.com/dtvrbdvkx/image/upload/v1764066113/ogshare_v4_psldb7.jpg';
+// Environment indexing gate (featureplans/fix-shared-environment-indexing.md) - every route
+// inherits this unless it sets its own robots field (see the landing pages, which now import
+// the same policy instead of hardcoding index:true).
+const { index: shouldIndex, follow: shouldFollow } = currentIndexingPolicy();
 
 
 // viewport-fit=cover lets the page extend under the notch and home indicator so the
@@ -56,13 +61,14 @@ export const metadata = {
     telephone: false,
   },
   
-  // GOOGLE CRAWLING - Instructions for Google's search bot
+  // GOOGLE CRAWLING - Instructions for Google's search bot. Fails closed to noindex
+  // everywhere except the exact production origin with indexing explicitly enabled.
   robots: {
-    index: true,      // Allow Google to index this page
-    follow: true,     // Allow Google to follow links
+    index: shouldIndex,
+    follow: shouldFollow,
     googleBot: {
-      index: true,
-      follow: true,
+      index: shouldIndex,
+      follow: shouldFollow,
       'max-video-preview': -1,     // No limit on video preview length
       'max-image-preview': 'large', // Show large image previews
       'max-snippet': -1,           // No limit on text snippet length

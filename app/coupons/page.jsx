@@ -1,9 +1,11 @@
 import CouponsClient from './CouponsClient';
 import SeoFooterBlock from './SeoFooterBlock';
+import { currentIndexingPolicy } from '@/utils/seo/indexingPolicy';
 
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
 const couponsOgImage = process.env.NEXT_PUBLIC_COUPONS_OG_IMAGE_URL || process.env.NEXT_PUBLIC_DEFAULT_OG_IMAGE_URL;
+const { index: shouldIndex, follow: shouldFollow } = currentIndexingPolicy();
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const API_KEY = process.env.NEXT_PUBLIC_FRONTEND_API_KEY;
 
@@ -49,8 +51,8 @@ export const metadata = {
     images: [couponsOgImage],
   },
 
-  // Explicit robots (also the inherited default)
-  robots: { index: true, follow: true },
+  // Environment indexing gate (featureplans/fix-shared-environment-indexing.md)
+  robots: { index: shouldIndex, follow: shouldFollow },
 };
 
 // The default view = no filters, no location, page 1, default sort. Only then may the

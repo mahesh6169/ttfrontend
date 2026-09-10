@@ -4,6 +4,7 @@ node_modules/
 # 🚀 Ignore Next.js Build Output
 .next/
 .next-e2e/
+.next-e2e-*/
 
 # 🚀 Ignore Environment Variables
 .env

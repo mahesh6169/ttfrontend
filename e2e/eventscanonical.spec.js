@@ -29,9 +29,20 @@ test('AC5 the hero page canonical is self-referential (its own URL)', async ({ p
   expect(canonical).toBe(`${SITE}${heroPath}`);
 });
 
+// Indexability itself is environment-driven (featureplans/fix-shared-environment-indexing.md) -
+// the shared test server noindexes every page by design. This AC's real guard is narrower:
+// canonicalisation must not layer an EXTRA noindex onto the day page beyond whatever the
+// environment already applies to any page - so it must match the hero page's own robots state,
+// not a hardcoded "always indexable" expectation.
 test('AC6 a canonicalised day page does NOT also carry a noindex robots tag', async ({ page }) => {
   const seed = readSeed();
+  const heroPath = `/events/${createSlugUrl(seed.seoCanonHeroTitle, seed.seoCanonHeroId)}`;
+
+  await page.goto(heroPath);
+  const heroRobots = await robotsContent(page);
+
   await page.goto(`/events/${seed.seoCanonDayId}`);
-  const robots = await robotsContent(page);
-  expect(robots === null || !robots.includes('noindex')).toBe(true);
+  const dayRobots = await robotsContent(page);
+
+  expect(dayRobots, 'day page robots should match the hero page robots').toBe(heroRobots);
 });
