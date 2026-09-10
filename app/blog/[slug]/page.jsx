@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { simpleMarkdownToHtml } from '@/utils/markdownToHtml';
 import { parseFrontmatter } from '@/utils/parseFrontmatter';
 import { META_DEFAULTS } from '@/utils/slugUtils';
+import { currentIndexingPolicy } from '@/utils/seo/indexingPolicy';
 import { FaFacebookF, FaWhatsapp, FaShareAlt } from 'react-icons/fa';
 import BlogLightbox from '@/components/blog/BlogLightbox';
 
@@ -99,6 +100,8 @@ export async function generateMetadata({ params }) {
     image = `${image}${separator}v=${Math.round(mtime)}`;
   }
 
+  const { index: shouldIndex, follow: shouldFollow } = currentIndexingPolicy();
+
   return {
     title,
     description,
@@ -118,7 +121,7 @@ export async function generateMetadata({ params }) {
       description,
       images: image ? [image] : [],
     },
-    robots: { index: true, follow: true },
+    robots: { index: shouldIndex, follow: shouldFollow },
   };
 }
 

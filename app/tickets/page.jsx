@@ -2,6 +2,7 @@ import Link from 'next/link';
 import PostPaidEventButton from '@/components/buttons/PostPaidEventButton';
 import TicketPayoutCalculator from '@/components/events/TicketPayoutCalculator';
 import { MARKETED_PLATFORM_FEE, platformFeeLabel } from '@/utils/platformFee';
+import { currentIndexingPolicy } from '@/utils/seo/indexingPolicy';
 
 // Fee figures come from the single source of truth (utils/platformFee.js) so the
 // marketed number on this page never drifts from the rest of the app.
@@ -12,6 +13,7 @@ const FEE_FLAT = MARKETED_PLATFORM_FEE.flat.toFixed(2);
 const siteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://desify.com.au';
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
 const ticketsOgImage = process.env.NEXT_PUBLIC_TICKETS_OG_IMAGE_URL;
+const { index: shouldIndex, follow: shouldFollow } = currentIndexingPolicy();
 
 export const metadata = {
   title: 'Sell Event Tickets Online | Simple Flat Fee Pricing',
@@ -34,7 +36,7 @@ export const metadata = {
     description: 'Sell tickets online with simple pricing, seating layouts and event management tools.',
     images: [ticketsOgImage],
   },
-  robots: { index: true, follow: true },
+  robots: { index: shouldIndex, follow: shouldFollow },
 };
 
 const serviceJsonLd = {

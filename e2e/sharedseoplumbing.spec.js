@@ -77,8 +77,11 @@ test('AC7 the listings/deals/threads /views pages redirect to their detail page'
   }
 });
 
-// AC6 - real detail (slug) pages must NOT carry noindex (guards against the noindex leaking onto
-// pages we want indexed).
+// AC6 - real detail (slug) pages must not carry an EXTRA noindex beyond whatever the environment
+// already applies to any page (guards against the /views legacy-stub noindex leaking onto them).
+// Indexability itself is environment-driven (featureplans/fix-shared-environment-indexing.md) - the
+// shared test server noindexes every page by design - so the guard is "matches the homepage's own
+// robots state on this same server", not a hardcoded "always indexable" expectation.
 test('AC6 the slug detail pages are NOT noindex in each vertical', async ({ page }) => {
   const seed = readSeed();
   const slugUrls = [
@@ -89,9 +92,12 @@ test('AC6 the slug detail pages are NOT noindex in each vertical', async ({ page
     `/coupons/${seed.couponCampaignSlug}`,
   ];
 
+  await page.goto('/');
+  const homeRobots = await robotsContent(page);
+
   for (const url of slugUrls) {
     await page.goto(url);
     const robots = await robotsContent(page);
-    expect(robots === null || !robots.includes('noindex'), `${url} should not be noindex`).toBe(true);
+    expect(robots, `${url} robots should match the homepage robots`).toBe(homeRobots);
   }
 });
