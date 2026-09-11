@@ -58,8 +58,6 @@ export const ALLOWED_EMAIL_DOMAINS = [
       errors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Email format is invalid';
-    } else if (!isValidEmailDomain(formData.email)) {
-      errors.email = 'To reduce spam, registration is restricted to recognized email domains.';
     }
   
     // Common: Password

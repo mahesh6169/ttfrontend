@@ -403,15 +403,6 @@ const Register = () => {
             {errors.email && (
               <p className="text-red-500 text-sm mt-1">
                 {errors.email}
-                {errors.email.includes('restricted to recognized email domains') && (
-                  <span>
-                    {' Please request your domain to be whitelisted '}
-                    <Link href="/support/contact" className="text-teal-700 underline">
-                      here
-                    </Link>
-                    .
-                  </span>
-                )}
               </p>
             )}
           </div>
