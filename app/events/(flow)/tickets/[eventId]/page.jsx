@@ -22,6 +22,7 @@ import {
 } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getEventTicketStatus, getTicketSaleStatus } from '@/utils/events/ticketStatusHelper';
+import { isSalesClosed } from '@/utils/events/salesCutoff';
 import { isDiscountRedeemable } from '@/utils/events/discountCodes';
 import { fetchEventById } from '@/store/slices/events/eventSlice';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -62,8 +63,11 @@ const TicketSelectionPage = () => {
   // Use backend values instead of local calculations
   const userReservation = eventCapacity?.userReservation || 0;
   
+  // Sales-closed state: mirrors the backend cutoff so the page is blocked before any API call.
+  const salesClosed = selectedEvent?.isPaid && isSalesClosed(selectedEvent);
+
   // Check if all required additional info fields are filled
-  const hasRequiredFieldErrors = selectedEvent?.registrationFields?.some(field => 
+  const hasRequiredFieldErrors = selectedEvent?.registrationFields?.some(field =>
     field.isRequired && !formResponses[field.fieldName]
   ) || false;
 
@@ -964,6 +968,13 @@ const TicketSelectionPage = () => {
           )}
 
 
+          {salesClosed && (
+            <div className="flex items-start gap-2 text-sm text-slate-500 my-4">
+              <FaExclamationTriangle className="mt-0.5 shrink-0" />
+              <span>Ticket sales for this event have closed.</span>
+            </div>
+          )}
+
           {errors.selection && (
             <div className="flex items-start gap-2 text-sm text-red-600 mb-4">
               <FaExclamationTriangle className="mt-0.5 shrink-0" />
@@ -984,28 +995,37 @@ const TicketSelectionPage = () => {
           proceed action on the right, pinned to the bottom edge. The mobile bottom nav is hidden on
           the flow (see BottomNavigation), so this owns the bottom edge; the page wrapper carries
           bottom padding (pb-24) so nothing hides behind it. */}
-      {userReservation > 0 && (
+      {(userReservation > 0 || salesClosed) && (
         <div
           data-testid="tickets-cta-bar"
           className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white safe-area-inset-pb"
         >
           <div className="w-full max-w-3xl mx-auto px-2 md:px-4 py-3 flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">
-                {selectedCount} ticket{selectedCount === 1 ? '' : 's'} - ${subtotal.toFixed(2)}
-              </p>
+              {salesClosed ? (
+                <p className="text-sm text-slate-500 truncate">Ticket sales for this event have closed.</p>
+              ) : (
+                <p className="text-sm font-semibold text-slate-900 truncate">
+                  {selectedCount} ticket{selectedCount === 1 ? '' : 's'} - ${subtotal.toFixed(2)}
+                </p>
+              )}
             </div>
             <button
               data-testid="tickets-proceed"
               onClick={handleProceed}
-              disabled={!canProceedToNext || isLoading || apiLoading || !reservation}
+              disabled={salesClosed || !canProceedToNext || isLoading || apiLoading || !reservation}
               className={`shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                canProceedToNext && !isLoading && !apiLoading && reservation
+                !salesClosed && canProceedToNext && !isLoading && !apiLoading && reservation
                   ? 'bg-teal-700 hover:bg-teal-800 text-white'
                   : 'bg-slate-100 text-slate-500 cursor-not-allowed'
               }`}
             >
-              {isLoading || apiLoading ? (
+              {salesClosed ? (
+                <>
+                  <FaShoppingCart className="text-sm" />
+                  <span>Sales Closed</span>
+                </>
+              ) : isLoading || apiLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Processing...</span>
