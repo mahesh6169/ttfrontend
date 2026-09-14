@@ -50,6 +50,7 @@ import WaitlistJoinModal from './WaitlistJoinModal';
 import axios from '@/utils/axiosConfig';
 import { toast } from 'react-toastify';
 import { formatInTimeZone } from 'date-fns-tz';
+import { isSalesClosed } from '@/utils/events/salesCutoff';
 import { checkRegistrationStatus, unregisterFromFreeEvent } from '@/store/slices/events/freeEventSlice';
 
 // Linkify URLs (http(s):// or www.) and @handles (assumed Instagram) in plain-text descriptions.
@@ -392,9 +393,13 @@ const SingleEventCard = ({ event, chatProps }) => {
     router.push(`/events/tickets/${event._id}`);
   };
 
+  // Sales-closed state for paid events: tickets sell until 11:59pm on the event day (D1).
+  const salesClosed = event.isPaid && isSalesClosed(event);
+
   // Show the waitlist CTA only when the event is genuinely full, the organiser turned the
-  // waitlist on, and it is a real (non-promo) event. Server re-validates all of this on join.
-  const showWaitlist = capacityFull && waitlistEnabledLive && !event.isAdvertiseOnly;
+  // waitlist on, it is a real (non-promo) event, and sales are still open (D6: once the
+  // event day has passed there is nothing to wait for).
+  const showWaitlist = capacityFull && waitlistEnabledLive && !event.isAdvertiseOnly && !salesClosed;
 
   // Join in one tap for a live session (member or guest email); logged-out visitors get the
   // email + reCAPTCHA modal. Server decides the real outcome (see featureplans/events-waitlist.md).
@@ -854,7 +859,7 @@ const SingleEventCard = ({ event, chatProps }) => {
             {/* Ticket types. ONE bordered card, rows divided by a subtle line; 5+ types scroll
                 inside the card so it stays compact. Below the summary on mobile, left on desktop. */}
             <div className="order-2 lg:order-1 flex-1 min-w-0">
-              <div className={`rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 transition-opacity ${capacityFull ? 'opacity-50' : ''} ${event.ticketTypes.filter((t) => t.active !== false).length > 4 ? 'max-h-72 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full' : ''}`}>
+              <div className={`rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 transition-opacity ${capacityFull || salesClosed ? 'opacity-50' : ''} ${event.ticketTypes.filter((t) => t.active !== false).length > 4 ? 'max-h-72 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full' : ''}`}>
                 {event.ticketTypes.filter((t) => t.active !== false).map((ticket, index) => {
                   // Capacity is event-level, not per-ticket, so the list only reflects sale-window status.
                   const status = event.timeZone ? getTicketSaleStatus(ticket, event.timeZone, null) : null;
@@ -925,7 +930,15 @@ const SingleEventCard = ({ event, chatProps }) => {
                 <div className="flex flex-row items-center justify-between gap-3 lg:flex-col lg:items-start lg:gap-4">
                   {/* Purchase button (mobile: left, vertically centred; desktop: below the summary) */}
                   <div className="order-1 lg:order-2 shrink-0">
-                    {showWaitlist ? (
+                    {salesClosed ? (
+                      <button
+                        disabled
+                        className="inline-flex items-center gap-2 bg-slate-100 text-slate-500 px-5 py-2.5 rounded-lg font-semibold text-sm cursor-not-allowed"
+                      >
+                        <FaShoppingCart />
+                        Sales Closed
+                      </button>
+                    ) : showWaitlist ? (
                       waitlistBlock
                     ) : (
                       <button

@@ -519,7 +519,15 @@ const CheckoutPage = () => {
       
       // Provide user-friendly generic messages
       let errorMessage = 'Unable to process payment at this time. Please try again.';
-      
+
+      // Sales closed: deterministic error code, replace the generic text (D5).
+      if (error.response?.data?.errorCode === 'SALES_CLOSED') {
+        setErrors({ payment: 'Ticket sales for this event have closed.' });
+        setPaymentStatus({ status: null, clientSecret: null, amount: 0 });
+        setIsProcessing(false);
+        return;
+      }
+
       // Discount became invalid between Apply and Pay (expired / used up). Drop it and ask the
       // buyer to retry without the code (honor-price only applies AFTER a successful charge).
       if (error.response?.data?.errorCode === 'INVALID_DISCOUNT') {
