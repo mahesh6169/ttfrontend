@@ -112,6 +112,13 @@ export const PRICING_CONFIG = {
     hire: { enabled: true, label: 'Hire', units: ['hour', 'day', 'week'] }
   }
 },
+
+'Building Materials': {
+  required: true,
+  options: {
+    sell: { enabled: true, label: 'Sell', units: null }
+  }
+},
 'Electronics & Computers': {
   required: true,
   options: {

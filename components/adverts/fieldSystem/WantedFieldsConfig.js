@@ -67,6 +67,12 @@ export const WANTED_FIELDS_CONFIG = {
     optionalFields: ['brand', 'model']
   },
 
+  'Building Materials': {
+    hiddenSections: ['pricingSection', 'conditionSection'],
+    hiddenFields: [],
+    optionalFields: []
+  },
+
   'Garden & Outdoor': {
     hiddenSections: ['pricingSection', 'conditionSection'],
     hiddenFields: [],
@@ -279,6 +285,12 @@ export const WANTED_FIELDS_CONFIG = {
   },
 
   'Priest & Pooja': {
+    hiddenSections: [],
+    hiddenFields: ['serviceArea'],
+    optionalFields: []
+  },
+
+  'Marriage Celebrants': {
     hiddenSections: [],
     hiddenFields: ['serviceArea'],
     optionalFields: []

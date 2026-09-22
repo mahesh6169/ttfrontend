@@ -22,6 +22,7 @@ export const CATEGORIES = [
       'Fashion & Accessories',
       'Books, Art & Collectables',
       'Pet Supplies',
+      'Building Materials',
     ],
   },
   {
@@ -153,6 +154,7 @@ export const CATEGORIES = [
     subcategories: [
       'Matrimony',
       'Priest & Pooja',
+      'Marriage Celebrants',
     ],
   },
 ];
@@ -171,6 +173,7 @@ const NON_SERVICE_SUBCATEGORIES = [
   'Fashion & Accessories',
   'Books, Art & Collectables',
   'Pet Supplies',
+  'Building Materials',
   // Real Estate (property listings)
   'Sell, Rent & Share',
   // Employment (job listings)
@@ -222,6 +225,7 @@ export function isValidCategoryCombo(category, subcategory) {
 const COMMUNITY_SUBCATEGORIES = [
   'Matrimony',
   'Priest & Pooja',
+  'Marriage Celebrants',
 ];
 
 // Parent categories where ALL subcategories need community field

@@ -260,6 +260,23 @@ fields: {
   }
 },
 
+'Building Materials': {
+  sections: [
+    { id: 'pricingSection', order: 10, title: null, specialField: 'pricing' },
+    {
+      id: 'conditionSection',
+      order: 15,
+      title: null,
+      specialField: 'condition',
+      dependencies: {
+        priceType: ['sell']
+      }
+    },
+    { id: 'fieldsSection', order: 20, title: null, fields: [] }
+  ],
+  fields: {}
+},
+
 'Pet Supplies': {
   sections: [
     { id: 'pricingSection', order: 10, title: null, specialField: 'pricing' },
@@ -752,6 +769,16 @@ fields: {
   },
 
   'Priest & Pooja': {
+    sections: [
+      {
+        id: 'serviceDetailsSection',
+        order: 10,
+        fields: ['serviceArea']
+      }
+    ]
+  },
+
+  'Marriage Celebrants': {
     sections: [
       {
         id: 'serviceDetailsSection',
