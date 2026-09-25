@@ -1,7 +1,9 @@
 'use client';
 
-// Admin purge queue (events-past-events.md D5): events organisers have soft-deleted, awaiting a hard
-// delete that frees storage (the doc + images + FreeTickets; PaidTickets + EventInvoices are preserved).
+// Admin purge queue (events-past-events.md D5, events-delete-retention.md D5/AC8): events organisers
+// have soft-deleted OR an admin has moderation-blocked, awaiting a hard delete that frees storage (the
+// doc + images; FreeTickets, PaidTickets, EventInvoices and RefundRequests are always preserved). A
+// future event with an unrefunded sold ticket is refused server-side (events-delete-retention.md D4).
 // Minimal admin view reusing the existing admin events page pattern - list + a Purge button per row.
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
@@ -42,7 +44,7 @@ const PurgeQueuePage = () => {
   useEffect(() => { fetchQueue(1); }, []);
 
   const handlePurge = async (eventId) => {
-    if (!confirm('Permanently delete this event and free its storage? PaidTickets and invoices are kept; this cannot be undone.')) {
+    if (!confirm('Permanently delete this event and free its storage? Paid tickets, invoices and refund requests are kept; this cannot be undone.')) {
       return;
     }
     setPurging((prev) => ({ ...prev, [eventId]: true }));
@@ -65,8 +67,8 @@ const PurgeQueuePage = () => {
     <div className="p-4">
       <h1 className="text-xl font-bold mb-1">Purge queue</h1>
       <p className="mb-4 text-sm text-slate-500">
-        Events organisers have deleted. Purging frees storage (the event, its images and RSVPs); paid
-        tickets and invoices are always preserved.
+        Events organisers have deleted, or an admin has moderation-blocked. Purging frees storage (the
+        event, its images and RSVPs); paid tickets, invoices and refund requests are always preserved.
       </p>
 
       {loading && <LoadingSpinner />}
@@ -78,7 +80,7 @@ const PurgeQueuePage = () => {
       {!loading && events.length > 0 && (
         <>
           <div className="mb-4 text-sm text-slate-600">
-            Showing {events.length} of {meta.totalItems} deleted events
+            Showing {events.length} of {meta.totalItems} events
           </div>
 
           <div className="overflow-x-auto">
@@ -88,24 +90,27 @@ const PurgeQueuePage = () => {
                   <th className="border p-2 text-left">Title</th>
                   <th className="border p-2 text-left">Owner</th>
                   <th className="border p-2 text-left">Event date</th>
-                  <th className="border p-2 text-left">Deleted</th>
+                  <th className="border p-2 text-left">Since</th>
                   <th className="border p-2">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {events.map((event) => {
-                  const { _id, title, email, dateTime, deletedAt, isPaid } = event;
+                  const { _id, title, email, dateTime, deletedAt, isPaid, deletedByOrganiser, isBlocked, blockedAt } = event;
+                  const since = deletedAt || blockedAt;
                   return (
                     <tr key={_id} className="bg-white">
                       <td className="border p-2">
                         {title} <span className="text-[10px] text-slate-400">({isPaid ? 'paid' : 'free'})</span>
+                        {deletedByOrganiser && <span className="ml-1 text-[10px] text-amber-600">(organiser-deleted)</span>}
+                        {isBlocked && <span className="ml-1 text-[10px] text-amber-600">(blocked)</span>}
                       </td>
                       <td className="border p-2">{email}</td>
                       <td className="border p-2">
                         {dateTime ? formatInTimeZone(dateTime, 'Australia/Sydney', 'dd/MM/yyyy') : '-'}
                       </td>
                       <td className="border p-2">
-                        {deletedAt ? formatInTimeZone(deletedAt, 'Australia/Sydney', 'dd/MM/yyyy') : '-'}
+                        {since ? formatInTimeZone(since, 'Australia/Sydney', 'dd/MM/yyyy') : '-'}
                       </td>
                       <td className="border p-2 text-center">
                         <button

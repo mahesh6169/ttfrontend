@@ -21,6 +21,7 @@ const ManageEventsPage = () => {
   });
   const [sendingReminders, setSendingReminders] = useState({});
   const [deletingEvents, setDeletingEvents] = useState({});
+  const [blockingEvents, setBlockingEvents] = useState({});
   
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -125,6 +126,35 @@ const ManageEventsPage = () => {
     }
   };
 
+  // Moderation hide - replaces the destructive delete with a non-destructive block
+  // (events-delete-retention.md D5-D7): the event and its images are kept, it disappears from
+  // the site everywhere, and it moves to the purge queue for a later permanent delete.
+  const handleModerationBlock = async (eventId) => {
+    if (!confirm('Hide this event immediately? It disappears from the site everywhere, but the record and images are kept for a later permanent delete from the purge queue.')) {
+      return;
+    }
+
+    setBlockingEvents(prev => ({ ...prev, [eventId]: true }));
+
+    try {
+      const { data } = await axios.patch(
+        `${BASE_URL}/admin/events/${eventId}/block`,
+        {},
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        toast.success('Event hidden');
+        fetchEvents(page);
+      }
+    } catch (error) {
+      console.error('Error hiding event:', error);
+      toast.error(error.response?.data?.message || 'Failed to hide event');
+    } finally {
+      setBlockingEvents(prev => ({ ...prev, [eventId]: false }));
+    }
+  };
+
   // Render
   return (
     <div className="p-4">
@@ -156,7 +186,7 @@ const ManageEventsPage = () => {
               </thead>
               <tbody>
                 {events.map((event) => {
-                  const { _id, title, email, dateTime, timeZone, status, actions, isRecurring } = event;
+                  const { _id, title, email, dateTime, timeZone, status, actions, isRecurring, isBlocked } = event;
                   const reminderKey1 = `${_id}-1`;
                   const reminderKey2 = `${_id}-2`;
 
@@ -229,17 +259,21 @@ const ManageEventsPage = () => {
                       </td>
 
                       <td className="border p-2">
-                        <button
-                          disabled={!actions.moderationDelete.enabled || deletingEvents[_id]}
-                          onClick={() => handleDelete(_id)}
-                          className={`px-2 py-1 text-xs rounded transition ${
-                            actions.moderationDelete.enabled
-                              ? 'bg-red-600 text-white hover:bg-red-700 disabled:opacity-50'
-                              : 'bg-slate-300 text-slate-600 cursor-not-allowed'
-                          }`}
-                        >
-                          {deletingEvents[_id] ? 'Deleting...' : 'Moderation Delete'}
-                        </button>
+                        {isBlocked ? (
+                          <span className="px-2 py-1 text-xs rounded bg-slate-200 text-slate-600">Blocked</span>
+                        ) : (
+                          <button
+                            disabled={!actions.moderationDelete.enabled || blockingEvents[_id]}
+                            onClick={() => handleModerationBlock(_id)}
+                            className={`px-2 py-1 text-xs rounded transition ${
+                              actions.moderationDelete.enabled
+                                ? 'bg-red-600 text-white hover:bg-red-700 disabled:opacity-50'
+                                : 'bg-slate-300 text-slate-600 cursor-not-allowed'
+                            }`}
+                          >
+                            {blockingEvents[_id] ? 'Hiding...' : 'Moderation Hide'}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

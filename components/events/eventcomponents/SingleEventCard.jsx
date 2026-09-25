@@ -393,8 +393,9 @@ const SingleEventCard = ({ event, chatProps }) => {
     router.push(`/events/tickets/${event._id}`);
   };
 
-  // Sales-closed state for paid events: tickets sell until 11:59pm on the event day (D1).
-  const salesClosed = event.isPaid && isSalesClosed(event);
+  // Sales/registration-closed state: tickets and free RSVP both close at 11:59pm on the event day
+  // (fix-events-sales-cutoff.md D1, events-past-offline-curation.md D6 - same rule, same helper).
+  const salesClosed = isSalesClosed(event);
 
   // Show the waitlist CTA only when the event is genuinely full, the organiser turned the
   // waitlist on, it is a real (non-promo) event, and sales are still open (D6: once the
@@ -1052,6 +1053,14 @@ const SingleEventCard = ({ event, chatProps }) => {
                     </button>
                   </div>
                 </div>
+              ) : salesClosed ? (
+                <button
+                  disabled
+                  className="inline-flex items-center gap-2 bg-slate-100 text-slate-500 px-5 py-2.5 rounded-lg font-semibold text-sm cursor-not-allowed"
+                >
+                  <FaRegCalendarCheck />
+                  Registrations Closed
+                </button>
               ) : showWaitlist ? (
                 waitlistBlock
               ) : (

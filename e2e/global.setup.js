@@ -54,4 +54,12 @@ setup('seed test data and authenticate the member', async ({ request }) => {
   });
   expect(orgRes.ok()).toBeTruthy();
   await request.storageState({ path: path.join(AUTH_DIR, 'organiser.json') });
+
+  // 4. Log the admin in (events-delete-retention.md AC10 - drives the renewals/purge admin pages)
+  // and save a third storage state.
+  const adminRes = await request.post(`${BACKEND_URL}/api/users/login`, {
+    data: { email: seed.adminEmail, password: seed.adminPassword },
+  });
+  expect(adminRes.ok()).toBeTruthy();
+  await request.storageState({ path: path.join(AUTH_DIR, 'admin.json') });
 });

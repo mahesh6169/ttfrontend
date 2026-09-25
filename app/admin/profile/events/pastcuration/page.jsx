@@ -66,7 +66,8 @@ const PastCurationPage = () => {
       <h1 className="text-xl font-bold mb-1">Past events curation</h1>
       <p className="mb-4 text-sm text-slate-500">
         Pick which past events appear in the public &quot;Past events&quot; strip on /events. Only the ones you
-        show here are visible to visitors.
+        show here are visible to visitors. This list covers every finished event, whether it is live,
+        offline, or organiser-deleted.
       </p>
 
       {loading && <LoadingSpinner />}
@@ -94,11 +95,12 @@ const PastCurationPage = () => {
               </thead>
               <tbody>
                 {events.map((event) => {
-                  const { _id, title, email, dateTime, featuredInPast, deletedByOrganiser } = event;
+                  const { _id, title, email, dateTime, featuredInPast, deletedByOrganiser, offline } = event;
                   return (
                     <tr key={_id} className={featuredInPast ? 'bg-teal-50' : 'bg-white'}>
                       <td className="border p-2">
                         {title}
+                        {offline && <span className="ml-1 text-[10px] text-amber-600">(offline)</span>}
                         {deletedByOrganiser && <span className="ml-1 text-[10px] text-amber-600">(organiser-deleted)</span>}
                       </td>
                       <td className="border p-2">{email}</td>
