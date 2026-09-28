@@ -1,0 +1,32 @@
+# Local development: frontend + (via include) Mongo + backend.
+#   docker compose up          (from this folder: starts all three)
+# Expects ../ttbackendflyio next to this repo.
+# Prod does NOT use this file: Vercel builds the app itself.
+#
+# One-time setup on a new machine:  docker network create edge
+# The site is served by the Caddy container on the "edge" network, which
+# also answers to telugufy.com.au inside that network, so server-side calls
+# to https://telugufy.com.au/api reach the backend through Caddy.
+name: tagtelugu
+
+include:
+  - ../ttbackendflyio/compose.yaml
+
+services:
+  tt-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    init: true
+    volumes:
+      - .:/app
+      - tt-frontend-node-modules:/app/node_modules
+      - tt-frontend-next:/app/.next
+    depends_on:
+      - tt-backend
+    networks:
+      - edge
+
+volumes:
+  tt-frontend-node-modules:
+  tt-frontend-next:
