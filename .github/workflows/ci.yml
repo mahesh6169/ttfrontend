@@ -56,7 +56,8 @@ jobs:
       # The test env files are gitignored; these mirror the local ones. Only
       # the Stripe test values and the two Google browser test keys are real
       # (from repo secrets); everything else is a CI dummy. FRONTEND_API_KEY
-      # and NEXT_PUBLIC_FRONTEND_API_KEY must match each other.
+      # and NEXT_PUBLIC_FRONTEND_API_KEY must both be test-api-key: the specs
+      # send that key themselves (cleanup and setup calls straight to the API).
       - name: Write test env files
         env:
           STRIPE_TEST_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
@@ -71,7 +72,7 @@ jobs:
           MONGO_URI=mongodb://localhost:27017/tagtelugu_test?replicaSet=rs0
           JWT_SECRET=ci-only-jwt-secret-not-used-anywhere-else
           MESSAGE_SECRET_KEY=00000000000000000000000000000000000000000000000000000000000000ff
-          FRONTEND_API_KEY=ci-only-frontend-api-key
+          FRONTEND_API_KEY=test-api-key
           API_KEY_MODE=enforce
           FRONTEND_URL=http://localhost:3120
           WEBSITE_URL=http://localhost:3120
@@ -89,7 +90,7 @@ jobs:
           cat > ttfrontend/.env.test <<EOF
           NEXT_PUBLIC_API_BASE_URL=http://localhost:5100/api
           NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:5100
-          NEXT_PUBLIC_FRONTEND_API_KEY=ci-only-frontend-api-key
+          NEXT_PUBLIC_FRONTEND_API_KEY=test-api-key
           NEXT_PUBLIC_RECAPTCHA_SITE_KEY=$RECAPTCHA_TEST_SITE_KEY
           NEXT_PUBLIC_WEBSITE_URL=http://localhost:3120
           NEXT_PUBLIC_ALLOW_INDEXING=false
