@@ -24,13 +24,19 @@ test('AC1 default page content band caps at 1024 on wide desktop', async ({ page
 });
 
 // AC2: a forms page caps its content band at 768 on a wide desktop.
-test('AC2 forms page content band caps at 768 on wide desktop', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/events/add');
-  const band = page.locator(BAND).first();
-  await expect(band).toBeVisible({ timeout: 20_000 });
-  const box = await band.boundingBox();
-  expect(box.width).toBeLessThanOrEqual(769); // 768 cap (+1 for rounding)
+// Logged in as the organiser: a logged-out visit to /events/add moves on to Login, so the band
+// was only on screen for a moment and the measurement raced it (flaky, feature 1002).
+test.describe('forms page (organiser)', () => {
+  test.use({ storageState: 'e2e/.auth/organiser.json' });
+
+  test('AC2 forms page content band caps at 768 on wide desktop', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/events/add');
+    const band = page.locator(BAND).first();
+    await expect(band).toBeVisible({ timeout: 20_000 });
+    const box = await band.boundingBox();
+    expect(box.width).toBeLessThanOrEqual(769); // 768 cap (+1 for rounding)
+  });
 });
 
 // AC3: at the 360px phone floor, no page scrolls sideways (nothing wider than the phone).
